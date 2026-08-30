@@ -1,10 +1,3 @@
-"""Renderer-neutral semantic HTML for a validated magazine edition.
-
-The public seam is :func:`render_html_edition`: callers supply an already
-validated :class:`~magazine.manifest.Edition` and receive deterministic HTML
-plus an inventory of the local assets referenced by it.  The module deliberately
-does not know about page size, CSS, PDFs, or a particular HTML renderer.
-"""
 
 from __future__ import annotations
 
@@ -39,12 +32,6 @@ from .reader_text import educate_reader_quotes, fold_reader_characters
 
 @dataclass(frozen=True, slots=True)
 class HtmlAsset:
-    """A local file referenced by the semantic edition HTML.
-
-    ``path`` stays a :class:`Path` so future adapters do not need to recover a
-    filesystem path from HTML. ``src`` is the corresponding local ``file:`` URL
-    used in the generated document; neither field ever causes network access.
-    """
 
     id: str
     role: str
@@ -62,31 +49,12 @@ class HtmlAsset:
 
 @dataclass(frozen=True, slots=True)
 class HtmlEdition:
-    """The complete semantic HTML edition and its explicit local asset inventory."""
 
     html: str
     assets: tuple[HtmlAsset, ...]
 
 
 def render_html_edition(edition: Edition) -> HtmlEdition:
-    """Render a validated edition into semantic, self-contained HTML.
-
-    The output contains no stylesheet, script, remotely fetched asset, or layout
-    policy. Authored links remain working links, including external destinations.
-    Its stable ``data-*`` attributes are the provenance hooks for screen and
-    print adapters. Repeated calls with the same validated edition produce the
-    same string and asset ordering.
-
-    Every text and attribute value is folded through
-    :func:`magazine.reader_text.fold_reader_characters` — the publication's own
-    character repertoire, not any renderer's — and then escaped, in that order,
-    so that whatever the fold produces is still escaped. Prose text is
-    additionally educated first through
-    :func:`magazine.reader_text.educate_reader_quotes`, so an authored
-    typewriter quote prints as the real mark; code spans, fenced code, URLs,
-    and attribute values are exempt — a straight quote there is content, and
-    the escape is what keeps it from terminating an attribute value.
-    """
 
     assets: list[HtmlAsset] = []
     body: list[str] = [_edition_header(edition), *_render_contents(edition)]
@@ -165,14 +133,6 @@ def _edition_header(edition: Edition) -> str:
 
 
 def _render_contents(edition: Edition) -> tuple[str, ...]:
-    """The contents sheets, with each entry's own label, title and author.
-
-    An entry is a row of four editorial facts -- what kind of piece it is, where
-    it starts, what it is called and who wrote it -- so each is its own element.
-    The folio is a second link to the same destination rather than a decoration
-    on the first: ``target-counter`` resolves against the element's own ``href``,
-    and an entry that cannot be followed to its page is not a contents entry.
-    """
 
     label = _ui(edition, "contents")
     kicker = f"{_ui(edition, 'issue')} {edition.issue_number} / {label}"
@@ -199,11 +159,8 @@ def _render_contents(edition: Edition) -> tuple[str, ...]:
         (_section_destination_id(index), _ui(edition, section.kind), section.title, "")
         for index, section in enumerate(edition.sections)
     )
-    # A contents row's author line is one line by contract (the row offsets
-    # are fixed), and the measure carries about 54 characters of 6.8pt
-    # Magazine Sans.  A roster longer than that is cut at an author boundary
-    # and closed with "et al." -- the full roster still prints on the
-    # article's own opener.
+
+
     def clamp_roster(author: str) -> str:
         if len(author) <= 54:
             return author
@@ -215,11 +172,8 @@ def _render_contents(edition: Edition) -> tuple[str, ...]:
         (destination, entry_label, title, clamp_roster(author))
         for destination, entry_label, title, author in entries
     ]
-    # The author line sits 2.7pt under a ONE-line title (editor's ruling,
-    # 2026-08-07: intra-entry space belongs between entries).  A title long
-    # enough to wrap would print into it, so it is the editor's to shorten
-    # -- loudly, not silently.  ~62 characters of 9.8pt Magazine Serif
-    # Display is the 286pt measure's practical ceiling.
+
+
     for _destination, _label, title, _author in entries:
         if len(title) > 62:
             raise ValidationError(
@@ -227,10 +181,8 @@ def _render_contents(edition: Edition) -> tuple[str, ...]:
                 "onto the entry's author line; shorten the article title to "
                 "62 characters or fewer."
             )
-    # The row template's fixed offsets (entry-author at 40.5pt) are drawn for
-    # the ~49pt row that eight entries leave.  Nine or more rows shrink below
-    # that, so the nav declares itself dense and the stylesheet moves the
-    # offsets up a few points -- same page, same anatomy, tighter rows.
+
+
     density = ' data-contents-density="tight"' if len(entries) > 8 else ""
     rows: list[str] = []
     for destination, entry_label, title, author in entries:
@@ -396,7 +348,6 @@ def _render_illustrated_article(
     opener_figures: list[Figure],
     figures_by_anchor: dict[str, list[Figure]],
 ) -> tuple[str, tuple[HtmlAsset, ...]]:
-    """Render the shared semantic structure for the illustrated opener."""
 
     extracts_by_anchor, opener_extracts = _extracts_by_anchor(article)
     if not document.blocks or not isinstance(document.blocks[0], Paragraph):
@@ -514,16 +465,6 @@ def _render_illustrated_article(
 
 
 def _render_key_ideas(edition: Edition, article: Article) -> tuple[str, ...]:
-    """The article's closing key-ideas box, or nothing.
-
-    An ``aside`` and not a ``section``: the lines are editorial furniture about
-    the article, not a further part of it, and the distinction is load-bearing
-    for the print adapter, which addresses the edition's real sections by tag.
-    The kicker is a labelled paragraph rather than a heading for the same
-    reason a content label is -- a heading here would enter the article's own
-    heading sequence, which is what ``edition.yaml``'s figure anchors are
-    matched against.
-    """
     if not article.key_ideas:
         return ()
     items = "".join(f"<li>{_text(idea)}</li>" for idea in article.key_ideas)
@@ -536,33 +477,6 @@ def _render_key_ideas(edition: Edition, article: Article) -> tuple[str, ...]:
 
 
 def _render_source_link(article: Article) -> tuple[str, ...]:
-    """The article's own way back to the source it was built from, as a link.
-
-    This is a semantic hook and not print policy, and the distinction is worth
-    stating because the thing it exists for is a printed QR code.  What the
-    edition *knows* is that this article was built from a source that lives at a
-    particular address, and that a reader who wants the original should be sent
-    there -- an editorial fact of the same kind as the source ids already
-    printed at the opener, and expressible in HTML as what it is: an anchor with
-    a working ``href``.  A screen adapter follows it.  The print adapter, which
-    cannot, renders it as a QR code set into the opener's title furniture, and
-    everything that decision needs -- where the credit line landed, how wide a
-    module has to be to survive an inkjet, which error-correction level leaves
-    the widest cell, how far the byline is inset beside it -- stays where page
-    geometry is known.  None of it is visible here.
-
-    One link, not one per source: ``source_ids`` is authored and ordered, the
-    first is the primary source, and the article already prints the full list at
-    its opener.  An article whose first source carries no ``canonical_url``
-    emits nothing at all rather than a broken destination.
-
-    NOT ONE WORD OF LANGUAGE EITHER, which it used to carry.  A
-    ``data-source-label`` held a localized ``Source / nn`` here, on the argument
-    that a printed square needs a name beside it or it reads as a sticker; the
-    printed square is now made furniture by where it stands on the opener's grid
-    instead, the label is retired, and this element is back to being exactly what
-    it says -- a destination, in one language, which is the URL's.
-    """
     if not article.source_url:
         return ()
     return (
@@ -588,10 +502,6 @@ def _render_section(edition: Edition, index: int, section: Section, document: Pu
     )
 
 
-# The plate window's aspect (weasyprint-a5.css .closing-plate img,
-# 333.0079 x 390.2756pt).  Plates draw contained -- never cropped -- so art
-# far from this aspect letterboxes; past a factor of two it prints as a
-# sliver in white space, which is a build error, not a taste question.
 _PLATE_WINDOW_ASPECT = 333.0079 / 390.2756
 
 
@@ -618,8 +528,8 @@ def _render_closing_plates(edition: Edition, assets: list[HtmlAsset]) -> tuple[s
             alt_text=plate.title,
         )
         assets.append(asset)
-        # Image only, no printed title (editor's ruling, 2026-08-07): the
-        # plate's configured title survives as alt text and record keeping.
+
+
         plates.append(
             '<figure class="closing-plate" data-asset-role="closing_plate" '
             f'data-closing-plate="{index}"><img src="{_attr(asset.src)}" '
@@ -675,22 +585,11 @@ def _extracts_by_anchor(
 
 
 def _render_extract(edition: Edition, article_id: str, extract: Extract) -> str:
-    """One verbatim extract panel.
-
-    An ``aside``, like the key-ideas box, because the run is editorial
-    furniture beside the article rather than a further part of it -- and so it
-    stays out of the figure counter and the heading sequence.  The text goes
-    through ``_verbatim`` in both styles: the run is byte-exact source
-    material, so no quote education and no character folding.
-    """
 
     body: str
     if extract.style == "code":
-        # Newlines become explicit breaks and the panel wraps with normal
-        # whitespace processing: a preserved trailing space on a soft-wrapped
-        # pre-wrap line hangs past the measure and fails the print critic.
-        # resolve_extracts refuses code extracts whose whitespace is
-        # layout-significant, so collapsing is display-safe here.
+
+
         lines = "<br>".join(_verbatim(line) for line in extract.text.split("\n"))
         body = f"<pre><code>{lines}</code></pre>"
     else:
@@ -718,14 +617,6 @@ def _render_blocks(blocks: tuple[Block, ...], *, standfirst: bool = False) -> tu
 
 
 def _render_block(block: Block, *, standfirst: bool = False, references: bool = False) -> str:
-    """Render one block.
-
-    ``standfirst`` marks the opening prose block of an article, editorial or
-    section: the standfirst is an editorial role, so it belongs to the semantic
-    document rather than to any one adapter's stylesheet.  ``references`` marks
-    a list that stands under a references heading, which is a bibliography and
-    not a list of points -- the same editorial distinction.
-    """
 
     if isinstance(block, Heading):
         return f"<h{block.level}>{_render_inlines(block.children)}</h{block.level}>"
@@ -751,14 +642,6 @@ def _render_block(block: Block, *, standfirst: bool = False, references: bool = 
 
 
 def _highlight_code(code: str, language: str) -> str:
-    """A fenced block's code as token spans, or plainly escaped.
-
-    Pygments emits class-annotated spans and nothing else (``nowrap``); the
-    stylesheets color the classes and never touch weight or slant, because a
-    bold monospace glyph is wider than a regular one and would move the very
-    line widths the print critic measures.  The token text is the folded code
-    verbatim, so a block with no usable lexer renders exactly as before.
-    """
 
     folded = fold_reader_characters(code)
     if language:
@@ -836,14 +719,6 @@ def _inline_text(inlines: tuple[Inline, ...]) -> str:
 
 
 def _figure_layouts(article: Article) -> str:
-    """The distinct curated figure layouts an article declares, in first-use order.
-
-    Editorially a layout belongs to the article as much as to the single figure
-    that carries it, but no selector can ask "does this article declare a
-    landscape plate?" of the article element alone. The attribute denormalises
-    the article's own authored figure metadata so that question is answerable;
-    it states nothing about what any adapter should then do with the answer.
-    """
 
     layouts: list[str] = []
     for figure in getattr(article, "figures", ()):
@@ -872,9 +747,6 @@ def _anchor_key(value: str) -> str:
     return value.strip().casefold()
 
 
-# The publication's own vocabulary for the heading that opens a bibliography.
-# It is a closed set rather than a heuristic: a list is demoted to source notes
-# only under a heading the publication recognizes as a references heading.
 _REFERENCE_HEADINGS = frozenset({"references", "referencias"})
 
 
@@ -882,29 +754,12 @@ def _is_reference_heading(text: str) -> bool:
     return text.strip().casefold() in _REFERENCE_HEADINGS
 
 
-# A paragraph whose whole text is short segments separated by bullets is a
-# roster of names -- signatories, sponsors, members -- and not running prose,
-# the same editorial distinction `_is_reference_heading` draws for a
-# bibliography.  The boundary is content-derived and deterministic: running
-# prose that happens to quote a bullet yields at most two segments, and prose
-# on both sides of two bullets yields a segment that reads as a clause, longer
-# than any name.  Every entry in the roster this rule was written against is
-# one to four words ("Y Combinator", "American Innovators Network"); six is
-# headroom for a longer organization name, not an invitation to a sentence.
 _ROSTER_SEPARATOR = "\N{BULLET}"
 _ROSTER_MIN_NAMES = 3
 _ROSTER_MAX_NAME_WORDS = 6
 
 
 def _is_name_roster(text: str) -> bool:
-    """True when ``text`` is a bullet-separated roster of names, not prose.
-
-    The answer becomes ``data-name-roster`` on the paragraph, so an adapter
-    can treat the block as what it is -- proper nouns in a list that happens
-    to be set in a paragraph.  The print stylesheet's use is to keep the
-    hyphenator out: a broken "DoorDash" or "Y Combinator" is a misprint, not
-    a rag repair.
-    """
     names = [segment.strip() for segment in text.split(_ROSTER_SEPARATOR)]
     if len(names) < _ROSTER_MIN_NAMES:
         return False
@@ -912,7 +767,6 @@ def _is_name_roster(text: str) -> bool:
 
 
 def _ui(edition: Edition, key: str) -> str:
-    """Small localized chrome vocabulary; authored manuscript labels win."""
 
     english = {
         "issue": "Issue",
@@ -963,32 +817,23 @@ def _ui(edition: Edition, key: str) -> str:
 
 
 def _text(value: object) -> str:
-    # Educate first, then fold, then escape: education is prose typography, so
-    # it sees the authored characters; the fold keeps whatever education set
-    # inside the faces' repertoire; the escape neutralises what remains.
+
+
     return escape(fold_reader_characters(educate_reader_quotes(str(value))), quote=False)
 
 
 def _verbatim(value: object) -> str:
-    """Prose escaping without quote education, for values that are not prose.
-
-    Code spans, fenced code, and URLs carry straight quotes as *content*: a
-    shell command's quoting or a query string must reach the page (and a screen
-    reader's clipboard) exactly as authored.  They are still folded, because the
-    faces' repertoire binds every printed character, prose or not.
-    """
     return escape(fold_reader_characters(str(value)), quote=False)
 
 
 def _attr(value: object) -> str:
-    # Fold first, escape second: the fold may still emit a character the escape
-    # has to neutralise, and only escaping can stop a quotation mark -- authored
-    # straight, or produced by a fold -- from terminating the value.
+
+
     return escape(fold_reader_characters(str(value)), quote=True)
 
 
 def _indent(lines: tuple[str, ...] | list[str], spaces: int) -> tuple[str, ...]:
     prefix = " " * spaces
-    # Do not indent embedded newlines: in ``pre``/``code`` content those spaces
-    # would become authored text and violate the adapter's lossless contract.
+
+
     return tuple(prefix + line for line in lines)

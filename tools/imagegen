@@ -1,15 +1,4 @@
 #!/bin/sh
-# Image generation via `codex exec` (magazine.toml: image_backend = "codex";
-# images are NOT a choice). One invocation renders one image.
-#
-#   imagegen '<prompt>' --out <file.png> [--ref '<img> [<img>...]']
-#
-# --ref takes whitespace-separated image paths (the {ref} placeholder in
-# `mag art --gen-cmd` expands to exactly that, and to '' when a brief has no
-# cast references — an empty --ref is ignored). Each path is attached to the
-# codex call with --image=path (never `-i path`: -i is variadic and eats the
-# prompt); the attached sheets are canon for recurring-character appearance.
-# Exits non-zero if codex fails or the output file is missing.
 set -eu
 
 prompt=${1:?usage: imagegen '<prompt>' --out <file.png> [--ref '<imgs>']}

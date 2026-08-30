@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""read.py — read a produce run's articles in a browser before rendering the PDF.
-
-    uv run python tools/read.py editions/004/run-<ts> [--out path.html]
-
-Lays each piece out in a column sized to roughly A5 page proportions, with
-faint page-break guide lines every ~page height, so density and length are
-visible at a glance. This is a quick reading tool, not a renderer — the
-guides are approximate, and the markdown-to-HTML conversion is deliberately
-tiny. It flags the same density problems a reader would trip over: paragraphs
-over 120 words, inline code/tokens over 60 chars, and pieces with no section
-headings past 600 words.
-"""
 
 from __future__ import annotations
 
@@ -25,10 +13,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# A5 page proportions (148 x 210 mm) mapped onto a fixed column width.
+
 COL_WIDTH = 460
-PAGE_RATIO = 148 / 210  # width / height
-PAGE_HEIGHT_PX = round(COL_WIDTH / PAGE_RATIO)  # ~652px
+PAGE_RATIO = 148 / 210
+PAGE_HEIGHT_PX = round(COL_WIDTH / PAGE_RATIO)
 WORDS_PER_PAGE = 260
 DENSE_WORDS = 120
 LONG_TOKEN_CHARS = 60
@@ -52,7 +40,6 @@ def strip_front_matter(md: str) -> str:
 
 
 def has_long_token(text: str) -> bool:
-    """A bare (non-code) whitespace-delimited token over LONG_TOKEN_CHARS."""
     without_code = re.sub(r"`[^`]+`", " ", text)
     for tok in without_code.split():
         if len(re.sub(r"[*_]", "", tok)) > LONG_TOKEN_CHARS:
@@ -74,7 +61,6 @@ def inline_markup(esc: str) -> str:
 
 
 def render_body(md: str) -> tuple[str, dict]:
-    """Tiny markdown -> HTML. Returns (html, {"headings": n, "dense": n})."""
     body = strip_front_matter(md)
     out: list[str] = []
     in_code = False
@@ -306,7 +292,7 @@ def render(run_dir: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser()
     ap.add_argument("run_dir", type=Path, help="produce run directory, e.g. editions/004/run-<ts>")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()

@@ -1,15 +1,3 @@
-"""Immutable semantic documents for magazine manuscripts.
-
-The module's public seam is :func:`parse_publication_document`.  Adapters get a
-stable, presentation-neutral document tree and do not need to know about YAML
-frontmatter or markdown-it-py's token stream.
-
-:func:`split_frontmatter` is the narrower seam for the callers that must read a
-manuscript's metadata even when its body will not parse -- a staged slot whose
-body is still an HTML comment has frontmatter worth reading and no document to
-build from.  Every caller reads frontmatter through one of the two, so the rules
-for what counts as frontmatter are stated once.
-"""
 
 from __future__ import annotations
 
@@ -25,13 +13,13 @@ from markdown_it.token import Token
 
 
 _MARKDOWN = MarkdownIt("commonmark")
-# Adapters should receive the author's link target, not markdown-it-py's URL
-# normalisation of non-ASCII characters into percent escapes.
+
+
 _MARKDOWN.normalizeLink = lambda url: url
 
 
 class DocumentParseError(ValueError):
-    """Raised when Markdown cannot be represented without losing semantics."""
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,47 +101,28 @@ Block: TypeAlias = Heading | Paragraph | FencedCode | BlockQuote | ListBlock | H
 
 @dataclass(frozen=True, slots=True)
 class PublicationDocument:
-    """A manuscript's frontmatter and reader-visible semantic content."""
 
     metadata: Mapping[str, object]
     blocks: tuple[Block, ...]
 
 
-# Characters the bundled body faces have no glyph for, each mapped to the
-# equivalent the faces do carry.  Writers emit U+2011 NON-BREAKING HYPHEN in
-# names like GPT-5.6; the reader fonts render it as the missing-glyph "?", so
-# it becomes the ordinary hyphen it prints as.  Applied at parse so every
-# consumer -- reader, web, booklet -- sees the same text.
 _GLYPH_FALLBACKS = str.maketrans({
-    "‑": "-",  # non-breaking hyphen
-    "−": "-",  # minus sign
-    "­": "",   # soft hyphen: an invisible hint, never ink
+    "‑": "-",
+    "−": "-",
+    "­": "",
 })
 
 
 def parse_publication_document(markdown: str) -> PublicationDocument:
-    """Parse one Markdown manuscript into immutable, presentation-neutral values.
-
-    YAML frontmatter is removed only when an opening delimiter is paired with a
-    closing YAML delimiter at the start of the file.  An unclosed ``---`` remains
-    Markdown content rather than silently deleting reader-visible text.
-    """
     metadata, body = split_frontmatter(markdown)
     tokens = _MARKDOWN.parse(body.translate(_GLYPH_FALLBACKS))
     blocks, next_index = _parse_blocks(tokens)
-    if next_index != len(tokens):  # Defensive: _parse_blocks must consume all input.
+    if next_index != len(tokens):
         raise DocumentParseError("Markdown parser left unconsumed block tokens")
     return PublicationDocument(metadata=metadata, blocks=blocks)
 
 
 def split_frontmatter(markdown: str) -> tuple[Mapping[str, object], str]:
-    """Separate a manuscript's frozen YAML frontmatter from its Markdown body.
-
-    Frontmatter is removed only when an opening delimiter is paired with a
-    closing one at the start of the file; an unclosed ``---`` is content.  The
-    body is returned unparsed, so a caller can read metadata off a file whose
-    body :func:`parse_publication_document` would reject.
-    """
 
     lines = markdown.splitlines(keepends=True)
     if not lines or lines[0].rstrip("\r\n") != "---":
@@ -222,7 +191,7 @@ def _parse_blocks(tokens: list[Token], index: int = 0, *, until: str | None = No
             blocks.append(FencedCode(code=token.content, info=token.info))
             index += 1
         elif token.type == "code_block":
-            # Indented code is still code but has no fence-info string.
+
             blocks.append(FencedCode(code=token.content, info=""))
             index += 1
         elif token.type == "hr":

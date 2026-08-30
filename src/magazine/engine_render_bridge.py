@@ -1,10 +1,3 @@
-"""Versioned subprocess seam from the XState engine to the deep renderer.
-
-The bridge receives an explicit inventory of immutable files, stages only those
-files in a temporary root, and writes only beneath a caller-owned destination.
-It does not inspect production records, workflow status, review records, or the
-release ledger.
-"""
 
 from __future__ import annotations
 
@@ -271,7 +264,6 @@ def _file_kind(path: Path) -> tuple[str, str]:
 
 
 def _archive_tree(root: Path, destination: Path) -> Path:
-    """Create a deterministic, self-contained ZIP from a renderer-owned tree."""
     with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(root.rglob("*"), key=lambda candidate: candidate.as_posix()):
             if not path.is_file() or path == destination:
@@ -342,10 +334,8 @@ def _render(
                 edition_id=variant.id,
                 recorded_review=None,
             )
-            # The deep renderer already owns the materialized Edition objects.
-            # Web production is therefore a rendering operation, not a legacy
-            # workflow transition. Keep each language package self-contained
-            # and make sibling-language navigation resolve from web/.
+
+
             write_web_edition(
                 variant,
                 package_destination / "web",
@@ -407,9 +397,8 @@ def render_manifest(request_path: Path, destination: Path) -> dict[str, Any]:
     if not request_path.is_file() or request_path.is_symlink():
         raise ValidationError(f"Render request is not a regular file: {request_path}")
     destination = _absolute_directory(destination, "destination")
-    # The destination is the render dir itself, where the caller has already
-    # parked request.json beside the languages this writes; anything else
-    # present means a reused directory, still refused.
+
+
     leftovers = [
         p.name
         for p in (destination.iterdir() if destination.exists() else ())
@@ -423,9 +412,8 @@ def render_manifest(request_path: Path, destination: Path) -> dict[str, Any]:
     destination.mkdir(parents=True, exist_ok=True)
     request = _load_request(request_path)
     with tempfile.TemporaryDirectory(prefix="mag-engine-render-stage-") as temporary:
-        # macOS exposes the temporary directory through both /var and
-        # /private/var.  Resolve once so paths returned by the renderer and
-        # the containment root use the same spelling.
+
+
         stage_root = Path(temporary).resolve()
         artifact_ids = _stage_inputs(request, stage_root)
         return _render(request, stage_root, destination, artifact_ids)

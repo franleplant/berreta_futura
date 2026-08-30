@@ -1,13 +1,3 @@
-// mag capture — one URL in, one captured source out.
-//
-// Deterministic parts run as code: fetch, id derivation, scaffolding,
-// media download, release-state queueing, the sources.md entry. The one
-// model call transcribes the page's HTML to verbatim Markdown, and a coded
-// fidelity gate rejects the reply unless its prose exists word-for-word in
-// the page and every fenced code block is an exact contiguous run; gate
-// failures feed back through the caller's retry loop. A capture that
-// passes is complete; one that fails leaves nothing behind but the raw
-// HTML snapshot in .magazine/capture/.
 
 use crate::caller::{self, Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
@@ -21,9 +11,6 @@ const RAW_DIR: &str = ".magazine/capture";
 const USER_AGENT: &str =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
 
-/// Prose windows this long (in words) must each appear verbatim in the page
-/// text. Small slack absorbs exotic HTML entities the decoder doesn't know,
-/// not paraphrase: a rewritten paragraph misses every window it spans.
 const SHINGLE_WORDS: usize = 12;
 const MISS_RATE_LIMIT: f64 = 0.02;
 
@@ -56,7 +43,6 @@ fn curl_text(url: &str) -> Result<String> {
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
-/// Download one image; the extension comes from the response content type.
 fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
     let tmp = dest_stem.with_extension("tmp");
     let out = Command::new("curl")
@@ -120,7 +106,6 @@ fn strip_block(html: &str, tag: &str) -> String {
         .into_owned()
 }
 
-/// The page's visible text, whitespace-normalized: the fidelity haystack.
 fn page_text(html: &str) -> String {
     let mut s = html.to_string();
     for tag in ["script", "style", "svg", "noscript"] {
@@ -131,7 +116,6 @@ fn page_text(html: &str) -> String {
     normalize_ws(&decode_entities(&s))
 }
 
-/// What the model sees: the page minus the blocks that carry no content.
 fn page_for_model(html: &str) -> String {
     let mut s = html.to_string();
     for tag in ["script", "style", "svg", "noscript", "head"] {
@@ -146,12 +130,6 @@ fn normalize_ws(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// The gate's comparison form: quotes folded, whitespace dropped. Pages mix
-/// curly and straight quotes freely (often in one paragraph), and stripping
-/// inline tags leaves stray spaces against punctuation ("works just fine ."),
-/// so neither can be compared literally. Character order is what verbatim
-/// means; dashes are deliberately not folded, since an introduced em dash is
-/// drift we want caught.
 fn comparison_form(s: &str) -> String {
     s.chars()
         .filter(|c| !c.is_whitespace())
@@ -163,7 +141,6 @@ fn comparison_form(s: &str) -> String {
         .collect()
 }
 
-/// Every <pre> run's text, for byte-exact code block checks.
 fn pre_runs(html: &str) -> Vec<String> {
     Regex::new(r"(?is)<pre\b[^>]*>(.*?)</pre>")
         .unwrap()
@@ -175,7 +152,6 @@ fn pre_runs(html: &str) -> Vec<String> {
         .collect()
 }
 
-/// Code comparison ignores trailing space per line and outer blank lines.
 fn normalize_code(s: &str) -> String {
     s.lines().map(str::trim_end).collect::<Vec<_>>().join("\n").trim().to_string()
 }
@@ -202,7 +178,7 @@ fn page_title(html: &str) -> Option<String> {
             .captures(html)
             .map(|c| decode_entities(c[1].trim()))
     })?;
-    // Drop a trailing " | Site Name" or " * Site Name" style suffix.
+
     let head = Regex::new(r"\s+[|\u{2022}\u{00b7}]\s+")
         .unwrap()
         .split(&raw)
@@ -232,13 +208,11 @@ struct Extraction {
     published: String,
 }
 
-/// Split the reply at ===META=== and hold it to the fidelity gate.
 fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extraction> {
     let (article, meta) = reply
         .rsplit_once("===META===")
         .ok_or_else(|| anyhow!("reply has no ===META=== separator"))?;
-    // Line-based on purpose: the values are prose the model writes, and a
-    // stray colon in an unquoted YAML scalar would fail a good transcription.
+
     let field = |k: &str| {
         meta.lines()
             .find_map(|l| l.trim().strip_prefix(&format!("{k}:")))
@@ -260,7 +234,7 @@ fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extractio
 }
 
 fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
-    // Every fenced block must be a contiguous exact run of some <pre>.
+
     let fence = Regex::new(r"(?s)```[^\n]*\n(.*?)```").unwrap();
     for block in fence.captures_iter(article) {
         let code = normalize_code(&block[1]);
@@ -271,8 +245,7 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
             pres.iter().any(|p| p.contains(c))
                 || comparison_form(haystack).contains(&comparison_form(c))
         };
-        // A page callout arrives as a blockquote, prefixing the fenced code
-        // inside it with "> "; the dequoted form is what must match the page.
+
         let dequoted = block[1]
             .lines()
             .filter(|l| !l.trim().is_empty())
@@ -295,27 +268,19 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
         }
     }
 
-    // Prose: word windows within each line (a Markdown paragraph) must each
-    // exist in the page text. Windows never span lines: the page may have a
-    // heading, figure, or caption between two paragraphs that the reply
-    // rightly renders as separate lines.
-    // Links and images unwrap over the whole body, not per line: the reply
-    // hard-wraps prose, so a link's [text](url) can straddle a line break.
     let link = Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
     let image = Regex::new(r"!\[[^\]]*\]\([^)]*\)").unwrap();
     let body = fence.replace_all(article, " ");
     let body = image.replace_all(&body, " ");
     let body = link.replace_all(&body, "$1");
-    // Folded out of both sides: Markdown markers the reply uses that pages
-    // also carry literally (AWS_*), footnote brackets the page renders as
-    // superscript ([1] vs 1), and the decorative external-link arrow.
+
     const PROSE_FOLD: [char; 5] = ['*', '`', '[', ']', '\u{2197}'];
     let folded_haystack = comparison_form(haystack).replace(PROSE_FOLD, "");
     let mut misses = Vec::new();
     let mut total = 0usize;
     for (i, line) in body.lines().enumerate() {
         let t = line.trim();
-        // Title and byline are authored framing, not page prose.
+
         if i < 3 || t.starts_with('#') || t.starts_with('|') || t.starts_with("![") {
             continue;
         }
@@ -396,9 +361,6 @@ fn record_yaml(
     out
 }
 
-/// Queue the source in release-state.yaml by text surgery, preserving the
-/// file's formatting. Creates the collecting edition (and moves the intake
-/// pointer to it) when it does not exist yet. Returns the queued count.
 pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(String, usize)> {
     let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
     let section = lines
@@ -459,7 +421,6 @@ pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(S
     }
 }
 
-/// Prepend the new entry to sources.md and bump the edition's queued count.
 pub fn prepend_sources_md(
     text: &str,
     entry: &[String],
@@ -503,7 +464,7 @@ fn sources_md_entry(
     edition: &str,
     synopsis: &str,
 ) -> Vec<String> {
-    let dash = '\u{2014}'; // matches the file's existing generated format
+    let dash = '\u{2014}';
     let mut lines = vec![
         if author.is_empty() {
             format!("## {title}")
@@ -528,7 +489,7 @@ fn sources_md_entry(
 }
 
 fn iso_now() -> String {
-    // caller::now_stamp is %Y-%m-%dT%H-%M-%S; make the time part ISO.
+
     let s = caller::now_stamp();
     let (date, time) = s.split_at(11);
     format!("{date}{}Z", time.replace('-', ":"))
@@ -541,8 +502,6 @@ fn intake_edition(release_state: &str) -> Option<String> {
     })
 }
 
-/// Download every http image reference, in order of appearance, into
-/// media/ and rewrite the references. Repeated URLs share one file.
 fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
     let re = Regex::new(r"!\[[^\]]*\]\((https?://[^)\s]+)\)").unwrap();
     let mut mapping: Vec<(String, String)> = Vec::new();
@@ -582,9 +541,7 @@ pub fn run(
     mode: &str,
     spec: &ModelSpec,
 ) -> Result<i32> {
-    // Pages behind login walls or client-side rendering can't be fetched
-    // here; whoever drives the capture fetches the DOM (browser session,
-    // plugin) and passes it in. Everything downstream is identical.
+
     if !crate::plan_cmd::CONTENT_MODES.contains(&mode) {
         bail!("unknown --mode '{mode}'; one of: {}", crate::plan_cmd::CONTENT_MODES.join(", "));
     }

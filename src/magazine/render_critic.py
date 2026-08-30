@@ -28,126 +28,45 @@ CONTACT_ROWS = 4
 THUMBNAIL_WIDTH = 260
 LABEL_HEIGHT = 24
 WHITE_THRESHOLD = 245
-# SPARSE_INK_RATIO has never fired on a real page: the emptiest page edition
-# 003 printed (two closing lines above a tail ornament) still inks 0.028 of
-# its raster, seven times this bar.  The constant and the ``sparse`` field it
-# feeds stay for schema stability, but the working whitespace judgment now
-# lives in the void geometry below, which asks *where* the paper shows
-# through rather than merely how much of it does.
+
+
 SPARSE_INK_RATIO = 0.004
 GEOMETRY_TOLERANCE = 0.75
-# ``ink_ratio`` judges legibility, so WHITE_THRESHOLD deliberately ignores
-# near-white ink; the price is that pale ornament work -- the tail-art bands
-# render around grey 254 -- contributes zero ink and is invisible to it.
-# ``presence_ratio`` therefore counts every pixel that is anything but
-# untouched paper: pdftoppm renders unprinted stock as exactly 255, so
-# "below 255" is precisely "the press touched it", with no tolerance band to
-# tune and no change to what ``ink_ratio`` means downstream.
+
+
 PAPER_WHITE = 255
-# The void critic hunts unmotivated whitespace: full-measure white blocks a
-# reader falls into mid-page.  It searches the presence mask, so a pale
-# ornament terminates a void exactly the way dark type does, and it runs on
-# a raster downsampled by 8 (one cell is 4 pt at 144 dpi) because a
-# maximal-rectangle sweep at full resolution would buy sub-point precision
-# that no threshold here can use.  8 is also safely inside the rounding
-# margin that keeps a reduced cell at zero only when *every* source pixel
-# was empty: one presence pixel in an 8x8 cell averages to 255/64 =~ 4.
+
+
 VOID_DOWNSAMPLE = 8
-# Calibrated on edition 003, both languages, and re-measured after the
-# opener byline fix and the centered tail bands landed.  The stranded dead
-# bands the first calibration named (148 pt and 224 pt between an END mark
-# and a foot-anchored ornament) no longer exist -- the ornament now centers
-# in its room, and its margins are excused by the tail-band check below --
-# so what remains guilty is the closing plate's dead skirt (108 pt) and a
-# body column running dry above an opener's fold (96 pt, the bar exactly).
-# The largest *honest* whitespace on an ordinary page stops at 84 pt at
-# full measure (a mid-article trailing shortfall), or 100 pt at 61 % of it
-# (an opener's ragged byline column).  96 pt and 90 % still separate the
-# two populations, though the height bar now touches the shortest guilty
-# reading rather than sitting midway -- worth re-measuring if a future
-# edition flags nothing.
+
+
 VOID_MIN_HEIGHT_POINTS = 96.0
 VOID_MIN_WIDTH_FRACTION = 0.9
-# One excused giant used to be able to hide a second, reportable void: the
-# sweep recorded only the largest rectangle per page, so on an article's
-# final page the excused trailing void shadowed the (say) 106.5 pt void
-# above the tail band.  A short ranked list -- each found rectangle masked
-# and the sweep re-run -- keeps every void that clears the bars above on the
-# record, so the excuses below can be argued per void rather than per page.
-# Three is one more than any edition-003 page has ever needed.
+
+
 VOID_REPORT_LIMIT = 3
-# A void whose bottom edge reaches the bottom of the live area -- nothing
-# beneath it but the folio line -- is the natural shortfall of an article's
-# final page, so article last pages are excused from trailing voids (a
-# too-empty final page is the stub check's business, below).  16 pt of
-# slack is enough to read "only the folio below" as "nothing below" at any
-# plausible folio size, while every mid-page void observed clears it by
-# hundreds of points.
+
+
 VOID_TRAILING_TOLERANCE_POINTS = 16.0
-# The trailing excuse has a limit.  An article's final page ending a little
-# short is the natural shortfall; an article's final page that is mostly
-# paper is the room an approved tail ornament exists to fill (rewrites move
-# the breaks, so a manuscript that ended flush yesterday ends on a
-# two-thirds-blank page today).  The largest honest shortfall measured on
-# edition 003 stops near 100 pt -- under a fifth of the ~530 pt live area --
-# while the endings the editor called out on edition 004 left well over
-# half the page white.  A third of the live height separates the two with
-# margin on each side; a page whose printed tail band already stands in the
-# room is excused regardless, since the ornament is the fill.
+
+
 TAIL_GAP_MIN_LIVE_FRACTION = 0.35
-# A printed tail ornament stands centered in whatever room the article's end
-# mark left it: by design, half the surplus above and half below (ornaments
-# cap at 214 pt, so edition 003's rooms leave 60-100 pt of margin a side).
-# Those margins are full-measure voids to the sweep -- 106.5 pt and
-# 128.5 pt above the edition's two capped bands -- but they are the design's
-# own centering, not dead paper, so a void that abuts the printed band is
-# excused *when the band's margins agree with each other*.  Locating the
-# band needs no new contract: the manifest's ``layout.tail_arts`` says what
-# height printed on which article, and the presence rows show a run of that
-# height.  The three tolerances, in order: the 4 pt void grid plus the
-# anti-aliased edge measure a 214.0 pt ledger band as 214.5 pt of presence,
-# so 12 pt matches a run to its ledger height with room to spare while no
-# text block on either language's tail pages comes within it; adjacency is
-# two grid cells, since a maximal void ends exactly where the band's
-# presence starts; and the symmetry bar covers the structural skew between
-# the two margins -- the foot side carries the 24 pt foot inset plus about
-# 20.5 pt of frame relief against the head side's 31 pt end-mark clearance,
-# about 13.5 pt of designed asymmetry -- so 32 pt accepts every centered
-# band observed (skews of 13-14 pt) while an ornament left stranded at its
-# foot, the old renderer's defect with all surplus above, misses by ~90 pt.
-# An article that ends absurdly high above its ornament is still caught:
-# that page carries almost no running text, which is the stub check's call.
+
+
 TAIL_BAND_HEIGHT_TOLERANCE_POINTS = 12.0
 TAIL_BAND_ADJACENCY_TOLERANCE_POINTS = 8.0
 TAIL_BAND_SYMMETRY_TOLERANCE_POINTS = 32.0
-# An article whose last page carries fewer than five lines of running text
-# ends on a stub -- edition 003 strands two lines of signatories above a
-# tail ornament -- while the leanest healthy closer observed still lands
-# seven.  A running-text line is one containing any lowercase letter:
-# folios, running heads and END marks are set in caps and digits in both
-# publication languages, so they never inflate the count.
+
+
 STUB_BODY_LINE_MINIMUM = 5
-# The editorial cap when the packaged manifest is unreachable: the
-# publication ceiling, which edition 001's two-page editorial legitimately
-# used.  When ``layout.maximum_editorial_pages`` is readable from the
-# build's own edition-manifest.json -- written beside the PDFs before this
-# critic runs -- the edition's tighter declaration replaces it, so the
-# critic is never looser than the contract the edition set for itself.
+
+
 DEFAULT_EDITORIAL_PAGE_CAP = 2
-# The zoom crops are the evidence the contact sheets cannot carry: a 260 px
-# thumbnail shows composition, not type, and the independent reviewer was
-# being asked to judge letterforms from it.  Each opener block, each placed
-# figure, each printed tail band and each flagged region is therefore also
-# cut from a 300 ppi raster of just its own page -- print resolution, so
-# what the crop shows is what the press will set.  The regions come from
-# facts the critic already holds (contents folios, the manifest's figure
-# boxes and tail ledger, the void geometry), never from new measurement.
+
+
 CROP_DPI = 300
-# The illustrated opener's orange rectangle is not a border. It is a 4.1pt
-# copy of the black frame translated right and down. At the critic's 144 DPI
-# this is 8.2 pixels. A flush padding/background treatment has the same outer
-# bounds, so resemblance is not enough: the orange must begin after both the
-# top-right and bottom-left corners.
+
+
 OPENER_OFFSET_POINTS = 4.1
 OPENER_FRAME_RGB = (23, 25, 28)
 OPENER_OFFSET_RGB = (240, 87, 56)
@@ -155,23 +74,17 @@ OPENER_OFFSET_TOLERANCE_PIXELS = 2.0
 OPENER_FRAME_MIN_RUN_FRACTION = 0.65
 OPENER_CROP_FIDELITY_MAX_RGB_MAE = 8.0
 OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES = 0.01
-# Breathing room around a cropped subject, so a void crop shows the type
-# that bounds it and a band crop shows the paper around the ornament.
+
+
 CROP_MARGIN_POINTS = 24.0
-# A figure's caption and credit sit under its box and are part of judging
-# the placement, so figure crops extend this much further below the box.
+
+
 CROP_CAPTION_ALLOWANCE_POINTS = 48.0
-# An article opener is a full-page composition: illustration, display title,
-# byline, QR, rule, and intro all participate in the visual decision. Its
-# evidence crop therefore takes the complete media box, not only the old
-# title-and-byline head.
-# A stub page's evidence is its head: running head, the remnant lines and
-# the END mark all land inside 220 pt on any page stubby enough to flag
-# (fewer than five lines of running text below a ~65 pt head area).
+
+
 STUB_CROP_HEIGHT_POINTS = 220.0
-# When the manifest says a band printed but no presence run matches its
-# height, the crop still ships -- the mismatch is exactly what a reviewer
-# should see -- covering the bottom of the page where the band belongs.
+
+
 TAIL_FALLBACK_CROP_HEIGHT_POINTS = 300.0
 
 _STANDALONE_PUNCTUATION = re.compile(r"^[,.;:!?\u2026]+$")
@@ -179,46 +92,6 @@ _COVER_PLACEHOLDER = re.compile(r"(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)", re.IG
 
 
 class _PageTexts:
-    """One document's extracted page text, asked of ``pypdf`` at most once.
-
-    ``extract_text`` is the most expensive thing this critic asks of pypdf:
-    measured warm and single-threaded on edition 003, 8.5 ms a page on the
-    English reader and 8.6 ms on the Spanish, rising to 17.2 ms a page on the
-    imposed interior, the dearest of the four documents. Warm and
-    single-threaded is the honest way to read those figures, because the build
-    extracts alongside the rasterizer threads. A build used to pay that cost
-    three times over for the same reader page: once for the page's own row in
-    ``_inspect_page``, once in the ``_booklet_spread_checks`` pass that imposes
-    the all-in-one booklet, and once in whichever of the interior and cover-wrap
-    passes covers it. Those two never both cover it -- ``section_reader_pages``
-    partitions the reader, the cover wrap taking pages 1, 2, ``n - 1`` and
-    ``n`` and the interior 3 through ``n - 2`` -- so only page 1 was read a
-    fourth time, and its fourth reader is the cover-placeholder check rather
-    than a third imposition. The saving therefore lives *between* those passes,
-    which is why the store is built once per document in ``inspect_render`` and
-    handed down rather than created inside the function that does the comparing:
-    a store owned by ``_booklet_spread_checks`` could only ever dedupe the two
-    halves of one side, and the pass after it would re-extract what the passes
-    before it had already read.
-
-    At that price the sharing is worth on the order of one and a half to two
-    seconds of a thirty-seven-second build, so it is the small one of the three
-    changes and the rasterizer fan-outs are where the wall clock actually went.
-    It still earns its place -- one extraction per page instead of three, 165
-    calls down to 72 on a 36-page fixture, at no cost to anything -- but it is
-    not what made the build fast.
-
-    Pages are extracted on first ask, never up front. A document whose checks
-    short-circuit -- a plan shorter than the booklet it is checked against, a
-    section that selects four of thirty-six pages -- must go on paying nothing
-    for the pages nobody looked at, and eager extraction would only move that
-    cost rather than remove it, making the smallest editions slower.
-
-    Both shapes the checks want come off the one extraction: the raw text whose
-    lines ``_inspect_page`` counts, and the whitespace-collapsed text that
-    imposition order is compared on. Page numbers are 1-indexed, as they are in
-    every report row and every check in this module, so no call site translates.
-    """
 
     def __init__(self, document: PdfReader) -> None:
         self._document = document
@@ -230,14 +103,12 @@ class _PageTexts:
         return len(self._document.pages)
 
     def raw(self, page_number: int) -> str:
-        """The page's text as ``extract_text`` gives it, or ``""`` where it gives nothing."""
 
         if page_number not in self._raw:
             self._raw[page_number] = self._document.pages[page_number - 1].extract_text() or ""
         return self._raw[page_number]
 
     def normalized(self, page_number: int) -> str:
-        """The same text with every run of whitespace collapsed to a single space."""
 
         if page_number not in self._normalized:
             self._normalized[page_number] = " ".join(self.raw(page_number).split())
@@ -245,13 +116,6 @@ class _PageTexts:
 
 
 def _page_texts(document: PdfReader | _PageTexts) -> _PageTexts:
-    """A document's text store, wrapping a bare ``PdfReader`` when that is what arrived.
-
-    ``inspect_render`` passes stores it built itself, so its three imposition
-    passes share one extraction per reader page; ``tools/compare_pipelines.py``
-    still hands ``_booklet_spread_checks`` plain readers, and a caller checking
-    one document once has nothing to share with anybody anyway.
-    """
 
     return document if isinstance(document, _PageTexts) else _PageTexts(document)
 
@@ -270,37 +134,13 @@ def inspect_render(
     edition_id: str,
     recorded_review: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], list[Path]]:
-    """Rasterize and audit a reader PDF, returning a stable review bundle.
-
-    Structural defects are machine blockers. Whitespace judgments -- sparse
-    pages, unmotivated voids, articles ending on stubs, dropped tail arts --
-    remain review prompts because covers, section openers, and signature
-    plates may be sparse by design, and only a human can say whether a given
-    stretch of paper is doing design work.
-
-    Three imposed documents are gated. The all-in-one booklet keeps its full
-    treatment: every side rasterized, plus exact left/right text pairing against
-    the declared plan. The split cover wrap is rasterized too -- it is one sheet,
-    two sides, so the blank inside-cover contract is checked on real pixels for
-    the price of two rasters. The interior is checked structurally only (side
-    count, A4 landscape geometry, exact left/right text pairing) and is
-    deliberately *not* rasterized: it would add roughly one raster per interior
-    sheet per language on top of the ~20 this function already renders, and it
-    would buy nothing new. Every interior reader page is already rasterized and
-    judged for blankness and sparseness in the reader pass, and the imposition is
-    the same ``pypdf`` merge the main booklet uses over the same pages, with
-    order proven by text pairing rather than by looking at it.
-    """
 
     reader = PdfReader(str(reader_pdf))
     booklet = PdfReader(str(booklet_pdf))
     interior_booklet = PdfReader(str(interior_booklet_pdf))
     cover_booklet = PdfReader(str(cover_booklet_pdf))
-    # One text store per document, built here and handed to every check that
-    # needs a page's words: the three imposition passes below all read the same
-    # reader pages, so sharing one store across them is what keeps each page's
-    # extraction to one.  See ``_PageTexts`` for why this cannot live inside
-    # ``_booklet_spread_checks`` and why nothing is extracted until it is asked for.
+
+
     reader_texts = _PageTexts(reader)
     booklet_texts = _PageTexts(booklet)
     interior_booklet_texts = _PageTexts(interior_booklet)
@@ -316,11 +156,8 @@ def inspect_render(
     rendered_cover_booklet = _render_pages(
         cover_booklet_pdf, review_dir / "cover-booklet-sides"
     )
-    # The build's own manifest sits beside the PDFs before this critic runs
-    # (package_release writes it first, precisely so an interrupted build
-    # cannot pair fresh PDFs with a stale manifest), so declared layout
-    # contracts -- the edition's own editorial cap, the tail-art ledger --
-    # are read from it rather than re-hardcoded here more loosely.
+
+
     manifest_layout = _manifest_layout(destination)
     illustrated_articles = _manifest_opener_article_ids(destination)
     page_rows = [
@@ -479,41 +316,31 @@ def inspect_render(
                 page=page,
             )
 
-    # Both directions of blankness are checked, at different strictness: an
-    # inside cover must be *completely* blank (pure-white raster, no text), so
-    # near-white ink fails it; an unintended blank body page is one with no
-    # ink a reader could see, so near-white ink fails that too.
+
     inside_cover_pages = {2, page_count - 1}
-    # The cap comes from the ReportLab engine's hard 8-entries-per-sheet
-    # chunking (render.py `contents`); the WeasyPrint engine flows entries
-    # and routinely fits more on one page.  A denser contents than the cap
-    # predicts is sound typesetting either way, so the check below rejects
-    # only a contents run *longer* than the cap -- overflow or dead pages.
+
+
     maximum_contents_pages = max(1, math.ceil(len(toc) / 8))
     first_body_page = min(toc.values(), default=3 + maximum_contents_pages)
     actual_contents_pages = first_body_page - 3
-    # The pages whose whitespace is anyone's business: covers and inside
-    # covers are sparse or blank by contract, and the contents page carries
-    # however few entries the edition has, so only the run of body pages
-    # between contents and the inside back cover is judged for voids.
+
+
     contents_pages = set(range(3, 3 + max(actual_contents_pages, 0)))
     body_pages = {
         page
         for page in range(3, page_count - 1)
         if page not in inside_cover_pages and page not in contents_pages
     }
-    # Where each article sets its final line, from the same declared facts the
-    # page-cap checks already trust: its contents folio plus its page count.
+
+
     article_last_pages = {
         slug: toc[slug] + int(count) - 1
         for slug, count in article_pages.items()
         if slug in toc and int(count) > 0
     }
     last_page_numbers = set(article_last_pages.values())
-    # Which pages should show a printed tail ornament, and at what height:
-    # the ledger names the article, the contents arithmetic above names its
-    # last page.  The void annotation uses this to find each band's presence
-    # run, so the review loop can tell its centered margins from dead paper.
+
+
     printed_tail_bands: dict[int, float] = {}
     for entry in manifest_layout.get("tail_arts") or ():
         if not isinstance(entry, dict) or not entry.get("printed"):
@@ -525,8 +352,8 @@ def inspect_render(
     live_area_points = _annotate_void_geometry(
         rendered_pages, page_rows, body_pages, printed_tail_bands
     )
-    # Regions the reviewer will want enlarged, gathered as their review items
-    # are raised so each crop shows exactly what its item is about.
+
+
     flag_crops: list[dict[str, Any]] = []
     for row in page_rows:
         page = int(row["page"])
@@ -556,19 +383,12 @@ def inspect_render(
                 "A line contains only punctuation, which usually indicates a broken display title.",
                 page=page,
             )
-        # Every reportable void answers for itself: the excuses that used to
-        # be applied to the page's single largest rectangle are argued per
-        # void, so an excused giant can no longer shadow a smaller void that
-        # deserves the reviewer's eye.
+
+
         for void in row["voids"]:
             if void["trailing"] and page in last_page_numbers:
-                # A trailing void on an article's final page is the article
-                # simply ending; anywhere else -- mid-article, or under a
-                # closing plate that should fill its page -- it is dead paper.
-                # The ending excuse stops at TAIL_GAP_MIN_LIVE_FRACTION: a
-                # mostly-blank ending with no printed tail band is the gap an
-                # approved tail asset should be filling, so it goes to the
-                # reviewer as its own advisory rather than passing silently.
+
+
                 if (
                     live_area_points is not None
                     and row["tail_band"] is None
@@ -609,12 +429,8 @@ def inspect_render(
                 continue
             band = row["tail_band"]
             if band is not None and _abuts_tail_band(void, band):
-                # The void abuts the tail ornament's own band.  Since the
-                # foot-anchor ruling (2026-08-07) the band stands at the
-                # page's foot and the room's whole surplus sits above it by
-                # construction -- honest white space, not dead paper -- so
-                # abutment alone is the excuse and the recorded ``centered``
-                # flag stays as data rather than a judgment.
+
+
                 continue
             issue(
                 "whitespace-void",
@@ -635,9 +451,7 @@ def inspect_render(
                 }
             )
 
-    # A machine can hear an article end on a stub even though it cannot judge
-    # the prose: the last declared page carrying almost no running text means
-    # the break upstream left a remnant, and a human should re-cut it.
+
     for slug in sorted(article_last_pages):
         last_page = article_last_pages[slug]
         if not 1 <= last_page <= len(page_rows):
@@ -655,10 +469,7 @@ def inspect_render(
                 {"page": last_page, "kind": "stub", "span": (0.0, STUB_CROP_HEIGHT_POINTS)}
             )
 
-    # Tail-art reconciliation, a forward contract: when the manifest starts
-    # declaring ``layout.tail_arts``, every ornament an article declared but
-    # the typesetter dropped becomes a review prompt.  Builds that predate
-    # the key simply have nothing to reconcile.
+
     for entry in manifest_layout.get("tail_arts") or ():
         if not isinstance(entry, dict):
             continue
@@ -699,8 +510,8 @@ def inspect_render(
                 abs(reference.width - expected_width) > 1
                 or abs(reference.height - expected_height) > 1
             ):
-                # Synthetic critic tests may substitute reduced rasters. Real
-                # package rasters are always emitted at RASTER_DPI.
+
+
                 continue
         fidelity = {
             "page": page,
@@ -768,7 +579,7 @@ def inspect_render(
                 page=side,
             )
 
-    # The cover's own row already read page 1, so this comes out of the store.
+
     cover_text = reader_texts.raw(1) if reader_texts.page_count else ""
     if _COVER_PLACEHOLDER.search(str(cover_text)):
         issue(
@@ -864,7 +675,7 @@ def inspect_render(
             "path": cover_booklet_pdf.relative_to(destination).as_posix(),
             "reader_pages": list(cover_pages),
             "sheet_sides": len(cover_booklet.pages),
-            # Single-sided wrap: one page is one sheet (booklet.cover_wrap_plan).
+
             "sheets": len(cover_booklet.pages),
             "expected_sheet_sides": len(cover_plan),
             "all_sides_a4_landscape": _all_a4_landscape(cover_booklet),
@@ -923,12 +734,6 @@ def _visual_review_status(
     reader_pdf: Path,
     booklet_pdf: Path,
 ) -> dict[str, Any]:
-    """Describe review freshness without reading or writing review authority.
-
-    The retained renderer receives no workflow review record.  This local
-    projection is retained only so its critic report tells the TypeScript
-    visual-review offer which exact bytes require inspection.
-    """
 
     def digest(path: Path) -> str:
         hasher = hashlib.sha256()
@@ -984,19 +789,6 @@ def _booklet_spread_checks(
     booklet: PdfReader | _PageTexts,
     spreads: tuple[tuple[int | None, int | None], ...],
 ) -> list[dict[str, Any]]:
-    """Confirm each imposed side carries exactly its planned reader page pair.
-
-    ``spreads`` is a plan in *reader* page numbers, so the same check serves the
-    all-in-one booklet, the interior, and the cover wrap: whichever pages a
-    section selects, its side ``n`` must extract the left page's text followed by
-    the right page's. ``None`` is a padded blank half-side.
-
-    Either document may arrive as a ``PdfReader`` or as the ``_PageTexts`` store
-    ``inspect_render`` shares between its three passes over one reader; a bare
-    reader is wrapped in a store of its own, which costs nothing and reads the
-    same, but only the shared one spares the second and third pass the
-    extraction the first already paid for.
-    """
 
     reader_texts = _page_texts(reader)
     booklet_texts = _page_texts(booklet)
@@ -1031,31 +823,6 @@ def _booklet_spread_checks(
 
 
 def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
-    """Rasterize every page of a PDF to ``page-001.png``, in document order.
-
-    ``pdftoppm`` is single-threaded and this is the most expensive thing the
-    build does, so the document is cut into contiguous page ranges rendered at
-    once.  Sharding cannot move a pixel or a name, but that rests on two
-    Poppler behaviours which nothing in this repository pins and which Poppler
-    does not document as guarantees; both were verified empirically against the
-    installed Poppler (25.08.0), and an upgrade is worth re-checking on both
-    counts.  First, a page's rendered bytes do not depend on whether it was
-    asked for alone or as part of the whole document.  Second, Poppler pads
-    each file name to the width of the *document's* page count rather than the
-    requested range's, so a 36-page document names its fifth page
-    ``page-05.png`` under ``-f 5 -l 5`` exactly as it does under a single-shot
-    run.  A future Poppler that padded to the requested range's width instead
-    would break this silently rather than loudly: that same page would arrive
-    as ``page-5.png`` from a one-page shard and as ``page-05.png`` from a wider
-    one, and the normalization below would sort a set of names that no longer
-    reflects the document and renumber the pages into the wrong order.
-
-    Given those two, the normalization is looking at the same directory of
-    files either way, and it -- not any shard -- is what decides the returned
-    names and their order.  Sorting by page number only after every shard has
-    finished is what keeps that order owing nothing to which shard finished
-    first.
-    """
 
     executable = shutil.which("pdftoppm")
     if not executable:
@@ -1064,7 +831,6 @@ def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
     prefix = output_dir / "page"
 
     def rasterize(window: tuple[int, int] | None) -> None:
-        """Render one inclusive page range, or the whole document for ``None``."""
         selection = [] if window is None else ["-f", str(window[0]), "-l", str(window[1])]
         completed = subprocess.run(
             [
@@ -1086,52 +852,19 @@ def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
             )
             raise DependencyError(f"Could not rasterize reader PDF for criticism: {detail}")
 
-    # Every shard pays its own process startup and document setup -- spawning
-    # pdftoppm, reading the xref and the catalog, preparing the output device --
-    # before it renders anything, and none of that is shared between shards, so
-    # a shard is only worth its process once it has a couple of pages to render;
-    # holding each to two keeps the cover wrap's two sides, and any document on
-    # a single-core machine, on the unsharded command that has always run here.
+
     try:
         page_count = len(PdfReader(str(reader_pdf)).pages)
     except Exception:
-        # A page count that cannot be read is not an error to raise here, only a
-        # split that cannot be planned: sharding is an optimization, so when the
-        # plan is unavailable this falls back to the unsharded command that has
-        # always run here and lets Poppler judge the file.  A truncated or
-        # malformed PDF then fails as it always did, with the ``DependencyError``
-        # carrying Poppler's own diagnosis, rather than with whatever pypdf
-        # raised on its way to a number this function only wanted in order to
-        # divide it.  ``tools/compare_pipelines.py`` is the one caller that
-        # reaches this function directly, without ``inspect_render``'s prior
-        # ``PdfReader`` construction to fail first, so it is the only path where
-        # this fallback is observable at all -- and the error it observes should
-        # be this module's own, not a pypdf internal.  Zero plans no shards, so
-        # the branch below is the one that runs.
+
+
         page_count = 0
     shard_count = worker_count(page_count // 2)
     if shard_count < 2:
         rasterize(None)
     else:
-        # Cutting at ``page_count * index // shard_count`` gives contiguous
-        # ranges that between them cover every page exactly once and leave none
-        # empty, so long as there are no more shards than pages; it is
-        # ``worker_count``'s clamp to the work that exists that guarantees that,
-        # and without it the arithmetic degenerates into windows that run
-        # backwards and windows that repeat a page.
-        #
-        # The two ways the cuts could be wrong are not equally visible, and only
-        # one of them is caught anywhere.  A gap loses pages, which
-        # ``inspect_render``'s raster-page-count check does report: a 118-page
-        # reader shards into eight windows of fourteen or fifteen pages, and
-        # dropping one of them -- ``(30, 44)`` -- left 103 of the 118 rasters,
-        # which the check fired on.  An overlap is the more dangerous one exactly
-        # because nothing reports it -- every page is still covered, so the count
-        # matches and the check stays silent, while two ``pdftoppm`` processes
-        # write the same PNG at the same time and leave a torn file that no count
-        # can see.  ``cuts[index] + 1``
-        # is the whole of what rules the overlap out, by opening each window one
-        # page past where the previous one closed.
+
+
         cuts = [page_count * index // shard_count for index in range(shard_count + 1)]
         windows = [(cuts[index] + 1, cuts[index + 1]) for index in range(shard_count)]
         ordered_map(rasterize, windows)
@@ -1162,34 +895,23 @@ def _inspect_page(
         ink_pixels = histogram[255]
         total_pixels = gray.width * gray.height
         bbox = ink_mask.getbbox()
-        # Two masks, two questions.  ``ink_ratio`` counts a pixel as ink below
-        # WHITE_THRESHOLD (245), so a 246-254 tint or hairline has a ratio of
-        # exactly 0.0 -- it asks what a reader can *read*.  ``presence_ratio``
-        # counts everything below pure paper white, so the same pale tint is
-        # fully visible to it -- it asks what the press *printed*, which is
-        # what the void geometry must honour lest a pale ornament read as
-        # empty paper.  "Blank" is held to the stricter standard
-        # tools/compare_pipelines.py uses: a pure-white raster and zero
-        # extracted characters.
+
+
         presence_mask = gray.point(lambda value: 255 if value < PAPER_WHITE else 0)
         presence_pixels = presence_mask.histogram()[255]
         presence_bbox = presence_mask.getbbox()
         pure_white = gray.getextrema() == (255, 255)
         width, height = gray.size
-    # The words come from the document's shared store when ``inspect_render``
-    # supplies one, so this row and the imposition passes do not each pay pypdf
-    # for the same page; a caller holding only the page object -- the synthetic
-    # pages in the tests, tools/compare_pipelines.py -- extracts it here as this
-    # function always did.
+
+
     text = texts.raw(page_number) if texts is not None else (pdf_page.extract_text() or "")
     punctuation = [
         line.strip()
         for line in text.splitlines()
         if _STANDALONE_PUNCTUATION.fullmatch(line.strip())
     ]
-    # Running text has lowercase letters; folios, running heads and END marks
-    # are set in caps and digits, in both publication languages, so counting
-    # only lines with any lowercase measures how much *body* a page carries.
+
+
     body_text_lines = sum(
         1
         for line in (raw.strip() for raw in text.splitlines())
@@ -1205,13 +927,8 @@ def _inspect_page(
         "presence_ratio": round(presence_ratio, 6),
         "presence_bbox": list(presence_bbox) if presence_bbox else None,
         "body_text_lines": body_text_lines,
-        # Filled in by ``_annotate_void_geometry`` for reader body pages; the
-        # keys are present on every row so the schema does not shift per
-        # page.  ``largest_void`` is the single largest empty rectangle
-        # whether or not it is worth reporting; ``voids`` ranks every
-        # rectangle tall and wide enough to matter; ``tail_band`` is the
-        # located presence run of a printed tail ornament, where the
-        # manifest declares one for this page.
+
+
         "largest_void": None,
         "voids": [],
         "tail_band": None,
@@ -1224,14 +941,6 @@ def _inspect_page(
 
 
 def _manifest_layout(destination: Path) -> dict[str, Any]:
-    """The ``layout`` block of the package's own edition-manifest.json, or {}.
-
-    ``package_release`` writes the manifest before it calls the critic, so on
-    a real build the file is always there; the tolerance is for the critic's
-    synthetic-test harnesses and for hand-assembled packages, where a missing
-    or malformed manifest must degrade to "nothing declared" rather than
-    block the raster checks that need no manifest at all.
-    """
 
     path = destination / "edition-manifest.json"
     if not path.is_file():
@@ -1245,7 +954,6 @@ def _manifest_layout(destination: Path) -> dict[str, Any]:
 
 
 def _manifest_opener_article_ids(destination: Path) -> tuple[str, ...]:
-    """Article ids whose packaged inputs declare first-class opener art."""
 
     path = destination / "edition-manifest.json"
     if not path.is_file():
@@ -1270,7 +978,6 @@ def _manifest_opener_article_ids(destination: Path) -> tuple[str, ...]:
 def _opener_frame_bbox(
     image: Image.Image, *, color_tolerance: int = 0
 ) -> tuple[int, int, int, int] | None:
-    """Locate the long near-black illustration frame in a page raster."""
 
     pixels = image.load()
     minimum_run = int(image.width * OPENER_FRAME_MIN_RUN_FRACTION)
@@ -1307,7 +1014,6 @@ def _opener_frame_bbox(
 
 
 def _inspect_opener_crop_fidelity(crop_path: Path, reader_page_path: Path) -> dict[str, Any]:
-    """Compare 300 ppi review evidence with its 144 dpi final-PDF raster."""
 
     with Image.open(reader_page_path) as opened:
         reference = opened.convert("RGB")
@@ -1321,9 +1027,7 @@ def _inspect_opener_crop_fidelity(crop_path: Path, reader_page_path: Path) -> di
     rgb_mae = sum((index % 256) * count for index, count in enumerate(histogram))
     rgb_mae /= channel_values
 
-    # Lanczos normalization softens the long frame rows even when the two
-    # rasters describe the same physical page. A 24-channel tolerance keeps
-    # those rows detectable without admitting the much lighter artwork.
+
     crop_frame = _opener_frame_bbox(normalized, color_tolerance=24)
     reference_frame = _opener_frame_bbox(reference, color_tolerance=24)
     frame_delta: float | None
@@ -1370,7 +1074,6 @@ def _inspect_opener_crop_fidelity(crop_path: Path, reader_page_path: Path) -> di
 
 
 def _inspect_opener_offset(path: Path) -> dict[str, Any]:
-    """Measure the translated orange rectangle from a finished page raster."""
 
     with Image.open(path) as opened:
         image = opened.convert("RGB")
@@ -1455,16 +1158,6 @@ def _inspect_opener_offset(path: Path) -> dict[str, Any]:
 
 
 def _declared_editorial_cap(manifest_layout: dict[str, Any]) -> int:
-    """The editorial page cap this edition declared for itself, if readable.
-
-    ``layout.maximum_editorial_pages`` is the value the build resolved through
-    ``reader_layout.declared_editorial_page_cap`` -- already clamped to the
-    publication ceiling -- but a hand-assembled package could declare any
-    number, so the critic re-clamps to the publication default rather than
-    letting a manifest loosen the ERROR below it; anything unreadable falls
-    back to the publication default rather than failing the build over a
-    manifest field the raster checks never needed.
-    """
 
     declared = manifest_layout.get("maximum_editorial_pages")
     if isinstance(declared, int) and not isinstance(declared, bool) and declared >= 1:
@@ -1478,24 +1171,6 @@ def _annotate_void_geometry(
     body_pages: set[int],
     tail_bands: dict[int, float],
 ) -> list[float] | None:
-    """Fill each body page's void geometry rows; return the live area in points.
-
-    The live area is the union of the body pages' presence boxes -- the frame
-    the design actually types into, discovered from the pages themselves so a
-    margin change never needs a constant retuned here.  Within that frame,
-    each body page is downsampled and swept for its all-paper rectangles:
-    voids are judged in page geometry (points, and a fraction of the live
-    measure) precisely so thresholds read like typography rather than pixel
-    counts.  The sweep repeats, masking each rectangle it finds, so one
-    excused giant cannot shadow a second reportable void -- ``voids`` is the
-    ranked list of every rectangle clearing the size bars, ``largest_void``
-    the single largest whether or not it clears them (schema stability).
-    ``tail_bands`` maps an article's last page to the ornament height the
-    manifest says printed there; the matching presence run is recorded as
-    ``tail_band`` so the review loop can tell a centered ornament's margins
-    from dead paper.  Pages with no presence at all are skipped; total
-    blankness is the blank-page check's verdict, not a void.
-    """
 
     scale = 72.0 / RASTER_DPI
     boxes = [
@@ -1533,10 +1208,8 @@ def _annotate_void_geometry(
             )
             if not area:
                 break
-            # ``reduce`` ceils a partial trailing cell into existence, so a
-            # void spanning the whole measure can compute a hair over the
-            # live width; clamping keeps the fraction an honest "share of
-            # the measure".
+
+
             width_px = min(cell_width * VOID_DOWNSAMPLE, live_width)
             height_px = cell_height * VOID_DOWNSAMPLE
             x_px = live[0] + cell_x * VOID_DOWNSAMPLE
@@ -1579,18 +1252,6 @@ def _locate_tail_band(
     scale: float,
     declared_height: float,
 ) -> dict[str, Any] | None:
-    """The presence run matching a page's declared tail ornament, or nothing.
-
-    The manifest's ledger says an ornament of ``declared_height`` printed on
-    this page; on the downsampled presence grid that ornament is a run of
-    consecutive occupied cell rows of the same height (the tolerance's own
-    comment argues why no text block collides).  The bottommost matching run
-    wins -- the ornament stands below the article's last line by
-    construction, and the folio's own run is a few points tall and can never
-    match a >=96 pt band.  The gaps to the neighbouring runs (or the live
-    edges) are the band's actual margins, and ``centered`` is the design's
-    signature: the two margins agreeing within the calibrated skew.
-    """
 
     runs: list[tuple[int, int]] = []
     start: int | None = None
@@ -1628,13 +1289,6 @@ def _locate_tail_band(
 
 
 def _abuts_tail_band(void: dict[str, Any], band: dict[str, Any]) -> bool:
-    """Whether a void is one of the band's own margins.
-
-    A maximal void ends exactly where presence begins, so a margin void's
-    bottom edge sits on the band's top edge (or its top edge on the band's
-    bottom); the tolerance is two grid cells of measurement slack, far under
-    the height of anything reportable.
-    """
 
     band_top = band["y_points"]
     band_bottom = band["y_points"] + band["height_points"]
@@ -1648,14 +1302,6 @@ def _abuts_tail_band(void: dict[str, Any], band: dict[str, Any]) -> bool:
 def _largest_empty_rectangle(
     data: bytes | bytearray, columns: int, rows_count: int
 ) -> tuple[int, int, int, int, int]:
-    """Largest all-zero rectangle in a row-major byte grid.
-
-    The classic histogram-of-heights sweep: each row extends a column-height
-    histogram of consecutive empty cells, and a monotonic stack finds the
-    best rectangle ending on that row, so the whole search is linear in the
-    number of cells.  Returns ``(area, width, height, x, y)`` in cells; a
-    fully occupied grid returns all zeros.
-    """
 
     heights = [0] * columns
     best = (0, 0, 0, 0, 0)
@@ -1728,17 +1374,6 @@ def _review_crop_plan(
     flag_crops: list[dict[str, Any]],
     page_count: int,
 ) -> list[dict[str, Any]]:
-    """Every region the 300 ppi crop set must cover, in page points.
-
-    Four families, all derived from facts the critic already holds: each
-    contents entry's opener block (folio from ``toc``), each placed figure
-    (page and box from the manifest, whose ``box_points`` y runs from the
-    page *bottom*, PDF-fashion), each printed tail ornament (the band the
-    void annotation located, or the foot of the page when the raster shows
-    no band of the declared height -- a discrepancy the reviewer should
-    see), and each flagged review item's own region.  Regions are clamped
-    to the page here, so the writer only converts and cuts.
-    """
 
     def page_size(page: int) -> tuple[float, float]:
         box = reader.pages[page - 1].mediabox
@@ -1822,19 +1457,6 @@ def _review_crop_plan(
 def _write_review_crops(
     reader_pdf: Path, crops_dir: Path, destination: Path, specs: list[dict[str, Any]]
 ) -> tuple[list[Path], list[dict[str, Any]]]:
-    """Cut each planned region from a 300 ppi raster of its own page.
-
-    Only the pages actually being cropped are rasterized at print
-    resolution, each exactly once however many crops it feeds, and the full
-    -page rasters are scratch -- removed once cut, so the review directory
-    carries ~20 focused crops rather than a second full set of pages five
-    times the size.  Names say what they show (``crop-p05-opener.png``),
-    with a numeric suffix only when one page flags the same kind twice.
-
-    The rasters are taken all at once on threads, because thirty-odd Poppler
-    invocations waited on in turn were a fifth of the build a human sits
-    through between asking for a review and reading it.
-    """
 
     if not specs:
         return [], []
@@ -1849,24 +1471,13 @@ def _write_review_crops(
         return _render_crop_page(reader_pdf, page, scratch)
 
     try:
-        # Every page a spec names, including one whose box the loop below finds
-        # degenerate and skips: that spec costs its page a raster today, before
-        # the box is even computed, so keeping it in the set is what makes this
-        # rasterize neither more nor fewer pages -- and therefore report neither
-        # more nor fewer Poppler failures -- than the serial version did.
-        # Sorting is what makes a failure deterministic: ``ordered_map`` raises
-        # for the lowest-index item that failed, so lowest index has to mean
-        # lowest page number rather than whichever page a thread reached first.
+
+
         pages = sorted({int(spec["page"]) for spec in specs})
         rasters = ordered_map(rasterize, pages, workers=worker_count(len(pages)))
         rendered = dict(zip(pages, rasters, strict=True))
-        # Walking ``specs`` rather than ``pages`` from here on, because the
-        # ``-2`` suffix is assigned in the order the specs arrive; consuming the
-        # prepared rasters in page order instead would move suffixes between two
-        # crops of one page and rename files a review has already accepted.  The
-        # cropping itself stays on this thread: it is a quarter of the cost and
-        # pure-Python pixel work, so threads would contend for the interpreter
-        # rather than overlap, and the PNGs are written in one fixed order.
+
+
         for spec in specs:
             page = int(spec["page"])
             base = f"crop-p{page:02d}-{spec['kind']}"
@@ -1905,7 +1516,6 @@ def _write_review_crops(
 
 
 def _render_crop_page(reader_pdf: Path, page_number: int, output_dir: Path) -> Path:
-    """One reader page as a 300 ppi raster, for cropping."""
 
     executable = shutil.which("pdftoppm")
     if not executable:

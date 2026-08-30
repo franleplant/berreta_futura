@@ -24,7 +24,6 @@ from .errors import (
 from .manifest import Edition
 
 
-# A5 in PostScript points. The SVG viewBox and PDF MediaBox share this space.
 PAGE_WIDTH = 419.527559
 PAGE_HEIGHT = 595.275591
 PROOF_DPI = 144
@@ -62,7 +61,6 @@ class _OutlinedText:
 
 
 class _FontOutliner:
-    """Convert bundled-font strings into self-contained SVG path geometry."""
 
     def __init__(self, path: Path):
         try:
@@ -158,7 +156,6 @@ class _FontOutliner:
         return width
 
     def ink_extent(self, text: str, *, size: float) -> tuple[float, float]:
-        """Measure the inked rise above and drop below the baseline of a line."""
         rise = 0.0
         drop = 0.0
         for character in text:
@@ -184,7 +181,6 @@ class _FontOutliner:
 
 
 class CoverCompiler:
-    """Deep module for the canonical SVG -> PDF -> proof cover pipeline."""
 
     def __init__(self, root: Path):
         self.root = root.resolve()
@@ -192,8 +188,8 @@ class CoverCompiler:
         if self.design_path.is_file():
             self.design = tomllib.loads(self.design_path.read_text(encoding="utf-8"))
         else:
-            # Installed-package and minimal test projects keep the same stable
-            # defaults without requiring repository design files.
+
+
             self.design = {
                 "id": "canto-vivo/1",
                 "color": {"paper": WHITE, "ink": INK, "violet": VIOLET, "orange": ORANGE},
@@ -226,10 +222,8 @@ class CoverCompiler:
         fonts = Path(__file__).with_name("assets") / "fonts" / "inter"
         self.regular = _FontOutliner(fonts / "Inter-Regular.ttf")
         self.bold = _FontOutliner(fonts / "Inter-Bold.ttf")
-        # The headline sets a true condensed grotesque; the wordmark and
-        # small print stay on Inter. The face is a static wdth-80/wght-700
-        # instance of variable Archivo: the look the old 80%-squeezed Inter
-        # Bold was imitating, with correctly drawn letterforms.
+
+
         self.display = _FontOutliner(
             Path(__file__).with_name("assets") / "fonts" / "archivo" / "ArchivoCondensed-Bold.ttf"
         )
@@ -244,7 +238,6 @@ class CoverCompiler:
         reference: Path | None = None,
         check: bool = False,
     ) -> CoverArtifact:
-        """Compile one localized edition cover and retain all proof evidence."""
         return self._compile_face(
             edition,
             destination,
@@ -261,7 +254,6 @@ class CoverCompiler:
         reference: Path | None = None,
         check: bool = False,
     ) -> CoverArtifact:
-        """Compile the localized back cover through the same proof pipeline."""
         return self._compile_face(
             edition,
             destination,
@@ -372,12 +364,6 @@ class CoverCompiler:
         )
 
     def _tab_band(self) -> tuple[float, float]:
-        """Return the printed fore-edge band as (x, width) in page points.
-
-        The band's inner edge is fixed by the design grid; `edge_reveal` is
-        taken off its outer edge, so the page keeps a hairline of unprinted
-        paper between the band and the right trim.
-        """
         tab = self.design["tab"]
         width = float(tab["width"])
         reveal = float(tab.get("edge_reveal", 0.0))
@@ -391,10 +377,8 @@ class CoverCompiler:
         parts: list[str] = [
             f'<rect data-slot="paper" x="0" y="0" width="{PAGE_WIDTH}" '
             f'height="{PAGE_HEIGHT}" fill="{paper}"/>',
-            # One solid band, bleeding off the head and the foot only: the
-            # vertical overdraw is clipped by the SVG viewport and later the PDF
-            # MediaBox, while the right edge stops short of the trim so the
-            # reserve stays unprinted paper.
+
+
             f'<rect data-slot="edge-tab" x="{band_x:.5f}" '
             f'y="{-float(tab["overdraw"]):.5f}" '
             f'width="{band_width:.5f}" '
@@ -417,8 +401,8 @@ class CoverCompiler:
                 f'href="data:image/png;base64,{art_data}"/>'
             )
         else:
-            # Deterministic fixture/provisional fallback; production editions
-            # should supply committed cover art before review.
+
+
             parts.append(
                 f'<g data-slot="art"><rect x="{art_x}" y="{art_y}" width="{art_w}" '
                 f'height="{art_h}" fill="{self.colors["violet"]}"/><circle cx="{art_x + art_w / 2}" '
@@ -455,7 +439,6 @@ class CoverCompiler:
         )
 
     def _materialize_back_svg(self, edition: Edition) -> str:
-        """Materialize the selected Signal fold back cover as outlined SVG."""
         back = self.design["back"]
         orange = str(self.colors["orange"])
         ink = str(self.colors["ink"])
@@ -495,9 +478,8 @@ class CoverCompiler:
         panel_x = float(back["panel_x"])
         panel_top = float(back["panel_top"])
         panel_width = PAGE_WIDTH - panel_x - float(back["panel_right"])
-        # panel_bottom is the floor: the panel may never intrude on the slug
-        # zone, but its actual height hugs the measured statement block so the
-        # white insert always carries equal, generous padding on every side.
+
+
         panel_max_height = PAGE_HEIGHT - panel_top - float(back["panel_bottom"])
         panel_padding = float(back["panel_padding"])
         statement = str(
@@ -606,12 +588,6 @@ class CoverCompiler:
         width: float,
         height: float,
     ) -> tuple[float, list[str], float, float]:
-        """Fit the statement, returning size, lines, first-line rise, block height.
-
-        The block height is the measured ink extent — first-line rise above its
-        baseline, the baseline-to-baseline run, and the last line's descender
-        drop — so the surrounding panel padding is optically true.
-        """
         back = self.design["back"]
         size = float(back["statement_max_size"])
         minimum = float(back["statement_min_size"])
@@ -669,7 +645,7 @@ class CoverCompiler:
             return [f'<g data-slot="wordmark">{head_path}</g>']
 
         tail_x = x + tail_offset
-        # Convert the old PDF group origin to SVG top-axis coordinates.
+
         tail_origin_y = PAGE_HEIGHT - (pdf_baseline - size * .91)
         box_x, box_y = -7.0, -7.0
         box_height = size * 1.04 - 1
@@ -714,12 +690,6 @@ class CoverCompiler:
         ]
 
     def _headline_layout(self, value: str, *, described_as: str | None = None) -> tuple[list[str], float]:
-        """The headline's line construction: balanced lines and the fitted size.
-
-        Shared between the printed face (:meth:`_headline`) and the web
-        cover's :func:`cover_headline_lines`, so both media break the issue
-        title on the same words for the same measured reasons.
-        """
 
         size = 29.0
         headline = self.design["headline"]
@@ -809,9 +779,8 @@ class CoverCompiler:
                 tracking=tracking,
                 horizontal_scale=scale,
             )
-            # Center the glyph body across the printed band, then advance
-            # top-to-bottom. Centring on the band and not on the tab's full
-            # width keeps the type seated in the orange the reader sees.
+
+
             cross = band_x + band_width / 2 - (outlined.ascent - outlined.descent) / 2
             return (
                 f'<g transform="translate({cross:.5f} {top:.5f}) rotate(90)">'
@@ -840,7 +809,6 @@ class CoverCompiler:
 
     @staticmethod
     def _graded_art(path: Path) -> bytes:
-        """Apply the explicitly versioned Canto vivo two-ink grade."""
         try:
             from PIL import Image
         except ImportError as exc:
@@ -887,9 +855,8 @@ class CoverCompiler:
                 svg,
                 count=1,
             )
-            # The PDF owns the paper as a vector rectangle. Rendering the
-            # paper into a scaled full-page bitmap can turn white into periodic
-            # 254-gray interpolation lines in Poppler.
+
+
             raster_svg = re.sub(
                 rb'(<rect data-slot="paper"[^>]*?) fill="[^"]+"',
                 rb'\1 fill="none"',
@@ -910,8 +877,8 @@ class CoverCompiler:
             )
             options = resvg.usvg.Options.default()
             tree = resvg.usvg.Tree.from_str(raster_svg.decode("utf-8"), options)
-            # resvg follows affine.Affine's (a, b, c, d, e, f) ordering;
-            # identity is therefore (1, 0, 0, 0, 1, 0), not the PDF matrix order.
+
+
             png = resvg.render(tree, (1, 0, 0, 0, 1, 0))
             pdf = canvas.Canvas(
                 str(output),
@@ -924,9 +891,8 @@ class CoverCompiler:
             if face == "front":
                 pdf.setFillColorRGB(1, 1, 1)
                 pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
-                # One vector band over the vector paper. The reserve at the
-                # right trim is the paper rectangle itself showing through, so
-                # the hairline is unprinted rather than painted white.
+
+
                 tab_overdraw = float(self.design["tab"]["overdraw"])
                 band_x, band_width = self._tab_band()
                 pdf.setFillColor(HexColor(str(self.colors["orange"])))
@@ -972,7 +938,6 @@ class CoverCompiler:
             raise CoverPdfError(f"Could not convert cover SVG to PDF: {exc}") from exc
 
     def _add_selectable_text_layer(self, pdf, edition: Edition) -> None:
-        """Add invisible bundled-font text so outlined cover copy stays selectable."""
         try:
             from reportlab.pdfbase import pdfmetrics
             from reportlab.pdfbase.ttfonts import TTFont
@@ -1003,8 +968,7 @@ class CoverCompiler:
             text.textLine(value)
             pdf.drawText(text)
 
-        # Reading order follows the cover's information hierarchy. Geometry is
-        # close to the outlined artwork so selection highlights the visible copy.
+
         invisible_line(edition.publication_name.upper(), 38.0, PAGE_HEIGHT - 55.0, 22.0)
         invisible_line(
             str(edition.cover.get("headline", edition.title)).upper(),
@@ -1040,7 +1004,6 @@ class CoverCompiler:
         )
 
     def _add_selectable_back_text_layer(self, pdf, edition: Edition) -> None:
-        """Mirror the outlined Signal fold copy with invisible embedded text."""
         try:
             from reportlab.pdfbase import pdfmetrics
             from reportlab.pdfbase.ttfonts import TTFont
@@ -1180,7 +1143,6 @@ def replace_outer_pages(
     back_cover_pdf: Path,
     output: Path | None = None,
 ) -> Path:
-    """Replace both reader outer pages with the exact compiled cover PDFs."""
     try:
         from pypdf import PdfReader, PdfWriter
     except ImportError as exc:
@@ -1211,7 +1173,6 @@ def replace_outer_pages(
 
 
 def replace_first_page(reader_pdf: Path, cover_pdf: Path, output: Path | None = None) -> Path:
-    """Compatibility helper for callers that only replace reader page 1."""
     try:
         from pypdf import PdfReader, PdfWriter
     except ImportError as exc:
@@ -1239,11 +1200,6 @@ def _cover_date(value: str) -> str:
 
 
 def _cover_contributors(edition: Edition) -> str:
-    """Derive front-cover contributor copy from the rendered article records.
-
-    An author with two pieces in the issue is still one contributor, so the
-    roster dedups case-insensitively while keeping first-appearance order.
-    """
     authors: list[str] = []
     seen: set[str] = set()
     for article in edition.articles:
@@ -1257,27 +1213,6 @@ def _cover_contributors(edition: Edition) -> str:
 
 
 def materialize_wordmark_svg(publication_name: str, root: Path | None = None) -> str:
-    """The Corte bruto lockup alone, as one standalone self-contained SVG.
-
-    The markup is exactly what :meth:`CoverCompiler._wordmark` sets on the
-    printed cover -- the compressed near-black head, the skewed slug, the
-    misregistered orange under the reversed letters -- outlined from the
-    bundled Inter Bold, so no page that shows it ever consults a host font.
-    What this function adds is only a frame: a tight ``viewBox`` around the
-    lockup's ink and a transparent background, which is what lets a screen
-    surface place the mark at any size like the paste-up it is.
-
-    ``root`` is a project root whose authored cover design (inks, wordmark
-    slot) should be honoured; without one, or without a design file under it,
-    the compiler's built-in canto-vivo defaults apply.  Deterministic: the
-    same name and design yield the same bytes.
-
-    The bounds below MIRROR the sizing loop in ``_wordmark``.  Drift between
-    the two only loosens or crops the frame's padding -- the lockup itself
-    always comes from ``_wordmark`` -- and the mirror is kept rather than
-    shared because the print method's loop lives mid-layout, entangled with
-    page coordinates this frame deliberately forgets.
-    """
 
     value = publication_name.upper().strip()
     markup, frame, _ = _wordmark_frames(
@@ -1287,17 +1222,6 @@ def materialize_wordmark_svg(publication_name: str, root: Path | None = None) ->
 
 
 def materialize_favicon_svg(publication_name: str, root: Path | None = None) -> str:
-    """The lockup's slug alone -- the skewed FUTURA bar -- framed as a favicon.
-
-    A favicon is the lockup at sixteen pixels, and at sixteen pixels the whole
-    two-story paste-up is noise; the slug -- the black printer's bar with the
-    reversed letters over the misregistered orange -- is the piece of the mark
-    that still reads.  The markup is the complete lockup exactly as
-    :meth:`CoverCompiler._wordmark` sets it, with the ``viewBox`` cropped to
-    the slug's own box, so the icon is a crop of the real mark, never new
-    artwork.  A single-word publication name has no slug and gets the full
-    lockup frame instead.
-    """
 
     value = publication_name.upper().strip()
     markup, frame, slug_frame = _wordmark_frames(
@@ -1307,17 +1231,6 @@ def materialize_favicon_svg(publication_name: str, root: Path | None = None) -> 
 
 
 def cover_headline_lines(text: str, root: Path | None = None) -> tuple[str, ...]:
-    """The printed cover's own line construction for ``text``.
-
-    The printed face breaks the issue title into width-balanced lines measured
-    on the bundled bold (``CoverCompiler._headline_layout``) and alternates
-    the ink: odd lines set violet, staggered right.  A screen cover restating
-    the headline must break on the same words or it reads as a different
-    construction, so this returns that break -- in the text's authored casing,
-    since casing is presentation the stylesheet owns.  Raises
-    :class:`CoverOverflowError` when no size fits, exactly as the print path
-    would; callers with a single-line fallback catch it.
-    """
 
     compiler = CoverCompiler(root if root is not None else Path("."))
     lines, _ = compiler._headline_layout(str(text).upper().strip(), described_as=str(text))
@@ -1332,25 +1245,12 @@ def cover_headline_lines(text: str, root: Path | None = None) -> tuple[str, ...]
 
 
 def cover_tab_issue(edition: Edition) -> str:
-    """The canto-vivo tab's head label, exactly as the printed tab sets it.
-
-    Zero-padded to three digits -- the shelf-navigation grammar -- under the
-    localized issue word.  Shared by the printed tab (:meth:`_tab_labels`) and
-    the web cover's canto strip, so the two media cannot drift apart.
-    """
 
     label = "ISSUE" if edition.language.split("-", 1)[0] == "en" else "NÚMERO"
     return f"{label} {str(edition.issue_number).zfill(3)}"
 
 
 def cover_tab_identity(edition: Edition) -> str:
-    """The canto-vivo tab's foot: the publication's identity line.
-
-    The city is the foot's whole point -- it is what the tab says when
-    editions stand on a shelf -- and it lives here, in the cover module that
-    owns cover copy, so every surface that states the identity states the
-    same one.
-    """
 
     return f"{edition.publication_name.upper()} / BUENOS AIRES"
 
@@ -1358,23 +1258,14 @@ def cover_tab_identity(edition: Edition) -> str:
 def _wordmark_frames(
     compiler: CoverCompiler, value: str
 ) -> tuple[str, tuple[float, float, float, float], tuple[float, float, float, float] | None]:
-    """The lockup markup with its tight frame and, when a slug exists, the
-    slug's own frame.
-
-    The bounds MIRROR the sizing loop in ``_wordmark``.  Drift between the two
-    only loosens or crops a frame's padding -- the lockup itself always comes
-    from ``_wordmark`` -- and the mirror is kept rather than shared because the
-    print method's loop lives mid-layout, entangled with page coordinates
-    these frames deliberately forget.
-    """
 
     head, separator, tail = value.rpartition(" ")
     if not separator:
         head, tail = value, ""
     wordmark = compiler.design["wordmark"]
     x, top = float(wordmark["x"]), float(wordmark["top"])
-    # PAGE_HEIGHT - (pdf_baseline - 1.65) with pdf_baseline = PAGE_HEIGHT - top:
-    # the head sits 1.65pt below the slot's nominal top line.
+
+
     baseline = top + 1.65
     max_width = (
         PAGE_WIDTH - float(compiler.design["tab"]["width"]) - float(wordmark["right_reserve"])
@@ -1397,7 +1288,7 @@ def _wordmark_frames(
 
     try:
         cap_units = float(compiler.bold.font["OS/2"].sCapHeight)
-    except (KeyError, AttributeError):  # A face without OS/2 caps: use ascent.
+    except (KeyError, AttributeError):
         cap_units = compiler.bold.ascent_units
     cap = cap_units / compiler.bold.units * size
     left = x - 1.0
@@ -1406,10 +1297,8 @@ def _wordmark_frames(
     bottom = baseline + 2.0
     slug_frame: tuple[float, float, float, float] | None = None
     if tail:
-        # The slug group: translate(tail_x, tail_origin_y), sheared ~10deg
-        # about its own centre.  Its ink spans group-y [8 - box_height - .65, 8]
-        # and group-x [-13, -7 + box_width]; the shear reaches at most
-        # tan(10deg) * half the box height sideways.
+
+
         box_height = size * 1.04 - 1
         tail_origin_y = top + size * .91
         reach = math.tan(math.radians(10)) * (box_height + .65) / 2 + 1.0

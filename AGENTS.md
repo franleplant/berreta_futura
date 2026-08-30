@@ -86,6 +86,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 
 ## Repository rules
 
+- Ship each feature complete in the fewest lines that stay readable, and
+  keep cyclomatic complexity low. Style rules are enforced by static checks
+  (`cargo test` runs `tools/nocomments.py`), not by this file.
+
 - Never author Unicode U+2014 in prose, comments, prompts, or copy. Preserve it
   only inside captured source text or an exact quotation.
 - Keep `.magazine/`, `output/`, run scratch, and credentials out of Git.
