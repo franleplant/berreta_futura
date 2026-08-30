@@ -1,15 +1,3 @@
-// mag produce — sources in, edition content out, no state outside memory,
-// plain output files. If it dies, rerun with --resume; pieces whose final.md
-// already exists are skipped.
-//
-// One model call writes each piece: the source extractions inside a
-// <sources> block, then the verbatim writer prompt from prompts/ — nothing
-// else reaches the writer. Frontmatter never comes from the writer: article
-// frontmatter is assembled from the plan row, and the editorial's title is
-// extracted from the finished manuscript by a cheap frontmatter model.
-//
-// The write → judge → rewrite loop that used to live here was removed on
-// 2026-08-06; meta/judge-inventory.md records what it was and why it went.
 
 use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
@@ -40,8 +28,7 @@ fn read(path: &Path) -> Result<String> {
 }
 
 pub(crate) fn prompts_path(file: &str) -> PathBuf {
-    // Relative to the repo root cwd that main.rs enforces; the fallback next
-    // to the crate exists so `cargo test` finds the real prompts from mag/.
+
     let local = PathBuf::from("prompts").join(file);
     if local.exists() {
         return local;
@@ -65,7 +52,6 @@ fn value_to_string(v: &serde_yaml::Value) -> Option<String> {
     }
 }
 
-/// The pasted sources, ahead of the prompt for better model processing.
 fn sources_block(sources: &[(String, String)]) -> String {
     let mut out = String::from("<sources>\n");
     for (_sid, text) in sources {
@@ -105,7 +91,6 @@ fn editorial_prompt(articles_final: &[(String, String)]) -> Result<String> {
     Ok(out)
 }
 
-/// Drop a leading `---` YAML frontmatter block, returning the body.
 fn strip_frontmatter(text: &str) -> &str {
     let Some(rest) = text.strip_prefix("---\n") else { return text };
     match rest.split_once("\n---\n") {
@@ -114,23 +99,11 @@ fn strip_frontmatter(text: &str) -> &str {
     }
 }
 
-/// The render caps the editorial at one printed page. The budget is weighted:
-/// a `##` heading spends vertical page space worth ~25 words of prose, so the
-/// piece keeps its sections and still fits. Calibrated on real renders — a
-/// 207-word/1-heading editorial fit (232 weighted), a 192-word/3-heading one
-/// did not (267 weighted).
 const EDITORIAL_MAX_WORDS: usize = 235;
 const HEADING_WORD_COST: usize = 25;
 
-/// The render caps an article at 7 reader pages (~260 words/page) and the
-/// opener art and figure bands eat into that; a 1459-word article has shipped
-/// with figures at the cap. Same reject-and-retry enforcement as above.
 const ARTICLE_MAX_WORDS: usize = 1450;
 
-/// A paragraph that is one short bold-only line ("**The curve**") is a
-/// heading the writer chose to set in bold. It becomes a real `##` heading so
-/// the render styles it as one and figure anchors have headings to bind to —
-/// without it, a bold-styled manuscript has no anchor points at all.
 fn is_bold_label(line: &str) -> bool {
     let t = line.trim();
     let Some(inner) = t.strip_prefix("**").and_then(|s| s.strip_suffix("**")) else {
@@ -158,11 +131,6 @@ fn normalize_bold_labels(body: &str) -> String {
     out.join("\n")
 }
 
-/// The reply is the manuscript body — no wrapper tags, no scratch markers.
-/// Bold-label paragraphs become `##` headings, then leading heading lines are
-/// dropped: the writer opens with an H1 title (edition.yaml owns titles) and
-/// a "30 second version" label, and the render needs every piece to open with
-/// a paragraph — the 30-second text itself becomes the intro.
 fn extract_body(reply: &str, label: &str) -> Result<String> {
     let normalized = normalize_bold_labels(reply.trim());
     let mut body = normalized.as_str();
@@ -177,11 +145,6 @@ fn extract_body(reply: &str, label: &str) -> Result<String> {
 
 const TRIM_PASSES: usize = 3;
 
-/// Word budgets can need a 25% cut, which a bare "try again shorter" retry
-/// never achieves (opus resettled at 1981→1836 over six attempts). Handing
-/// the model its own draft to cut does: each pass re-sends the original
-/// verbatim prompt plus the draft and the budget.
-/// Prose words plus the page space headings spend, in word-equivalents.
 fn weighted_words(body: &str, heading_cost: usize) -> usize {
     let headings = body.lines().filter(|l| l.starts_with("## ")).count();
     body.split_whitespace().count() + headings * heading_cost
@@ -204,8 +167,7 @@ fn fit_to_budget(
         }
         let words = body.split_whitespace().count();
         let label = format!("{piece_id} trim{pass}");
-        // Models overshoot word targets (asked for 220, opus lands ~260), so
-        // the ask sits below the budget the reply is actually checked against.
+
         let ask = max - max / 8;
         let heading_note = if heading_cost > 0 {
             format!(" Every `##` heading line costs {heading_cost} words of the budget.")
@@ -231,10 +193,6 @@ fn fit_to_budget(
     Ok(body)
 }
 
-/// CLAUDE.md bans authored U+2014: an em dash may appear only inside text
-/// carried verbatim from a source. A dash passes when every source window
-/// around it exists in some source text; anything else is the writer's own
-/// punctuation. Fenced code is skipped here; the exact-run rule owns it.
 fn em_dash_violations(body: &str, sources: &[(String, String)]) -> Vec<String> {
     let mut violations = Vec::new();
     let mut in_fence = false;
@@ -259,10 +217,6 @@ fn em_dash_violations(body: &str, sources: &[(String, String)]) -> Vec<String> {
     violations
 }
 
-/// A dash is verbatim when some 25-char window containing it appears in a
-/// source. Sliding the window keeps a quotation's dash passing even when the
-/// dash sits near the quote boundary and fixed context would leak into the
-/// writer's own words.
 fn em_dash_verbatim(chars: &[char], i: usize, sources: &[(String, String)]) -> bool {
     const W: usize = 25;
     let len = chars.len();
@@ -280,9 +234,6 @@ fn em_dash_verbatim(chars: &[char], i: usize, sources: &[(String, String)]) -> b
 
 const EM_DASH_PASSES: usize = 2;
 
-/// Capture-gate pattern: hand the writer its own draft with the offending
-/// lines listed, ask for repunctuation and nothing else, re-check. Fail loud
-/// if the dashes survive both passes.
 fn fix_em_dashes(
     caller: &Caller,
     writer_model: &ModelSpec,
@@ -322,7 +273,6 @@ fn fix_em_dashes(
     Ok(body)
 }
 
-/// Article frontmatter is deterministic from the plan row — no model call.
 fn article_frontmatter(article: &serde_yaml::Value) -> Result<String> {
     let mode = article
         .get("content_mode")
@@ -341,8 +291,6 @@ fn article_frontmatter(article: &serde_yaml::Value) -> Result<String> {
     Ok(out)
 }
 
-/// The editorial's title comes from its finished manuscript via the cheap
-/// frontmatter model; the render refuses an editorial without one.
 fn editorial_frontmatter(caller: &Caller, meta_model: &ModelSpec, manuscript: &str) -> Result<String> {
     let prompt = format!(
         "{manuscript}\n\nReply with a title for the piece above: one line of plain text, \
@@ -356,10 +304,7 @@ fn editorial_frontmatter(caller: &Caller, meta_model: &ModelSpec, manuscript: &s
         Ok(t.to_string())
     })?;
     let mut map = serde_yaml::Mapping::new();
-    // The printed label is just EDITORIAL (editor's rule, 2026-08-12): the
-    // ": ORIGINAL EDITOR TEXT" suffix was policy bookkeeping leaking onto
-    // the page. The mode still marks the piece as original editor text
-    // everywhere it matters; the reader page does not restate it.
+
     map.insert("label".into(), "EDITORIAL".into());
     map.insert("title".into(), title.into());
     map.insert("byline".into(), "The Editors".into());
@@ -374,7 +319,6 @@ struct PieceStatus {
     state: String,
 }
 
-/// One writer call for one article or the editorial.
 fn produce_piece(
     caller: &Arc<Caller>,
     run_dir: &Path,
@@ -440,7 +384,6 @@ struct Plan {
     articles: Vec<serde_yaml::Value>,
 }
 
-/// A YAML scalar for the scaffold: single-quoted when it needs to be.
 fn yq(s: &str) -> String {
     if s.is_empty() || s.contains(':') || s.contains('#') || s.contains('\'') || s.starts_with(['[', '{', '&', '*', '!', '|', '>', '%', '@', '`', '"']) {
         format!("'{}'", s.replace('\'', "''"))
@@ -449,9 +392,6 @@ fn yq(s: &str) -> String {
     }
 }
 
-/// The images a captured source carries, as (path, alt) pairs read from its
-/// article.md, so the editor picks figures from a list instead of opening
-/// every media directory.
 fn source_figure_candidates(sid: &str) -> Vec<(String, String)> {
     let path = PathBuf::from("library/sources").join(sid).join("article.md");
     let Ok(text) = fs::read_to_string(&path) else { return Vec::new() };
@@ -467,13 +407,6 @@ fn source_figure_candidates(sid: &str) -> Vec<(String, String)> {
     out
 }
 
-/// editions/<ed>/edition.yaml, written once, right after the first produce
-/// run, from the plan the run was produced from. The pipeline's next step
-/// reads it (mag art needs art_direction_path and the article list), so it
-/// must exist before the editor is asked for anything; what the editor owns
-/// (title, cover copy, figure picks, art picks) is marked TODO in place, and
-/// every source's images are listed as figure candidates beside its article.
-/// Never overwrites: an existing edition.yaml is the editor's.
 fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> Result<Option<PathBuf>> {
     let path = edition_dir.join("edition.yaml");
     if path.exists() {
@@ -552,7 +485,6 @@ pub fn run_edition(
         .and_then(value_to_string)
         .ok_or_else(|| anyhow!("plan.edition.id missing or not a string/number"))?;
 
-    // Runs live inside the edition dir, name-sortable: editions/<ed>/run-<ts>/
     let edition_dir = plan_path.parent().map(PathBuf::from).unwrap_or_default();
     let run_dir = resume
         .unwrap_or_else(|| edition_dir.join(format!("run-{}", crate::caller::now_stamp())));
@@ -698,7 +630,7 @@ mod tests {
         let quoted = "the walls \u{2014} not the mind \u{2014} were the problem";
         let sources = vec![("s".to_string(), format!("He wrote that {quoted}, twice."))];
         let body = format!("As the author put it, \"{quoted}\".");
-        // Windows around each dash exist verbatim in the source.
+
         assert!(em_dash_violations(&body, &sources).is_empty());
     }
 

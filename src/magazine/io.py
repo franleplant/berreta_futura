@@ -33,4 +33,3 @@ def safe_project_path(root: Path, value: str, *, must_exist: bool = True) -> Pat
     if must_exist and not candidate.is_file():
         raise ValidationError(f"Referenced file does not exist: {value}")
     return candidate
-

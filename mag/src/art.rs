@@ -1,9 +1,3 @@
-// Art candidate rounds: one model
-// call proposes a slate of art briefs for the edition, then a user-supplied
-// shell command renders `candidates` variants of each brief. Purely
-// additive: every round lives in its own timestamped directory under
-// `editions/<ed>/art/rounds/`, nothing is ever overwritten or deleted, and a
-// human makes the final selection by hand-editing edition.yaml.
 
 use crate::caller::{Caller, ModelSpec};
 use crate::produce::{self, INLINE_PREAMBLE};
@@ -18,7 +12,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 use std::thread;
 
-/// Cap on concurrent `gen_cmd` subprocesses in flight at once.
 const GEN_CONCURRENCY: usize = 8;
 
 fn read(path: &Path) -> Result<String> {
@@ -29,8 +22,6 @@ fn prompts_path(file: &str) -> PathBuf {
     PathBuf::from("prompts").join(file)
 }
 
-/// Resolve `editions/<edition>` directly, or else the unique directory
-/// matching `editions/<edition>*`.
 fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     let direct = PathBuf::from("editions").join(edition);
     if direct.is_dir() {
@@ -78,8 +69,7 @@ struct Brief {
     alt_text: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     credit: Option<String>,
-    /// Reference images attached to this brief's generation calls, set by
-    /// inject_cast when the cast defines them — never by the brief writer.
+
     #[serde(default, skip_serializing_if = "Option::is_none")]
     cast_references: Option<Vec<String>>,
 }
@@ -89,9 +79,6 @@ struct BriefsDoc {
     briefs: Vec<Brief>,
 }
 
-/// The edition's declared art direction: `art_direction_path` from
-/// edition.yaml, read so the brief writer restates the visual language
-/// inside every standalone prompt.
 fn art_direction_section(edition_yaml_text: &str) -> Result<Option<(String, String)>> {
     let doc: serde_yaml::Value = serde_yaml::from_str(edition_yaml_text)
         .context("parsing edition.yaml for art_direction_path")?;
@@ -106,15 +93,11 @@ fn art_direction_section(edition_yaml_text: &str) -> Result<Option<(String, Stri
     Ok(Some((path.to_string(), text)))
 }
 
-/// A canonical recurring character from the art direction's `direction.cast`
-/// list. The prompt is written for the image generator and is appended
-/// verbatim to generation prompts — the brief writer never restates it.
 #[derive(Debug, Clone, Deserialize)]
 struct CastMember {
     name: String,
     prompt: String,
-    /// Path to the character's canonical reference sheet, attached to every
-    /// generation call the character appears in via the {ref} placeholder.
+
     #[serde(default)]
     reference: Option<String>,
 }
@@ -129,8 +112,6 @@ fn cast_members(art_direction_text: &str) -> Result<Vec<CastMember>> {
     }
 }
 
-/// `direction.cast_license`: per-purpose editorial license loosening cast
-/// presentation (age, wardrobe, rendering) while identity anchors hold.
 fn cast_license(art_direction_text: &str) -> Result<HashMap<String, String>> {
     let doc: serde_yaml::Value = serde_yaml::from_str(art_direction_text)
         .context("parsing art direction file for direction.cast_license")?;
@@ -148,12 +129,6 @@ fn cast_license(art_direction_text: &str) -> Result<HashMap<String, String>> {
     Ok(map)
 }
 
-/// Append the canonical descriptions of the cast members a brief names to
-/// its prompt, along with their reference sheets. Not every member appears
-/// in every illustration, so naming is the signal — the brief writer is
-/// instructed to name whoever appears, and validate_cast_named() rejects
-/// interior briefs that name nobody. This is the one continuity mechanism:
-/// the text the generator sees is canon, never a paraphrase.
 fn inject_cast(briefs: &mut [Brief], cast: &[CastMember], license: &HashMap<String, String>) {
     for brief in briefs.iter_mut() {
         let named: Vec<&CastMember> = cast
@@ -188,9 +163,6 @@ fn inject_cast(briefs: &mut [Brief], cast: &[CastMember], license: &HashMap<Stri
     }
 }
 
-/// An interior brief that names no cast member either violates the art
-/// direction or hides a character behind a description injection can't see
-/// ("the boy"). Rejected so the retry names names.
 fn validate_cast_named(briefs: &[Brief], cast: &[CastMember], label: &str) -> Result<()> {
     if cast.is_empty() {
         return Ok(());
@@ -215,8 +187,6 @@ fn validate_cast_named(briefs: &[Brief], cast: &[CastMember], label: &str) -> Re
     Ok(())
 }
 
-/// Cast reference images are attached through the gen-cmd's {ref}
-/// placeholder; a template without it would silently drop them.
 fn ensure_ref_placeholder(gen_cmd: &str, briefs: &[Brief]) -> Result<()> {
     let needs = briefs
         .iter()
@@ -231,8 +201,6 @@ fn ensure_ref_placeholder(gen_cmd: &str, briefs: &[Brief]) -> Result<()> {
     Ok(())
 }
 
-/// Briefs from every earlier round whose purpose is in `purposes` — the
-/// rejected material a scoped re-round must not repeat.
 fn previous_briefs(edition_dir: &Path, purposes: &[String]) -> Result<Vec<Brief>> {
     let rounds_root = edition_dir.join("art").join("rounds");
     let mut round_dirs: Vec<PathBuf> = match fs::read_dir(&rounds_root) {
@@ -408,14 +376,10 @@ struct GeneratedItem {
     ok: bool,
 }
 
-/// Escape a string for safe embedding inside a single-quoted shell argument:
-/// close the quote, emit an escaped literal quote, reopen the quote.
 fn shell_single_quote_escape(s: &str) -> String {
     s.replace('\'', "'\\''")
 }
 
-/// The one place a candidate's output filename and shell command are built,
-/// so the live run and the dry-run script can never drift apart.
 fn candidate_command(
     gen_cmd: &str,
     brief: &Brief,
@@ -438,8 +402,6 @@ fn candidate_command(
     (filename, cmd_str)
 }
 
-/// Dry run: write the exact per-candidate commands as an executable script
-/// beside the briefs, to be run from the repo root once image credits exist.
 fn write_generate_script(
     round_dir: &Path,
     edition_label: &str,
@@ -476,8 +438,6 @@ fn write_generate_script(
     Ok(path)
 }
 
-/// Run one `gen_cmd` subprocess for a candidate. Returns Ok on a zero exit
-/// with a non-empty output file, otherwise a description of the failure.
 fn run_gen_command(cmd_str: &str, out_path: &Path) -> Result<(), String> {
     let output = Command::new("sh")
         .arg("-c")
@@ -496,7 +456,6 @@ fn run_gen_command(cmd_str: &str, out_path: &Path) -> Result<(), String> {
     }
 }
 
-/// Run every brief x variant candidate, GEN_CONCURRENCY at a time, in brief order.
 fn generate_all(
     briefs: &[Brief],
     candidates: u32,
@@ -602,8 +561,6 @@ fn write_proof_sheet(
     Ok(())
 }
 
-/// One generated image on the edition's showcase page: where it lives,
-/// which brief produced it, and whether edition.yaml currently selects it.
 struct ShowcaseItem {
     round: String,
     file: String,
@@ -613,12 +570,10 @@ struct ShowcaseItem {
     prompt: String,
     variant: u32,
     selected: bool,
-    /// cast-check.yaml verdicts for this image, empty when never checked.
+
     verdicts: Vec<MemberVerdict>,
 }
 
-/// Every art path edition.yaml currently selects, repo-relative as written:
-/// the cover, each article's opener and tail, and the closing plates.
 fn selected_art_paths(edition_yaml: &serde_yaml::Value) -> Vec<String> {
     let mut out = Vec::new();
     let mut push = |v: Option<&serde_yaml::Value>| {
@@ -643,8 +598,6 @@ fn selected_art_paths(edition_yaml: &serde_yaml::Value) -> Vec<String> {
     out
 }
 
-/// Walk every round under `editions/<ed>/art/rounds/`, pairing round.yaml's
-/// generated items with briefs.yaml's purposes and prompts.
 fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec<ShowcaseItem>> {
     let rounds_root = edition_dir.join("art").join("rounds");
     let mut round_dirs: Vec<PathBuf> = match fs::read_dir(&rounds_root) {
@@ -711,9 +664,6 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
     Ok(items)
 }
 
-/// The edition's one-stop review page: every generated image across every
-/// round, grouped cover → openers → tails → closing plates, selected assets
-/// badged. Rewritten from disk on every `mag art` invocation.
 fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     let edition_yaml_path = edition_dir.join("edition.yaml");
     let mut cover_frame = CoverFrame {
@@ -906,10 +856,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
                 html_escape(&item.file)
             );
             if item.purpose == "cover" {
-                // The brief doc's own rule: candidates are judged as rendered
-                // covers, never as naked squares. This is a CSS approximation
-                // of the fixed frame (masthead, headline, spine band, credits);
-                // coverproof.py stays the true proof for finalists.
+
                 let mut words = cover_frame.headline.split_whitespace();
                 let first = words.next().unwrap_or("");
                 let rest = words.collect::<Vec<_>>().join(" ");
@@ -991,8 +938,6 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     Ok(path)
 }
 
-/// The fixed cover frame's editorial facts, read once from edition.yaml so
-/// every cover candidate on the showcase can be shown inside it.
 struct CoverFrame {
     publication: String,
     headline: String,
@@ -1000,10 +945,6 @@ struct CoverFrame {
     date: String,
 }
 
-/// The showcase's selection layer: a pick basket over the static page. Picks
-/// live only in the page; applying them is copy-paste (commands run from the
-/// repo root, edition.yaml lines pasted by the editor), so the file stays a
-/// plain static page with no server behind it.
 const SHOWCASE_BASKET: &str = r#"<div id="basket">
 <span class="count">0 picked</span>
 <button data-bar="preview">open picked in Preview</button>
@@ -1104,9 +1045,6 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
 </script>
 "#;
 
-/// The model-sheet prompt is composed verbatim from the direction file —
-/// no brief-writer call, nothing paraphrased. The sheet these candidates
-/// compete for becomes the canon every future generation is drawn against.
 fn cast_sheet_prompt(direction: &serde_yaml::Value, cast: &[CastMember], note: Option<&str>) -> String {
     let field = |k: &str| {
         direction
@@ -1151,8 +1089,6 @@ fn cast_sheet_prompt(direction: &serde_yaml::Value, cast: &[CastMember], note: O
     p
 }
 
-/// href from the cast showcase page (at <root>/rounds/<stem>/showcase.html)
-/// to a repo-relative path like `art-directions/references/x.png`.
 fn cast_ref_href(repo_relative: &str) -> String {
     match repo_relative.strip_prefix("art-directions/") {
         Some(rest) => format!("../../{rest}"),
@@ -1160,10 +1096,6 @@ fn cast_ref_href(repo_relative: &str) -> String {
     }
 }
 
-/// The direction's one-stop cast review page: the current canonical
-/// reference sheets on top, every round's candidates below, the variant
-/// whose bytes match an installed reference badged CANON. Rebuilt from disk
-/// on every `mag cast-sheet` invocation.
 pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
     let text = read(direction_path)?;
     let cast = cast_members(&text)?;
@@ -1189,7 +1121,7 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
         Err(_) => Vec::new(),
     };
     round_dirs.sort();
-    round_dirs.reverse(); // newest first
+    round_dirs.reverse();
 
     let mut html = String::new();
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
@@ -1375,8 +1307,6 @@ pub fn cast_sheet_run(
     Ok(if all_failed { 1 } else { 0 })
 }
 
-// ---------- cast check: advisory on-model judge ----------
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MemberVerdict {
     name: String,
@@ -1465,15 +1395,12 @@ fn extract_verdicts(reply: &str, label: &str, cast: &[CastMember]) -> Result<Vec
     Ok(doc.verdicts)
 }
 
-/// One image the check will judge: where it lives and what it was for.
 struct CheckTarget {
     round_dir: PathBuf,
     file: String,
     purpose: String,
 }
 
-/// The ok candidates in a round the cast applies to: interior briefs always,
-/// covers only when the brief names a cast member.
 fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarget>> {
     let briefs_path = round_dir.join("briefs.yaml");
     let round_path = round_dir.join("round.yaml");
@@ -1601,8 +1528,6 @@ pub fn cast_check_run(
         let fresh = results.into_inner().unwrap();
         let errors = errors.into_inner().unwrap();
 
-        // Merge over any earlier check: re-judged files replace their old
-        // entry, files outside this run's scope keep theirs.
         let check_path = round_dir.join("cast-check.yaml");
         let mut by_file: HashMap<String, CastCheckResult> = if check_path.exists() {
             let old: CastCheckDoc = serde_yaml::from_str(&read(&check_path)?)
@@ -1675,8 +1600,6 @@ fn write_round_yaml(
     Ok(failures)
 }
 
-/// The house image generator (tools/imagegen wraps `codex exec`); the
-/// placeholders are what candidate_command substitutes.
 pub const DEFAULT_GEN_CMD: &str = "tools/imagegen '{prompt}' --out {out} --ref '{ref}'";
 
 pub fn run(
@@ -1703,9 +1626,6 @@ pub fn run(
         return Ok(0);
     }
 
-    // Resume an interrupted round: reuse its briefs verbatim, keep every
-    // candidate already on disk, generate only the missing ones, then finish
-    // the round (proof sheet, round.yaml, showcase) as if it never stopped.
     if let Some(resume) = resume_round {
         if dry_run || only.is_some() || note.is_some() || articles.is_some() {
             bail!("--resume-round completes an existing round; drop --dry-run/--only/--note/--articles");
@@ -1876,8 +1796,6 @@ pub fn run(
     generate_and_finish(&briefs, candidates, gen_cmd, &round_dir, &edition_dir, &edition_label)
 }
 
-/// Generation and everything after it: proof sheet, round.yaml, showcase,
-/// and the per-brief summary. Shared by a fresh round and --resume-round.
 fn generate_and_finish(
     briefs: &[Brief],
     candidates: u32,
@@ -2043,7 +1961,7 @@ mod tests {
         assert_eq!(briefs[0].prompt, format!("maro waves while Pedro reads\n\n{pair}"));
         assert_eq!(briefs[1].prompt, "an abstract door");
         assert_eq!(briefs[2].prompt, format!("Flopaz ties a knot\n\n{solo}"));
-        // The shared sheet is attached once, and only for members that have one.
+
         assert_eq!(briefs[0].cast_references.as_deref(), Some(&["refs/cast.png".to_string()][..]));
         assert!(briefs[1].cast_references.is_none());
         assert!(briefs[2].cast_references.is_none());
@@ -2266,11 +2184,11 @@ mod tests {
         assert!(html.contains("<h2>Cover</h2>"), "{html}");
         assert!(html.contains("<h2>Article openers</h2>"), "{html}");
         assert!(html.contains("opener-a</h3>") || html.contains("opener-a — a</h3>"), "{html}");
-        // The failed v2 never renders; the selected v1 carries the badge.
+
         assert!(!html.contains("opener-a-v2.png"), "{html}");
         assert_eq!(html.matches("SELECTED").count(), 1, "{html}");
         assert!(html.contains("rounds/2026-01-01T00-00-00/cover-wildcard-v1.png"), "{html}");
-        // Tails were never generated: the section says so rather than vanishing.
+
         assert!(html.contains("none generated yet"), "{html}");
     }
 

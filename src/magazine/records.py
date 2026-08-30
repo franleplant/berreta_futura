@@ -1,11 +1,3 @@
-"""Minimal source records.
-
-A captured source is a directory under ``library/sources/<id>/`` holding:
-
-- ``record.yaml`` -- the metadata in this module
-- ``article.md`` -- the captured text, image references pointing at ``media/``
-- ``media/`` -- the source's images, when it has any
-"""
 
 from __future__ import annotations
 
@@ -84,7 +76,7 @@ class SourceRecord:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SourceRecord":
         data = dict(data)
-        # Older records used submitted_url/canonical_url and publication_date.
+
         data["url"] = data.get("url") or data.get("canonical_url") or data.get("submitted_url")
         data["published_at"] = data.get("published_at") or data.get("publication_date")
         for key in ("captured_at", "published_at"):

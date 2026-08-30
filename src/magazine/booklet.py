@@ -5,13 +5,10 @@ from pathlib import Path
 
 from .errors import DependencyError
 
-#: The three A4 saddle-stitch documents a package ships.  ``"all"`` is the
-#: single-stock booklet that has always been built; ``"cover"`` and
-#: ``"interior"`` split the same block the way a bindery does, so the wrap can
-#: go on heavier stock than the text pages.
+
 BOOKLET_SECTIONS = ("all", "interior", "cover")
 
-#: One imposed side: two A5 reader pages side by side on landscape A4.
+
 A4_LANDSCAPE_POINTS = (841.8898, 595.2756)
 
 _SECTION_TITLES = {
@@ -22,7 +19,6 @@ _SECTION_TITLES = {
 
 
 def booklet_spreads(page_count: int) -> tuple[tuple[int, int], ...]:
-    """Return left/right reader folios in short-edge duplex print order."""
     total = ((page_count + 3) // 4) * 4
     spreads: list[tuple[int, int]] = []
     for sheet_index in range(total // 4):
@@ -32,16 +28,6 @@ def booklet_spreads(page_count: int) -> tuple[tuple[int, int], ...]:
 
 
 def section_reader_pages(page_count: int, section: str = "all") -> tuple[int, ...]:
-    """Return the reader pages a booklet section imposes, in reader order.
-
-    Reader anatomy: page 1 is the front cover, page 2 the blank inside front
-    cover, ``page_count - 1`` the blank inside back cover, and ``page_count``
-    the back cover.  The cover section is exactly that outer sheet; the interior
-    is everything between the two inside covers.  Both are returned in *reader*
-    order -- turning that order into print order is
-    :func:`imposed_reader_page_plan`'s single job, so all three documents fold
-    the same way.
-    """
     if section not in BOOKLET_SECTIONS:
         raise ValueError(f"Unknown booklet section {section!r}; expected one of {BOOKLET_SECTIONS}.")
     if section == "all":
@@ -58,13 +44,6 @@ def section_reader_pages(page_count: int, section: str = "all") -> tuple[int, ..
 def imposed_reader_page_plan(
     reader_pages: Sequence[int],
 ) -> tuple[tuple[int | None, int | None], ...]:
-    """Turn reader pages into per-side ``(left, right)`` reader page numbers.
-
-    The selection is padded with blanks to a whole signature and then folded by
-    :func:`booklet_spreads`, so every section -- the whole magazine, the
-    interior alone, or the cover wrap -- is short-edge-duplex correct by the
-    same rule.  ``None`` marks a padded blank half-side.
-    """
     padded: list[int | None] = [*reader_pages]
     padded += [None] * (-len(padded) % 4)
     return tuple(
@@ -73,13 +52,6 @@ def imposed_reader_page_plan(
 
 
 def cover_wrap_plan(page_count: int) -> tuple[tuple[int | None, int | None], ...]:
-    """The cover wrap's print plan: one side, back cover beside front cover.
-
-    booklet-a4-cover.pdf prints single-sided (editor's rule, 2026-08-07): the
-    wrap's inside faces are blank by contract, so the document carries only
-    the outside spread and heavier stock goes through the printer once.  The
-    all-in-one and interior booklets keep their duplex plans untouched.
-    """
     return imposed_reader_page_plan(section_reader_pages(page_count, "cover"))[:1]
 
 

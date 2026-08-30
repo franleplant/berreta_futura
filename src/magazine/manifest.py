@@ -31,37 +31,14 @@ CONTENT_MODES: frozenset[str] = frozenset(
         "in_a_nutshell",
     }
 )
-"""The magazine's two article writers (2026-08-06 simplification).
-
-``article`` is the standard retell through prompts/article.md; the historical
-``faithful_edit`` / ``faithful_synthesis`` / ``selected_extracts`` /
-``original_synthesis`` taxonomy is gone.  ``in_a_nutshell`` is the teaching
-explainer: the magazine's own Teacher voice grounded in the captured source.
-The edition-level editorial is its own third writer and never appears as an
-article content_mode.
-"""
 
 EDITOR_VOICE_CONTENT_MODES: frozenset[str] = frozenset(
     {"in_a_nutshell"}
 )
-"""Modes whose byline is an editor's, not the captured source author's.
-
-The byline check below matches an article's byline against the identity its
-primary source record captured.  For these two the magazine is the writer, so
-the check would demand the editors rename themselves after the author they are
-explaining, and staging cannot infer the byline from the source at all.
-"""
 
 HOUSE_BYLINES: frozenset[str] = frozenset(
     {"editors", "the editors", "editorial team", "the editorial team"}
 )
-"""Bylines that are the magazine signing its own work.
-
-They are self-explanatory, so an article carrying one may not also carry an
-``author_note``: there is no third party to introduce.  Every rule that asks
-after an author biography reads this set, so the two halves -- "must omit" and
-"must supply" -- cannot drift into a pair no byline can satisfy.
-"""
 
 SECTION_KINDS: tuple[str, ...] = (
     "original_editorial",
@@ -73,23 +50,8 @@ SECTION_KINDS: tuple[str, ...] = (
     "try_it",
     "cheat_sheet",
 )
-"""The edition-level pieces that are not articles, in no particular order.
-
-Adding a kind is four edits and no new machinery: this tuple, the default title
-in :func:`_section_title`, and the localized kicker in the two renderers'
-label vocabularies (``render.UI_COPY`` and ``html_edition._ui``).  Rendering,
-pinning, packaging and translation reconciliation all iterate sections
-generically and need no change at all.
-"""
 
 KEY_IDEAS_WORD_BUDGET = 90
-"""The hard ceiling on an article's key-ideas box, counted across all its lines.
-
-A closing box is paid for in reader pages, and the budget is what keeps a
-whole edition's teaching furniture inside about three added pages.  It is
-measured here, off ``edition.yaml``, so an over-long box is refused before
-anything is laid out.
-"""
 
 
 @dataclass(frozen=True)
@@ -115,47 +77,10 @@ class Article:
     minimum_reader_pages: int = 1
     tail_art: Path | None = None
     source_url: str | None = None
-    """The canonical URL of the article's *first* source, or nothing.
-
-    ``source_ids`` is authored and ordered, so the first entry is the article's
-    primary source and the one a reader is sent back to.  It is resolved here,
-    once, from the same source records the rest of the edition is validated
-    against, because it is an editorial fact about the article and not something
-    a renderer should be reading source records to discover.
-
-    ``None`` is an ordinary state, not a failure: a source record is not
-    required to carry a ``canonical_url``, and an editorial has no source at
-    all.  Every consumer treats the absence as "no link back", never as an
-    error.
-    """
     opener_art: ArticleOpenerArt | None = None
     key_ideas: tuple[str, ...] = ()
-    """The claims a reader must retain to *use* the piece, in editor voice.
-
-    Not a summary and not the manuscript's own words: the lines are authored in
-    ``edition.yaml`` rather than in manuscript frontmatter precisely because
-    they are editorial furniture -- they flow through translation
-    reconciliation like any other localized copy, and their
-    :data:`KEY_IDEAS_WORD_BUDGET` can be measured before a single page is laid
-    out.
-
-    An article closes with one object, never two, so an article carrying key
-    ideas may not also declare ``tail_art_path``; validation refuses the pair.
-    """
     dateline: str | None = None
-    """One date standing for the article, "YYYY MM", or nothing.
-
-    Resolved at load time from the newest source ``published_at`` (see
-    ``_representative_dateline``), the same record-derived editorial fact
-    pattern as ``source_url``: absence is an ordinary state, never an error.
-    """
     extracts: tuple[Extract, ...] = ()
-    """Verbatim source runs the edition MUST print, placed like figures.
-
-    Resolved from the captured sources at load time, never from the writer,
-    so the text is byte-exact by construction.  Captions and anchors localize;
-    the runs themselves never do.
-    """
 
 
 @dataclass(frozen=True)
@@ -330,12 +255,8 @@ def load_edition(
             continue
         opener_art = None
         if illustrated_article_openers:
-            # The illustrated opener sets a biography under the byline, so a
-            # republished author owes one.  The house byline is the exception
-            # and has to be: the rule just above refuses an author_note for it,
-            # so demanding one here would make an editor-voiced piece --
-            # `original_synthesis`, `in_a_nutshell` -- impossible to declare in
-            # an illustrated edition at all.
+
+
             if not author_note and not house_byline:
                 errors.append(
                     f"{label} requires author_note for "
@@ -578,7 +499,6 @@ def load_translation(
     base: Edition,
     language: str,
 ) -> Edition:
-    """Load a complete, hash-pinned language overlay for an edition."""
     translation_dir = root / "editions" / base.id / "translations" / language
     manifest_path = translation_dir / "edition.yaml"
     if not manifest_path.is_file():
@@ -673,10 +593,8 @@ def load_translation(
                 f"Translation {language!r} article {article.id} author_note must be a "
                 "single line of at most 160 characters"
             )
-        # A localized byline is optional: most authors are proper names and
-        # carry across languages unchanged, so absence means "use the base
-        # author".  Like title and short_title it is a display string, checked
-        # against the pinned base copy as a whole rather than pinned itself.
+
+
         author = article.author
         if "author" in row:
             author = str(row.get("author") or "").strip()
@@ -701,8 +619,8 @@ def load_translation(
                 f"Translation {language!r} article {article.id} short_title must occur "
                 "in its localized title"
             )
-        # Key ideas are localized copy, so the overlay carries its own lines --
-        # same count, same budget -- rather than inheriting the English ones.
+
+
         key_ideas: tuple[str, ...] = ()
         if article.key_ideas or row.get("key_ideas") is not None:
             try:
@@ -775,9 +693,8 @@ def load_translation(
                 figures,
                 article.minimum_reader_pages,
                 article.tail_art,
-                # A translation renders the same article from the same sources,
-                # so it points back to the same place.  The link is provenance,
-                # not copy, and is never localized.
+
+
                 article.source_url,
                 article.opener_art,
                 key_ideas,
@@ -950,17 +867,7 @@ def load_translation(
     )
 
 
-
-
 def _markdown_signature(path: Path) -> list[str]:
-    """Return the manuscript's block structure as the renderer sees it.
-
-    The signature is derived from the same CommonMark parse the reader
-    typesets, so a translation is held to the source's *rendered* structure --
-    ordered lists with their start numbers, nested lists, block quotes with
-    their children, and thematic breaks -- not to a smaller Markdown a
-    line scanner happens to know.
-    """
     return block_signature(
         parse_publication_document(path.read_text(encoding="utf-8")).blocks
     )
@@ -1013,18 +920,9 @@ def _markdown_invariants(path: Path) -> tuple[list[str], list[str], list[str]]:
     return links, inline, fenced
 
 
-
 def _representative_dateline(
     source_ids: tuple[str, ...], records: Mapping[str, "SourceRecord"] | None
 ) -> str | None:
-    """One date standing for the article: its newest source, as "YYYY MM".
-
-    A single-source article dates itself; a synthesis is as current as its
-    freshest source, so the newest ``published_at`` wins.  Rendered in the
-    cover footer's spaced-digit style, which is also language-neutral.  As
-    with the source URL, everything unanswerable is "no dateline": absent
-    records, records without ``published_at``, an editorial with no sources.
-    """
     if not source_ids or not records:
         return None
     dates = [
@@ -1034,7 +932,7 @@ def _representative_dateline(
     dates = [d for d in dates if d]
     if not dates:
         return None
-    newest = max(dates)  # ISO dates order lexically
+    newest = max(dates)
     parts = newest.split("-")
     if len(parts) < 2:
         return parts[0]
@@ -1044,15 +942,6 @@ def _representative_dateline(
 def _primary_source_url(
     source_ids: tuple[str, ...], records: Mapping[str, "SourceRecord"] | None
 ) -> str | None:
-    """The canonical URL of the first source, when the records are to hand.
-
-    Deliberately silent about everything it cannot answer.  ``records`` is
-    optional on ``load_edition``, a record need not carry a ``canonical_url``,
-    and an article's first source may not be one this call was given -- each of
-    those is "no link back" and none of them is an error.  Unknown source ids
-    are already an edition-level failure by the time this runs, so nothing is
-    hidden by the lookup being lenient.
-    """
     if not source_ids or not records:
         return None
     record = records.get(source_ids[0])
@@ -1087,13 +976,6 @@ def _edition_path(
 
 
 def _key_ideas(label: str, value: object) -> tuple[str, ...]:
-    """The article's key-ideas lines, checked against the budget they are paid in.
-
-    Absent is the ordinary case and returns nothing.  Present means a non-empty
-    list of single-line claims whose words, counted together, fit
-    :data:`KEY_IDEAS_WORD_BUDGET` -- the box is one closing object and is
-    measured as one, not line by line.
-    """
     if value is None:
         return ()
     if (
@@ -1151,14 +1033,6 @@ def _load_editorial(path: Path) -> Editorial:
 
 
 def source_code_payload(url: str) -> str:
-    """The text a printed or web source code encodes for ``url``.
-
-    The scheme and a leading ``www.`` are dropped: every phone scanner opens
-    ``anthropic.com/research/...`` exactly as it opens the full form, and the
-    twelve saved characters are often the difference between a QR version that
-    fits the opener square and one that does not.  The record keeps the full
-    canonical URL; only the symbol's payload is shortened.
-    """
     payload = url.strip()
     for scheme in ("https://", "http://"):
         if payload.startswith(scheme):

@@ -35,7 +35,6 @@ def _raster_dimensions(path: Path | None) -> tuple[int, int] | None:
 
 
 def _png_dimensions(path: Path | None) -> tuple[int, int] | None:
-    """Compatibility alias for callers that previously inspected cover PNGs."""
     return _raster_dimensions(path)
 
 
@@ -52,11 +51,6 @@ def _effective_image_ppi(
 def _booklet_section_facts(
     document: PdfReader, reader: PdfReader, section: str, *, stock: str
 ) -> dict[str, Any]:
-    """Describe one split A4 signature: which reader pages, how many sheets, how it feeds.
-
-    The cover wrap prints single-sided (booklet.cover_wrap_plan): one page is
-    one sheet, and there is no duplex flip to state.
-    """
     sizes = [_page_size(page) for page in document.pages]
     page_count = len(reader.pages)
     expected = section_reader_pages(page_count, section) if page_count >= 4 else ()
@@ -156,11 +150,8 @@ def inspect_package(
                     ),
                 }
             )
-        # Unresolved is a fact about the figure, not about whether a treatment
-        # was attempted: the ladder now ships the original bytes when no rung
-        # improves the median, so a figure can fail the floor with treatment
-        # "none".  Gating this on the adjusted branch is how the blocker went
-        # dead the first time.
+
+
         if contrast and prepared.after.needs_treatment:
             unresolved_low_contrast_figures.append(
                 {
@@ -228,9 +219,8 @@ def inspect_package(
             "print_scale": "100%",
             "duplex_flip": "short edge",
         },
-        # The split pair prints the same block on two stocks. Preflight already
-        # answers "what sheet, how many, which way up" for the all-in-one, and a
-        # printer needs those same three facts per document to load the press.
+
+
         "home_booklet_interior": _booklet_section_facts(
             interior_booklet, reader, "interior", stock="text"
         ),

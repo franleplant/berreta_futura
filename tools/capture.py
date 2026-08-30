@@ -1,22 +1,4 @@
 #!/usr/bin/env python3
-"""capture.py — scaffold, then validate, a source capture.
-
-    uv run python tools/capture.py <url> [--edition 006] [--tags a,b] \
-        [--title ...] [--author ...] [--published YYYY-MM-DD]
-    uv run python tools/capture.py --finish <source-id>
-
-The first form does the deterministic part of intake: fetches the page,
-derives the source id (48-char title slug + first 8 hex of sha256(url)),
-writes library/sources/<id>/ with a record.yaml scaffold, an article.md
-stub, and an empty media/, saves the raw HTML under .magazine/capture/,
-queues the id in library/release-state.yaml, prepends an entry to
-sources.md, and prints the checklist for finishing the capture.
-
-It never writes article body text: filling article.md and media/ verbatim
-is the caller's job, following the printed checklist. When that is done,
-`--finish <id>` validates the capture and copies the record's synopsis
-into the sources.md entry. A capture is not complete until --finish passes.
-"""
 
 from __future__ import annotations
 
@@ -75,7 +57,6 @@ def fetch(url: str) -> str:
 
 
 def meta_content(html: str, *patterns: str) -> str | None:
-    """First match across <meta> property/name patterns and JSON-LD keys."""
     for pat in patterns:
         m = re.search(
             rf'<meta[^>]+(?:property|name)=["\']{pat}["\'][^>]+content=["\']([^"\']+)',
@@ -95,7 +76,7 @@ def page_title(html: str) -> str | None:
         m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S)
         title = html_lib.unescape(m.group(1)).strip() if m else None
     if title:
-        # Drop a trailing " | Site Name" or " • Site Name" suffix.
+
         title = re.split(r"\s+[|•·]\s+", title)[0].strip()
         title = re.sub(r"\s+", " ", title)
     return title or None
@@ -153,7 +134,6 @@ def sources_md_entry(record: dict, edition: str) -> list[str]:
 
 
 def prepend_sources_md(record: dict, edition: str, queued: int) -> None:
-    """New entry above the previous newest; bump the edition's queued count."""
     lines = SOURCES_MD.read_text(encoding="utf-8").splitlines()
     collecting_line = f"_Collecting: `{edition}` ({queued} queued)._"
     for i, line in enumerate(lines):
@@ -260,7 +240,7 @@ def finish(sid: str) -> int:
             print(f"  - {p}", file=sys.stderr)
         return 1
 
-    # Complete the sources.md entry with the record's synopsis.
+
     lines = SOURCES_MD.read_text(encoding="utf-8").splitlines()
     try:
         id_line = lines.index(f"- ID: `{sid}`")
@@ -280,7 +260,7 @@ def finish(sid: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("url", nargs="?", help="page to capture")
     parser.add_argument("--edition", help="collecting edition to queue into (default: intake edition)")
     parser.add_argument("--tags", help="comma-separated tags")

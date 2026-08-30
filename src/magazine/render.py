@@ -46,8 +46,8 @@ READING_MEASURE = 325.0
 FOLIO_BASELINE = 19.5
 ARTICLE_TAIL_ORNAMENT_MIN_HEIGHT = 118.0
 ARTICLE_TAIL_ORNAMENT_MAX_HEIGHT = 214.0
-# The key-ideas box opens on a rule and a tracked kicker; the two constants are
-# the air above the rule and the drop from the rule to the first claim.
+
+
 KEY_IDEAS_SPACE_BEFORE = 12.0
 KEY_IDEAS_LABEL_SPACE = 17.0
 RUNNING_HEADER_BASELINE_INSET = 20.0
@@ -57,8 +57,7 @@ HEADING_SPACE_BEFORE = {
     "h3": 10.0,
 }
 
-# Quiet Standard uses the sheet itself as the paper color. Violet is reserved for
-# hierarchy and typographic furniture so interiors remain economical to print.
+
 INK = (.055, .075, .085)
 VIOLET = (.25, .10, .43)
 SLATE = (.31, .35, .37)
@@ -66,8 +65,7 @@ COOL_GRAY = (.88, .89, .90)
 PALE_VIOLET = (.955, .945, .975)
 WHITE = (1, 1, 1)
 
-# The Canto vivo cover is calibrated to the selected browser proof. These are
-# cover inks, not substitutions for the cooler Quiet Standard interior palette.
+
 COVER_PAPER = WHITE
 COVER_INK = tuple(value / 255 for value in (10, 11, 13))
 COVER_VIOLET = tuple(value / 255 for value in (75, 33, 192))
@@ -78,7 +76,6 @@ RUNNING_HEADER_SIGNAL_LENGTH = 14.0
 
 @lru_cache(maxsize=16)
 def _cover_graded_art(path_value: str) -> bytes:
-    """Grade the two process inks without changing the source artwork file."""
     from PIL import Image
 
     image = Image.open(path_value).convert("RGB")
@@ -199,7 +196,6 @@ def _article_tail_ornament_box(
     frame_bottom: float,
     endmark_baseline: float,
 ) -> tuple[float, float, float, float] | None:
-    """Reserve a restrained motif only when an article ends with real open space."""
     bottom = frame_bottom + 24.0
     available_top = endmark_baseline - 31.0
     available_height = available_top - bottom
@@ -260,7 +256,6 @@ def _ui(edition: Edition, key: str) -> str:
 
 
 def _cover_date(value: str) -> str:
-    """Render ISO publication dates as the cover's compact numeric register."""
     parts = str(value).split("-")
     return " ".join(parts) if len(parts) == 3 and all(parts) else str(value)
 
@@ -278,7 +273,6 @@ def _content_mode_label(edition: Edition, mode: str) -> str:
 
 
 def _opening_sentence(text: str) -> tuple[str, str]:
-    """Split an exact first sentence for deterministic editorial treatments."""
     match = re.search(r"(?<=[.!?])(?:[\"'»”)]*)\s+", text)
     if not match:
         return text.strip(), ""
@@ -363,8 +357,8 @@ class _Typesetter:
         self.pdf, self.edition, self.width, self.height, self.metrics = pdf, edition, *pagesize, metrics
         self.design = design
         self.enforce_page_caps = enforce_page_caps
-        # The edition may hold its editorial tighter than the publication's
-        # ceiling; it may never hold it looser.
+
+
         self.editorial_page_cap = declared_editorial_page_cap(
             edition.raw, MAX_EDITORIAL_PAGES
         )
@@ -570,8 +564,8 @@ class _Typesetter:
         self.pdf.setStrokeColorRGB(*COOL_GRAY)
         self.pdf.setLineWidth(.55)
         self.pdf.line(self.left, y - 8, self.width - self.right, y - 8)
-        # A tiny continuation signal carries the Canto vivo ink into the
-        # reading pages without turning orange into a decorative palette.
+
+
         self.pdf.setStrokeColorRGB(*SIGNAL_ORANGE)
         self.pdf.setLineWidth(1.15)
         self.pdf.line(
@@ -595,9 +589,8 @@ class _Typesetter:
         self.page += 1
         self._set_page_margins()
         self.section = section or self.section
-        # Quiet Standard has one reading column everywhere. Keep the argument
-        # for call-site compatibility, but never allow a layout path to revive
-        # the old double-column interior.
+
+
         selected_columns = 1
         if opener:
             role = "opener"
@@ -953,7 +946,6 @@ class _Typesetter:
         article_id: str,
         figure_index: int,
     ) -> None:
-        """Give a wide, label-dense source diagram a dedicated sideways plate."""
         from reportlab.lib.utils import ImageReader
 
         self.new_page(columns=1)
@@ -1159,7 +1151,6 @@ class _Typesetter:
         self.y -= after
 
     def code_lines(self, text: str, font: str, size: float, width: float) -> list[str]:
-        """Preserve source lines and indentation, wrapping only to avoid clipping."""
         result: list[str] = []
         for source_line in text.expandtabs(4).split("\n"):
             if not source_line:
@@ -1178,8 +1169,8 @@ class _Typesetter:
                 if end == len(remaining):
                     result.append(remaining)
                     break
-                # Prefer a syntactic or whitespace boundary near the right edge;
-                # hard character splitting is a last resort for unbroken tokens.
+
+
                 minimum = max(1, end // 2)
                 candidates = [
                     index + 1
@@ -1464,7 +1455,6 @@ class _Typesetter:
             self.pdf.restoreState()
 
     def _publication_wordmark(self, name: str, x: float, y: float, width: float) -> None:
-        """Draw the selected Corte bruto wordmark as live cover typography."""
         value = _plain(name.upper()).strip()
         head, separator, tail = value.rpartition(" ")
         if not separator:
@@ -1518,7 +1508,7 @@ class _Typesetter:
         try:
             self.pdf.translate(tail_x, tail_y)
             self.pdf.translate(center_x, center_y)
-            # PDF's Y axis points up, opposite to CSS: +10 reproduces skewX(-10deg).
+
             self.pdf.skew(0, 10)
             self.pdf.translate(-center_x, -center_y)
             slug = self.pdf.beginPath()
@@ -1530,7 +1520,7 @@ class _Typesetter:
             self.pdf.setFillColorRGB(*COVER_INK)
             self.pdf.drawPath(slug, fill=1, stroke=0)
 
-            # A deliberately misregistered orange impression sits beneath the white type.
+
             self._scaled_word(
                 tail,
                 -13,
@@ -1603,8 +1593,8 @@ class _Typesetter:
         layout = CANTO_VIVO_COVER
         tab_x = self.width - layout.tab_width
         self.pdf.setFillColorRGB(*COVER_ORANGE)
-        # Paint beyond every trim edge. The page box clips the overdraw and the
-        # raster cannot expose a one-pixel paper hairline at the fore edge.
+
+
         self.pdf.rect(
             tab_x,
             -layout.tab_overdraw,
@@ -1831,8 +1821,8 @@ class _Typesetter:
             deck_width = art_width
             deck_size = 6.4
             deck_scale = 121.5
-            # Preserve the approved two-line break independently of the small
-            # optical size/width correction used for the drawn text.
+
+
             deck_lines = self.lines(deck, SANS, 7.8, deck_width)
             if len(deck_lines) > 5:
                 raise ValidationError("Cover deck is too long for the Canto vivo cover")
@@ -1957,19 +1947,11 @@ class _Typesetter:
         )
         if opener_has_figure:
             self.y += 13
-        # Without an opener figure, the opening paragraph acts as a standfirst
-        # on a shared baseline zone. With one, the figure uses the available
-        # space immediately after the credit instead of wasting a new page.
+
+
         self._set_reading_frame(top=self.y if opener_has_figure else 238)
 
     def _article_key_ideas(self, key_ideas: tuple[str, ...]) -> None:
-        """Set the article's closing box: what a reader keeps in order to use it.
-
-        In flow and at the article's foot, so it is read last and paid for in
-        the article's own page budget.  It is the *only* closing object an
-        article may carry -- the manifest refuses key ideas beside tail art --
-        so nothing here has to negotiate with the ornament for the same paper.
-        """
         if not key_ideas:
             return
         label = _ui(self.edition, "key_ideas")
@@ -2022,11 +2004,8 @@ class _Typesetter:
 
         image = ImageReader(str(tail_art))
         pixel_width, pixel_height = image.getSize()
-        # Cut to the cloth, as the WeasyPrint plan does (_measured_tail_art):
-        # a raster short of the box at 300 ppi prints as the tallest band it
-        # can fill at the floor.  The foot stays where the box put it -- the
-        # ornament stands at the page's foot and the surplus is white space
-        # above it (editor's ruling, 2026-08-07).
+
+
         affordable = (pixel_height / MIN_FIGURE_PPI) * 72.0
         if affordable < height:
             height = affordable
@@ -2106,8 +2085,8 @@ class _Typesetter:
                 start_page = self.page
                 self.toc[article.id] = self.page
                 self._render_article_opener(article, article_index, article_total)
-                # The opener is measured from the actual page transition, not
-                # inferred from text length or a fixed policy constant.
+
+
                 self.article_opener_fits[article.id] = self.page == start_page
                 self.markdown(
                     article.manuscript,
@@ -2163,17 +2142,14 @@ class _Typesetter:
             raise ValidationError(
                 f"Edition requires {total} closing plates for signature padding, but none are configured"
             )
-        # More pages than plates cycles the approved pool: repeating a plate
-        # is the editor's stated preference over shipping blank paper.
+
+
         plate = self.edition.closing_plates[index % len(self.edition.closing_plates)]
         self.new_page(blank_header=True)
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
-        # Image only, contained and centred on the page (editor's rulings,
-        # 2026-08-07): the plate is a picture the reader is given whole --
-        # never cropped, never captioned, letterboxed when its aspect
-        # differs from the window's.  The configured title stays record
-        # keeping and alt text.
+
+
         art_x, art_width = self.grid_box(0, 6)
         from reportlab.lib.utils import ImageReader
 
@@ -2193,27 +2169,26 @@ class _Typesetter:
     def back_cover(self):
         self.continuation_columns = 1
         configured = self.edition.raw.get("format", {}).get("target_pages")
-        # Reserve the inside back cover as a completely blank page, then keep
-        # the designed back cover as the final page of the signature.
+
+
         minimum_total = self.page + 2
         target = int(configured) if configured else ((minimum_total + 3) // 4) * 4
         target = max(target, minimum_total)
         target = ((target + 3) // 4) * 4
         closing_pages = target - 2 - self.page
         if closing_pages < 4:
-            # Editor's rule (2026-08-07, raised to four the same day): the
-            # edition always closes with at least a full fold of plate art.
+
+
             target += 4
             closing_pages = target - 2 - self.page
         for index in range(closing_pages):
             self._closing_plate(index, closing_pages)
-        # Page -2 is the blank inside back cover. The final page is a blank
-        # placeholder replaced by the canonical back-cover PDF after layout.
+
+
         self.new_page(blank_header=True)
         self.new_page(blank_header=True)
-        # ReportLab drops a final page that has no drawing operations at all.
-        # Materialize this replace-only placeholder without reimplementing the
-        # back design; replace_outer_pages removes it before packaging.
+
+
         self.pdf.setFillColorRGB(*WHITE)
         self.pdf.rect(0, 0, self.width, self.height, fill=1, stroke=0)
 
@@ -2247,11 +2222,10 @@ def _render_pass(
         design=design,
         enforce_page_caps=enforce_page_caps,
     )
-    # The cover is compiled once by CoverCompiler and spliced into this
-    # placeholder. ReportLab owns interiors only; it must not reimplement the
-    # cover design or create a second approval surface.
+
+
     typesetter.new_page(blank_header=True)
-    # Page 2 is the completely blank inside front cover.
+
     typesetter.new_page(blank_header=True)
     typesetter.contents(toc or {})
     typesetter.body()
@@ -2264,9 +2238,8 @@ def _render_pass(
         DESIGN_LABEL,
         typesetter.cover_art_size_points,
         dict(typesetter.article_frame_usage),
-        # A legacy layout fact, permanently empty: the terminal balancer is
-        # gone, and the field survives only because the packaged manifest key
-        # derived from it must not change bytes.  See reader_layout.RenderLayout.
+
+
         {},
         tuple(typesetter.figure_placements),
         dict(typesetter.article_opener_fits),
@@ -2279,7 +2252,6 @@ def render_a5(
     *,
     design: str = DESIGN_MONUMENT,
 ) -> RenderLayout:
-    """Render an edition twice so the deterministic contents page has folios."""
     if design != DESIGN_MONUMENT:
         raise ValidationError(
             f"Unsupported render design {design!r}; expected {DESIGN_MONUMENT!r}"
@@ -2293,15 +2265,13 @@ def render_a5(
         raise ValidationError(
             f"format.max_article_pages is a hard publication rule and must remain {MAX_ARTICLE_PAGES}"
         )
-    # A ceiling an edition may tighten, never raise; the typesetter reads the
-    # same resolver, so declaring it here is only the early refusal.
+
+
     declared_editorial_page_cap(edition.raw, MAX_EDITORIAL_PAGES)
     output.parent.mkdir(parents=True, exist_ok=True)
     probe = _render_pass(io.BytesIO(), edition, design=design)
-    # Full-height continuation frames keep prose moving naturally. The former
-    # terminal balancer shortened the last two frames and manufactured large
-    # white fields in the middle of an article; it has been removed, and
-    # genuine tail space is handled by the small article-end ornament instead.
+
+
     draft = _render_pass(
         io.BytesIO(),
         edition,

@@ -1,23 +1,3 @@
-"""Edition figure references, resolved directly against source media files.
-
-A figure row in ``edition.yaml`` names the source it comes from and the image
-file inside that source's directory:
-
-.. code-block:: yaml
-
-    figures:
-    - id: campaign-timeline
-      source_id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
-      path: media/003.png
-      caption: ...
-      alt_text: ...
-      anchor: From one pod to the network
-      layout: evidence_band_prose
-
-``path`` is relative to ``library/sources/<source_id>/``. Validation checks
-that the file exists, the anchor names a real ``##`` heading in the
-manuscript, and the layout is one the renderer knows.
-"""
 
 from __future__ import annotations
 
@@ -59,13 +39,6 @@ def resolve_figures(
     rows: Any,
     allow_unanchored: bool = False,
 ) -> tuple[Figure, ...]:
-    """Resolve an article's figure rows to files under ``library/sources``.
-
-    ``allow_unanchored`` keeps a figure whose anchor names a heading the current
-    manuscript does not carry. It exists only for the renderer adapter while it
-    measures a supplied render manifest and reports a stranded anchor by name;
-    every other caller leaves it false.
-    """
 
     if rows in (None, []):
         return ()
@@ -139,7 +112,6 @@ def localize_figures(
     manuscript: Path,
     language: str,
 ) -> tuple[Figure, ...]:
-    """Overlay translated caption, credit, alt text, and anchor on base figures."""
 
     if not base:
         if rows not in (None, []):
@@ -200,16 +172,6 @@ EXTRACT_STYLES = {"code", "quote"}
 
 @dataclass(frozen=True)
 class Extract:
-    """A verbatim run of source text the edition MUST print, as a panel.
-
-    The figure pattern applied to text: the editor names the run in
-    ``edition.yaml`` and the renderer places it beside the manuscript, pulled
-    from the captured source at load time.  The writer is never asked for it,
-    so the run cannot be misquoted -- ``text`` is byte-identical to the source
-    by construction, located by ``begin``/``end`` markers that must each pin a
-    single position.  ``text`` is never localized; a verbatim run has one
-    language, its source's, exactly as a code block does.
-    """
 
     id: str
     source_id: str
@@ -228,14 +190,6 @@ def resolve_extracts(
     rows: Any,
     allow_unanchored: bool = False,
 ) -> tuple[Extract, ...]:
-    """Resolve an article's extract rows to verbatim runs of captured sources.
-
-    Every check is a string check.  ``begin`` must occur exactly once in the
-    source's ``article.md``; ``end`` must occur exactly once at or after it;
-    the run is the contiguous span from ``begin`` through the end of ``end``.
-    A run the manuscript already contains verbatim is an error, not a warning:
-    the piece would print it twice, and the editor must drop one copy.
-    """
 
     if rows in (None, []):
         return ()
@@ -330,11 +284,6 @@ def localize_extracts(
     manuscript: Path,
     language: str,
 ) -> tuple[Extract, ...]:
-    """Overlay translated caption and anchor on base extracts.
-
-    ``text``, ``style``, and ``source_id`` never change: the run is verbatim
-    source material, preserved exactly, in its source's language.
-    """
 
     if not base:
         if rows not in (None, []):
@@ -387,12 +336,6 @@ def localize_extracts(
 
 
 def semantic_headings(path: Path) -> set[str]:
-    """Every ``##`` or ``###`` heading a figure anchor may name.
-
-    Public because ``produce`` reconciles anchors against a manuscript it has
-    just rewritten, and it has to ask the same question this module answers
-    when it validates one.
-    """
 
     headings: set[str] = set()
     for line in path.read_text(encoding="utf-8").splitlines():

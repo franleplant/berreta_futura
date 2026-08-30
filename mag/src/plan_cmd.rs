@@ -1,9 +1,3 @@
-// The `plan` subcommand, deterministic: every source queued for the intake
-// edition in library/release-state.yaml becomes one article row in plan.yaml.
-// No model call, no selection — the editor curates by editing the file.
-// Idempotent: re-running appends a row per queued source the plan does not
-// reference yet and never rewrites existing rows, so hand edits (merged
-// source_ids, content_mode flips, titles, rationales) survive later captures.
 
 use anyhow::{anyhow, bail, Context, Result};
 use std::fs;
@@ -13,8 +7,6 @@ fn read(path: &std::path::Path) -> Result<String> {
     fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
 }
 
-/// Directories under editions/ whose name starts with `edition` — mirrors
-/// `sorted(ROOT.glob(f"editions/{edition}*"))`.
 fn matching_edition_dirs(edition: &str) -> Result<Vec<PathBuf>> {
     let root = PathBuf::from("editions");
     let mut out = Vec::new();
@@ -34,8 +26,6 @@ fn matching_edition_dirs(edition: &str) -> Result<Vec<PathBuf>> {
     Ok(out)
 }
 
-/// The sources queued for an edition in library/release-state.yaml: the
-/// collecting entry whose id starts with the requested edition label.
 fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<String>)> {
     let doc: serde_yaml::Value =
         serde_yaml::from_str(release_state).context("parsing library/release-state.yaml")?;
@@ -67,9 +57,6 @@ fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<
     bail!("no collecting edition matching '{edition}' in library/release-state.yaml")
 }
 
-/// An article slug from a library source id: the trailing capture-hash
-/// segment goes, the truncation artifacts of slug generation stay for the
-/// editor to tidy.
 fn article_slug(source_id: &str) -> String {
     let trimmed = match source_id.rsplit_once('-') {
         Some((head, tail))
@@ -98,7 +85,6 @@ fn article_row(source_id: &str, title: &str, author: &str, mode: &str) -> serde_
     serde_yaml::Value::Mapping(row)
 }
 
-/// The source ids referenced by any article row in an existing plan.
 fn referenced_source_ids(plan_text: &str) -> Result<std::collections::HashSet<String>> {
     let doc: serde_yaml::Value =
         serde_yaml::from_str(plan_text).context("parsing existing plan.yaml")?;
@@ -122,11 +108,6 @@ fn referenced_source_ids(plan_text: &str) -> Result<std::collections::HashSet<St
     Ok(out)
 }
 
-/// The existing plan text with new article rows appended to its articles
-/// list. Text-level append so hand-written comments and formatting survive;
-/// the result is re-parsed to prove the rows landed in the list (they only
-/// can if `articles:` is the file's last top-level key), and nothing is
-/// returned for writing otherwise.
 fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
     let before: serde_yaml::Value =
         serde_yaml::from_str(plan_text).context("parsing existing plan.yaml")?;
@@ -159,8 +140,6 @@ fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
     Ok(appended)
 }
 
-/// An article row for a queued source, title and author read from its
-/// record.yaml.
 fn row_from_record(sid: &str, mode: &str) -> Result<serde_yaml::Value> {
     let record_path = PathBuf::from("library/sources").join(sid).join("record.yaml");
     let record: serde_yaml::Value = serde_yaml::from_str(&read(&record_path)?)
@@ -175,10 +154,6 @@ fn row_from_record(sid: &str, mode: &str) -> Result<serde_yaml::Value> {
 
 pub const CONTENT_MODES: &[&str] = &["article", "in_a_nutshell"];
 
-/// The existing plan text with `sid` appended to the source_ids of the
-/// article row whose id is `article`. Text-level edit so comments and hand
-/// formatting survive; the result is re-parsed to prove the id landed in
-/// that row's list.
 fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     let lines: Vec<&str> = plan_text.lines().collect();
     let row_start = lines
@@ -262,12 +237,6 @@ fn write_new_plan(out_path: &std::path::Path, edition_id: &str, articles: Vec<se
     Ok(())
 }
 
-/// Record a freshly captured source in the edition's plan.yaml right away, so
-/// the source-to-article mapping lives on disk from intake, never only in
-/// whoever's head ran the capture. With `article`, the source joins that
-/// existing row's source_ids; otherwise it gets its own row in `mode`. A
-/// missing plan.yaml is created first from every queued source, so earlier
-/// captures are covered too.
 pub fn add_source(edition: &str, sid: &str, article: Option<&str>, mode: &str) -> Result<()> {
     if !CONTENT_MODES.contains(&mode) {
         bail!("unknown content mode '{mode}'; one of: {}", CONTENT_MODES.join(", "));
@@ -376,7 +345,7 @@ mod tests {
         assert_eq!(article_slug("prime-agent-a-self-improving-rlm-agent-2c19ce14"), "prime-agent-a-self-improving-rlm-agent");
         assert_eq!(article_slug("how-enabling-two-settings-tripled-our-scores-on--265c6a01"), "how-enabling-two-settings-tripled-our-scores-on");
         assert_eq!(article_slug("no-hash-here"), "no-hash-here");
-        // 8 chars but not hex: stays.
+
         assert_eq!(article_slug("keep-my-suffixes"), "keep-my-suffixes");
     }
 
@@ -466,7 +435,7 @@ edition:
         assert_eq!(merged.len(), 3);
         assert_eq!(merged[2].as_str(), Some("d-77778888"));
         assert_eq!(arts[1].get("source_ids").unwrap().as_sequence().unwrap().len(), 1);
-        // Works for the last row too (no following row to bound the block).
+
         let out = join_article(PLAN, "solo-article", "d-77778888").unwrap();
         let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
         let solo = doc.get("articles").unwrap().as_sequence().unwrap()[1].get("source_ids").unwrap();

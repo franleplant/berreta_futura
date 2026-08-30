@@ -14,30 +14,10 @@ from .preflight import inspect_package
 from .render_critic import inspect_render
 
 
-# WHERE ``layout.tail_arts`` COMES FROM.  The reader renderer decides, page by
-# page, which declared tail ornaments print and at what height, and the render
-# critic reconciles that record against the declarations (``tail-art-dropped``
-# in ``render_critic.py``) -- so the ledger has to reach the packaged
-# ``edition-manifest.json`` this module writes.  The renderer cannot put it
-# there itself: the render seam returns a ``RenderLayout`` whose fields the
-# compiler copies into fixed ``layout.*`` keys one by one, and this module must
-# not import a renderer either (packaging serves both engines, and selecting
-# ReportLab keeps the WeasyPrint module deletable -- ``render_engine``'s
-# isolation contract).  What does reach packaging whole is the edition mapping
-# the renderer was handed: ``manifest["edition"]`` *is* ``edition.raw``, the
-# same dict object, so ``render_a5_weasyprint`` parks its ledger there under
-# this private key and packaging adopts it into ``layout`` -- popping it, so
-# the scratch key never reaches the written artifact and the edition mapping
-# is handed back exactly as it was declared.  The literal is restated on the
-# renderer's side (``weasyprint_adapter._TAIL_ART_LEDGER_KEY``) rather than
-# imported, for the same isolation reason.  A build whose renderer wrote no
-# ledger -- ReportLab, or any manifest predating the key -- simply packages no
-# ``layout.tail_arts``, which the critic reads as nothing to reconcile.
 RENDERED_TAIL_ARTS_KEY = "_rendered_tail_arts"
 
 
 def _adopt_rendered_layout(manifest: dict[str, Any]) -> None:
-    """Move the renderer's parked tail-art ledger into ``manifest['layout']``."""
     edition = manifest.get("edition")
     if not isinstance(edition, dict):
         return
@@ -75,9 +55,8 @@ def package_release(
     destination.mkdir(parents=True, exist_ok=True)
     reader = destination / "reader.pdf"
     shutil.copyfile(reader_pdf, reader)
-    # Three impositions of one block: the single-stock all-in-one that has always
-    # shipped, plus the bindery split -- interior text pages and the cover wrap as
-    # separate signatures, so the wrap can go on heavier stock.
+
+
     booklet = impose_a5_on_a4(reader, destination / "booklet-a4.pdf")
     interior_booklet = impose_a5_on_a4(
         reader, destination / "booklet-a4-interior.pdf", section="interior"
@@ -85,13 +64,8 @@ def package_release(
     cover_booklet = impose_a5_on_a4(
         reader, destination / "booklet-a4-cover.pdf", section="cover"
     )
-    # The manifest is written as soon as the PDFs it describes exist, *before*
-    # the render critic runs: the critic reads the edition's declared layout
-    # contract from it (the editorial page cap, the tail-art reconciliation),
-    # so it must already be on disk, and a crash or a critic failure anywhere
-    # below must not leave fresh PDFs beside the previous build's manifest --
-    # that pairing is what a release-time staleness check exists to catch, and
-    # it should never be manufacturable by an interrupted build.
+
+
     edition_manifest = destination / "edition-manifest.json"
     edition_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
     render_report, contact_sheets = inspect_render(
@@ -124,7 +98,7 @@ def package_release(
             reader_page_count=len(PdfReader(str(reader)).pages),
             all_in_one_sheets=len(PdfReader(str(booklet)).pages) // 2,
             interior_sheets=len(PdfReader(str(interior_booklet)).pages) // 2,
-            # The cover wrap prints single-sided: one page is one sheet.
+
             cover_sheets=len(PdfReader(str(cover_booklet)).pages),
         ),
         encoding="utf-8",
@@ -151,9 +125,8 @@ def package_release(
         ) + "\n",
         encoding="utf-8",
     )
-    # Keep each language package self-contained. The primary English package may
-    # have translated sibling directories beneath it, which must not leak into
-    # its checksum inventory.
+
+
     files = sorted(
         [
             reader,

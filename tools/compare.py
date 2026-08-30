@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""compare.py — read several produce runs side by side in a browser.
-
-    uv run python tools/compare.py editions/004/run-A editions/004/run-B [...]
-    uv run python tools/compare.py --out /tmp/x.html editions/004/run-*
-
-Emits one self-contained HTML file: every piece from every run, its manuscript,
-the judge findings that survived, and what `worth` says the reader lost. No
-scores, no aggregate metrics — the point is to read the prose and read the
-feedback, and to see what changed between variants.
-"""
 
 from __future__ import annotations
 
@@ -33,7 +23,6 @@ def load_yaml(path: Path):
 
 
 def split_label(arg: str) -> tuple[str | None, Path]:
-    """`label=path` gives the column a readable name; bare `path` uses the dir."""
     if "=" in arg:
         label, _, path = arg.partition("=")
         return label.strip(), Path(path)
@@ -41,7 +30,6 @@ def split_label(arg: str) -> tuple[str | None, Path]:
 
 
 def run_label(run_dir: Path, label: str | None = None) -> tuple[str, str]:
-    """(name, subtitle) — subtitle carries model + style overlay from summary.md."""
     summary = read(run_dir / "summary.md")
     match = re.search(r"^- writer .*$", summary, re.MULTILINE)
     subtitle = match.group(0).lstrip("- ") if match else ""
@@ -60,7 +48,6 @@ def strip_front_matter(md: str) -> str:
 
 
 def md_to_html(md: str) -> str:
-    """Deliberately tiny: paragraphs, headings, code fences, lists, inline code."""
     out, in_code, in_list = [], False, False
     for raw in strip_front_matter(md).split("\n"):
         line = raw.rstrip()
@@ -106,7 +93,6 @@ def md_to_html(md: str) -> str:
 
 
 def findings_rows(reports) -> list[dict]:
-    """Flatten the last round's per-lens reports into one list."""
     rows = []
     if not isinstance(reports, dict):
         return rows
@@ -133,7 +119,6 @@ def findings_rows(reports) -> list[dict]:
 
 
 def omissions_rows(reports) -> list[dict]:
-    """`worth`'s itemized what-the-reader-lost list."""
     rows = []
     if not isinstance(reports, dict):
         return rows
@@ -251,7 +236,7 @@ def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
     parts.append("</div></header>")
     parts.append("<nav>" + "".join(f"<a href='#{i}'>{html.escape(i)}</a>" for i in ids) + "</nav><main>")
 
-    # one compact table: lengths and open findings per piece per run
+
     parts.append("<table class='sum'><tr><th>piece</th><th>source words</th>")
     for (n, _), _, _ in data:
         parts.append(f"<th>{html.escape(n)}</th>")
@@ -321,7 +306,7 @@ def render(runs: list[tuple[str | None, Path]], plan_path: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="+", help="run dir, or label=run-dir for a readable column name")
     ap.add_argument("--plan", type=Path, default=ROOT / "editions/004/plan.yaml")
     ap.add_argument("--out", type=Path, default=None)

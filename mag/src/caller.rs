@@ -1,9 +1,3 @@
-// The model caller: parametric over backends.
-//
-// A model spec string is `<backend>:<model>`, backend defaulting to `claude`
-// when there is no colon at all (so `opus` == `claude:opus`). When a colon is
-// present the spec splits on the FIRST colon only, so `ollama:gemma4:e4b`
-// yields backend `ollama`, model `gemma4:e4b`.
 
 use anyhow::{bail, Context, Result};
 use std::path::PathBuf;
@@ -17,10 +11,6 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 pub const CALL_RETRIES: u32 = 2;
 pub const CONCURRENCY: usize = 8;
 
-/// Call timeout in seconds. MAG_CALL_TIMEOUT_SECS overrides everything;
-/// otherwise high reasoning efforts get a longer default, because they earn it:
-/// luna at `max` runs a median 419s per call against medium's 41s, so a 600s
-/// limit kills work that was still going rather than work that was stuck.
 pub fn call_timeout_secs_for(spec: Option<&ModelSpec>) -> u64 {
     if let Some(v) = std::env::var("MAG_CALL_TIMEOUT_SECS").ok().and_then(|v| v.parse().ok()) {
         return v;
@@ -32,8 +22,6 @@ pub fn call_timeout_secs_for(spec: Option<&ModelSpec>) -> u64 {
     }
 }
 
-/// Context window requested from ollama; MAG_OLLAMA_NUM_CTX overrides.
-/// Ollama's server default (4096) silently truncates our ~20k-token prompts.
 fn ollama_num_ctx() -> u64 {
     std::env::var("MAG_OLLAMA_NUM_CTX")
         .ok()
@@ -52,10 +40,9 @@ pub enum Backend {
 pub struct ModelSpec {
     pub backend: Backend,
     pub model: String,
-    /// Reasoning effort, from a `@effort` suffix (`codex:gpt-5.6-luna@max`).
+
     pub effort: Option<String>,
-    /// The original spec string, exactly as given — logged as the "model"
-    /// field so the run log always shows what was actually asked for.
+
     pub full: String,
 }
 
@@ -90,8 +77,6 @@ impl ModelSpec {
     }
 }
 
-/// UTC timestamp in `%Y-%m-%dT%H-%M-%S` shape, computed from
-/// SystemTime with no chrono dependency.
 pub fn now_stamp() -> String {
     let secs = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -108,17 +93,16 @@ fn format_utc_stamp(secs: u64) -> String {
     format!("{y:04}-{mo:02}-{d:02}T{h:02}-{m:02}-{s:02}")
 }
 
-/// Howard Hinnant's days-since-epoch -> (year, month, day) algorithm.
 fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let z = z + 719468;
     let era = if z >= 0 { z } else { z - 146096 } / 146097;
-    let doe = z - era * 146097; // [0, 146096]
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // [0, 399]
+    let doe = z - era * 146097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
     let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // [0, 365]
-    let mp = (5 * doy + 2) / 153; // [0, 11]
-    let d = (doy - (153 * mp + 2) / 5 + 1) as u32; // [1, 31]
-    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32; // [1, 12]
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     let y = if m <= 2 { y + 1 } else { y };
     (y, m, d)
 }
@@ -131,9 +115,6 @@ fn round4(x: f64) -> f64 {
     (x * 10000.0).round() / 10000.0
 }
 
-/// A per-call scratch directory for the codex backend: an empty cwd (so an
-/// agentic CLI has nothing to read even if it tries) plus the file its final
-/// message is written to. Removed when the call returns.
 struct CodexScratch {
     dir: PathBuf,
     out: PathBuf,
@@ -155,8 +136,6 @@ impl Drop for CodexScratch {
     }
 }
 
-/// A simple counting semaphore capping in-flight subprocesses, acquired
-/// around the subprocess run only (never around the whole retry loop).
 struct Semaphore {
     count: Mutex<usize>,
     cond: Condvar,
@@ -231,8 +210,6 @@ impl Caller {
         self.calls.load(Ordering::SeqCst)
     }
 
-    /// Run one headless call with retry; `parse` failures count as retryable
-    /// failures, with the parse error fed back into the retry prompt.
     pub fn call_with_parse<T>(
         &self,
         label: &str,
@@ -243,10 +220,6 @@ impl Caller {
         self.call_with_parse_images(label, spec, prompt, &[], parse)
     }
 
-    /// Like call_with_parse, with image files attached to the call. Codex
-    /// gets them as `--image=path` (never `-i path`: -i is variadic and eats
-    /// the prompt); claude is allowed the Read tool and the prompt must name
-    /// the paths; ollama is not wired for images and refuses loudly.
     pub fn call_with_parse_images<T>(
         &self,
         label: &str,
@@ -277,9 +250,6 @@ impl Caller {
                 }
             };
 
-            // Cost/calls are tracked as soon as the subprocess call itself
-            // succeeds, before the parse step — so a parse failure on a later
-            // retry still leaves the earlier successful call's cost counted.
             *self.total_cost.lock().unwrap() += cost;
             self.calls.fetch_add(1, Ordering::SeqCst);
 
@@ -295,8 +265,7 @@ impl Caller {
                 }
             }
         }
-        // Keep the reply that could not be parsed: a failure you cannot read is
-        // a failure you cannot fix.
+
         let saved = match &last_reply {
             Some(reply) => self.save_failed_reply(label, spec, reply),
             None => None,
@@ -311,7 +280,6 @@ impl Caller {
         )
     }
 
-    /// Write an unparsable reply next to the run's log so it can be read.
     fn save_failed_reply(&self, label: &str, spec: &ModelSpec, reply: &str) -> Option<PathBuf> {
         let dir = self.log_path.parent()?.join("failed-replies");
         std::fs::create_dir_all(&dir).ok()?;
@@ -354,8 +322,6 @@ impl Caller {
         Ok(())
     }
 
-    /// One subprocess attempt. Returns (reply text, cost usd, elapsed secs) on
-    /// success, or a retryable error message.
     fn run_once(
         &self,
         spec: &ModelSpec,
@@ -383,19 +349,13 @@ impl Caller {
                 if images.is_empty() {
                     c.args(["--disallowedTools", "*"]);
                 } else {
-                    // Vision goes through the Read tool; the prompt names the
-                    // image paths. Nothing else is allowed.
+
                     c.args(["--allowedTools", "Read"]);
                 }
                 c
             }
             Backend::Codex => {
-                // codex exec is agentic: it can read files and run commands.
-                // Source-blindness here is the same construction as elsewhere —
-                // the prompt simply never contains the source — so the process
-                // is given an empty cwd and a read-only sandbox, leaving it
-                // nothing to find even if it goes looking. The final message
-                // goes to a file so we never parse the event stream.
+
                 let mut c = Command::new("codex");
                 c.args([
                     "exec",
@@ -419,9 +379,7 @@ impl Caller {
                 c
             }
             Backend::Ollama => {
-                // The local API rather than `ollama run`: it lets us set
-                // num_ctx (the server default of 4096 silently truncates our
-                // prompts) and avoids TTY quirks. Body goes in on stdin.
+
                 let mut c = Command::new("curl");
                 c.args([
                     "-s",
@@ -462,7 +420,7 @@ impl Caller {
         let mut stdin = child.stdin.take().expect("piped stdin");
         let writer = thread::spawn(move || {
             let _ = stdin.write_all(stdin_payload.as_bytes());
-            // drop stdin here to close it, signaling EOF to the child
+
         });
 
         let mut stdout = child.stdout.take().expect("piped stdout");
@@ -545,7 +503,7 @@ impl Caller {
                 if reply.trim().is_empty() {
                     return Err("codex final message was empty".to_string());
                 }
-                // codex reports no per-call price; time is the honest signal.
+
                 Ok((reply, 0.0, seconds))
             }
             Backend::Ollama => {
@@ -594,7 +552,7 @@ mod tests {
 
     #[test]
     fn timestamp_matches_known_unix_time() {
-        // `date -u -r 1700000000 +"%Y-%m-%dT%H-%M-%S"` => 2023-11-14T22-13-20
+
         assert_eq!(format_utc_stamp(1700000000), "2023-11-14T22-13-20");
     }
 }

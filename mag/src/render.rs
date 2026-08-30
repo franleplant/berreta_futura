@@ -1,9 +1,3 @@
-// Render seam: stages every file the Python renderer bridge needs, writes a
-// magazine-renderer/1 request, then shells out to `uv run mag-render-adapter
-// <request.json> <out>`. The bridge copies inputs into its own stage root and
-// does the actual typesetting; this module's only job is to discover and
-// validate the input set (walking edition.yaml, translations, and source
-// record.yamls) and to report back what came out.
 
 use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
@@ -52,9 +46,6 @@ struct Request {
     inputs: Vec<InputRow>,
 }
 
-/// Accumulates the staged-file set: dedupes by target path, and defers the
-/// existence check to one place so every missing path is collected before we
-/// fail loud.
 struct Staging {
     repo_root: PathBuf,
     seen: HashSet<String>,
@@ -67,9 +58,6 @@ impl Staging {
         Self { repo_root, seen: HashSet::new(), rows: Vec::new(), missing: Vec::new() }
     }
 
-    /// `rel` is repo-root-relative. Existing files are added to the input
-    /// set; missing ones are recorded (not staged) so the caller can still
-    /// report every missing path at once.
     fn add(&mut self, rel: &Path) {
         let target = rel.to_string_lossy().replace('\\', "/");
         if !self.seen.insert(target.clone()) {
@@ -87,8 +75,6 @@ impl Staging {
         });
     }
 
-    /// Stage `source` (repo-root-relative) at the tree position `target`
-    /// declares — how a run's final.md lands on the path edition.yaml names.
     fn add_mapped(&mut self, source: &Path, target: &Path) {
         let target = target.to_string_lossy().replace('\\', "/");
         if !self.seen.insert(target.clone()) {
@@ -107,8 +93,6 @@ impl Staging {
     }
 }
 
-/// `## ` and `### ` headings in a manuscript, which is what a figure anchor
-/// must match (the renderer places a figure after any heading block).
 fn manuscript_headings(path: &Path) -> Vec<String> {
     fs::read_to_string(path)
         .map(|t| {
@@ -123,8 +107,6 @@ fn manuscript_headings(path: &Path) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// The newest run dir under the edition that ran fully: editorial/final.md
-/// plus articles/<id>/final.md for every article edition.yaml declares.
 fn latest_complete_run(edition_dir: &Path, article_ids: &[String]) -> Option<PathBuf> {
     let mut runs: Vec<PathBuf> = fs::read_dir(edition_dir)
         .ok()?
@@ -147,9 +129,6 @@ fn run_is_complete(run: &Path, article_ids: &[String]) -> bool {
             .all(|id| run.join("articles").join(id).join("final.md").exists())
 }
 
-/// Field-value path-resolution rule: a value whose first segment is
-/// `editions` is repo-root-relative; otherwise it is relative to the
-/// declaring manifest's directory.
 fn resolve_field(raw: &str, manifest_dir: &Path) -> PathBuf {
     if raw.split('/').next() == Some("editions") {
         PathBuf::from(raw)
@@ -196,8 +175,6 @@ fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     }
 }
 
-/// `[publication]\nname = "..."` scan, no toml dependency. Falls back to
-/// "Magazine" if the file, section, or field is absent.
 pub(crate) fn publication_name(repo_root: &Path) -> String {
     let path = repo_root.join("magazine.toml");
     let Ok(text) = fs::read_to_string(&path) else {
@@ -225,8 +202,6 @@ pub(crate) fn publication_name(repo_root: &Path) -> String {
     "Magazine".to_string()
 }
 
-/// Stage every figure belonging to one article: each figure names its source
-/// and the image file inside that source's directory.
 fn stage_article_figures(
     staging: &mut Staging,
     article: &serde_yaml::Value,
@@ -246,7 +221,6 @@ fn stage_article_figures(
     Ok(())
 }
 
-/// Stage the source article.md behind each of an article's extracts.
 fn stage_article_extracts(
     staging: &mut Staging,
     article: &serde_yaml::Value,
@@ -298,12 +272,6 @@ struct AnchorOutcome {
     dropped: Vec<String>,
 }
 
-/// Re-anchor one article's figures against the current run's manuscript.
-/// Anchors that already name a heading (or `__opener__`) are left alone; the
-/// rest are matched to a heading by the anchor model, judging by the figure's
-/// caption, alt text, rationale, and previous anchor. A figure the model
-/// says no heading fits — or any figure when the manuscript has no headings —
-/// is removed and reported in `dropped`.
 fn resolve_article_anchors(
     caller: &Caller,
     anchor_model: &ModelSpec,
@@ -314,7 +282,6 @@ fn resolve_article_anchors(
     let mut outcome = AnchorOutcome { changed: false, dropped: Vec::new() };
     let headings = manuscript_headings(manuscript_path);
 
-    // Read pass: which figures need resolution, and what the model gets to see.
     let mut pending_idx: Vec<usize> = Vec::new();
     let mut pending_ids: Vec<String> = Vec::new();
     let mut pending_meta = String::new();
@@ -404,10 +371,6 @@ fn resolve_article_anchors(
     Ok(outcome)
 }
 
-/// One `<figure id> :: <heading|NONE>` line per pending figure, matched
-/// case-insensitively to the manuscript's headings; the returned anchor is
-/// the heading exactly as the manuscript writes it, which is what the
-/// renderer's exact-match validation requires.
 fn parse_anchor_reply(
     reply: &str,
     ids: &[String],
@@ -489,13 +452,9 @@ pub fn run(
         }
     }
 
-    // Renders live beside the edition's runs: editions/<ed>/render-<ts>/
     let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
     let mut staging = Staging::new(repo_root.clone());
 
-    // Content comes from a run: --run <dir>, else the newest complete run,
-    // else the files edition.yaml points at. Run finals are staged AT the
-    // paths edition.yaml declares, so no promotion step exists.
     let article_ids: Vec<String> =
         articles.iter().filter_map(|a| str_field(a, "id").map(str::to_string)).collect();
     let content_run: Option<PathBuf> = match run_flag {
@@ -517,12 +476,6 @@ pub fn run(
         None => println!("content: committed edition files (no complete run found)"),
     }
 
-    // A. Base edition manuscript + editorial + article manuscripts.
-    // Figure anchors name a heading in the manuscript, and every run writes
-    // its own headings — so an anchor pinned to a previous run's prose is
-    // re-resolved against this run's manuscript by the cheap anchor model
-    // (an anchor that still matches exactly never costs a call). Only a
-    // figure no heading fits is dropped, loudly.
     let mut staged_edition_path = edition_yaml_path.clone();
     if let Some(run) = &content_run {
         fs::create_dir_all(&render_dir)?;
@@ -573,7 +526,6 @@ pub fn run(
         }
     }
 
-    // B. Art: cover, openers, tails, closing plates.
     if let Some(art_path) = edition_yaml.get("cover").and_then(|c| str_field(c, "art_path")) {
         staging.add(&resolve_field(art_path, &edition_dir));
     }
@@ -593,13 +545,11 @@ pub fn run(
         }
     }
 
-    // C. Optional cover design defaults.
     let design_toml = PathBuf::from(DESIGN_TOML_PATH);
     if repo_root.join(&design_toml).exists() {
         staging.add(&design_toml);
     }
 
-    // D. ES translation, if present (skipped when --langs excludes es).
     let translation_dir = edition_dir.join("translations/es");
     let translation_yaml_path = translation_dir.join("edition.yaml");
     let has_translation = translation_yaml_path.exists()
@@ -624,8 +574,6 @@ pub fn run(
         }
     }
 
-    // E. Source record.yamls for every top-level source id and every
-    // article's source_ids.
     let mut sids: Vec<String> = Vec::new();
     let mut sid_seen: HashSet<String> = HashSet::new();
     if let Some(top_sources) = edition_yaml.get("sources").and_then(|v| v.as_sequence()) {
@@ -658,13 +606,10 @@ pub fn run(
         staging.add(&record_path);
     }
 
-    // F. Figure media, each named directly by the article's figure rows.
     for article in &articles {
         stage_article_figures(&mut staging, article)?;
     }
 
-    // G. Source article.md behind each extracts row: the bridge pulls the
-    // verbatim run from it at load time.
     for article in &articles {
         stage_article_extracts(&mut staging, article)?;
     }
@@ -693,8 +638,6 @@ pub fn run(
         inputs: staging.rows,
     };
 
-    // The languages sit directly under the render dir (render-<stamp>/en/...),
-    // beside request.json; the old out/ nesting carried nothing.
     let run_dir = render_dir;
     let out_dir = run_dir.clone();
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
@@ -705,7 +648,6 @@ pub fn run(
     println!("request: {}", request_path.display());
     println!("out dir: {}", out_dir.display());
 
-    // The bridge requires absolute request and destination paths.
     let mut child = Command::new("uv")
         .args(["run", "mag-render-adapter"])
         .arg(request_path.canonicalize()?)

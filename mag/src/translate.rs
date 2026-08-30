@@ -1,7 +1,3 @@
-// Translate a produce run's accepted pieces (articles + editorial) to
-// Spanish. One model call per piece, in parallel threads throttled by the
-// Caller's own concurrency semaphore. Resume-safe: a piece whose translated
-// output file already exists is skipped, not re-translated.
 
 use crate::caller::{Caller, ModelSpec};
 use crate::produce::{section, INLINE_PREAMBLE};
@@ -28,13 +24,10 @@ struct PieceJob {
 #[derive(Serialize, Debug, Clone)]
 struct PieceTranslation {
     piece: String,
-    state: String, // done | skipped | failed
+    state: String,
     words: usize,
 }
 
-/// Every article directory under `run_dir/articles/*` with a `final.md`,
-/// plus the editorial piece if `run_dir/editorial/final.md` exists.
-/// Article ids are sorted for a deterministic job order.
 fn discover_jobs(run_dir: &Path) -> Result<Vec<PieceJob>> {
     let mut jobs = Vec::new();
     let translations_root = run_dir.join("translations").join("es");
@@ -84,12 +77,6 @@ fn build_prompt(piece_id: &str, manuscript: &str, hash_hex: &str) -> Result<Stri
     Ok(out)
 }
 
-/// Extract the last ```json fence and validate it. The capture is
-/// intentionally greedy (`.*` not `.*?`): the translated markdown itself may
-/// contain fenced code blocks, whose literal ``` characters would otherwise
-/// terminate a lazy match early. Greedy matching walks to the last ``` in
-/// the reply, which is the true closing delimiter as long as the model put
-/// nothing after the block (as instructed).
 fn parse_translation(
     reply: &str,
     expected_hash: &str,
