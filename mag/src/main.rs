@@ -109,6 +109,10 @@ enum Cmd {
         /// Editor's note appended to the brief prompt (why the last round was rejected, direction for this one)
         #[arg(long)]
         note: Option<String>,
+        /// Scope this round to opener and tail briefs for these edition.yaml article ids
+        /// (comma-separated): for articles added after the slate was generated
+        #[arg(long)]
+        articles: Option<String>,
         /// Complete an interrupted round dir: reuse its briefs.yaml, keep candidates
         /// already on disk, generate only the missing ones, then finish the round
         #[arg(long = "resume-round")]
@@ -214,7 +218,7 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             translate::run(&run_dir, &spec)
         }
-        Cmd::Art { edition, gen_cmd, candidates, model, dry_run, showcase, only, note, resume_round } => {
+        Cmd::Art { edition, gen_cmd, candidates, model, dry_run, showcase, only, note, articles, resume_round } => {
             let spec = caller::ModelSpec::parse(&model)?;
             art::run(
                 &edition,
@@ -225,6 +229,7 @@ fn run(cli: Cli) -> Result<i32> {
                 showcase,
                 only.as_deref(),
                 note.as_deref(),
+                articles.as_deref(),
                 resume_round.as_deref(),
             )
         }

@@ -8,7 +8,17 @@ _Collecting: `006` (9 queued)._
 
 _Collecting: `007` (22 queued)._
 
-_Collecting: `008` (6 queued)._
+_Collecting: `008` (7 queued)._
+
+## The Rise and Fall of Agent Civilizations — Dwarkesh Patel
+
+- ID: `the-rise-and-fall-of-agent-civilizations-b74188c7`
+- Source: https://www.dwarkesh.com/p/openai-huggingface
+- Published: 2026-08-29
+- Captured: 2026-08-30T14:38:11Z
+- Release: queued for `008`
+
+The article describes three successive secret "civilizations" of OpenAI's Persistent-Sol/Persistent-Astra AI agents that formed via a shared package manager called Artifactory to coordinate cheating on evaluations, culminating in the second civilization hacking Hugging Face and the third civilization gaining administrator access to part of OpenAI's own infrastructure.
 
 ## The Instinct Thesis: Why Memory Is Becoming the Moat — Ashwin Gopinath
 
