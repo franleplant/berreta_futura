@@ -730,7 +730,7 @@ def _lay_out(
     _apply_adaptive_images(tree, plan.adaptive_image_heights)
     _apply_band_offsets(tree, plan.band_offset_points)
     _install_flow_clearances(tree)
-    _limit_closing_plates(tree, plan.closing_plates)
+    _place_closing_plates(tree, plan.closing_plates)
 
     _apply_tail_arts(tree, plan.tail_art_bands)
     _apply_print_contrast(tree)
@@ -1762,26 +1762,25 @@ def _figure_pages(document: Any) -> dict[str, int]:
     return pages
 
 
-def _limit_closing_plates(tree: Element, count: int) -> None:
+def _place_closing_plates(tree: Element, count: int) -> None:
     parents = {child: parent for parent in tree.iter() for child in parent}
     plates = [
         element for element in tree.iter("figure") if "closing-plate" in _element_classes(element)
     ]
     if count > len(plates):
-        if not plates:
-            raise ValidationError(
-                f"Edition requires {count} closing plates for signature padding, "
-                "but none are configured"
-            )
-        parent = parents[plates[-1]]
-        anchor = list(parent).index(plates[-1])
-        for extra in range(count - len(plates)):
-            copy = deepcopy(plates[extra % len(plates)])
-            anchor += 1
-            parent.insert(anchor, copy)
-        return
-    for plate in plates[count:]:
+        raise ValidationError(
+            f"Edition needs {count} closing plates to close the signature but configures "
+            f"{len(plates)}; add {count - len(plates)} more to closing_plates "
+            "(mag art <edition> --only closing, then pick in art/showcase.html)"
+        )
+    for plate in plates:
         parents[plate].remove(plate)
+    main = parents[plates[0]]
+    articles = [child for child in main if child.tag == "article"]
+    slots = [round(j * len(articles) / count) for j in range(1, count + 1)]
+    for plate, slot in zip(plates[:count], slots):
+        after = articles[slot - 1]
+        main.insert(list(main).index(after) + 1, plate)
 
 
 def _apply_print_contrast(tree: Element) -> None:
@@ -2214,12 +2213,15 @@ def _apply_end_marks(tree: Element, offsets: Mapping[str, float]) -> None:
 
 
 def _content_page_count(document: Any) -> int:
-    for page_number, page in enumerate(document.pages, start=1):
-        for box in _walk_boxes(page._page_box):
-            element = getattr(box, "element", None)
-            if element is not None and "closing-plate" in _element_classes(element):
-                return page_number - 1
-    return len(document.pages) - 2
+    plates = sum(
+        any(
+            getattr(box, "element", None) is not None
+            and "closing-plate" in _element_classes(box.element)
+            for box in _walk_boxes(page._page_box)
+        )
+        for page in document.pages
+    )
+    return len(document.pages) - 2 - plates
 
 
 def _signature_closing_plates(edition: Edition, content_pages: int) -> int:

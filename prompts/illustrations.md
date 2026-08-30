@@ -17,8 +17,9 @@ round and an explicit new selection.
   that document's constraints.
 - **Article openers** — exactly one per article, placed at the article's
   start. Each opener illustrates its own article's core proposition, in the
-  edition's art direction. Square compositions are preferred; the essential
-  subject must survive the opener frame crop and remain legible at A5.
+  edition's art direction. The opener frame is landscape, 348 x 203 pt (1.71:1),
+  filled edge to edge, so compose for that shape with the essential subject
+  and every head well inside it, legible at A5.
 - **Article tails** — exactly one per article, a wide single vignette drawn
   in the whitespace at the end of an article when the final page has room.
   Whether a tail *prints* is the typesetter's call at render time; whether a

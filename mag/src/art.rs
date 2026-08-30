@@ -247,6 +247,7 @@ fn build_brief_prompt(
         out += &produce::section(&path, &text);
     }
     out += &produce::section("edition.yaml", edition_yaml_text);
+    out += FRAME_GUIDE;
     if !cast.is_empty() {
         let names: Vec<&str> = cast.iter().map(|m| m.name.as_str()).collect();
         out += &format!(
@@ -400,7 +401,8 @@ fn candidate_command(
     let cmd_str = gen_cmd
         .replace("{prompt}", &escaped_prompt)
         .replace("{out}", &out_path.to_string_lossy())
-        .replace("{ref}", &shell_single_quote_escape(&refs));
+        .replace("{ref}", &shell_single_quote_escape(&refs))
+        .replace("{size}", size_for(&brief.purpose));
     (filename, cmd_str)
 }
 
@@ -1466,13 +1468,22 @@ fn cast_check_prompt(cast: &[CastMember], image_abs: &Path, license: Option<&str
     p += &format!(
         "\nExamine the illustration image; if it is not already attached to \
          this conversation, view it with the Read tool at: {}\n\n\
-         Judge each cast member's DESIGN strictly against its definition — \
-         pose, action, expression, props, and setting are free and never \
-         count against a character:\n\
-         - on_model: a character of this kind appears and matches every \
-           specified design attribute\n\
-         - off_model: a character of this kind appears but deviates from the \
-           definition (name the deviation)\n\
+         Judge each cast member's IDENTITY against its definition. Identity \
+         is what a reader uses to recognise the character across pages: for \
+         a human, hair colour, glasses or their absence, and the colour and \
+         kind of each garment; for a robot, body shape, body and panel \
+         colours, the face screen, the antenna, and the pouch. Everything \
+         else is licence and never counts: pose, action, expression, props, \
+         setting, hairstyle (ponytail, bob, loose, bangs), lace or sole \
+         colours, the cut of a garment, proportions under perspective, \
+         rendering style, shading, and small colour shifts from lighting. \
+         A deviation counts only when it is unmistakable at a glance and \
+         would make a reader think this is a different character; when in \
+         doubt, the verdict is on_model.\n\
+         - on_model: a character of this kind appears and reads as the same \
+           character\n\
+         - off_model: a character of this kind appears but an identity \
+           attribute is unmistakably wrong (name it)\n\
          - absent: no character of this kind appears in the image\n\n\
          Return exactly one fenced yaml code block and nothing else of \
          consequence:\n\
@@ -1753,7 +1764,25 @@ fn write_round_yaml(
     Ok(failures)
 }
 
-pub const DEFAULT_GEN_CMD: &str = "tools/imagegen '{prompt}' --out {out} --ref '{ref}'";
+pub const DEFAULT_GEN_CMD: &str =
+    "tools/imagegen '{prompt}' --out {out} --ref '{ref}' --size {size}";
+
+fn size_for(purpose: &str) -> &'static str {
+    match purpose {
+        "cover" => "2048x2048",
+        "opener" => "1760x1024",
+        "tail" => "2160x720",
+        _ => "1536x2160",
+    }
+}
+
+const FRAME_GUIDE: &str =
+    "\nEvery brief is generated at the pixel size its slot prints in, so compose for \
+that frame and nothing else. cover: square, 2048x2048. opener: landscape 1.71:1 \
+(the frame is 348x203pt, object-fit cover), 1760x1024; keep every head, hand, \
+and essential prop well inside the frame with headroom, since nothing outside \
+prints. tail: a 3:1 strip, 2160x720. closing: portrait 1:1.41 (an A5 page), \
+1536x2160. Never describe a composition as square unless it is the cover.\n";
 
 pub struct ArtRun<'a> {
     pub edition: &'a str,
