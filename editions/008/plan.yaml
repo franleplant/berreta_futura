@@ -37,3 +37,9 @@ articles:
   content_mode: article
   source_ids:
   - the-instinct-thesis-why-memory-is-becoming-the-m-14970672
+- id: the-rise-and-fall-of-agent-civilizations
+  title: The Rise and Fall of Agent Civilizations
+  author: Dwarkesh Patel
+  content_mode: article
+  source_ids:
+  - the-rise-and-fall-of-agent-civilizations-b74188c7

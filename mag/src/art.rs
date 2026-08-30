@@ -258,6 +258,7 @@ fn build_brief_prompt(
     edition_yaml_text: &str,
     candidates: u32,
     only: Option<&[String]>,
+    articles: Option<&[String]>,
     rejected: &[Brief],
     note: Option<&str>,
 ) -> Result<String> {
@@ -296,6 +297,20 @@ fn build_brief_prompt(
     }
     if let Some(note) = note {
         out += &produce::section("editor's note for this round", note);
+    }
+    if let Some(ids) = articles {
+        out += &format!(
+            "\nPropose ONLY the opener and tail briefs (one of each) for these \
+             articles, which were added to the edition after its art slate was \
+             made: {}. Every other article, the cover, and the closing plates \
+             already have art; do not propose anything for them. Keep the \
+             edition's established art direction and shared constraints.\n\n\
+             You are not generating images yourself — a later pipeline step \
+             will run each brief through an image generator {candidates} \
+             time(s) to produce that many variants.\n\n",
+            ids.join(", ")
+        );
+        return Ok(out);
     }
     match only {
         Some(purposes) => {
@@ -1717,6 +1732,7 @@ pub fn run(
     showcase_only: bool,
     only: Option<&str>,
     note: Option<&str>,
+    articles: Option<&str>,
     resume_round: Option<&str>,
 ) -> Result<i32> {
     let edition_dir = resolve_edition_dir(edition)?;
@@ -1735,8 +1751,8 @@ pub fn run(
     // candidate already on disk, generate only the missing ones, then finish
     // the round (proof sheet, round.yaml, showcase) as if it never stopped.
     if let Some(resume) = resume_round {
-        if dry_run || only.is_some() || note.is_some() {
-            bail!("--resume-round completes an existing round; drop --dry-run/--only/--note");
+        if dry_run || only.is_some() || note.is_some() || articles.is_some() {
+            bail!("--resume-round completes an existing round; drop --dry-run/--only/--note/--articles");
         }
         let gen_cmd =
             gen_cmd.ok_or_else(|| anyhow!("--resume-round requires --gen-cmd"))?;
@@ -1790,12 +1806,39 @@ pub fn run(
         Some(purposes) => previous_briefs(&edition_dir, purposes)?,
         None => Vec::new(),
     };
+    let only_articles: Option<Vec<String>> = match articles {
+        Some(raw) => {
+            if only_purposes.is_some() {
+                bail!("--articles and --only are separate scopes; pass one");
+            }
+            let ids: Vec<String> =
+                raw.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            if ids.is_empty() {
+                bail!("--articles was given but named no article ids");
+            }
+            let doc: serde_yaml::Value = serde_yaml::from_str(&edition_yaml_text)
+                .context("parsing edition.yaml for article ids")?;
+            let known: Vec<String> = doc
+                .get("articles")
+                .and_then(|v| v.as_sequence())
+                .map(|s| s.iter().filter_map(|a| a.get("id").and_then(|v| v.as_str()).map(str::to_string)).collect())
+                .unwrap_or_default();
+            for id in &ids {
+                if !known.contains(id) {
+                    bail!("--articles: '{id}' is not an article in edition.yaml; known: {}", known.join(", "));
+                }
+            }
+            Some(ids)
+        }
+        None => None,
+    };
 
     let caller = Caller::new(&round_dir);
     let prompt = build_brief_prompt(
         &edition_yaml_text,
         candidates,
         only_purposes.as_deref(),
+        only_articles.as_deref(),
         &rejected,
         note,
     )?;
@@ -1812,6 +1855,19 @@ pub fn run(
                     bail!(
                         "{label}: this round is scoped to {}; brief '{}' has purpose '{}'",
                         purposes.join(", "),
+                        b.id,
+                        b.purpose
+                    );
+                }
+            }
+        }
+        if let Some(ids) = &only_articles {
+            for b in &briefs {
+                let aid = b.article_id.as_deref().unwrap_or("");
+                if !matches!(b.purpose.as_str(), "opener" | "tail") || !ids.iter().any(|i| i == aid) {
+                    bail!(
+                        "{label}: this round is scoped to opener/tail briefs for {}; brief '{}' is a {} for '{aid}'",
+                        ids.join(", "),
                         b.id,
                         b.purpose
                     );
