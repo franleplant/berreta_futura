@@ -19,18 +19,26 @@ breaks, opens, or pays.
   built in a named graphic register from the menu below and governed by
   the cover ink discipline. The continuity branch.
 - `art_directed`: an edition-specific interpretation in whatever MEDIUM
-  serves the proposition best: photography, painting, printmaking,
-  sculpture, staged work, collage, textile, another deliberate form. It
-  keeps the publication palette's handshake with the frame but its craft
-  lives in material conviction: real light on real surfaces, believable
-  weight, deliberate facture. Never a default subject; humans and hands
-  only when the concept needs them; never reuse a previous edition's
-  objects, only its level of intent.
-- `wildcard`: medium, metaphor, subject, and composition free. One
-  improbable idea, immediately legible, formally disciplined enough to
-  survive print. It may depart the palette only if the cover proof shows
-  the result still sits in the fixed cover system. Surprise excuses
-  nothing: no darkness-as-mood, no clutter, no arbitrary symbols.
+  serves the proposition best: painting, printmaking, photography,
+  sculpture, staged work, collage, textile, another deliberate form. Its
+  craft lives in material conviction: real light on real surfaces,
+  believable weight, deliberate facture, and it renders with full depth —
+  modelled form, cast shadow, atmosphere, texture. It carries FOUR to SIX
+  hues and is exempt from the synthetic ink discipline; only the ground
+  rules below bind it. Never a default subject; humans and hands only
+  when the concept needs them; never reuse a previous edition's objects,
+  only its level of intent.
+- `wildcard`: medium, metaphor, subject, and composition free, and the
+  palette entirely its own: it never inherits the ink discipline and owes
+  the masthead nothing. Its job is IMPACT: one improbable idea a passerby
+  cannot ignore, rendered at full conviction. Photorealistic and cinematic
+  registers are first-class here and often the strongest: hyperreal macro,
+  motion frozen mid-event, hard studio or natural light on real materials,
+  believable physics rendered like an award-winning photograph of an
+  impossible thing. Flat graphic treatment is allowed only when flatness
+  IS the idea; an "artsy" abstraction that merely decorates is a failed
+  wildcard. Surprise excuses nothing: no darkness-as-mood, no clutter, no
+  arbitrary symbols, and it still must survive print and thumbnail.
 
 Every branch obeys the verb rule, the compositional weapons, the frame
 handshake, and the brief prose discipline below. The `cast_poster` branch
@@ -50,10 +58,11 @@ Consequences, non-negotiable:
 - The plate must hold a hard-edged, high-contrast silhouette against a
   WHITE page. A mid-tone ground (photographic gray sky, dusk haze, muddy
   field) dissolves into the page and reads as a dull rectangle.
-- The ink set should shake hands with the masthead: pick up its
-  red-orange, its black, or the page's bone white somewhere prominent.
-  A plate whose colors ignore the frame looks pasted in from another
-  magazine.
+- The plate must SIT WELL in that frame, which does not mean borrowing
+  its colors: a violet-and-vermilion plate, an emerald-and-ochre plate,
+  and a full-color photograph all sit fine against the off-white page and
+  black masthead. What breaks the frame is mush at the edges, not a
+  palette of its own.
 - Grounds are either pale (bone, cream) for a constructivist effect
   where the page and plate breathe together, or a SATURATED COLOR that
   stays unmistakably a color in print: cobalt, emerald, vermilion,
@@ -64,18 +73,29 @@ Consequences, non-negotiable:
   prints beautifully), never to the ground behind them. No mid-tone
   grounds, no textured wallpaper grounds.
 
-## The cover ink discipline (synthetic; a default the other branches bend deliberately)
+## Color across the round (all branches)
 
 The cover NEVER uses the interior art direction's palette. Interior
 directions are tuned for gentle print reading; on a cover they read as
 dull. Ignore any palette, style, or constraint text from the edition's
 art direction file when writing cover briefs: covers have their own rules.
 
-- Choose a cover ink set per edition: TWO or THREE saturated, committed
-  inks plus one ground, plus ONE luminous accent. Deep and bright beat
-  pale and dusty: oxblood, cobalt, violet-navy, emerald, vermilion,
-  chrome yellow; a near-black is allowed as a FORM ink only, never as
-  the ground. Name the exact inks in the brief.
+The three briefs of a round must live in three DIFFERENT color worlds:
+no two briefs share a ground hue, and no more than one brief may lean on
+the red/black/white of the masthead. A round whose three plates could be
+printed from one ink drawer is rejected as written. Do not reuse the
+previous edition's ground-and-accent pairing; name in each brief the hues
+it commits to. The working gamut is wide: violet, ultramarine, cobalt,
+teal, emerald, moss, ochre, chrome yellow, tangerine, vermilion, oxblood,
+magenta, rose, bone — and for the art_directed and wildcard branches, the
+full continuous color of paint or photography.
+
+## The cover ink discipline (SYNTHETIC BRANCH ONLY — the other two branches are exempt)
+
+- Choose a synthetic ink set per edition: TWO or THREE saturated,
+  committed inks plus one ground, plus ONE luminous accent. Deep and
+  bright beat pale and dusty; a near-black is allowed as a FORM ink only,
+  never as the ground. Name the exact inks in the brief.
 - The ground is one color and generous: a pale field (cream, bone) or a
   saturated color that stays unmistakably a color in print (cobalt,
   emerald, vermilion, violet, chrome yellow). Black and near-black
@@ -87,6 +107,9 @@ art direction file when writing cover briefs: covers have their own rules.
 - Print-flat color: hard edges, confident fills, controlled shading in
   service of depth on the few big forms. No gradients that muddy, no
   pigment-wash softness, no all-over grain doing the work color should do.
+  This flatness rule is the synthetic branch's own; art_directed and
+  wildcard render with as much depth, texture, and atmosphere as their
+  medium demands.
 
 ## The proposition
 
