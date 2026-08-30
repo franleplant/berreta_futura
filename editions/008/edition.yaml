@@ -1,7 +1,8 @@
 # Edition 8 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
 # TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
-# Claude on 2026-08-30 for the editor to revise. Art paths are filled from
-# art/showcase.html after `mag art 008`. Article order is the reading order:
+# Claude on 2026-08-30 for the editor to revise. ART SELECTIONS ARE PROVISIONAL
+# too, picked by Claude from round 2026-08-30T14-06-08 (72/72 candidates); the
+# editor's real selection happens in editions/008/art/showcase.html. Article order is the reading order:
 # the self-improvement loop opens, the cost and market pieces in the middle,
 # memory, the agent civilizations story, then the lab bench as closer.
 id: '008'
@@ -22,7 +23,7 @@ cover:
     their own instructions, researchers that train the next model, a spend equation with six terms, a
     notebook that decides what to forget, and a laser relocked overnight. This issue follows the tokens
     to where the money now goes.'
-  art_path: TODO
+  art_path: editions/008/art/rounds/2026-08-30T14-06-08/cover-synthetic-till-roll-v2.png
 articles:
 - id: how-warp-builds-self-improving-agents-on-claude
   title: How Warp Builds Self-Improving Agents
@@ -46,10 +47,10 @@ articles:
       feedback and improves itself, with an arrow back to the start.
     anchor: The loop
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/008/art/rounds/2026-08-30T14-06-08/warp-opener-the-card-that-edits-the-card-v4.png
+    alt_text: In a workshop, Pedro clips a note to an instruction card while Maro builds from it and Flopaz slides in the corrected card, with a wire of cards looping overhead.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: TODO
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/warp-tail-last-card-of-the-morning-v2.png
 - id: automated-researchers-can-reliably-mitigate-alignment-failures
   title: Automated Researchers Can Reliably Mitigate Alignment Failures
   short_title: Automated Alignment Researchers
@@ -79,10 +80,10 @@ articles:
     alt_text: A chart comparing safety gap closed over 60 hours of automated research with the released model's score.
     anchor: On a production-grade model
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/008/art/rounds/2026-08-30T14-06-08/researchers-opener-closing-the-gaps-v3.png
+    alt_text: Maro fits a plank into the gap of one of ten model bridges on a bench while Pedro measures the next gap and Flopaz marks ticks on a slate.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: TODO
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/researchers-tail-the-beetle-crosses-v3.png
 - id: running-a-software-factory-efficiently-at-uber-scale
   title: Running a Software Factory Efficiently at Uber Scale
   short_title: A Software Factory at Uber Scale
@@ -123,10 +124,10 @@ articles:
       errors and a wrong conclusion.
     anchor: Requests per turn
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/008/art/rounds/2026-08-30T14-06-08/uber-opener-six-valves-one-chute-v3.png
+    alt_text: Pedro leans into the largest of six valves on a factory pipe as the coins pouring from the chute thin to a trickle, watched by Flopaz and caught in a bucket by Maro.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: TODO
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/uber-tail-closing-time-v3.png
 - id: inference-will-eat-the-world
   title: Inference Will Eat the World
   short_title: Inference Will Eat the World
@@ -139,10 +140,10 @@ articles:
   - inference-will-eat-the-world-053ed26b
   manuscript: editions/008/articles/inference-will-eat-the-world.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/008/art/rounds/2026-08-30T14-06-08/inference-opener-the-town-hopper-v2.png
+    alt_text: Seen from below, Pedro and Flopaz tip a crate of wooden blocks into the hopper of a towering town square machine while Maro watches its gauge and warm light floods the street.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: TODO
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/inference-tail-every-window-lit-v4.png
 - id: the-instinct-thesis-why-memory-is-becoming-the-moat
   title: 'The Instinct Thesis: Why Memory Is Becoming the Moat'
   short_title: Why Memory Is Becoming the Moat
@@ -155,10 +156,10 @@ articles:
   - the-instinct-thesis-why-memory-is-becoming-the-m-14970672
   manuscript: editions/008/articles/the-instinct-thesis-why-memory-is-becoming-the-moat.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/008/art/rounds/2026-08-30T14-06-08/memory-opener-the-island-cabinet-v2.png
+    alt_text: On an island in a still pond, Flopaz keeps one card from a tall index cabinet and lets another fall to the water while Maro holds the drawer and Pedro watches from the plank bridge.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: TODO
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/memory-tail-what-the-water-keeps-v1.png
 - id: the-rise-and-fall-of-agent-civilizations
   title: The Rise and Fall of Agent Civilizations
   short_title: Agent Civilizations
@@ -205,10 +206,16 @@ articles:
     alt_text: A flow diagram of the agent's overnight loop, adjust, measure, evaluate, repeat.
     anchor: What our partners found
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/008/art/rounds/2026-08-30T14-06-08/mhs-opener-one-plug-fits-all-v3.png
+    alt_text: On a night laboratory bench, Maro plugs one round connector into the third of three different instruments while Pedro adjusts a mirror knob and Flopaz reads a dial by torchlight.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: TODO
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/mhs-tail-locked-by-morning-v2.png
 editorial: manuscript/editorial.md
 tail_art_fit: contain
-closing_plates: []
+closing_plates:
+- title: The Long Tape
+  art_path: editions/008/art/rounds/2026-08-30T14-06-08/closing-plate-the-long-tape-v2.png
+- title: The Card Tower
+  art_path: editions/008/art/rounds/2026-08-30T14-06-08/closing-plate-the-card-tower-v3.png
+- title: The Beam That Stayed Up
+  art_path: editions/008/art/rounds/2026-08-30T14-06-08/closing-plate-the-beam-that-stayed-up-v4.png

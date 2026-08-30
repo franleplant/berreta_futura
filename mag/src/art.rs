@@ -64,6 +64,7 @@ fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Brief {
     id: String,
+    #[serde(alias = "slot")]
     purpose: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     article_id: Option<String>,
@@ -310,8 +311,7 @@ fn build_brief_prompt(
              time(s) to produce that many variants.\n\n",
             ids.join(", ")
         );
-        return Ok(out);
-    }
+    } else {
     match only {
         Some(purposes) => {
             out += &format!(
@@ -339,6 +339,7 @@ fn build_brief_prompt(
          at three or more.\n\n"
             );
         }
+    }
     }
     out +=
         "Return exactly one fenced yaml code block (```yaml ... ```) and nothing \
