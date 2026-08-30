@@ -387,15 +387,16 @@ def localize_extracts(
 
 
 def semantic_headings(path: Path) -> set[str]:
-    """Every ``##`` heading a figure anchor may name.
+    """Every ``##`` or ``###`` heading a figure anchor may name.
 
     Public because ``produce`` reconciles anchors against a manuscript it has
     just rewritten, and it has to ask the same question this module answers
     when it validates one.
     """
 
-    return {
-        line[3:].strip()
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.startswith("## ") and line[3:].strip()
-    }
+    headings: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        for prefix in ("## ", "### "):
+            if line.startswith(prefix) and line[len(prefix):].strip():
+                headings.add(line[len(prefix):].strip())
+    return headings

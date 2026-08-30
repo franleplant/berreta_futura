@@ -107,12 +107,17 @@ impl Staging {
     }
 }
 
-/// `## ` headings in a manuscript, which is what a figure anchor must match.
+/// `## ` and `### ` headings in a manuscript, which is what a figure anchor
+/// must match (the renderer places a figure after any heading block).
 fn manuscript_headings(path: &Path) -> Vec<String> {
     fs::read_to_string(path)
         .map(|t| {
             t.lines()
-                .filter_map(|l| l.strip_prefix("## ").map(|h| h.trim().to_string()))
+                .filter_map(|l| {
+                    l.strip_prefix("## ")
+                        .or_else(|| l.strip_prefix("### "))
+                        .map(|h| h.trim().to_string())
+                })
                 .collect()
         })
         .unwrap_or_default()

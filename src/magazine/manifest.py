@@ -1148,3 +1148,22 @@ def _load_editorial(path: Path) -> Editorial:
         byline=str(metadata.get("byline") or "The editors").strip(),
         label=str(metadata.get("label") or "ORIGINAL EDITORIAL").strip(),
     )
+
+
+def source_code_payload(url: str) -> str:
+    """The text a printed or web source code encodes for ``url``.
+
+    The scheme and a leading ``www.`` are dropped: every phone scanner opens
+    ``anthropic.com/research/...`` exactly as it opens the full form, and the
+    twelve saved characters are often the difference between a QR version that
+    fits the opener square and one that does not.  The record keeps the full
+    canonical URL; only the symbol's payload is shortened.
+    """
+    payload = url.strip()
+    for scheme in ("https://", "http://"):
+        if payload.startswith(scheme):
+            payload = payload[len(scheme):]
+            break
+    if payload.startswith("www."):
+        payload = payload[4:]
+    return payload

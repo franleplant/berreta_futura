@@ -6,8 +6,16 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 
 ## Pipeline
 
-- `mag` (Rust, in `mag/`) is the CLI: `plan`, `produce`, `art`, `translate`,
-  `render`. Build with `cargo build`, run from the repo root.
+- `mag` (Rust, in `mag/`) is the CLI: `capture`, `plan`, `produce`, `art`,
+  `translate`, `render`. Build with `cargo build`, run from the repo root.
+- The pipeline leads: every step prints the next command when it finishes.
+  Follow that, not the previous edition. The order is `mag capture` (writes
+  the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
+  the first time, scaffolds `edition.yaml` with TODO fields and figure
+  candidates) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
+  `tools/imagegen`) -> pick in `art/showcase.html` -> `mag render NNN`. If a
+  step leaves you guessing what comes next, fix the step's output in code;
+  documenting the gap here is the fallback, not the fix.
 - `src/magazine/` (Python, run through `uv`) is the renderer: it loads
   `edition.yaml`, lays out reader pages, and produces PDF/web output through
   WeasyPrint. It renders; it does not orchestrate.

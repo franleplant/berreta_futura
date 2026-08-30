@@ -523,7 +523,7 @@ fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> R
         for sid in &sids {
             for (media, alt) in source_figure_candidates(sid) {
                 if !any {
-                    y += "  # figure candidates (uncomment into a `figures:` list; each needs caption, alt_text, credit, anchor = a heading in the manuscript):\n";
+                    y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text, credit,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate). short_title and display_emphasis must occur inside title.\n";
                     any = true;
                 }
                 y += &format!("  #   {sid} {media}: {alt}\n");
