@@ -186,8 +186,16 @@ fn run(cli: Cli) -> Result<i32> {
             "must run from the repo root: no ./prompts directory found in the current directory"
         );
     }
-
     match cli.cmd {
+        Cmd::Plan { .. } | Cmd::Capture { .. } | Cmd::Produce { .. } | Cmd::Translate { .. } => {
+            run_text(cli.cmd)
+        }
+        visual => run_visual(visual),
+    }
+}
+
+fn run_text(cmd: Cmd) -> Result<i32> {
+    match cmd {
         Cmd::Plan { edition } => plan_cmd::propose_plan(&edition),
         Cmd::Capture {
             url,
@@ -203,15 +211,17 @@ fn run(cli: Cli) -> Result<i32> {
         } => {
             let spec = caller::ModelSpec::parse(&model)?;
             capture::run(
-                &url,
-                edition.as_deref(),
-                tags.as_deref(),
-                title.as_deref(),
-                author.as_deref(),
-                published.as_deref(),
-                html.as_deref(),
-                article.as_deref(),
-                &mode,
+                &capture::CaptureArgs {
+                    url,
+                    edition,
+                    tags,
+                    title,
+                    author,
+                    published,
+                    html,
+                    article,
+                    mode,
+                },
                 &spec,
             )
         }
@@ -232,6 +242,12 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             translate::run(&run_dir, &spec)
         }
+        _ => unreachable!(),
+    }
+}
+
+fn run_visual(cmd: Cmd) -> Result<i32> {
+    match cmd {
         Cmd::Art {
             edition,
             gen_cmd,
@@ -245,18 +261,18 @@ fn run(cli: Cli) -> Result<i32> {
             resume_round,
         } => {
             let spec = caller::ModelSpec::parse(&model)?;
-            art::run(
-                &edition,
-                Some(gen_cmd.as_str()),
+            art::run(&art::ArtRun {
+                edition: &edition,
+                gen_cmd: Some(gen_cmd.as_str()),
                 candidates,
-                &spec,
+                model: &spec,
                 dry_run,
-                showcase,
-                only.as_deref(),
-                note.as_deref(),
-                articles.as_deref(),
-                resume_round.as_deref(),
-            )
+                showcase_only: showcase,
+                only: only.as_deref(),
+                note: note.as_deref(),
+                articles: articles.as_deref(),
+                resume_round: resume_round.as_deref(),
+            })
         }
         Cmd::CastSheet {
             direction,
@@ -300,5 +316,6 @@ fn run(cli: Cli) -> Result<i32> {
                 &anchor,
             )
         }
+        _ => unreachable!(),
     }
 }

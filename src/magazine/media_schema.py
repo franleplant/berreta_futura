@@ -38,7 +38,6 @@ def resolve_figures(
     rows: Any,
     allow_unanchored: bool = False,
 ) -> tuple[Figure, ...]:
-
     if rows in (None, []):
         return ()
     if not isinstance(rows, list):
@@ -54,53 +53,68 @@ def resolve_figures(
         if not isinstance(row, dict):
             errors.append(f"{label} must be a mapping")
             continue
-        figure_id = str(row.get("id") or "").strip()
-        source_id = str(row.get("source_id") or "").strip()
-        rel_path = str(row.get("path") or "").strip()
-        caption = str(row.get("caption") or "").strip()
-        credit = str(row.get("credit") or "").strip()
-        alt_text = str(row.get("alt_text") or "").strip()
-        anchor = str(row.get("anchor") or "").strip()
-        layout = str(row.get("layout") or "").strip()
-        missing = [
-            name
-            for name, value in (
-                ("id", figure_id),
-                ("source_id", source_id),
-                ("path", rel_path),
-                ("caption", caption),
-                ("alt_text", alt_text),
-                ("anchor", anchor),
-                ("layout", layout),
-            )
-            if not value
-        ]
-        if missing:
-            errors.append(f"{label} missing: {', '.join(missing)}")
+        fields = _figure_fields(label, row, errors)
+        if fields is None:
             continue
-        if figure_id in seen:
-            errors.append(f"Article {article_id} has duplicate figure id: {figure_id}")
-        seen.add(figure_id)
-        if source_id not in article_source_ids:
-            errors.append(f"{label} source_id must be one of the article source_ids")
-        relative = PurePosixPath(rel_path)
-        if not relative.parts or relative.is_absolute() or ".." in relative.parts:
-            errors.append(f"{label} has unsafe path: {rel_path!r}")
-            continue
-        if layout not in FIGURE_LAYOUTS:
-            errors.append(f"{label} has invalid layout: {layout or '<missing>'}")
-        if anchor != "__opener__" and anchor not in headings and not allow_unanchored:
-            errors.append(f"{label} anchor does not match an article heading: {anchor!r}")
-        path = root / "library" / "sources" / source_id / Path(*relative.parts)
-        if not path.is_file():
-            errors.append(f"{label} image file is missing: {path}")
-            continue
-        figures.append(
-            Figure(figure_id, source_id, path, caption, credit, alt_text, anchor, layout)
+        if fields["id"] in seen:
+            errors.append(f"Article {article_id} has duplicate figure id: {fields['id']}")
+        seen.add(fields["id"])
+        figure = _resolve_figure(
+            root, label, fields, article_source_ids, headings, allow_unanchored, errors
         )
+        if figure is not None:
+            figures.append(figure)
     if errors:
         raise ValidationError(errors)
     return tuple(figures)
+
+
+def _figure_fields(label: str, row: dict[str, Any], errors: list[str]) -> dict[str, str] | None:
+    fields = {
+        name: str(row.get(name) or "").strip()
+        for name in ("id", "source_id", "path", "caption", "credit", "alt_text", "anchor", "layout")
+    }
+    missing = [name for name, value in fields.items() if name != "credit" and not value]
+    if missing:
+        errors.append(f"{label} missing: {', '.join(missing)}")
+        return None
+    return fields
+
+
+def _resolve_figure(
+    root: Path,
+    label: str,
+    fields: dict[str, str],
+    article_source_ids: tuple[str, ...],
+    headings: set[str],
+    allow_unanchored: bool,
+    errors: list[str],
+) -> Figure | None:
+    if fields["source_id"] not in article_source_ids:
+        errors.append(f"{label} source_id must be one of the article source_ids")
+    relative = PurePosixPath(fields["path"])
+    if not relative.parts or relative.is_absolute() or ".." in relative.parts:
+        errors.append(f"{label} has unsafe path: {fields['path']!r}")
+        return None
+    if fields["layout"] not in FIGURE_LAYOUTS:
+        errors.append(f"{label} has invalid layout: {fields['layout'] or '<missing>'}")
+    anchor = fields["anchor"]
+    if anchor != "__opener__" and anchor not in headings and not allow_unanchored:
+        errors.append(f"{label} anchor does not match an article heading: {anchor!r}")
+    path = root / "library" / "sources" / fields["source_id"] / Path(*relative.parts)
+    if not path.is_file():
+        errors.append(f"{label} image file is missing: {path}")
+        return None
+    return Figure(
+        fields["id"],
+        fields["source_id"],
+        path,
+        fields["caption"],
+        fields["credit"],
+        fields["alt_text"],
+        anchor,
+        fields["layout"],
+    )
 
 
 def localize_figures(
@@ -184,7 +198,6 @@ def resolve_extracts(
     rows: Any,
     allow_unanchored: bool = False,
 ) -> tuple[Extract, ...]:
-
     if rows in (None, []):
         return ()
     if not isinstance(rows, list):
@@ -201,73 +214,103 @@ def resolve_extracts(
         if not isinstance(row, dict):
             errors.append(f"{label} must be a mapping")
             continue
-        extract_id = str(row.get("id") or "").strip()
-        source_id = str(row.get("source_id") or "").strip()
-        begin = str(row.get("begin") or "")
-        end = str(row.get("end") or "")
-        style = str(row.get("style") or "").strip()
-        caption = str(row.get("caption") or "").strip()
-        anchor = str(row.get("anchor") or "").strip()
-        missing = [
-            name
-            for name, value in (
-                ("id", extract_id),
-                ("source_id", source_id),
-                ("begin", begin),
-                ("end", end),
-                ("style", style),
-                ("caption", caption),
-                ("anchor", anchor),
-            )
-            if not value
-        ]
-        if missing:
-            errors.append(f"{label} missing: {', '.join(missing)}")
+        fields = _extract_fields(label, row, errors)
+        if fields is None:
             continue
-        if extract_id in seen:
-            errors.append(f"Article {article_id} has duplicate extract id: {extract_id}")
-        seen.add(extract_id)
-        if source_id not in article_source_ids:
+        if fields["id"] in seen:
+            errors.append(f"Article {article_id} has duplicate extract id: {fields['id']}")
+        seen.add(fields["id"])
+        if fields["source_id"] not in article_source_ids:
             errors.append(f"{label} source_id must be one of the article source_ids")
             continue
-        if style not in EXTRACT_STYLES:
-            errors.append(f"{label} has invalid style: {style!r}; known: {sorted(EXTRACT_STYLES)}")
-        if anchor != "__opener__" and anchor not in headings and not allow_unanchored:
-            errors.append(f"{label} anchor does not match an article heading: {anchor!r}")
-        source_path = root / "library" / "sources" / source_id / "article.md"
-        if not source_path.is_file():
-            errors.append(f"{label} source article is missing: {source_path}")
+        _check_extract_style(label, fields, headings, allow_unanchored, errors)
+        text = _extract_run(root, label, fields, errors)
+        if text is None:
             continue
-        source_text = source_path.read_text(encoding="utf-8")
-        if source_text.count(begin) != 1:
-            errors.append(
-                f"{label} begin marker must occur exactly once in the source "
-                f"(found {source_text.count(begin)}): {begin!r}"
+        _check_extract_text(label, fields["style"], text, manuscript_text, errors)
+        extracts.append(
+            Extract(
+                fields["id"],
+                fields["source_id"],
+                text,
+                fields["style"],
+                fields["caption"],
+                fields["anchor"],
             )
-            continue
-        start = source_text.index(begin)
-        if source_text.count(end, start) != 1:
-            errors.append(
-                f"{label} end marker must occur exactly once at or after begin "
-                f"(found {source_text.count(end, start)}): {end!r}"
-            )
-            continue
-        text = source_text[start : source_text.index(end, start) + len(end)]
-        if style == "code" and ("\t" in text or "  " in text):
-            errors.append(
-                f"{label} run carries layout-significant whitespace (tabs or "
-                "space runs), which a wrapping code panel cannot preserve; "
-                "use begin/end markers that avoid it or style: quote"
-            )
-        if text in manuscript_text:
-            errors.append(
-                f"{label} run already appears verbatim in the manuscript; "
-                "drop the extract row or the manuscript's own copy"
-            )
-        extracts.append(Extract(extract_id, source_id, text, style, caption, anchor))
+        )
     if errors:
         raise ValidationError(errors)
     return tuple(extracts)
+
+
+def _extract_fields(label: str, row: dict[str, Any], errors: list[str]) -> dict[str, str] | None:
+    fields = {
+        "id": str(row.get("id") or "").strip(),
+        "source_id": str(row.get("source_id") or "").strip(),
+        "begin": str(row.get("begin") or ""),
+        "end": str(row.get("end") or ""),
+        "style": str(row.get("style") or "").strip(),
+        "caption": str(row.get("caption") or "").strip(),
+        "anchor": str(row.get("anchor") or "").strip(),
+    }
+    missing = [name for name, value in fields.items() if not value]
+    if missing:
+        errors.append(f"{label} missing: {', '.join(missing)}")
+        return None
+    return fields
+
+
+def _check_extract_style(
+    label: str,
+    fields: dict[str, str],
+    headings: set[str],
+    allow_unanchored: bool,
+    errors: list[str],
+) -> None:
+    style, anchor = fields["style"], fields["anchor"]
+    if style not in EXTRACT_STYLES:
+        errors.append(f"{label} has invalid style: {style!r}; known: {sorted(EXTRACT_STYLES)}")
+    if anchor != "__opener__" and anchor not in headings and not allow_unanchored:
+        errors.append(f"{label} anchor does not match an article heading: {anchor!r}")
+
+
+def _extract_run(root: Path, label: str, fields: dict[str, str], errors: list[str]) -> str | None:
+    source_path = root / "library" / "sources" / fields["source_id"] / "article.md"
+    if not source_path.is_file():
+        errors.append(f"{label} source article is missing: {source_path}")
+        return None
+    source_text = source_path.read_text(encoding="utf-8")
+    begin, end = fields["begin"], fields["end"]
+    if source_text.count(begin) != 1:
+        errors.append(
+            f"{label} begin marker must occur exactly once in the source "
+            f"(found {source_text.count(begin)}): {begin!r}"
+        )
+        return None
+    start = source_text.index(begin)
+    if source_text.count(end, start) != 1:
+        errors.append(
+            f"{label} end marker must occur exactly once at or after begin "
+            f"(found {source_text.count(end, start)}): {end!r}"
+        )
+        return None
+    return source_text[start : source_text.index(end, start) + len(end)]
+
+
+def _check_extract_text(
+    label: str, style: str, text: str, manuscript_text: str, errors: list[str]
+) -> None:
+    if style == "code" and ("\t" in text or "  " in text):
+        errors.append(
+            f"{label} run carries layout-significant whitespace (tabs or "
+            "space runs), which a wrapping code panel cannot preserve; "
+            "use begin/end markers that avoid it or style: quote"
+        )
+    if text in manuscript_text:
+        errors.append(
+            f"{label} run already appears verbatim in the manuscript; "
+            "drop the extract row or the manuscript's own copy"
+        )
 
 
 def localize_extracts(

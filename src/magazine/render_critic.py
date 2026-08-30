@@ -5,6 +5,7 @@ import hashlib
 import math
 import re
 import shutil
+import types
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -119,79 +120,21 @@ def _page_texts(document: PdfReader | _PageTexts) -> _PageTexts:
     return document if isinstance(document, _PageTexts) else _PageTexts(document)
 
 
-def inspect_render(
-    reader_pdf: Path,
-    booklet_pdf: Path,
-    destination: Path,
-    *,
-    interior_booklet_pdf: Path,
-    cover_booklet_pdf: Path,
-    language: str,
-    toc: dict[str, int],
-    article_pages: dict[str, int],
-    editorial_pages: int | None,
-    edition_id: str,
-    recorded_review: dict[str, Any] | None = None,
-) -> tuple[dict[str, Any], list[Path]]:
-
-    reader = PdfReader(str(reader_pdf))
-    booklet = PdfReader(str(booklet_pdf))
-    interior_booklet = PdfReader(str(interior_booklet_pdf))
-    cover_booklet = PdfReader(str(cover_booklet_pdf))
-
-    reader_texts = _PageTexts(reader)
-    booklet_texts = _PageTexts(booklet)
-    interior_booklet_texts = _PageTexts(interior_booklet)
-    cover_booklet_texts = _PageTexts(cover_booklet)
-    page_count = len(reader.pages)
-    review_dir = destination / "render-review"
-    if review_dir.exists():
-        shutil.rmtree(review_dir)
-    review_dir.mkdir(parents=True, exist_ok=True)
-
-    rendered_pages = _render_pages(reader_pdf, review_dir / "reader-pages")
-    rendered_booklet = _render_pages(booklet_pdf, review_dir / "booklet-sides")
-    rendered_cover_booklet = _render_pages(cover_booklet_pdf, review_dir / "cover-booklet-sides")
-
-    manifest_layout = _manifest_layout(destination)
-    illustrated_articles = _manifest_opener_article_ids(destination)
-    page_rows = [
-        _inspect_page(page_path, reader.pages[index], index + 1, texts=reader_texts)
-        for index, page_path in enumerate(rendered_pages)
-        if index < page_count
-    ]
-    booklet_rows = [
-        _inspect_page(page_path, booklet.pages[index], index + 1, texts=booklet_texts)
-        for index, page_path in enumerate(rendered_booklet)
-        if index < len(booklet.pages)
-    ]
-    cover_booklet_rows = [
-        _inspect_page(page_path, cover_booklet.pages[index], index + 1, texts=cover_booklet_texts)
-        for index, page_path in enumerate(rendered_cover_booklet)
-        if index < len(cover_booklet.pages)
-    ]
-    reader_contact_sheets = _write_contact_sheets(
-        rendered_pages, review_dir, prefix="reader-contact-sheet"
-    )
-    booklet_contact_sheets = _write_contact_sheets(
-        rendered_booklet, review_dir, prefix="booklet-contact-sheet"
-    )
-    review_artifacts = (
-        rendered_pages
-        + rendered_booklet
-        + rendered_cover_booklet
-        + reader_contact_sheets
-        + booklet_contact_sheets
-    )
-
-    issues: list[dict[str, Any]] = []
-
+def _issue_recorder(issues: list[dict[str, Any]]):
     def issue(code: str, severity: str, message: str, *, page: int | None = None) -> None:
         row: dict[str, Any] = {"code": code, "severity": severity, "message": message}
         if page is not None:
             row["page"] = page
         issues.append(row)
 
+    return issue
+
+
+def _imposition_checks(issue, r):
+    reader_texts, booklet_texts, interior_booklet_texts, cover_booklet_texts = r.texts
+    reader, booklet, interior_booklet, cover_booklet = r.pdfs
+    rendered_pages, rendered_booklet, rendered_cover_booklet = r.rendered
+    page_count = r.page_count
     if len(rendered_pages) != page_count:
         issue(
             "raster-page-count",
@@ -273,6 +216,18 @@ def inspect_render(
             f"Reader page count {page_count} is not a multiple of four.",
         )
 
+    return types.SimpleNamespace(
+        spread_checks=spread_checks,
+        interior_pages=interior_pages,
+        interior_plan=interior_plan,
+        interior_spread_checks=interior_spread_checks,
+        cover_pages=cover_pages,
+        cover_plan=cover_plan,
+        cover_spread_checks=cover_spread_checks,
+    )
+
+
+def _opener_offset_checks(issue, illustrated_articles, toc, rendered_pages):
     opener_offset_checks: list[dict[str, Any]] = []
     for article_id in illustrated_articles:
         page = toc.get(article_id)
@@ -311,26 +266,10 @@ def inspect_render(
                 page=page,
             )
 
-    inside_cover_pages = {2, page_count - 1}
+    return opener_offset_checks
 
-    maximum_contents_pages = max(1, math.ceil(len(toc) / 8))
-    first_body_page = min(toc.values(), default=3 + maximum_contents_pages)
-    actual_contents_pages = first_body_page - 3
 
-    contents_pages = set(range(3, 3 + max(actual_contents_pages, 0)))
-    body_pages = {
-        page
-        for page in range(3, page_count - 1)
-        if page not in inside_cover_pages and page not in contents_pages
-    }
-
-    article_last_pages = {
-        slug: toc[slug] + int(count) - 1
-        for slug, count in article_pages.items()
-        if slug in toc and int(count) > 0
-    }
-    last_page_numbers = set(article_last_pages.values())
-
+def _printed_tail_bands(manifest_layout, article_last_pages):
     printed_tail_bands: dict[int, float] = {}
     for entry in manifest_layout.get("tail_arts") or ():
         if not isinstance(entry, dict) or not entry.get("printed"):
@@ -339,10 +278,12 @@ def inspect_render(
         band_page = article_last_pages.get(str(entry.get("article")))
         if isinstance(height, (int, float)) and band_page is not None:
             printed_tail_bands[band_page] = float(height)
-    live_area_points = _annotate_void_geometry(
-        rendered_pages, page_rows, body_pages, printed_tail_bands
-    )
+    return printed_tail_bands
 
+
+def _page_row_issues(
+    issue, page_rows, inside_cover_pages, last_page_numbers, live_area_points, article_last_pages
+):
     flag_crops: list[dict[str, Any]] = []
     for row in page_rows:
         page = int(row["page"])
@@ -428,6 +369,10 @@ def inspect_render(
                 }
             )
 
+    return flag_crops
+
+
+def _stub_and_tail_issues(issue, article_last_pages, page_rows, manifest_layout, flag_crops):
     for slug in sorted(article_last_pages):
         last_page = article_last_pages[slug]
         if not 1 <= last_page <= len(page_rows):
@@ -458,19 +403,8 @@ def inspect_render(
                 "confirm the drop is intentional.",
             )
 
-    crop_specs = _review_crop_plan(
-        reader,
-        toc=toc,
-        manifest_layout=manifest_layout,
-        printed_tail_bands=printed_tail_bands,
-        page_rows=page_rows,
-        flag_crops=flag_crops,
-        page_count=page_count,
-    )
-    crop_paths, crop_rows = _write_review_crops(
-        reader_pdf, review_dir / "crops", destination, crop_specs
-    )
-    review_artifacts = review_artifacts + crop_paths
+
+def _opener_crop_fidelity_checks(issue, crop_rows, rendered_pages, destination):
     opener_crop_fidelity: list[dict[str, Any]] = []
     for crop in crop_rows:
         if crop["kind"] != "opener":
@@ -501,6 +435,12 @@ def inspect_render(
                 page=page,
             )
 
+    return opener_crop_fidelity
+
+
+def _booklet_side_issues(
+    issue, spread_checks, booklet_rows, cover_spread_checks, cover_booklet_rows, inside_cover_pages
+):
     inside_cover_sides = {
         int(row["side"])
         for row in spread_checks
@@ -550,6 +490,20 @@ def inspect_render(
                 page=side,
             )
 
+    return cover_booklet_inside_sides
+
+
+def _contents_issues(
+    issue,
+    reader_texts,
+    toc,
+    page_count,
+    article_pages,
+    editorial_pages,
+    manifest_layout,
+    actual_contents_pages,
+    maximum_contents_pages,
+):
     cover_text = reader_texts.raw(1) if reader_texts.page_count else ""
     if _COVER_PLACEHOLDER.search(str(cover_text)):
         issue(
@@ -580,6 +534,159 @@ def inspect_render(
             f"The opening editorial occupies {editorial_pages} reader pages; "
             f"this edition allows {editorial_page_cap}.",
         )
+
+    return editorial_page_cap
+
+
+def inspect_render(
+    reader_pdf: Path,
+    booklet_pdf: Path,
+    destination: Path,
+    *,
+    interior_booklet_pdf: Path,
+    cover_booklet_pdf: Path,
+    language: str,
+    toc: dict[str, int],
+    article_pages: dict[str, int],
+    editorial_pages: int | None,
+    edition_id: str,
+    recorded_review: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], list[Path]]:
+    reader = PdfReader(str(reader_pdf))
+    booklet = PdfReader(str(booklet_pdf))
+    interior_booklet = PdfReader(str(interior_booklet_pdf))
+    cover_booklet = PdfReader(str(cover_booklet_pdf))
+
+    reader_texts = _PageTexts(reader)
+    booklet_texts = _PageTexts(booklet)
+    interior_booklet_texts = _PageTexts(interior_booklet)
+    cover_booklet_texts = _PageTexts(cover_booklet)
+    page_count = len(reader.pages)
+    review_dir = destination / "render-review"
+    if review_dir.exists():
+        shutil.rmtree(review_dir)
+    review_dir.mkdir(parents=True, exist_ok=True)
+
+    rendered_pages = _render_pages(reader_pdf, review_dir / "reader-pages")
+    rendered_booklet = _render_pages(booklet_pdf, review_dir / "booklet-sides")
+    rendered_cover_booklet = _render_pages(cover_booklet_pdf, review_dir / "cover-booklet-sides")
+
+    manifest_layout = _manifest_layout(destination)
+    illustrated_articles = _manifest_opener_article_ids(destination)
+    page_rows = [
+        _inspect_page(page_path, reader.pages[index], index + 1, texts=reader_texts)
+        for index, page_path in enumerate(rendered_pages)
+        if index < page_count
+    ]
+    booklet_rows = [
+        _inspect_page(page_path, booklet.pages[index], index + 1, texts=booklet_texts)
+        for index, page_path in enumerate(rendered_booklet)
+        if index < len(booklet.pages)
+    ]
+    cover_booklet_rows = [
+        _inspect_page(page_path, cover_booklet.pages[index], index + 1, texts=cover_booklet_texts)
+        for index, page_path in enumerate(rendered_cover_booklet)
+        if index < len(cover_booklet.pages)
+    ]
+    reader_contact_sheets = _write_contact_sheets(
+        rendered_pages, review_dir, prefix="reader-contact-sheet"
+    )
+    booklet_contact_sheets = _write_contact_sheets(
+        rendered_booklet, review_dir, prefix="booklet-contact-sheet"
+    )
+    review_artifacts = (
+        rendered_pages
+        + rendered_booklet
+        + rendered_cover_booklet
+        + reader_contact_sheets
+        + booklet_contact_sheets
+    )
+
+    issues: list[dict[str, Any]] = []
+    issue = _issue_recorder(issues)
+    imposition = _imposition_checks(
+        issue,
+        types.SimpleNamespace(
+            texts=(reader_texts, booklet_texts, interior_booklet_texts, cover_booklet_texts),
+            pdfs=(reader, booklet, interior_booklet, cover_booklet),
+            rendered=(rendered_pages, rendered_booklet, rendered_cover_booklet),
+            page_count=page_count,
+        ),
+    )
+    spread_checks = imposition.spread_checks
+    interior_pages, interior_plan = imposition.interior_pages, imposition.interior_plan
+    interior_spread_checks = imposition.interior_spread_checks
+    cover_pages, cover_plan = imposition.cover_pages, imposition.cover_plan
+    cover_spread_checks = imposition.cover_spread_checks
+    opener_offset_checks = _opener_offset_checks(issue, illustrated_articles, toc, rendered_pages)
+
+    inside_cover_pages = {2, page_count - 1}
+
+    maximum_contents_pages = max(1, math.ceil(len(toc) / 8))
+    first_body_page = min(toc.values(), default=3 + maximum_contents_pages)
+    actual_contents_pages = first_body_page - 3
+
+    contents_pages = set(range(3, 3 + max(actual_contents_pages, 0)))
+    body_pages = {
+        page
+        for page in range(3, page_count - 1)
+        if page not in inside_cover_pages and page not in contents_pages
+    }
+
+    article_last_pages = {
+        slug: toc[slug] + int(count) - 1
+        for slug, count in article_pages.items()
+        if slug in toc and int(count) > 0
+    }
+    last_page_numbers = set(article_last_pages.values())
+    printed_tail_bands = _printed_tail_bands(manifest_layout, article_last_pages)
+    live_area_points = _annotate_void_geometry(
+        rendered_pages, page_rows, body_pages, printed_tail_bands
+    )
+    flag_crops = _page_row_issues(
+        issue,
+        page_rows,
+        inside_cover_pages,
+        last_page_numbers,
+        live_area_points,
+        article_last_pages,
+    )
+    _stub_and_tail_issues(issue, article_last_pages, page_rows, manifest_layout, flag_crops)
+    crop_specs = _review_crop_plan(
+        reader,
+        toc=toc,
+        manifest_layout=manifest_layout,
+        printed_tail_bands=printed_tail_bands,
+        page_rows=page_rows,
+        flag_crops=flag_crops,
+        page_count=page_count,
+    )
+    crop_paths, crop_rows = _write_review_crops(
+        reader_pdf, review_dir / "crops", destination, crop_specs
+    )
+    review_artifacts = review_artifacts + crop_paths
+    opener_crop_fidelity = _opener_crop_fidelity_checks(
+        issue, crop_rows, rendered_pages, destination
+    )
+    cover_booklet_inside_sides = _booklet_side_issues(
+        issue,
+        spread_checks,
+        booklet_rows,
+        cover_spread_checks,
+        cover_booklet_rows,
+        inside_cover_pages,
+    )
+    editorial_page_cap = _contents_issues(
+        issue,
+        reader_texts,
+        toc,
+        page_count,
+        article_pages,
+        editorial_pages,
+        manifest_layout,
+        actual_contents_pages,
+        maximum_contents_pages,
+    )
 
     errors = [row for row in issues if row["severity"] == "error"]
     review_items = [row for row in issues if row["severity"] == "review"]
@@ -1300,6 +1407,31 @@ def _write_contact_sheets(
     return outputs
 
 
+def _figure_crop_regions(manifest_layout, page_count: int, page_size):
+    for entry in manifest_layout.get("figures") or ():
+        if not isinstance(entry, dict):
+            continue
+        page = entry.get("page")
+        box = entry.get("box_points")
+        if not isinstance(page, int) or not 1 <= page <= page_count:
+            continue
+        if not (isinstance(box, (list, tuple)) and len(box) == 4):
+            continue
+        x, y, box_width, box_height = (float(value) for value in box)
+        _, height = page_size(page)
+        top = height - y - box_height
+        yield (
+            page,
+            str(entry.get("id") or entry.get("figure_id") or ""),
+            (
+                x - CROP_MARGIN_POINTS,
+                top - CROP_MARGIN_POINTS,
+                x + box_width + CROP_MARGIN_POINTS,
+                top + box_height + CROP_MARGIN_POINTS + CROP_CAPTION_ALLOWANCE_POINTS,
+            ),
+        )
+
+
 def _review_crop_plan(
     reader: PdfReader,
     *,
@@ -1337,31 +1469,8 @@ def _review_crop_plan(
         opening = ", ".join(sorted(slug for slug, folio in toc.items() if folio == page))
         width, height = page_size(page)
         specs.append(clamped(page, "opener", opening, (0.0, 0.0, width, height)))
-    for entry in manifest_layout.get("figures") or ():
-        if not isinstance(entry, dict):
-            continue
-        page = entry.get("page")
-        box = entry.get("box_points")
-        if not isinstance(page, int) or not 1 <= page <= page_count:
-            continue
-        if not (isinstance(box, (list, tuple)) and len(box) == 4):
-            continue
-        x, y, box_width, box_height = (float(value) for value in box)
-        _, height = page_size(page)
-        top = height - y - box_height
-        specs.append(
-            clamped(
-                page,
-                "figure",
-                str(entry.get("id") or entry.get("figure_id") or ""),
-                (
-                    x - CROP_MARGIN_POINTS,
-                    top - CROP_MARGIN_POINTS,
-                    x + box_width + CROP_MARGIN_POINTS,
-                    top + box_height + CROP_MARGIN_POINTS + CROP_CAPTION_ALLOWANCE_POINTS,
-                ),
-            )
-        )
+    for page, subject, region in _figure_crop_regions(manifest_layout, page_count, page_size):
+        specs.append(clamped(page, "figure", subject, region))
     for page in sorted(printed_tail_bands):
         if not 1 <= page <= min(page_count, len(page_rows)):
             continue

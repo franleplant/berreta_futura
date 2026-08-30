@@ -82,6 +82,12 @@ def _load_request(path: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError) as exc:
         raise ValidationError(f"Cannot read render request {path}: {exc}") from exc
     _strict_keys(request, _TOP_LEVEL_KEYS, "render request")
+    _check_request_shape(request)
+    _check_request_languages(request)
+    return request
+
+
+def _check_request_shape(request: dict[str, Any]) -> None:
     if request.get("schemaVersion") != 1:
         raise ValidationError("render request schemaVersion must be 1")
     if request.get("rendererContractVersion") != CONTRACT_VERSION:
@@ -97,6 +103,9 @@ def _load_request(path: Path) -> dict[str, Any]:
     for key in ("editionId", "primaryLanguage", "publicationName", "renderer"):
         if not isinstance(request.get(key), str) or not request[key].strip():
             raise ValidationError(f"render request {key} must be a non-empty string")
+
+
+def _check_request_languages(request: dict[str, Any]) -> None:
     languages = request.get("languages")
     if (
         not isinstance(languages, list)
@@ -117,7 +126,6 @@ def _load_request(path: Path) -> dict[str, Any]:
         raise ValidationError("renderer must be reportlab or weasyprint")
     if not isinstance(request.get("inputs"), list) or not request["inputs"]:
         raise ValidationError("render request inputs must be a non-empty list")
-    return request
 
 
 def _stage_inputs(request: dict[str, Any], stage_root: Path) -> list[str]:

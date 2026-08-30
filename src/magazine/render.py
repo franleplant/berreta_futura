@@ -275,18 +275,34 @@ def _opening_sentence(text: str) -> tuple[str, str]:
     return text[: match.start()].strip(), text[match.end() :].strip()
 
 
+_BAND_LAYOUTS = {
+    "landscape_plate",
+    "evidence_band",
+    "evidence_band_prose",
+    "adaptive_band",
+    "compact_band",
+}
+_MARKDOWN_PREFIXES = (("### ", "h3"), ("## ", "h2"), ("# ", "h1"), ("> ", "quote"))
+
+
+def _markdown_line_kind(stripped: str) -> tuple[str, str] | None:
+    for prefix, kind in _MARKDOWN_PREFIXES:
+        if stripped.startswith(prefix):
+            return kind, stripped[len(prefix) :]
+    if re.match(r"^[-*] ", stripped):
+        return "bullet", stripped[2:]
+    return None
+
+
 def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
     if text.startswith("---\n"):
         _, _, text = text.partition("\n---\n")
     buffer: list[str] = []
 
     def flush():
-        if buffer:
-            value = " ".join(line.strip() for line in buffer).strip()
-            buffer.clear()
-            if value:
-                return ("body", value)
-        return None
+        value = " ".join(line.strip() for line in buffer).strip()
+        buffer.clear()
+        return [("body", value)] if value else []
 
     code: list[str] | None = None
     for line in text.splitlines():
@@ -299,46 +315,18 @@ def _markdown_blocks(text: str) -> Iterable[tuple[str, str]]:
             continue
         stripped = line.strip()
         if stripped.startswith("```"):
-            block = flush()
-            if block:
-                yield block
+            yield from flush()
             code = []
         elif not stripped:
-            block = flush()
-            if block:
-                yield block
-        elif stripped.startswith("### "):
-            block = flush()
-            if block:
-                yield block
-            yield "h3", stripped[4:]
-        elif stripped.startswith("## "):
-            block = flush()
-            if block:
-                yield block
-            yield "h2", stripped[3:]
-        elif stripped.startswith("# "):
-            block = flush()
-            if block:
-                yield block
-            yield "h1", stripped[2:]
-        elif re.match(r"^[-*] ", stripped):
-            block = flush()
-            if block:
-                yield block
-            yield "bullet", stripped[2:]
-        elif stripped.startswith("> "):
-            block = flush()
-            if block:
-                yield block
-            yield "quote", stripped[2:]
+            yield from flush()
+        elif (block := _markdown_line_kind(stripped)) is not None:
+            yield from flush()
+            yield block
         else:
             buffer.append(stripped)
     if code is not None:
         yield "code", "\n".join(code)
-    block = flush()
-    if block:
-        yield block
+    yield from flush()
 
 
 class _Typesetter:
@@ -1078,45 +1066,45 @@ class _Typesetter:
         if kind == "h3":
             text = text.upper()
         indent = 14 if kind in {"bullet", "quote"} else 0
-        lines = self.lines(text, font, size, self.column_width - indent)
+        width = self.column_width - indent
         if kind in {"h1", "h2", "h3"}:
-            self.y = min(self.y, self.height - self.top)
-            if math.isclose(self.y, self.frame_top):
-                before = 0
-            needed = before + len(lines) * leading + after
-            if self.y - needed - 25 < self.frame_bottom:
-                self._advance_frame()
-                before = 0
-                lines = self.lines(text, font, size, self.column_width - indent)
-                needed = len(lines) * leading + after
-            if self.y - needed < self.frame_bottom:
-                raise ValidationError(
-                    f"A {kind} block is too tall for the Quiet Standard text frame"
-                )
-            self.y -= before
-            self.pdf.setFillColorRGB(*(VIOLET if kind == "h3" else INK))
-            self.pdf.setFont(font, size)
-            for line in lines:
-                self.pdf.drawString(self.frame_left, self.y, line)
-                self.y -= leading
-            self.y -= after
-            return
+            self._heading_block(kind, text, font, size, leading, before, after, width)
+        else:
+            self._flow_block(kind, text, font, size, leading, after, indent, keep_together)
 
-        remaining_text = text
-        first_line = True
+    def _heading_block(self, kind, text, font, size, leading, before, after, width):
+        lines = self.lines(text, font, size, width)
+        self.y = min(self.y, self.height - self.top)
+        if math.isclose(self.y, self.frame_top):
+            before = 0
+        needed = before + len(lines) * leading + after
+        if self.y - needed - 25 < self.frame_bottom:
+            self._advance_frame()
+            before = 0
+            lines = self.lines(text, font, size, width)
+            needed = len(lines) * leading + after
+        if self.y - needed < self.frame_bottom:
+            raise ValidationError(f"A {kind} block is too tall for the Quiet Standard text frame")
+        self.y -= before
+        self.pdf.setFillColorRGB(*(VIOLET if kind == "h3" else INK))
+        self.pdf.setFont(font, size)
+        for line in lines:
+            self.pdf.drawString(self.frame_left, self.y, line)
+            self.y -= leading
+        self.y -= after
+
+    def _flow_block(self, kind, text, font, size, leading, after, indent, keep_together):
+        width = self.column_width - indent
         if keep_together:
-            complete_lines = self.lines(text, font, size, self.column_width - indent)
+            complete_lines = self.lines(text, font, size, width)
             full_capacity = int((self.frame_top - self.frame_bottom) // leading)
             current_capacity = int((self.y - self.frame_bottom) // leading)
             if len(complete_lines) <= full_capacity and current_capacity < len(complete_lines):
                 self._advance_frame()
+        remaining_text = text
+        first_line = True
         while remaining_text:
-            current_lines = self.lines(
-                remaining_text,
-                font,
-                size,
-                self.column_width - indent,
-            )
+            current_lines = self.lines(remaining_text, font, size, width)
             capacity = int((self.y - self.frame_bottom) // leading)
             minimum = 1 if len(current_lines) == 1 else 2
             if capacity < minimum:
@@ -1127,28 +1115,32 @@ class _Typesetter:
                 take -= 1
             chunk = current_lines[:take]
             remaining_text = " ".join(current_lines[take:])
-            if kind == "quote":
-                self.pdf.setStrokeColorRGB(*VIOLET)
-                self.pdf.setLineWidth(1.5)
-                self.pdf.line(
-                    self.frame_left + 1,
-                    self.y + 3,
-                    self.frame_left + 1,
-                    self.y - len(chunk) * leading + 5,
-                )
-            self.pdf.setFillColorRGB(*INK)
-            self.pdf.setFont(font, size)
-            for line in chunk:
-                if kind == "bullet" and first_line:
-                    self.pdf.setFillColorRGB(*VIOLET)
-                    self.pdf.circle(self.frame_left + 2.5, self.y + 4, 2.5, fill=1, stroke=0)
-                    self.pdf.setFillColorRGB(*INK)
-                self.pdf.drawString(self.frame_left + indent, self.y, line)
-                self.y -= leading
-                first_line = False
+            first_line = self._draw_flow_chunk(kind, chunk, font, size, leading, indent, first_line)
             if remaining_text:
                 self._advance_frame()
         self.y -= after
+
+    def _draw_flow_chunk(self, kind, chunk, font, size, leading, indent, first_line):
+        if kind == "quote":
+            self.pdf.setStrokeColorRGB(*VIOLET)
+            self.pdf.setLineWidth(1.5)
+            self.pdf.line(
+                self.frame_left + 1,
+                self.y + 3,
+                self.frame_left + 1,
+                self.y - len(chunk) * leading + 5,
+            )
+        self.pdf.setFillColorRGB(*INK)
+        self.pdf.setFont(font, size)
+        for line in chunk:
+            if kind == "bullet" and first_line:
+                self.pdf.setFillColorRGB(*VIOLET)
+                self.pdf.circle(self.frame_left + 2.5, self.y + 4, 2.5, fill=1, stroke=0)
+                self.pdf.setFillColorRGB(*INK)
+            self.pdf.drawString(self.frame_left + indent, self.y, line)
+            self.y -= leading
+            first_line = False
+        return first_line
 
     def code_lines(self, text: str, font: str, size: float, width: float) -> list[str]:
         result: list[str] = []
@@ -1300,90 +1292,57 @@ class _Typesetter:
             layout = str(self._figure_value(figure, "layout", "column_plate"))
             if layout in {"evidence_band", "evidence_band_prose", "adaptive_band"}:
                 self._opener_evidence_band(
-                    figure,
-                    article_id=article_id,
-                    figure_index=figure_number,
+                    figure, article_id=article_id, figure_index=figure_number
                 )
             else:
-                self._column_figure(
-                    figure,
-                    article_id=article_id,
-                    figure_index=figure_number,
-                )
+                self._column_figure(figure, article_id=article_id, figure_index=figure_number)
 
         reference_notes = False
         deferred_landscape = None
         for index, (kind, value) in enumerate(blocks):
-            if kind in {"h1", "h2", "h3"} and deferred_landscape is not None:
-                deferred_kind, deferred_heading, deferred_figure, deferred_number = (
-                    deferred_landscape
-                )
-                self._landscape_plate(
-                    deferred_kind,
-                    deferred_heading,
-                    deferred_figure,
-                    article_id=article_id,
-                    figure_index=deferred_number,
-                )
-                deferred_landscape = None
             if kind in {"h1", "h2", "h3"}:
+                if deferred_landscape is not None:
+                    self._landscape_plate(
+                        *deferred_landscape[:3],
+                        article_id=article_id,
+                        figure_index=deferred_landscape[3],
+                    )
+                    deferred_landscape = None
                 reference_notes = value.strip().casefold() in {"references", "referencias"}
             figure = anchored.get(value.strip().casefold()) if kind in {"h2", "h3"} else None
             layout = str(self._figure_value(figure, "layout")) if figure is not None else ""
-            if figure is not None and layout == "landscape_plate":
+            if figure is not None and layout in _BAND_LAYOUTS:
                 figure_number += 1
-                self._landscape_plate(
-                    kind,
-                    value,
-                    figure,
-                    article_id=article_id,
-                    figure_index=figure_number,
+                plate = (
+                    self._landscape_plate if layout == "landscape_plate" else self._evidence_band
                 )
-                continue
-            if figure is not None and layout in {
-                "evidence_band",
-                "evidence_band_prose",
-                "adaptive_band",
-                "compact_band",
-            }:
-                figure_number += 1
-                self._evidence_band(
-                    kind,
-                    value,
-                    figure,
-                    article_id=article_id,
-                    figure_index=figure_number,
-                )
+                plate(kind, value, figure, article_id=article_id, figure_index=figure_number)
                 continue
             if figure is not None and layout != "landscape_plate_after":
                 self._keep_heading_with_column_figure(kind, value, figure)
-            if kind == "code":
-                self.code_block(value)
-            else:
-                if lead and index == 0 and kind == "body":
-                    kind = "lead"
-                elif reference_notes and kind == "bullet":
-                    kind = "source_note"
-                self.block(kind, value)
+            self._render_text_block(kind, value, lead and index == 0, reference_notes)
             if figure is not None and layout == "landscape_plate_after":
                 figure_number += 1
                 deferred_landscape = (kind, value, figure, figure_number)
             elif figure is not None:
                 figure_number += 1
-                self._column_figure(
-                    figure,
-                    article_id=article_id,
-                    figure_index=figure_number,
-                )
+                self._column_figure(figure, article_id=article_id, figure_index=figure_number)
         if deferred_landscape is not None:
-            deferred_kind, deferred_heading, deferred_figure, deferred_number = deferred_landscape
             self._landscape_plate(
-                deferred_kind,
-                deferred_heading,
-                deferred_figure,
-                article_id=article_id,
-                figure_index=deferred_number,
+                *deferred_landscape[:3], article_id=article_id, figure_index=deferred_landscape[3]
             )
+
+    def _render_text_block(
+        self, kind: str, value: str, lead_position: bool, reference_notes: bool
+    ) -> None:
+        if kind == "code":
+            self.code_block(value)
+            return
+        if lead_position and kind == "body":
+            kind = "lead"
+        elif reference_notes and kind == "bullet":
+            kind = "source_note"
+        self.block(kind, value)
 
     def _tracked_label(
         self,

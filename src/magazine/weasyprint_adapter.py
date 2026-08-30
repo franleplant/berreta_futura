@@ -2283,6 +2283,43 @@ def _validate_caps(edition: Edition) -> None:
     declared_editorial_page_cap(edition.raw, _MAX_EDITORIAL_PAGES)
 
 
+def _note_box(
+    box: Any,
+    page_number: int,
+    article_pages: dict[str, set[int]],
+    article_opener_pages: dict[str, set[int]],
+    editorial_pages: set[int],
+    destinations: dict[str, int],
+) -> None:
+    element = box.element
+    attributes = getattr(element, "attrib", {})
+    tag = getattr(box, "element_tag", None)
+    article_id = attributes.get("data-article-id")
+    if article_id and tag == "article":
+        article_pages.setdefault(article_id, set()).add(page_number)
+    if article_id and tag == "header" and "article-opener" in _element_classes(element):
+        article_opener_pages.setdefault(article_id, set()).add(page_number)
+    if attributes.get("id") == "editorial" and tag == "section":
+        editorial_pages.add(page_number)
+    identifier = attributes.get("id")
+    if identifier and identifier not in destinations:
+        destinations[identifier] = page_number
+
+
+def _toc_from(destinations: dict[str, int], article_pages: dict[str, set[int]]) -> dict[str, int]:
+    toc: dict[str, int] = {}
+    if "editorial" in destinations:
+        toc["editorial"] = destinations["editorial"]
+    for article_id in article_pages:
+        destination = f"article-{article_id}"
+        if destination in destinations:
+            toc[article_id] = destinations[destination]
+    for identifier, page_number in destinations.items():
+        if identifier.startswith("section-"):
+            toc[identifier] = page_number
+    return toc
+
+
 def _measure_layout(
     document: Any,
     assets: tuple[HtmlAsset, ...],
@@ -2311,43 +2348,17 @@ def _measure_layout(
             element = getattr(box, "element", None)
             if element is None:
                 continue
-            attributes = getattr(element, "attrib", {})
-            article_id = attributes.get("data-article-id")
-            if article_id and getattr(box, "element_tag", None) == "article":
-                article_pages.setdefault(article_id, set()).add(page_number)
-            if (
-                article_id
-                and getattr(box, "element_tag", None) == "header"
-                and "article-opener" in _element_classes(element)
-            ):
-                article_opener_pages.setdefault(article_id, set()).add(page_number)
-            if (
-                attributes.get("id") == "editorial"
-                and getattr(box, "element_tag", None) == "section"
-            ):
-                editorial_pages.add(page_number)
-            identifier = attributes.get("id")
-            if identifier and identifier not in destinations:
-                destinations[identifier] = page_number
+            _note_box(
+                box, page_number, article_pages, article_opener_pages, editorial_pages, destinations
+            )
             if getattr(box, "element_tag", None) == "img":
+                attributes = getattr(element, "attrib", {})
                 source = attributes.get("data-print-source") or attributes.get("src")
                 candidates = assets_by_source.get(source, [])
                 occurrence = source_occurrences.get(source or "", 0)
                 if occurrence < len(candidates):
                     image_boxes.append((candidates[occurrence], page_number, box, rotor))
                     source_occurrences[source or ""] = occurrence + 1
-
-    toc: dict[str, int] = {}
-    if "editorial" in destinations:
-        toc["editorial"] = destinations["editorial"]
-
-    for article_id in article_pages:
-        destination = f"article-{article_id}"
-        if destination in destinations:
-            toc[article_id] = destinations[destination]
-    for identifier, page_number in destinations.items():
-        if identifier.startswith("section-"):
-            toc[identifier] = page_number
 
     placements = tuple(
         _figure_placement(asset, page, box, rotor)
@@ -2362,7 +2373,7 @@ def _measure_layout(
             "WeasyPrint did not place expected raster assets: " + ", ".join(missing)
         )
     return RenderLayout(
-        toc=toc,
+        toc=_toc_from(destinations, article_pages),
         article_pages={key: len(value) for key, value in article_pages.items()},
         editorial_pages=len(editorial_pages) if editorial_pages else None,
         design=design,
@@ -2721,13 +2732,7 @@ def _collect_field_overflows(box: Any, page_number: int, failures: list[str]) ->
         )
 
 
-def _split_standfirst_overflow(article: Element, header: Element, declared: Any) -> None:
-    standfirst = next(
-        (el for el in header.iter("p") if "standfirst" in (el.get("class") or "").split()),
-        None,
-    )
-    if standfirst is None:
-        return
+def _standfirst_keep_words(standfirst: Element, declared: Any) -> int:
     intro = " ".join("".join(standfirst.itertext()).split())
     budget = illustrated_opener_intro_budget(
         title=str(declared.title),
@@ -2736,52 +2741,62 @@ def _split_standfirst_overflow(article: Element, header: Element, declared: Any)
         sample=intro,
     )
     if budget is None or budget.lines < 1 or budget.fits(intro):
+        return 0
+    return sum(len(line.split()) for line in budget.wrapped(intro)[: budget.lines])
+
+
+def _cut_words(text: str | None, remaining: int) -> tuple[str | None, str | None, int]:
+    if text is None:
+        return None, None, remaining
+    parts = re.split(r"(\s+)", text)
+    kept: list[str] = []
+    for index, part in enumerate(parts):
+        if part and not part.isspace():
+            if remaining == 0:
+                return "".join(kept).rstrip(), "".join(parts[index:]).lstrip(), 0
+            remaining -= 1
+        kept.append(part)
+    return "".join(kept), None, remaining
+
+
+def _move_children_after(
+    standfirst: Element, remainder: Element, children: list[Element], remaining: int
+) -> int | None:
+    for index, child in enumerate(children):
+        if remaining == 0:
+            return index
+        child_words = len("".join(child.itertext()).split())
+        if child_words > remaining:
+            return index
+        remaining -= child_words
+        kept, moved, remaining = _cut_words(child.tail, remaining)
+        child.tail = kept
+        if moved is not None:
+            remainder.text = moved
+            return index + 1
+    return None
+
+
+def _split_standfirst_overflow(article: Element, header: Element, declared: Any) -> None:
+    standfirst = next(
+        (el for el in header.iter("p") if "standfirst" in (el.get("class") or "").split()),
+        None,
+    )
+    if standfirst is None:
         return
-    keep_words = sum(len(line.split()) for line in budget.wrapped(intro)[: budget.lines])
-    if keep_words < 1:
+    remaining = _standfirst_keep_words(standfirst, declared)
+    if remaining < 1:
         return
 
     remainder = Element("p")
-    remaining = keep_words
-
-    def cut_text(text: str | None) -> tuple[str | None, str | None]:
-        nonlocal remaining
-        if text is None:
-            return None, None
-        parts = re.split(r"(\s+)", text)
-        kept: list[str] = []
-        for index, part in enumerate(parts):
-            if part and not part.isspace():
-                if remaining == 0:
-                    return "".join(kept).rstrip(), "".join(parts[index:]).lstrip()
-                remaining -= 1
-            kept.append(part)
-        return "".join(kept), None
-
-    kept, moved = cut_text(standfirst.text)
+    kept, moved, remaining = _cut_words(standfirst.text, remaining)
     standfirst.text = kept
-    move_from: int | None = None
     children = list(standfirst)
     if moved is not None:
         remainder.text = moved
-        move_from = 0
+        move_from: int | None = 0
     else:
-        for index, child in enumerate(children):
-            if remaining == 0:
-                move_from = index
-                break
-            child_words = len("".join(child.itertext()).split())
-            if child_words > remaining:
-                remaining = 0
-                move_from = index
-                break
-            remaining -= child_words
-            kept, moved = cut_text(child.tail)
-            child.tail = kept
-            if moved is not None:
-                remainder.text = moved
-                move_from = index + 1
-                break
+        move_from = _move_children_after(standfirst, remainder, children, remaining)
     if move_from is not None:
         for child in children[move_from:]:
             standfirst.remove(child)
@@ -2791,7 +2806,7 @@ def _split_standfirst_overflow(article: Element, header: Element, declared: Any)
     article.insert(list(article).index(header) + 1, remainder)
 
 
-def _validate_illustrated_opener_integrity(document: Any) -> None:
+def _illustrated_headers_by_page(document: Any) -> dict[int, dict[str, Any]]:
     headers: dict[int, dict[str, Any]] = {}
     for page_number, page in enumerate(document.pages, start=1):
         for box in _walk_boxes(page._page_box):
@@ -2805,33 +2820,40 @@ def _validate_illustrated_opener_integrity(document: Any) -> None:
                 continue
             entry = headers.setdefault(id(element), {"element": element, "pages": {}})
             entry["pages"].setdefault(page_number, []).append(box)
+    return headers
+
+
+def _chrome_fragmented(entry: dict[str, Any], pages: list[int]) -> bool:
+    element = entry["element"]
+    standfirst_ids = {
+        id(descendant)
+        for standfirst in element.iter()
+        if "standfirst" in (standfirst.get("class") or "").split()
+        for descendant in standfirst.iter()
+    }
+    fragmented = False
+    for page_number in pages[1:]:
+        for fragment in entry["pages"][page_number]:
+            for box in _walk_boxes(fragment):
+                boxed = getattr(box, "element", None)
+                if boxed is None or boxed is element:
+                    continue
+                if id(boxed) not in standfirst_ids:
+                    fragmented = True
+    return fragmented
+
+
+def _validate_illustrated_opener_integrity(document: Any) -> None:
     split = []
-    for entry in headers.values():
+    for entry in _illustrated_headers_by_page(document).values():
         pages = sorted(entry["pages"])
-        if len(pages) <= 1:
+        if len(pages) <= 1 or not _chrome_fragmented(entry, pages):
             continue
-        element = entry["element"]
-        standfirst_ids = {
-            id(descendant)
-            for standfirst in element.iter()
-            if "standfirst" in (standfirst.get("class") or "").split()
-            for descendant in standfirst.iter()
-        }
-        chrome_fragmented = False
-        for page_number in pages[1:]:
-            for fragment in entry["pages"][page_number]:
-                for box in _walk_boxes(fragment):
-                    boxed = getattr(box, "element", None)
-                    if boxed is None or boxed is element:
-                        continue
-                    if id(boxed) not in standfirst_ids:
-                        chrome_fragmented = True
-        if chrome_fragmented:
-            title = next(
-                ("".join(item.itertext()).strip() for item in element.iter("h1")),
-                "untitled article",
-            )
-            split.append(f"{title!r} across pages {', '.join(str(page) for page in pages)}")
+        title = next(
+            ("".join(item.itertext()).strip() for item in entry["element"].iter("h1")),
+            "untitled article",
+        )
+        split.append(f"{title!r} across pages {', '.join(str(page) for page in pages)}")
     if split:
         raise ValidationError(
             "An illustrated opener may only continue its first paragraph onto the "

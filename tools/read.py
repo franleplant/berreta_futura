@@ -72,83 +72,84 @@ def inline_markup(esc: str) -> str:
     return esc
 
 
-def render_body(md: str) -> tuple[str, dict]:
-    body = strip_front_matter(md)
-    out: list[str] = []
-    in_code = False
-    in_list = False
-    para_buf: list[str] = []
-    stats = {"headings": 0, "dense": 0}
+def _para_html(text: str, stats: dict) -> str:
+    words = len(text.split())
+    esc = inline_markup(html.escape(text))
+    classes, flags = [], []
+    if words > DENSE_WORDS:
+        classes.append("dense")
+        flags.append(f"dense · {words} words")
+        stats["dense"] += 1
+    if has_long_token(text):
+        classes.append("toolong")
+        flags.append("long token")
+    cls = f' class="{" ".join(classes)}"' if classes else ""
+    flag_html = f'<span class="flag">{" · ".join(flags)}</span>' if flags else ""
+    return f"<p{cls}>{flag_html}{esc}</p>"
 
-    def flush_para() -> None:
-        if not para_buf:
-            return
-        text = " ".join(para_buf)
-        para_buf.clear()
-        words = len(text.split())
-        esc = inline_markup(html.escape(text))
-        classes, flags = [], []
-        if words > DENSE_WORDS:
-            classes.append("dense")
-            flags.append(f"dense · {words} words")
-            stats["dense"] += 1
-        if has_long_token(text):
-            classes.append("toolong")
-            flags.append("long token")
-        cls = f' class="{" ".join(classes)}"' if classes else ""
-        flag_html = f'<span class="flag">{" · ".join(flags)}</span>' if flags else ""
-        out.append(f"<p{cls}>{flag_html}{esc}</p>")
 
-    for raw in body.split("\n"):
-        line = raw.rstrip()
+def _code_line_html(line: str) -> str:
+    esc = html.escape(line)
+    if len(line.strip()) > LONG_TOKEN_CHARS or has_long_token(line):
+        return f'<span class="toolong">{esc}</span>'
+    return esc
+
+
+class _Body:
+    def __init__(self) -> None:
+        self.out: list[str] = []
+        self.in_code = False
+        self.in_list = False
+        self.para: list[str] = []
+        self.stats = {"headings": 0, "dense": 0}
+
+    def flush_para(self) -> None:
+        if self.para:
+            self.out.append(_para_html(" ".join(self.para), self.stats))
+            self.para.clear()
+
+    def close_list(self) -> None:
+        if self.in_list:
+            self.out.append("</ul>")
+            self.in_list = False
+
+    def line(self, line: str) -> None:
         if line.startswith("```"):
-            flush_para()
-            if in_code:
-                out.append("</code></pre>")
-            else:
-                out.append("<pre><code>")
-            in_code = not in_code
-            continue
-        if in_code:
-            esc = html.escape(line)
-            cls = (
-                ' class="toolong"'
-                if len(line.strip()) > LONG_TOKEN_CHARS or has_long_token(line)
-                else ""
-            )
-            out.append(f"<span{cls}>{esc}</span>" if cls else esc)
-            continue
-        if not line.strip():
-            flush_para()
-            if in_list:
-                out.append("</ul>")
-                in_list = False
-            continue
-        if line.startswith("#"):
-            flush_para()
-            if in_list:
-                out.append("</ul>")
-                in_list = False
-            stats["headings"] += 1
-            text = line.lstrip("#").strip()
-            out.append(f'<h4 class="mdhead">{html.escape(text)}</h4>')
-            continue
-        if line.startswith(("- ", "* ")):
-            flush_para()
-            if not in_list:
-                out.append("<ul>")
-                in_list = True
-            item = line[2:]
-            out.append(f"<li>{inline_markup(html.escape(item))}</li>")
-            continue
-        para_buf.append(line.strip())
+            self.flush_para()
+            self.out.append("</code></pre>" if self.in_code else "<pre><code>")
+            self.in_code = not self.in_code
+        elif self.in_code:
+            self.out.append(_code_line_html(line))
+        elif not line.strip():
+            self.flush_para()
+            self.close_list()
+        elif line.startswith("#"):
+            self.flush_para()
+            self.close_list()
+            self.stats["headings"] += 1
+            self.out.append(f'<h4 class="mdhead">{html.escape(line.lstrip("#").strip())}</h4>')
+        elif line.startswith(("- ", "* ")):
+            self.flush_para()
+            if not self.in_list:
+                self.out.append("<ul>")
+                self.in_list = True
+            self.out.append(f"<li>{inline_markup(html.escape(line[2:]))}</li>")
+        else:
+            self.para.append(line.strip())
 
-    flush_para()
-    if in_list:
-        out.append("</ul>")
-    if in_code:
-        out.append("</code></pre>")
-    return "\n".join(out), stats
+    def finish(self) -> tuple[str, dict]:
+        self.flush_para()
+        self.close_list()
+        if self.in_code:
+            self.out.append("</code></pre>")
+        return "\n".join(self.out), self.stats
+
+
+def render_body(md: str) -> tuple[str, dict]:
+    body = _Body()
+    for raw in strip_front_matter(md).split("\n"):
+        body.line(raw.rstrip())
+    return body.finish()
 
 
 def piece_dirs(run_dir: Path) -> list[Path]:

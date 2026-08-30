@@ -452,18 +452,16 @@ pub fn run(
         bail!("measure_article requires --article");
     }
 
-    let repo_root = std::env::current_dir().context("resolving current directory")?;
-    let repo_root = repo_root
+    let repo_root = std::env::current_dir()
+        .context("resolving current directory")?
         .canonicalize()
         .context("canonicalizing repo root")?;
-
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_yaml_path = edition_dir.join("edition.yaml");
     if !edition_yaml_path.exists() {
         bail!("{} not found", edition_yaml_path.display());
     }
     let edition_yaml = read_yaml(&edition_yaml_path)?;
-
     let edition_id = str_field(&edition_yaml, "id")
         .map(str::to_string)
         .unwrap_or_else(|| {
@@ -473,221 +471,52 @@ pub fn run(
                 .to_string_lossy()
                 .to_string()
         });
-    let primary_language = str_field(&edition_yaml, "language")
-        .unwrap_or("en")
-        .to_string();
-
     let articles = edition_yaml
         .get("articles")
         .and_then(|v| v.as_sequence())
         .ok_or_else(|| anyhow!("edition.yaml missing 'articles' list"))?
         .clone();
-
-    if operation == "measure_article" {
-        let wanted = article.unwrap();
-        let ids: Vec<String> = articles
-            .iter()
-            .filter_map(|a| str_field(a, "id").map(str::to_string))
-            .collect();
-        if !ids.iter().any(|id| id == wanted) {
+    let article_ids: Vec<String> = articles
+        .iter()
+        .filter_map(|a| str_field(a, "id").map(str::to_string))
+        .collect();
+    if let Some(wanted) = article.filter(|_| operation == "measure_article") {
+        if !article_ids.iter().any(|id| id == wanted) {
             bail!(
                 "article '{wanted}' not found in edition '{edition_id}'; available: {}",
-                ids.join(", ")
+                article_ids.join(", ")
             );
         }
     }
 
     let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
+    let content_run = pick_content_run(run_flag, &edition_dir, &article_ids)?;
     let mut staging = Staging::new(repo_root.clone());
-
-    let article_ids: Vec<String> = articles
-        .iter()
-        .filter_map(|a| str_field(a, "id").map(str::to_string))
-        .collect();
-    let content_run: Option<PathBuf> = match run_flag {
-        Some(dir) => {
-            let dir = PathBuf::from(dir);
-            if !run_is_complete(&dir, &article_ids) {
-                bail!(
-                    "{} is not a complete run (needs editorial/final.md and articles/<id>/final.md for: {})",
-                    dir.display(),
-                    article_ids.join(", ")
-                );
-            }
-            Some(dir)
-        }
-        None => latest_complete_run(&edition_dir, &article_ids),
+    let staged_edition_path = match &content_run {
+        Some(run) => patch_anchors(run, &render_dir, &edition_yaml, anchor_model)?
+            .unwrap_or_else(|| edition_yaml_path.clone()),
+        None => edition_yaml_path.clone(),
     };
-    match &content_run {
-        Some(run) => println!("content: {}", run.display()),
-        None => println!("content: committed edition files (no complete run found)"),
-    }
-
-    let mut staged_edition_path = edition_yaml_path.clone();
-    if let Some(run) = &content_run {
-        fs::create_dir_all(&render_dir)?;
-        let caller = Caller::new(&render_dir);
-        let mut patched = edition_yaml.clone();
-        let mut changed = false;
-        let mut dropped: Vec<String> = Vec::new();
-        if let Some(list) = patched
-            .get_mut("articles")
-            .and_then(|v| v.as_sequence_mut())
-        {
-            for article in list.iter_mut() {
-                let Some(id) = str_field(article, "id").map(str::to_string) else {
-                    continue;
-                };
-                let manuscript_path = run.join("articles").join(&id).join("final.md");
-                let outcome =
-                    resolve_article_anchors(&caller, anchor_model, &id, &manuscript_path, article)?;
-                changed |= outcome.changed;
-                dropped.extend(outcome.dropped);
-            }
-        }
-        if !dropped.is_empty() {
-            println!(
-                "  dropped {} figure(s) no heading of this run fits:",
-                dropped.len()
-            );
-            for d in &dropped {
-                println!("    {d}");
-            }
-        }
-        if changed {
-            let patched_path = render_dir.join("edition.yaml");
-            fs::write(&patched_path, serde_yaml::to_string(&patched)?)?;
-            staged_edition_path = patched_path;
-        }
-    }
     staging.add_mapped(&staged_edition_path, &edition_yaml_path);
-    if let Some(editorial) = str_field(&edition_yaml, "editorial") {
-        let declared = resolve_field(editorial, &edition_dir);
-        match &content_run {
-            Some(run) => staging.add_mapped(&run.join("editorial/final.md"), &declared),
-            None => staging.add(&declared),
-        }
-    }
-    for article in &articles {
-        if let (Some(id), Some(manuscript)) =
-            (str_field(article, "id"), str_field(article, "manuscript"))
-        {
-            let declared = resolve_field(manuscript, &edition_dir);
-            match &content_run {
-                Some(run) => {
-                    staging.add_mapped(&run.join("articles").join(id).join("final.md"), &declared)
-                }
-                None => staging.add(&declared),
-            }
-        }
-    }
-
-    if let Some(art_path) = edition_yaml
-        .get("cover")
-        .and_then(|c| str_field(c, "art_path"))
-    {
-        staging.add(&resolve_field(art_path, &edition_dir));
-    }
-    for article in &articles {
-        if let Some(opener_path) = article.get("opener_art").and_then(|o| str_field(o, "path")) {
-            staging.add(&resolve_field(opener_path, &edition_dir));
-        }
-        if let Some(tail_path) = str_field(article, "tail_art_path") {
-            staging.add(&resolve_field(tail_path, &edition_dir));
-        }
-    }
-    if let Some(plates) = edition_yaml
-        .get("closing_plates")
-        .and_then(|v| v.as_sequence())
-    {
-        for plate in plates {
-            if let Some(art_path) = str_field(plate, "art_path") {
-                staging.add(&resolve_field(art_path, &edition_dir));
-            }
-        }
-    }
-
+    stage_manuscripts(
+        &mut staging,
+        &edition_yaml,
+        &edition_dir,
+        content_run.as_deref(),
+    );
+    stage_art(&mut staging, &edition_yaml, &edition_dir);
     let design_toml = PathBuf::from(DESIGN_TOML_PATH);
     if repo_root.join(&design_toml).exists() {
         staging.add(&design_toml);
     }
-
-    let translation_dir = edition_dir.join("translations/es");
-    let translation_yaml_path = translation_dir.join("edition.yaml");
-    let has_translation = translation_yaml_path.exists()
-        && langs
-            .map(|l| l.split(',').any(|x| x.trim() == "es"))
-            .unwrap_or(true);
-    let languages: Vec<String> = if has_translation {
-        vec!["en".to_string(), "es".to_string()]
-    } else {
-        vec!["en".to_string()]
-    };
-    if has_translation {
-        let translation_yaml = read_yaml(&translation_yaml_path)?;
-        staging.add(&translation_yaml_path);
-        if let Some(editorial_path) = translation_yaml
-            .get("editorial")
-            .and_then(|e| str_field(e, "path"))
-        {
-            staging.add(&resolve_field(editorial_path, &translation_dir));
-        }
-        if let Some(t_articles) = translation_yaml
-            .get("articles")
-            .and_then(|v| v.as_sequence())
-        {
-            for t_article in t_articles {
-                if let Some(manuscript) = str_field(t_article, "manuscript") {
-                    staging.add(&resolve_field(manuscript, &translation_dir));
-                }
-            }
-        }
-    }
-
-    let mut sids: Vec<String> = Vec::new();
-    let mut sid_seen: HashSet<String> = HashSet::new();
-    if let Some(top_sources) = edition_yaml.get("sources").and_then(|v| v.as_sequence()) {
-        for s in top_sources {
-            if let Some(sid) = s.as_str() {
-                if sid_seen.insert(sid.to_string()) {
-                    sids.push(sid.to_string());
-                }
-            }
-        }
-    }
-    for article in &articles {
-        if let Some(source_ids) = article.get("source_ids").and_then(|v| v.as_sequence()) {
-            for s in source_ids {
-                if let Some(sid) = s.as_str() {
-                    if sid_seen.insert(sid.to_string()) {
-                        sids.push(sid.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    for sid in &sids {
-        let record_path = PathBuf::from("library/sources")
-            .join(sid)
-            .join("record.yaml");
-        if !repo_root.join(&record_path).exists() {
-            staging
-                .missing
-                .push(record_path.to_string_lossy().replace('\\', "/"));
-            continue;
-        }
-        staging.add(&record_path);
-    }
-
+    let languages = stage_translation(&mut staging, &edition_dir, langs)?;
+    stage_source_records(&mut staging, &edition_yaml, &repo_root);
     for article in &articles {
         stage_article_figures(&mut staging, article)?;
     }
-
     for article in &articles {
         stage_article_extracts(&mut staging, article)?;
     }
-
     if !staging.missing.is_empty() {
         staging.missing.sort();
         staging.missing.dedup();
@@ -702,25 +531,213 @@ pub fn run(
         schema_version: SCHEMA_VERSION,
         renderer_contract_version: RENDERER_CONTRACT_VERSION.to_string(),
         operation: operation.to_string(),
-        article_id: if operation == "measure_article" {
-            article.map(str::to_string)
-        } else {
-            None
-        },
-        edition_id: edition_id.clone(),
-        primary_language,
+        article_id: article
+            .filter(|_| operation == "measure_article")
+            .map(str::to_string),
+        edition_id,
+        primary_language: str_field(&edition_yaml, "language")
+            .unwrap_or("en")
+            .to_string(),
         languages,
         publication_name: publication_name(&repo_root),
         renderer: RENDERER.to_string(),
         artifact_root: repo_root.to_string_lossy().to_string(),
         inputs: staging.rows,
     };
+    run_adapter(&repo_root, &render_dir, &request)
+}
 
-    let run_dir = render_dir;
-    let out_dir = run_dir.clone();
+fn pick_content_run(
+    run_flag: Option<&str>,
+    edition_dir: &Path,
+    article_ids: &[String],
+) -> Result<Option<PathBuf>> {
+    let content_run = match run_flag {
+        Some(dir) => {
+            let dir = PathBuf::from(dir);
+            if !run_is_complete(&dir, article_ids) {
+                bail!(
+                    "{} is not a complete run (needs editorial/final.md and articles/<id>/final.md for: {})",
+                    dir.display(),
+                    article_ids.join(", ")
+                );
+            }
+            Some(dir)
+        }
+        None => latest_complete_run(edition_dir, article_ids),
+    };
+    match &content_run {
+        Some(run) => println!("content: {}", run.display()),
+        None => println!("content: committed edition files (no complete run found)"),
+    }
+    Ok(content_run)
+}
+
+fn patch_anchors(
+    run: &Path,
+    render_dir: &Path,
+    edition_yaml: &serde_yaml::Value,
+    anchor_model: &ModelSpec,
+) -> Result<Option<PathBuf>> {
+    fs::create_dir_all(render_dir)?;
+    let caller = Caller::new(render_dir);
+    let mut patched = edition_yaml.clone();
+    let mut changed = false;
+    let mut dropped: Vec<String> = Vec::new();
+    if let Some(list) = patched
+        .get_mut("articles")
+        .and_then(|v| v.as_sequence_mut())
+    {
+        for article in list.iter_mut() {
+            let Some(id) = str_field(article, "id").map(str::to_string) else {
+                continue;
+            };
+            let manuscript_path = run.join("articles").join(&id).join("final.md");
+            let outcome =
+                resolve_article_anchors(&caller, anchor_model, &id, &manuscript_path, article)?;
+            changed |= outcome.changed;
+            dropped.extend(outcome.dropped);
+        }
+    }
+    if !dropped.is_empty() {
+        println!(
+            "  dropped {} figure(s) no heading of this run fits:",
+            dropped.len()
+        );
+        for d in &dropped {
+            println!("    {d}");
+        }
+    }
+    if !changed {
+        return Ok(None);
+    }
+    let patched_path = render_dir.join("edition.yaml");
+    fs::write(&patched_path, serde_yaml::to_string(&patched)?)?;
+    Ok(Some(patched_path))
+}
+
+fn stage_manuscripts(
+    staging: &mut Staging,
+    edition_yaml: &serde_yaml::Value,
+    edition_dir: &Path,
+    content_run: Option<&Path>,
+) {
+    let mut stage = |declared: PathBuf, from_run: PathBuf| match content_run {
+        Some(run) => staging.add_mapped(&run.join(from_run), &declared),
+        None => staging.add(&declared),
+    };
+    if let Some(editorial) = str_field(edition_yaml, "editorial") {
+        stage(
+            resolve_field(editorial, edition_dir),
+            PathBuf::from("editorial/final.md"),
+        );
+    }
+    for article in articles_of(edition_yaml) {
+        if let (Some(id), Some(manuscript)) =
+            (str_field(article, "id"), str_field(article, "manuscript"))
+        {
+            stage(
+                resolve_field(manuscript, edition_dir),
+                PathBuf::from("articles").join(id).join("final.md"),
+            );
+        }
+    }
+}
+
+fn articles_of(edition_yaml: &serde_yaml::Value) -> impl Iterator<Item = &serde_yaml::Value> {
+    edition_yaml
+        .get("articles")
+        .and_then(|v| v.as_sequence())
+        .into_iter()
+        .flatten()
+}
+
+fn stage_art(staging: &mut Staging, edition_yaml: &serde_yaml::Value, edition_dir: &Path) {
+    let cover = edition_yaml
+        .get("cover")
+        .and_then(|c| str_field(c, "art_path"));
+    let plates = edition_yaml
+        .get("closing_plates")
+        .and_then(|v| v.as_sequence())
+        .into_iter()
+        .flatten()
+        .filter_map(|plate| str_field(plate, "art_path"));
+    let article_art = articles_of(edition_yaml).flat_map(|article| {
+        let opener = article.get("opener_art").and_then(|o| str_field(o, "path"));
+        opener
+            .into_iter()
+            .chain(str_field(article, "tail_art_path"))
+    });
+    for path in cover.into_iter().chain(article_art).chain(plates) {
+        staging.add(&resolve_field(path, edition_dir));
+    }
+}
+
+fn stage_translation(
+    staging: &mut Staging,
+    edition_dir: &Path,
+    langs: Option<&str>,
+) -> Result<Vec<String>> {
+    let translation_dir = edition_dir.join("translations/es");
+    let translation_yaml_path = translation_dir.join("edition.yaml");
+    let has_translation = translation_yaml_path.exists()
+        && langs
+            .map(|l| l.split(',').any(|x| x.trim() == "es"))
+            .unwrap_or(true);
+    if !has_translation {
+        return Ok(vec!["en".to_string()]);
+    }
+    let translation_yaml = read_yaml(&translation_yaml_path)?;
+    staging.add(&translation_yaml_path);
+    if let Some(editorial_path) = translation_yaml
+        .get("editorial")
+        .and_then(|e| str_field(e, "path"))
+    {
+        staging.add(&resolve_field(editorial_path, &translation_dir));
+    }
+    for t_article in articles_of(&translation_yaml) {
+        if let Some(manuscript) = str_field(t_article, "manuscript") {
+            staging.add(&resolve_field(manuscript, &translation_dir));
+        }
+    }
+    Ok(vec!["en".to_string(), "es".to_string()])
+}
+
+fn stage_source_records(staging: &mut Staging, edition_yaml: &serde_yaml::Value, repo_root: &Path) {
+    let top = edition_yaml
+        .get("sources")
+        .and_then(|v| v.as_sequence())
+        .into_iter()
+        .flatten();
+    let per_article = articles_of(edition_yaml).flat_map(|a| {
+        a.get("source_ids")
+            .and_then(|v| v.as_sequence())
+            .into_iter()
+            .flatten()
+    });
+    let mut seen: HashSet<String> = HashSet::new();
+    for sid in top.chain(per_article).filter_map(|s| s.as_str()) {
+        if !seen.insert(sid.to_string()) {
+            continue;
+        }
+        let record_path = PathBuf::from("library/sources")
+            .join(sid)
+            .join("record.yaml");
+        if repo_root.join(&record_path).exists() {
+            staging.add(&record_path);
+        } else {
+            staging
+                .missing
+                .push(record_path.to_string_lossy().replace('\\', "/"));
+        }
+    }
+}
+
+fn run_adapter(repo_root: &Path, run_dir: &Path, request: &Request) -> Result<i32> {
+    let out_dir = run_dir.to_path_buf();
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     let request_path = run_dir.join("request.json");
-    fs::write(&request_path, serde_json::to_string_pretty(&request)?)
+    fs::write(&request_path, serde_json::to_string_pretty(request)?)
         .with_context(|| format!("writing {}", request_path.display()))?;
 
     println!("request: {}", request_path.display());
@@ -730,7 +747,7 @@ pub fn run(
         .args(["run", "mag-render-adapter"])
         .arg(request_path.canonicalize()?)
         .arg(out_dir.canonicalize()?)
-        .current_dir(&repo_root)
+        .current_dir(repo_root)
         .stdout(Stdio::piped())
         .spawn()
         .context("spawning `uv run mag-render-adapter`")?;

@@ -218,53 +218,58 @@ def capture(args: argparse.Namespace) -> int:
     return 0
 
 
-def finish(sid: str) -> int:
-    src_dir = SOURCES / sid
-    record_path = src_dir / "record.yaml"
-    article_path = src_dir / "article.md"
+def _capture_problems(src_dir: Path, record: dict, article: str) -> list[str]:
     problems = []
-    if not record_path.exists():
-        print(f"no such source: {sid}", file=sys.stderr)
-        return 1
-
-    record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
-    article = article_path.read_text(encoding="utf-8") if article_path.exists() else ""
-
     if "TODO: verbatim capture pending" in article:
         problems.append("article.md still holds the scaffold stub")
     if len(article.split()) < 100:
         problems.append(f"article.md is only {len(article.split())} words")
-    synopsis = (record.get("synopsis") or "").strip()
-    if not synopsis:
+    if not (record.get("synopsis") or "").strip():
         problems.append("record.yaml synopsis is empty")
-
     for ref in re.findall(r"\]\((media/[^)]+)\)", article):
         if not (src_dir / ref).exists():
             problems.append(f"article.md references missing {ref}")
     for media_file in sorted((src_dir / "media").glob("*")):
         if f"media/{media_file.name}" not in article:
             problems.append(f"media/{media_file.name} is not referenced in article.md")
+    return problems
 
+
+def _add_synopsis(sid: str, synopsis: str) -> bool:
+    lines = SOURCES_MD.read_text(encoding="utf-8").splitlines()
+    try:
+        id_line = lines.index(f"- ID: `{sid}`")
+    except ValueError:
+        return False
+    end = id_line
+    while end < len(lines) and lines[end].startswith("- "):
+        end += 1
+    if synopsis not in "\n".join(lines[end : end + 2]):
+        lines[end:end] = ["", synopsis]
+        SOURCES_MD.write_text("\n".join(lines).rstrip("\n") + "\n", encoding="utf-8")
+    return True
+
+
+def finish(sid: str) -> int:
+    src_dir = SOURCES / sid
+    record_path = src_dir / "record.yaml"
+    article_path = src_dir / "article.md"
+    if not record_path.exists():
+        print(f"no such source: {sid}", file=sys.stderr)
+        return 1
+
+    record = yaml.safe_load(record_path.read_text(encoding="utf-8"))
+    article = article_path.read_text(encoding="utf-8") if article_path.exists() else ""
+    problems = _capture_problems(src_dir, record, article)
     if problems:
         print(f"capture of {sid} is incomplete:", file=sys.stderr)
         for p in problems:
             print(f"  - {p}", file=sys.stderr)
         return 1
 
-    lines = SOURCES_MD.read_text(encoding="utf-8").splitlines()
-    try:
-        id_line = lines.index(f"- ID: `{sid}`")
-    except ValueError:
+    if not _add_synopsis(sid, (record.get("synopsis") or "").strip()):
         print(f"sources.md has no entry for {sid}; re-run the capture", file=sys.stderr)
         return 1
-    end = id_line
-    while end < len(lines) and lines[end].startswith("- "):
-        end += 1
-    tail = "\n".join(lines[end : end + 2])
-    if synopsis not in tail:
-        lines[end:end] = ["", synopsis]
-        SOURCES_MD.write_text("\n".join(lines).rstrip("\n") + "\n", encoding="utf-8")
-
     print(f"capture of {sid} is complete")
     return 0
 
