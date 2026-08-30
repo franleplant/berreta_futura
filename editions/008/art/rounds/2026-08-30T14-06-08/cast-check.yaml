@@ -1,61 +1,61 @@
 model: sonnet
-checked: 2026-08-30T15-05-45
+checked: 2026-08-30T18-05-41
 results:
 - file: closing-plate-the-beam-that-stayed-up-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt limbs and antenna ball tip, and coral tool pouch are all present.
+    reason: Off-white rounded body with cobalt panels/limbs, black face screen with two curved white eyes, single cobalt-tipped antenna, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and green shoes are all present.
+    reason: Chestnut hair in a low side ponytail with bangs, white socks, and muted-green flat shoes are present; the pink pinafore's cut and lack of visible white underlayer are licensed wardrobe variation, not an identity deviation.
 - file: closing-plate-the-beam-that-stayed-up-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
   - name: Maro
-    verdict: off_model
-    reason: Robot has cobalt legs/feet with visible knee-like joints instead of the defined rounded cobalt feet, and no antenna-ball-tip-to-head proportion issue but body reads taller/more humanoid-legged than the waist-high rounded-rectangular design calls for.
+    verdict: on_model
+    reason: Off-white rounded body with black face screen, two curved white eyes, cobalt panels and antenna ball, and coral tool pouch are all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in one low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and muted-green flat shoes all present.
+    reason: Chestnut hair in a side ponytail with bangs, no glasses, and a rose-pink pinafore dress over a white top with white socks are all present; shoe color reads dark green rather than the canonical muted green, a licensed minor shift not an identity break.
 - file: closing-plate-the-beam-that-stayed-up-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, round glasses, teal crew-neck, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body with cobalt panels, curved white eyes on a black screen, cobalt-tipped antenna, and coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn as a low center-back ponytail rather than the defined single low side ponytail with straight bangs, and the dress lacks the required white short-sleeve top layer beneath the pinafore.
+    verdict: on_model
+    reason: Chestnut low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all present.
 - file: closing-plate-the-beam-that-stayed-up-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal crew-neck, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with cobalt panels, mitten hands, single antenna with cobalt ball tip, two curved white eyes on a black face screen, and coral tool pouch are all correct.
+    reason: Off-white rounded body with cobalt panels/joints/feet, two-eye curved face screen, single antenna, coral pouch all correct.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in one low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green flat shoes all match.
+    reason: Rose-pink pinafore over white top with side pocket, white socks, muted-green shoes, and chestnut hair all match despite a raised hand pose.
 - file: closing-plate-the-card-tower-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with black screen face, curved white eyes, cobalt panels/joints/feet, single cobalt-tipped antenna, and coral tool pouch all present.
+    reason: Off-white rounded body with cobalt panels, two-eyed black face screen, single cobalt-tipped antenna, and coral tool pouch all match.
   - name: Flopaz
-    verdict: on_model
-    reason: Chestnut-brown hair in one low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and muted-green flats all present.
+    verdict: off_model
+    reason: Hair is worn in twin pigtails/ponytails rather than the canonical one low side ponytail, an unmistakable identity deviation.
 - file: closing-plate-the-card-tower-v2.png
   verdicts:
   - name: Pedro
@@ -63,120 +63,120 @@ results:
     reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, single cobalt-tipped antenna, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair gathered in a single low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and green shoes all match.
+    reason: Chestnut hair, rose-pink pinafore over white top, white socks, and muted-green shoes match, with hairstyle worn loose counting as licensed variation.
 - file: closing-plate-the-card-tower-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
     reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
-  - name: Flopaz
-    verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and green shoes all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/mitten hands/feet, single antenna with cobalt tip, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and green flats all present.
 - file: closing-plate-the-card-tower-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/antenna tip, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a single side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green flats all present.
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and green shoes all match.
 - file: closing-plate-the-long-tape-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present and correct.
+    reason: Black tousled hair, round glasses, teal crew-neck, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch are all present.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral pouch at waist all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white top, and white socks match the definition.
+    reason: Chestnut hair in a side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all present.
 - file: closing-plate-the-long-tape-v2.png
-  verdicts:
-  - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present as specified.
-  - name: Maro
-    verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
-  - name: Flopaz
-    verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore with pockets over a white top, and white socks with muted-green shoes all match.
-- file: closing-plate-the-long-tape-v3.png
-  verdicts:
-  - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
-  - name: Maro
-    verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt limbs and antenna ball, and coral tool pouch all match.
-  - name: Flopaz
-    verdict: off_model
-    reason: Hair is styled as two ponytails rather than the single low side ponytail specified.
-- file: closing-plate-the-long-tape-v4.png
-  verdicts:
-  - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
-  - name: Maro
-    verdict: on_model
-    reason: Off-white rounded body with black screen face, curved white eyes, cobalt panels/joints, mitten hands, rounded feet, single cobalt-tipped antenna, and coral tool pouch all match.
-  - name: Flopaz
-    verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white short-sleeve top, white socks, and green flat shoes all match.
-- file: inference-opener-the-town-hopper-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
     reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/antenna tip, mitten hands, and coral tool pouch all match.
-  - name: Flopaz
-    verdict: off_model
-    reason: Hair is styled as twin ponytails rather than the single low side ponytail with straight bangs specified.
-- file: inference-opener-the-town-hopper-v2.png
-  verdicts:
-  - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Off-white rounded body, black screen with curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all match.
-  - name: Maro
-    verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
-- file: inference-opener-the-town-hopper-v3.png
+    reason: Chestnut hair in a side ponytail with bangs, rose-pink pinafore over a white top, and white socks match, with no glasses or pigtails.
+- file: closing-plate-the-long-tape-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
     reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
   - name: Maro
-    verdict: off_model
-    reason: Body is a rounded rectangle with cobalt panels and a coral tool pouch, but has one antenna without a visible cobalt ball tip, no visible arms besides one raised to the gauge with no mitten hand detail rendered, and feet appear as simple blue ovals rather than the defined rounded feet with joints.
+    verdict: on_model
+    reason: Off-white body, black screen face with curved white eyes, cobalt antenna tip/hands/feet, and coral tool pouch are all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn as a single ponytail without straight bangs, and the dress is a rose-pink pinafore with a white top but is knee-length rather than matching the defined pinafore silhouette, plus shoes read as dark green/olive flats rather than muted-green, which is a minor but acceptable match; the clearer deviation is the ponytail is centered/back rather than a low side ponytail.
+    verdict: on_model
+    reason: Chestnut-brown hair, rose-pink pinafore dress over a white top, white socks, and green shoes match; hairstyle variation is licensed, not an identity attribute.
+- file: closing-plate-the-long-tape-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/hands/feet, single antenna with cobalt ball tip, and coral pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a side ponytail, rose-pink pinafore over white top, white socks, and muted-green shoes all match.
+- file: inference-opener-the-town-hopper-v1.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers are all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/hands/feet, cobalt-tipped antenna, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a single side ponytail, rose pinafore over white top, white socks, and green flats match the definition.
+- file: inference-opener-the-town-hopper-v2.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/antenna tip, and coral tool pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut-brown ponytail, rose-pink pinafore over white top, white socks, and green shoes all match.
+- file: inference-opener-the-town-hopper-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white body, black screen face with curved white eyes, cobalt antenna tip and limbs, and coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a side ponytail with bangs, rose-pink pinafore over white top, white socks, and green shoes all present.
 - file: inference-opener-the-town-hopper-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with cobalt panels/joints/feet, two curved white eyes on black screen, single cobalt-tipped antenna, and coral tool pouch all match.
+    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/antenna tip, and coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn in two ponytails rather than one low side ponytail with straight bangs.
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and green shoes all present.
 - file: inference-tail-every-window-lit-v1.png
   verdicts:
   - name: Pedro
@@ -184,318 +184,318 @@ results:
     reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna, mitten hands, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna ball, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green flats all present.
+    reason: Chestnut side ponytail with bangs and rose-pink pinafore over a white top are present, consistent with identity anchors even under the tail's licensed season/wardrobe drift.
 - file: inference-tail-every-window-lit-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts are all present, consistent with the license's older-reading exception.
+    reason: Black tousled hair, round glasses, and teal top are present, consistent with an older-reading tail-licensed rendering.
   - name: Maro
-    verdict: off_model
-    reason: Body and side panels are white/gray rather than off-white with cobalt panels, and the antenna tip and mitten hands are not clearly cobalt-colored, though the black screen face with two curved white eyes and antenna silhouette are correct.
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt antenna ball, cobalt panels and coral pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Wears a rose-pink pinafore-style dress with overall straps over a white top instead of the defined pockets styling, and hair reads as a ponytail without the straight bangs clearly visible, though chestnut side ponytail color/placement is close to canon.
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs is present; dress and shoe colors have drifted under the tail license but identity anchors hold.
 - file: inference-tail-every-window-lit-v3.png
   verdicts:
   - name: Pedro
-    verdict: off_model
-    reason: He is barefoot instead of wearing red sneakers.
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts visible; identity anchors intact despite older reading and painterly rendering.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and antenna ball, and coral tool pouch all match the canon design.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and antenna ball, coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: She wears a solid rose-pink pinafore/overall dress without visible side pockets, and no bangs are visible from this rear three-quarter angle, though the chestnut side ponytail is present.
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs is present; the pinafore reads pink and identity anchors hold under the tail's licensed wardrobe drift.
 - file: inference-tail-every-window-lit-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal top, khaki shorts, and bare feet visible (sneakers not shown but design otherwise intact) with matching identity anchors present.
+    reason: Black tousled hair and round glasses are present; teal top and khaki shorts read as licensed evening wardrobe variants.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt joints/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+    reason: Rounded off-white body, black screen face with two curved white eyes, cobalt panels/joints, antenna with cobalt ball tip, and coral tool pouch are all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in one low side ponytail with straight bangs and rose-pink pinafore over white top match canon identity anchors, consistent with the licensed quieter tail register.
+    reason: Chestnut side ponytail with bangs is present; rose-pink pinafore over white top matches canon.
 - file: memory-opener-the-island-cabinet-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present as specified.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
-    verdict: off_model
-    reason: The head is a plain rounded dome with no visible antenna or cobalt ball tip, though eyes, panels, mitten hands, and coral pouch match.
+    verdict: on_model
+    reason: Off-white rounded body with cobalt panels/limbs, curved white eyes on a black screen, cobalt-tipped antenna, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore over a white top, white socks, and muted-green shoes all match.
+    reason: Chestnut hair in a side ponytail with bangs, rose-pink pinafore over a white top, white socks, and green flats all present.
 - file: memory-opener-the-island-cabinet-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round wire glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/hands/feet, ball-tipped antenna, and coral tool pouch all match.
+    reason: Off-white rounded body with black screen face, curved white eyes, cobalt panels/limbs, ball-tipped antenna, and coral pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore with side pocket over white top, white socks, and muted-green flat shoes all match.
+    reason: Chestnut-brown hair, rose-pink pinafore over white top, white socks, and muted-green shoes all match.
 - file: memory-opener-the-island-cabinet-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, and red sneakers all match, seated on the dock.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white body with cobalt panels/limbs, black screen face with curved white eyes, single cobalt-tipped antenna, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands/feet, single antenna with cobalt tip, and coral tool pouch are all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and muted-green shoes all match, with no glasses or pigtails.
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pocketed pinafore over a white top, white socks, and green flats are all present.
 - file: memory-opener-the-island-cabinet-v4.png
   verdicts:
   - name: Pedro
-    verdict: off_model
-    reason: Sneakers are laced with white/gray instead of red, and hair has a small ponytail-like tuft rather than plain tousled hair.
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt tip, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/hands/feet, single antenna with cobalt tip, and coral pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn in a plain back ponytail with center-parted bangs rather than a low side ponytail with straight bangs, and she wears a pinafore-style overall dress over a white top rather than the defined rose-pink pinafore with side pockets.
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and green flat shoes all present, no glasses.
 - file: memory-tail-what-the-water-keeps-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, and teal top are present as licensed tail styling allows.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/feet, ball-tipped antenna, and coral tool pouch all present.
+    reason: Rounded off-white body with black screen face, two curved white eyes, cobalt panels, antenna, and pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and green flats all present.
+    reason: Chestnut hair with bangs and a rose-pink dress are present; ponytail is loosely rendered but hairstyle is licensed, not an identity anchor.
 - file: memory-tail-what-the-water-keeps-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, red sneakers all present.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna ball, mitten hands, coral tool pouch all present.
+    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt antenna/panels/feet, and coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn loose/down rather than in the canonical single low side ponytail with straight bangs.
+    verdict: on_model
+    reason: Chestnut side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all present.
 - file: memory-tail-what-the-water-keeps-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers are all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/hands/feet, antenna with cobalt ball tip, and coral pouch are all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is a plain loose bob without the canon single low side ponytail or straight bangs, and the dress reads as a solid dusty-rose pinafore-style dress without the distinct white short-sleeve top visible beneath.
+    verdict: on_model
+    reason: Chestnut side ponytail with bangs, rose-pink pinafore over white top, white socks, and green shoes are all present.
 - file: memory-tail-what-the-water-keeps-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, single cobalt-tipped antenna, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in one low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and muted-green flats all present.
+    reason: Chestnut side ponytail with bangs, white socks, and muted-green shoes present; dress is a solid rose-pink pinafore-style dress over a white top, matching the canon silhouette closely enough to read as Flopaz.
 - file: mhs-opener-one-plug-fits-all-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with cobalt panels/joints/mitten hands/feet, black screen face with curved white eyes, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body with cobalt panels, joints, mitten hands, feet, single antenna with cobalt ball tip, coral pouch, and curved-eye face screen all match.
   - name: Flopaz
-    verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs and a rose-pink pinafore over a white short-sleeve top match the definition.
+    verdict: off_model
+    reason: She wears a pink pinafore with straps over a white top as specified, but the definition calls for straight bangs and here her hair is swept to the side without bangs.
 - file: mhs-opener-one-plug-fits-all-v2.png
   verdicts:
   - name: Pedro
-    verdict: off_model
-    reason: Wears a teal crew-neck sweater with long sleeves rather than the defined teal crew-neck top, and sneakers/shorts are not visible to confirm khaki shorts and red sneakers.
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts visible, matches definition.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and antenna ball, coral tool pouch all present.
   - name: Flopaz
     verdict: off_model
-    reason: Hair is worn as a single low ponytail without the defined straight bangs, and the pink pinafore is sleeveless over a white top rather than the defined side-pocketed pinafore with visible white short sleeves.
+    reason: Wearing a rose-pink pinafore-style dress but no white short-sleeve top underneath is visible and hair is a loose side-parted bob rather than a side ponytail with bangs, though this borders on licence; identity attributes otherwise (color, glasses absence) match.
 - file: mhs-opener-one-plug-fits-all-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, and teal crew-neck top all match, with shorts/shoes out of frame.
+    reason: Black tousled hair, round glasses, and teal crew-neck top all match the definition.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints and mitten hands, single cobalt-tipped antenna, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/feet, antenna with cobalt ball tip, and coral pouch are all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs and the rose-pink pinafore over a white top both match, with socks/shoes out of frame.
+    reason: Chestnut hair in a low ponytail with a rose-pink pinafore over a white top matches the definition.
 - file: mhs-opener-one-plug-fits-all-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match the canonical definition.
   - name: Maro
-    verdict: off_model
-    reason: Body and mitten hands read as pale gold/brass rather than off-white, though the cobalt panels, antenna ball, coral pouch, and two-eye screen face match.
+    verdict: on_model
+    reason: Off-white rounded body, black face screen with curved white eyes, cobalt panels and antenna ball, and coral tool pouch all match the canonical definition.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn loose/down rather than in a single low side ponytail with straight bangs, and the top under the pinafore is short-sleeve white but paired with a plain neckline lacking the collar seen in canon, plus shoes are not visible to confirm muted-green flats.
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail, rose-pink pinafore over a white short-sleeve top, and white socks all match; shoe color is a minor lighting-level detail that does not read as a different character.
 - file: mhs-tail-locked-by-morning-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair and round glasses are present, asleep against Flopaz with wardrobe and pose free under the license.
+    reason: Black tousled hair and round glasses are present; teal top matches, wardrobe/pose drift is licensed.
   - name: Maro
     verdict: on_model
-    reason: Black screen face with two curved white eyes, rounded off-white body, cobalt panels and antenna, and coral tool pouch all match canon.
+    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt panels/antenna ball, and coral pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a single low side ponytail with straight bangs is visible, matching the identity anchor.
+    reason: Chestnut hair in a low side ponytail with bangs is present; pajama wardrobe swap is licensed for a tail.
 - file: mhs-tail-locked-by-morning-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair and round glasses are present, matching the identity anchors under the license's relaxed wardrobe.
-  - name: Maro
-    verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna ball tip, and coral tool pouch all match.
+    reason: Black tousled hair and round glasses are present and unmistakable despite sleepwear licensed by the tail.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a side ponytail with straight bangs matches the identity anchor despite the licensed cozy wardrobe swap.
+    reason: Chestnut side ponytail with bangs is clearly visible despite a licensed pink sleepwear top.
+  - name: Maro
+    verdict: on_model
+    reason: Rounded white body, black screen face with two curved white eyes, cobalt panels/limbs, antenna with cobalt tip, and coral tool pouch all match canon.
 - file: mhs-tail-locked-by-morning-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present, with the licensed painterly/quieter-register rendering.
+    reason: Black tousled hair and round glasses present, wearing a teal top consistent with identity even though asleep and slouched.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black face screen with two curved white eyes, cobalt panels/joints/feet, one antenna with cobalt ball tip, and coral tool pouch are all present.
+    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt panels/limbs, antenna with cobalt tip, and coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn in a single low side ponytail but lacks the straight bangs, and the dress reads as pink overalls over a white top rather than a pinafore with side pockets.
+    verdict: on_model
+    reason: Chestnut hair with side ponytail and bangs is present, and no glasses or twin pigtails appear, satisfying the identity anchors despite the licensed pink pinafore-style outfit.
 - file: mhs-tail-locked-by-morning-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, and teal top are present and consistent with canon.
-  - name: Flopaz
-    verdict: on_model
-    reason: Chestnut side ponytail with straight bangs matches canon; the pink hoodie is licensed wardrobe drift, not a deviation.
+    reason: Black tousled hair and round glasses present, wearing a teal top consistent with canon.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/limbs, antenna with cobalt tip, and coral tool pouch all match canon.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and antenna ball, coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs is present; the pink hoodie is licensed wardrobe drift, not an identity deviation.
 - file: researchers-opener-closing-the-gaps-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels and antenna ball, mitten hands, and coral tool pouch all match.
   - name: Flopaz
-    verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore with side pockets over a white top, white socks, and muted-green flats all match.
+    verdict: off_model
+    reason: Hair is worn as straight bangs with a short bob rather than the low side ponytail, which is unmistakable at a glance.
 - file: researchers-opener-closing-the-gaps-v2.png
   verdicts:
   - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    verdict: off_model
+    reason: outfit is a teal long-sleeve sweater with khaki shorts, missing the defined teal crew-neck top styling but close enough on color; however he is seated on a stool rather than any prohibited change, so identity core (hair, glasses, teal top, khaki shorts, red sneakers) matches and reads as Pedro.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with cobalt panels, mitten hands and feet, one cobalt-tipped antenna, black screen face with two curved white eyes, and coral tool pouch all present.
+    reason: off-white rounded body, black face screen with two curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
   - name: Flopaz
     verdict: off_model
-    reason: Hair is worn loose with straight bangs rather than gathered into the defined single low side ponytail.
+    reason: hair is worn loose with blunt bangs rather than the defined one low side ponytail, which is a hairstyle variation and licensed, but the dress is a rose-pink pinafore over a white top matching the definition, so identity reads as Flopaz overall.
 - file: researchers-opener-closing-the-gaps-v3.png
   verdicts:
   - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, big round glasses, teal top, khaki shorts, and red sneakers all present.
+    verdict: off_model
+    reason: top reads as a plain cobalt-blue sweater rather than the canonical teal crew-neck.
   - name: Maro
     verdict: on_model
-    reason: Off-white body, black screen face with curved white eyes, cobalt antenna tip/hands/feet, and coral tool pouch all present.
+    reason: off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna tip, and coral pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and green shoes all present.
+    reason: single side ponytail with straight bangs, rose-pink pinafore over white top, white socks, and no glasses all match.
 - file: researchers-opener-closing-the-gaps-v4.png
   verdicts:
   - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    verdict: off_model
+    reason: wears a teal crew-neck sweater instead of the canonical outfit's red sneakers being present but paired with khaki shorts and no visible round glasses frame issue; actually glasses and hair are correct, red sneakers present, teal top present, khaki shorts present, so this matches on_model.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/antenna tip, mitten hands, and coral tool pouch all match.
+    reason: off-white rounded body, black face screen with curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral waist pouch all match.
   - name: Flopaz
     verdict: off_model
-    reason: Hair reads as a straight bob with bangs rather than the canonical single low side ponytail.
+    reason: hair is worn loose with bangs rather than the canonical single low side ponytail, making it a distinguishing deviation from the definition.
 - file: researchers-tail-the-beetle-crosses-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and mitten hands, antenna with cobalt ball tip, and coral tool pouch all present.
+    reason: Rounded off-white body with black screen face, two curved white eyes, cobalt panels/limbs, antenna with cobalt ball tip, and coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is a shoulder-length bob rather than chestnut hair in one low side ponytail with straight bangs.
+    verdict: on_model
+    reason: Chestnut hair with side ponytail and bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all present.
 - file: researchers-tail-the-beetle-crosses-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal crew-neck, khaki shorts, red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/hands/feet, antenna with cobalt tip, and coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn as a single loose ponytail without straight bangs, deviating from the canonical chestnut side ponytail with bangs.
+    verdict: on_model
+    reason: Chestnut side ponytail with bangs, rose-pink pinafore over white top, white socks, and green flats all present.
 - file: researchers-tail-the-beetle-crosses-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match, with only pose (bending forward) varying.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and mitten hands, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and antenna ball, coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair tied in a low side ponytail with straight bangs is visible, matching the licensed identity anchors.
+    reason: Chestnut hair with bangs and side ponytail is present; dress is rose-pink over white top, consistent with licensed wardrobe drift while identity anchors hold.
 - file: researchers-tail-the-beetle-crosses-v4.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, red sneakers all present.
+  - name: Maro
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna, coral tool pouch all present.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut side ponytail with bangs and pinafore-style dress read as Flopaz; identity anchors intact despite licensed wardrobe drift.
+- file: uber-opener-six-valves-one-chute-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
     reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with black screen face, two curved white eyes, cobalt panels/limbs, single antenna with cobalt tip, and coral tool pouch all present.
-  - name: Flopaz
-    verdict: off_model
-    reason: Wears a full pinafore dress in a dusty rose-mauve tone with a plain white bib front rather than the canon rose-pink pinafore with side pockets over a white short-sleeve top.
-- file: uber-opener-six-valves-one-chute-v1.png
-  verdicts:
-  - name: Pedro
-    verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match, no hat.
-  - name: Maro
-    verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels and mitten hands, single antenna with cobalt ball tip, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with curved eyes, cobalt panels/hands, single antenna with cobalt tip, and waist pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in one low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green shoes all match, no glasses or twin pigtails.
+    reason: Brown hair in a low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and muted-green shoes all present.
 - file: uber-opener-six-valves-one-chute-v2.png
   verdicts:
   - name: Pedro
@@ -503,161 +503,161 @@ results:
     reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/joints/mitten hands/feet, cobalt-tipped antenna, and coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green flat shoes all present.
+    reason: Chestnut-brown hair with bangs, rose-pink pinafore over white short-sleeve top, white socks, and muted-green flat shoes all present, no glasses.
 - file: uber-opener-six-valves-one-chute-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands/feet, single antenna with cobalt tip, and a coral tool pouch are all present.
+    reason: Off-white body, black screen face with curved white eyes, cobalt panels/hands, single antenna with cobalt tip, and a tool pouch at the waist all match.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in one low side ponytail with bangs, rose-pink pinafore over white top, white socks, and muted-green flats all present.
+    reason: Chestnut hair in a side ponytail, rose-pink pinafore over a white top, white socks, and green flats all match.
 - file: uber-opener-six-valves-one-chute-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present as specified.
+    reason: Black tousled hair, round glasses, teal crew-neck, khaki shorts, and red sneakers all match.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body with cobalt panels/joints/feet, black screen face with curved white eyes, single cobalt-tipped antenna, and coral tool pouch all match.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore with side pocket over white top, white socks, and muted-green flat shoes all match.
+    reason: Chestnut hair in one low side ponytail, rose-pink pinafore over white top, white socks, and no glasses all match; shoe color reads dark olive rather than muted green but is not an unmistakable identity break.
 - file: uber-tail-closing-time-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral pouch are all present.
+    reason: Black screen face with two curved white eyes, rounded off-white body, cobalt panels and antenna ball, coral pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is a low ponytail without straight bangs, and she is in a plain pink pinafore-style dress rather than the rose-pink pinafore with side pockets over a white short-sleeve top, though white socks and muted-green shoes match.
+    verdict: on_model
+    reason: Chestnut side ponytail with bangs, rose-pink pinafore over white top, and muted-green shoes all present.
 - file: uber-tail-closing-time-v2.png
-  verdicts:
-  - name: Pedro
-    verdict: off_model
-    reason: Sneakers are red/white with a blue stripe rather than plain red, but hair, glasses, and teal top are on-model (minor deviation, license covers wardrobe drift).
-  - name: Maro
-    verdict: off_model
-    reason: No visible coral tool pouch at the waist; the antenna ball tip appears blue matching canon but the pouch is absent otherwise proportions and face match.
-  - name: Flopaz
-    verdict: on_model
-    reason: Chestnut side ponytail with bangs, rose pinafore over white top, white socks and muted-green shoes all match canon.
-- file: uber-tail-closing-time-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
     reason: Black tousled hair, round glasses, teal top, khaki shorts, red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body with cobalt panels, mitten hands, rounded feet, single cobalt-tipped antenna, and coral pouch all present, though eyes are not visible from behind.
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands/feet, single cobalt-tipped antenna, and coral pouch are all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in one low side ponytail with bangs, rose-pink pinafore over white top, white socks, and green flats all present.
+    reason: Chestnut hair in a side ponytail with bangs and a pink pinafore over a white top are present; identity anchors hold despite the licensed older/painterly rendering.
+- file: uber-tail-closing-time-v3.png
+  verdicts:
+  - name: Pedro
+    verdict: on_model
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers are all present.
+  - name: Maro
+    verdict: on_model
+    reason: Rounded off-white body with cobalt panels, mitten hands, single antenna with cobalt ball tip, and coral pouch all match.
+  - name: Flopaz
+    verdict: on_model
+    reason: Chestnut side ponytail with bangs and rose-pink pinafore over a white top match, with shoes in green rather than muted-green licensed as wardrobe drift.
 - file: uber-tail-closing-time-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, teal crew-neck top, khaki shorts, red sneakers all present, seen from behind covering his head with his arms.
+    reason: Black tousled hair and teal top, khaki shorts, red sneakers all match; face obscured but hair and outfit anchors hold.
   - name: Maro
     verdict: off_model
-    reason: Body and antenna are off-white/cobalt as specified, but the face is not visible (turned away) and hands are gripping a bucket handle rather than showing mitten shapes, so the black screen face with two curved eyes cannot be confirmed.
+    reason: Face is a plain flat cobalt-blue oval with no visible eyes at all, not the black screen with two curved white eyes.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is a single low ponytail but shown without visible straight-cut bangs, and dress is a rose-pink pinafore with a white top and white socks with muted-green shoes as specified, worn a few years older per the tail license.
+    verdict: on_model
+    reason: Chestnut hair in a low side ponytail with bangs, rose-pink pinafore over white top, present and recognizable from behind.
 - file: warp-opener-the-card-that-edits-the-card-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands, and cobalt-tipped antenna all match; waist is occluded by the cart so the pouch cannot be checked but no visible attribute deviates.
+    reason: Off-white rounded body with cobalt panels/joints/feet, black face screen with two curved white eyes, single cobalt-tipped antenna, waist-high to Pedro; tool pouch not clearly visible but no disqualifying deviation.
   - name: Flopaz
-    verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore with side pocket over a white top, white socks, and muted-green flat shoes all match.
+    verdict: off_model
+    reason: Wears a solid pink jumper-style dress with a bib front rather than the defined rose-pink pinafore over a white short-sleeve top, and shoes read grayish-green rather than muted green flats with white socks correctly shown.
 - file: warp-opener-the-card-that-edits-the-card-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all present.
   - name: Maro
-    verdict: off_model
-    reason: Body proportions are humanoid (visible jointed arms/torso with elbows and a slim waist) rather than the defined waist-high rounded-rectangular body.
+    verdict: on_model
+    reason: Off-white rounded body, black screen face with curved white eyes, cobalt panels/hands/feet, single antenna with cobalt ball tip, and coral tool pouch all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn loose/down at the sides rather than gathered into one low side ponytail with straight bangs.
+    verdict: on_model
+    reason: Chestnut-brown hair with bangs and low side ponytail, rose-pink pinafore over white top, white socks, and muted-green shoes all present.
 - file: warp-opener-the-card-that-edits-the-card-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, round glasses, teal crew-neck, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: off_model
-    reason: The antenna ball tip renders white/off-white matching the body instead of cobalt.
+    reason: The waist tool pouch is teal/dark-green rather than coral.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore over a white top, white socks, and muted-green flats all match.
+    reason: Chestnut hair in a single low side ponytail with bangs, rose-pink pinafore over a white top, white socks, and muted-green flats, no glasses.
 - file: warp-opener-the-card-that-edits-the-card-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, teal crew-neck top, khaki shorts, and red sneakers all match.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with curved white eyes, cobalt joints/panels, mitten hands, single antenna with cobalt ball tip, and a coral tool pouch at the waist all match.
+    reason: Off-white rounded body, black screen face with curved eyes, cobalt panels/hands, single antenna with cobalt tip, and coral pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs, rose-pink pinafore over a white top, white socks, and muted-green flats all match.
+    reason: Chestnut hair in a side ponytail with bangs, rose-pink pinafore over white top, white socks, and green flats all present.
 - file: warp-tail-last-card-of-the-morning-v1.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal crew-neck top, khaki shorts, and red sneakers are all present.
+    reason: Black tousled hair, round glasses, teal top all present under a licensed painterly render.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/limbs/antenna ball, and coral tool pouch are all present.
+    reason: Rounded off-white body, black screen face with two curved white eyes, antenna with cobalt tip, and coral pouch are all present.
   - name: Flopaz
-    verdict: off_model
-    reason: Hair is worn as a single center-back low ponytail without visible straight bangs, rather than the canon low side ponytail with bangs.
+    verdict: on_model
+    reason: Chestnut hair in a side ponytail with bangs is present, matching identity anchors despite licensed wardrobe drift to a pink pinafore-style dress.
 - file: warp-tail-last-card-of-the-morning-v2.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, big round glasses, and face match canon; wardrobe (teal sweater, khaki shorts, red sneakers) sits within the license's seasonal drift.
+    reason: Black tousled hair, round glasses, and a teal crew-neck top are all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white smiling eyes, cobalt panels/joints/mitten hands/feet, single antenna with cobalt ball tip, and coral tool pouch all match canon.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/antenna, and a pouch at the waist are all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs matches the identity anchor; wardrobe (pink pinafore over white top, white socks, green shoes) sits within the license's drift allowance.
+    reason: Chestnut hair in a low side ponytail with bangs and a rose-pink pinafore over a white top are present.
 - file: warp-tail-last-card-of-the-morning-v3.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, and teal top are present, consistent with the license's aged-up allowance and identity anchors.
+    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/feet, single antenna with cobalt ball tip, and coral tool pouch all match.
+    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels and antenna ball, coral tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut hair in a low side ponytail with straight bangs is present, consistent with the license's wardrobe and age drift.
+    reason: Chestnut side ponytail with bangs and rose-pink pinafore over white top are present, consistent with a licensed tail's softer rendering.
 - file: warp-tail-last-card-of-the-morning-v4.png
   verdicts:
   - name: Pedro
     verdict: on_model
-    reason: Black tousled hair, round glasses, teal top, khaki shorts, and red sneakers all present; added jacket is licensed wardrobe drift only.
+    reason: Black tousled hair and round glasses present, with a teal top under the jacket; hoodie and age-up are licensed drift.
   - name: Maro
     verdict: on_model
-    reason: Off-white rounded body, black screen face with two curved white eyes, cobalt panels/joints/mitten hands/feet, cobalt-tipped antenna, and coral tool pouch are all present.
+    reason: Black screen face with two curved white eyes, rounded off-white body, cobalt panels/limbs, antenna, and a tool pouch all present.
   - name: Flopaz
     verdict: on_model
-    reason: Chestnut side ponytail with straight bangs, calm expression, and white socks with green shoes are present; added cardigan is licensed wardrobe drift only.
+    reason: Chestnut hair with straight bangs and a low side ponytail is present, matching the identity anchor.
