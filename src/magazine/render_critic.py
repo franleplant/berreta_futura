@@ -92,7 +92,6 @@ _COVER_PLACEHOLDER = re.compile(r"(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)", re.IG
 
 
 class _PageTexts:
-
     def __init__(self, document: PdfReader) -> None:
         self._document = document
         self._raw: dict[int, str] = {}
@@ -140,7 +139,6 @@ def inspect_render(
     interior_booklet = PdfReader(str(interior_booklet_pdf))
     cover_booklet = PdfReader(str(cover_booklet_pdf))
 
-
     reader_texts = _PageTexts(reader)
     booklet_texts = _PageTexts(booklet)
     interior_booklet_texts = _PageTexts(interior_booklet)
@@ -153,10 +151,7 @@ def inspect_render(
 
     rendered_pages = _render_pages(reader_pdf, review_dir / "reader-pages")
     rendered_booklet = _render_pages(booklet_pdf, review_dir / "booklet-sides")
-    rendered_cover_booklet = _render_pages(
-        cover_booklet_pdf, review_dir / "cover-booklet-sides"
-    )
-
+    rendered_cover_booklet = _render_pages(cover_booklet_pdf, review_dir / "cover-booklet-sides")
 
     manifest_layout = _manifest_layout(destination)
     illustrated_articles = _manifest_opener_article_ids(destination)
@@ -316,14 +311,11 @@ def inspect_render(
                 page=page,
             )
 
-
     inside_cover_pages = {2, page_count - 1}
-
 
     maximum_contents_pages = max(1, math.ceil(len(toc) / 8))
     first_body_page = min(toc.values(), default=3 + maximum_contents_pages)
     actual_contents_pages = first_body_page - 3
-
 
     contents_pages = set(range(3, 3 + max(actual_contents_pages, 0)))
     body_pages = {
@@ -332,14 +324,12 @@ def inspect_render(
         if page not in inside_cover_pages and page not in contents_pages
     }
 
-
     article_last_pages = {
         slug: toc[slug] + int(count) - 1
         for slug, count in article_pages.items()
         if slug in toc and int(count) > 0
     }
     last_page_numbers = set(article_last_pages.values())
-
 
     printed_tail_bands: dict[int, float] = {}
     for entry in manifest_layout.get("tail_arts") or ():
@@ -352,7 +342,6 @@ def inspect_render(
     live_area_points = _annotate_void_geometry(
         rendered_pages, page_rows, body_pages, printed_tail_bands
     )
-
 
     flag_crops: list[dict[str, Any]] = []
     for row in page_rows:
@@ -384,25 +373,17 @@ def inspect_render(
                 page=page,
             )
 
-
         for void in row["voids"]:
             if void["trailing"] and page in last_page_numbers:
-
-
                 if (
                     live_area_points is not None
                     and row["tail_band"] is None
                     and void["height_points"]
-                    >= TAIL_GAP_MIN_LIVE_FRACTION
-                    * (live_area_points[3] - live_area_points[1])
+                    >= TAIL_GAP_MIN_LIVE_FRACTION * (live_area_points[3] - live_area_points[1])
                 ):
                     live_height = live_area_points[3] - live_area_points[1]
                     slug = next(
-                        (
-                            name
-                            for name, last in article_last_pages.items()
-                            if last == page
-                        ),
+                        (name for name, last in article_last_pages.items() if last == page),
                         "unknown article",
                     )
                     issue(
@@ -420,17 +401,13 @@ def inspect_render(
                             "kind": "void",
                             "span": (
                                 void["y_points"] - CROP_MARGIN_POINTS,
-                                void["y_points"]
-                                + void["height_points"]
-                                + CROP_MARGIN_POINTS,
+                                void["y_points"] + void["height_points"] + CROP_MARGIN_POINTS,
                             ),
                         }
                     )
                 continue
             band = row["tail_band"]
             if band is not None and _abuts_tail_band(void, band):
-
-
                 continue
             issue(
                 "whitespace-void",
@@ -451,7 +428,6 @@ def inspect_render(
                 }
             )
 
-
     for slug in sorted(article_last_pages):
         last_page = article_last_pages[slug]
         if not 1 <= last_page <= len(page_rows):
@@ -468,7 +444,6 @@ def inspect_render(
             flag_crops.append(
                 {"page": last_page, "kind": "stub", "span": (0.0, STUB_CROP_HEIGHT_POINTS)}
             )
-
 
     for entry in manifest_layout.get("tail_arts") or ():
         if not isinstance(entry, dict):
@@ -510,15 +485,11 @@ def inspect_render(
                 abs(reference.width - expected_width) > 1
                 or abs(reference.height - expected_height) > 1
             ):
-
-
                 continue
         fidelity = {
             "page": page,
             "path": crop["path"],
-            **_inspect_opener_crop_fidelity(
-                destination / crop["path"], rendered_pages[page - 1]
-            ),
+            **_inspect_opener_crop_fidelity(destination / crop["path"], rendered_pages[page - 1]),
         }
         opener_crop_fidelity.append(fidelity)
         if not fidelity["pass"]:
@@ -579,7 +550,6 @@ def inspect_render(
                 page=side,
             )
 
-
     cover_text = reader_texts.raw(1) if reader_texts.page_count else ""
     if _COVER_PLACEHOLDER.search(str(cover_text)):
         issue(
@@ -597,7 +567,9 @@ def inspect_render(
             f"{maximum_contents_pages} are expected for {len(toc)} entries.",
         )
     if any(page < 4 or page > page_count for page in toc.values()):
-        issue("contents-folio-range", "error", "A contents folio points outside the body page range.")
+        issue(
+            "contents-folio-range", "error", "A contents folio points outside the body page range."
+        )
     if any(count > 7 for count in article_pages.values()):
         issue("article-page-cap", "error", "A source article exceeds the seven-page reader cap.")
     editorial_page_cap = _declared_editorial_cap(manifest_layout)
@@ -675,7 +647,6 @@ def inspect_render(
             "path": cover_booklet_pdf.relative_to(destination).as_posix(),
             "reader_pages": list(cover_pages),
             "sheet_sides": len(cover_booklet.pages),
-
             "sheets": len(cover_booklet.pages),
             "expected_sheet_sides": len(cover_plan),
             "all_sides_a4_landscape": _all_a4_landscape(cover_booklet),
@@ -701,9 +672,7 @@ def inspect_render(
             "booklet_contact_sheets": [
                 path.relative_to(destination).as_posix() for path in booklet_contact_sheets
             ],
-            "reader_pages": [
-                path.relative_to(destination).as_posix() for path in rendered_pages
-            ],
+            "reader_pages": [path.relative_to(destination).as_posix() for path in rendered_pages],
             "booklet_sides": [
                 path.relative_to(destination).as_posix() for path in rendered_booklet
             ],
@@ -803,9 +772,7 @@ def _booklet_spread_checks(
             if text
         )
         actual = (
-            booklet_texts.normalized(side_index)
-            if side_index <= booklet_texts.page_count
-            else ""
+            booklet_texts.normalized(side_index) if side_index <= booklet_texts.page_count else ""
         )
         rows.append(
             {
@@ -847,24 +814,17 @@ def _render_pages(reader_pdf: Path, output_dir: Path) -> list[Path]:
             check=False,
         )
         if completed.returncode:
-            detail = (
-                completed.stderr.strip() or completed.stdout.strip() or "unknown Poppler error"
-            )
+            detail = completed.stderr.strip() or completed.stdout.strip() or "unknown Poppler error"
             raise DependencyError(f"Could not rasterize reader PDF for criticism: {detail}")
-
 
     try:
         page_count = len(PdfReader(str(reader_pdf)).pages)
     except Exception:
-
-
         page_count = 0
     shard_count = worker_count(page_count // 2)
     if shard_count < 2:
         rasterize(None)
     else:
-
-
         cuts = [page_count * index // shard_count for index in range(shard_count + 1)]
         windows = [(cuts[index] + 1, cuts[index + 1]) for index in range(shard_count)]
         ordered_map(rasterize, windows)
@@ -896,13 +856,11 @@ def _inspect_page(
         total_pixels = gray.width * gray.height
         bbox = ink_mask.getbbox()
 
-
         presence_mask = gray.point(lambda value: 255 if value < PAPER_WHITE else 0)
         presence_pixels = presence_mask.histogram()[255]
         presence_bbox = presence_mask.getbbox()
         pure_white = gray.getextrema() == (255, 255)
         width, height = gray.size
-
 
     text = texts.raw(page_number) if texts is not None else (pdf_page.extract_text() or "")
     punctuation = [
@@ -910,7 +868,6 @@ def _inspect_page(
         for line in text.splitlines()
         if _STANDALONE_PUNCTUATION.fullmatch(line.strip())
     ]
-
 
     body_text_lines = sum(
         1
@@ -927,8 +884,6 @@ def _inspect_page(
         "presence_ratio": round(presence_ratio, 6),
         "presence_bbox": list(presence_bbox) if presence_bbox else None,
         "body_text_lines": body_text_lines,
-
-
         "largest_void": None,
         "voids": [],
         "tail_band": None,
@@ -987,9 +942,7 @@ def _opener_frame_bbox(
         for x in range(image.width + 1):
             is_frame = x < image.width and all(
                 abs(channel - target) <= color_tolerance
-                for channel, target in zip(
-                    pixels[x, y], OPENER_FRAME_RGB, strict=True
-                )
+                for channel, target in zip(pixels[x, y], OPENER_FRAME_RGB, strict=True)
             )
             if is_frame and start is None:
                 start = x
@@ -1000,11 +953,7 @@ def _opener_frame_bbox(
     if not frame_runs:
         return None
     longest = max(end - start for start, end, _y in frame_runs)
-    border_rows = [
-        (start, end, y)
-        for start, end, y in frame_runs
-        if end - start >= longest - 2
-    ]
+    border_rows = [(start, end, y) for start, end, y in frame_runs if end - start >= longest - 2]
     return (
         min(start for start, _end, _y in border_rows),
         min(y for _start, _end, y in border_rows),
@@ -1018,25 +967,25 @@ def _inspect_opener_crop_fidelity(crop_path: Path, reader_page_path: Path) -> di
     with Image.open(reader_page_path) as opened:
         reference = opened.convert("RGB")
     with Image.open(crop_path) as opened:
-        normalized = opened.convert("RGB").resize(
-            reference.size, Image.Resampling.LANCZOS
-        )
+        normalized = opened.convert("RGB").resize(reference.size, Image.Resampling.LANCZOS)
 
     histogram = ImageChops.difference(normalized, reference).histogram()
     channel_values = reference.width * reference.height * 3
     rgb_mae = sum((index % 256) * count for index, count in enumerate(histogram))
     rgb_mae /= channel_values
 
-
     crop_frame = _opener_frame_bbox(normalized, color_tolerance=24)
     reference_frame = _opener_frame_bbox(reference, color_tolerance=24)
     frame_delta: float | None
     frames_match = crop_frame is not None and reference_frame is not None
     if frames_match:
-        frame_delta = max(
-            abs(crop_edge - reference_edge)
-            for crop_edge, reference_edge in zip(crop_frame, reference_frame, strict=True)
-        ) / RASTER_DPI
+        frame_delta = (
+            max(
+                abs(crop_edge - reference_edge)
+                for crop_edge, reference_edge in zip(crop_frame, reference_frame, strict=True)
+            )
+            / RASTER_DPI
+        )
     elif crop_frame is None and reference_frame is None:
         frame_delta = None
         frames_match = True
@@ -1046,10 +995,7 @@ def _inspect_opener_crop_fidelity(crop_path: Path, reader_page_path: Path) -> di
     passed = (
         rgb_mae <= OPENER_CROP_FIDELITY_MAX_RGB_MAE
         and frames_match
-        and (
-            frame_delta is None
-            or frame_delta <= OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES
-        )
+        and (frame_delta is None or frame_delta <= OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES)
     )
     frame_text = (
         "no illustration frame detected in either raster"
@@ -1064,9 +1010,7 @@ def _inspect_opener_crop_fidelity(crop_path: Path, reader_page_path: Path) -> di
         "pass": passed,
         "rgb_mae": round(rgb_mae, 4),
         "maximum_rgb_mae": OPENER_CROP_FIDELITY_MAX_RGB_MAE,
-        "frame_edge_delta_inches": (
-            None if frame_delta is None else round(frame_delta, 4)
-        ),
+        "frame_edge_delta_inches": (None if frame_delta is None else round(frame_delta, 4)),
         "maximum_frame_edge_delta_inches": OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES,
         "normalized_pixels": [reference.width, reference.height],
         "message": f"RGB MAE {rgb_mae:.2f}/255; {frame_text}.",
@@ -1097,11 +1041,7 @@ def _inspect_opener_offset(path: Path) -> dict[str, Any]:
         }
 
     longest = max(end - start for start, end, _y in frame_runs)
-    border_rows = [
-        (start, end, y)
-        for start, end, y in frame_runs
-        if end - start >= longest - 2
-    ]
+    border_rows = [(start, end, y) for start, end, y in frame_runs if end - start >= longest - 2]
     frame_left = min(start for start, _end, _y in border_rows)
     frame_right = max(end for _start, end, _y in border_rows)
     frame_top = min(y for _start, _end, y in border_rows)
@@ -1138,10 +1078,7 @@ def _inspect_opener_offset(path: Path) -> dict[str, Any]:
     extension_y = max(y for _x, y in bottom_orange) + 1 - frame_bottom
     expected = OPENER_OFFSET_POINTS * RASTER_DPI / 72
     values = (offset_x, offset_y, extension_x, extension_y)
-    passed = all(
-        abs(value - expected) <= OPENER_OFFSET_TOLERANCE_PIXELS
-        for value in values
-    )
+    passed = all(abs(value - expected) <= OPENER_OFFSET_TOLERANCE_PIXELS for value in values)
     return {
         "pass": passed,
         "frame_bbox_pixels": [frame_left, frame_top, frame_right, frame_bottom],
@@ -1208,7 +1145,6 @@ def _annotate_void_geometry(
             )
             if not area:
                 break
-
 
             width_px = min(cell_width * VOID_DOWNSAMPLE, live_width)
             height_px = cell_height * VOID_DOWNSAMPLE
@@ -1400,9 +1336,7 @@ def _review_crop_plan(
             continue
         opening = ", ".join(sorted(slug for slug, folio in toc.items() if folio == page))
         width, height = page_size(page)
-        specs.append(
-            clamped(page, "opener", opening, (0.0, 0.0, width, height))
-        )
+        specs.append(clamped(page, "opener", opening, (0.0, 0.0, width, height)))
     for entry in manifest_layout.get("figures") or ():
         if not isinstance(entry, dict):
             continue
@@ -1471,12 +1405,9 @@ def _write_review_crops(
         return _render_crop_page(reader_pdf, page, scratch)
 
     try:
-
-
         pages = sorted({int(spec["page"]) for spec in specs})
         rasters = ordered_map(rasterize, pages, workers=worker_count(len(pages)))
         rendered = dict(zip(pages, rasters, strict=True))
-
 
         for spec in specs:
             page = int(spec["page"])
@@ -1542,7 +1473,5 @@ def _render_crop_page(reader_pdf: Path, page_number: int, output_dir: Path) -> P
     matches = sorted(output_dir.glob(f"page-{page_number:03d}-*.png"))
     if completed.returncode or not matches:
         detail = completed.stderr.strip() or completed.stdout.strip() or "unknown Poppler error"
-        raise DependencyError(
-            f"Could not rasterize reader page {page_number} for crops: {detail}"
-        )
+        raise DependencyError(f"Could not rasterize reader page {page_number} for crops: {detail}")
     return matches[0]

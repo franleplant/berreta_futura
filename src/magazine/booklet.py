@@ -29,7 +29,9 @@ def booklet_spreads(page_count: int) -> tuple[tuple[int, int], ...]:
 
 def section_reader_pages(page_count: int, section: str = "all") -> tuple[int, ...]:
     if section not in BOOKLET_SECTIONS:
-        raise ValueError(f"Unknown booklet section {section!r}; expected one of {BOOKLET_SECTIONS}.")
+        raise ValueError(
+            f"Unknown booklet section {section!r}; expected one of {BOOKLET_SECTIONS}."
+        )
     if section == "all":
         return tuple(range(1, page_count + 1))
     if page_count < 4:

@@ -87,12 +87,17 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 ## Repository rules
 
 - Ship each feature complete in the fewest lines that stay readable, and
-  keep cyclomatic complexity low. Style rules are enforced by static checks
-  (`cargo test` runs `tools/nocomments.py`), not by this file.
+  keep cyclomatic complexity low. Style is enforced by tooling, not prose:
+  `cargo fmt`, `cargo clippy` (complexity and length lints in Cargo.toml),
+  `uvx ruff format` and `uvx ruff check` (C901, ERA in pyproject.toml), and
+  `tools/nocomments.py` under `cargo test` for the one rule no linter has
+  (no comments; clap help text and `__doc__` usage strings excepted).
 
 - Never author Unicode U+2014 in prose, comments, prompts, or copy. Preserve it
   only inside captured source text or an exact quotation.
 - Keep `.magazine/`, `output/`, run scratch, and credentials out of Git.
-- Verification: `cargo test` in `mag/`, and load the editions through
-  `magazine.manifest.load_edition` when the Python side changes.
+- Verification: `cargo fmt --check`, `cargo clippy`, `cargo test` in `mag/`;
+  `uvx ruff format --check` and `uvx ruff check` on `src/magazine` and
+  `tools`; load the editions through `magazine.manifest.load_edition` when
+  the Python side changes.
 - Work on the branch the user asks for and commit coherent checkpoints.

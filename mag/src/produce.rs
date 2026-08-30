@@ -1,4 +1,3 @@
-
 use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -28,18 +27,24 @@ fn read(path: &Path) -> Result<String> {
 }
 
 pub(crate) fn prompts_path(file: &str) -> PathBuf {
-
     let local = PathBuf::from("prompts").join(file);
     if local.exists() {
         return local;
     }
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../prompts").join(file)
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../prompts")
+        .join(file)
 }
 
 fn source_text(source_id: &str) -> Result<String> {
-    let path = PathBuf::from("library/sources").join(source_id).join("article.md");
+    let path = PathBuf::from("library/sources")
+        .join(source_id)
+        .join("article.md");
     if !path.exists() {
-        bail!("no captured article for source '{source_id}' at {}", path.display());
+        bail!(
+            "no captured article for source '{source_id}' at {}",
+            path.display()
+        );
     }
     read(&path)
 }
@@ -83,7 +88,10 @@ fn editorial_prompt(articles_final: &[(String, String)]) -> Result<String> {
     let mut out = String::from("<articles>\n");
     for (n, (_id, text)) in articles_final.iter().enumerate() {
         let n = n + 1;
-        out += &format!("\n<article {n}>\n{}\n</article {n}>\n", strip_frontmatter(text).trim());
+        out += &format!(
+            "\n<article {n}>\n{}\n</article {n}>\n",
+            strip_frontmatter(text).trim()
+        );
     }
     out += "\n</articles>\n\n";
     out += read(&prompts_path("opening-editorial.md"))?.trim();
@@ -92,7 +100,9 @@ fn editorial_prompt(articles_final: &[(String, String)]) -> Result<String> {
 }
 
 fn strip_frontmatter(text: &str) -> &str {
-    let Some(rest) = text.strip_prefix("---\n") else { return text };
+    let Some(rest) = text.strip_prefix("---\n") else {
+        return text;
+    };
     match rest.split_once("\n---\n") {
         Some((_, body)) => body,
         None => text,
@@ -122,7 +132,11 @@ fn normalize_bold_labels(body: &str) -> String {
         let alone = (i == 0 || lines[i - 1].trim().is_empty())
             && (i + 1 == lines.len() || lines[i + 1].trim().is_empty());
         if alone && is_bold_label(line) {
-            let inner = line.trim().trim_start_matches("**").trim_end_matches("**").trim();
+            let inner = line
+                .trim()
+                .trim_start_matches("**")
+                .trim_end_matches("**")
+                .trim();
             out.push(format!("## {inner}"));
         } else {
             out.push(line.to_string());
@@ -135,7 +149,11 @@ fn extract_body(reply: &str, label: &str) -> Result<String> {
     let normalized = normalize_bold_labels(reply.trim());
     let mut body = normalized.as_str();
     while body.starts_with('#') {
-        body = body.split_once('\n').map(|(_, rest)| rest).unwrap_or("").trim_start();
+        body = body
+            .split_once('\n')
+            .map(|(_, rest)| rest)
+            .unwrap_or("")
+            .trim_start();
     }
     if body.is_empty() {
         bail!("{label}: reply was empty");
@@ -247,8 +265,11 @@ fn fix_em_dashes(
         if violations.is_empty() {
             return Ok(body);
         }
-        let listed =
-            violations.iter().map(|l| format!("  {l}")).collect::<Vec<_>>().join("\n");
+        let listed = violations
+            .iter()
+            .map(|l| format!("  {l}"))
+            .collect::<Vec<_>>()
+            .join("\n");
         let label = format!("{piece_id} emdash{pass}");
         let fix_prompt = format!(
             "{prompt}\n\n========== your draft ==========\n\n{body}\n\
@@ -284,20 +305,31 @@ fn article_frontmatter(article: &serde_yaml::Value) -> Result<String> {
         .ok_or_else(|| anyhow!("article missing source_ids"))?;
     let mut out = String::from("---\nsource_ids:\n");
     for sid in source_ids {
-        let sid = sid.as_str().ok_or_else(|| anyhow!("non-string source id"))?;
+        let sid = sid
+            .as_str()
+            .ok_or_else(|| anyhow!("non-string source id"))?;
         out += &format!("- {sid}\n");
     }
-    out += &format!("content_mode: {mode}\nlabel: {}\n---\n\n", mode.to_uppercase().replace('_', " "));
+    out += &format!(
+        "content_mode: {mode}\nlabel: {}\n---\n\n",
+        mode.to_uppercase().replace('_', " ")
+    );
     Ok(out)
 }
 
-fn editorial_frontmatter(caller: &Caller, meta_model: &ModelSpec, manuscript: &str) -> Result<String> {
+fn editorial_frontmatter(
+    caller: &Caller,
+    meta_model: &ModelSpec,
+    manuscript: &str,
+) -> Result<String> {
     let prompt = format!(
         "{manuscript}\n\nReply with a title for the piece above: one line of plain text, \
          at most eight words, no quotes, no markdown."
     );
     let title = caller.call_with_parse("editorial title", meta_model, &prompt, |reply| {
-        let t = reply.trim().trim_matches(|c| c == '"' || c == '\u{201c}' || c == '\u{201d}');
+        let t = reply
+            .trim()
+            .trim_matches(|c| c == '"' || c == '\u{201c}' || c == '\u{201d}');
         if t.is_empty() || t.lines().count() != 1 || t.len() > 90 || t.starts_with('#') {
             bail!("reply must be a single plain-text title line");
         }
@@ -308,7 +340,10 @@ fn editorial_frontmatter(caller: &Caller, meta_model: &ModelSpec, manuscript: &s
     map.insert("label".into(), "EDITORIAL".into());
     map.insert("title".into(), title.into());
     map.insert("byline".into(), "The Editors".into());
-    Ok(format!("---\n{}---\n\n", serde_yaml::to_string(&serde_yaml::Value::Mapping(map))?))
+    Ok(format!(
+        "---\n{}---\n\n",
+        serde_yaml::to_string(&serde_yaml::Value::Mapping(map))?
+    ))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -337,19 +372,29 @@ fn produce_piece(
     let final_path = out.join("final.md");
     if final_path.exists() {
         println!("  {piece_id}: final.md exists, skipping (resume)");
-        return Ok(match read(&out.join("status.yaml")).ok().and_then(|t| serde_yaml::from_str(&t).ok()) {
-            Some(status) => status,
-            None => PieceStatus {
-                piece: piece_id.to_string(),
-                words: strip_frontmatter(&read(&final_path)?).split_whitespace().count(),
-                state: "written".to_string(),
+        return Ok(
+            match read(&out.join("status.yaml"))
+                .ok()
+                .and_then(|t| serde_yaml::from_str(&t).ok())
+            {
+                Some(status) => status,
+                None => PieceStatus {
+                    piece: piece_id.to_string(),
+                    words: strip_frontmatter(&read(&final_path)?)
+                        .split_whitespace()
+                        .count(),
+                    state: "written".to_string(),
+                },
             },
-        });
+        );
     }
 
     let label = format!("{piece_id} write");
     let (prompt, frontmatter) = match article {
-        Some(article) => (writer_prompt(article, sources)?, Some(article_frontmatter(article)?)),
+        Some(article) => (
+            writer_prompt(article, sources)?,
+            Some(article_frontmatter(article)?),
+        ),
         None => (editorial_prompt(sources)?, None),
     };
     let (max_words, heading_cost) = if article.is_none() {
@@ -358,9 +403,18 @@ fn produce_piece(
         (ARTICLE_MAX_WORDS, 0)
     };
     let parse_label = label.clone();
-    let body =
-        caller.call_with_parse(&label, writer_model, &prompt, |r| extract_body(r, &parse_label))?;
-    let body = fit_to_budget(caller, writer_model, piece_id, &prompt, body, max_words, heading_cost)?;
+    let body = caller.call_with_parse(&label, writer_model, &prompt, |r| {
+        extract_body(r, &parse_label)
+    })?;
+    let body = fit_to_budget(
+        caller,
+        writer_model,
+        piece_id,
+        &prompt,
+        body,
+        max_words,
+        heading_cost,
+    )?;
     let body = fix_em_dashes(caller, writer_model, piece_id, &prompt, body, sources)?;
     let frontmatter = match frontmatter {
         Some(fm) => fm,
@@ -385,7 +439,12 @@ struct Plan {
 }
 
 fn yq(s: &str) -> String {
-    if s.is_empty() || s.contains(':') || s.contains('#') || s.contains('\'') || s.starts_with(['[', '{', '&', '*', '!', '|', '>', '%', '@', '`', '"']) {
+    if s.is_empty()
+        || s.contains(':')
+        || s.contains('#')
+        || s.contains('\'')
+        || s.starts_with(['[', '{', '&', '*', '!', '|', '>', '%', '@', '`', '"'])
+    {
         format!("'{}'", s.replace('\'', "''"))
     } else {
         s.to_string()
@@ -393,13 +452,23 @@ fn yq(s: &str) -> String {
 }
 
 fn source_figure_candidates(sid: &str) -> Vec<(String, String)> {
-    let path = PathBuf::from("library/sources").join(sid).join("article.md");
-    let Ok(text) = fs::read_to_string(&path) else { return Vec::new() };
+    let path = PathBuf::from("library/sources")
+        .join(sid)
+        .join("article.md");
+    let Ok(text) = fs::read_to_string(&path) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for line in text.lines() {
-        let Some(rest) = line.trim_start().strip_prefix("![") else { continue };
-        let Some((alt, tail)) = rest.split_once("](") else { continue };
-        let Some((media, _)) = tail.split_once(')') else { continue };
+        let Some(rest) = line.trim_start().strip_prefix("![") else {
+            continue;
+        };
+        let Some((alt, tail)) = rest.split_once("](") else {
+            continue;
+        };
+        let Some((media, _)) = tail.split_once(')') else {
+            continue;
+        };
         if media.starts_with("media/") {
             out.push((media.to_string(), alt.chars().take(110).collect()));
         }
@@ -407,13 +476,20 @@ fn source_figure_candidates(sid: &str) -> Vec<(String, String)> {
     out
 }
 
-fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> Result<Option<PathBuf>> {
+fn scaffold_edition_yaml(
+    edition_dir: &Path,
+    edition_id: &str,
+    plan: &Plan,
+) -> Result<Option<PathBuf>> {
     let path = edition_dir.join("edition.yaml");
     if path.exists() {
         return Ok(None);
     }
     let issue_number: u32 = edition_id.trim_start_matches('0').parse().unwrap_or(0);
-    let today = crate::caller::now_stamp().chars().take(10).collect::<String>();
+    let today = crate::caller::now_stamp()
+        .chars()
+        .take(10)
+        .collect::<String>();
     let mut y = String::new();
     y += &format!(
         "# Edition {issue_number} spec, scaffolded by `mag produce` from plan.yaml.\n\
@@ -432,9 +508,18 @@ fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> R
         let get = |k: &str| a.get(k).and_then(value_to_string).unwrap_or_default();
         let id = get("id");
         let title = get("title");
-        y += &format!("- id: {}\n  title: {}\n  short_title: {}\n", yq(&id), yq(&title), yq(&title));
+        y += &format!(
+            "- id: {}\n  title: {}\n  short_title: {}\n",
+            yq(&id),
+            yq(&title),
+            yq(&title)
+        );
         y += "  display_emphasis: TODO\n  opener_variant: stepped_title\n";
-        y += &format!("  author: {}\n  author_note: TODO\n  content_mode: {}\n", yq(&get("author")), yq(&get("content_mode")));
+        y += &format!(
+            "  author: {}\n  author_note: TODO\n  content_mode: {}\n",
+            yq(&get("author")),
+            yq(&get("content_mode"))
+        );
         y += "  source_ids:\n";
         let sids: Vec<String> = a
             .get("source_ids")
@@ -486,21 +571,28 @@ pub fn run_edition(
         .ok_or_else(|| anyhow!("plan.edition.id missing or not a string/number"))?;
 
     let edition_dir = plan_path.parent().map(PathBuf::from).unwrap_or_default();
-    let run_dir = resume
-        .unwrap_or_else(|| edition_dir.join(format!("run-{}", crate::caller::now_stamp())));
+    let run_dir =
+        resume.unwrap_or_else(|| edition_dir.join(format!("run-{}", crate::caller::now_stamp())));
     fs::create_dir_all(&run_dir)?;
     fs::write(run_dir.join("plan.yaml"), serde_yaml::to_string(&plan)?)?;
     let caller = Arc::new(Caller::new(&run_dir));
     let started = Instant::now();
     println!("run dir: {}", run_dir.display());
 
-    let scaffold_plan = Plan { edition: plan.edition.clone(), articles: plan.articles.clone() };
+    let scaffold_plan = Plan {
+        edition: plan.edition.clone(),
+        articles: plan.articles.clone(),
+    };
     let articles: Vec<serde_yaml::Value> = plan
         .articles
         .into_iter()
         .filter(|a| match &only {
             None => true,
-            Some(ids) => a.get("id").and_then(|v| v.as_str()).map(|s| ids.contains(s)).unwrap_or(false),
+            Some(ids) => a
+                .get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| ids.contains(s))
+                .unwrap_or(false),
         })
         .collect();
 
@@ -530,14 +622,26 @@ pub fn run_edition(
                 let text = source_text(&sid)?;
                 sources.push((sid, text));
             }
-            produce_piece(&caller, &run_dir, &id, Some(&article_owned), &sources, &writer_model, &meta_model)
+            produce_piece(
+                &caller,
+                &run_dir,
+                &id,
+                Some(&article_owned),
+                &sources,
+                &writer_model,
+                &meta_model,
+            )
         }));
     }
 
     let mut statuses = Vec::new();
     let mut failures: Vec<(String, String)> = Vec::new();
     for (article, handle) in articles.iter().zip(handles) {
-        let id = article.get("id").and_then(|v| v.as_str()).unwrap_or("?").to_string();
+        let id = article
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("?")
+            .to_string();
         match handle.join() {
             Ok(Ok(status)) => statuses.push(status),
             Ok(Err(e)) => {
@@ -562,7 +666,15 @@ pub fn run_edition(
     }
 
     if !finals.is_empty() && failures.is_empty() {
-        match produce_piece(&caller, &run_dir, "editorial", None, &finals, writer_model, meta_model) {
+        match produce_piece(
+            &caller,
+            &run_dir,
+            "editorial",
+            None,
+            &finals,
+            writer_model,
+            meta_model,
+        ) {
             Ok(st) => statuses.push(st),
             Err(e) => {
                 eprintln!("  FAILED editorial: {e}");
@@ -575,8 +687,16 @@ pub fn run_edition(
     let mut lines = vec![
         format!("# Run summary — edition {edition_id}"),
         String::new(),
-        format!("- {} model calls, ${:.2}, {:.1} minutes", caller.calls(), caller.total_cost(), minutes),
-        format!("- writer `{}`, frontmatter `{}`", writer_model.full, meta_model.full),
+        format!(
+            "- {} model calls, ${:.2}, {:.1} minutes",
+            caller.calls(),
+            caller.total_cost(),
+            minutes
+        ),
+        format!(
+            "- writer `{}`, frontmatter `{}`",
+            writer_model.full, meta_model.full
+        ),
         String::new(),
         "| piece | words |".to_string(),
         "|---|---|".to_string(),
@@ -608,7 +728,11 @@ pub fn run_edition(
             edition_yaml.display()
         );
     } else {
-        println!("\nnext: fix the failures above, then: mag produce {} --resume {}", plan_path.display(), run_dir.display());
+        println!(
+            "\nnext: fix the failures above, then: mag produce {} --resume {}",
+            plan_path.display(),
+            run_dir.display()
+        );
     }
 
     Ok(if failures.is_empty() { 0 } else { 1 })
@@ -704,7 +828,10 @@ mod tests {
             extract_body(reply, "t").unwrap(),
             "An AI application needs things.\n\n## Later\n\nMore.\n"
         );
-        assert_eq!(extract_body("Plain paragraph first.", "t").unwrap(), "Plain paragraph first.\n");
+        assert_eq!(
+            extract_body("Plain paragraph first.", "t").unwrap(),
+            "Plain paragraph first.\n"
+        );
         assert!(extract_body("# Only a title", "t").is_err());
         assert!(extract_body("   ", "t").is_err());
     }

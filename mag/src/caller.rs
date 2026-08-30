@@ -1,7 +1,6 @@
-
 use anyhow::{bail, Context, Result};
-use std::path::PathBuf;
 use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Condvar, Mutex};
@@ -12,7 +11,10 @@ pub const CALL_RETRIES: u32 = 2;
 pub const CONCURRENCY: usize = 8;
 
 pub fn call_timeout_secs_for(spec: Option<&ModelSpec>) -> u64 {
-    if let Some(v) = std::env::var("MAG_CALL_TIMEOUT_SECS").ok().and_then(|v| v.parse().ok()) {
+    if let Some(v) = std::env::var("MAG_CALL_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+    {
         return v;
     }
     match spec.and_then(|s| s.effort.as_deref()) {
@@ -126,7 +128,10 @@ impl CodexScratch {
         let n = N.fetch_add(1, Ordering::Relaxed);
         let dir = std::env::temp_dir().join(format!("mag-codex-{}-{n}", std::process::id()));
         std::fs::create_dir_all(&dir).map_err(|e| format!("creating codex scratch dir: {e}"))?;
-        Ok(Self { out: dir.join("last-message.txt"), dir })
+        Ok(Self {
+            out: dir.join("last-message.txt"),
+            dir,
+        })
     }
 }
 
@@ -349,13 +354,11 @@ impl Caller {
                 if images.is_empty() {
                     c.args(["--disallowedTools", "*"]);
                 } else {
-
                     c.args(["--allowedTools", "Read"]);
                 }
                 c
             }
             Backend::Codex => {
-
                 let mut c = Command::new("codex");
                 c.args([
                     "exec",
@@ -368,7 +371,8 @@ impl Caller {
                     "never",
                 ]);
                 if let Some(effort) = &spec.effort {
-                    c.arg("-c").arg(format!("model_reasoning_effort=\"{effort}\""));
+                    c.arg("-c")
+                        .arg(format!("model_reasoning_effort=\"{effort}\""));
                 }
                 for img in images {
                     c.arg(format!("--image={}", img.display()));
@@ -379,7 +383,6 @@ impl Caller {
                 c
             }
             Backend::Ollama => {
-
                 let mut c = Command::new("curl");
                 c.args([
                     "-s",
@@ -399,8 +402,8 @@ impl Caller {
             None => self.root.as_path(),
         })
         .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
         let mut child = cmd
             .spawn()
@@ -420,7 +423,6 @@ impl Caller {
         let mut stdin = child.stdin.take().expect("piped stdin");
         let writer = thread::spawn(move || {
             let _ = stdin.write_all(stdin_payload.as_bytes());
-
         });
 
         let mut stdout = child.stdout.take().expect("piped stdout");
@@ -460,7 +462,12 @@ impl Caller {
 
         let status = match status {
             Some(s) => s,
-            None => return Err(format!("timeout after {}s", call_timeout_secs_for(Some(spec)))),
+            None => {
+                return Err(format!(
+                    "timeout after {}s",
+                    call_timeout_secs_for(Some(spec))
+                ))
+            }
         };
 
         match spec.backend {
@@ -473,7 +480,10 @@ impl Caller {
                         status.code().unwrap_or(-1)
                     )
                 })?;
-                let is_error = data.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
+                let is_error = data
+                    .get("is_error")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
                 let subtype = data.get("subtype").and_then(|v| v.as_str()).unwrap_or("");
                 if is_error || subtype != "success" {
                     let dumped = data.to_string();
@@ -552,7 +562,6 @@ mod tests {
 
     #[test]
     fn timestamp_matches_known_unix_time() {
-
         assert_eq!(format_utc_stamp(1700000000), "2023-11-14T22-13-20");
     }
 }

@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from collections.abc import Mapping as MappingABC
@@ -101,16 +100,17 @@ Block: TypeAlias = Heading | Paragraph | FencedCode | BlockQuote | ListBlock | H
 
 @dataclass(frozen=True, slots=True)
 class PublicationDocument:
-
     metadata: Mapping[str, object]
     blocks: tuple[Block, ...]
 
 
-_GLYPH_FALLBACKS = str.maketrans({
-    "‑": "-",
-    "−": "-",
-    "­": "",
-})
+_GLYPH_FALLBACKS = str.maketrans(
+    {
+        "‑": "-",
+        "−": "-",
+        "­": "",
+    }
+)
 
 
 def parse_publication_document(markdown: str) -> PublicationDocument:
@@ -167,7 +167,9 @@ def _freeze(value: object) -> object:
     return value
 
 
-def _parse_blocks(tokens: list[Token], index: int = 0, *, until: str | None = None) -> tuple[tuple[Block, ...], int]:
+def _parse_blocks(
+    tokens: list[Token], index: int = 0, *, until: str | None = None
+) -> tuple[tuple[Block, ...], int]:
     blocks: list[Block] = []
     while index < len(tokens):
         token = tokens[index]
@@ -175,7 +177,9 @@ def _parse_blocks(tokens: list[Token], index: int = 0, *, until: str | None = No
             return tuple(blocks), index + 1
         if token.type == "heading_open":
             inline = _expect(tokens, index + 1, "inline")
-            blocks.append(Heading(level=int(token.tag[1:]), children=_parse_inlines(inline.children)))
+            blocks.append(
+                Heading(level=int(token.tag[1:]), children=_parse_inlines(inline.children))
+            )
             index = _expect_close(tokens, index + 2, "heading_close")
         elif token.type == "paragraph_open":
             inline = _expect(tokens, index + 1, "inline")
@@ -191,7 +195,6 @@ def _parse_blocks(tokens: list[Token], index: int = 0, *, until: str | None = No
             blocks.append(FencedCode(code=token.content, info=token.info))
             index += 1
         elif token.type == "code_block":
-
             blocks.append(FencedCode(code=token.content, info=""))
             index += 1
         elif token.type == "hr":
@@ -234,7 +237,9 @@ def _parse_inlines(tokens: list[Token] | None) -> tuple[Inline, ...]:
     return inlines
 
 
-def _parse_inline_sequence(tokens: list[Token], index: int = 0, *, until: str | None = None) -> tuple[tuple[Inline, ...], int]:
+def _parse_inline_sequence(
+    tokens: list[Token], index: int = 0, *, until: str | None = None
+) -> tuple[tuple[Inline, ...], int]:
     inlines: list[Inline] = []
     while index < len(tokens):
         token = tokens[index]
@@ -258,7 +263,9 @@ def _parse_inline_sequence(tokens: list[Token], index: int = 0, *, until: str | 
             destination = token.attrGet("href")
             if destination is None:
                 raise DocumentParseError("Markdown link has no destination")
-            inlines.append(Link(destination=destination, children=children, title=token.attrGet("title")))
+            inlines.append(
+                Link(destination=destination, children=children, title=token.attrGet("title"))
+            )
         else:
             raise DocumentParseError(f"Unsupported Markdown inline token: {token.type}")
     if until is not None:

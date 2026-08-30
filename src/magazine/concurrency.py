@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import os
@@ -29,16 +28,12 @@ def ordered_map(
 
     count = worker_count(len(items), workers)
     if count <= 1 or len(items) < 2:
-
-
         results: list[R] = []
         failures: list[Exception] = []
         for item in items:
             try:
                 results.append(function(item))
             except Exception as error:
-
-
                 failures.append(error)
         if failures:
             raise failures[0]
@@ -47,9 +42,7 @@ def ordered_map(
     with ThreadPoolExecutor(max_workers=count, thread_name_prefix="magazine") as pool:
         futures = [pool.submit(function, item) for item in items]
 
-
         wait(futures)
-
 
         for future in futures:
             error = future.exception()

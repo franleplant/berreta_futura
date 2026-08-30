@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
@@ -124,11 +123,7 @@ def localize_figures(
             f"Translation {language!r} article {article_id} figures must be a list"
         )
     errors: list[str] = []
-    by_id = {
-        str(row.get("id")): row
-        for row in rows
-        if isinstance(row, dict) and row.get("id")
-    }
+    by_id = {str(row.get("id")): row for row in rows if isinstance(row, dict) and row.get("id")}
     expected_ids = {figure.id for figure in base}
     if set(by_id) != expected_ids:
         missing = sorted(expected_ids - set(by_id))
@@ -172,7 +167,6 @@ EXTRACT_STYLES = {"code", "quote"}
 
 @dataclass(frozen=True)
 class Extract:
-
     id: str
     source_id: str
     text: str
@@ -296,11 +290,7 @@ def localize_extracts(
             f"Translation {language!r} article {article_id} extracts must be a list"
         )
     errors: list[str] = []
-    by_id = {
-        str(row.get("id")): row
-        for row in rows
-        if isinstance(row, dict) and row.get("id")
-    }
+    by_id = {str(row.get("id")): row for row in rows if isinstance(row, dict) and row.get("id")}
     expected_ids = {extract.id for extract in base}
     if set(by_id) != expected_ids:
         missing = sorted(expected_ids - set(by_id))
@@ -340,6 +330,6 @@ def semantic_headings(path: Path) -> set[str]:
     headings: set[str] = set()
     for line in path.read_text(encoding="utf-8").splitlines():
         for prefix in ("## ", "### "):
-            if line.startswith(prefix) and line[len(prefix):].strip():
-                headings.add(line[len(prefix):].strip())
+            if line.startswith(prefix) and line[len(prefix) :].strip():
+                headings.add(line[len(prefix) :].strip())
     return headings

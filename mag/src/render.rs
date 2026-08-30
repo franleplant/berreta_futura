@@ -1,4 +1,3 @@
-
 use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
@@ -55,7 +54,12 @@ struct Staging {
 
 impl Staging {
     fn new(repo_root: PathBuf) -> Self {
-        Self { repo_root, seen: HashSet::new(), rows: Vec::new(), missing: Vec::new() }
+        Self {
+            repo_root,
+            seen: HashSet::new(),
+            rows: Vec::new(),
+            missing: Vec::new(),
+        }
     }
 
     fn add(&mut self, rel: &Path) {
@@ -82,7 +86,8 @@ impl Staging {
         }
         let abs = self.repo_root.join(source);
         if !abs.exists() {
-            self.missing.push(format!("{} (for {})", source.display(), target));
+            self.missing
+                .push(format!("{} (for {})", source.display(), target));
             return;
         }
         self.rows.push(InputRow {
@@ -119,7 +124,9 @@ fn latest_complete_run(edition_dir: &Path, article_ids: &[String]) -> Option<Pat
         })
         .collect();
     runs.sort();
-    runs.into_iter().rev().find(|run| run_is_complete(run, article_ids))
+    runs.into_iter()
+        .rev()
+        .find(|run| run_is_complete(run, article_ids))
 }
 
 fn run_is_complete(run: &Path, article_ids: &[String]) -> bool {
@@ -165,12 +172,17 @@ fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
         }
     }
     match matches.len() {
-        0 => bail!("no edition directory found matching 'editions/{edition}' or 'editions/{edition}*'"),
+        0 => bail!(
+            "no edition directory found matching 'editions/{edition}' or 'editions/{edition}*'"
+        ),
         1 => Ok(matches.remove(0)),
         _ => {
             matches.sort();
             let names: Vec<String> = matches.iter().map(|p| p.display().to_string()).collect();
-            bail!("ambiguous edition '{edition}': matches {}", names.join(", "))
+            bail!(
+                "ambiguous edition '{edition}': matches {}",
+                names.join(", ")
+            )
         }
     }
 }
@@ -202,18 +214,16 @@ pub(crate) fn publication_name(repo_root: &Path) -> String {
     "Magazine".to_string()
 }
 
-fn stage_article_figures(
-    staging: &mut Staging,
-    article: &serde_yaml::Value,
-) -> Result<()> {
+fn stage_article_figures(staging: &mut Staging, article: &serde_yaml::Value) -> Result<()> {
     let article_id = str_field(article, "id").unwrap_or("<unknown article>");
     let Some(figures) = article.get("figures").and_then(|v| v.as_sequence()) else {
         return Ok(());
     };
     for figure in figures {
         let figure_id = str_field(figure, "id").unwrap_or("<unknown figure>");
-        let sid = str_field(figure, "source_id")
-            .ok_or_else(|| anyhow!("article '{article_id}' figure '{figure_id}' missing source_id"))?;
+        let sid = str_field(figure, "source_id").ok_or_else(|| {
+            anyhow!("article '{article_id}' figure '{figure_id}' missing source_id")
+        })?;
         let path = str_field(figure, "path")
             .ok_or_else(|| anyhow!("article '{article_id}' figure '{figure_id}' missing path"))?;
         staging.add(&PathBuf::from("library/sources").join(sid).join(path));
@@ -221,10 +231,7 @@ fn stage_article_figures(
     Ok(())
 }
 
-fn stage_article_extracts(
-    staging: &mut Staging,
-    article: &serde_yaml::Value,
-) -> Result<()> {
+fn stage_article_extracts(staging: &mut Staging, article: &serde_yaml::Value) -> Result<()> {
     let article_id = str_field(article, "id").unwrap_or("<unknown article>");
     let Some(extracts) = article.get("extracts").and_then(|v| v.as_sequence()) else {
         return Ok(());
@@ -234,7 +241,11 @@ fn stage_article_extracts(
         let sid = str_field(extract, "source_id").ok_or_else(|| {
             anyhow!("article '{article_id}' extract '{extract_id}' missing source_id")
         })?;
-        staging.add(&PathBuf::from("library/sources").join(sid).join("article.md"));
+        staging.add(
+            &PathBuf::from("library/sources")
+                .join(sid)
+                .join("article.md"),
+        );
     }
     Ok(())
 }
@@ -242,7 +253,10 @@ fn stage_article_extracts(
 fn print_summary(value: &serde_json::Value, out_dir: &Path) {
     if let Some(layouts) = value.get("layouts").and_then(|v| v.as_object()) {
         for (lang, info) in layouts {
-            let total_pages = info.get("totalPages").map(|v| v.to_string()).unwrap_or_else(|| "?".to_string());
+            let total_pages = info
+                .get("totalPages")
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "?".to_string());
             println!("  [{lang}] totalPages={total_pages}");
             if let Some(article_pages) = info.get("articlePages").and_then(|v| v.as_object()) {
                 for (aid, pages) in article_pages {
@@ -279,7 +293,10 @@ fn resolve_article_anchors(
     manuscript_path: &Path,
     article: &mut serde_yaml::Value,
 ) -> Result<AnchorOutcome> {
-    let mut outcome = AnchorOutcome { changed: false, dropped: Vec::new() };
+    let mut outcome = AnchorOutcome {
+        changed: false,
+        dropped: Vec::new(),
+    };
     let headings = manuscript_headings(manuscript_path);
 
     let mut pending_idx: Vec<usize> = Vec::new();
@@ -291,17 +308,20 @@ fn resolve_article_anchors(
         };
         for (i, fig) in figs.iter().enumerate() {
             let anchor = str_field(fig, "anchor").unwrap_or("");
-            if anchor.is_empty()
-                || anchor == "__opener__"
-                || headings.iter().any(|h| h == anchor)
-            {
+            if anchor.is_empty() || anchor == "__opener__" || headings.iter().any(|h| h == anchor) {
                 continue;
             }
-            let fig_id = str_field(fig, "id").unwrap_or("<unknown-figure>").to_string();
+            let fig_id = str_field(fig, "id")
+                .unwrap_or("<unknown-figure>")
+                .to_string();
             pending_meta += &format!("- id: {fig_id}\n");
             for key in ["caption", "alt_text", "rationale", "anchor"] {
                 if let Some(v) = str_field(fig, key) {
-                    let label = if key == "anchor" { "previous_section" } else { key };
+                    let label = if key == "anchor" {
+                        "previous_section"
+                    } else {
+                        key
+                    };
                     pending_meta += &format!("  {label}: {v}\n");
                 }
             }
@@ -354,7 +374,9 @@ fn resolve_article_anchors(
                 outcome.changed = true;
             }
             None => {
-                outcome.dropped.push(format!("{article_id}:{fig_id} (was '{old}')"));
+                outcome
+                    .dropped
+                    .push(format!("{article_id}:{fig_id} (was '{old}')"));
                 drop_idx.insert(i);
             }
         }
@@ -380,7 +402,12 @@ fn parse_anchor_reply(
     for id in ids {
         let line = reply
             .lines()
-            .find(|l| l.split("::").next().map(|s| s.trim().trim_start_matches('-').trim() == id).unwrap_or(false))
+            .find(|l| {
+                l.split("::")
+                    .next()
+                    .map(|s| s.trim().trim_start_matches('-').trim() == id)
+                    .unwrap_or(false)
+            })
             .ok_or_else(|| anyhow!("reply has no `{id} :: <heading>` line"))?;
         let value = line
             .split_once("::")
@@ -416,14 +443,19 @@ pub fn run(
     anchor_model: &ModelSpec,
 ) -> Result<i32> {
     if !OPERATIONS.contains(&operation) {
-        bail!("unknown operation '{operation}': expected one of {}", OPERATIONS.join(", "));
+        bail!(
+            "unknown operation '{operation}': expected one of {}",
+            OPERATIONS.join(", ")
+        );
     }
     if operation == "measure_article" && article.is_none() {
         bail!("measure_article requires --article");
     }
 
     let repo_root = std::env::current_dir().context("resolving current directory")?;
-    let repo_root = repo_root.canonicalize().context("canonicalizing repo root")?;
+    let repo_root = repo_root
+        .canonicalize()
+        .context("canonicalizing repo root")?;
 
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_yaml_path = edition_dir.join("edition.yaml");
@@ -434,8 +466,16 @@ pub fn run(
 
     let edition_id = str_field(&edition_yaml, "id")
         .map(str::to_string)
-        .unwrap_or_else(|| edition_dir.file_name().unwrap().to_string_lossy().to_string());
-    let primary_language = str_field(&edition_yaml, "language").unwrap_or("en").to_string();
+        .unwrap_or_else(|| {
+            edition_dir
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string()
+        });
+    let primary_language = str_field(&edition_yaml, "language")
+        .unwrap_or("en")
+        .to_string();
 
     let articles = edition_yaml
         .get("articles")
@@ -445,18 +485,25 @@ pub fn run(
 
     if operation == "measure_article" {
         let wanted = article.unwrap();
-        let ids: Vec<String> =
-            articles.iter().filter_map(|a| str_field(a, "id").map(str::to_string)).collect();
+        let ids: Vec<String> = articles
+            .iter()
+            .filter_map(|a| str_field(a, "id").map(str::to_string))
+            .collect();
         if !ids.iter().any(|id| id == wanted) {
-            bail!("article '{wanted}' not found in edition '{edition_id}'; available: {}", ids.join(", "));
+            bail!(
+                "article '{wanted}' not found in edition '{edition_id}'; available: {}",
+                ids.join(", ")
+            );
         }
     }
 
     let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
     let mut staging = Staging::new(repo_root.clone());
 
-    let article_ids: Vec<String> =
-        articles.iter().filter_map(|a| str_field(a, "id").map(str::to_string)).collect();
+    let article_ids: Vec<String> = articles
+        .iter()
+        .filter_map(|a| str_field(a, "id").map(str::to_string))
+        .collect();
     let content_run: Option<PathBuf> = match run_flag {
         Some(dir) => {
             let dir = PathBuf::from(dir);
@@ -483,9 +530,14 @@ pub fn run(
         let mut patched = edition_yaml.clone();
         let mut changed = false;
         let mut dropped: Vec<String> = Vec::new();
-        if let Some(list) = patched.get_mut("articles").and_then(|v| v.as_sequence_mut()) {
+        if let Some(list) = patched
+            .get_mut("articles")
+            .and_then(|v| v.as_sequence_mut())
+        {
             for article in list.iter_mut() {
-                let Some(id) = str_field(article, "id").map(str::to_string) else { continue };
+                let Some(id) = str_field(article, "id").map(str::to_string) else {
+                    continue;
+                };
                 let manuscript_path = run.join("articles").join(&id).join("final.md");
                 let outcome =
                     resolve_article_anchors(&caller, anchor_model, &id, &manuscript_path, article)?;
@@ -494,7 +546,10 @@ pub fn run(
             }
         }
         if !dropped.is_empty() {
-            println!("  dropped {} figure(s) no heading of this run fits:", dropped.len());
+            println!(
+                "  dropped {} figure(s) no heading of this run fits:",
+                dropped.len()
+            );
             for d in &dropped {
                 println!("    {d}");
             }
@@ -519,14 +574,18 @@ pub fn run(
         {
             let declared = resolve_field(manuscript, &edition_dir);
             match &content_run {
-                Some(run) => staging
-                    .add_mapped(&run.join("articles").join(id).join("final.md"), &declared),
+                Some(run) => {
+                    staging.add_mapped(&run.join("articles").join(id).join("final.md"), &declared)
+                }
                 None => staging.add(&declared),
             }
         }
     }
 
-    if let Some(art_path) = edition_yaml.get("cover").and_then(|c| str_field(c, "art_path")) {
+    if let Some(art_path) = edition_yaml
+        .get("cover")
+        .and_then(|c| str_field(c, "art_path"))
+    {
         staging.add(&resolve_field(art_path, &edition_dir));
     }
     for article in &articles {
@@ -537,7 +596,10 @@ pub fn run(
             staging.add(&resolve_field(tail_path, &edition_dir));
         }
     }
-    if let Some(plates) = edition_yaml.get("closing_plates").and_then(|v| v.as_sequence()) {
+    if let Some(plates) = edition_yaml
+        .get("closing_plates")
+        .and_then(|v| v.as_sequence())
+    {
         for plate in plates {
             if let Some(art_path) = str_field(plate, "art_path") {
                 staging.add(&resolve_field(art_path, &edition_dir));
@@ -553,7 +615,9 @@ pub fn run(
     let translation_dir = edition_dir.join("translations/es");
     let translation_yaml_path = translation_dir.join("edition.yaml");
     let has_translation = translation_yaml_path.exists()
-        && langs.map(|l| l.split(',').any(|x| x.trim() == "es")).unwrap_or(true);
+        && langs
+            .map(|l| l.split(',').any(|x| x.trim() == "es"))
+            .unwrap_or(true);
     let languages: Vec<String> = if has_translation {
         vec!["en".to_string(), "es".to_string()]
     } else {
@@ -562,10 +626,16 @@ pub fn run(
     if has_translation {
         let translation_yaml = read_yaml(&translation_yaml_path)?;
         staging.add(&translation_yaml_path);
-        if let Some(editorial_path) = translation_yaml.get("editorial").and_then(|e| str_field(e, "path")) {
+        if let Some(editorial_path) = translation_yaml
+            .get("editorial")
+            .and_then(|e| str_field(e, "path"))
+        {
             staging.add(&resolve_field(editorial_path, &translation_dir));
         }
-        if let Some(t_articles) = translation_yaml.get("articles").and_then(|v| v.as_sequence()) {
+        if let Some(t_articles) = translation_yaml
+            .get("articles")
+            .and_then(|v| v.as_sequence())
+        {
             for t_article in t_articles {
                 if let Some(manuscript) = str_field(t_article, "manuscript") {
                     staging.add(&resolve_field(manuscript, &translation_dir));
@@ -598,9 +668,13 @@ pub fn run(
     }
 
     for sid in &sids {
-        let record_path = PathBuf::from("library/sources").join(sid).join("record.yaml");
+        let record_path = PathBuf::from("library/sources")
+            .join(sid)
+            .join("record.yaml");
         if !repo_root.join(&record_path).exists() {
-            staging.missing.push(record_path.to_string_lossy().replace('\\', "/"));
+            staging
+                .missing
+                .push(record_path.to_string_lossy().replace('\\', "/"));
             continue;
         }
         staging.add(&record_path);
@@ -628,7 +702,11 @@ pub fn run(
         schema_version: SCHEMA_VERSION,
         renderer_contract_version: RENDERER_CONTRACT_VERSION.to_string(),
         operation: operation.to_string(),
-        article_id: if operation == "measure_article" { article.map(str::to_string) } else { None },
+        article_id: if operation == "measure_article" {
+            article.map(str::to_string)
+        } else {
+            None
+        },
         edition_id: edition_id.clone(),
         primary_language,
         languages,
@@ -697,7 +775,9 @@ mod tests {
         let reply = "fig-a :: the escalation\nfig-b :: NONE\n";
         let out = parse_anchor_reply(reply, &ids, &headings).unwrap();
         assert_eq!(out, vec![Some("The Escalation".to_string()), None]);
-        assert!(parse_anchor_reply("fig-a :: Not A Heading\nfig-b :: NONE", &ids, &headings).is_err());
+        assert!(
+            parse_anchor_reply("fig-a :: Not A Heading\nfig-b :: NONE", &ids, &headings).is_err()
+        );
         assert!(parse_anchor_reply("fig-a :: The Escalation", &ids, &headings).is_err());
     }
 }

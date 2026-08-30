@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
@@ -119,7 +118,10 @@ _ADAPTIVE_FIGURE_MIN_IMAGE_HEIGHT = 155.0
 _MIN_FIGURE_PPI = 300.0
 
 
-_BAND_HEADING_MEASURE = {"h2": ("serif-display", 17.5, 20.5, 10.0), "h3": ("sans-semibold", 8.7, 12.0, 7.0)}
+_BAND_HEADING_MEASURE = {
+    "h2": ("serif-display", 17.5, 20.5, 10.0),
+    "h3": ("sans-semibold", 8.7, 12.0, 7.0),
+}
 
 
 _EVIDENCE_BAND_LAYOUTS = frozenset(
@@ -137,14 +139,14 @@ _READING_LEADING = 13.0
 _HEADING_CLEARANCE_POINTS = 25.0
 
 
-_FIGURE_RULE_WIDTH_POINTS = .55
+_FIGURE_RULE_WIDTH_POINTS = 0.55
 _FIGURE_RULE_INK = "rgb(5.5%,7.5%,8.5%)"
 
 
 _FIGURE_RULE_BLEED_POINTS = 1.0
 
 
-_OPENER_TITLE_LEADING_RATIO = .96
+_OPENER_TITLE_LEADING_RATIO = 0.96
 
 
 _OPENER_TITLE_TOP_POINTS = _FIRST_BASELINE_INSET_POINTS + 25.0 + 12.0
@@ -163,7 +165,7 @@ _OPENER_TITLE_TO_CREDIT_POINTS = 10.0
 _OPENER_BYLINE_PAD_POINTS = 12.0
 
 
-_OPENER_TITLE_BASELINE_RATIO = _OPENER_TITLE_LEADING_RATIO / 2 + .3505
+_OPENER_TITLE_BASELINE_RATIO = _OPENER_TITLE_LEADING_RATIO / 2 + 0.3505
 
 _FRAME_TOP_POINTS = _PAGE_HEIGHT_POINTS - 52.0
 
@@ -195,9 +197,7 @@ _ILLUSTRATED_OPENER_TITLE_MAX_LINES = 2
 
 _ILLUSTRATED_OPENER_COMPACT_TITLE_MAX = 30.0
 _ILLUSTRATED_OPENER_META_MEASURE_POINTS = 293.0
-_ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS = (
-    _PAGE_HEIGHT_POINTS - _PAGE_MARGIN_TOP_POINTS - 54.9996
-)
+_ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS = _PAGE_HEIGHT_POINTS - _PAGE_MARGIN_TOP_POINTS - 54.9996
 _ILLUSTRATED_OPENER_STANDARD = {
     "art": 195.1,
     "label": 24.0 + 7.15,
@@ -243,10 +243,7 @@ _NOTE_DESCENT_POINTS = _NOTE_SIZE_POINTS * 0.2412109375
 
 _END_MARK_HOIST_POINTS = 20.0
 _END_MARK_PAINT_POINTS = (
-    _END_MARK_HOIST_POINTS
-    + _FIRST_BASELINE_INSET_POINTS
-    - _ZERO_LEADING_SANS_BASELINE
-    + 1.0
+    _END_MARK_HOIST_POINTS + _FIRST_BASELINE_INSET_POINTS - _ZERO_LEADING_SANS_BASELINE + 1.0
 )
 
 
@@ -276,10 +273,10 @@ _TOKEN_MEASURE_EPSILON = 0.01
 _FIELD_OVERFLOW_EPSILON = 0.01
 
 
-_RUNT_MEASURE_FRACTION = .15
+_RUNT_MEASURE_FRACTION = 0.15
 
 
-_RUNT_MAX_RAG_FRACTION = .33
+_RUNT_MAX_RAG_FRACTION = 0.33
 
 
 _BINDABLE_TAGS = frozenset({"p", "li", "span"})
@@ -287,10 +284,24 @@ _BINDABLE_TAGS = frozenset({"p", "li", "span"})
 
 _UNBINDABLE_CLASSES = frozenset(
     {
-        "author-note", "byline", "content-label", "contents-kicker", "end-mark",
-        "entry-author", "entry-folio", "entry-label", "entry-title", "folio-name",
-        "issue-number", "key-ideas-label", "label-primary", "label-secondary",
-        "provenance", "publication-name", "running-head", "subtitle",
+        "author-note",
+        "byline",
+        "content-label",
+        "contents-kicker",
+        "end-mark",
+        "entry-author",
+        "entry-folio",
+        "entry-label",
+        "entry-title",
+        "folio-name",
+        "issue-number",
+        "key-ideas-label",
+        "label-primary",
+        "label-secondary",
+        "provenance",
+        "publication-name",
+        "running-head",
+        "subtitle",
     }
 )
 
@@ -379,7 +390,7 @@ def _fitted_display(
         leading = size * leading_ratio
         if len(lines) <= maximum_lines and size + (len(lines) - 1) * leading <= height:
             return size, lines
-        size -= .5
+        size -= 0.5
     raise ValidationError(f"Title cannot fit the Quiet Standard display box: {text}")
 
 
@@ -396,9 +407,7 @@ def render_a5_weasyprint(
     _validate_caps(edition)
     HTML, CSS, FontConfiguration = _weasyprint_types()
 
-
     semantic = render_html_edition(edition)
-
 
     font_config = FontConfiguration()
     stylesheet = CSS(
@@ -420,7 +429,6 @@ def render_a5_weasyprint(
     _validate_contents_page(document)
     _validate_reader_measures(document)
 
-
     _report_hyphen_ladders(document, edition)
     _validate_fitted_display(document, edition)
     _validate_illustrated_opener_integrity(document)
@@ -430,8 +438,6 @@ def render_a5_weasyprint(
         HTML, html, stylesheet, edition, plan, document, font_config=font_config
     )
     try:
-
-
         identifier = hashlib.sha256(html.encode("utf-8")).digest()[:16]
         pdf_bytes = document.write_pdf(pdf_identifier=identifier)
     except TypeError:
@@ -439,13 +445,11 @@ def render_a5_weasyprint(
     except Exception as exc:
         raise ValidationError(f"WeasyPrint could not write edition {edition.id}: {exc}") from exc
 
-
     _validate_source_codes(
         pdf_bytes, edition, plan.source_codes, _measured_source_code_boxes(document)
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(pdf_bytes)
-
 
     edition.raw[_TAIL_ART_LEDGER_KEY] = _tail_art_ledger(document, edition, plan)
     return layout
@@ -469,26 +473,28 @@ def _configure_macos_library_path() -> None:
     if platform.system() != "Darwin":
         return
     candidates = [
-        str(path)
-        for path in (Path("/opt/homebrew/lib"), Path("/usr/local/lib"))
-        if path.is_dir()
+        str(path) for path in (Path("/opt/homebrew/lib"), Path("/usr/local/lib")) if path.is_dir()
     ]
     if not candidates:
         return
-    existing = [entry for entry in os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", "").split(":") if entry]
+    existing = [
+        entry for entry in os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", "").split(":") if entry
+    ]
     additions = [entry for entry in candidates if entry not in existing]
     if additions:
         os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = ":".join([*additions, *existing])
 
 
 def _read_print_css() -> str:
-    return resources.files("magazine").joinpath("assets", "weasyprint-a5.css").read_text(
-        encoding="utf-8"
+    return (
+        resources.files("magazine")
+        .joinpath("assets", "weasyprint-a5.css")
+        .read_text(encoding="utf-8")
     )
 
 
 def _with_print_slots(html: str) -> str:
-    main_open = '<main data-edition-id='
+    main_open = "<main data-edition-id="
     start = html.find(main_open)
     if start < 0:
         raise ValidationError("Semantic edition HTML did not contain its main element")
@@ -514,7 +520,6 @@ def _with_print_slots(html: str) -> str:
 
 @dataclass(frozen=True, slots=True, order=True)
 class SourceCode:
-
     article_id: str
     slot: str
     error: str
@@ -551,7 +556,6 @@ class SourceCode:
 
 @dataclass(frozen=True, slots=True)
 class ReaderPlan:
-
     closing_plates: int
     source_codes: tuple[SourceCode, ...] = ()
     tail_arts: tuple[tuple[str, float, float], ...] = ()
@@ -571,10 +575,7 @@ class ReaderPlan:
 
     @property
     def tail_art_bands(self) -> dict[str, "TailBand"]:
-        return {
-            article_id: TailBand(height, lift)
-            for article_id, height, lift in self.tail_arts
-        }
+        return {article_id: TailBand(height, lift) for article_id, height, lift in self.tail_arts}
 
     @property
     def end_mark_offsets(self) -> dict[str, float]:
@@ -590,13 +591,11 @@ class ReaderPlan:
 
 
 class TailBand(NamedTuple):
-
     height: float
     lift: float
 
 
 class MeasuredRule(NamedTuple):
-
     page: int
     left: float
     top: float
@@ -629,8 +628,6 @@ def _render_to_signature(
                 f"laid-out reader measures ({settled})"
             )
     if len(document.pages) % 4:
-
-
         signature_coda = f"{edition.publication_name} - {edition.title}"
         raise ValidationError(
             f"WeasyPrint reader for edition {edition.id} is {len(document.pages)} pages, "
@@ -653,8 +650,6 @@ def _painted_reader(
     declared = _declared_figure_ids(html)
     rules = _measured_figure_rules(document)
     if set(rules) != declared:
-
-
         raise ValidationError(
             f"WeasyPrint measured figure frames for {sorted(rules)} in edition "
             f"{edition.id}, but its semantic HTML declares curated figures "
@@ -684,8 +679,7 @@ def _painted_reader(
         raise ValidationError(
             f"WeasyPrint figure frames moved text in edition {edition.id}: "
             f"{len(before)} text boxes before the frames were painted and "
-            f"{len(after)} after, {len(moved)} of them displaced. "
-            + "; ".join(moved[:5])
+            f"{len(after)} after, {len(moved)} of them displaced. " + "; ".join(moved[:5])
         )
     _validate_figure_rules(painted, rules)
     return painted
@@ -703,7 +697,12 @@ def _measured_flow_positions(document: Any) -> tuple[tuple[int, str, float, floa
             if not isinstance(text, str):
                 continue
             positions.append(
-                (page_number, text, round(float(box.position_x), 6), round(float(box.position_y), 6))
+                (
+                    page_number,
+                    text,
+                    round(float(box.position_x), 6),
+                    round(float(box.position_y), 6),
+                )
             )
     return tuple(positions)
 
@@ -721,7 +720,6 @@ def _lay_out(
     source = HTML(string=html, base_url=Path.cwd().as_uri() + "/")
     tree = source.etree_element
 
-
     _key_prose_blocks(tree)
     _bind_paragraph_tails(tree, plan.runt_binds)
     _install_page_chrome(tree, edition)
@@ -734,7 +732,6 @@ def _lay_out(
     _install_flow_clearances(tree)
     _limit_closing_plates(tree, plan.closing_plates)
 
-
     _apply_tail_arts(tree, plan.tail_art_bands)
     _apply_print_contrast(tree)
     _apply_end_marks(tree, plan.end_mark_offsets)
@@ -744,9 +741,7 @@ def _lay_out(
     try:
         return source.render(stylesheets=[stylesheet], font_config=font_config)
     except Exception as exc:
-        raise ValidationError(
-            f"WeasyPrint could not lay out edition {edition.id}: {exc}"
-        ) from exc
+        raise ValidationError(f"WeasyPrint could not lay out edition {edition.id}: {exc}") from exc
 
 
 def _element_classes(element: Element) -> frozenset[str]:
@@ -765,8 +760,6 @@ def _prose_blocks(element: Element, *, inside_main: bool = False) -> Iterable[El
     if tag == "main":
         inside_main = True
     if tag == "figure" and "closing-plate" in _element_classes(element):
-
-
         return
     nested = [block for child in element for block in _prose_blocks(child, inside_main=inside_main)]
     if nested:
@@ -827,7 +820,6 @@ def _measured_runt_binds(document: Any) -> tuple[str, ...]:
             element = getattr(box, "element", None)
             key = getattr(element, "attrib", {}).get(_RUNT_KEY) if element is not None else None
 
-
             if key is None or type(box).__name__ != "BlockBox":
                 continue
             boxes[key] = (
@@ -849,7 +841,6 @@ def _measured_runt_binds(document: Any) -> tuple[str, ...]:
 
 
 class _Hyphenation(NamedTuple):
-
     lang: str
     total: int
     left: int
@@ -895,7 +886,6 @@ def _is_runt(
 
 
 class HyphenLadder(NamedTuple):
-
     key: str
     page: int
     run: int
@@ -927,9 +917,7 @@ def _measured_hyphen_ladders(document: Any) -> tuple[HyphenLadder, ...]:
             if len(run) > len(longest):
                 longest = run
         if len(longest) > _HYPHEN_LADDER_LIMIT:
-            ladders.append(
-                HyphenLadder(key, longest[0][1], len(longest), longest[0][0])
-            )
+            ladders.append(HyphenLadder(key, longest[0][1], len(longest), longest[0][0]))
     return tuple(ladders)
 
 
@@ -963,7 +951,6 @@ def _install_page_chrome(tree: Element, edition: Edition) -> None:
         SubElement(row, "span").text = publication
         SubElement(row, "span").text = short_title
 
-
         SubElement(SubElement(head, "div", {"class": "running-head-rule"}), "i")
         piece.insert(0, head)
 
@@ -979,8 +966,6 @@ def _rewrite_article_plates(article: Element) -> None:
     for child in article:
         layout = child.get("data-layout", "") if child.tag == "figure" else ""
         if layout not in _LANDSCAPE_PLATE_LAYOUTS:
-
-
             releases = child.tag in _PLATE_ANCHOR_TAGS or bool(
                 _element_classes(child) & _ARTICLE_CODA_CLASSES
             )
@@ -1046,18 +1031,14 @@ def _set_illustrated_opener_title(header: Element, size: float) -> None:
     for title in header.iter("h1"):
         title.set(
             "style",
-            f"font-size: {size:.4f}pt; "
-            f"line-height: {size * _OPENER_TITLE_LEADING_RATIO:.4f}pt",
+            f"font-size: {size:.4f}pt; line-height: {size * _OPENER_TITLE_LEADING_RATIO:.4f}pt",
         )
         return
-    raise ValidationError(
-        "An illustrated opener header must carry the article title as an h1"
-    )
+    raise ValidationError("An illustrated opener header must carry the article title as an h1")
 
 
 @dataclass(frozen=True)
 class OpenerIntroBudget:
-
     lines: int
     safe_characters: int
     measure_points: float
@@ -1101,11 +1082,7 @@ def illustrated_opener_intro_budget(
         standfirst_lines=0,
         density=density,
     )
-    room = (
-        _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
-        - _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
-        - fixed
-    )
+    room = _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS - _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS - fixed
     size = density["standfirst_size"]
     lines = max(int(room // density["standfirst_leading"]), 0)
     return OpenerIntroBudget(
@@ -1125,9 +1102,7 @@ def _safe_characters_per_line(sample: str, size: float) -> int:
     width = _string_width(text, "serif", size)
     if width <= 0:
         return 0
-    long_word = sorted(_string_width(word, "serif", size) for word in words)[
-        int(len(words) * 0.9)
-    ]
+    long_word = sorted(_string_width(word, "serif", size) for word in words)[int(len(words) * 0.9)]
     usable = _ILLUSTRATED_OPENER_RAIL_POINTS - long_word
     if usable <= 0:
         return 0
@@ -1142,27 +1117,15 @@ def _illustrated_opener_height(
     density: Mapping[str, float],
 ) -> float:
     byline = next(
-        (
-            item
-            for item in header.iter("p")
-            if "byline" in _element_classes(item)
-        ),
+        (item for item in header.iter("p") if "byline" in _element_classes(item)),
         None,
     )
     note = next(
-        (
-            item
-            for item in header.iter("p")
-            if "author-note" in _element_classes(item)
-        ),
+        (item for item in header.iter("p") if "author-note" in _element_classes(item)),
         None,
     )
     standfirst = next(
-        (
-            item
-            for item in header.iter("p")
-            if "standfirst" in _element_classes(item)
-        ),
+        (item for item in header.iter("p") if "standfirst" in _element_classes(item)),
         None,
     )
     if byline is None or standfirst is None:
@@ -1208,14 +1171,18 @@ def _opener_stack_height(
     )
     credit_height = byline_lines * 8.5
     if note_text:
-        credit_height += 3.2 + len(
-            _wrap(
-                note_text,
-                "sans-medium",
-                6.8,
-                _ILLUSTRATED_OPENER_META_MEASURE_POINTS,
+        credit_height += (
+            3.2
+            + len(
+                _wrap(
+                    note_text,
+                    "sans-medium",
+                    6.8,
+                    _ILLUSTRATED_OPENER_META_MEASURE_POINTS,
+                )
             )
-        ) * 9.4
+            * 9.4
+        )
     meta_height = max(_ILLUSTRATED_OPENER_CODE_SIDE_POINTS, credit_height)
     meta_height += 2 * density["meta_padding"] + 1.0
     return (
@@ -1232,9 +1199,7 @@ def _opener_stack_height(
 
 def _set_opener_title(header: Element, size: float) -> None:
     baseline_head = _OPENER_TITLE_BASELINE_RATIO * size
-    margin_top = (
-        _OPENER_TITLE_TOP_POINTS - _OPENER_LABEL_BOX_POINTS + size - baseline_head
-    )
+    margin_top = _OPENER_TITLE_TOP_POINTS - _OPENER_LABEL_BOX_POINTS + size - baseline_head
     margin_bottom = (
         baseline_head
         + _OPENER_TITLE_TO_CREDIT_POINTS
@@ -1298,7 +1263,6 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
                     density=_ILLUSTRATED_OPENER_COMPACT,
                 )
 
-
                 if (
                     compact_height + _ILLUSTRATED_OPENER_PANGO_RESERVE_POINTS
                     > _ILLUSTRATED_OPENER_PAGE_HEIGHT_POINTS
@@ -1306,7 +1270,6 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
                     _split_standfirst_overflow(article, header, declared)
                 header.set("data-opener-density", "compact")
             _set_illustrated_opener_title(header, size)
-
 
             header.set("data-title-lines", str(len(lines)))
             continue
@@ -1327,8 +1290,6 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
             field = title_field
             floor = _opener_code_field_floor(declared, size, len(lines))
             if floor > title_field:
-
-
                 figure = _opener_figure(article)
                 for image in () if figure is None else figure.iter("img"):
                     style = (image.get("style") or "").strip().rstrip(";")
@@ -1340,21 +1301,19 @@ def _pin_opener_fields(tree: Element, edition: Edition) -> None:
                 field = floor
             header.set("style", f"height: {field:.4f}pt")
 
-
             header.set("data-title-field", f"{title_field:.4f}")
         else:
-
-
-            header.set(
-                "style", f"height: {_opener_prose_field(declared, size, len(lines)):.4f}pt"
-            )
+            header.set("style", f"height: {_opener_prose_field(declared, size, len(lines)):.4f}pt")
             header.set(
                 "data-title-field",
                 f"{_OPENER_FIGURE_FIELD_BASE + _opener_title_flow(size, len(lines)):.4f}",
             )
     sections = {
         f"section-{index}": (
-            str(section.title), _SECTION_TITLE_BOX, _SECTION_TITLE_MAX, _SECTION_FIELD_BASE
+            str(section.title),
+            _SECTION_TITLE_BOX,
+            _SECTION_TITLE_MAX,
+            _SECTION_FIELD_BASE,
         )
         for index, section in enumerate(getattr(edition, "sections", ()))
     }
@@ -1404,9 +1363,7 @@ def _opener_credit_code(article: Any) -> SourceCode | None:
 
 def _opener_byline_baseline(size: float, lines: int) -> float:
     return (
-        _OPENER_TITLE_TOP_POINTS
-        + _opener_title_flow(size, lines)
-        + _OPENER_TITLE_TO_CREDIT_POINTS
+        _OPENER_TITLE_TOP_POINTS + _opener_title_flow(size, lines) + _OPENER_TITLE_TO_CREDIT_POINTS
     )
 
 
@@ -1463,8 +1420,6 @@ def _install_flow_clearances(tree: Element) -> None:
             elif child.tag in _PLATE_ANCHOR_TAGS and (
                 following is None or following.tag != "figure"
             ):
-
-
                 rebuilt.append(_clearance("heading-clearance", _HEADING_CLEARANCE_POINTS))
         piece[:] = rebuilt
 
@@ -1481,7 +1436,9 @@ def _evidence_bands(article: Element) -> Iterable[tuple[Element, Element | None,
     for index, child in enumerate(children):
         if child.tag != "figure" or child.get("data-layout") not in _EVIDENCE_BAND_LAYOUTS:
             continue
-        heading = children[index - 1] if index and children[index - 1].tag in _PLATE_ANCHOR_TAGS else None
+        heading = (
+            children[index - 1] if index and children[index - 1].tag in _PLATE_ANCHOR_TAGS else None
+        )
         bridge = children[index - 2] if heading is not None and index >= 2 else None
         yield child, heading, bridge
 
@@ -1512,9 +1469,7 @@ def _apply_adaptive_images(tree: Element, heights: Mapping[str, float]) -> None:
             continue
         for image in figure.iter("img"):
             style = (image.get("style") or "").strip().rstrip(";")
-            image.set(
-                "style", f"{style + '; ' if style else ''}max-height: {height:.4f}pt"
-            )
+            image.set("style", f"{style + '; ' if style else ''}max-height: {height:.4f}pt")
 
 
 def _apply_figure_rules(tree: Element, rules: Mapping[str, MeasuredRule]) -> None:
@@ -1589,9 +1544,7 @@ def _validate_figure_rules(document: Any, rules: Mapping[str, MeasuredRule]) -> 
         )
         found = painted.pop((figure_id, rule.page), None)
         if found is None or any(abs(a - b) > 1e-3 for a, b in zip(found, expected)):
-            misplaced.append(
-                f"{figure_id}: expected {expected} on page {rule.page}, found {found}"
-            )
+            misplaced.append(f"{figure_id}: expected {expected} on page {rule.page}, found {found}")
     misplaced.extend(
         f"{figure_id}: unexpected frame on page {page} at {box}"
         for (figure_id, page), box in painted.items()
@@ -1605,8 +1558,12 @@ def _validate_figure_rules(document: Any, rules: Mapping[str, MeasuredRule]) -> 
 
 def _box_inside(outer: Any, inner: Any) -> tuple[float, float, float, float]:
     return (
-        round((float(inner.content_box_x()) - float(outer.padding_box_x())) * _POINTS_PER_CSS_PIXEL, 4),
-        round((float(inner.content_box_y()) - float(outer.padding_box_y())) * _POINTS_PER_CSS_PIXEL, 4),
+        round(
+            (float(inner.content_box_x()) - float(outer.padding_box_x())) * _POINTS_PER_CSS_PIXEL, 4
+        ),
+        round(
+            (float(inner.content_box_y()) - float(outer.padding_box_y())) * _POINTS_PER_CSS_PIXEL, 4
+        ),
         round(float(inner.width) * _POINTS_PER_CSS_PIXEL, 4),
         round(float(inner.height) * _POINTS_PER_CSS_PIXEL, 4),
     )
@@ -1628,16 +1585,16 @@ def _walk_figure_images(box: Any, figure: Any = None) -> Iterable[tuple[Any, Any
         yield from _walk_figure_images(child, figure)
 
 
-def _figure_block_geometry(figure: Any, width: float, max_image_height: float) -> tuple[float, float]:
+def _figure_block_geometry(
+    figure: Any, width: float, max_image_height: float
+) -> tuple[float, float]:
     try:
         from PIL import Image
 
         with Image.open(figure.path) as image:
             pixel_width, pixel_height = int(image.width), int(image.height)
     except (OSError, ValueError) as exc:
-        raise ValidationError(
-            f"Cannot decode curated figure {figure.path}: {exc}"
-        ) from exc
+        raise ValidationError(f"Cannot decode curated figure {figure.path}: {exc}") from exc
     scale = min(width / pixel_width, max_image_height / pixel_height)
     image_height = pixel_height * scale
     text_lines = len(_wrap(str(figure.caption), "serif", _CAPTION_SIZE, width)) + len(
@@ -1665,7 +1622,6 @@ def _measured_adaptive_images(document: Any, edition: Edition) -> tuple[tuple[st
         for article in edition.articles
         for figure in getattr(article, "figures", ())
     }
-
 
     anchors = {
         figure.id: educate_reader_quotes(str(figure.anchor))
@@ -1700,7 +1656,10 @@ def _anchor_heading_tag(document: Any, anchor: str) -> str:
     for page in document.pages:
         for box in _walk_boxes(page._page_box):
             tag = getattr(box, "element_tag", None)
-            if tag in {"h2", "h3"} and _element_text(getattr(box, "element", None)).strip().casefold() == folded:
+            if (
+                tag in {"h2", "h3"}
+                and _element_text(getattr(box, "element", None)).strip().casefold() == folded
+            ):
                 return tag
     return "h2"
 
@@ -1784,9 +1743,7 @@ def _measured_band_offsets(document: Any) -> tuple[tuple[str, float], ...]:
         landed = figure_pages.get(figure_id)
         if landed is None or landed == bridge_page:
             continue
-        offsets.append(
-            (figure_id, _live_area_left(bridge_page) - _live_area_left(landed))
-        )
+        offsets.append((figure_id, _live_area_left(bridge_page) - _live_area_left(landed)))
     return tuple(sorted(offsets))
 
 
@@ -1795,7 +1752,11 @@ def _figure_pages(document: Any) -> dict[str, int]:
     for page_number, page in enumerate(document.pages, start=1):
         for box in _walk_boxes(page._page_box):
             element = getattr(box, "element", None)
-            figure_id = getattr(element, "attrib", {}).get("data-figure-id") if element is not None else None
+            figure_id = (
+                getattr(element, "attrib", {}).get("data-figure-id")
+                if element is not None
+                else None
+            )
             if figure_id and getattr(box, "element_tag", None) == "figure":
                 pages.setdefault(figure_id, page_number)
     return pages
@@ -1804,9 +1765,7 @@ def _figure_pages(document: Any) -> dict[str, int]:
 def _limit_closing_plates(tree: Element, count: int) -> None:
     parents = {child: parent for parent in tree.iter() for child in parent}
     plates = [
-        element
-        for element in tree.iter("figure")
-        if "closing-plate" in _element_classes(element)
+        element for element in tree.iter("figure") if "closing-plate" in _element_classes(element)
     ]
     if count > len(plates):
         if not plates:
@@ -1834,7 +1793,6 @@ def _apply_print_contrast(tree: Element) -> None:
         figure_id = figure.get("data-figure-id")
         if not figure_id and "article-tail" not in _element_classes(figure):
             continue
-
 
         subject = f"curated figure {figure_id}" if figure_id else "article tail art"
         for image in figure.iter("img"):
@@ -1885,7 +1843,6 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
                     "has no source link inside its metadata grid"
                 )
 
-
             owner.text = None
         image = SubElement(owner, "img")
         image.set("class", "source-code")
@@ -1908,7 +1865,6 @@ def _apply_source_codes(tree: Element, codes: Mapping[str, SourceCode]) -> None:
 
 
 def _credit_column_inset(code: SourceCode) -> float:
-
 
     return code.side - 2 * code.quiet + _CODE_CREDIT_GAP_POINTS
 
@@ -1996,7 +1952,6 @@ def _source_code_source(code: SourceCode) -> str:
 
 
 class PlacedCode(NamedTuple):
-
     page: int
     left: float
     bottom: float
@@ -2013,9 +1968,7 @@ def _measured_source_code_boxes(document: Any) -> dict[str, PlacedCode]:
                 page_number,
                 round(float(box.content_box_x()) * _POINTS_PER_CSS_PIXEL, 4),
                 round(
-                    _reader_y_points(
-                        float(box.content_box_y()) * _POINTS_PER_CSS_PIXEL, height
-                    ),
+                    _reader_y_points(float(box.content_box_y()) * _POINTS_PER_CSS_PIXEL, height),
                     4,
                 ),
                 round(width, 4),
@@ -2049,9 +2002,7 @@ def _walk_source_code_images(box: Any, article_id: str | None = None) -> Iterabl
         yield from _walk_source_code_images(child, article_id)
 
 
-def _measured_plan(
-    document: Any, edition: Edition, runt_binds: Iterable[str] = ()
-) -> ReaderPlan:
+def _measured_plan(document: Any, edition: Edition, runt_binds: Iterable[str] = ()) -> ReaderPlan:
     content_pages = _content_page_count(document)
     end_marks: list[tuple[str, float]] = []
     tail_arts: list[tuple[str, float, float]] = []
@@ -2068,9 +2019,7 @@ def _measured_plan(
         adaptive_images=_measured_adaptive_images(document, edition),
         band_offsets=_measured_band_offsets(document),
         end_marks=tuple(end_marks),
-        runt_binds=tuple(
-            sorted({*runt_binds, *_measured_runt_binds(document)}, key=int)
-        ),
+        runt_binds=tuple(sorted({*runt_binds, *_measured_runt_binds(document)}, key=int)),
         midpage_band_anchors=_measured_midpage_anchors(document),
     )
 
@@ -2083,11 +2032,7 @@ def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, .
         if not url:
             continue
         illustrated = _is_illustrated_article(article)
-        room = (
-            _ILLUSTRATED_OPENER_CODE_SIDE_POINTS
-            if illustrated
-            else _CODE_OPENER_SIDE_POINTS
-        )
+        room = _ILLUSTRATED_OPENER_CODE_SIDE_POINTS if illustrated else _CODE_OPENER_SIDE_POINTS
         code = _fitted_source_code(str(article.id), url, room)
         if code is None:
             raise ValidationError(
@@ -2097,8 +2042,6 @@ def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, .
                 f"{_CODE_MIN_MODULE_POINTS * 25.4 / 72:.2f}mm. Shorten the canonical URL."
             )
         if illustrated:
-
-
             codes.append(code)
             continue
         baseline = baselines.get(str(article.id))
@@ -2108,7 +2051,6 @@ def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, .
                 "no byline line; the code's credit-line anchor does not exist."
             )
         top = baseline - _BYLINE_SIZE_POINTS * _INTER_CAP_RATIO - code.quiet
-
 
         left = _CODE_MEASURE_LEFT_POINTS - code.quiet
         codes.append(replace(code, left=left, top=top))
@@ -2192,9 +2134,7 @@ def _measured_tail_art(article: Any, flow_bottom: float) -> TailBand | None:
 _TAIL_ART_LEDGER_KEY = "_rendered_tail_arts"
 
 
-def _tail_art_ledger(
-    document: Any, edition: Edition, plan: ReaderPlan
-) -> list[dict[str, Any]]:
+def _tail_art_ledger(document: Any, edition: Edition, plan: ReaderPlan) -> list[dict[str, Any]]:
     bands = plan.tail_art_bands
     rows: list[dict[str, Any]] = []
     for article in edition.articles:
@@ -2290,8 +2230,6 @@ def _signature_closing_plates(edition: Edition, content_pages: int) -> int:
     target = ((target + 3) // 4) * 4
     count = target - 2 - content_pages
     if count < 4:
-
-
         target += 4
         count = target - 2 - content_pages
     return count
@@ -2309,9 +2247,7 @@ def _article_flow_bottom(document: Any, article_id: str) -> float:
         if page_lowest:
             lowest = page_lowest
     if not lowest:
-        raise ValidationError(
-            f"WeasyPrint placed no in-flow content for article {article_id}"
-        )
+        raise ValidationError(f"WeasyPrint placed no in-flow content for article {article_id}")
     return _PAGE_HEIGHT_POINTS - lowest - _FIRST_BASELINE_INSET_POINTS
 
 
@@ -2344,7 +2280,6 @@ def _validate_caps(edition: Edition) -> None:
                 f"format.{key} is a hard publication rule and must remain {expected}"
             )
 
-
     declared_editorial_page_cap(edition.raw, _MAX_EDITORIAL_PAGES)
 
 
@@ -2360,7 +2295,6 @@ def _measure_layout(
     destinations: dict[str, int] = {}
     image_boxes: list[tuple[HtmlAsset, int, Any, Any]] = []
     assets_by_source: dict[str, list[HtmlAsset]] = {}
-
 
     placed_assets = tuple(
         asset
@@ -2387,14 +2321,15 @@ def _measure_layout(
                 and "article-opener" in _element_classes(element)
             ):
                 article_opener_pages.setdefault(article_id, set()).add(page_number)
-            if attributes.get("id") == "editorial" and getattr(box, "element_tag", None) == "section":
+            if (
+                attributes.get("id") == "editorial"
+                and getattr(box, "element_tag", None) == "section"
+            ):
                 editorial_pages.add(page_number)
             identifier = attributes.get("id")
             if identifier and identifier not in destinations:
                 destinations[identifier] = page_number
             if getattr(box, "element_tag", None) == "img":
-
-
                 source = attributes.get("data-print-source") or attributes.get("src")
                 candidates = assets_by_source.get(source, [])
                 occurrence = source_occurrences.get(source or "", 0)
@@ -2406,7 +2341,6 @@ def _measure_layout(
     if "editorial" in destinations:
         toc["editorial"] = destinations["editorial"]
 
-
     for article_id in article_pages:
         destination = f"article-{article_id}"
         if destination in destinations:
@@ -2414,7 +2348,6 @@ def _measure_layout(
     for identifier, page_number in destinations.items():
         if identifier.startswith("section-"):
             toc[identifier] = page_number
-
 
     placements = tuple(
         _figure_placement(asset, page, box, rotor)
@@ -2434,8 +2367,6 @@ def _measure_layout(
         editorial_pages=len(editorial_pages) if editorial_pages else None,
         design=design,
         cover_art_size_points=None,
-
-
         article_frame_usage={},
         article_terminal_balance={},
         figure_placements=placements,
@@ -2468,9 +2399,7 @@ def _walk_boxes_in_frame(box: Any, rotor: Any = None) -> Iterable[tuple[Any, Any
         yield from _walk_boxes_in_frame(child, rotor)
 
 
-def _figure_placement(
-    asset: HtmlAsset, page: int, box: Any, rotor: Any = None
-) -> FigurePlacement:
+def _figure_placement(asset: HtmlAsset, page: int, box: Any, rotor: Any = None) -> FigurePlacement:
     try:
         from PIL import Image
 
@@ -2483,7 +2412,6 @@ def _figure_placement(
     box_width = float(box.width) * _POINTS_PER_CSS_PIXEL
     box_height = float(box.height) * _POINTS_PER_CSS_PIXEL
 
-
     box_x = float(box.content_box_x()) * _POINTS_PER_CSS_PIXEL
     box_y = float(box.content_box_y()) * _POINTS_PER_CSS_PIXEL
     if rotor is None:
@@ -2493,9 +2421,7 @@ def _figure_placement(
     if width <= 0 or height <= 0:
         raise ValidationError(f"Curated figure {asset.figure_id} has an empty WeasyPrint image box")
 
-
     ppi = min(dimensions[0] / (box_width / 72), dimensions[1] / (box_height / 72))
-
 
     if asset.role == "figure" and ppi < _MIN_FIGURE_PPI:
         raise ValidationError(
@@ -2538,7 +2464,6 @@ def _validate_layout_caps(edition: Edition, layout: RenderLayout) -> None:
             "WeasyPrint article page cap exceeded (maximum 7): " + ", ".join(overlong)
         )
 
-
     short = [
         f"{article.id} ({layout.article_pages[article.id]} pages, "
         f"editorial minimum {article.minimum_reader_pages})"
@@ -2547,9 +2472,7 @@ def _validate_layout_caps(edition: Edition, layout: RenderLayout) -> None:
         and layout.article_pages[article.id] < article.minimum_reader_pages
     ]
     if short:
-        raise ValidationError(
-            "WeasyPrint article editorial minimum not met: " + ", ".join(short)
-        )
+        raise ValidationError("WeasyPrint article editorial minimum not met: " + ", ".join(short))
     editorial_cap = declared_editorial_page_cap(edition.raw, _MAX_EDITORIAL_PAGES)
     if layout.editorial_pages is not None and layout.editorial_pages > editorial_cap:
         raise ValidationError(
@@ -2561,7 +2484,6 @@ def _validate_layout_caps(edition: Edition, layout: RenderLayout) -> None:
 def _validate_cover_slots(document: Any) -> None:
     if len(document.pages) < 4:
         raise ValidationError("WeasyPrint reader must contain cover and inside-cover placeholders")
-
 
     named = []
     for page in document.pages:
@@ -2605,11 +2527,7 @@ def _validate_source_codes(
         box = placed[article_id]
         decoded = _decoded_codes(rasters[box.page])
         match = next(
-            (
-                found
-                for found in decoded
-                if _code_box_matches(found[1], box)
-            ),
+            (found for found in decoded if _code_box_matches(found[1], box)),
             None,
         )
         if match is None:
@@ -2669,8 +2587,16 @@ def _rasterised_pages(pdf_bytes: bytes, pages: Iterable[int]) -> dict[int, Any]:
             prefix = root / f"page-{page}"
             completed = subprocess.run(
                 [
-                    executable, "-png", "-r", str(_CODE_DECODE_DPI),
-                    "-f", str(page), "-l", str(page), str(reader), str(prefix),
+                    executable,
+                    "-png",
+                    "-r",
+                    str(_CODE_DECODE_DPI),
+                    "-f",
+                    str(page),
+                    "-l",
+                    str(page),
+                    str(reader),
+                    str(prefix),
                 ],
                 capture_output=True,
                 text=True,
@@ -2679,9 +2605,7 @@ def _rasterised_pages(pdf_bytes: bytes, pages: Iterable[int]) -> dict[int, Any]:
             rendered = sorted(root.glob(f"page-{page}-*.png"))
             if completed.returncode or not rendered:
                 detail = (
-                    completed.stderr.strip()
-                    or completed.stdout.strip()
-                    or "no raster was produced"
+                    completed.stderr.strip() or completed.stdout.strip() or "no raster was produced"
                 )
                 raise DependencyError(
                     f"Could not rasterize reader page {page} to read its source code: {detail}"
@@ -2724,8 +2648,7 @@ def _validate_reader_measures(document: Any) -> None:
     if overlong:
         raise ValidationError(
             "WeasyPrint set a reader line wider than its own measure, which means a "
-            "token with no break opportunity is overflowing the column: "
-            + "; ".join(overlong[:5])
+            "token with no break opportunity is overflowing the column: " + "; ".join(overlong[:5])
         )
 
 
@@ -2908,9 +2831,7 @@ def _validate_illustrated_opener_integrity(document: Any) -> None:
                 ("".join(item.itertext()).strip() for item in element.iter("h1")),
                 "untitled article",
             )
-            split.append(
-                f"{title!r} across pages {', '.join(str(page) for page in pages)}"
-            )
+            split.append(f"{title!r} across pages {', '.join(str(page) for page in pages)}")
     if split:
         raise ValidationError(
             "An illustrated opener may only continue its first paragraph onto the "
@@ -2927,9 +2848,7 @@ def _opener_title_reservation(header: Any) -> float:
     return float(header.height) * _POINTS_PER_CSS_PIXEL
 
 
-def _validate_opener_code_clearance(
-    document: Any, codes: Mapping[str, SourceCode]
-) -> None:
+def _validate_opener_code_clearance(document: Any, codes: Mapping[str, SourceCode]) -> None:
     failures: list[str] = []
     for page_number, page in enumerate(document.pages, start=1):
         squares: dict[str, Any] = {}
@@ -3010,9 +2929,8 @@ def _walk_opener_code_furniture(
     if getattr(box, "element_tag", None) == "article" and attributes.get("data-article-id"):
         article_id = str(attributes["data-article-id"])
     if element is not None and article_id is not None:
-        if (
-            getattr(box, "element_tag", None) == "img"
-            and "source-code" in _element_classes(element)
+        if getattr(box, "element_tag", None) == "img" and "source-code" in _element_classes(
+            element
         ):
             yield article_id, "code", box
             return
@@ -3061,8 +2979,9 @@ def _validate_contents_page(document: Any) -> None:
         raise ValidationError("WeasyPrint reader has no logical contents page")
     for box in _walk_boxes(document.pages[2]._page_box):
         element = getattr(box, "element", None)
-        if element is not None and getattr(element, "attrib", {}).get(
-            "data-edition-navigation"
-        ) == "contents":
+        if (
+            element is not None
+            and getattr(element, "attrib", {}).get("data-edition-navigation") == "contents"
+        ):
             return
     raise ValidationError("WeasyPrint contents must begin on logical reader page 3")

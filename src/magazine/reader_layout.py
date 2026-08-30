@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -21,8 +20,7 @@ def declared_editorial_page_cap(raw: Mapping[str, Any], ceiling: int) -> int:
         ) from exc
     if cap > ceiling:
         raise ValidationError(
-            f"format.max_editorial_pages is a hard publication rule and must not "
-            f"exceed {ceiling}"
+            f"format.max_editorial_pages is a hard publication rule and must not exceed {ceiling}"
         )
     if cap < 1:
         raise ValidationError("format.max_editorial_pages must be at least 1")
@@ -31,7 +29,6 @@ def declared_editorial_page_cap(raw: Mapping[str, Any], ceiling: int) -> int:
 
 @dataclass(frozen=True)
 class FrameUsage:
-
     relative_page: int
     frame_index: int
     used: float
@@ -40,7 +37,6 @@ class FrameUsage:
 
 @dataclass(frozen=True)
 class FigurePlacement:
-
     figure_id: str
     article_id: str
     page: int
@@ -54,7 +50,6 @@ class FigurePlacement:
 
 @dataclass(frozen=True)
 class RenderLayout:
-
     toc: dict[str, int]
     article_pages: dict[str, int]
     editorial_pages: int | None

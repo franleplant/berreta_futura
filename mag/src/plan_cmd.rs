@@ -1,4 +1,3 @@
-
 use anyhow::{anyhow, bail, Context, Result};
 use std::fs;
 use std::path::PathBuf;
@@ -59,9 +58,7 @@ fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<
 
 fn article_slug(source_id: &str) -> String {
     let trimmed = match source_id.rsplit_once('-') {
-        Some((head, tail))
-            if tail.len() == 8 && tail.chars().all(|c| c.is_ascii_hexdigit()) =>
-        {
+        Some((head, tail)) if tail.len() == 8 && tail.chars().all(|c| c.is_ascii_hexdigit()) => {
             head
         }
         _ => source_id,
@@ -141,7 +138,9 @@ fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
 }
 
 fn row_from_record(sid: &str, mode: &str) -> Result<serde_yaml::Value> {
-    let record_path = PathBuf::from("library/sources").join(sid).join("record.yaml");
+    let record_path = PathBuf::from("library/sources")
+        .join(sid)
+        .join("record.yaml");
     let record: serde_yaml::Value = serde_yaml::from_str(&read(&record_path)?)
         .with_context(|| format!("parsing {}", record_path.display()))?;
     let title = record
@@ -158,25 +157,35 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     let lines: Vec<&str> = plan_text.lines().collect();
     let row_start = lines
         .iter()
-        .position(|l| l.trim_end() == format!("- id: {article}") || l.trim_end() == format!("- id: '{article}'"))
+        .position(|l| {
+            l.trim_end() == format!("- id: {article}")
+                || l.trim_end() == format!("- id: '{article}'")
+        })
         .ok_or_else(|| {
             let ids: Vec<String> = lines
                 .iter()
                 .filter_map(|l| l.strip_prefix("- id: "))
                 .map(|s| s.trim().trim_matches('\'').to_string())
                 .collect();
-            anyhow!("plan.yaml has no article '{article}'; existing articles: {}", ids.join(", "))
+            anyhow!(
+                "plan.yaml has no article '{article}'; existing articles: {}",
+                ids.join(", ")
+            )
         })?;
     let row_end = lines[row_start + 1..]
         .iter()
-        .position(|l| l.starts_with("- ") || (!l.is_empty() && !l.starts_with(' ') && !l.starts_with('#')))
+        .position(|l| {
+            l.starts_with("- ") || (!l.is_empty() && !l.starts_with(' ') && !l.starts_with('#'))
+        })
         .map(|i| row_start + 1 + i)
         .unwrap_or(lines.len());
     let sids_line = lines[row_start..row_end]
         .iter()
         .position(|l| l.trim_end() == "  source_ids:")
         .map(|i| row_start + i)
-        .ok_or_else(|| anyhow!("article '{article}' in plan.yaml has no block-style source_ids list"))?;
+        .ok_or_else(|| {
+            anyhow!("article '{article}' in plan.yaml has no block-style source_ids list")
+        })?;
     let mut insert_at = sids_line + 1;
     while insert_at < row_end && lines[insert_at].starts_with("  - ") {
         insert_at += 1;
@@ -194,8 +203,7 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
         .map(|arts| {
             arts.iter().any(|a| {
                 a.get("id").and_then(|v| v.as_str()) == Some(article)
-                    && a
-                        .get("source_ids")
+                    && a.get("source_ids")
                         .and_then(|v| v.as_sequence())
                         .map(|s| s.iter().any(|x| x.as_str() == Some(sid)))
                         .unwrap_or(false)
@@ -210,12 +218,18 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
 
 fn plan_path_for(edition: &str) -> Result<PathBuf> {
     let dirs = matching_edition_dirs(edition)?;
-    let out_dir =
-        dirs.into_iter().next().unwrap_or_else(|| PathBuf::from("editions").join(edition));
+    let out_dir = dirs
+        .into_iter()
+        .next()
+        .unwrap_or_else(|| PathBuf::from("editions").join(edition));
     Ok(out_dir.join("plan.yaml"))
 }
 
-fn write_new_plan(out_path: &std::path::Path, edition_id: &str, articles: Vec<serde_yaml::Value>) -> Result<()> {
+fn write_new_plan(
+    out_path: &std::path::Path,
+    edition_id: &str,
+    articles: Vec<serde_yaml::Value>,
+) -> Result<()> {
     let mut edition_map = serde_yaml::Mapping::new();
     edition_map.insert(
         serde_yaml::Value::String("id".to_string()),
@@ -233,13 +247,19 @@ fn write_new_plan(out_path: &std::path::Path, edition_id: &str, articles: Vec<se
     if let Some(dir) = out_path.parent() {
         fs::create_dir_all(dir)?;
     }
-    fs::write(out_path, serde_yaml::to_string(&serde_yaml::Value::Mapping(plan))?)?;
+    fs::write(
+        out_path,
+        serde_yaml::to_string(&serde_yaml::Value::Mapping(plan))?,
+    )?;
     Ok(())
 }
 
 pub fn add_source(edition: &str, sid: &str, article: Option<&str>, mode: &str) -> Result<()> {
     if !CONTENT_MODES.contains(&mode) {
-        bail!("unknown content mode '{mode}'; one of: {}", CONTENT_MODES.join(", "));
+        bail!(
+            "unknown content mode '{mode}'; one of: {}",
+            CONTENT_MODES.join(", ")
+        );
     }
     let out_path = plan_path_for(edition)?;
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
@@ -257,7 +277,11 @@ pub fn add_source(edition: &str, sid: &str, article: Option<&str>, mode: &str) -
             }
         }
         write_new_plan(&out_path, &edition_id, articles)?;
-        println!("  plan: wrote {} ({} row(s))", out_path.display(), queued.len());
+        println!(
+            "  plan: wrote {} ({} row(s))",
+            out_path.display(),
+            queued.len()
+        );
         if article.is_none() {
             return Ok(());
         }
@@ -293,8 +317,10 @@ pub fn propose_plan(edition: &str) -> Result<i32> {
     if out_path.exists() {
         let plan_text = read(&out_path)?;
         let referenced = referenced_source_ids(&plan_text)?;
-        let missing: Vec<&String> =
-            source_ids.iter().filter(|sid| !referenced.contains(*sid)).collect();
+        let missing: Vec<&String> = source_ids
+            .iter()
+            .filter(|sid| !referenced.contains(*sid))
+            .collect();
         if missing.is_empty() {
             println!(
                 "{} already covers all {} queued source(s); nothing to add",
@@ -342,8 +368,14 @@ mod tests {
 
     #[test]
     fn article_slug_strips_only_a_trailing_capture_hash() {
-        assert_eq!(article_slug("prime-agent-a-self-improving-rlm-agent-2c19ce14"), "prime-agent-a-self-improving-rlm-agent");
-        assert_eq!(article_slug("how-enabling-two-settings-tripled-our-scores-on--265c6a01"), "how-enabling-two-settings-tripled-our-scores-on");
+        assert_eq!(
+            article_slug("prime-agent-a-self-improving-rlm-agent-2c19ce14"),
+            "prime-agent-a-self-improving-rlm-agent"
+        );
+        assert_eq!(
+            article_slug("how-enabling-two-settings-tripled-our-scores-on--265c6a01"),
+            "how-enabling-two-settings-tripled-our-scores-on"
+        );
         assert_eq!(article_slug("no-hash-here"), "no-hash-here");
 
         assert_eq!(article_slug("keep-my-suffixes"), "keep-my-suffixes");
@@ -406,7 +438,12 @@ articles:
         assert_eq!(articles.len(), 3);
         assert_eq!(articles[2].get("id").unwrap().as_str(), Some("d"));
         assert_eq!(
-            articles[2].get("source_ids").unwrap().as_sequence().unwrap()[0].as_str(),
+            articles[2]
+                .get("source_ids")
+                .unwrap()
+                .as_sequence()
+                .unwrap()[0]
+                .as_str(),
             Some("d-77778888")
         );
     }
@@ -434,23 +471,40 @@ edition:
         let merged = arts[0].get("source_ids").unwrap().as_sequence().unwrap();
         assert_eq!(merged.len(), 3);
         assert_eq!(merged[2].as_str(), Some("d-77778888"));
-        assert_eq!(arts[1].get("source_ids").unwrap().as_sequence().unwrap().len(), 1);
+        assert_eq!(
+            arts[1]
+                .get("source_ids")
+                .unwrap()
+                .as_sequence()
+                .unwrap()
+                .len(),
+            1
+        );
 
         let out = join_article(PLAN, "solo-article", "d-77778888").unwrap();
         let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
-        let solo = doc.get("articles").unwrap().as_sequence().unwrap()[1].get("source_ids").unwrap();
+        let solo = doc.get("articles").unwrap().as_sequence().unwrap()[1]
+            .get("source_ids")
+            .unwrap();
         assert_eq!(solo.as_sequence().unwrap().len(), 2);
     }
 
     #[test]
     fn join_article_fails_loud_on_unknown_article() {
-        let err = join_article(PLAN, "nope", "d-77778888").unwrap_err().to_string();
+        let err = join_article(PLAN, "nope", "d-77778888")
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("merged-nutshell, solo-article"), "{err}");
     }
 
     #[test]
     fn article_row_defaults_to_the_article_writer() {
-        let row = article_row("prime-agent-2c19ce14", "Prime Agent", "Prime Intellect Team", "article");
+        let row = article_row(
+            "prime-agent-2c19ce14",
+            "Prime Agent",
+            "Prime Intellect Team",
+            "article",
+        );
         assert_eq!(row.get("content_mode").unwrap().as_str(), Some("article"));
         assert_eq!(row.get("id").unwrap().as_str(), Some("prime-agent"));
         assert_eq!(

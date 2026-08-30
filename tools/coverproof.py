@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+"""Render the same edition cover with different candidate art, side by side.
+
+    python3 tools/coverproof.py 006 art1.png art2.png [...]
+
+For each candidate the edition's cover.art_path is swapped in place, the
+edition is rendered through the normal `mag render` path, and the rendered
+cover page (page-001) is harvested. The original edition.yaml is restored
+afterward even on failure. Output: editions/<ed>/art/cover-proofs/<stamp>/
+with one PNG per candidate and a proof.html opening them side by side.
+
+Each candidate costs one full edition render (roughly half a minute); the
+point is zero hand-editing between trials, not a faster renderer. Render
+scratch dirs created along the way are ordinary untracked render-* output.
+"""
 
 import re
 import subprocess
@@ -18,7 +32,7 @@ def newest_render_dir(edition_dir: Path) -> Path:
 
 def main() -> None:
     if len(sys.argv) < 3:
-        raise SystemExit("usage: python3 tools/coverproof.py <edition> <art.png> [...]")
+        raise SystemExit(__doc__)
     edition = sys.argv[1]
     candidates = [Path(p) for p in sys.argv[2:]]
     for c in candidates:
@@ -26,7 +40,11 @@ def main() -> None:
             raise SystemExit(f"candidate not found: {c}")
 
     edition_dir = next(
-        (d for d in (ROOT / "editions").iterdir() if d.name == edition or d.name.startswith(edition)),
+        (
+            d
+            for d in (ROOT / "editions").iterdir()
+            if d.name == edition or d.name.startswith(edition)
+        ),
         None,
     )
     if edition_dir is None:
@@ -55,7 +73,13 @@ def main() -> None:
                 capture_output=True,
                 text=True,
             )
-            page = newest_render_dir(edition_dir) / "en" / "render-review" / "reader-pages" / "page-001.png"
+            page = (
+                newest_render_dir(edition_dir)
+                / "en"
+                / "render-review"
+                / "reader-pages"
+                / "page-001.png"
+            )
             dest = out_dir / f"{cand.stem}.png"
             dest.write_bytes(page.read_bytes())
             rows.append((cand, dest.name))

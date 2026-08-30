@@ -18,7 +18,9 @@ def _page_size(page) -> tuple[float, float]:
     return float(page.mediabox.width), float(page.mediabox.height)
 
 
-def _near(actual: tuple[float, float], expected: tuple[float, float], tolerance: float = 0.75) -> bool:
+def _near(
+    actual: tuple[float, float], expected: tuple[float, float], tolerance: float = 0.75
+) -> bool:
     return all(abs(left - right) <= tolerance for left, right in zip(actual, expected, strict=True))
 
 
@@ -86,7 +88,10 @@ def inspect_package(
     reader_sizes = [_page_size(page) for page in reader.pages]
     booklet_sizes = [_page_size(page) for page in booklet.pages]
     cover_dimensions = _raster_dimensions(cover_art)
-    cover_info: dict[str, Any] = {"path": str(cover_art) if cover_art else None, "pixel_dimensions": cover_dimensions}
+    cover_info: dict[str, Any] = {
+        "path": str(cover_art) if cover_art else None,
+        "pixel_dimensions": cover_dimensions,
+    }
     if cover_dimensions:
         effective_at_a5 = _effective_image_ppi(cover_dimensions, A5_POINTS)
         placement = cover_art_size_points or A5_POINTS
@@ -101,6 +106,7 @@ def inspect_package(
     contrast_adjusted_figures: list[dict[str, Any]] = []
     unresolved_low_contrast_figures: list[dict[str, Any]] = []
     for placement in figure_placements or ():
+
         def value(name: str, default=None):
             if isinstance(placement, dict):
                 return placement.get(name, default)
@@ -151,7 +157,6 @@ def inspect_package(
                 }
             )
 
-
         if contrast and prepared.after.needs_treatment:
             unresolved_low_contrast_figures.append(
                 {
@@ -177,8 +182,8 @@ def inspect_package(
             or height <= 0
             or x < 0
             or y < 0
-            or x + width > A5_POINTS[0] + .75
-            or y + height > A5_POINTS[1] + .75
+            or x + width > A5_POINTS[0] + 0.75
+            or y + height > A5_POINTS[1] + 0.75
         ):
             invalid_figure_boxes.append({"figure_id": row["figure_id"], "box_points": box})
             continue
@@ -214,19 +219,17 @@ def inspect_package(
         "home_booklet": {
             "sheet_sides": len(booklet.pages),
             "sheets": len(booklet.pages) // 2,
-            "all_pages_a4_landscape": all(_near(size, A4_LANDSCAPE_POINTS) for size in booklet_sizes),
+            "all_pages_a4_landscape": all(
+                _near(size, A4_LANDSCAPE_POINTS) for size in booklet_sizes
+            ),
             "encrypted": booklet.is_encrypted,
             "print_scale": "100%",
             "duplex_flip": "short edge",
         },
-
-
         "home_booklet_interior": _booklet_section_facts(
             interior_booklet, reader, "interior", stock="text"
         ),
-        "home_booklet_cover": _booklet_section_facts(
-            cover_booklet, reader, "cover", stock="cover"
-        ),
+        "home_booklet_cover": _booklet_section_facts(cover_booklet, reader, "cover", stock="cover"),
         "cover_art": cover_info,
         "figures": figure_rows,
         "low_resolution_figures": low_resolution_figures,

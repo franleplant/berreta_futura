@@ -3,7 +3,6 @@ class MagazineError(Exception):
 
 
 class ValidationError(MagazineError):
-
     def __init__(self, errors: list[str] | str):
         self.errors = [errors] if isinstance(errors, str) else errors
         super().__init__("\n".join(self.errors))

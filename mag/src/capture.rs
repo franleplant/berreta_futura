@@ -1,4 +1,3 @@
-
 use crate::caller::{self, Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
@@ -8,8 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 const RAW_DIR: &str = ".magazine/capture";
-const USER_AGENT: &str =
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
+const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
 
 const SHINGLE_WORDS: usize = 12;
 const MISS_RATE_LIMIT: f64 = 0.02;
@@ -38,7 +36,10 @@ fn curl_text(url: &str) -> Result<String> {
         .output()
         .context("spawning curl")?;
     if !out.status.success() {
-        bail!("fetching {url} failed (curl exit {})", out.status.code().unwrap_or(-1));
+        bail!(
+            "fetching {url} failed (curl exit {})",
+            out.status.code().unwrap_or(-1)
+        );
     }
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
@@ -53,7 +54,10 @@ fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
         .context("spawning curl")?;
     if !out.status.success() {
         let _ = fs::remove_file(&tmp);
-        bail!("downloading image {url} failed (curl exit {})", out.status.code().unwrap_or(-1));
+        bail!(
+            "downloading image {url} failed (curl exit {})",
+            out.status.code().unwrap_or(-1)
+        );
     }
     let ctype = String::from_utf8_lossy(&out.stdout).to_lowercase();
     let ext = match ctype.split(';').next().unwrap_or("").trim() {
@@ -75,11 +79,19 @@ fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
 
 fn decode_entities(s: &str) -> String {
     let named = [
-        ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""),
-        ("&#39;", "'"), ("&apos;", "'"), ("&nbsp;", " "),
-        ("&rsquo;", "\u{2019}"), ("&lsquo;", "\u{2018}"),
-        ("&rdquo;", "\u{201d}"), ("&ldquo;", "\u{201c}"),
-        ("&hellip;", "\u{2026}"), ("&mdash;", "\u{2014}"),
+        ("&amp;", "&"),
+        ("&lt;", "<"),
+        ("&gt;", ">"),
+        ("&quot;", "\""),
+        ("&#39;", "'"),
+        ("&apos;", "'"),
+        ("&nbsp;", " "),
+        ("&rsquo;", "\u{2019}"),
+        ("&lsquo;", "\u{2018}"),
+        ("&rdquo;", "\u{201d}"),
+        ("&ldquo;", "\u{201c}"),
+        ("&hellip;", "\u{2026}"),
+        ("&mdash;", "\u{2014}"),
         ("&ndash;", "\u{2013}"),
     ];
     let mut out = s.to_string();
@@ -111,8 +123,14 @@ fn page_text(html: &str) -> String {
     for tag in ["script", "style", "svg", "noscript"] {
         s = strip_block(&s, tag);
     }
-    s = Regex::new(r"(?s)<!--.*?-->").unwrap().replace_all(&s, " ").into_owned();
-    s = Regex::new(r"(?s)<[^>]*>").unwrap().replace_all(&s, " ").into_owned();
+    s = Regex::new(r"(?s)<!--.*?-->")
+        .unwrap()
+        .replace_all(&s, " ")
+        .into_owned();
+    s = Regex::new(r"(?s)<[^>]*>")
+        .unwrap()
+        .replace_all(&s, " ")
+        .into_owned();
     normalize_ws(&decode_entities(&s))
 }
 
@@ -121,9 +139,18 @@ fn page_for_model(html: &str) -> String {
     for tag in ["script", "style", "svg", "noscript", "head"] {
         s = strip_block(&s, tag);
     }
-    s = Regex::new(r"(?s)<!--.*?-->").unwrap().replace_all(&s, " ").into_owned();
-    s = Regex::new(r#"(?s)\bsrc="data:[^"]*""#).unwrap().replace_all(&s, "").into_owned();
-    Regex::new(r"\n{3,}").unwrap().replace_all(&s, "\n\n").into_owned()
+    s = Regex::new(r"(?s)<!--.*?-->")
+        .unwrap()
+        .replace_all(&s, " ")
+        .into_owned();
+    s = Regex::new(r#"(?s)\bsrc="data:[^"]*""#)
+        .unwrap()
+        .replace_all(&s, "")
+        .into_owned();
+    Regex::new(r"\n{3,}")
+        .unwrap()
+        .replace_all(&s, "\n\n")
+        .into_owned()
 }
 
 fn normalize_ws(s: &str) -> String {
@@ -153,14 +180,21 @@ fn pre_runs(html: &str) -> Vec<String> {
 }
 
 fn normalize_code(s: &str) -> String {
-    s.lines().map(str::trim_end).collect::<Vec<_>>().join("\n").trim().to_string()
+    s.lines()
+        .map(str::trim_end)
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim()
+        .to_string()
 }
 
 fn meta_content(html: &str, keys: &[&str]) -> Option<String> {
     for key in keys {
         for pat in [
             format!(r#"(?i)<meta[^>]+(?:property|name)=["']{key}["'][^>]+content=["']([^"']+)"#),
-            format!(r#"(?i)<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']{key}["']"#),
+            format!(
+                r#"(?i)<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']{key}["']"#
+            ),
             format!(r#""{key}"\s*:\s*"([^"]+)""#),
         ] {
             if let Some(c) = Regex::new(&pat).unwrap().captures(html) {
@@ -234,7 +268,6 @@ fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extractio
 }
 
 fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
-
     let fence = Regex::new(r"(?s)```[^\n]*\n(.*?)```").unwrap();
     for block in fence.captures_iter(article) {
         let code = normalize_code(&block[1]);
@@ -278,6 +311,7 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
     let folded_haystack = comparison_form(haystack).replace(PROSE_FOLD, "");
     let mut misses = Vec::new();
     let mut total = 0usize;
+    let ordinal = Regex::new(r"^\d+\.\s").unwrap();
     for (i, line) in body.lines().enumerate() {
         let t = line.trim();
 
@@ -285,7 +319,7 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
             continue;
         }
         let t = t.trim_start_matches(['-', '*', '>']).trim_start();
-        let t = Regex::new(r"^\d+\.\s").unwrap().replace(t, "");
+        let t = ordinal.replace(t, "");
         let t = t.replace(PROSE_FOLD, "");
         let words: Vec<&str> = t.split_whitespace().collect();
         if words.len() < 5 {
@@ -300,7 +334,7 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
                 windows.push(words[i..i + SHINGLE_WORDS].join(" "));
                 i += SHINGLE_WORDS;
             }
-            if words.len() % SHINGLE_WORDS != 0 {
+            if !words.len().is_multiple_of(SHINGLE_WORDS) {
                 windows.push(words[words.len() - SHINGLE_WORDS..].join(" "));
             }
         }
@@ -313,8 +347,11 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
     }
     let limit = ((total as f64) * MISS_RATE_LIMIT).max(1.0) as usize;
     if misses.len() > limit {
-        let examples: Vec<String> =
-            misses.iter().take(5).map(|m| format!("  ...{m}...")).collect();
+        let examples: Vec<String> = misses
+            .iter()
+            .take(5)
+            .map(|m| format!("  ...{m}..."))
+            .collect();
         bail!(
             "{} of {} prose passages are not verbatim from the page; transcribe the page's \
              own wording exactly. Examples:\n{}",
@@ -343,7 +380,11 @@ fn record_yaml(
     let mut out = format!(
         "id: {sid}\ntitle: {}\nauthor: {}\nurl: {url}\ncaptured_at: {}\n",
         yaml_quote(title),
-        if author.is_empty() { "''".to_string() } else { yaml_quote(author) },
+        if author.is_empty() {
+            "''".to_string()
+        } else {
+            yaml_quote(author)
+        },
         yaml_quote(captured_at),
     );
     if !published.is_empty() {
@@ -397,9 +438,10 @@ pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(S
             if ids.iter().any(|&i| lines[i].trim() == format!("- {sid}")) {
                 bail!("source {sid} is already queued for edition {edition}");
             }
-            let insert_at = ids.last().map(|&i| i + 1).ok_or_else(|| {
-                anyhow!("collecting edition '{edition}' has no source_ids list")
-            })?;
+            let insert_at = ids
+                .last()
+                .map(|&i| i + 1)
+                .ok_or_else(|| anyhow!("collecting edition '{edition}' has no source_ids list"))?;
             lines.insert(insert_at, format!("  - {sid}"));
             let count = ids.len() + 1;
             Ok((lines.join("\n") + "\n", count))
@@ -413,7 +455,10 @@ pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(S
                 format!("  - {sid}"),
             ];
             lines.splice(section_end..section_end, block);
-            if let Some(i) = lines.iter().position(|l| l.starts_with("intake_edition_id:")) {
+            if let Some(i) = lines
+                .iter()
+                .position(|l| l.starts_with("intake_edition_id:"))
+            {
                 lines[i] = format!("intake_edition_id: '{edition}'");
             }
             Ok((lines.join("\n") + "\n", 1))
@@ -421,12 +466,7 @@ pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(S
     }
 }
 
-pub fn prepend_sources_md(
-    text: &str,
-    entry: &[String],
-    edition: &str,
-    queued: usize,
-) -> String {
+pub fn prepend_sources_md(text: &str, entry: &[String], edition: &str, queued: usize) -> String {
     let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
     let collecting_line = format!("_Collecting: `{edition}` ({queued} queued)._");
     let marker = format!("_Collecting: `{edition}` (");
@@ -439,9 +479,12 @@ pub fn prepend_sources_md(
             .enumerate()
             .filter(|(_, l)| l.starts_with('_'))
             .map(|(i, _)| i)
-            .last()
+            .next_back()
             .unwrap_or(2);
-        lines.splice(last_meta + 1..last_meta + 1, ["".to_string(), collecting_line]);
+        lines.splice(
+            last_meta + 1..last_meta + 1,
+            ["".to_string(), collecting_line],
+        );
     }
     let first_entry = lines
         .iter()
@@ -489,7 +532,6 @@ fn sources_md_entry(
 }
 
 fn iso_now() -> String {
-
     let s = caller::now_stamp();
     let (date, time) = s.split_at(11);
     format!("{date}{}Z", time.replace('-', ":"))
@@ -541,9 +583,11 @@ pub fn run(
     mode: &str,
     spec: &ModelSpec,
 ) -> Result<i32> {
-
     if !crate::plan_cmd::CONTENT_MODES.contains(&mode) {
-        bail!("unknown --mode '{mode}'; one of: {}", crate::plan_cmd::CONTENT_MODES.join(", "));
+        bail!(
+            "unknown --mode '{mode}'; one of: {}",
+            crate::plan_cmd::CONTENT_MODES.join(", ")
+        );
     }
     let html = match html_file {
         Some(p) => fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?,
@@ -597,7 +641,10 @@ pub fn run(
             return Err(e);
         }
     };
-    fs::write(src_dir.join("article.md"), article.trim_end().to_string() + "\n")?;
+    fs::write(
+        src_dir.join("article.md"),
+        article.trim_end().to_string() + "\n",
+    )?;
 
     let captured_at = iso_now();
     let author = author_override
@@ -616,7 +663,16 @@ pub fn run(
         .collect();
     fs::write(
         src_dir.join("record.yaml"),
-        record_yaml(&sid, &title, &author, url, &captured_at, &published, &tags, &extraction.synopsis),
+        record_yaml(
+            &sid,
+            &title,
+            &author,
+            url,
+            &captured_at,
+            &published,
+            &tags,
+            &extraction.synopsis,
+        ),
     )?;
 
     let (new_release, queued) = queue_in_release_state(&release_text, &edition, &sid)?;
@@ -624,10 +680,21 @@ pub fn run(
 
     let sources_path = PathBuf::from("sources.md");
     let entry = sources_md_entry(
-        &sid, &title, &author, url, &captured_at, &published, &tags, &edition, &extraction.synopsis,
+        &sid,
+        &title,
+        &author,
+        url,
+        &captured_at,
+        &published,
+        &tags,
+        &edition,
+        &extraction.synopsis,
     );
     let sources_text = fs::read_to_string(&sources_path).context("reading sources.md")?;
-    fs::write(&sources_path, prepend_sources_md(&sources_text, &entry, &edition, queued))?;
+    fs::write(
+        &sources_path,
+        prepend_sources_md(&sources_text, &entry, &edition, queued),
+    )?;
 
     crate::plan_cmd::add_source(&edition, &sid, join_article, mode)?;
 
@@ -653,7 +720,10 @@ mod tests {
             "your-agent-needs-a-computer-not-a-container-intr-4851b3c5"
         );
         assert_eq!(
-            source_id("The actor model in 10 minutes", "https://www.brianstorti.com/the-actor-model/"),
+            source_id(
+                "The actor model in 10 minutes",
+                "https://www.brianstorti.com/the-actor-model/"
+            ),
             "the-actor-model-in-10-minutes-47394faa"
         );
     }
@@ -683,7 +753,10 @@ mod tests {
                      synopsis: Covers dynamic Worker loading, node: imports, and flags.\n\
                      author:\npublished: 2026-08-01\n";
         let e = parse_reply(reply, &page_text(html), &[]).unwrap();
-        assert_eq!(e.synopsis, "Covers dynamic Worker loading, node: imports, and flags.");
+        assert_eq!(
+            e.synopsis,
+            "Covers dynamic Worker loading, node: imports, and flags."
+        );
         assert_eq!(e.author, "");
         assert_eq!(e.published, "2026-08-01");
     }

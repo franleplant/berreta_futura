@@ -1,4 +1,3 @@
-
 use crate::caller::{Caller, ModelSpec};
 use crate::produce::{section, INLINE_PREAMBLE};
 use anyhow::{anyhow, bail, Context, Result};
@@ -45,7 +44,11 @@ fn discover_jobs(run_dir: &Path) -> Result<Vec<PieceJob>> {
             let source_path = articles_dir.join(&id).join("final.md");
             if source_path.is_file() {
                 let output_path = translations_root.join("articles").join(format!("{id}.md"));
-                jobs.push(PieceJob { id, source_path, output_path });
+                jobs.push(PieceJob {
+                    id,
+                    source_path,
+                    output_path,
+                });
             }
         }
     }
@@ -90,8 +93,8 @@ fn parse_translation(
         .map(|c| c[1].trim().to_string())
         .ok_or_else(|| anyhow!("{label}: reply contained no ```json fenced block"))?;
 
-    let value: serde_json::Value =
-        serde_json::from_str(&fence).with_context(|| format!("{label}: invalid json in fenced block"))?;
+    let value: serde_json::Value = serde_json::from_str(&fence)
+        .with_context(|| format!("{label}: invalid json in fenced block"))?;
     let obj = value
         .as_object()
         .ok_or_else(|| anyhow!("{label}: json block is not an object"))?;
@@ -205,8 +208,16 @@ pub fn run(run_dir: &Path, model: &ModelSpec) -> Result<i32> {
         }
     }
 
-    fs::write(translations_root.join("status.yaml"), serde_yaml::to_string(&results)?)
-        .with_context(|| format!("writing {}", translations_root.join("status.yaml").display()))?;
+    fs::write(
+        translations_root.join("status.yaml"),
+        serde_yaml::to_string(&results)?,
+    )
+    .with_context(|| {
+        format!(
+            "writing {}",
+            translations_root.join("status.yaml").display()
+        )
+    })?;
 
     println!(
         "{} pieces, {} calls, ${:.2}",
