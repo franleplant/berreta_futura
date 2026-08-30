@@ -88,9 +88,9 @@ enum Cmd {
     /// Generate art candidate rounds for an edition (human selects)
     Art {
         edition: String,
-        /// Shell command template for one image; {prompt} and {out} are substituted
-        #[arg(long = "gen-cmd", required_unless_present_any = ["dry_run", "showcase"])]
-        gen_cmd: Option<String>,
+        /// Shell command template for one image; {prompt}, {out}, and {ref} are substituted
+        #[arg(long = "gen-cmd", default_value = art::DEFAULT_GEN_CMD)]
+        gen_cmd: String,
         /// How many candidates per art brief
         #[arg(long, default_value_t = 4)]
         candidates: u32,
@@ -218,7 +218,7 @@ fn run(cli: Cli) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             art::run(
                 &edition,
-                gen_cmd.as_deref(),
+                Some(gen_cmd.as_str()),
                 candidates,
                 &spec,
                 dry_run,

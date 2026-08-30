@@ -730,6 +730,11 @@ pub fn run(
     let value: serde_json::Value = serde_json::from_str(&stdout_buf)
         .with_context(|| format!("parsing mag-render-adapter stdout as JSON: {stdout_buf}"))?;
     print_summary(&value, &out_dir);
+    println!(
+        "\nnext: read the PDF in {}; fix copy in the run finals or picks in edition.yaml and re-render; \
+         `mag translate <run dir>` for the Spanish edition",
+        out_dir.display()
+    );
 
     Ok(0)
 }

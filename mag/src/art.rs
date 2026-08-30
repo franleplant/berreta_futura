@@ -1704,6 +1704,10 @@ fn write_round_yaml(
     Ok(failures)
 }
 
+/// The house image generator (tools/imagegen wraps `codex exec`); the
+/// placeholders are what candidate_command substitutes.
+pub const DEFAULT_GEN_CMD: &str = "tools/imagegen '{prompt}' --out {out} --ref '{ref}'";
+
 pub fn run(
     edition: &str,
     gen_cmd: Option<&str>,
@@ -1893,9 +1897,10 @@ fn generate_and_finish(
         println!("  {} [{}]: {ok} ok, {fail} failed", brief.id, brief.purpose);
     }
     println!(
-        "\nopen proof-sheet.html, record your selection in edition.yaml \
-         (cover.art_path / opener_art.path / tail_art_path / closing_plates), \
-         historic images are never deleted."
+        "\nnext:\n  1. mag cast-check {edition_label}        (optional: badge off-model candidates in the showcase)\n  \
+         2. open editions/{edition_label}/art/showcase.html and pick; clicking writes the paths to copy into edition.yaml \
+         (cover.art_path / opener_art.path / tail_art_path / closing_plates); historic images are never deleted\n  \
+         3. mag render {edition_label}"
     );
 
     let all_failed = !generated.is_empty() && failures == generated.len();

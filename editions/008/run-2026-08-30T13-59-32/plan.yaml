@@ -1,0 +1,39 @@
+edition:
+  id: '008'
+articles:
+- id: how-warp-builds-self-improving-agents-on-claude
+  title: How Warp builds self-improving agents on Claude
+  author: Michael Segner
+  content_mode: article
+  source_ids:
+  - how-warp-builds-self-improving-agents-on-claude-9e96ce55
+- id: previewing-the-model-hardware-standard
+  title: Previewing the Model Hardware Standard
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - previewing-the-model-hardware-standard-35305757
+- id: inference-will-eat-the-world
+  title: Inference will eat the world.
+  author: David Ondrej
+  content_mode: article
+  source_ids:
+  - inference-will-eat-the-world-053ed26b
+- id: automated-researchers-can-reliably-mitigate-alignment-failures
+  title: Automated researchers can reliably mitigate alignment failures
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - automated-researchers-can-reliably-mitigate-alig-a9acbff7
+- id: running-a-software-factory-efficiently-at-uber-scale
+  title: Running a Software Factory Efficiently at Uber Scale
+  author: Uday Kiran Medisetty
+  content_mode: article
+  source_ids:
+  - running-a-software-factory-efficiently-at-uber-s-36ff06c6
+- id: the-instinct-thesis-why-memory-is-becoming-the-moat
+  title: 'The Instinct Thesis: Why Memory Is Becoming the Moat'
+  author: Ashwin Gopinath
+  content_mode: article
+  source_ids:
+  - the-instinct-thesis-why-memory-is-becoming-the-m-14970672

@@ -440,6 +440,103 @@ struct Plan {
     articles: Vec<serde_yaml::Value>,
 }
 
+/// A YAML scalar for the scaffold: single-quoted when it needs to be.
+fn yq(s: &str) -> String {
+    if s.is_empty() || s.contains(':') || s.contains('#') || s.contains('\'') || s.starts_with(['[', '{', '&', '*', '!', '|', '>', '%', '@', '`', '"']) {
+        format!("'{}'", s.replace('\'', "''"))
+    } else {
+        s.to_string()
+    }
+}
+
+/// The images a captured source carries, as (path, alt) pairs read from its
+/// article.md, so the editor picks figures from a list instead of opening
+/// every media directory.
+fn source_figure_candidates(sid: &str) -> Vec<(String, String)> {
+    let path = PathBuf::from("library/sources").join(sid).join("article.md");
+    let Ok(text) = fs::read_to_string(&path) else { return Vec::new() };
+    let mut out = Vec::new();
+    for line in text.lines() {
+        let Some(rest) = line.trim_start().strip_prefix("![") else { continue };
+        let Some((alt, tail)) = rest.split_once("](") else { continue };
+        let Some((media, _)) = tail.split_once(')') else { continue };
+        if media.starts_with("media/") {
+            out.push((media.to_string(), alt.chars().take(110).collect()));
+        }
+    }
+    out
+}
+
+/// editions/<ed>/edition.yaml, written once, right after the first produce
+/// run, from the plan the run was produced from. The pipeline's next step
+/// reads it (mag art needs art_direction_path and the article list), so it
+/// must exist before the editor is asked for anything; what the editor owns
+/// (title, cover copy, figure picks, art picks) is marked TODO in place, and
+/// every source's images are listed as figure candidates beside its article.
+/// Never overwrites: an existing edition.yaml is the editor's.
+fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> Result<Option<PathBuf>> {
+    let path = edition_dir.join("edition.yaml");
+    if path.exists() {
+        return Ok(None);
+    }
+    let issue_number: u32 = edition_id.trim_start_matches('0').parse().unwrap_or(0);
+    let today = crate::caller::now_stamp().chars().take(10).collect::<String>();
+    let mut y = String::new();
+    y += &format!(
+        "# Edition {issue_number} spec, scaffolded by `mag produce` from plan.yaml.\n\
+         # TODO markers are the editor's: title, subtitle, cover copy, figure picks.\n\
+         # Art paths are filled by picking in art/showcase.html after `mag art {edition_id}`.\n\
+         # Article order here is the reading order; reorder freely.\n"
+    );
+    y += &format!("id: '{edition_id}'\nissue_number: {issue_number}\n");
+    y += "title: TODO\nsubtitle: TODO\n";
+    y += &format!("publication_date: '{today}'\nstatus: draft\n");
+    y += "format:\n  article_opener: illustrated_paper_spots_v1\n";
+    y += "art_direction_path: art-directions/story-led-boy-and-robot.yaml\n";
+    y += "cover:\n  headline: TODO\n  deck: TODO\n  back_text: TODO\n  art_path: TODO\n";
+    y += "articles:\n";
+    for a in &plan.articles {
+        let get = |k: &str| a.get(k).and_then(value_to_string).unwrap_or_default();
+        let id = get("id");
+        let title = get("title");
+        y += &format!("- id: {}\n  title: {}\n  short_title: {}\n", yq(&id), yq(&title), yq(&title));
+        y += "  display_emphasis: TODO\n  opener_variant: stepped_title\n";
+        y += &format!("  author: {}\n  author_note: TODO\n  content_mode: {}\n", yq(&get("author")), yq(&get("content_mode")));
+        y += "  source_ids:\n";
+        let sids: Vec<String> = a
+            .get("source_ids")
+            .and_then(|v| v.as_sequence())
+            .map(|s| s.iter().filter_map(value_to_string).collect())
+            .unwrap_or_default();
+        for sid in &sids {
+            y += &format!("  - {sid}\n");
+        }
+        y += &format!("  manuscript: editions/{edition_id}/articles/{id}.md\n");
+        if let Some(ex) = a.get("extracts") {
+            let mut m = serde_yaml::Mapping::new();
+            m.insert(serde_yaml::Value::String("extracts".into()), ex.clone());
+            for line in serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?.lines() {
+                y += &format!("  {line}\n");
+            }
+        }
+        let mut any = false;
+        for sid in &sids {
+            for (media, alt) in source_figure_candidates(sid) {
+                if !any {
+                    y += "  # figure candidates (uncomment into a `figures:` list; each needs caption, alt_text, credit, anchor = a heading in the manuscript):\n";
+                    any = true;
+                }
+                y += &format!("  #   {sid} {media}: {alt}\n");
+            }
+        }
+        y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
+        y += "  tail_art_path: TODO\n";
+    }
+    y += "editorial: manuscript/editorial.md\ntail_art_fit: contain\nclosing_plates: []\n";
+    fs::write(&path, y)?;
+    Ok(Some(path))
+}
+
 pub fn run_edition(
     plan_path: &Path,
     resume: Option<PathBuf>,
@@ -465,6 +562,7 @@ pub fn run_edition(
     let started = Instant::now();
     println!("run dir: {}", run_dir.display());
 
+    let scaffold_plan = Plan { edition: plan.edition.clone(), articles: plan.articles.clone() };
     let articles: Vec<serde_yaml::Value> = plan
         .articles
         .into_iter()
@@ -562,6 +660,24 @@ pub fn run_edition(
     fs::write(run_dir.join("summary.md"), &summary_text)?;
     println!("\n{}", run_dir.join("summary.md").display());
     println!("{}", lines.join("\n"));
+
+    if failures.is_empty() {
+        let edition_yaml = edition_dir.join("edition.yaml");
+        match scaffold_edition_yaml(&edition_dir, &edition_id, &scaffold_plan)? {
+            Some(p) => println!("\nscaffolded {}", p.display()),
+            None => println!("\n{} already exists; left as is", edition_yaml.display()),
+        }
+        println!(
+            "\nnext:\n  1. read the finals under {}/articles/*/final.md and editorial/final.md\n  \
+             2. edit {}: TODO fields (title, cover copy), article order, figures\n  \
+             3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
+             4. mag render {edition_id}",
+            run_dir.display(),
+            edition_yaml.display()
+        );
+    } else {
+        println!("\nnext: fix the failures above, then: mag produce {} --resume {}", plan_path.display(), run_dir.display());
+    }
 
     Ok(if failures.is_empty() { 0 } else { 1 })
 }
