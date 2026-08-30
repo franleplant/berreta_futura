@@ -5,10 +5,12 @@ prompt=${1:?usage: imagegen '<prompt>' --out <file.png> [--ref '<imgs>']}
 shift
 out=
 refs=
+size=
 while [ $# -gt 0 ]; do
     case $1 in
         --out) out=${2:?--out needs a path}; shift 2 ;;
         --ref) refs=${2-}; shift 2 ;;
+        --size) size=${2:?--size needs WIDTHxHEIGHT}; shift 2 ;;
         *) echo "imagegen: unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -21,7 +23,7 @@ for ref in $refs; do
 done
 
 instructions="Generate one illustration image with your image generation \
-tool and save it as a PNG to exactly this path: $out — create parent \
+tool${size:+ at exactly $size pixels (pass size=$size)} and save it as a PNG to exactly this path: $out — create parent \
 directories if needed, write nothing else. If reference images are attached, \
 they are the canonical designs of the recurring characters named in the \
 prompt: match those designs exactly while drawing the new scene described \
