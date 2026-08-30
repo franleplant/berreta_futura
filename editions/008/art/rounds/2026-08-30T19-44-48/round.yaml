@@ -1,0 +1,52 @@
+edition: '008'
+dry_run: false
+generated:
+- brief: cover-synthetic-the-ticket-punch
+  variant: 1
+  file: cover-synthetic-the-ticket-punch-v1.png
+  ok: true
+- brief: cover-synthetic-the-ticket-punch
+  variant: 2
+  file: cover-synthetic-the-ticket-punch-v2.png
+  ok: true
+- brief: cover-synthetic-the-ticket-punch
+  variant: 3
+  file: cover-synthetic-the-ticket-punch-v3.png
+  ok: true
+- brief: cover-synthetic-the-ticket-punch
+  variant: 4
+  file: cover-synthetic-the-ticket-punch-v4.png
+  ok: true
+- brief: cover-art-directed-the-counterweight
+  variant: 1
+  file: cover-art-directed-the-counterweight-v1.png
+  ok: true
+- brief: cover-art-directed-the-counterweight
+  variant: 2
+  file: cover-art-directed-the-counterweight-v2.png
+  ok: true
+- brief: cover-art-directed-the-counterweight
+  variant: 3
+  file: cover-art-directed-the-counterweight-v3.png
+  ok: true
+- brief: cover-art-directed-the-counterweight
+  variant: 4
+  file: cover-art-directed-the-counterweight-v4.png
+  ok: true
+- brief: cover-wildcard-the-chain-runs-out
+  variant: 1
+  file: cover-wildcard-the-chain-runs-out-v1.png
+  ok: true
+- brief: cover-wildcard-the-chain-runs-out
+  variant: 2
+  file: cover-wildcard-the-chain-runs-out-v2.png
+  ok: true
+- brief: cover-wildcard-the-chain-runs-out
+  variant: 3
+  file: cover-wildcard-the-chain-runs-out-v3.png
+  ok: true
+- brief: cover-wildcard-the-chain-runs-out
+  variant: 4
+  file: cover-wildcard-the-chain-runs-out-v4.png
+  ok: true
+failures: 0
