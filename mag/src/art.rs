@@ -1434,7 +1434,11 @@ struct MemberVerdict {
     name: String,
     verdict: String,
     reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    attribute: Option<String>,
 }
+
+const LICENSED_ATTRIBUTES: &[&str] = &["hairstyle", "garment_cut", "pose", "style", "other"];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CastCheckResult {
@@ -1477,6 +1481,10 @@ fn cast_check_prompt(cast: &[CastMember], image_abs: &Path, license: Option<&str
          setting, hairstyle (ponytail, bob, loose, bangs), lace or sole \
          colours, the cut of a garment, proportions under perspective, \
          rendering style, shading, and small colour shifts from lighting. \
+         If a definition describes a hairstyle (ponytail, side, bangs, bob) \
+         or a garment's cut or layering (pinafore over a top, sleeve length), \
+         that wording is a rendering preference for the generator, not an \
+         identity anchor: only the hair colour and the garment colours count. \
          A deviation counts only when it is unmistakable at a glance and \
          would make a reader think this is a different character; when in \
          doubt, the verdict is on_model.\n\
@@ -1491,9 +1499,11 @@ fn cast_check_prompt(cast: &[CastMember], image_abs: &Path, license: Option<&str
          verdicts:\n\
          - name: <cast member name>\n\
          \x20 verdict: on_model | off_model | absent\n\
+         \x20 attribute: hair_colour | glasses | garment_colour | body_shape | body_colour | face_screen | antenna | pouch | hairstyle | garment_cut | pose | style | other\n\
          \x20 reason: one short factual sentence\n\
          ```\n\
-         with exactly one entry per cast member listed above.",
+         with exactly one entry per cast member listed above; attribute names \
+         what the reason is about (for on_model or absent, use other).",
         image_abs.display()
     );
     p
@@ -1530,7 +1540,23 @@ fn extract_verdicts(reply: &str, label: &str, cast: &[CastMember]) -> Result<Vec
             );
         }
     }
-    Ok(doc.verdicts)
+    Ok(doc.verdicts.into_iter().map(license_verdict).collect())
+}
+
+fn license_verdict(mut v: MemberVerdict) -> MemberVerdict {
+    let licensed = v
+        .attribute
+        .as_deref()
+        .is_some_and(|a| LICENSED_ATTRIBUTES.contains(&a));
+    if v.verdict == "off_model" && licensed {
+        v.verdict = "on_model".to_string();
+        v.reason = format!(
+            "licensed {}: {}",
+            v.attribute.as_deref().unwrap_or(""),
+            v.reason
+        );
+    }
+    v
 }
 
 struct CheckTarget {

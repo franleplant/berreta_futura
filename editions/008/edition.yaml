@@ -1,7 +1,8 @@
 # Edition 8 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
 # TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
 # Claude on 2026-08-30 for the editor to revise. ART SELECTIONS ARE PROVISIONAL
-# too, picked by Claude from round 2026-08-30T14-06-08 (72/72 candidates); the
+# too, picked by Claude from rounds 2026-08-30T14-06-08 (tails) and 2026-08-30T18-03-42
+# (cover, openers at the frame's 1.71:1 size, six closing plates); the
 # editor's real selection happens in editions/008/art/showcase.html. Article order is the reading order:
 # the self-improvement loop opens, the cost and market pieces in the middle,
 # memory, the agent civilizations story, then the lab bench as closer.
@@ -23,7 +24,7 @@ cover:
     their own instructions, researchers that train the next model, a spend equation with six terms, a
     notebook that decides what to forget, and a laser relocked overnight. This issue follows the tokens
     to where the money now goes.'
-  art_path: editions/008/art/rounds/2026-08-30T14-06-08/cover-synthetic-till-roll-v2.png
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/cover-wildcard-the-anvil-and-the-crown-v3.png
 articles:
 - id: how-warp-builds-self-improving-agents-on-claude
   title: How Warp Builds Self-Improving Agents
@@ -48,8 +49,8 @@ articles:
     anchor: The loop
     layout: evidence_band_prose
   opener_art:
-    path: editions/008/art/rounds/2026-08-30T14-06-08/warp-opener-the-card-that-edits-the-card-v4.png
-    alt_text: In a workshop, Pedro clips a note to an instruction card while Maro builds from it and Flopaz slides in the corrected card, with a wire of cards looping overhead.
+    path: editions/008/art/rounds/2026-08-30T18-03-42/warp-opener-the-run-that-fixes-its-track-v2.png
+    alt_text: Maro releases a marble at the left of a long wooden marble run while Pedro chalks a cross on the floor where the last one flew off and Flopaz tilts the track section that will send the next one into the cup.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/warp-tail-last-card-of-the-morning-v2.png
 - id: automated-researchers-can-reliably-mitigate-alignment-failures
@@ -83,8 +84,8 @@ articles:
     anchor: On a production-grade model
     layout: compact_band
   opener_art:
-    path: editions/008/art/rounds/2026-08-30T14-06-08/researchers-opener-closing-the-gaps-v3.png
-    alt_text: Maro fits a plank into the gap of one of ten model bridges on a bench while Pedro measures the next gap and Flopaz marks ticks on a slate.
+    path: editions/008/art/rounds/2026-08-30T18-03-42/researchers-opener-the-clouded-flasks-v3.png
+    alt_text: At a long workroom bench Maro adds a single drop to the first clouded flask in a row while Pedro holds the next one up to the window light and Flopaz stands beside a nearly finished sand timer.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/researchers-tail-the-beetle-crosses-v3.png
 - id: running-a-software-factory-efficiently-at-uber-scale
@@ -130,8 +131,8 @@ articles:
     anchor: Requests per turn
     layout: evidence_band_prose
   opener_art:
-    path: editions/008/art/rounds/2026-08-30T14-06-08/uber-opener-six-valves-one-chute-v3.png
-    alt_text: Pedro leans into the largest of six valves on a factory pipe as the coins pouring from the chute thin to a trickle, watched by Flopaz and caught in a bucket by Maro.
+    path: editions/008/art/rounds/2026-08-30T18-03-42/uber-opener-the-lighter-belt-v3.png
+    alt_text: A factory conveyor crosses the frame loaded with crates at the left and carrying single small parcels at the right, as Pedro lifts a crate off the belt, Maro holds up a smaller drive motor, and Flopaz watches a wall dial's needle sink.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/uber-tail-closing-time-v3.png
 - id: inference-will-eat-the-world
@@ -146,8 +147,8 @@ articles:
   - inference-will-eat-the-world-053ed26b
   manuscript: editions/008/articles/inference-will-eat-the-world.md
   opener_art:
-    path: editions/008/art/rounds/2026-08-30T14-06-08/inference-opener-the-town-hopper-v2.png
-    alt_text: Seen from below, Pedro and Flopaz tip a crate of wooden blocks into the hopper of a towering town square machine while Maro watches its gauge and warm light floods the street.
+    path: editions/008/art/rounds/2026-08-30T18-03-42/inference-opener-one-wheel-turns-the-valley-v3.png
+    alt_text: In a valley village one big mill wheel drives leather belts running out to three open workshops down the street, with Pedro hauling the sluice gate lever, Maro greasing the axle, and Flopaz watching the belts take up.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/inference-tail-every-window-lit-v4.png
 - id: the-instinct-thesis-why-memory-is-becoming-the-moat
@@ -162,8 +163,8 @@ articles:
   - the-instinct-thesis-why-memory-is-becoming-the-m-14970672
   manuscript: editions/008/articles/the-instinct-thesis-why-memory-is-becoming-the-moat.md
   opener_art:
-    path: editions/008/art/rounds/2026-08-30T14-06-08/memory-opener-the-island-cabinet-v2.png
-    alt_text: On an island in a still pond, Flopaz keeps one card from a tall index cabinet and lets another fall to the water while Maro holds the drawer and Pedro watches from the plank bridge.
+    path: editions/008/art/rounds/2026-08-30T18-03-42/memory-opener-what-the-pan-keeps-v2.png
+    alt_text: In river shallows Pedro tips a sheet of grit and water off a broad pan while Flopaz kneels at the right holding a tin lid with three bright specks and Maro steadies a wooden sluice box in the current.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/memory-tail-what-the-water-keeps-v1.png
 - id: the-rise-and-fall-of-agent-civilizations
@@ -178,9 +179,8 @@ articles:
   - the-rise-and-fall-of-agent-civilizations-b74188c7
   manuscript: editions/008/articles/the-rise-and-fall-of-agent-civilizations.md
   opener_art:
-    path: editions/008/art/rounds/2026-08-30T15-07-58/civilizations-opener-the-third-city-v2.png
-    alt_text: On a classroom sand table, Pedro sets a block on a small rising city while Maro braces its
-      base and Flopaz lifts a salvaged block from the ruins of two collapsed cities.
+    path: editions/008/art/rounds/2026-08-30T18-03-42/civilizations-opener-the-flame-handed-on-v2.png
+    alt_text: In a dim room Pedro carries a flame on a wooden splint from a guttering candle toward the fresh one Flopaz holds ready, while Maro shields the flame with a glass chimney and a burnt out stub sits at the far end of the table.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T15-07-58/civilizations-tail-carrying-the-blocks-home-v3.png
 - id: previewing-the-model-hardware-standard
@@ -215,16 +215,22 @@ articles:
     anchor: What our partners found
     layout: column_plate
   opener_art:
-    path: editions/008/art/rounds/2026-08-30T14-06-08/mhs-opener-one-plug-fits-all-v3.png
-    alt_text: On a night laboratory bench, Maro plugs one round connector into the third of three different instruments while Pedro adjusts a mirror knob and Flopaz reads a dial by torchlight.
+    path: editions/008/art/rounds/2026-08-30T18-03-42/mhs-opener-one-shaft-turns-them-all-v3.png
+    alt_text: In a workshop laboratory a single overhead line shaft drives three different instruments, as Pedro turns the crank wheel at the left, Maro loops the newest machine's belt over a pulley at the right, and Flopaz watches them all start.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/mhs-tail-locked-by-morning-v2.png
 editorial: manuscript/editorial.md
 tail_art_fit: contain
 closing_plates:
-- title: The Long Tape
-  art_path: editions/008/art/rounds/2026-08-30T14-06-08/closing-plate-the-long-tape-v2.png
-- title: The Card Tower
-  art_path: editions/008/art/rounds/2026-08-30T14-06-08/closing-plate-the-card-tower-v3.png
-- title: The Beam That Stayed Up
-  art_path: editions/008/art/rounds/2026-08-30T14-06-08/closing-plate-the-beam-that-stayed-up-v4.png
+- title: The Bell Rope
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-bell-rope-v2.png
+- title: The Climbing Vine
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-climbing-vine-v3.png
+- title: The Fly Line
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-fly-line-v2.png
+- title: The Sack Hoist
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-sack-hoist-v2.png
+- title: The Speaking Tube
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-speaking-tube-v2.png
+- title: The Weight Chain
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-weight-chain-v3.png
