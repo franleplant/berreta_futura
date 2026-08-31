@@ -78,6 +78,9 @@ enum Cmd {
         /// Fixed image height cap in mm (default: try 130, 110, 90 and keep the densest PDF)
         #[arg(long = "image-cap")]
         image_cap: Option<u32>,
+        /// Page layout: single (A4 one column), columns (A4 two columns), a5 (booklet page)
+        #[arg(long, default_value = "single")]
+        layout: String,
     },
     /// Produce an edition from a plan.yaml
     Produce {
@@ -324,12 +327,14 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             out,
             chrome,
             image_cap,
+            layout,
         } => print_cmd::run(&print_cmd::PrintArgs {
             url,
             html,
             out,
             chrome,
             image_cap,
+            layout,
         }),
         Cmd::Render {
             edition,
