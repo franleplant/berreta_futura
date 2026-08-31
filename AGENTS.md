@@ -23,10 +23,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   side tool, not an edition step: it turns one blog post into
   `output/print/<slug>/print.pdf` ready to print (plus the self-contained
   index.html it is rendered from), with no model call and no library record.
-  It keeps the page's own CSS (inlined) and images (localized), and strips
-  site chrome, scripts, players, link-preview cards, bare-URL link lists,
-  and emptied wrappers; the PDF step runs headless Chrome, trying three
-  image-size caps and keeping the densest PDF (`--image-cap` pins one).
+  It re-typesets the article reader-mode style: the site's CSS is discarded
+  and the content is set in a built-in print stylesheet (serif body, reading
+  measure, standard code/quote/table treatment, centered images), after
+  stripping site chrome, scripts, players, link-preview cards, bare-URL link
+  lists, and emptied wrappers; images are localized and the PDF step runs
+  headless Chrome, trying three image-size caps and keeping the densest PDF
+  (`--image-cap` pins one).
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.
 

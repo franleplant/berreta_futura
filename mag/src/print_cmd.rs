@@ -34,33 +34,36 @@ const ROOTS: [&str; 6] = [
     ".post",
     ".entry-content",
 ];
-const PRINT_CSS: &str = "<style>
-@page { size: A4; margin: 14mm 15mm; }
-img { max-width: 100% \
-!important; height: auto !important; }
-pre { white-space: pre-wrap !important; word-break: \
-break-word; }
+const READER_CSS: &str = r#"<style>
+@page { size: A4; margin: 18mm; }
+html { font-size: 11pt; }
+body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.5; color: #111;
+  background: #fff; max-width: 150mm; margin: 0 auto; }
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.4em; }
+h2 { font-size: 1.4rem; margin: 1.2em 0 0.4em; }
+h3 { font-size: 1.2rem; margin: 1.1em 0 0.3em; }
+h4, h5, h6 { font-size: 1.05rem; margin: 1em 0 0.3em; }
+p, ul, ol, table { margin: 0.55em 0; }
+li { margin: 0.2em 0; }
+a { color: inherit; }
+img { display: block; max-width: 100%; max-height: {cap}mm; width: auto; height: auto;
+  margin: 0.9em auto; }
+figure { margin: 0.9em auto; }
+figcaption { font-size: 0.85rem; color: #555; text-align: center; margin-top: 0.35em; }
+pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem;
+  line-height: 1.4; background: #f5f5f5; border: 0.3mm solid #ddd; padding: 0.6em 0.8em;
+  white-space: pre-wrap; word-break: break-word; margin: 0.8em 0; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }
+blockquote { margin: 0.8em 0; padding-left: 1em; border-left: 0.8mm solid #bbb; color: #333; }
+table { border-collapse: collapse; font-size: 0.85rem; }
+td, th { border: 0.2mm solid #ccc; padding: 0.3em 0.5em; text-align: left; }
+hr { border: 0; border-top: 0.3mm solid #ccc; margin: 1.2em 0; }
 @media print {
-  html, body { background: #fff !important; }
-  body { orphans: 3; \
-widows: 3; }
-  img { max-width: 100% !important; max-height: {cap}mm !important; width: auto \
-!important; height: auto !important; }
-  img, figure { break-inside: avoid; }
-  h1, h2, h3, h4 { \
-break-after: avoid; }
-  p, ul, ol, pre, blockquote, table { margin-top: 0.5em !important; \
-margin-bottom: 0.5em !important; }
-  figure { margin: 0.9em auto !important; }
-  figcaption { \
-margin-top: 0.4em !important; }
-  h1, h2, h3, h4, h5, h6 { margin-top: 1em !important; \
-margin-bottom: 0.4em !important; }
-  li { margin-top: 0.15em !important; margin-bottom: 0.15em \
-!important; }
-  header { padding-top: 0 !important; padding-bottom: 0 !important; }
+  body { orphans: 3; widows: 3; }
+  img, figure, table { break-inside: avoid; }
+  h1, h2, h3, h4 { break-after: avoid; }
 }
-</style>";
+</style>"#;
 
 pub struct PrintArgs {
     pub url: String,
@@ -88,16 +91,15 @@ pub fn run(args: &PrintArgs) -> Result<i32> {
     strip_empty(&mut doc);
     strip_dangling_tails(&mut doc);
     strip_empty(&mut doc);
-    let page = doc.root_element().html();
+    let page = reader_content(&doc);
     let (page, images) = localize_images(&page, &base, &out_dir)?;
-    let (page, sheets) = inline_styles(&page, &base);
     let index = out_dir.join("index.html");
     let pdf = out_dir.join("print.pdf");
     let chrome = chrome_binary(args.chrome.as_deref())?;
     let caps = args.image_cap.map_or_else(|| CAPS_MM.to_vec(), |c| vec![c]);
     let mut best: Option<(u32, usize)> = None;
     for cap in caps {
-        fs::write(&index, finish(&page, &base, cap))?;
+        fs::write(&index, finish(&page, &base, &title, cap))?;
         print_pdf(&chrome, &index, &pdf)?;
         let pages = pdf_pages(&pdf)?;
         if best.is_none_or(|(_, p)| pages < p) {
@@ -105,11 +107,10 @@ pub fn run(args: &PrintArgs) -> Result<i32> {
         }
     }
     let (cap, pages) = best.unwrap();
-    fs::write(&index, finish(&page, &base, cap))?;
+    fs::write(&index, finish(&page, &base, &title, cap))?;
     print_pdf(&chrome, &index, &pdf)?;
     println!(
-        "printable: {} ({pages} pages, images fit to {cap}mm, {images} images localized, \
-{sheets} stylesheets inlined)",
+        "printable: {} ({pages} pages, images fit to {cap}mm, {images} images localized)",
         pdf.display()
     );
     println!("next: open {} and print it", pdf.display());
@@ -329,7 +330,7 @@ fn largest_srcset(srcset: &str) -> Option<String> {
 
 fn rebuild_img(tag: &str, src: &str) -> String {
     let mut out = format!("<img src=\"{src}\"");
-    for k in ["alt", "title", "class", "width", "height"] {
+    for k in ["alt", "width", "height"] {
         if let Some(v) = attr(tag, k) {
             out += &format!(" {k}=\"{v}\"");
         }
@@ -390,55 +391,6 @@ fn download_all(urls: &[String], assets: &Path) -> HashMap<String, String> {
     map
 }
 
-fn inline_styles(html: &str, base: &Url) -> (String, usize) {
-    let re = Regex::new(r"(?is)<link\b[^>]*>").unwrap();
-    let mut count = 0usize;
-    let out = re.replace_all(html, |c: &regex::Captures| {
-        let tag = c.get(0).unwrap().as_str();
-        let is_sheet = attr(tag, "rel").is_some_and(|r| r.eq_ignore_ascii_case("stylesheet"));
-        let href = attr(tag, "href").and_then(|h| base.join(&h).ok());
-        let (Some(u), true) = (href, is_sheet) else {
-            return tag.to_string();
-        };
-        match capture::curl_text(u.as_str()) {
-            Ok(css) => {
-                count += 1;
-                format!("<style>\n{}\n</style>", absolutize_css(&css, &u))
-            }
-            Err(e) => {
-                eprintln!("warning: keeping remote stylesheet {u}: {e:#}");
-                format!("<link rel=\"stylesheet\" href=\"{u}\">")
-            }
-        }
-    });
-    (out.into_owned(), count)
-}
-
-fn absolutize_css(css: &str, css_url: &Url) -> String {
-    Regex::new(r#"url\(\s*(['"]?)([^'")]+)['"]?\s*\)"#)
-        .unwrap()
-        .replace_all(css, |c: &regex::Captures| {
-            let target = &c[2];
-            if target.starts_with("data:") || target.starts_with("http") {
-                c[0].to_string()
-            } else {
-                css_url
-                    .join(target)
-                    .map_or_else(|_| c[0].to_string(), |u| format!("url(\"{u}\")"))
-            }
-        })
-        .into_owned()
-}
-
-fn absolutize_inline_styles(html: &str, base: &Url) -> String {
-    Regex::new(r"(?is)(<style\b[^>]*>)(.*?)(</style>)")
-        .unwrap()
-        .replace_all(html, |c: &regex::Captures| {
-            format!("{}{}{}", &c[1], absolutize_css(&c[2], base), &c[3])
-        })
-        .into_owned()
-}
-
 fn absolutize_hrefs(html: &str, base: &Url) -> String {
     Regex::new(r#"(?is)(<a\b[^>]*\bhref=["'])([^"'#][^"']*)(["'])"#)
         .unwrap()
@@ -449,22 +401,84 @@ fn absolutize_hrefs(html: &str, base: &Url) -> String {
         .into_owned()
 }
 
-fn finish(html: &str, base: &Url, cap: u32) -> String {
-    let css = PRINT_CSS.replace("{cap}", &cap.to_string());
+fn reader_content(doc: &Html) -> String {
+    let (root, is_body) = content_root(doc);
+    let el = doc
+        .tree
+        .get(root)
+        .and_then(scraper::ElementRef::wrap)
+        .unwrap_or_else(|| doc.root_element());
+    if is_body {
+        el.inner_html()
+    } else {
+        el.html()
+    }
+}
+
+fn escape_text(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+fn strip_attrs(html: &str) -> String {
+    let mut svgs: Vec<String> = Vec::new();
+    let svg_re = Regex::new(r"(?is)<svg\b.*?</svg>").unwrap();
+    let stashed = svg_re.replace_all(html, |c: &regex::Captures| {
+        svgs.push(c[0].to_string());
+        format!("\u{1}{}\u{1}", svgs.len() - 1)
+    });
+    let tag = Regex::new(r"<([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>").unwrap();
+    let mut out = tag
+        .replace_all(&stashed, |c: &regex::Captures| {
+            let name = c[1].to_lowercase();
+            let keep: &[&str] = match name.as_str() {
+                "a" => &["href"],
+                "img" => &["src", "alt", "width", "height"],
+                "td" | "th" => &["colspan", "rowspan"],
+                _ => &[],
+            };
+            let mut t = format!("<{name}");
+            for k in keep {
+                if let Some(v) = attr(&c[0], k) {
+                    t += &format!(" {k}=\"{v}\"");
+                }
+            }
+            t + ">"
+        })
+        .into_owned();
+    for (i, svg) in svgs.iter().enumerate() {
+        out = out.replace(&format!("\u{1}{i}\u{1}"), svg);
+    }
+    out
+}
+
+fn ensure_h1(html: &str, title: &str) -> String {
+    if Regex::new(r"(?i)<h1[\s>]").unwrap().is_match(html) {
+        html.to_string()
+    } else {
+        format!("<h1>{}</h1>\n{html}", escape_text(title))
+    }
+}
+
+fn finish(html: &str, base: &Url, title: &str, cap: u32) -> String {
     let s = Regex::new(r"(?s)<!--.*?-->")
         .unwrap()
         .replace_all(html, " ")
         .into_owned();
-    let s = absolutize_inline_styles(&s, base);
+    let s = Regex::new(r"(?is)<style\b[^>]*>.*?</style>")
+        .unwrap()
+        .replace_all(&s, " ")
+        .into_owned();
+    let s = strip_attrs(&s);
     let s = absolutize_hrefs(&s, base);
-    let head = Regex::new(r"(?i)</head>").unwrap();
-    let s = if head.is_match(&s) {
-        head.replace(&s, format!("{css}\n</head>").as_str())
-            .into_owned()
-    } else {
-        format!("{css}\n{s}")
-    };
-    format!("<!DOCTYPE html>\n{s}")
+    let s = ensure_h1(&s, title);
+    let css = READER_CSS.replace("{cap}", &cap.to_string());
+    format!(
+        "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{}</title>\n\
+{css}\n</head>\n<body>\n{s}\n</body>\n</html>\n",
+        escape_text(title)
+    )
 }
 
 #[cfg(test)]
@@ -523,11 +537,24 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
     }
 
     #[test]
-    fn print_css_gets_the_image_cap() {
+    fn finish_builds_a_reader_page() {
         let base = Url::parse("https://x.com/").unwrap();
-        let out = finish("<html><head></head><body></body></html>", &base, 110);
+        let out = finish("<p>x</p>", &base, "T & Co", 110);
         assert!(out.contains("max-height: 110mm"));
         assert!(!out.contains("{cap}"));
+        assert!(out.contains("<title>T &amp; Co</title>"));
+        assert!(out.contains("<h1>T &amp; Co</h1>"));
+        assert!(out.contains("Georgia"));
+    }
+
+    #[test]
+    fn attrs_are_stripped_to_reader_whitelist() {
+        let html = "<div class=\"x\" style=\"c:red\"><a href=\"/a\" target=\"_b\">l</a>\
+<img src=\"s\" alt=\"a\" class=\"k\"><svg viewBox=\"0 0 1 1\"><path d=\"M0\"/></svg></div>";
+        let out = strip_attrs(html);
+        assert!(out.contains("<div><a href=\"/a\">l</a><img src=\"s\" alt=\"a\">"));
+        assert!(out.contains("viewBox=\"0 0 1 1\""));
+        assert!(out.contains("<path d=\"M0\"/>"));
     }
 
     #[test]
@@ -568,21 +595,7 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
         let tag = "<img src=\"x\" class=\"kg-image\" alt=\"a\" loading=\"lazy\" \
 onerror=\"hide()\" srcset=\"y 2x\">";
         let out = rebuild_img(tag, "assets/001.png");
-        assert_eq!(
-            out,
-            "<img src=\"assets/001.png\" alt=\"a\" class=\"kg-image\">"
-        );
-    }
-
-    #[test]
-    fn css_urls_become_absolute() {
-        let base = Url::parse("https://x.com/assets/built/screen.css").unwrap();
-        let css =
-            "a{background:url(../fonts/f.woff2)}b{mask:url('/m.svg')}c{cursor:url(\"data:x\")}";
-        let out = absolutize_css(css, &base);
-        assert!(out.contains("url(\"https://x.com/assets/fonts/f.woff2\")"));
-        assert!(out.contains("url(\"https://x.com/m.svg\")"));
-        assert!(out.contains("url(\"data:x\")"));
+        assert_eq!(out, "<img src=\"assets/001.png\" alt=\"a\">");
     }
 
     #[test]
