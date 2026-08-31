@@ -35,7 +35,7 @@ const ROOTS: [&str; 6] = [
     ".entry-content",
 ];
 const READER_CSS: &str = r#"<style>
-@page { {page} }
+@page { {page} {pagebox} }
 html { font-size: {font}pt; }
 body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.5; color: #111;
   background: #fff; {body} }
@@ -63,6 +63,7 @@ hr { border: 0; border-top: 0.3mm solid #ccc; margin: 1.2em 0; }
   img, figure, table { break-inside: avoid; }
   h1, h2, h3, h4 { break-after: avoid; }
 }
+{counterstyles}
 </style>"#;
 
 pub struct PrintArgs {
@@ -79,6 +80,23 @@ struct Layout {
     font: &'static str,
     body: &'static str,
     h1: &'static str,
+    pagebox: &'static str,
+}
+
+const FOOT: &str = "font-family: Georgia, serif; font-size: 8.5pt; color: #666;";
+
+fn counter_styles() -> String {
+    let syms = |start: u32| -> String {
+        (0..300)
+            .map(|i| format!("\"{}\" ", start + 2 * i))
+            .collect()
+    };
+    format!(
+        "@counter-style pageleft {{ system: fixed; symbols: {}; }}\n\
+@counter-style pageright {{ system: fixed; symbols: {}; }}",
+        syms(1),
+        syms(2)
+    )
 }
 
 fn layout(name: &str) -> Result<&'static Layout> {
@@ -88,18 +106,22 @@ fn layout(name: &str) -> Result<&'static Layout> {
             font: "11",
             body: "max-width: 150mm; margin: 0 auto;",
             h1: "",
+            pagebox: "@bottom-center { content: counter(page); {foot} }",
         }),
         "columns" => Ok(&Layout {
             page: "size: A4; margin: 14mm 12mm;",
             font: "9.5",
             body: "columns: 2; column-gap: 8mm;",
             h1: "column-span: all;",
+            pagebox: "@bottom-center { content: counter(page); {foot} }",
         }),
         "a5" => Ok(&Layout {
             page: "size: A4 landscape; margin: 12mm 11mm;",
             font: "9.5",
             body: "columns: 2; column-gap: 22mm;",
             h1: "",
+            pagebox: "@bottom-left { content: counter(page, pageleft); {foot} } \
+@bottom-right { content: counter(page, pageright); {foot} }",
         }),
         other => anyhow::bail!("unknown --layout '{other}' (expected single, columns, or a5)"),
     }
@@ -507,6 +529,8 @@ fn finish(html: &str, base: &Url, title: &str, cap: u32, lay: &Layout) -> String
     let s = absolutize_hrefs(&s, base);
     let s = ensure_h1(&s, title);
     let css = READER_CSS
+        .replace("{pagebox}", &lay.pagebox.replace("{foot}", FOOT))
+        .replace("{counterstyles}", &counter_styles())
         .replace("{page}", lay.page)
         .replace("{font}", lay.font)
         .replace("{body}", lay.body)
@@ -583,6 +607,8 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
         let five = finish("<p>x</p>", &base, "T", 110, layout("a5").unwrap());
         assert!(five.contains("size: A4 landscape;"));
         assert!(five.contains("column-gap: 22mm;"));
+        assert!(five.contains("counter(page, pageleft)"));
+        assert!(five.contains("@counter-style pageright { system: fixed; symbols: \"2\" \"4\""));
         assert!(layout("booklet").is_err());
     }
 
@@ -591,6 +617,7 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
         let base = Url::parse("https://x.com/").unwrap();
         let out = finish("<p>x</p>", &base, "T & Co", 110, layout("single").unwrap());
         assert!(out.contains("max-height: 110mm"));
+        assert!(out.contains("@bottom-center { content: counter(page);"));
         assert!(!out.contains("{cap}"));
         assert!(out.contains("<title>T &amp; Co</title>"));
         assert!(out.contains("<h1>T &amp; Co</h1>"));
