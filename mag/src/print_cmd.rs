@@ -35,11 +35,11 @@ const ROOTS: [&str; 6] = [
     ".entry-content",
 ];
 const READER_CSS: &str = r#"<style>
-@page { size: A4; margin: 18mm; }
-html { font-size: 11pt; }
+@page { {page} }
+html { font-size: {font}pt; }
 body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.5; color: #111;
-  background: #fff; max-width: 150mm; margin: 0 auto; }
-h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.4em; }
+  background: #fff; {body} }
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.4em; {h1} }
 h2 { font-size: 1.4rem; margin: 1.2em 0 0.4em; }
 h3 { font-size: 1.2rem; margin: 1.1em 0 0.3em; }
 h4, h5, h6 { font-size: 1.05rem; margin: 1em 0 0.3em; }
@@ -71,9 +71,42 @@ pub struct PrintArgs {
     pub out: Option<PathBuf>,
     pub chrome: Option<PathBuf>,
     pub image_cap: Option<u32>,
+    pub layout: String,
+}
+
+struct Layout {
+    page: &'static str,
+    font: &'static str,
+    body: &'static str,
+    h1: &'static str,
+}
+
+fn layout(name: &str) -> Result<&'static Layout> {
+    match name {
+        "single" => Ok(&Layout {
+            page: "size: A4; margin: 18mm;",
+            font: "11",
+            body: "max-width: 150mm; margin: 0 auto;",
+            h1: "",
+        }),
+        "columns" => Ok(&Layout {
+            page: "size: A4; margin: 14mm 12mm;",
+            font: "9.5",
+            body: "columns: 2; column-gap: 8mm;",
+            h1: "column-span: all;",
+        }),
+        "a5" => Ok(&Layout {
+            page: "size: A5; margin: 12mm 11mm;",
+            font: "9.5",
+            body: "",
+            h1: "",
+        }),
+        other => anyhow::bail!("unknown --layout '{other}' (expected single, columns, or a5)"),
+    }
 }
 
 pub fn run(args: &PrintArgs) -> Result<i32> {
+    let lay = layout(&args.layout)?;
     let base = Url::parse(&args.url).context("parsing url")?;
     let raw = match &args.html {
         Some(p) => fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?,
@@ -99,7 +132,7 @@ pub fn run(args: &PrintArgs) -> Result<i32> {
     let caps = args.image_cap.map_or_else(|| CAPS_MM.to_vec(), |c| vec![c]);
     let mut best: Option<(u32, usize)> = None;
     for cap in caps {
-        fs::write(&index, finish(&page, &base, &title, cap))?;
+        fs::write(&index, finish(&page, &base, &title, cap, lay))?;
         print_pdf(&chrome, &index, &pdf)?;
         let pages = pdf_pages(&pdf)?;
         if best.is_none_or(|(_, p)| pages < p) {
@@ -107,7 +140,7 @@ pub fn run(args: &PrintArgs) -> Result<i32> {
         }
     }
     let (cap, pages) = best.unwrap();
-    fs::write(&index, finish(&page, &base, &title, cap))?;
+    fs::write(&index, finish(&page, &base, &title, cap, lay))?;
     print_pdf(&chrome, &index, &pdf)?;
     println!(
         "printable: {} ({pages} pages, images fit to {cap}mm, {images} images localized)",
@@ -461,7 +494,7 @@ fn ensure_h1(html: &str, title: &str) -> String {
     }
 }
 
-fn finish(html: &str, base: &Url, title: &str, cap: u32) -> String {
+fn finish(html: &str, base: &Url, title: &str, cap: u32, lay: &Layout) -> String {
     let s = Regex::new(r"(?s)<!--.*?-->")
         .unwrap()
         .replace_all(html, " ")
@@ -473,7 +506,12 @@ fn finish(html: &str, base: &Url, title: &str, cap: u32) -> String {
     let s = strip_attrs(&s);
     let s = absolutize_hrefs(&s, base);
     let s = ensure_h1(&s, title);
-    let css = READER_CSS.replace("{cap}", &cap.to_string());
+    let css = READER_CSS
+        .replace("{page}", lay.page)
+        .replace("{font}", lay.font)
+        .replace("{body}", lay.body)
+        .replace("{h1}", lay.h1)
+        .replace("{cap}", &cap.to_string());
     format!(
         "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{}</title>\n\
 {css}\n</head>\n<body>\n{s}\n</body>\n</html>\n",
@@ -537,9 +575,20 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
     }
 
     #[test]
+    fn layouts_resolve_and_unknown_fails() {
+        let base = Url::parse("https://x.com/").unwrap();
+        let two = finish("<p>x</p>", &base, "T", 110, layout("columns").unwrap());
+        assert!(two.contains("columns: 2;"));
+        assert!(two.contains("column-span: all;"));
+        let five = finish("<p>x</p>", &base, "T", 110, layout("a5").unwrap());
+        assert!(five.contains("size: A5;"));
+        assert!(layout("booklet").is_err());
+    }
+
+    #[test]
     fn finish_builds_a_reader_page() {
         let base = Url::parse("https://x.com/").unwrap();
-        let out = finish("<p>x</p>", &base, "T & Co", 110);
+        let out = finish("<p>x</p>", &base, "T & Co", 110, layout("single").unwrap());
         assert!(out.contains("max-height: 110mm"));
         assert!(!out.contains("{cap}"));
         assert!(out.contains("<title>T &amp; Co</title>"));
