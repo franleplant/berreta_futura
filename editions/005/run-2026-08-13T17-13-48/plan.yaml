@@ -1,0 +1,51 @@
+edition:
+  id: '005'
+articles:
+- id: how-enabling-two-settings-tripled-our-scores-on
+  title: How enabling two settings tripled our scores on the ARC-AGI-3 benchmark
+  author: Ilan Bigio, Ted Sanders
+  content_mode: article
+  source_ids:
+  - how-enabling-two-settings-tripled-our-scores-on--265c6a01
+- id: investigating-three-real-world-incidents-in-our
+  title: Investigating three real-world incidents in our cybersecurity evaluations
+  author: Frontier Red Team
+  content_mode: article
+  source_ids:
+  - investigating-three-real-world-incidents-in-our--8b96329a
+- id: announcing-cloudflare-wallets-the-programmable-w
+  title: 'Announcing Cloudflare Wallets: the programmable wallet for the agentic Internet'
+  author: Will Papper
+  content_mode: article
+  source_ids:
+  - announcing-cloudflare-wallets-the-programmable-w-97d2eb2e
+- id: pax-machina-new-institutions-for-powerful-ai
+  title: 'Pax Machina: New Institutions for Powerful AI'
+  author: The Editors
+  content_mode: article
+  source_ids:
+  - pax-machina-new-institutions-for-powerful-ai-f9c15c97
+- id: prime-agent-a-self-improving-rlm-agent
+  title: 'Prime Agent: A self-improving RLM agent'
+  author: Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team
+  content_mode: article
+  source_ids:
+  - prime-agent-a-self-improving-rlm-agent-2c19ce14
+- id: the-shape-of-things-to-come-part-1-the-continuou
+  title: 'The Shape of Things to Come, Part 1: The Continuous Thunderdome'
+  author: Steve Yegge
+  content_mode: article
+  source_ids:
+  - the-shape-of-things-to-come-part-1-the-continuou-ba42001b
+- id: the-shape-of-things-to-come-part-2-model-welfare
+  title: 'The Shape of Things to Come, Part 2: Model Welfare for Agentic Engineers'
+  author: Steve Yegge
+  content_mode: article
+  source_ids:
+  - the-shape-of-things-to-come-part-2-model-welfare-4e8062e1
+- id: your-agent-needs-a-computer-not-a-container-intr
+  title: Your agent needs a computer, not a container — introducing @cloudflare/computer
+  author: Matt Carey, Aron Carroll
+  content_mode: article
+  source_ids:
+  - your-agent-needs-a-computer-not-a-container-intr-4851b3c5
