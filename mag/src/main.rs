@@ -75,6 +75,9 @@ enum Cmd {
         /// Browser binary for the PDF step (default: first Chrome/Chromium found)
         #[arg(long)]
         chrome: Option<PathBuf>,
+        /// Fixed image height cap in mm (default: try 130, 110, 90 and keep the densest PDF)
+        #[arg(long = "image-cap")]
+        image_cap: Option<u32>,
     },
     /// Produce an edition from a plan.yaml
     Produce {
@@ -320,11 +323,13 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             html,
             out,
             chrome,
+            image_cap,
         } => print_cmd::run(&print_cmd::PrintArgs {
             url,
             html,
             out,
             chrome,
+            image_cap,
         }),
         Cmd::Render {
             edition,

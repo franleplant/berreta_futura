@@ -15,6 +15,7 @@ select, textarea, canvas, dialog, template, .related-posts, .related-wrapper, .r
 .skip-link, .read-next, .site-header, .site-footer, .kg-video-card, .kg-embed-card, \
 .kg-audio-card, .kg-file-card, .kg-signup-card, .kg-cta-card, [class*=\"bookmark\"]";
 const CHROME: &str = "header, nav, footer, aside";
+const CAPS_MM: [u32; 3] = [130, 110, 90];
 const CHROME_APPS: [&str; 4] = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -43,7 +44,7 @@ break-word; }
   html, body { background: #fff !important; }
   body { orphans: 3; \
 widows: 3; }
-  img { max-width: 100% !important; max-height: 120mm !important; width: auto \
+  img { max-width: 100% !important; max-height: {cap}mm !important; width: auto \
 !important; height: auto !important; }
   img, figure { break-inside: avoid; }
   h1, h2, h3, h4 { \
@@ -66,6 +67,7 @@ pub struct PrintArgs {
     pub html: Option<PathBuf>,
     pub out: Option<PathBuf>,
     pub chrome: Option<PathBuf>,
+    pub image_cap: Option<u32>,
 }
 
 pub fn run(args: &PrintArgs) -> Result<i32> {
@@ -90,15 +92,41 @@ pub fn run(args: &PrintArgs) -> Result<i32> {
     let (page, images) = localize_images(&page, &base, &out_dir)?;
     let (page, sheets) = inline_styles(&page, &base);
     let index = out_dir.join("index.html");
-    fs::write(&index, finish(&page, &base))?;
     let pdf = out_dir.join("print.pdf");
-    print_pdf(&chrome_binary(args.chrome.as_deref())?, &index, &pdf)?;
+    let chrome = chrome_binary(args.chrome.as_deref())?;
+    let caps = args.image_cap.map_or_else(|| CAPS_MM.to_vec(), |c| vec![c]);
+    let mut best: Option<(u32, usize)> = None;
+    for cap in caps {
+        fs::write(&index, finish(&page, &base, cap))?;
+        print_pdf(&chrome, &index, &pdf)?;
+        let pages = pdf_pages(&pdf)?;
+        if best.is_none_or(|(_, p)| pages < p) {
+            best = Some((cap, pages));
+        }
+    }
+    let (cap, pages) = best.unwrap();
+    fs::write(&index, finish(&page, &base, cap))?;
+    print_pdf(&chrome, &index, &pdf)?;
     println!(
-        "printable: {} ({images} images localized, {sheets} stylesheets inlined)",
+        "printable: {} ({pages} pages, images fit to {cap}mm, {images} images localized, \
+{sheets} stylesheets inlined)",
         pdf.display()
     );
     println!("next: open {} and print it", pdf.display());
     Ok(0)
+}
+
+fn pdf_pages(pdf: &Path) -> Result<usize> {
+    max_count(&fs::read(pdf)?)
+        .ok_or_else(|| anyhow::anyhow!("no page count found in {}", pdf.display()))
+}
+
+fn max_count(bytes: &[u8]) -> Option<usize> {
+    regex::bytes::Regex::new(r"/Count (\d+)")
+        .unwrap()
+        .captures_iter(bytes)
+        .filter_map(|c| std::str::from_utf8(&c[1]).ok().and_then(|n| n.parse().ok()))
+        .max()
 }
 
 fn chrome_binary(flag: Option<&Path>) -> Result<PathBuf> {
@@ -421,7 +449,8 @@ fn absolutize_hrefs(html: &str, base: &Url) -> String {
         .into_owned()
 }
 
-fn finish(html: &str, base: &Url) -> String {
+fn finish(html: &str, base: &Url, cap: u32) -> String {
+    let css = PRINT_CSS.replace("{cap}", &cap.to_string());
     let s = Regex::new(r"(?s)<!--.*?-->")
         .unwrap()
         .replace_all(html, " ")
@@ -430,10 +459,10 @@ fn finish(html: &str, base: &Url) -> String {
     let s = absolutize_hrefs(&s, base);
     let head = Regex::new(r"(?i)</head>").unwrap();
     let s = if head.is_match(&s) {
-        head.replace(&s, format!("{PRINT_CSS}\n</head>").as_str())
+        head.replace(&s, format!("{css}\n</head>").as_str())
             .into_owned()
     } else {
-        format!("{PRINT_CSS}\n{s}")
+        format!("{css}\n{s}")
     };
     format!("<!DOCTYPE html>\n{s}")
 }
@@ -485,6 +514,20 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
         assert!(!out.contains("pinned:"));
         assert!(!out.contains("<ul>"));
         assert!(!out.contains("Other post"));
+    }
+
+    #[test]
+    fn page_count_is_the_max_pdf_count() {
+        assert_eq!(max_count(b"<</Type/Pages/Count 3>> /Count 16 x"), Some(16));
+        assert_eq!(max_count(b"no counts"), None);
+    }
+
+    #[test]
+    fn print_css_gets_the_image_cap() {
+        let base = Url::parse("https://x.com/").unwrap();
+        let out = finish("<html><head></head><body></body></html>", &base, 110);
+        assert!(out.contains("max-height: 110mm"));
+        assert!(!out.contains("{cap}"));
     }
 
     #[test]

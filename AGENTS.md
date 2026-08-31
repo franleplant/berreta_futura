@@ -25,7 +25,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   index.html it is rendered from), with no model call and no library record.
   It keeps the page's own CSS (inlined) and images (localized), and strips
   site chrome, scripts, players, link-preview cards, bare-URL link lists,
-  and emptied wrappers; the PDF step runs headless Chrome.
+  and emptied wrappers; the PDF step runs headless Chrome, trying three
+  image-size caps and keeping the densest PDF (`--image-cap` pins one).
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.
 
