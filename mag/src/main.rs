@@ -72,6 +72,9 @@ enum Cmd {
         /// Output directory (default: output/print/<slug>)
         #[arg(long)]
         out: Option<PathBuf>,
+        /// Browser binary for the PDF step (default: first Chrome/Chromium found)
+        #[arg(long)]
+        chrome: Option<PathBuf>,
     },
     /// Produce an edition from a plan.yaml
     Produce {
@@ -312,7 +315,17 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             art::cast_check_run(&edition, round.as_deref(), direction.as_deref(), &spec)
         }
-        Cmd::Print { url, html, out } => print_cmd::run(&print_cmd::PrintArgs { url, html, out }),
+        Cmd::Print {
+            url,
+            html,
+            out,
+            chrome,
+        } => print_cmd::run(&print_cmd::PrintArgs {
+            url,
+            html,
+            out,
+            chrome,
+        }),
         Cmd::Render {
             edition,
             operation,

@@ -19,6 +19,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - `src/magazine/` (Python, run through `uv`) is the renderer: it loads
   `edition.yaml`, lays out reader pages, and produces PDF/web output through
   WeasyPrint. It renders; it does not orchestrate.
+- `mag print <url> [--html file] [--out dir] [--chrome bin]` is a standalone
+  side tool, not an edition step: it turns one blog post into
+  `output/print/<slug>/print.pdf` ready to print (plus the self-contained
+  index.html it is rendered from), with no model call and no library record.
+  It keeps the page's own CSS (inlined) and images (localized), and strips
+  site chrome, scripts, players, link-preview cards, bare-URL link lists,
+  and emptied wrappers; the PDF step runs headless Chrome.
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.
 

@@ -13,8 +13,14 @@ select, textarea, canvas, dialog, template, .related-posts, .related-wrapper, .r
 .navigation, .post-nav, .pagination, .comments, #comments, .comment-section, .share, .social, \
 [class*=\"subscribe\"], [class*=\"newsletter\"], [id*=\"newsletter\"], a[href*=\"#/portal\"], .modal, .popup, .pswp, .post-footer, .sidebar, .search, .cookie-banner, \
 .skip-link, .read-next, .site-header, .site-footer, .kg-video-card, .kg-embed-card, \
-.kg-audio-card, .kg-file-card, .kg-signup-card, .kg-cta-card";
+.kg-audio-card, .kg-file-card, .kg-signup-card, .kg-cta-card, [class*=\"bookmark\"]";
 const CHROME: &str = "header, nav, footer, aside";
+const CHROME_APPS: [&str; 4] = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+];
 const KEEP_EMPTY: [&str; 12] = [
     "br", "wbr", "hr", "img", "svg", "picture", "table", "pre", "td", "th", "col", "colgroup",
 ];
@@ -27,15 +33,28 @@ const ROOTS: [&str; 6] = [
     ".post",
     ".entry-content",
 ];
-const PRINT_CSS: &str = "<style>\n@page { size: A4; margin: 18mm 15mm; }\nimg { max-width: 100% \
-!important; height: auto !important; }\npre { white-space: pre-wrap !important; word-break: \
-break-word; }\n@media print {\n  html, body { background: #fff !important; }\n  img, figure, \
-blockquote, pre { break-inside: avoid; }\n  h1, h2, h3, h4 { break-after: avoid; }\n}\n</style>";
+const PRINT_CSS: &str = "<style>
+@page { size: A4; margin: 18mm 15mm; }
+img { max-width: 100% \
+!important; height: auto !important; }
+pre { white-space: pre-wrap !important; word-break: \
+break-word; }
+@media print {
+  html, body { background: #fff !important; }
+  img { max-width: \
+100% !important; max-height: 150mm !important; width: auto !important; height: auto !important; \
+}
+  img, figure, blockquote, pre { break-inside: avoid; }
+  h1, h2, h3, h4 { break-after: avoid; \
+}
+}
+</style>";
 
 pub struct PrintArgs {
     pub url: String,
     pub html: Option<PathBuf>,
     pub out: Option<PathBuf>,
+    pub chrome: Option<PathBuf>,
 }
 
 pub fn run(args: &PrintArgs) -> Result<i32> {
@@ -52,18 +71,89 @@ pub fn run(args: &PrintArgs) -> Result<i32> {
     fs::create_dir_all(&out_dir)?;
     let mut doc = Html::parse_document(&raw);
     clean(&mut doc);
+    strip_link_litter(&mut doc);
+    strip_empty(&mut doc);
+    strip_dangling_tails(&mut doc);
     strip_empty(&mut doc);
     let page = doc.root_element().html();
     let (page, images) = localize_images(&page, &base, &out_dir)?;
     let (page, sheets) = inline_styles(&page, &base);
     let index = out_dir.join("index.html");
     fs::write(&index, finish(&page, &base))?;
+    let pdf = out_dir.join("print.pdf");
+    print_pdf(&chrome_binary(args.chrome.as_deref())?, &index, &pdf)?;
     println!(
         "printable: {} ({images} images localized, {sheets} stylesheets inlined)",
-        index.display()
+        pdf.display()
     );
-    println!("next: open {} and print from the browser", index.display());
+    println!("next: open {} and print it", pdf.display());
     Ok(0)
+}
+
+fn chrome_binary(flag: Option<&Path>) -> Result<PathBuf> {
+    if let Some(p) = flag {
+        anyhow::ensure!(p.exists(), "--chrome {} does not exist", p.display());
+        return Ok(p.to_path_buf());
+    }
+    if let Some(p) = CHROME_APPS.iter().map(Path::new).find(|p| p.exists()) {
+        return Ok(p.to_path_buf());
+    }
+    for name in ["google-chrome", "chromium", "chromium-browser"] {
+        let out = std::process::Command::new("which").arg(name).output();
+        if let Ok(o) = out {
+            if o.status.success() {
+                return Ok(PathBuf::from(
+                    String::from_utf8_lossy(&o.stdout).trim().to_string(),
+                ));
+            }
+        }
+    }
+    anyhow::bail!("no Chrome or Chromium found for PDF output; pass --chrome <browser binary>")
+}
+
+fn print_pdf(chrome: &Path, index: &Path, pdf: &Path) -> Result<()> {
+    let abs = index.canonicalize()?;
+    let out = std::process::Command::new(chrome)
+        .args(["--headless=new", "--disable-gpu", "--no-pdf-header-footer"])
+        .arg(format!("--print-to-pdf={}", pdf.display()))
+        .arg(format!("file://{}", abs.display()))
+        .output()
+        .context("spawning chrome for pdf print")?;
+    if !out.status.success() || !pdf.exists() {
+        let err = String::from_utf8_lossy(&out.stderr);
+        anyhow::bail!(
+            "chrome pdf print failed: {}",
+            err.lines().last().unwrap_or("")
+        );
+    }
+    Ok(())
+}
+
+fn strip_link_litter(doc: &mut Html) {
+    let ids: Vec<NodeId> = doc
+        .select(&sel("p, li"))
+        .filter(is_link_litter)
+        .map(|e| e.id())
+        .collect();
+    for id in ids {
+        if let Some(mut n) = doc.tree.get_mut(id) {
+            n.detach();
+        }
+    }
+}
+
+fn is_link_litter(e: &scraper::ElementRef) -> bool {
+    let anchors: Vec<String> = e
+        .select(&sel("a"))
+        .map(|a| a.text().collect::<String>().trim().to_string())
+        .collect();
+    let url_like = |t: &String| t.starts_with("http") || t.starts_with("www.");
+    if anchors.is_empty() || !anchors.iter().all(url_like) {
+        return false;
+    }
+    let total = e.text().flat_map(str::split_whitespace).count();
+    let linked: usize = anchors.iter().map(|t| t.split_whitespace().count()).sum();
+    total.saturating_sub(linked) <= 2
 }
 
 fn sel(s: &str) -> Selector {
@@ -105,10 +195,39 @@ fn strip_empty(doc: &mut Html) {
 fn is_empty(e: &scraper::ElementRef) -> bool {
     !KEEP_EMPTY.contains(&e.value().name())
         && !e.text().any(|t| !t.trim().is_empty())
-        && !e
-            .descendants()
-            .filter_map(scraper::ElementRef::wrap)
-            .any(|d| CONTENT_TAGS.contains(&d.value().name()))
+        && !has_content(e)
+}
+
+fn has_content(e: &scraper::ElementRef) -> bool {
+    e.descendants()
+        .filter_map(scraper::ElementRef::wrap)
+        .any(|d| CONTENT_TAGS.contains(&d.value().name()))
+}
+
+fn strip_dangling_tails(doc: &mut Html) {
+    loop {
+        let ids: Vec<NodeId> = doc
+            .select(&sel("p"))
+            .filter(is_dangling_tail)
+            .map(|e| e.id())
+            .collect();
+        if ids.is_empty() {
+            return;
+        }
+        for id in ids {
+            if let Some(mut n) = doc.tree.get_mut(id) {
+                n.detach();
+            }
+        }
+    }
+}
+
+fn is_dangling_tail(e: &scraper::ElementRef) -> bool {
+    if has_content(e) || e.next_siblings().any(|n| n.value().is_element()) {
+        return false;
+    }
+    let text = e.text().collect::<String>().trim().to_string();
+    text.ends_with(':') || text.chars().filter(|c| c.is_alphanumeric()).count() <= 3
 }
 
 fn content_root(doc: &Html) -> (NodeId, bool) {
@@ -337,6 +456,36 @@ mod tests {
         assert!(out.contains("<p>body</p>"));
         assert!(!out.contains("chrome"));
         assert!(!out.contains("foot"));
+    }
+
+    #[test]
+    fn link_litter_goes_prose_links_stay() {
+        let html = "<html><body><article><p>The code is at <a href=\"https://g.com/r\">\
+https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a/1</a></p>\
+<ul><li>X - <a href=\"https://x.com/a\">https://x.com/a</a></li></ul>\
+<figure class=\"kg-bookmark-card\"><a href=\"/other\">Other post</a></figure>\
+</article></body></html>";
+        let mut doc = Html::parse_document(html);
+        clean(&mut doc);
+        strip_link_litter(&mut doc);
+        strip_empty(&mut doc);
+        let out = doc.root_element().html();
+        assert!(out.contains("The code is at"));
+        assert!(!out.contains("pinned:"));
+        assert!(!out.contains("<ul>"));
+        assert!(!out.contains("Other post"));
+    }
+
+    #[test]
+    fn dangling_tail_labels_are_dropped() {
+        let html = "<html><body><article><p>Cya soon.</p><p>ps..</p><p>pps. socials:</p>\
+</article></body></html>";
+        let mut doc = Html::parse_document(html);
+        strip_dangling_tails(&mut doc);
+        let out = doc.root_element().html();
+        assert!(out.contains("Cya soon."));
+        assert!(!out.contains("ps.."));
+        assert!(!out.contains("socials"));
     }
 
     #[test]
