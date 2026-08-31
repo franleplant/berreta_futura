@@ -30,7 +30,7 @@ pub fn source_id(title: &str, url: &str) -> String {
     format!("{slug}-{}", &hash[..8])
 }
 
-fn curl_text(url: &str) -> Result<String> {
+pub(crate) fn curl_text(url: &str) -> Result<String> {
     let out = Command::new("curl")
         .args(["-sL", "--max-time", "90", "-A", USER_AGENT, "--fail", url])
         .output()
@@ -44,7 +44,7 @@ fn curl_text(url: &str) -> Result<String> {
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
-fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
+pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
     let tmp = dest_stem.with_extension("tmp");
     let out = Command::new("curl")
         .args(["-sL", "--max-time", "120", "-A", USER_AGENT, "--fail", "-o"])
@@ -205,7 +205,7 @@ fn meta_content(html: &str, keys: &[&str]) -> Option<String> {
     None
 }
 
-fn page_title(html: &str) -> Option<String> {
+pub(crate) fn page_title(html: &str) -> Option<String> {
     let raw = meta_content(html, &["og:title"]).or_else(|| {
         Regex::new(r"(?is)<title[^>]*>(.*?)</title>")
             .unwrap()
