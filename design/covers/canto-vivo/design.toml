@@ -83,3 +83,15 @@ es = "references/es.png"
 [back_reference]
 en = "back-references/en.png"
 es = "back-references/es.png"
+
+[layout.footer_caption]
+margin = 25.0
+wordmark_scale = 0.8
+wordmark_dy = 6.0
+title_size = 26.0
+
+[layout.honored_plate]
+margin = 17.0
+footer = 64.0
+wordmark_scale = 0.5
+title_size = 19.0

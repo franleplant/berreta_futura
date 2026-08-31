@@ -1795,7 +1795,7 @@ pub const DEFAULT_GEN_CMD: &str =
 
 fn size_for(purpose: &str) -> &'static str {
     match purpose {
-        "cover" => "2048x2048",
+        "cover" => "1440x2160",
         "opener" => "1760x1024",
         "tail" => "2160x720",
         _ => "1536x2160",
@@ -1804,7 +1804,8 @@ fn size_for(purpose: &str) -> &'static str {
 
 const FRAME_GUIDE: &str =
     "\nEvery brief is generated at the pixel size its slot prints in, so compose for \
-that frame and nothing else. cover: square, 2048x2048. opener: landscape 1.71:1 \
+that frame and nothing else. cover: portrait 2:3, 1440x2160, a full A5 page with the top left reserved for a small \\
+wordmark and the bottom 90pt tolerant of a caption line. opener: landscape 1.71:1 \
 (the frame is 348x203pt, object-fit cover), 1760x1024; keep every head, hand, \
 and essential prop well inside the frame with headroom, since nothing outside \
 prints. tail: a 3:1 strip, 2160x720. closing: portrait 1:1.41 (an A5 page), \

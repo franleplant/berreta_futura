@@ -1,7 +1,7 @@
 # Cover-art candidate process
 
-Every new edition produces exactly three square, text-free cover-art
-candidates before the editor selects one. Candidate generation is an
+Every new edition produces exactly three portrait (2:3), text-free,
+full-page cover-art candidates before the editor selects one. Candidate generation is an
 author-time creative step, never part of deterministic packaging. The
 production compiler continues to consume only `cover.art_path` from
 `edition.yaml`.
@@ -47,11 +47,12 @@ cover.
 
 ## The frame it lives in
 
-The artwork is not the cover; it is a square plate placed on the cover.
-The fixed frame around it: a warm off-white page, the black masthead with
-its red-orange accent above, the headline in heavy black capitals, a
-red-orange spine band at the right edge, credits in small capitals below.
-Every brief must say in one sentence how the plate sits in that frame.
+The artwork IS the page: it prints full-bleed (footer_caption layout) or
+as a generous plate with narrow margins (honored_plate). The fixed chrome:
+a small wordmark in the top left, a red-orange spine band at the right
+edge, and a one-line title with credits in the bottom 90pt. Compose so the
+top-left corner tolerates the mark and the bottom strip tolerates a line
+of type; every brief must say in one sentence where the type zones fall.
 
 Consequences, non-negotiable:
 
@@ -175,7 +176,9 @@ nouns is a template, and templates are what made past covers dull.
 
 ## Shared constraints
 
-- Square PNG artwork at least 1000 × 1000 pixels.
+- Portrait PNG artwork at 1440 x 2160 (2:3); the essential subject inside
+  the middle three-fifths, nothing critical in the top-left mark zone or
+  the bottom caption strip.
 - All typography lives in layout code: no masthead, title, issue number,
   caption, logo, pseudo-writing, numerals, or watermark in the artwork.
 - Design for the fixed cover crop, thumbnail recognition, and clean print
