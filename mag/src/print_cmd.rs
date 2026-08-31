@@ -34,19 +34,30 @@ const ROOTS: [&str; 6] = [
     ".entry-content",
 ];
 const PRINT_CSS: &str = "<style>
-@page { size: A4; margin: 18mm 15mm; }
+@page { size: A4; margin: 14mm 15mm; }
 img { max-width: 100% \
 !important; height: auto !important; }
 pre { white-space: pre-wrap !important; word-break: \
 break-word; }
 @media print {
   html, body { background: #fff !important; }
-  img { max-width: \
-100% !important; max-height: 150mm !important; width: auto !important; height: auto !important; \
-}
-  img, figure, blockquote, pre { break-inside: avoid; }
-  h1, h2, h3, h4 { break-after: avoid; \
-}
+  body { orphans: 3; \
+widows: 3; }
+  img { max-width: 100% !important; max-height: 120mm !important; width: auto \
+!important; height: auto !important; }
+  img, figure { break-inside: avoid; }
+  h1, h2, h3, h4 { \
+break-after: avoid; }
+  p, ul, ol, pre, blockquote, table { margin-top: 0.5em !important; \
+margin-bottom: 0.5em !important; }
+  figure { margin: 0.9em auto !important; }
+  figcaption { \
+margin-top: 0.4em !important; }
+  h1, h2, h3, h4, h5, h6 { margin-top: 1em !important; \
+margin-bottom: 0.4em !important; }
+  li { margin-top: 0.15em !important; margin-bottom: 0.15em \
+!important; }
+  header { padding-top: 0 !important; padding-bottom: 0 !important; }
 }
 </style>";
 
