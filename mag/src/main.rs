@@ -2,6 +2,7 @@ mod art;
 mod caller;
 mod capture;
 mod plan_cmd;
+mod print_cmd;
 mod produce;
 mod render;
 mod translate;
@@ -58,6 +59,19 @@ enum Cmd {
         mode: String,
         #[arg(long, default_value = "sonnet")]
         model: String,
+    },
+    /// Produce a printable, self-contained HTML version of a blog post: keep
+    /// the page's own style, content, and images; strip site chrome, scripts,
+    /// players, and other unprintable parts (no model call)
+    Print {
+        url: String,
+        /// Saved HTML to clean instead of fetching the URL (for pages curl
+        /// cannot reach: login walls, JS-rendered apps)
+        #[arg(long)]
+        html: Option<PathBuf>,
+        /// Output directory (default: output/print/<slug>)
+        #[arg(long)]
+        out: Option<PathBuf>,
     },
     /// Produce an edition from a plan.yaml
     Produce {
@@ -298,6 +312,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             let spec = caller::ModelSpec::parse(&model)?;
             art::cast_check_run(&edition, round.as_deref(), direction.as_deref(), &spec)
         }
+        Cmd::Print { url, html, out } => print_cmd::run(&print_cmd::PrintArgs { url, html, out }),
         Cmd::Render {
             edition,
             operation,
