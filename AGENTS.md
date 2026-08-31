@@ -29,8 +29,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   stripping site chrome, scripts, players, link-preview cards, bare-URL link
   lists, and emptied wrappers; images are localized and the PDF step runs
   headless Chrome, trying three image-size caps and keeping the densest PDF
-  (`--image-cap` pins one). `--layout` picks the page: `single` (A4 one
-  column), `columns` (A4 two columns), `a5` (booklet page).
+  (`--image-cap` pins one). `--layout` picks the page: `a5` (default,
+  booklet: two numbered A5 pages per landscape A4 sheet in reading order,
+  no imposition yet), `columns` (A4 two columns), `single` (A4 one column).
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.
 

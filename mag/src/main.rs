@@ -78,8 +78,9 @@ enum Cmd {
         /// Fixed image height cap in mm (default: try 130, 110, 90 and keep the densest PDF)
         #[arg(long = "image-cap")]
         image_cap: Option<u32>,
-        /// Page layout: single (A4 one column), columns (A4 two columns), a5 (booklet page)
-        #[arg(long, default_value = "single")]
+        /// Page layout: a5 (booklet: two A5 pages per landscape A4 sheet),
+        /// columns (A4 two columns), single (A4 one column)
+        #[arg(long, default_value = "a5")]
         layout: String,
     },
     /// Produce an edition from a plan.yaml
