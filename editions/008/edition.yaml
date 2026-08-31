@@ -17,6 +17,7 @@ format:
   article_opener: illustrated_paper_spots_v1
 art_direction_path: art-directions/story-led-boy-and-robot.yaml
 cover:
+  layout: footer_caption
   headline: The Token Bill
   deck: Warp's self-improving skills, Claude fixing its own alignment, Uber's cost equation, inference eating
     software, memory as the moat, three agent civilizations, and agents at the lab bench

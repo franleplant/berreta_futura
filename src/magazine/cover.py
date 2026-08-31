@@ -392,6 +392,15 @@ class CoverCompiler:
         return PAGE_WIDTH - width, width - reveal
 
     def _materialize_svg(self, edition: Edition) -> str:
+        layout = str(edition.cover.get("layout") or "framed")
+        if layout == "footer_caption":
+            return self._footer_caption_svg(edition)
+        if layout == "honored_plate":
+            return self._honored_plate_svg(edition)
+        if layout != "framed":
+            raise CoverAssetError(
+                f"Unknown cover layout {layout!r}: expected framed, footer_caption, or honored_plate"
+            )
         tab = self.design["tab"]
         paper = str(self.colors["paper"])
         orange = str(self.colors["orange"])
@@ -455,6 +464,233 @@ class CoverCompiler:
             f'  <g id="cover" data-design="{escape(str(self.design["id"]))}">\n    {body}\n  </g>\n'
             "</svg>\n"
         )
+
+    def _svg_shell(self, body: str) -> str:
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{PAGE_WIDTH}pt" '
+            f'height="{PAGE_HEIGHT}pt" viewBox="0 0 {PAGE_WIDTH} {PAGE_HEIGHT}" '
+            'overflow="hidden">\n'
+            "  <title>Berreta Futura cover</title>\n"
+            f'  <g id="cover" data-design="{escape(str(self.design["id"]))}">\n    {body}\n  </g>\n'
+            "</svg>\n"
+        )
+
+    def _band_x(self) -> float:
+        return PAGE_WIDTH - float(self.design["tab"]["width"])
+
+    def _art_zones(self, path: Path) -> tuple[tuple[float, float], tuple[float, float]]:
+        try:
+            from PIL import Image, ImageStat
+        except ImportError as exc:
+            raise DependencyError("Cover artwork requires Pillow; run `uv sync --locked`.") from exc
+        with Image.open(path) as source:
+            image = source.convert("RGB")
+        ratio = max(self._band_x() / image.width, PAGE_HEIGHT / image.height)
+        width, height = int(self._band_x() / ratio), int(PAGE_HEIGHT / ratio)
+        ox, oy = (image.width - width) // 2, (image.height - height) // 2
+        image = image.crop((ox, oy, ox + width, oy + height))
+
+        def stat(box):
+            grey = image.crop(box).convert("L")
+            values = ImageStat.Stat(grey)
+            return values.mean[0], values.stddev[0]
+
+        top = stat((0, 0, image.width, int(image.height * 0.24)))
+        bottom = stat((0, int(image.height * 0.72), image.width, image.height))
+        return top, bottom
+
+    def _full_art(self, edition: Edition, x: float, y: float, w: float, h: float) -> str:
+        if not edition.cover_art or not edition.cover_art.is_file():
+            raise CoverAssetError(f"Cover art is missing: {edition.cover_art}")
+        art_data = base64.b64encode(self._graded_art(edition.cover_art)).decode("ascii")
+        return (
+            f'<image data-slot="art" x="{x}" y="{y}" width="{w}" height="{h}" '
+            f'preserveAspectRatio="xMidYMid slice" href="data:image/png;base64,{art_data}"/>'
+        )
+
+    def _scaled_wordmark(
+        self, edition: Edition, mode: str, scale: float, dx: float, dy: float
+    ) -> str:
+        part = self._wordmark(edition.publication_name)[0]
+        if mode == "light":
+            i = part.find("matrix(")
+            j = part.rfind("<g transform=", 0, i)
+            part = part[:j].replace(str(self.colors["ink"]), str(self.colors["paper"])) + part[j:]
+        return f'<g transform="translate({dx:.4f} {dy:.4f}) scale({scale})">{part}</g>'
+
+    def _margin_locked_wordmark(
+        self, edition: Edition, mode: str, scale: float, margin: float, dy: float
+    ) -> str:
+        dx = margin - (float(self.design["wordmark"]["x"]) + 0.36) * scale
+        return self._scaled_wordmark(edition, mode, scale, dx, dy)
+
+    def _fit_display_line(
+        self, text: str, max_size: float, width: float, tracking: float = 0.2
+    ) -> float:
+        size = max_size
+        while size >= 12 and self.display.measure(text, size=size, tracking=tracking) > width:
+            size -= 0.5
+        if size < 12:
+            raise CoverOverflowError(f"Cover title cannot fit on one line: {text}")
+        return size
+
+    def _justified_line(
+        self, text: str, x: float, baseline: float, size: float, fill: str, width: float
+    ) -> str:
+        base = self.regular.measure(text, size=size, tracking=0)
+        tracking = max(0.0, (width - base) / max(1, len(text) - 1))
+        return self.regular.outline(
+            text, x=x, baseline=baseline, size=size, fill=fill, tracking=tracking
+        ).markup
+
+    def _right_line(
+        self,
+        text: str,
+        right_edge: float,
+        baseline: float,
+        size: float,
+        fill: str,
+        tracking: float = 1.4,
+    ) -> str:
+        width = self.bold.measure(text, size=size, tracking=tracking)
+        return self.bold.outline(
+            text, x=right_edge - width, baseline=baseline, size=size, fill=fill, tracking=tracking
+        ).markup
+
+    @staticmethod
+    def _gradient(
+        gid: str, x: float, y: float, w: float, h: float, color: str, top: float, bottom: float
+    ) -> str:
+        return (
+            f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1">'
+            f'<stop offset="0" stop-color="{color}" stop-opacity="{top}"/>'
+            f'<stop offset="1" stop-color="{color}" stop-opacity="{bottom}"/>'
+            f"</linearGradient></defs>"
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="url(#{gid})"/>'
+        )
+
+    def _footer_caption_svg(self, edition: Edition) -> str:
+        spec = self.design.get("layout", {}).get("footer_caption", {})
+        margin = float(spec.get("margin", 25.0))
+        scale = float(spec.get("wordmark_scale", 0.8))
+        band = self._band_x()
+        right_edge = band - margin
+        (top_mean, top_std), (bottom_mean, bottom_std) = self._art_zones(edition.cover_art)
+        dark_bottom = bottom_mean < 105
+        fill = str(self.colors["paper"] if dark_bottom else self.colors["ink"])
+        parts = [self._full_art(edition, 0, 0, band, PAGE_HEIGHT)]
+        if dark_bottom and bottom_std > 46:
+            parts.append(
+                self._gradient(
+                    "cap-b", 0, PAGE_HEIGHT - 170, band, 170, str(self.colors["ink"]), 0.0, 0.72
+                )
+            )
+        if not dark_bottom:
+            parts.append(
+                self._gradient(
+                    "cap-b", 0, PAGE_HEIGHT - 170, band, 170, str(self.colors["paper"]), 0.0, 0.7
+                )
+            )
+        if top_std > 52 and top_mean < 150:
+            parts.append(
+                self._gradient("cap-t", 0, 0, band, 120, str(self.colors["ink"]), 0.42, 0.0)
+            )
+        mode = "light" if top_mean < 118 else "dark"
+        parts.append(
+            self._margin_locked_wordmark(
+                edition, mode, scale, margin, float(spec.get("wordmark_dy", 6.0))
+            )
+        )
+        title = str(edition.cover.get("headline", edition.title)).upper().strip()
+        size = self._fit_display_line(
+            title, float(spec.get("title_size", 26.0)), right_edge - margin - 62
+        )
+        parts.append(
+            '<g data-slot="headline">'
+            + self.display.outline(
+                title, x=margin, baseline=PAGE_HEIGHT - 46, size=size, fill=fill, tracking=0.2
+            ).markup
+            + "</g>"
+        )
+        parts.append(
+            self._right_line(
+                _cover_date(edition.publication_date), right_edge, PAGE_HEIGHT - 46, 7.0, fill
+            )
+        )
+        contributors = _cover_contributors(edition)
+        if contributors:
+            parts.append(
+                '<g data-slot="deck">'
+                + self._justified_line(
+                    contributors, margin, PAGE_HEIGHT - 24, 4.6, fill, right_edge - margin
+                )
+                + "</g>"
+            )
+        parts.append(
+            f'<rect data-slot="edge-tab" x="{band + 0 - 0:.5f}" y="-1.5" width="{PAGE_WIDTH - band - float(self.design["tab"]["edge_reveal"]):.5f}" '
+            f'height="{PAGE_HEIGHT + 3}" fill="{self.colors["orange"]}"/>'
+        )
+        parts.extend(self._tab_labels(edition))
+        return self._svg_shell("\n    ".join(parts))
+
+    def _honored_plate_svg(self, edition: Edition) -> str:
+        spec = self.design.get("layout", {}).get("honored_plate", {})
+        margin = float(spec.get("margin", 17.0))
+        footer = float(spec.get("footer", 64.0))
+        band = self._band_x()
+        right_edge = band - margin - 8
+        ink = str(self.colors["ink"])
+        parts = [
+            f'<rect data-slot="paper" x="0" y="0" width="{PAGE_WIDTH}" height="{PAGE_HEIGHT}" fill="{self.colors["paper"]}"/>',
+            self._full_art(
+                edition, margin, margin, band - 2 * margin, PAGE_HEIGHT - 2 * margin - footer
+            ),
+            f'<rect data-slot="art-border" x="{margin}" y="{margin}" width="{band - 2 * margin}" '
+            f'height="{PAGE_HEIGHT - 2 * margin - footer}" fill="none" stroke="{ink}" stroke-width=".7"/>',
+            self._scaled_wordmark(
+                edition,
+                "dark",
+                float(spec.get("wordmark_scale", 0.5)),
+                6.0,
+                PAGE_HEIGHT - footer - 22 - 14,
+            ),
+        ]
+        title = str(edition.cover.get("headline", edition.title)).upper().strip()
+        size = self._fit_display_line(title, float(spec.get("title_size", 19.0)), 190)
+        width = self.display.measure(title, size=size, tracking=0.2)
+        parts.append(
+            '<g data-slot="headline">'
+            + self.display.outline(
+                title,
+                x=right_edge - width,
+                baseline=PAGE_HEIGHT - footer + 22,
+                size=size,
+                fill=ink,
+                tracking=0.2,
+            ).markup
+            + "</g>"
+        )
+        contributors = _cover_contributors(edition)
+        if contributors:
+            parts.append(
+                '<g data-slot="deck">'
+                + self._justified_line(
+                    contributors, margin + 8, PAGE_HEIGHT - 24, 4.4, ink, right_edge - margin - 68
+                )
+                + "</g>"
+            )
+        parts.append(
+            self._right_line(
+                _cover_date(edition.publication_date), right_edge, PAGE_HEIGHT - 13, 4.4, ink
+            )
+        )
+        parts.append(
+            f'<rect data-slot="edge-tab" x="{band:.5f}" y="-1.5" width="{PAGE_WIDTH - band - float(self.design["tab"]["edge_reveal"]):.5f}" '
+            f'height="{PAGE_HEIGHT + 3}" fill="{self.colors["orange"]}"/>'
+        )
+        parts.extend(self._tab_labels(edition))
+        return self._svg_shell("\n    ".join(parts))
 
     def _materialize_back_svg(self, edition: Edition) -> str:
         back = self.design["back"]
