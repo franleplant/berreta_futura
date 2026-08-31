@@ -96,9 +96,9 @@ fn layout(name: &str) -> Result<&'static Layout> {
             h1: "column-span: all;",
         }),
         "a5" => Ok(&Layout {
-            page: "size: A5; margin: 12mm 11mm;",
+            page: "size: A4 landscape; margin: 12mm 11mm;",
             font: "9.5",
-            body: "",
+            body: "columns: 2; column-gap: 22mm;",
             h1: "",
         }),
         other => anyhow::bail!("unknown --layout '{other}' (expected single, columns, or a5)"),
@@ -581,7 +581,8 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
         assert!(two.contains("columns: 2;"));
         assert!(two.contains("column-span: all;"));
         let five = finish("<p>x</p>", &base, "T", 110, layout("a5").unwrap());
-        assert!(five.contains("size: A5;"));
+        assert!(five.contains("size: A4 landscape;"));
+        assert!(five.contains("column-gap: 22mm;"));
         assert!(layout("booklet").is_err());
     }
 
