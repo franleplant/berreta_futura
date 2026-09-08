@@ -1,0 +1,36 @@
+edition: '009'
+dry_run: false
+generated:
+- brief: closing-listening-shell
+  variant: 1
+  file: closing-listening-shell-v1.png
+  ok: true
+- brief: closing-listening-shell
+  variant: 2
+  file: closing-listening-shell-v2.png
+  ok: true
+- brief: closing-listening-shell
+  variant: 3
+  file: closing-listening-shell-v3.png
+  ok: true
+- brief: closing-listening-shell
+  variant: 4
+  file: closing-listening-shell-v4.png
+  ok: true
+- brief: closing-frost-window
+  variant: 1
+  file: closing-frost-window-v1.png
+  ok: true
+- brief: closing-frost-window
+  variant: 2
+  file: closing-frost-window-v2.png
+  ok: true
+- brief: closing-frost-window
+  variant: 3
+  file: closing-frost-window-v3.png
+  ok: true
+- brief: closing-frost-window
+  variant: 4
+  file: closing-frost-window-v4.png
+  ok: true
+failures: 0
