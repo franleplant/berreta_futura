@@ -29,7 +29,7 @@ cover:
     This issue walks its perimeter: the patterns that keep a stranger''s tokens away from the
     cart, the character a model plays when it answers, and a lab watching its own work pass to
     agents. The systems are grown. The choices are still ours.'
-  art_path: editions/009/art/rounds/2026-09-08T17-19-03/cover-synthetic-split-trellis-v3.png
+  art_path: editions/009/art/rounds/2026-09-08T17-19-03/cover-wildcard-poured-face-v3.png
 articles:
 - id: design-patterns-for-securing-llm-agents-against
   title: Securing LLM Agents Against Prompt Injections
@@ -193,8 +193,8 @@ closing_plates:
   art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-grown-not-drawn-tree-v1.png
 - title: The Night Greenhouse
   art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-night-greenhouse-v4.png
-- title: The Water Tower
-  art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-water-tower-terraces-v1.png
+- title: The Shell at Low Tide
+  art_path: editions/009/art/rounds/2026-09-08T18-21-46/closing-listening-shell-v3.png
 - title: The Creature Kite
   art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-creature-kite-v3.png
 - title: The Frost Window
