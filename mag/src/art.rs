@@ -1933,7 +1933,10 @@ fn resume_round(
     let gen_cmd = opts
         .gen_cmd
         .ok_or_else(|| anyhow!("--resume-round requires --gen-cmd"))?;
-    let round_dir = PathBuf::from(resume);
+    let mut round_dir = PathBuf::from(resume);
+    if !round_dir.join("briefs.yaml").exists() {
+        round_dir = edition_dir.join("art/rounds").join(resume);
+    }
     let briefs_path = round_dir.join("briefs.yaml");
     let doc: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
         .with_context(|| format!("parsing {}", briefs_path.display()))?;
