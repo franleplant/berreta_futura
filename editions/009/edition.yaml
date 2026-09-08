@@ -1,0 +1,191 @@
+# Edition 9 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
+# TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
+# Claude on 2026-09-08 for the editor to revise. Art paths are TODO until
+# `mag art 009` runs and picks land in editions/009/art/showcase.html.
+# Article order is the reading order: securing agents opens beside the
+# editorial's argument, commerce agents show the stakes in production, the
+# persona piece explains what these systems are, then OpenAI's three posts
+# run mind, measurement, plan, and the Jalapeño chip closes on the iron.
+id: '009'
+issue_number: 9
+title: Grown, Not Designed
+subtitle: Six patterns against prompt injection, the persona behind the Assistant, commerce agents
+  in days, Pachocki's alien mind, OpenAI measuring its own acceleration, a plan built to benefit
+  everyone, and first silicon called Jalapeño
+publication_date: '2026-09-08'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Grown, Not Designed
+  deck: Six patterns against prompt injection, the persona behind the Assistant, commerce agents
+    in days, Pachocki's alien mind, OpenAI measuring its own acceleration, a plan built to benefit
+    everyone, and first silicon called Jalapeño
+  back_text: 'Run a plain optimization step on an unimaginable amount of compute and you get a mind
+    nobody drew. This issue walks its perimeter: the six patterns that keep a stranger''s tokens
+    away from the cart and the inbox, the character a model plays when it answers, a research lab
+    watching its own work pass to agents, and a chip that went from design to tapeout in nine
+    months with the model''s help. The systems are grown. The choices about them are still ours
+    to design.'
+  art_path: TODO
+articles:
+- id: design-patterns-for-securing-llm-agents-against
+  title: Securing LLM Agents Against Prompt Injections
+  short_title: Securing LLM Agents
+  display_emphasis: Prompt Injections
+  opener_variant: split_axis
+  author: Simon Willison
+  author_note: From Simon Willison's weblog, on a design-patterns paper by eleven authors across five institutions.
+  content_mode: article
+  source_ids:
+  - design-patterns-for-securing-llm-agents-against-d40186ec
+  manuscript: editions/009/articles/design-patterns-for-securing-llm-agents-against.md
+  figures:
+  - id: dual-llm
+    source_id: design-patterns-for-securing-llm-agents-against-d40186ec
+    path: media/001.png
+    credit: 'Diagram by Simon Willison; source: Design Patterns for Securing LLM Agents against Prompt Injections.'
+    caption: The privileged LLM plans and triggers the tools while a quarantined LLM reads the
+      untrusted content; only symbolic variables ever cross between them.
+    alt_text: Architecture diagram, a user's prompt flows to a privileged LLM that controls tools,
+      while a quarantined LLM handles untrusted content and returns only symbolic variables.
+    anchor: The six patterns
+    layout: evidence_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: building-commerce-agents-with-claude
+  title: Building Commerce Agents with Claude
+  short_title: Commerce Agents
+  display_emphasis: Commerce
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: From the Claude blog.
+  content_mode: article
+  source_ids:
+  - building-commerce-agents-with-claude-4a77cb2e
+  manuscript: editions/009/articles/building-commerce-agents-with-claude.md
+  figures:
+  - id: acme-shopping-agent
+    source_id: building-commerce-agents-with-claude-4a77cb2e
+    path: media/001.webp
+    credit: 'Screenshot by Anthropic; source: Building Commerce Agents with Claude.'
+    caption: The shopping agent running in the ACME retail example, with products, comparisons,
+      and the cart rendered inside the conversation.
+    alt_text: A retail chat interface where the shopping agent shows product cards and a cart
+      alongside its answer.
+    anchor: The shopping agent
+    layout: adaptive_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: the-persona-selection-model
+  title: The Persona Selection Model
+  short_title: Persona Selection
+  display_emphasis: Persona
+  opener_variant: edge_medallion
+  author: Anthropic
+  author_note: From the Anthropic research blog.
+  content_mode: article
+  source_ids:
+  - the-persona-selection-model-8defd9b5
+  manuscript: editions/009/articles/the-persona-selection-model.md
+  figures:
+  - id: assistant-persona
+    source_id: the-persona-selection-model-8defd9b5
+    path: media/001.jpg
+    credit: 'Illustration by Anthropic; source: The persona selection model.'
+    caption: After pretraining, the AI serves as a rudimentary assistant by simulating what a
+      human-like Assistant character would say next.
+    alt_text: Diagram of a pretrained model answering as an Assistant character it simulates,
+      one persona among the many learned from text.
+    anchor: The default, not the achievement
+    layout: adaptive_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: an-alien-mind
+  title: An Alien Mind
+  short_title: An Alien Mind
+  display_emphasis: Alien Mind
+  opener_variant: stepped_title
+  author: Jakub Pachocki
+  author_note: OpenAI's chief scientist.
+  content_mode: article
+  source_ids:
+  - an-alien-mind-e0f75446
+  manuscript: editions/009/articles/an-alien-mind.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: research-acceleration-the-view-inside-openai
+  title: 'Research Acceleration: The View Inside OpenAI'
+  short_title: Research Acceleration
+  display_emphasis: Acceleration
+  opener_variant: split_axis
+  author: OpenAI
+  author_note: ''
+  content_mode: article
+  source_ids:
+  - research-acceleration-the-view-inside-openai-be17d270
+  manuscript: editions/009/articles/research-acceleration-the-view-inside-openai.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: built-to-benefit-everyone-our-plan
+  title: 'Built to Benefit Everyone: Our Plan'
+  short_title: Built to Benefit Everyone
+  display_emphasis: Everyone
+  opener_variant: edge_medallion
+  author: Sam Altman, Jakub Pachocki
+  author_note: OpenAI's CEO and chief scientist.
+  content_mode: article
+  source_ids:
+  - built-to-benefit-everyone-our-plan-af3db91a
+  manuscript: editions/009/articles/built-to-benefit-everyone-our-plan.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: jalape-o-s-first-results-show-industry-leading-s
+  title: Jalapeño’s First Results
+  short_title: Jalapeño’s First Results
+  display_emphasis: Jalapeño
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: ''
+  content_mode: article
+  source_ids:
+  - jalape-o-s-first-results-show-industry-leading-s-9edfd1ae
+  manuscript: editions/009/articles/jalape-o-s-first-results-show-industry-leading-s.md
+  figures:
+  - id: jalapeno-silicon
+    source_id: jalape-o-s-first-results-show-industry-leading-s-9edfd1ae
+    path: media/001.webp
+    credit: 'Photograph by OpenAI; source: Jalapeño’s first results.'
+    caption: The Jalapeño inference chip on its board, rated at 700 watts and measured at or
+      below 550 on the workloads tested.
+    alt_text: Close-up of the Jalapeño inference chip mounted on a teal circuit board.
+    anchor: What we measured
+    layout: adaptive_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+editorial: manuscript/editorial.md
+tail_art_fit: contain
+closing_plates: []
