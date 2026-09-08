@@ -853,7 +853,8 @@ mod tests {
         assert!(p.starts_with("<articles>\n"));
         assert!(p.contains("<article 1>\nBody one\n</article 1>"));
         assert!(p.contains("<article 2>\nBody two\n</article 2>"));
-        assert!(p.contains("An editorial is an argument, not a theme."));
+        let tail = read(&prompts_path("opening-editorial.md")).unwrap();
+        assert!(p.ends_with(&format!("{}\n", tail.trim())));
         assert!(!p.contains("k: v"));
     }
 
