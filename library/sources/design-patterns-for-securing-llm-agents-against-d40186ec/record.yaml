@@ -1,0 +1,8 @@
+id: design-patterns-for-securing-llm-agents-against-d40186ec
+title: 'Design Patterns for Securing LLM Agents against Prompt Injections'
+author: 'Simon Willison'
+url: https://simonwillison.net/2025/Jun/13/prompt-injection-design-patterns/
+captured_at: '2026-09-08T16:50:49Z'
+published_at: '2025-06-13'
+tags: []
+synopsis: 'The article reviews a paper proposing six design patterns (Action-Selector, Plan-Then-Execute, LLM Map-Reduce, Dual LLM, Code-Then-Execute, and Context-Minimization) that constrain LLM agents to mitigate prompt injection risks by limiting their ability to perform arbitrary tasks.'

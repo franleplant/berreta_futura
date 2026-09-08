@@ -1,0 +1,8 @@
+id: the-persona-selection-model-8defd9b5
+title: 'The persona selection model'
+author: ''
+url: https://www.anthropic.com/research/persona-selection-model
+captured_at: '2026-09-08T16:51:35Z'
+published_at: '2026-02-23'
+tags: []
+synopsis: 'Anthropic proposes the "persona selection model," arguing that AI assistants like Claude default to human-like behavior because post-training refines a human-like "Assistant" persona already learned during pretraining, rather than fundamentally changing the AI''s nature.'
