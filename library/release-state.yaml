@@ -1,5 +1,5 @@
 schema_version: 2
-intake_edition_id: '008'
+intake_edition_id: '009'
 collecting_editions:
 - id: '005'
   issue_number: 5
@@ -63,6 +63,17 @@ collecting_editions:
   - running-a-software-factory-efficiently-at-uber-s-36ff06c6
   - the-instinct-thesis-why-memory-is-becoming-the-m-14970672
   - the-rise-and-fall-of-agent-civilizations-b74188c7
+- id: '009'
+  issue_number: 9
+  status: collecting
+  source_ids:
+  - design-patterns-for-securing-llm-agents-against-d40186ec
+  - the-persona-selection-model-8defd9b5
+  - building-commerce-agents-with-claude-4a77cb2e
+  - an-alien-mind-e0f75446
+  - built-to-benefit-everyone-our-plan-af3db91a
+  - research-acceleration-the-view-inside-openai-be17d270
+  - jalape-o-s-first-results-show-industry-leading-s-9edfd1ae
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

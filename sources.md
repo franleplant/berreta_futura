@@ -10,6 +10,78 @@ _Collecting: `007` (22 queued)._
 
 _Collecting: `008` (7 queued)._
 
+_Collecting: `009` (7 queued)._
+
+## Jalapeño’s first results show industry-leading speed and efficiency in AI inference — OpenAI
+
+- ID: `jalape-o-s-first-results-show-industry-leading-s-9edfd1ae`
+- Source: https://openai.com/index/jalapeno-first-results/
+- Published: 2026-08-25
+- Captured: 2026-09-08T17:08:27Z
+- Release: queued for `009`
+
+OpenAI reports that its first custom inference chip, Jalapeño, delivers industry-leading speed and power efficiency in AI inference benchmarks across GPT-OSS 120B, DeepSeek R1, and Kimi K2.5 1T, and will begin deploying within OpenAI's compute infrastructure by the end of the year.
+
+## Research acceleration: The view inside OpenAI — OpenAI
+
+- ID: `research-acceleration-the-view-inside-openai-be17d270`
+- Source: https://openai.com/index/research-acceleration-view-inside-openai/
+- Published: 2026-09-06
+- Captured: 2026-09-08T17:07:39Z
+- Release: queued for `009`
+
+OpenAI reports that coding agents are increasingly integrated into researchers' daily work, accelerating code output and experimentation while requiring new safety and security restrictions such as the pause and hardening of RL training following an infrastructure compromise.
+
+## Built to benefit everyone: our plan — Sam Altman, Jakub Pachocki
+
+- ID: `built-to-benefit-everyone-our-plan-af3db91a`
+- Source: https://openai.com/index/built-to-benefit-everyone-our-plan/
+- Published: 2026-06-08
+- Captured: 2026-09-08T17:06:42Z
+- Release: queued for `009`
+
+OpenAI's Sam Altman and Jakub Pachocki outline the company's third-phase plan to build an automated AI researcher, accelerate the economy, and give everyone a personal AGI while distributing power and benefits broadly rather than concentrating them.
+
+## An Alien Mind — Jakub Pachocki
+
+- ID: `an-alien-mind-e0f75446`
+- Source: https://openai.com/index/an-alien-mind
+- Published: 2026-09-06
+- Captured: 2026-09-08T17:06:07Z
+- Release: queued for `009`
+
+OpenAI's Chief Scientist argues that AI is beginning to exceed human intelligence in transformative ways, that current alignment and chain-of-thought monitoring techniques are becoming less reliable as models grow more capable, and that responsible pacing of recursive self-improvement will require stronger technical safeguards, defensive systems, and international coordination.
+
+## Building Commerce Agents with Claude
+
+- ID: `building-commerce-agents-with-claude-4a77cb2e`
+- Source: https://claude.com/blog/claude-for-commerce-agents
+- Published: 2026-09-02
+- Captured: 2026-09-08T16:52:03Z
+- Release: queued for `009`
+
+Anthropic launched a commerce agent blueprint providing harnesses, patterns, and guardrails for building shopping and merchant agents on Claude across retail, travel, telecom, and ticketing platforms.
+
+## The persona selection model
+
+- ID: `the-persona-selection-model-8defd9b5`
+- Source: https://www.anthropic.com/research/persona-selection-model
+- Published: 2026-02-23
+- Captured: 2026-09-08T16:51:35Z
+- Release: queued for `009`
+
+Anthropic proposes the "persona selection model," arguing that AI assistants like Claude default to human-like behavior because post-training refines a human-like "Assistant" persona already learned during pretraining, rather than fundamentally changing the AI's nature.
+
+## Design Patterns for Securing LLM Agents against Prompt Injections — Simon Willison
+
+- ID: `design-patterns-for-securing-llm-agents-against-d40186ec`
+- Source: https://simonwillison.net/2025/Jun/13/prompt-injection-design-patterns/
+- Published: 2025-06-13
+- Captured: 2026-09-08T16:50:49Z
+- Release: queued for `009`
+
+The article reviews a paper proposing six design patterns (Action-Selector, Plan-Then-Execute, LLM Map-Reduce, Dual LLM, Code-Then-Execute, and Context-Minimization) that constrain LLM agents to mitigate prompt injection risks by limiting their ability to perform arbitrary tasks.
+
 ## The Rise and Fall of Agent Civilizations — Dwarkesh Patel
 
 - ID: `the-rise-and-fall-of-agent-civilizations-b74188c7`
