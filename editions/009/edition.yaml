@@ -1,7 +1,9 @@
 # Edition 9 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
 # TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
-# Claude on 2026-09-08 for the editor to revise. Art paths are TODO until
-# `mag art 009` runs and picks land in editions/009/art/showcase.html.
+# Claude on 2026-09-08 for the editor to revise.
+# ART PICKS ARE PROVISIONAL too, chosen by Claude from round 2026-09-08T17-19-03
+# (cast-check: everything on model); the editor's real selection happens in
+# editions/009/art/showcase.html.
 # Article order is the reading order: securing agents opens beside the
 # editorial's argument, commerce agents show the stakes in production, the
 # persona piece explains what these systems are, then OpenAI's three posts
@@ -23,13 +25,11 @@ cover:
   deck: Six patterns against prompt injection, the persona behind the Assistant, commerce agents
     in days, Pachocki's alien mind, OpenAI measuring its own acceleration, a plan built to benefit
     everyone, and first silicon called Jalapeño
-  back_text: 'Run a plain optimization step on an unimaginable amount of compute and you get a mind
-    nobody drew. This issue walks its perimeter: the six patterns that keep a stranger''s tokens
-    away from the cart and the inbox, the character a model plays when it answers, a research lab
-    watching its own work pass to agents, and a chip that went from design to tapeout in nine
-    months with the model''s help. The systems are grown. The choices about them are still ours
-    to design.'
-  art_path: TODO
+  back_text: 'Run a plain optimization step on enough compute and you get a mind nobody drew.
+    This issue walks its perimeter: the patterns that keep a stranger''s tokens away from the
+    cart, the character a model plays when it answers, and a lab watching its own work pass to
+    agents. The systems are grown. The choices are still ours.'
+  art_path: editions/009/art/rounds/2026-09-08T17-19-03/cover-synthetic-split-trellis-v3.png
 articles:
 - id: design-patterns-for-securing-llm-agents-against
   title: Securing LLM Agents Against Prompt Injections
@@ -54,10 +54,10 @@ articles:
     anchor: The six patterns
     layout: evidence_band
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/009/art/rounds/2026-09-08T17-19-03/opener-securing-agents-v1.png
+    alt_text: Pedro and Maro pass a single wooden token through a brass slot in a glass wall while Flopaz stands on the far side amid a flood of letters, holding one page up.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/009/art/rounds/2026-09-08T17-19-03/tail-securing-agents-v2.png
 - id: building-commerce-agents-with-claude
   title: Building Commerce Agents with Claude
   short_title: Commerce Agents
@@ -79,12 +79,12 @@ articles:
     alt_text: A retail chat interface where the shopping agent shows product cards and a cart
       alongside its answer.
     anchor: The shopping agent
-    layout: adaptive_band
+    layout: evidence_band_prose
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/009/art/rounds/2026-09-08T17-19-03/opener-commerce-agents-v2.png
+    alt_text: At a market stall Flopaz weighs fruit on a balance scale beside a loaded cart while Maro tends the crates and Pedro reaches for the packed basket.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/009/art/rounds/2026-09-08T17-19-03/tail-commerce-agents-v2.png
 - id: the-persona-selection-model
   title: The Persona Selection Model
   short_title: Persona Selection
@@ -108,10 +108,10 @@ articles:
     anchor: The default, not the achievement
     layout: adaptive_band
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/009/art/rounds/2026-09-08T17-19-03/opener-persona-selection-v2.png
+    alt_text: Backstage under a line of hanging masks, Flopaz holds a smiling mask up to its face while Pedro raises a lantern and Maro follows the script book.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/009/art/rounds/2026-09-08T17-19-03/tail-persona-selection-v2.png
 - id: an-alien-mind
   title: An Alien Mind
   short_title: An Alien Mind
@@ -124,26 +124,26 @@ articles:
   - an-alien-mind-e0f75446
   manuscript: editions/009/articles/an-alien-mind.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/009/art/rounds/2026-09-08T17-19-03/opener-alien-mind-v4.png
+    alt_text: In a night greenhouse Pedro, Maro, and Flopaz with a lamp watch an enormous glowing growth press against the glass wall of its tank.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/009/art/rounds/2026-09-08T17-19-03/tail-alien-mind-v2.png
 - id: research-acceleration-the-view-inside-openai
   title: 'Research Acceleration: The View Inside OpenAI'
   short_title: Research Acceleration
   display_emphasis: Acceleration
   opener_variant: split_axis
   author: OpenAI
-  author_note: ''
+  author_note: The lab's public progress report on automating its own research.
   content_mode: article
   source_ids:
   - research-acceleration-the-view-inside-openai-be17d270
   manuscript: editions/009/articles/research-acceleration-the-view-inside-openai.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/009/art/rounds/2026-09-08T17-19-03/opener-research-acceleration-v2.png
+    alt_text: Flopaz cranks a wheel-making machine whose output stacks into a tower Maro measures with a stick, while Pedro sits on a crate whittling a single wheel by hand.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/009/art/rounds/2026-09-08T17-19-03/tail-research-acceleration-v2.png
 - id: built-to-benefit-everyone-our-plan
   title: 'Built to Benefit Everyone: Our Plan'
   short_title: Built to Benefit Everyone
@@ -156,17 +156,17 @@ articles:
   - built-to-benefit-everyone-our-plan-af3db91a
   manuscript: editions/009/articles/built-to-benefit-everyone-our-plan.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/009/art/rounds/2026-09-08T17-19-03/opener-built-to-benefit-v4.png
+    alt_text: Flopaz opens a sluice gate and water steps down through terraced garden beds where Pedro guides the flow with a hoe and Maro kneels planting, a village in the distance.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/009/art/rounds/2026-09-08T17-19-03/tail-built-to-benefit-v1.png
 - id: jalape-o-s-first-results-show-industry-leading-s
   title: Jalapeño’s First Results
   short_title: Jalapeño’s First Results
   display_emphasis: Jalapeño
   opener_variant: stepped_title
   author: OpenAI
-  author_note: ''
+  author_note: From the OpenAI blog, on its first custom inference chip.
   content_mode: article
   source_ids:
   - jalape-o-s-first-results-show-industry-leading-s-9edfd1ae
@@ -182,10 +182,22 @@ articles:
     anchor: What we measured
     layout: adaptive_band
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/009/art/rounds/2026-09-08T17-19-03/opener-jalapeno-v2.png
+    alt_text: At a workbench forge Flopaz lifts a gleaming fresh wafer with tongs from a small glowing furnace, Pedro fans the heat, Maro waves it cool, and a green jalapeno pepper rests on the bench.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/009/art/rounds/2026-09-08T17-19-03/tail-jalapeno-v1.png
 editorial: manuscript/editorial.md
 tail_art_fit: contain
-closing_plates: []
+closing_plates:
+- title: The Outgrown Fence
+  art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-grown-not-drawn-tree-v1.png
+- title: The Night Greenhouse
+  art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-night-greenhouse-v4.png
+- title: The Water Tower
+  art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-water-tower-terraces-v1.png
+- title: The Creature Kite
+  art_path: editions/009/art/rounds/2026-09-08T17-19-03/closing-creature-kite-v3.png
+- title: The Frost Window
+  art_path: editions/009/art/rounds/2026-09-08T18-21-46/closing-frost-window-v4.png
+- title: The Listening Shell
+  art_path: editions/009/art/rounds/2026-09-08T18-21-46/closing-listening-shell-v2.png
