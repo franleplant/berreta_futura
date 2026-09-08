@@ -1,0 +1,45 @@
+edition:
+  id: '009'
+articles:
+- id: design-patterns-for-securing-llm-agents-against
+  title: Design Patterns for Securing LLM Agents against Prompt Injections
+  author: Simon Willison
+  content_mode: article
+  source_ids:
+  - design-patterns-for-securing-llm-agents-against-d40186ec
+- id: the-persona-selection-model
+  title: The persona selection model
+  author: ''
+  content_mode: article
+  source_ids:
+  - the-persona-selection-model-8defd9b5
+- id: building-commerce-agents-with-claude
+  title: Building Commerce Agents with Claude
+  author: ''
+  content_mode: article
+  source_ids:
+  - building-commerce-agents-with-claude-4a77cb2e
+- id: an-alien-mind
+  title: An Alien Mind
+  author: Jakub Pachocki
+  content_mode: article
+  source_ids:
+  - an-alien-mind-e0f75446
+- id: built-to-benefit-everyone-our-plan
+  title: 'Built to benefit everyone: our plan'
+  author: Sam Altman, Jakub Pachocki
+  content_mode: article
+  source_ids:
+  - built-to-benefit-everyone-our-plan-af3db91a
+- id: research-acceleration-the-view-inside-openai
+  title: 'Research acceleration: The view inside OpenAI'
+  author: OpenAI
+  content_mode: article
+  source_ids:
+  - research-acceleration-the-view-inside-openai-be17d270
+- id: jalape-o-s-first-results-show-industry-leading-s
+  title: Jalapeño’s first results show industry-leading speed and efficiency in AI inference
+  author: OpenAI
+  content_mode: article
+  source_ids:
+  - jalape-o-s-first-results-show-industry-leading-s-9edfd1ae
