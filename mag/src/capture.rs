@@ -118,8 +118,15 @@ fn strip_block(html: &str, tag: &str) -> String {
         .into_owned()
 }
 
+fn strip_sr_only(html: &str) -> String {
+    Regex::new(r#"(?is)<span\b[^>]*class="[^"]*\bsr-only\b[^"]*"[^>]*>.*?</span>"#)
+        .unwrap()
+        .replace_all(html, " ")
+        .into_owned()
+}
+
 fn page_text(html: &str) -> String {
-    let mut s = html.to_string();
+    let mut s = strip_sr_only(html);
     for tag in ["script", "style", "svg", "noscript"] {
         s = strip_block(&s, tag);
     }
@@ -135,7 +142,7 @@ fn page_text(html: &str) -> String {
 }
 
 fn page_for_model(html: &str) -> String {
-    let mut s = html.to_string();
+    let mut s = strip_sr_only(html);
     for tag in ["script", "style", "svg", "noscript", "head"] {
         s = strip_block(&s, tag);
     }
@@ -159,7 +166,9 @@ fn normalize_ws(s: &str) -> String {
 
 fn comparison_form(s: &str) -> String {
     s.chars()
-        .filter(|c| !c.is_whitespace())
+        .filter(|c| {
+            !c.is_whitespace() && !matches!(c, '\u{2060}' | '\u{200b}' | '\u{feff}' | '\u{ad}')
+        })
         .map(|c| match c {
             '\u{2018}' | '\u{2019}' => '\'',
             '\u{201c}' | '\u{201d}' => '"',
