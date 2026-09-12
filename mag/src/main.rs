@@ -54,9 +54,10 @@ enum Cmd {
         /// of getting a row of its own
         #[arg(long)]
         article: Option<String>,
-        /// Content mode for the new plan row: article or in_a_nutshell
-        #[arg(long, default_value = "article")]
-        mode: String,
+        /// Content mode for the new plan row: article, in_a_nutshell, or verbatim
+        /// (default: verbatim when the source fits seven reader pages, else article)
+        #[arg(long)]
+        mode: Option<String>,
         #[arg(long, default_value = "sonnet")]
         model: String,
     },

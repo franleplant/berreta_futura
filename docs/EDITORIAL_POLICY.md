@@ -7,7 +7,11 @@ Every piece is explicitly one of:
 - `verbatim`: the source author's work printed unchanged, when it fits the
   verbatim page budget; the pipeline copies the captured text with no model
   call, stripping only capture chrome (the captured title line, byline line,
-  and image references, which the figure system owns);
+  and image references, which the figure system owns). A verbatim article's
+  title is the captured source title, unchanged; the loader refuses retitles.
+  New plan rows auto-promote to verbatim when the captured text fits seven
+  reader pages; `--mode` at capture time or editing plan.yaml overrides the
+  auto decision in either direction;
 - `faithful_edit`: the source author's work, minimally adapted for print;
 - `faithful_synthesis`: a compact adaptation in the source author's voice that preserves the source's argument, evidence, qualifications, and conclusions;
 - `selected_extracts`: attributed passages with editorial framing;
