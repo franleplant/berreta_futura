@@ -28,6 +28,7 @@ CONTENT_MODES: frozenset[str] = frozenset(
     {
         "article",
         "in_a_nutshell",
+        "verbatim",
     }
 )
 

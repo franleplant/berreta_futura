@@ -293,6 +293,28 @@ fn fix_em_dashes(
     Ok(body)
 }
 
+fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
+    let [(_, text)] = sources else {
+        bail!(
+            "verbatim mode requires exactly one source, got {}",
+            sources.len()
+        );
+    };
+    let image = regex::Regex::new(r"^!\[[^\]]*\]\([^)]*\)\s*$").unwrap();
+    let mut lines = text.lines().skip_while(|l| l.trim().is_empty()).peekable();
+    if lines.peek().is_some_and(|l| l.starts_with("# ")) {
+        lines.next();
+        while lines.peek().is_some_and(|l| l.trim().is_empty()) {
+            lines.next();
+        }
+        if lines.peek().is_some_and(|l| l.starts_with("By:")) {
+            lines.next();
+        }
+    }
+    let body: Vec<&str> = lines.filter(|l| !image.is_match(l)).collect();
+    Ok(body.join("\n").trim().to_string() + "\n")
+}
+
 fn article_frontmatter(article: &serde_yaml::Value) -> Result<String> {
     let mode = article
         .get("content_mode")
@@ -386,6 +408,25 @@ fn produce_piece(
                 },
             },
         );
+    }
+
+    if let Some(article) = article {
+        let mode = article.get("content_mode").and_then(|v| v.as_str());
+        if mode == Some("verbatim") {
+            let body = verbatim_body(sources)?;
+            fs::write(&final_path, article_frontmatter(article)? + &body)?;
+            let status = PieceStatus {
+                piece: piece_id.to_string(),
+                words: body.split_whitespace().count(),
+                state: "written".to_string(),
+            };
+            fs::write(out.join("status.yaml"), serde_yaml::to_string(&status)?)?;
+            println!(
+                "  {piece_id}: verbatim from source ({} words)",
+                status.words
+            );
+            return Ok(status);
+        }
     }
 
     let label = format!("{piece_id} write");
@@ -856,6 +897,14 @@ mod tests {
         let tail = read(&prompts_path("opening-editorial.md")).unwrap();
         assert!(p.ends_with(&format!("{}\n", tail.trim())));
         assert!(!p.contains("k: v"));
+    }
+
+    #[test]
+    fn verbatim_body_strips_capture_chrome_only() {
+        let src = "# Title\n\nBy: A. Author - 2026\n\nFirst para.\n\n![fig](media/001.png)\n\n## Head\n\nSecond - para.\n";
+        let body = verbatim_body(&[("s-1".to_string(), src.to_string())]).unwrap();
+        assert_eq!(body, "First para.\n\n\n## Head\n\nSecond - para.\n");
+        assert!(verbatim_body(&[]).is_err());
     }
 
     #[test]

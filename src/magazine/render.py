@@ -20,6 +20,7 @@ from .reader_layout import (
 
 
 MAX_ARTICLE_PAGES = 7
+MAX_VERBATIM_PAGES = 12
 MAX_EDITORIAL_PAGES = 2
 DESIGN_MONUMENT = "monument"
 DESIGN_LABEL = "A / Quiet Standard"
@@ -2076,10 +2077,13 @@ class _Typesetter:
                 page_count = self.page - start_page + 1
                 self._finish_article()
                 self.article_pages[article.id] = page_count
-                if self.enforce_page_caps and page_count > MAX_ARTICLE_PAGES:
+                page_cap = (
+                    MAX_VERBATIM_PAGES if article.content_mode == "verbatim" else MAX_ARTICLE_PAGES
+                )
+                if self.enforce_page_caps and page_count > page_cap:
                     raise ValidationError(
                         f"Article {article.id} spans {page_count} reader pages; the hard cap is "
-                        f"{MAX_ARTICLE_PAGES}. Condense it as a faithful_synthesis before building."
+                        f"{page_cap}. Condense it as a faithful_synthesis before building."
                     )
                 if self.enforce_page_caps and page_count < article.minimum_reader_pages:
                     raise ValidationError(

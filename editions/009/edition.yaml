@@ -119,7 +119,7 @@ articles:
   opener_variant: stepped_title
   author: Jakub Pachocki
   author_note: OpenAI's chief scientist.
-  content_mode: article
+  content_mode: verbatim
   source_ids:
   - an-alien-mind-e0f75446
   manuscript: editions/009/articles/an-alien-mind.md

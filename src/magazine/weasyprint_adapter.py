@@ -30,6 +30,7 @@ SHAPING_SCAFFOLDS: tuple[str, ...] = ()
 _CSS_PIXELS_PER_POINT = 96 / 72
 _POINTS_PER_CSS_PIXEL = 72 / 96
 _MAX_ARTICLE_PAGES = 7
+_MAX_VERBATIM_PAGES = 12
 _MAX_EDITORIAL_PAGES = 2
 
 _PAGE_HEIGHT_POINTS = 595.2756
@@ -2466,16 +2467,19 @@ def _rotated_plate_box(
     return left, _reader_y_points(top, box_width), box_height, box_width
 
 
+def article_page_cap(content_mode: str) -> int:
+    return _MAX_VERBATIM_PAGES if content_mode == "verbatim" else _MAX_ARTICLE_PAGES
+
+
 def _validate_layout_caps(edition: Edition, layout: RenderLayout) -> None:
+    caps = {article.id: article_page_cap(article.content_mode) for article in edition.articles}
     overlong = [
-        f"{article_id} ({count} pages)"
+        f"{article_id} ({count} pages, cap {caps.get(article_id, _MAX_ARTICLE_PAGES)})"
         for article_id, count in layout.article_pages.items()
-        if count > _MAX_ARTICLE_PAGES
+        if count > caps.get(article_id, _MAX_ARTICLE_PAGES)
     ]
     if overlong:
-        raise ValidationError(
-            "WeasyPrint article page cap exceeded (maximum 7): " + ", ".join(overlong)
-        )
+        raise ValidationError("WeasyPrint article page cap exceeded: " + ", ".join(overlong))
 
     short = [
         f"{article.id} ({layout.article_pages[article.id]} pages, "

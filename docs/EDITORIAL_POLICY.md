@@ -4,6 +4,10 @@
 
 Every piece is explicitly one of:
 
+- `verbatim`: the source author's work printed unchanged, when it fits the
+  verbatim page budget; the pipeline copies the captured text with no model
+  call, stripping only capture chrome (the captured title line, byline line,
+  and image references, which the figure system owns);
 - `faithful_edit`: the source author's work, minimally adapted for print;
 - `faithful_synthesis`: a compact adaptation in the source author's voice that preserves the source's argument, evidence, qualifications, and conclusions;
 - `selected_extracts`: attributed passages with editorial framing;
@@ -32,7 +36,10 @@ must approve the argument and final prose.
 ## Print-length budget
 
 Every rendered source article, including its title and credit, has a hard maximum
-of seven A5 reader pages. `measureArticle` reports the actual opener fit and
+of seven A5 reader pages. A `verbatim` article has a hard maximum of twelve A5
+reader pages instead: unchanged author text is the one case worth more room,
+and a source that cannot fit twelve pages verbatim is condensed under the
+rules below rather than trimmed silently. `measureArticle` reports the actual opener fit and
 page count from the production layout interface; character counts and
 hand-reproduced wrapping are not substitutes.
 
