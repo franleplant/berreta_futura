@@ -489,6 +489,7 @@ def _load_article(
     content_mode, minimum_reader_pages, display_emphasis, short_title, opener_variant = (
         _article_display(label, row, errors)
     )
+    _check_verbatim_title(label, row, source_ids, content_mode, source_records, errors)
     figures, extracts = _article_media(
         root, article_id, source_ids, manuscript, row, errors, allow_unanchored_figures
     )
@@ -512,6 +513,26 @@ def _load_article(
         dateline=_representative_dateline(source_ids, source_records),
         extracts=extracts,
     )
+
+
+def _check_verbatim_title(
+    label: str,
+    row: Any,
+    source_ids: list[str],
+    content_mode: str,
+    source_records: Mapping[str, "SourceRecord"] | None,
+    errors: list[str],
+) -> None:
+    if content_mode != "verbatim":
+        return
+    if len(source_ids) != 1:
+        errors.append(f"{label} verbatim articles carry exactly one source")
+        return
+    record = (source_records or {}).get(source_ids[0])
+    if record and str(row["title"]).strip() != record.title.strip():
+        errors.append(
+            f"{label} verbatim title must stay the captured source title {record.title!r}"
+        )
 
 
 def _load_edition_editorial(

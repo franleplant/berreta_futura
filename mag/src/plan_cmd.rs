@@ -137,7 +137,30 @@ fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
     Ok(appended)
 }
 
-fn row_from_record(sid: &str, mode: &str) -> Result<serde_yaml::Value> {
+const VERBATIM_AUTO_WORD_LIMIT: usize = 1750;
+const IMAGE_WORD_COST: usize = 210;
+
+fn mode_for_source_text(text: &str) -> &'static str {
+    let cost = text.split_whitespace().count() + text.matches("![").count() * IMAGE_WORD_COST;
+    if cost <= VERBATIM_AUTO_WORD_LIMIT {
+        "verbatim"
+    } else {
+        "article"
+    }
+}
+
+fn default_mode(sid: &str) -> Result<&'static str> {
+    let path = PathBuf::from("library/sources")
+        .join(sid)
+        .join("article.md");
+    Ok(mode_for_source_text(&read(&path)?))
+}
+
+fn row_from_record(sid: &str, mode: Option<&str>) -> Result<serde_yaml::Value> {
+    let mode = match mode {
+        Some(m) => m,
+        None => default_mode(sid)?,
+    };
     let record_path = PathBuf::from("library/sources")
         .join(sid)
         .join("record.yaml");
@@ -254,12 +277,19 @@ fn write_new_plan(
     Ok(())
 }
 
-pub fn add_source(edition: &str, sid: &str, article: Option<&str>, mode: &str) -> Result<()> {
-    if !CONTENT_MODES.contains(&mode) {
-        bail!(
-            "unknown content mode '{mode}'; one of: {}",
-            CONTENT_MODES.join(", ")
-        );
+pub fn add_source(
+    edition: &str,
+    sid: &str,
+    article: Option<&str>,
+    mode: Option<&str>,
+) -> Result<()> {
+    if let Some(mode) = mode {
+        if !CONTENT_MODES.contains(&mode) {
+            bail!(
+                "unknown content mode '{mode}'; one of: {}",
+                CONTENT_MODES.join(", ")
+            );
+        }
     }
     let out_path = plan_path_for(edition)?;
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
@@ -273,7 +303,7 @@ pub fn add_source(edition: &str, sid: &str, article: Option<&str>, mode: &str) -
                     articles.push(row_from_record(q, mode)?);
                 }
             } else {
-                articles.push(row_from_record(q, "article")?);
+                articles.push(row_from_record(q, None)?);
             }
         }
         write_new_plan(&out_path, &edition_id, articles)?;
@@ -299,7 +329,13 @@ pub fn add_source(edition: &str, sid: &str, article: Option<&str>, mode: &str) -
             t
         }
         None => {
-            let t = append_rows(&plan_text, &[row_from_record(sid, mode)?])?;
+            let row = row_from_record(sid, mode)?;
+            let mode = row
+                .get("content_mode")
+                .and_then(|v| v.as_str())
+                .unwrap_or("article")
+                .to_string();
+            let t = append_rows(&plan_text, &[row])?;
             println!("  plan: {sid} added as its own {mode} row");
             t
         }
@@ -331,8 +367,14 @@ pub fn propose_plan(edition: &str) -> Result<i32> {
         }
         let mut rows = Vec::new();
         for sid in &missing {
-            rows.push(row_from_record(sid, "article")?);
-            println!("  added: {sid}");
+            let row = row_from_record(sid, None)?;
+            let mode = row
+                .get("content_mode")
+                .and_then(|v| v.as_str())
+                .unwrap_or("article")
+                .to_string();
+            rows.push(row);
+            println!("  added: {sid} ({mode})");
         }
         fs::write(&out_path, append_rows(&plan_text, &rows)?)?;
         println!(
@@ -347,8 +389,14 @@ pub fn propose_plan(edition: &str) -> Result<i32> {
 
     let mut articles = Vec::new();
     for sid in &source_ids {
-        articles.push(row_from_record(sid, "article")?);
-        println!("  queued: {sid}");
+        let row = row_from_record(sid, None)?;
+        let mode = row
+            .get("content_mode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("article")
+            .to_string();
+        articles.push(row);
+        println!("  queued: {sid} ({mode})");
     }
 
     write_new_plan(&out_path, &edition_id, articles)?;
@@ -495,6 +543,16 @@ edition:
             .unwrap_err()
             .to_string();
         assert!(err.contains("merged-nutshell, solo-article"), "{err}");
+    }
+
+    #[test]
+    fn mode_for_source_text_promotes_when_it_fits_seven_pages() {
+        let short = ["word"; 1700].join(" ");
+        assert_eq!(mode_for_source_text(&short), "verbatim");
+        let long = ["word"; 1800].join(" ");
+        assert_eq!(mode_for_source_text(&long), "article");
+        let with_images = format!("{} ![a](m/1.png) ![b](m/2.png)", ["word"; 1400].join(" "));
+        assert_eq!(mode_for_source_text(&with_images), "article");
     }
 
     #[test]

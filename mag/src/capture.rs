@@ -607,7 +607,7 @@ pub struct CaptureArgs {
     pub published: Option<String>,
     pub html: Option<PathBuf>,
     pub article: Option<String>,
-    pub mode: String,
+    pub mode: Option<String>,
 }
 
 pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
@@ -615,7 +615,7 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
         args.url.as_str(),
         args.edition.as_deref(),
         args.tags.as_deref(),
-        args.mode.as_str(),
+        args.mode.as_deref(),
     );
     let (title_override, author_override, published_override) = (
         args.title.as_deref(),
@@ -623,11 +623,13 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
         args.published.as_deref(),
     );
     let (html_file, join_article) = (args.html.as_deref(), args.article.as_deref());
-    if !crate::plan_cmd::CONTENT_MODES.contains(&mode) {
-        bail!(
-            "unknown --mode '{mode}'; one of: {}",
-            crate::plan_cmd::CONTENT_MODES.join(", ")
-        );
+    if let Some(mode) = mode {
+        if !crate::plan_cmd::CONTENT_MODES.contains(&mode) {
+            bail!(
+                "unknown --mode '{mode}'; one of: {}",
+                crate::plan_cmd::CONTENT_MODES.join(", ")
+            );
+        }
     }
     let html = match html_file {
         Some(p) => fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?,

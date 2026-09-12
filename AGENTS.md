@@ -52,8 +52,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   writes record.yaml, queues the source, prepends the `sources.md` entry,
   and records the source in `editions/<edition>/plan.yaml` (creating the
   plan from every queued source if it does not exist). By default the source
-  gets its own `article` row; `--article <id>` joins an existing row instead
-  and `--mode in_a_nutshell` sets the mode. Decide the source-to-article
+  gets its own row, auto-promoted to `verbatim` when the captured text fits
+  seven reader pages (word-count calibration in plan_cmd) and `article`
+  otherwise; `--article <id>` joins an existing row instead and `--mode`
+  (article, in_a_nutshell, verbatim) overrides the auto decision. Decide the source-to-article
   mapping at capture time, on the command line, so it lives in plan.yaml and
   never only in a conversation. Raw HTML lands in `.magazine/capture/` (untracked). For pages curl
   cannot reach (login walls, JS-rendered apps like X), fetch the DOM with a
