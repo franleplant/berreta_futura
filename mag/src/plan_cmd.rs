@@ -151,7 +151,7 @@ fn row_from_record(sid: &str, mode: &str) -> Result<serde_yaml::Value> {
     Ok(article_row(sid, title, author, mode))
 }
 
-pub const CONTENT_MODES: &[&str] = &["article", "in_a_nutshell"];
+pub const CONTENT_MODES: &[&str] = &["article", "in_a_nutshell", "verbatim"];
 
 fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     let lines: Vec<&str> = plan_text.lines().collect();

@@ -524,8 +524,9 @@ def _contents_issues(
         issue(
             "contents-folio-range", "error", "A contents folio points outside the body page range."
         )
-    if any(count > 7 for count in article_pages.values()):
-        issue("article-page-cap", "error", "A source article exceeds the seven-page reader cap.")
+    page_caps = manifest_layout.get("article_page_caps") or {}
+    if any(count > int(page_caps.get(slug, 7)) for slug, count in article_pages.items()):
+        issue("article-page-cap", "error", "A source article exceeds its reader page cap.")
     editorial_page_cap = _declared_editorial_cap(manifest_layout)
     if editorial_pages is not None and editorial_pages > editorial_page_cap:
         issue(

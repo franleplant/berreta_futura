@@ -22,7 +22,7 @@ articles:
 - id: an-alien-mind
   title: An Alien Mind
   author: Jakub Pachocki
-  content_mode: article
+  content_mode: verbatim
   source_ids:
   - an-alien-mind-e0f75446
 - id: built-to-benefit-everyone-our-plan

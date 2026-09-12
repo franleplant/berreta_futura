@@ -15,6 +15,7 @@ from .errors import MagazineError, ValidationError
 from .manifest import Edition, load_edition, load_translation
 from .package import package_release
 from .reader_layout import RenderLayout, declared_editorial_page_cap
+from .weasyprint_adapter import article_page_cap
 from .records import load_records
 from .render_engine import reader_renderer
 from .web_edition import write_web_edition
@@ -222,6 +223,9 @@ def _render_manifest(
                 (variant.raw.get("format") or {}).get("max_article_pages", 7)
             ),
             "article_pages": layout.article_pages,
+            "article_page_caps": {
+                article.id: article_page_cap(article.content_mode) for article in variant.articles
+            },
             "maximum_editorial_pages": declared_editorial_page_cap(variant.raw, 2),
             "editorial_pages": layout.editorial_pages,
             "figures": [
