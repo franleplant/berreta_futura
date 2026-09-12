@@ -76,10 +76,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   in plan.yaml and carry it into edition.yaml at assembly.
 - Content modes: `faithful_edit`, `faithful_synthesis`, `selected_extracts`,
   `original_synthesis`, `in_a_nutshell`, `verbatim` (source text unchanged, no
-  writer call, twelve-page cap instead of seven), plus the `original_editorial`
+  writer call, ten-page cap instead of seven), plus the `original_editorial`
   opener.
   See `docs/EDITORIAL_POLICY.md`.
-- Source articles fit in at most seven A5 reader pages (twelve for
+- Source articles fit in at most seven A5 reader pages (ten for
   `verbatim`); the opening editorial
   fits on one, including label, title, and byline, and must not be an
   article-by-article summary.
