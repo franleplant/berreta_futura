@@ -20,7 +20,7 @@ from .reader_layout import (
 
 
 MAX_ARTICLE_PAGES = 7
-MAX_VERBATIM_PAGES = 12
+MAX_VERBATIM_PAGES = 10
 MAX_EDITORIAL_PAGES = 2
 DESIGN_MONUMENT = "monument"
 DESIGN_LABEL = "A / Quiet Standard"
