@@ -1,5 +1,5 @@
 schema_version: 2
-intake_edition_id: '009'
+intake_edition_id: '010'
 collecting_editions:
 - id: '005'
   issue_number: 5
@@ -74,6 +74,13 @@ collecting_editions:
   - built-to-benefit-everyone-our-plan-af3db91a
   - research-acceleration-the-view-inside-openai-be17d270
   - jalape-o-s-first-results-show-industry-leading-s-9edfd1ae
+- id: '010'
+  issue_number: 10
+  status: collecting
+  source_ids:
+  - scenarios-for-our-economic-future-eaff98a3
+  - towards-self-driving-codebases-3fd7b9ca
+  - an-alignment-assessment-of-recent-cybersecurity-415f8f1a
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

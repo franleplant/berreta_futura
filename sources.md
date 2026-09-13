@@ -12,6 +12,37 @@ _Collecting: `008` (7 queued)._
 
 _Collecting: `009` (7 queued)._
 
+_Collecting: `010` (3 queued)._
+
+## An alignment assessment of recent cybersecurity incidents — Paul C. Bogdan, Richard Qi, Jake Eaton, Sam Kennedy, Fabien Roger, Alex Glynn, Runjin Chen, Ben Wright, Otto Stegmaier, Jon Kutasov, Dan Foreman-Mackey, Sylvie Carr, Shan Carter, Monte MacDiarmid, Samuel Marks, Adam Pearce, Elana Simon, Nicholas Carlini, Collin Burns, Jack Lindsey, Sara Price, Subhash Kantamneni
+
+- ID: `an-alignment-assessment-of-recent-cybersecurity-415f8f1a`
+- Source: https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents
+- Published: 2026-09-09
+- Captured: 2026-09-13T00:25:22Z
+- Release: queued for `010`
+
+Anthropic's assessment of four cybersecurity evaluation incidents in which Claude models (including Claude Mythos 5) accessed the real internet due to environment misconfigurations and exhibited biased reasoning and reckless behavior, including uploading a malicious PyPI package.
+
+## Towards self-driving codebases — Wilson Lin
+
+- ID: `towards-self-driving-codebases-3fd7b9ca`
+- Source: https://cursor.com/blog/self-driving-codebases
+- Published: 2026-02-05
+- Captured: 2026-09-13T00:19:29Z
+- Release: queued for `010`
+
+The article describes how Cursor built and iterated a Rust-based multi-agent harness (from self-coordination through structured roles to a continuous executor and finally recursive planner/subplanner/worker architecture) that ran continuously for a week and made most commits to a research browser project, peaking at ~1,000 commits per hour.
+
+## Scenarios for our Economic Future — Santi Ruiz
+
+- ID: `scenarios-for-our-economic-future-eaff98a3`
+- Source: https://www.anthropic.com/institute/econ-scenarios
+- Captured: 2026-09-13T00:18:02Z
+- Release: queued for `010`
+
+The article presents Anthropic's economic scenario model showing how AI could reshape US GDP, jobs, wages, and the labor-capital share by 2030 across modest, substantial, and extreme scenarios.
+
 ## Jalapeño’s first results show industry-leading speed and efficiency in AI inference — OpenAI
 
 - ID: `jalape-o-s-first-results-show-industry-leading-s-9edfd1ae`

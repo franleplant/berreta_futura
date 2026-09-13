@@ -1,0 +1,21 @@
+edition:
+  id: '010'
+articles:
+- id: scenarios-for-our-economic-future
+  title: Scenarios for our Economic Future
+  author: Santi Ruiz
+  content_mode: article
+  source_ids:
+  - scenarios-for-our-economic-future-eaff98a3
+- id: towards-self-driving-codebases
+  title: Towards self-driving codebases
+  author: Wilson Lin
+  content_mode: article
+  source_ids:
+  - towards-self-driving-codebases-3fd7b9ca
+- id: an-alignment-assessment-of-recent-cybersecurity
+  title: An alignment assessment of recent cybersecurity incidents
+  author: Paul C. Bogdan, Richard Qi, Jake Eaton, Sam Kennedy, Fabien Roger, Alex Glynn, Runjin Chen, Ben Wright, Otto Stegmaier, Jon Kutasov, Dan Foreman-Mackey, Sylvie Carr, Shan Carter, Monte MacDiarmid, Samuel Marks, Adam Pearce, Elana Simon, Nicholas Carlini, Collin Burns, Jack Lindsey, Sara Price, Subhash Kantamneni
+  content_mode: article
+  source_ids:
+  - an-alignment-assessment-of-recent-cybersecurity-415f8f1a

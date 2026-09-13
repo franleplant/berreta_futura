@@ -1,0 +1,8 @@
+id: towards-self-driving-codebases-3fd7b9ca
+title: 'Towards self-driving codebases'
+author: 'Wilson Lin'
+url: https://cursor.com/blog/self-driving-codebases
+captured_at: '2026-09-13T00:19:29Z'
+published_at: '2026-02-05'
+tags: []
+synopsis: 'The article describes how Cursor built and iterated a Rust-based multi-agent harness (from self-coordination through structured roles to a continuous executor and finally recursive planner/subplanner/worker architecture) that ran continuously for a week and made most commits to a research browser project, peaking at ~1,000 commits per hour.'

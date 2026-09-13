@@ -82,9 +82,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   opener.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for
-  `verbatim`); the opening editorial
-  fits on one, including label, title, and byline, and must not be an
-  article-by-article summary.
+  `verbatim`). Editions from 010 on carry no opening editorial: produce no
+  longer writes one and the renderer treats `editorial:` as optional
+  (editions 001-009 keep theirs).
+- Filler art never repeats inside an edition: cover, openers, tails, and
+  closing plates must all be distinct images, and two variants of one brief
+  count as a repeat; generate more plates instead (`mag art <edition> --only
+  closing`).
 - Every fenced code block in a manuscript is a contiguous exact run from a
   captured source. Drop a block whole if it cannot be preserved.
 - No CommonMark footnote syntax (`[^1]`) in manuscripts.

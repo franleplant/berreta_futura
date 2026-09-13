@@ -23,6 +23,10 @@ The default for source articles is `faithful_edit`. The opening editorial is `or
 
 ## Opening editorial contract
 
+Discontinued: editions from 010 on carry no opening editorial. The contract
+below governs editions 001-009, whose editorials remain in their runs.
+
+
 The opening editorial develops a distinct unifying idea, set of ideas, or
 emergent narrative across the edition. Its value lies in the new argument the
 editors discover between the sources, not in recounting what each source says.

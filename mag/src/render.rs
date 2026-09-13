@@ -112,7 +112,11 @@ fn manuscript_headings(path: &Path) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn latest_complete_run(edition_dir: &Path, article_ids: &[String]) -> Option<PathBuf> {
+fn latest_complete_run(
+    edition_dir: &Path,
+    article_ids: &[String],
+    needs_editorial: bool,
+) -> Option<PathBuf> {
     let mut runs: Vec<PathBuf> = fs::read_dir(edition_dir)
         .ok()?
         .filter_map(|e| e.ok().map(|e| e.path()))
@@ -126,11 +130,11 @@ fn latest_complete_run(edition_dir: &Path, article_ids: &[String]) -> Option<Pat
     runs.sort();
     runs.into_iter()
         .rev()
-        .find(|run| run_is_complete(run, article_ids))
+        .find(|run| run_is_complete(run, article_ids, needs_editorial))
 }
 
-fn run_is_complete(run: &Path, article_ids: &[String]) -> bool {
-    run.join("editorial/final.md").exists()
+fn run_is_complete(run: &Path, article_ids: &[String], needs_editorial: bool) -> bool {
+    (!needs_editorial || run.join("editorial/final.md").exists())
         && article_ids
             .iter()
             .all(|id| run.join("articles").join(id).join("final.md").exists())
@@ -490,7 +494,7 @@ pub fn run(
     }
 
     let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
-    let content_run = pick_content_run(run_flag, &edition_dir, &article_ids)?;
+    let content_run = pick_content_run(run_flag, &edition_dir, &article_ids, &edition_yaml)?;
     let mut staging = Staging::new(repo_root.clone());
     let staged_edition_path = match &content_run {
         Some(run) => patch_anchors(run, &render_dir, &edition_yaml, anchor_model)?
@@ -551,20 +555,22 @@ fn pick_content_run(
     run_flag: Option<&str>,
     edition_dir: &Path,
     article_ids: &[String],
+    edition_yaml: &serde_yaml::Value,
 ) -> Result<Option<PathBuf>> {
+    let needs_editorial = str_field(edition_yaml, "editorial").is_some();
     let content_run = match run_flag {
         Some(dir) => {
             let dir = PathBuf::from(dir);
-            if !run_is_complete(&dir, article_ids) {
+            if !run_is_complete(&dir, article_ids, needs_editorial) {
                 bail!(
-                    "{} is not a complete run (needs editorial/final.md and articles/<id>/final.md for: {})",
+                    "{} is not a complete run (needs articles/<id>/final.md for: {}, plus editorial/final.md when the edition declares one)",
                     dir.display(),
                     article_ids.join(", ")
                 );
             }
             Some(dir)
         }
-        None => latest_complete_run(edition_dir, article_ids),
+        None => latest_complete_run(edition_dir, article_ids, needs_editorial),
     };
     match &content_run {
         Some(run) => println!("content: {}", run.display()),
