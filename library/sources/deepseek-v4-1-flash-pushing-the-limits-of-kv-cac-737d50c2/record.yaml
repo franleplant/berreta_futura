@@ -1,7 +1,7 @@
 id: deepseek-v4-1-flash-pushing-the-limits-of-kv-cac-737d50c2
 title: 'DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression'
 author: 'DeepSeek-AI'
-url: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/DeepSeek_V41_Tech_Report.pdf
+url: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
 captured_at: '2026-09-13T01:34:05Z'
 tags: []
 synopsis: 'The widespread adoption of long-horizon agents has made model workloads increasingly input- heavy. Although prior work has substantially reduced the cost of long-context computation, prefill remains computationally expensive, and large KV caches continue to strain HBM and SSD capacity and'
