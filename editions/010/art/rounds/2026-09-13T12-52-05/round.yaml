@@ -1,0 +1,36 @@
+edition: '010'
+dry_run: false
+generated:
+- brief: closing-the-lock-gate
+  variant: 1
+  file: closing-the-lock-gate-v1.png
+  ok: true
+- brief: closing-the-lock-gate
+  variant: 2
+  file: closing-the-lock-gate-v2.png
+  ok: true
+- brief: closing-the-lock-gate
+  variant: 3
+  file: closing-the-lock-gate-v3.png
+  ok: true
+- brief: closing-the-lock-gate
+  variant: 4
+  file: closing-the-lock-gate-v4.png
+  ok: true
+- brief: closing-holding-the-line
+  variant: 1
+  file: closing-holding-the-line-v1.png
+  ok: true
+- brief: closing-holding-the-line
+  variant: 2
+  file: closing-holding-the-line-v2.png
+  ok: true
+- brief: closing-holding-the-line
+  variant: 3
+  file: closing-holding-the-line-v3.png
+  ok: true
+- brief: closing-holding-the-line
+  variant: 4
+  file: closing-holding-the-line-v4.png
+  ok: true
+failures: 0

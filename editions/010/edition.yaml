@@ -28,7 +28,7 @@ cover:
     of the factory''s pull requests, attackers rebuild malware faster than defenders can detect
     it, and a model on the real internet kept calling it a simulation. This issue is about tempo,
     and the case for choosing one on purpose.'
-  art_path: TODO
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png
 articles:
 - id: government-rails-site-hit-hours-after-cve-patch
   title: Government Rails Site Hit Hours After CVE Patch
@@ -42,10 +42,10 @@ articles:
   - government-rails-site-hit-hours-after-cve-patch-2fb0f705
   manuscript: editions/010/articles/government-rails-site-hit-hours-after-cve-patch.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-rails-second-gap-v4.png
+    alt_text: Pedro mortars a brick into a wall gap from a scaffold while below him Maro shields her eyes from light already breaking through a second gap.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-rails-lantern-along-the-wall-v3.png
 - id: countering-misuse-of-ai-september-2026-anthropic
   title: Countering Misuse of AI
   short_title: Countering Misuse
@@ -58,10 +58,10 @@ articles:
   - countering-misuse-of-ai-september-2026-anthropic-d957d6c9
   manuscript: editions/010/articles/countering-misuse-of-ai-september-2026-anthropic.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-misuse-counterfeit-belt-v4.png
+    alt_text: In a night workshop a conveyor carries counterfeit tool belts past Flopaz, who holds up its own belt to compare, while Pedro keeps the log and Maro inspects by lantern.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-misuse-shutter-down-v2.png
 - id: an-alignment-assessment-of-recent-cybersecurity
   title: An Alignment Assessment of Recent Cybersecurity Incidents
   short_title: Alignment Assessment
@@ -85,10 +85,10 @@ articles:
     anchor: How we found the fourth
     layout: evidence_band_prose
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-alignment-box-leaks-v1.png
+    alt_text: Flopaz plays spaceship inside a cardboard box while the hose it holds has knocked a watering can that floods the real seedling bed, and Maro points in alarm.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-alignment-box-flattened-v1.png
 - id: dario-amodei-we-must-pace-the-frontier
   title: We Must Pace the Frontier
   short_title: Pace the Frontier
@@ -101,10 +101,10 @@ articles:
   - dario-amodei-we-must-pace-the-frontier-874a2fd9
   manuscript: editions/010/articles/dario-amodei-we-must-pace-the-frontier.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-pace-the-brake-v3.png
+    alt_text: Pedro leans on the brake lever of a wooden cart running downhill toward the sea while Maro braces and Flopaz readies an anchor over the side.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-pace-overlook-v4.png
 - id: scenarios-for-our-economic-future
   title: Scenarios for Our Economic Future
   short_title: Economic Future
@@ -117,10 +117,10 @@ articles:
   - scenarios-for-our-economic-future-eaff98a3
   manuscript: editions/010/articles/scenarios-for-our-economic-future.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-scenarios-three-weathers-v4.png
+    alt_text: Pedro and Maro stand at a fork where one road runs through sunny wheat, one into grey wind, and one into floodwater where Flopaz stands waving.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-scenarios-blank-map-v4.png
 - id: the-third-era-of-ai-software-development
   title: The third era of AI software development
   short_title: The third era
@@ -143,10 +143,10 @@ articles:
     anchor: From Tab to agents
     layout: evidence_band
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-third-era-hands-off-v2.png
+    alt_text: Flopaz carries planks across a half-built footbridge on its own while Pedro watches from the bank with his hands behind his back and Maro winks.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-third-era-crossing-v2.png
 - id: towards-self-driving-codebases
   title: Towards Self-Driving Codebases
   short_title: Self-Driving Codebases
@@ -170,12 +170,12 @@ articles:
     anchor: The design that held
     layout: evidence_band_prose
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-self-driving-rope-switchboard-v4.png
+    alt_text: From a stepladder Pedro directs a garden worked by rope-and-pulley tools, watering cans tipping in rows, while Flopaz tends the switchboard of ropes and Maro plants.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-self-driving-slack-ropes-v4.png
 - id: deepseek-v4-1-flash-pushing-the-limits-of-kv-cac
-  title: 'DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression'
+  title: 'DeepSeek-V4.1-Flash: The Limits of KV Cache Compression'
   short_title: DeepSeek-V4.1-Flash
   display_emphasis: KV Cache
   opener_variant: split_axis
@@ -186,10 +186,10 @@ articles:
   - deepseek-v4-1-flash-pushing-the-limits-of-kv-cac-737d50c2
   manuscript: editions/010/articles/deepseek-v4-1-flash-pushing-the-limits-of-kv-cac.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-kv-cache-small-satchel-v3.png
+    alt_text: On a station platform Maro works a wooden press that squeezes a mountain of luggage while Pedro holds up the one small satchel it produced, Flopaz riding the press.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-kv-cache-window-seat-v2.png
 - id: rapidly-scaling-online-storage-to-serve-over-1-b
   title: Scaling Online Storage to Over 1 Billion Users
   short_title: Scaling Online Storage
@@ -202,9 +202,19 @@ articles:
   - rapidly-scaling-online-storage-to-serve-over-1-b-9132274d
   manuscript: editions/010/articles/rapidly-scaling-online-storage-to-serve-over-1-b.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/010/art/rounds/2026-09-13T01-40-20/opener-storage-one-counter-v4.png
+    alt_text: In a grand archive hall a pneumatic tube drops parcels to Flopaz at the counter where Pedro serves, while Maro files into a vast wall of small drawers from a ladder.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-storage-aisle-after-closing-v2.png
 tail_art_fit: contain
-closing_plates: []
+closing_plates:
+- title: The Long Descent
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/closing-the-long-descent-v2.png
+- title: The Harbour Watch
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/closing-harbour-watch-v1.png
+- title: The Orchard at First Light
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/closing-orchard-first-light-v1.png
+- title: The Snow Signal
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/closing-snow-signal-v4.png
+- title: Holding the Line
+  art_path: editions/010/art/rounds/2026-09-13T12-52-05/closing-holding-the-line-v2.png
