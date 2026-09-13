@@ -23,7 +23,8 @@ for ref in $refs; do
 done
 
 instructions="Generate one illustration image with your image generation \
-tool${size:+ at exactly $size pixels (pass size=$size)} and save it as a PNG to exactly this path: $out — create parent \
+tool, using the newest image model it offers (gpt-image-2.5 if it accepts a \
+model choice)${size:+ at exactly $size pixels (pass size=$size)}, and save it as a PNG to exactly this path: $out — create parent \
 directories if needed, write nothing else. If reference images are attached, \
 they are the canonical designs of the recurring characters named in the \
 prompt: match those designs exactly while drawing the new scene described \
