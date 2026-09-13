@@ -44,10 +44,11 @@ must approve the argument and final prose.
 ## Print-length budget
 
 Every rendered source article, including its title and credit, has a hard maximum
-of seven A5 reader pages. A `verbatim` article has a hard maximum of ten A5
-reader pages instead: unchanged author text is the one case worth more room,
-and a source that cannot fit ten pages verbatim is condensed under the
-rules below rather than trimmed silently. `measureArticle` reports the actual opener fit and
+of seven A5 reader pages. A `verbatim` article has a ten-page budget
+instead: unchanged author text is the one case worth more room. A verbatim
+article past ten pages renders with a warning, never a failure; trimming is
+not an option for verbatim text, so the editor decides between accepting the
+length and flipping the row to a writer mode. `measureArticle` reports the actual opener fit and
 page count from the production layout interface; character counts and
 hand-reproduced wrapping are not substitutes.
 

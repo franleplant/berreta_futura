@@ -81,6 +81,10 @@ collecting_editions:
   - scenarios-for-our-economic-future-eaff98a3
   - towards-self-driving-codebases-3fd7b9ca
   - an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+  - the-third-era-of-ai-software-development-7395f18d
+  - government-rails-site-hit-hours-after-cve-patch-2fb0f705
+  - rapidly-scaling-online-storage-to-serve-over-1-b-9132274d
+  - dario-amodei-we-must-pace-the-frontier-874a2fd9
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

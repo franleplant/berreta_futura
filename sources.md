@@ -12,7 +12,46 @@ _Collecting: `008` (7 queued)._
 
 _Collecting: `009` (7 queued)._
 
-_Collecting: `010` (3 queued)._
+_Collecting: `010` (7 queued)._
+
+## Dario Amodei — We Must Pace the Frontier — Dario Amodei
+
+- ID: `dario-amodei-we-must-pace-the-frontier-874a2fd9`
+- Source: https://darioamodei.com/post/we-must-pace-the-frontier
+- Captured: 2026-09-13T00:51:44Z
+- Release: queued for `010`
+
+Dario Amodei proposes a three-step plan (embedded evaluators, democratic coordination, global coordination) to pace AI capability development so that alignment, interpretability, and safety work can keep up.
+
+## Rapidly scaling online storage to serve over 1 billion ChatGPT users — Jon Lee, Chaomin Yu, Ben Ries
+
+- ID: `rapidly-scaling-online-storage-to-serve-over-1-b-9132274d`
+- Source: https://openai.com/index/scaling-storage-one-billion-users-part-one/
+- Published: 2026-09-11
+- Captured: 2026-09-13T00:50:50Z
+- Release: queued for `010`
+
+The article describes how OpenAI scaled its Habitat online storage platform from a simple Python client library into a service handling over 70 million requests per second for more than 1 billion weekly users, and its eventual rewrite from Python to Rust.
+
+## Government Rails Site Hit Hours After CVE Patch — Frank Rietta
+
+- ID: `government-rails-site-hit-hours-after-cve-patch-2fb0f705`
+- Source: https://rietta.com/blog/ruby-on-rails-cve-exploited-hours-after-patch/
+- Published: 2026-09-04
+- Captured: 2026-09-13T00:49:45Z
+- Release: queued for `010`
+
+Rietta describes patching a government client's Ruby on Rails ActiveStorage vulnerability (CVE-2026-66066) within hours of disclosure, only to see exploit attempts begin before the embargoed technical details were even published, and draws lessons about patching on the fix rather than waiting for severity scores or writeups.
+
+## The third era of AI software development — Michael Truell
+
+- ID: `the-third-era-of-ai-software-development-7395f18d`
+- Source: https://cursor.com/blog/third-era
+- Published: 2026-02-26
+- Captured: 2026-09-13T00:49:11Z
+- Release: queued for `010`
+
+Cursor argues that AI-assisted software development is entering a third era, moving from synchronous agent prompting to autonomous cloud agents that work independently over hours and are reviewed via artifacts rather than diffs.
 
 ## An alignment assessment of recent cybersecurity incidents — Paul C. Bogdan, Richard Qi, Jake Eaton, Sam Kennedy, Fabien Roger, Alex Glynn, Runjin Chen, Ben Wright, Otto Stegmaier, Jon Kutasov, Dan Foreman-Mackey, Sylvie Carr, Shan Carter, Monte MacDiarmid, Samuel Marks, Adam Pearce, Elana Simon, Nicholas Carlini, Collin Burns, Jack Lindsey, Sara Price, Subhash Kantamneni
 

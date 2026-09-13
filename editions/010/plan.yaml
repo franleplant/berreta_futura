@@ -19,3 +19,27 @@ articles:
   content_mode: article
   source_ids:
   - an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+- id: the-third-era-of-ai-software-development
+  title: The third era of AI software development
+  author: Michael Truell
+  content_mode: verbatim
+  source_ids:
+  - the-third-era-of-ai-software-development-7395f18d
+- id: government-rails-site-hit-hours-after-cve-patch
+  title: Government Rails Site Hit Hours After CVE Patch
+  author: Frank Rietta
+  content_mode: article
+  source_ids:
+  - government-rails-site-hit-hours-after-cve-patch-2fb0f705
+- id: rapidly-scaling-online-storage-to-serve-over-1-b
+  title: Rapidly scaling online storage to serve over 1 billion ChatGPT users
+  author: Jon Lee, Chaomin Yu, Ben Ries
+  content_mode: article
+  source_ids:
+  - rapidly-scaling-online-storage-to-serve-over-1-b-9132274d
+- id: dario-amodei-we-must-pace-the-frontier
+  title: Dario Amodei — We Must Pace the Frontier
+  author: Dario Amodei
+  content_mode: verbatim
+  source_ids:
+  - dario-amodei-we-must-pace-the-frontier-874a2fd9

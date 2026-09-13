@@ -226,6 +226,9 @@ def _render_manifest(
             "article_page_caps": {
                 article.id: article_page_cap(article.content_mode) for article in variant.articles
             },
+            "article_content_modes": {
+                article.id: article.content_mode for article in variant.articles
+            },
             "maximum_editorial_pages": declared_editorial_page_cap(variant.raw, 2),
             "editorial_pages": layout.editorial_pages,
             "figures": [
