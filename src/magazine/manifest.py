@@ -153,6 +153,7 @@ def load_edition(
     sections = _load_sections(root, edition_dir, data, errors)
     cover, cover_art = _load_cover(root, edition_dir, data, errors)
     closing_plates = _load_closing_plates(root, edition_dir, data, errors, allow_missing_art)
+    _check_unique_art(data, errors)
     if errors:
         raise ValidationError(errors)
     return Edition(
@@ -190,8 +191,8 @@ def _check_edition_header(
         unknown_declared = sorted(set(declared_sources) - known_sources)
         if unknown_declared:
             errors.append(f"Edition references unknown sources: {', '.join(unknown_declared)}")
-    if not data.get("sections") and (not data.get("editorial") or not data.get("articles")):
-        errors.append("Edition requires either sections, or editorial plus articles")
+    if not data.get("sections") and not data.get("articles"):
+        errors.append("Edition requires either sections or articles")
 
 
 def _edition_opener_format(data: dict[str, Any], errors: list[str]) -> bool:
@@ -603,6 +604,41 @@ def _load_cover(
         except ValidationError as exc:
             errors.extend(exc.errors)
     return cover, cover_art
+
+
+def _art_variant_stem(path: str) -> str:
+    stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    head, sep, tail = stem.rpartition("-v")
+    return head if sep and tail.isdigit() else stem
+
+
+def _check_unique_art(data: dict[str, Any], errors: list[str]) -> None:
+    slots: list[tuple[str, str]] = []
+    cover_art = (data.get("cover") or {}).get("art_path")
+    if isinstance(cover_art, str) and cover_art.strip():
+        slots.append(("cover", cover_art))
+    for row in data.get("articles") or []:
+        if not isinstance(row, dict):
+            continue
+        opener = (row.get("opener_art") or {}).get("path")
+        if isinstance(opener, str) and opener.strip():
+            slots.append((f"article {row.get('id')} opener", opener))
+        tail = row.get("tail_art_path")
+        if isinstance(tail, str) and tail.strip():
+            slots.append((f"article {row.get('id')} tail", tail))
+    for plate in data.get("closing_plates") or []:
+        if isinstance(plate, dict) and isinstance(plate.get("art_path"), str):
+            slots.append((f"closing plate {plate.get('title')!r}", plate["art_path"]))
+    seen: dict[str, str] = {}
+    for label, path in slots:
+        for key in (path, _art_variant_stem(path)):
+            if key in seen and seen[key] != label:
+                errors.append(
+                    f"{label} repeats the art of {seen[key]} ({key}); every filler image "
+                    "appears once per edition; generate more with mag art <edition> --only closing"
+                )
+                break
+            seen.setdefault(key, label)
 
 
 def _load_closing_plates(

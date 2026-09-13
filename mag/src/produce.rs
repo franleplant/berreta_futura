@@ -84,21 +84,6 @@ fn writer_prompt(article: &serde_yaml::Value, sources: &[(String, String)]) -> R
     Ok(sources_block(sources) + &prompt + "\n")
 }
 
-fn editorial_prompt(articles_final: &[(String, String)]) -> Result<String> {
-    let mut out = String::from("<articles>\n");
-    for (n, (_id, text)) in articles_final.iter().enumerate() {
-        let n = n + 1;
-        out += &format!(
-            "\n<article {n}>\n{}\n</article {n}>\n",
-            strip_frontmatter(text).trim()
-        );
-    }
-    out += "\n</articles>\n\n";
-    out += read(&prompts_path("opening-editorial.md"))?.trim();
-    out += "\n";
-    Ok(out)
-}
-
 fn strip_frontmatter(text: &str) -> &str {
     let Some(rest) = text.strip_prefix("---\n") else {
         return text;
@@ -108,9 +93,6 @@ fn strip_frontmatter(text: &str) -> &str {
         None => text,
     }
 }
-
-const EDITORIAL_MAX_WORDS: usize = 235;
-const HEADING_WORD_COST: usize = 25;
 
 const ARTICLE_MAX_WORDS: usize = 1450;
 
@@ -338,35 +320,6 @@ fn article_frontmatter(article: &serde_yaml::Value) -> Result<String> {
     Ok(out)
 }
 
-fn editorial_frontmatter(
-    caller: &Caller,
-    meta_model: &ModelSpec,
-    manuscript: &str,
-) -> Result<String> {
-    let prompt = format!(
-        "{manuscript}\n\nReply with a title for the piece above: one line of plain text, \
-         at most eight words, no quotes, no markdown."
-    );
-    let title = caller.call_with_parse("editorial title", meta_model, &prompt, |reply| {
-        let t = reply
-            .trim()
-            .trim_matches(|c| c == '"' || c == '\u{201c}' || c == '\u{201d}');
-        if t.is_empty() || t.lines().count() != 1 || t.len() > 90 || t.starts_with('#') {
-            bail!("reply must be a single plain-text title line");
-        }
-        Ok(t.to_string())
-    })?;
-    let mut map = serde_yaml::Mapping::new();
-
-    map.insert("label".into(), "EDITORIAL".into());
-    map.insert("title".into(), title.into());
-    map.insert("byline".into(), "The Editors".into());
-    Ok(format!(
-        "---\n{}---\n\n",
-        serde_yaml::to_string(&serde_yaml::Value::Mapping(map))?
-    ))
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct PieceStatus {
     piece: String,
@@ -379,16 +332,11 @@ fn produce_piece(
     caller: &Arc<Caller>,
     run_dir: &Path,
     piece_id: &str,
-    article: Option<&serde_yaml::Value>,
+    article: &serde_yaml::Value,
     sources: &[(String, String)],
     writer_model: &ModelSpec,
-    meta_model: &ModelSpec,
 ) -> Result<PieceStatus> {
-    let out = if article.is_none() {
-        run_dir.join("editorial")
-    } else {
-        run_dir.join("articles").join(piece_id)
-    };
+    let out = run_dir.join("articles").join(piece_id);
     fs::create_dir_all(&out)?;
     let final_path = out.join("final.md");
     if final_path.exists() {
@@ -410,7 +358,7 @@ fn produce_piece(
         );
     }
 
-    if let Some(article) = article {
+    {
         let mode = article.get("content_mode").and_then(|v| v.as_str());
         if mode == Some("verbatim") {
             let body = verbatim_body(sources)?;
@@ -430,18 +378,9 @@ fn produce_piece(
     }
 
     let label = format!("{piece_id} write");
-    let (prompt, frontmatter) = match article {
-        Some(article) => (
-            writer_prompt(article, sources)?,
-            Some(article_frontmatter(article)?),
-        ),
-        None => (editorial_prompt(sources)?, None),
-    };
-    let (max_words, heading_cost) = if article.is_none() {
-        (EDITORIAL_MAX_WORDS, HEADING_WORD_COST)
-    } else {
-        (ARTICLE_MAX_WORDS, 0)
-    };
+    let prompt = writer_prompt(article, sources)?;
+    let frontmatter = article_frontmatter(article)?;
+    let (max_words, heading_cost) = (ARTICLE_MAX_WORDS, 0);
     let parse_label = label.clone();
     let body = caller.call_with_parse(&label, writer_model, &prompt, |r| {
         extract_body(r, &parse_label)
@@ -456,10 +395,6 @@ fn produce_piece(
         heading_cost,
     )?;
     let body = fix_em_dashes(caller, writer_model, piece_id, &prompt, body, sources)?;
-    let frontmatter = match frontmatter {
-        Some(fm) => fm,
-        None => editorial_frontmatter(caller, meta_model, &body)?,
-    };
     fs::write(&final_path, frontmatter + &body)?;
 
     let status = PieceStatus {
@@ -590,7 +525,7 @@ fn scaffold_edition_yaml(
         y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
         y += "  tail_art_path: TODO\n";
     }
-    y += "editorial: manuscript/editorial.md\ntail_art_fit: contain\nclosing_plates: []\n";
+    y += "tail_art_fit: contain\nclosing_plates: []\n";
     fs::write(&path, y)?;
     Ok(Some(path))
 }
@@ -600,7 +535,6 @@ pub fn run_edition(
     resume: Option<PathBuf>,
     only: Option<HashSet<String>>,
     writer_model: &ModelSpec,
-    meta_model: &ModelSpec,
 ) -> Result<i32> {
     let plan_text = read(plan_path)?;
     let plan: Plan = serde_yaml::from_str(&plan_text).context("parsing plan.yaml")?;
@@ -636,29 +570,17 @@ pub fn run_edition(
         })
         .collect();
 
-    let models = (writer_model, meta_model);
-    let (mut statuses, mut failures) = write_articles(&caller, &run_dir, &articles, models);
-    let finals = collect_finals(&run_dir, &articles)?;
-    if !finals.is_empty() && failures.is_empty() {
-        match produce_piece(
-            &caller,
-            &run_dir,
-            "editorial",
-            None,
-            &finals,
-            writer_model,
-            meta_model,
-        ) {
-            Ok(st) => statuses.push(st),
-            Err(e) => {
-                eprintln!("  FAILED editorial: {e}");
-                failures.push(("editorial".to_string(), e.to_string()));
-            }
-        }
-    }
+    let (statuses, failures) = write_articles(&caller, &run_dir, &articles, writer_model);
 
     let minutes = started.elapsed().as_secs_f64() / 60.0;
-    let lines = summary_lines(&edition_id, &caller, minutes, models, &statuses, &failures);
+    let lines = summary_lines(
+        &edition_id,
+        &caller,
+        minutes,
+        writer_model,
+        &statuses,
+        &failures,
+    );
     fs::write(run_dir.join("summary.md"), lines.join("\n") + "\n")?;
     println!("\n{}", run_dir.join("summary.md").display());
     println!("{}", lines.join("\n"));
@@ -682,7 +604,7 @@ fn write_articles(
     caller: &Arc<Caller>,
     run_dir: &Path,
     articles: &[serde_yaml::Value],
-    (writer_model, meta_model): (&ModelSpec, &ModelSpec),
+    writer_model: &ModelSpec,
 ) -> (Vec<PieceStatus>, Failures) {
     let mut handles = Vec::new();
     for article in articles {
@@ -690,7 +612,6 @@ fn write_articles(
         let caller = Arc::clone(caller);
         let run_dir = run_dir.to_path_buf();
         let writer_model = writer_model.clone();
-        let meta_model = meta_model.clone();
         handles.push(thread::spawn(move || -> Result<PieceStatus> {
             let id = article_owned
                 .get("id")
@@ -714,10 +635,9 @@ fn write_articles(
                 &caller,
                 &run_dir,
                 &id,
-                Some(&article_owned),
+                &article_owned,
                 &sources,
                 &writer_model,
-                &meta_model,
             )
         }));
     }
@@ -745,24 +665,11 @@ fn write_articles(
     (statuses, failures)
 }
 
-fn collect_finals(run_dir: &Path, articles: &[serde_yaml::Value]) -> Result<Vec<(String, String)>> {
-    let mut finals = Vec::new();
-    for article in articles {
-        if let Some(id) = article.get("id").and_then(|v| v.as_str()) {
-            let fp = run_dir.join("articles").join(id).join("final.md");
-            if fp.exists() {
-                finals.push((id.to_string(), read(&fp)?));
-            }
-        }
-    }
-    Ok(finals)
-}
-
 fn summary_lines(
     edition_id: &str,
     caller: &Caller,
     minutes: f64,
-    (writer_model, meta_model): (&ModelSpec, &ModelSpec),
+    writer_model: &ModelSpec,
     statuses: &[PieceStatus],
     failures: &Failures,
 ) -> Vec<String> {
@@ -775,10 +682,7 @@ fn summary_lines(
             caller.total_cost(),
             minutes
         ),
-        format!(
-            "- writer `{}`, frontmatter `{}`",
-            writer_model.full, meta_model.full
-        ),
+        format!("- writer `{}`", writer_model.full),
         String::new(),
         "| piece | words |".to_string(),
         "|---|---|".to_string(),
@@ -805,7 +709,7 @@ fn print_next_steps(
         None => println!("\n{} already exists; left as is", edition_yaml.display()),
     }
     println!(
-        "\nnext:\n  1. read the finals under {}/articles/*/final.md and editorial/final.md\n  \
+        "\nnext:\n  1. read the finals under {}/articles/*/final.md\n  \
          2. edit {}: TODO fields (title, cover copy), article order, figures\n  \
          3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
          4. mag render {edition_id}",
@@ -882,21 +786,6 @@ mod tests {
             fm,
             "---\nsource_ids:\n- a-1\n- b-2\ncontent_mode: in_a_nutshell\nlabel: IN A NUTSHELL\n---\n\n"
         );
-    }
-
-    #[test]
-    fn editorial_prompt_wraps_numbered_articles() {
-        let finals = vec![
-            ("x".to_string(), "---\nk: v\n---\nBody one".to_string()),
-            ("y".to_string(), "Body two".to_string()),
-        ];
-        let p = editorial_prompt(&finals).unwrap();
-        assert!(p.starts_with("<articles>\n"));
-        assert!(p.contains("<article 1>\nBody one\n</article 1>"));
-        assert!(p.contains("<article 2>\nBody two\n</article 2>"));
-        let tail = read(&prompts_path("opening-editorial.md")).unwrap();
-        assert!(p.ends_with(&format!("{}\n", tail.trim())));
-        assert!(!p.contains("k: v"));
     }
 
     #[test]
