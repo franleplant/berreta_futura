@@ -12,7 +12,16 @@ _Collecting: `008` (7 queued)._
 
 _Collecting: `009` (7 queued)._
 
-_Collecting: `010` (8 queued)._
+_Collecting: `010` (9 queued)._
+
+## DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression — DeepSeek-AI
+
+- ID: `deepseek-v4-1-flash-pushing-the-limits-of-kv-cac-737d50c2`
+- Source: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/DeepSeek_V41_Tech_Report.pdf
+- Captured: 2026-09-13T01:34:05Z
+- Release: queued for `010`
+
+The widespread adoption of long-horizon agents has made model workloads increasingly input- heavy. Although prior work has substantially reduced the cost of long-context computation, prefill remains computationally expensive, and large KV caches continue to strain HBM and SSD capacity and
 
 ## Countering misuse of AI: September 2026 / Anthropic
 
