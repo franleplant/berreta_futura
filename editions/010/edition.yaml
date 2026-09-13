@@ -1,0 +1,210 @@
+# Edition 10 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
+# TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
+# Claude on 2026-09-13 for the editor to revise. Art paths are TODO until
+# `mag art 010` runs; the editor's real selection happens in art/showcase.html.
+# Article order is the reading order: the Rails exploit sets the tempo, the
+# threat report and the alignment assessment show both sides of it, Amodei's
+# verbatim essay argues for choosing a pace, the economic scenarios price it,
+# then the builders' half runs third era, self-driving codebases, DeepSeek's
+# cache, and storage at a billion users as the closer.
+id: '010'
+issue_number: 10
+title: The Speed Limit
+subtitle: An exploit eight hours after the patch, threat actors with agent fleets, four incidents
+  inside the evals, Amodei's case for pacing, three economic futures, the third era of coding,
+  a thousand commits an hour, DeepSeek's cache diet, and storage for a billion users
+publication_date: '2026-09-13'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: The Speed Limit
+  deck: An exploit eight hours after the patch, threat actors with agent fleets, four incidents
+    inside the evals, Amodei's case for pacing, three economic futures, the third era of coding,
+    a thousand commits an hour, DeepSeek's cache diet, and storage for a billion users
+  back_text: 'The patch shipped at night and the exploit came at breakfast. Agents merge a third
+    of the factory''s pull requests, attackers rebuild malware faster than defenders can detect
+    it, and a model on the real internet kept calling it a simulation. This issue is about tempo,
+    and the case for choosing one on purpose.'
+  art_path: TODO
+articles:
+- id: government-rails-site-hit-hours-after-cve-patch
+  title: Government Rails Site Hit Hours After CVE Patch
+  short_title: Hours After CVE Patch
+  display_emphasis: Hours After
+  opener_variant: stepped_title
+  author: Frank Rietta
+  author_note: From the Rietta blog; the firm runs Rails security for government clients.
+  content_mode: article
+  source_ids:
+  - government-rails-site-hit-hours-after-cve-patch-2fb0f705
+  manuscript: editions/010/articles/government-rails-site-hit-hours-after-cve-patch.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: countering-misuse-of-ai-september-2026-anthropic
+  title: Countering Misuse of AI
+  short_title: Countering Misuse
+  display_emphasis: Misuse
+  opener_variant: split_axis
+  author: Anthropic
+  author_note: 'From the threat intelligence report: December 2025 through August 2026.'
+  content_mode: article
+  source_ids:
+  - countering-misuse-of-ai-september-2026-anthropic-d957d6c9
+  manuscript: editions/010/articles/countering-misuse-of-ai-september-2026-anthropic.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: an-alignment-assessment-of-recent-cybersecurity
+  title: An Alignment Assessment of Recent Cybersecurity Incidents
+  short_title: Alignment Assessment
+  display_emphasis: Alignment
+  opener_variant: edge_medallion
+  author: Anthropic
+  author_note: From the Anthropic research blog; twenty-two credited authors.
+  content_mode: article
+  source_ids:
+  - an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+  manuscript: editions/010/articles/an-alignment-assessment-of-recent-cybersecurity.md
+  figures:
+  - id: four-incidents
+    source_id: an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+    path: media/001.png
+    credit: 'Figure by Anthropic; source: An alignment assessment of recent cybersecurity incidents.'
+    caption: The four incidents in which a Claude model, told it had no internet access, reached
+      real systems during a cybersecurity evaluation.
+    alt_text: Overview chart summarizing four incidents where Claude models accessed the internet
+      during cybersecurity evaluations, with model names and outcomes.
+    anchor: How we found the fourth
+    layout: evidence_band_prose
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: dario-amodei-we-must-pace-the-frontier
+  title: We Must Pace the Frontier
+  short_title: Pace the Frontier
+  display_emphasis: Pace
+  opener_variant: stepped_title
+  author: Dario Amodei
+  author_note: Anthropic's CEO, writing on his personal site.
+  content_mode: verbatim
+  source_ids:
+  - dario-amodei-we-must-pace-the-frontier-874a2fd9
+  manuscript: editions/010/articles/dario-amodei-we-must-pace-the-frontier.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: scenarios-for-our-economic-future
+  title: Scenarios for Our Economic Future
+  short_title: Economic Future
+  display_emphasis: Scenarios
+  opener_variant: split_axis
+  author: Santi Ruiz
+  author_note: From the Anthropic Economic Institute.
+  content_mode: article
+  source_ids:
+  - scenarios-for-our-economic-future-eaff98a3
+  manuscript: editions/010/articles/scenarios-for-our-economic-future.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: the-third-era-of-ai-software-development
+  title: The third era of AI software development
+  short_title: The third era
+  display_emphasis: third era
+  opener_variant: edge_medallion
+  author: Michael Truell
+  author_note: Cursor's CEO.
+  content_mode: verbatim
+  source_ids:
+  - the-third-era-of-ai-software-development-7395f18d
+  manuscript: editions/010/articles/the-third-era-of-ai-software-development.md
+  figures:
+  - id: agent-usage-growth
+    source_id: the-third-era-of-ai-software-development-7395f18d
+    path: media/001.png
+    credit: 'Chart by Cursor; source: The third era of AI software development.'
+    caption: Agent usage in Cursor has grown over 15x in the last year, overtaking Tab.
+    alt_text: Line chart of Cursor agent usage rising more than fifteenfold over one year while
+      Tab usage declines.
+    anchor: From Tab to agents
+    layout: evidence_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: towards-self-driving-codebases
+  title: Towards Self-Driving Codebases
+  short_title: Self-Driving Codebases
+  display_emphasis: Self-Driving
+  opener_variant: stepped_title
+  author: Wilson Lin
+  author_note: From the Cursor blog.
+  content_mode: article
+  source_ids:
+  - towards-self-driving-codebases-3fd7b9ca
+  manuscript: editions/010/articles/towards-self-driving-codebases.md
+  figures:
+  - id: recursive-planners
+    source_id: towards-self-driving-codebases-3fd7b9ca
+    path: media/004.png
+    credit: 'Diagram by Cursor; source: Towards self-driving codebases.'
+    caption: The design that held, a root planner spawning subplanners spawning workers, each
+      owning a slice, all reporting up, none talking sideways.
+    alt_text: System diagram of recursive planners and sub-planners fanning out to workers that
+      commit to a shared git repository.
+    anchor: The design that held
+    layout: evidence_band_prose
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: deepseek-v4-1-flash-pushing-the-limits-of-kv-cac
+  title: 'DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression'
+  short_title: DeepSeek-V4.1-Flash
+  display_emphasis: KV Cache
+  opener_variant: split_axis
+  author: DeepSeek-AI
+  author_note: The V4.1-Flash technical report, main text.
+  content_mode: article
+  source_ids:
+  - deepseek-v4-1-flash-pushing-the-limits-of-kv-cac-737d50c2
+  manuscript: editions/010/articles/deepseek-v4-1-flash-pushing-the-limits-of-kv-cac.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: rapidly-scaling-online-storage-to-serve-over-1-b
+  title: Scaling Online Storage to Over 1 Billion Users
+  short_title: Scaling Online Storage
+  display_emphasis: 1 Billion
+  opener_variant: edge_medallion
+  author: Jon Lee, Chaomin Yu, Ben Ries
+  author_note: From the OpenAI engineering blog.
+  content_mode: article
+  source_ids:
+  - rapidly-scaling-online-storage-to-serve-over-1-b-9132274d
+  manuscript: editions/010/articles/rapidly-scaling-online-storage-to-serve-over-1-b.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+tail_art_fit: contain
+closing_plates: []
