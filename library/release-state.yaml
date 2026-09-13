@@ -85,6 +85,7 @@ collecting_editions:
   - government-rails-site-hit-hours-after-cve-patch-2fb0f705
   - rapidly-scaling-online-storage-to-serve-over-1-b-9132274d
   - dario-amodei-we-must-pace-the-frontier-874a2fd9
+  - countering-misuse-of-ai-september-2026-anthropic-d957d6c9
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
