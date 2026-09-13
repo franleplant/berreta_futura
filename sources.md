@@ -12,7 +12,17 @@ _Collecting: `008` (7 queued)._
 
 _Collecting: `009` (7 queued)._
 
-_Collecting: `010` (7 queued)._
+_Collecting: `010` (8 queued)._
+
+## Countering misuse of AI: September 2026 / Anthropic
+
+- ID: `countering-misuse-of-ai-september-2026-anthropic-d957d6c9`
+- Source: https://www.anthropic.com/threat-intelligence-report-september-2026
+- Published: 2026-09-10
+- Captured: 2026-09-13T01:11:11Z
+- Release: queued for `010`
+
+Given the extreme length of this document (a many-thousand-word multi-section threat intelligence report), a complete verbatim transcription could not be finished within the response limits available.
 
 ## Dario Amodei — We Must Pace the Frontier — Dario Amodei
 

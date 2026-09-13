@@ -43,3 +43,9 @@ articles:
   content_mode: verbatim
   source_ids:
   - dario-amodei-we-must-pace-the-frontier-874a2fd9
+- id: countering-misuse-of-ai-september-2026-anthropic
+  title: 'Countering misuse of AI: September 2026 / Anthropic'
+  author: ''
+  content_mode: article
+  source_ids:
+  - countering-misuse-of-ai-september-2026-anthropic-d957d6c9
