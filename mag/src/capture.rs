@@ -639,6 +639,127 @@ pub struct CaptureArgs {
     pub mode: Option<String>,
 }
 
+fn pdf_to_extraction(pdf: &Path) -> Result<Extraction> {
+    let out = Command::new("uv")
+        .args(["run", "python", "tools/pdf2md.py"])
+        .arg(pdf)
+        .output()
+        .context("running tools/pdf2md.py (needs uv)")?;
+    if !out.status.success() {
+        bail!("pdf2md failed: {}", String::from_utf8_lossy(&out.stderr));
+    }
+    let article = String::from_utf8_lossy(&out.stdout).trim().to_string() + "\n";
+    if article.split_whitespace().count() < 50 {
+        bail!("pdf2md got almost no text out of {}", pdf.display());
+    }
+    let tail = article.split("Abstract").nth(1).unwrap_or(&article);
+    let synopsis = tail
+        .split_whitespace()
+        .take(40)
+        .collect::<Vec<_>>()
+        .join(" ");
+    Ok(Extraction {
+        article,
+        synopsis,
+        author: String::new(),
+        published: String::new(),
+    })
+}
+
+fn pdf_title(article: &str) -> Option<String> {
+    article
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .map(|l| {
+            l.trim_start_matches(['#', ' '])
+                .trim_end_matches(':')
+                .trim()
+                .to_string()
+        })
+        .filter(|t| !t.is_empty())
+}
+
+fn fetched_pdf(url: &str) -> Result<Option<PathBuf>> {
+    if !url
+        .split('?')
+        .next()
+        .unwrap_or("")
+        .to_lowercase()
+        .ends_with(".pdf")
+    {
+        return Ok(None);
+    }
+    fs::create_dir_all(RAW_DIR)?;
+    let tmp = PathBuf::from(RAW_DIR).join("fetched.pdf");
+    let out = Command::new("curl")
+        .args(["-sL", "--max-time", "180", "-A", USER_AGENT, "--fail", "-o"])
+        .arg(&tmp)
+        .arg(url)
+        .output()
+        .context("spawning curl")?;
+    if !out.status.success() {
+        bail!(
+            "fetching {url} failed (curl exit {})",
+            out.status.code().unwrap_or(-1)
+        );
+    }
+    let magic = fs::read(&tmp)?;
+    Ok(magic.starts_with(b"%PDF").then_some(tmp))
+}
+
+fn transcribe(html: &str, url: &str, sid: &str, spec: &ModelSpec) -> Result<(Extraction, f64)> {
+    let haystack = page_text(html);
+    let pres = pre_runs(html);
+    let prompt = capture_prompt(html, url)?;
+    let caller = Caller::new(Path::new(RAW_DIR));
+    let extraction = caller.call_with_parse(&format!("capture {sid}"), spec, &prompt, |reply| {
+        parse_reply(reply, &haystack, &pres)
+    })?;
+    Ok((extraction, caller.total_cost()))
+}
+
+type ResolvedInput = (Option<PathBuf>, String, Option<Extraction>);
+
+fn resolve_input(html_file: Option<&Path>, url: &str) -> Result<ResolvedInput> {
+    let pdf = match html_file {
+        Some(p) => fs::read(p)
+            .with_context(|| format!("reading {}", p.display()))?
+            .starts_with(b"%PDF")
+            .then(|| p.to_path_buf()),
+        None => fetched_pdf(url)?,
+    };
+    match &pdf {
+        Some(p) => Ok((pdf.clone(), String::new(), Some(pdf_to_extraction(p)?))),
+        None => {
+            let html = match html_file {
+                Some(p) => {
+                    fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?
+                }
+                None => curl_text(url)?,
+            };
+            Ok((None, html, None))
+        }
+    }
+}
+
+fn write_raw(pdf: &Option<PathBuf>, html: &str, sid: &str) -> Result<()> {
+    fs::create_dir_all(RAW_DIR)?;
+    let ext = if pdf.is_some() { "pdf" } else { "html" };
+    let raw_path = PathBuf::from(RAW_DIR).join(format!("{sid}.{ext}"));
+    match pdf {
+        Some(p) => {
+            fs::copy(p, &raw_path)?;
+        }
+        None => {
+            fs::write(&raw_path, html)
+                .with_context(|| format!("writing {}", raw_path.display()))?;
+        }
+    }
+    println!("  {sid}");
+    println!("  raw {ext}: {}", raw_path.display());
+    Ok(())
+}
+
 pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
     let (url, edition, tags, mode) = (
         args.url.as_str(),
@@ -660,12 +781,10 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
             );
         }
     }
-    let html = match html_file {
-        Some(p) => fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?,
-        None => curl_text(url)?,
-    };
+    let (pdf, html, pre_extraction) = resolve_input(html_file, url)?;
     let title = title_override
         .map(str::to_string)
+        .or_else(|| pre_extraction.as_ref().and_then(|e| pdf_title(&e.article)))
         .or_else(|| page_title(&html))
         .ok_or_else(|| anyhow!("could not extract a title from {url}; pass --title"))?;
     let sid = source_id(&title, url);
@@ -681,20 +800,15 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
         .or_else(|| intake_edition(&release_text))
         .ok_or_else(|| anyhow!("no --edition and no intake_edition_id in release-state.yaml"))?;
 
-    fs::create_dir_all(RAW_DIR)?;
-    let raw_path = PathBuf::from(RAW_DIR).join(format!("{sid}.html"));
-    fs::write(&raw_path, &html).with_context(|| format!("writing {}", raw_path.display()))?;
-    println!("  {sid}");
-    println!("  raw html: {}", raw_path.display());
+    write_raw(&pdf, &html, &sid)?;
 
-    let haystack = page_text(&html);
-    let pres = pre_runs(&html);
-    let prompt = capture_prompt(&html, url)?;
-
-    let caller = Caller::new(Path::new(RAW_DIR));
-    let extraction = caller.call_with_parse(&format!("capture {sid}"), spec, &prompt, |reply| {
-        parse_reply(reply, &haystack, &pres)
-    })?;
+    let (extraction, model_cost) = match pre_extraction {
+        Some(e) => {
+            println!("    pdf text converted directly, no model call");
+            (e, 0.0)
+        }
+        None => transcribe(&html, url, &sid, spec)?,
+    };
 
     let media_dir = src_dir.join("media");
     fs::create_dir_all(&media_dir)?;
@@ -743,8 +857,7 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
 
     let words = article.split_whitespace().count();
     println!(
-        "  captured: {words} words, {image_count} images, queued for {edition} (${:.2})",
-        caller.total_cost()
+        "  captured: {words} words, {image_count} images, queued for {edition} (${model_cost:.2})"
     );
     Ok(0)
 }

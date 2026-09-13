@@ -49,3 +49,9 @@ articles:
   content_mode: article
   source_ids:
   - countering-misuse-of-ai-september-2026-anthropic-d957d6c9
+- id: deepseek-v4-1-flash-pushing-the-limits-of-kv-cac
+  title: 'DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression'
+  author: DeepSeek-AI
+  content_mode: article
+  source_ids:
+  - deepseek-v4-1-flash-pushing-the-limits-of-kv-cac-737d50c2
