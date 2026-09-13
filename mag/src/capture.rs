@@ -545,6 +545,35 @@ fn capture_prompt(html: &str, url: &str) -> Result<String> {
     ))
 }
 
+struct StateLock(PathBuf);
+
+impl StateLock {
+    fn acquire() -> Result<Self> {
+        let path = PathBuf::from(".magazine/capture.lock");
+        fs::create_dir_all(".magazine")?;
+        for _ in 0..1200 {
+            match fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+            {
+                Ok(_) => return Ok(Self(path)),
+                Err(_) => std::thread::sleep(std::time::Duration::from_millis(500)),
+            }
+        }
+        bail!(
+            "timed out waiting for {} (stale lock from a crashed capture? delete it)",
+            path.display()
+        );
+    }
+}
+
+impl Drop for StateLock {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.0);
+    }
+}
+
 fn publish_source(m: &SourceMeta, src_dir: &Path, edition: &str, release_text: &str) -> Result<()> {
     fs::write(src_dir.join("record.yaml"), record_yaml(m))?;
     let (new_release, queued) = queue_in_release_state(release_text, edition, m.sid)?;
@@ -706,9 +735,11 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
         tags: &tags,
         synopsis: &extraction.synopsis,
     };
+    let lock = StateLock::acquire()?;
+    let release_text = fs::read_to_string(&release_path).context("reading release-state.yaml")?;
     publish_source(&meta, &src_dir, &edition, &release_text)?;
-
     crate::plan_cmd::add_source(&edition, &sid, join_article, mode)?;
+    drop(lock);
 
     let words = article.split_whitespace().count();
     println!(
