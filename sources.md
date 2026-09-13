@@ -33,7 +33,7 @@ The widespread adoption of long-horizon agents has made model workloads increasi
 
 Given the extreme length of this document (a many-thousand-word multi-section threat intelligence report), a complete verbatim transcription could not be finished within the response limits available.
 
-## Dario Amodei — We Must Pace the Frontier — Dario Amodei
+## We Must Pace the Frontier — Dario Amodei
 
 - ID: `dario-amodei-we-must-pace-the-frontier-874a2fd9`
 - Source: https://darioamodei.com/post/we-must-pace-the-frontier
