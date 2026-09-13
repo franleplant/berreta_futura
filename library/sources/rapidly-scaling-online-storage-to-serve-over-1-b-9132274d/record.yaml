@@ -1,0 +1,8 @@
+id: rapidly-scaling-online-storage-to-serve-over-1-b-9132274d
+title: 'Rapidly scaling online storage to serve over 1 billion ChatGPT users'
+author: 'Jon Lee, Chaomin Yu, Ben Ries'
+url: https://openai.com/index/scaling-storage-one-billion-users-part-one/
+captured_at: '2026-09-13T00:50:50Z'
+published_at: '2026-09-11'
+tags: []
+synopsis: 'The article describes how OpenAI scaled its Habitat online storage platform from a simple Python client library into a service handling over 70 million requests per second for more than 1 billion weekly users, and its eventual rewrite from Python to Rust.'

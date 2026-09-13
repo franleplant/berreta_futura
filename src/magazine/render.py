@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 import io
 import math
 import re
@@ -2081,10 +2083,17 @@ class _Typesetter:
                     MAX_VERBATIM_PAGES if article.content_mode == "verbatim" else MAX_ARTICLE_PAGES
                 )
                 if self.enforce_page_caps and page_count > page_cap:
-                    raise ValidationError(
-                        f"Article {article.id} spans {page_count} reader pages; the hard cap is "
-                        f"{page_cap}. Condense it as a faithful_synthesis before building."
-                    )
+                    if article.content_mode == "verbatim":
+                        print(
+                            f"WARNING: verbatim article {article.id} spans {page_count} reader "
+                            f"pages (cap {page_cap}); rendering anyway.",
+                            file=sys.stderr,
+                        )
+                    else:
+                        raise ValidationError(
+                            f"Article {article.id} spans {page_count} reader pages; the hard cap is "
+                            f"{page_cap}. Condense it as a faithful_synthesis before building."
+                        )
                 if self.enforce_page_caps and page_count < article.minimum_reader_pages:
                     raise ValidationError(
                         f"Article {article.id} spans {page_count} reader pages; its editorial minimum is "
