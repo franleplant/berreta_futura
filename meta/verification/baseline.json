@@ -1,0 +1,10 @@
+{
+  "schema_note": "per interior page of edition 010 (en) reader.pdf: the best parity tier achieved and the passing Tier S clauses, each entry bound to the staged-input digest it was computed from; mag parity refuses ratchet comparison when the current digest differs; raises are written only by verifiers (protocol rule 3)",
+  "page_entry_shape": {
+    "tier": "none | G1 | G2 | V1 | V2 | E",
+    "s_clauses_passing": ["page_count", "boxes", "text", "code_blocks", "color", "navigation", "critic"],
+    "staged_input_digest": "sha256"
+  },
+  "staged_input_digest": null,
+  "pages": {}
+}

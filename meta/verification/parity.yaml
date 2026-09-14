@@ -36,6 +36,30 @@ normalization:
   font_name_map:
     authored_by: WP-0.2b
     entries: {}
+tiers:
+  s:
+    box_tolerance_pt: 0.05
+    clauses:
+      - page_count
+      - boxes
+      - text
+      - code_blocks
+      - color
+      - navigation
+      - critic
+  g:
+    g1_pt: 2.0
+    g2_pt: 0.5
+  v:
+    dpi: 300
+    channel_delta: 24
+    v1_page_fraction: 0.01
+    v2_page_fraction: 0.001
+  e:
+    coordinate_quantum_pt: 0.01
+    link_rect_quantum_pt: 0.5
+    raster_bound:
+      authored_by: WP-0.2d
 tools:
   measured_at: WP-0.1
   os: macOS 26.6.2
