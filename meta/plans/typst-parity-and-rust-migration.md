@@ -1,14 +1,79 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-14, revision 11 (Phase 0 built and
+Status: **in execution**, 2026-09-14, revision 12 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
-adversarially and repaired). Companion to `rust-rewrite.md`
+adversarially and repaired, the content-final gate narrowed to where it
+bites). Companion to `rust-rewrite.md`
 (which moved orchestration to Rust and left the renderer in Python). This
 plan finishes the job: a Typst-based renderer implemented in Rust inside
 `mag`, proven equivalent to the WeasyPrint renderer by rendering **edition
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 12 changelog
+
+**The content-final gate moves from WP-2.0a to WP-3.1.** Reasoned from the
+plan's own design rather than from schedule pressure: every Phase 2
+comparison is a SAME-RUN comparison, both legs rendered from one staged
+copy in one invocation, so each asserts a property (the two legs agree)
+rather than a fact about a particular corpus. A property survives content
+churn; a cumulative claim does not. Nothing accumulates across runs until
+the ratchet starts recording per-page tiers, and the first WP whose
+acceptance depends on a baseline entry surviving from an earlier run is
+WP-3.1. WP-2.0b compares against a baseline that is still empty, and the
+staleness guard already refuses ratchet comparison and page-set scoring
+when the staged-input digest differs, so a mid-Phase-2 content change costs
+a re-render and a re-run of that WP's verify clauses, and invalidates
+nothing, because there is nothing yet to invalidate. Building the engine
+against a corpus that may move is also a better test of it than building
+against a frozen snapshot: an engine that only works on one pinned edition
+is overfitted, and Phase 2 would not find out.
+
+The two content-sensitive-looking cases are both same-run and therefore
+safe: WP-2.2b's Tier S page count compares the two legs of one render, so
+if 010 grows both legs grow, and WP-2.3 compares the layout result against
+the oracle leg's `edition-manifest.json` from the same staged copy. What
+this does require is that no verify clause hard-code a corpus fact, so
+rule 9 is extended: a pass condition quoting a number from the corpus must
+derive it from the oracle leg per run.
+
+**Duplication across the model ports is now a measured defect source, not a
+style question.** Three of six rejections in this run came from one
+behavior living in two places and drifting: WP-5.1c reintroduced by copying
+the exact `py_repr` defect WP-5.1b had already been rejected for and fixed,
+into the module with the widest exposure (25 call sites, any hand-authored
+string from edition.yaml). No test caught it because the 74-case corpus has
+no non-printable characters. So **WP-5.1d** consolidates the shared
+helpers, and the Phase 5 preamble now carries a rule for the remaining
+ports.
+
+**WP-5.7's oracle is re-scoped from byte-identity to transcription
+fidelity, and split so the fixtures exist first.** The WP confirmed
+`pdf2md.py` is deterministic, then blocked for two reasons that hold:
+matching it byte for byte means porting pypdf's text layer (1701 lines plus
+18452 of tables) and, worse, reproducing its self-described heuristics
+rather than the PDF specification; and the three fixtures the oracle names
+do not exist, so two would be synthetic and authored by the implementer,
+the pattern that has already caused two rejections. Byte-identity here
+anchors on an arbitrary choice and governs only FUTURE captures, since
+every committed article.md is never re-derived, so it is a counterfactual
+rather than a regression check. What the pipeline actually requires,
+verbatim source text, is testable directly. This is the one place the plan
+deliberately changes what "the same" means, so the reasoning is written out
+in WP-5.7, the fallback (a faithful port of pypdf's text layer) is named,
+and WP-5.7a builds a real fixture corpus with ground truth established by
+cross-extractor disagreement review BEFORE WP-5.7b chooses a library.
+Poppler is not a free substitute: it welds hyphenated line breaks, turning
+`input-\nheavy` into `inputheavy`, which is word corruption in a verbatim
+file.
+
+**And the lesson that keeps repeating, written where port WPs will read
+it**: a corpus-based oracle proves only what the corpus contains. Edition
+010 has no padded containers (which hid WP-5.1a's defect), no explicit
+ports and no non-printable characters (WP-5.1b's two and WP-5.1c's one).
+Every port WP must now state which branches its corpus cannot reach and
+cover them by fixture.
 
 ## Revision 11 changelog
 
@@ -189,8 +254,10 @@ Two decisions define this plan:
   reference and there is nothing to pin. 010 is also the live intake
   edition, so every verdict and baseline entry is bound to the
   staged-input digest it was computed from (see Reference stability), and
-  Phase 2 starts only once Fran records 010 content-final (the ninth
-  source landed).
+  PHASE 3 starts only once Fran records 010 content-final. Phase 2 builds
+  the engine against whatever 010 currently is: every Phase 2 comparison is
+  same-run, so it asserts agreement between the legs rather than a fact
+  about a corpus (revision 12).
 - **No human in any pass/fail verification.** The gate is display-list
   equality plus a raster comparison within a derived bound, both decidable
   by machine (revision 9 replaced "zero-diff" here; see Tier E). Fran appears
@@ -461,9 +528,20 @@ before/after comparisons (WP-4.3); out of scope here.
   refuses ratchet comparison and page-set scoring when the current digest
   differs, and the baseline is then rebased by the verifier from a fresh
   run. Page sets are stored as RULES in parity.yaml and computed per run
-  from the oracle leg's manifest, never as page-number values. Phase 2
-  starts only after Fran records 010 content-final (same shape as the
-  anchors-resolved-once clause).
+  from the oracle leg's manifest, never as page-number values.
+- **Where the content-final gate sits, and why there** (revision 12):
+  **WP-3.1**, the first WP whose acceptance depends on a baseline entry
+  surviving from an earlier run. Everything before it compares two legs of
+  ONE staged copy in ONE invocation, so it proves the legs agree rather
+  than anything about the corpus, and a content change costs a re-render
+  and a re-run of that WP's verify clauses. Phase 2 runs against an empty
+  baseline; no Phase 2 WP may write or raise a baseline entry, and the
+  first is written by WP-3.1's verifier. What a mid-Phase-2 content change
+  may NOT invalidate: nothing, because nothing accumulates before WP-3.1.
+  Recorded as a decision, not left implicit: gating Phase 2 on a live
+  intake edition would stall the whole engine build on a question the
+  staleness guard already answers, and would build the engine against a
+  frozen snapshot it could overfit to.
 - **Zero model calls.** `mag render` can invoke a model to patch figure
   anchors (`patch_anchors` in `mag/src/render.rs`); parity renders run
   `--no-model` (WP-0.0) and abort listing pending anchors instead. Edition
@@ -621,7 +699,8 @@ before/after comparisons (WP-4.3); out of scope here.
    irreversible happens. Revision 9 resolves the Phase 1 gates (1.1's
    residual, 1.2's match rate, 1.3's mechanism) as plan decisions, so what
    remains is: a discovered repo anomaly or failed spike (0.1, 5.7), 010
-   content-final before Phase 2, the post-flip typography change (4.3),
+   content-final before PHASE 3 (revision 12 moved it there from Phase 2),
+   the post-flip typography change (4.3),
    tools disposition and rollback deletion (6.1), and any new `blocked`
    finding that needs the plan changed (as WP-0.2d's raster bound did).
    A gated WP
@@ -639,6 +718,12 @@ before/after comparisons (WP-4.3); out of scope here.
    own number and WP-1.1's with a methodological difference that does not
    exist. Both were caught by audit rather than by the authoring WP, which
    is why it is a rule and not advice.
+   The same applies to the CORPUS: a pass condition may not hard-code a
+   number that edition 010 happens to have today (56 pages, nine articles,
+   84 link annotations). Derive it from the oracle leg of the same run.
+   Corpus figures belong in `## Metrics` as observations, never in a verify
+   clause as a threshold. This is what lets Phase 2 run against a live
+   intake edition at all.
 8. **The brief.** A subagent receives: its WP section verbatim, its phase
    preamble, and these sections: the parity ladder, Normalization,
    Reference stability, Architecture, and this protocol. The brief bounds
@@ -1152,6 +1237,25 @@ fallback.
   a plan revision: it would mean no single column width satisfies both
   engines, and the fix would have to move to the engine.
 - Feeds WP-2.2a's mapping table, which cites this WP for the number.
+- RESULT (done, accepted), with two corrections its verifier required.
+  The safe interval as MEASURED is `[+0.010, +0.039]` pt: the upper bound
+  of `+0.040` was never actually rendered, so the exclusivity at that end
+  is model-derived rather than observed, and the plan must not quote a
+  closed interval to `+0.040` as measured. **Two decimals suffice for
+  WP-2.2a**: both 325.02 and 325.03 sit inside the measured interval, so
+  the three-decimal figure in the evidence is unnecessary precision.
+- OBLIGATION carried to WP-3.1 (rule 9, third instance): WP-1.7's harness
+  reports 147/149 paragraphs and 962/968 lines at the unwidened measure
+  where WP-1.2 reports 148/149 and 963/968 for what both describe as the
+  same 149-block, 968-line population. One extra divergent block and one
+  extra differing line, neither named nor explained. It blocks nothing
+  (the interval is derived from `measure()` values independently of the
+  harness, and the recommended constant gives 149/149), but it is the
+  THIRD unreconciled cross-spike number in this execution, so it does not
+  get to sit unexplained. WP-3.1 scores body text at Tier E and will
+  surface any real discrepancy; start from WP-1.2's own record of
+  improving 147/149 to 148/149 once styled runs were preserved, which is
+  the likely difference.
 
 ### WP-1.5 apply the hyphenation decision (sanctioned oracle change)
 
@@ -1298,14 +1402,20 @@ is WP-3.4); verdict digest recorded.
 
 ## Phase 3: convergence
 
-Preamble (binds per rule 8): strictly serial, this order. Every Phase 3 WP
-except WP-3.0g owns `mag/src/typeset/**` plus its evidence file and NOTHING
-else; comparator territory is out of bounds (rule 4). Each WP is scored on
-its named `page_sets:` entry. Verification, identical for all: `mag parity
+Preamble (binds per rule 8): **Phase 3 does not start until Fran has
+recorded 010 content-final** (revision 12 moved that gate here from
+WP-2.0a: this is where claims start accumulating across runs, and a moving
+corpus makes a per-page ratchet meaningless). Strictly serial, this order.
+Every Phase 3 WP except WP-3.0g owns `mag/src/typeset/**` plus its evidence
+file and NOTHING else; comparator territory is out of bounds (rule 4). Each
+WP is scored on its named `page_sets:` entry. Verification, identical for all: `mag parity
 010` green against `baseline.json` (no page regresses; raises are the
 verifier's), and the named page set at the named standard.
 
-- **WP-3.1 body text** (`page_sets.body`): Tier S text+color + G2.
+- **WP-3.1 body text** (`page_sets.body`): Tier S text+color + G2. Also
+  carries WP-1.2's single break miss and WP-1.7's unreconciled 147/149
+  versus 148/149 count: both must be resolved here or reported as real
+  divergences, not inherited as folklore.
 - **WP-3.2 headings, openers, TOC** (`page_sets.openers`): Tier S + G2;
   opener-fit booleans exact.
 - **WP-3.3 code blocks and extracts**: 010 carries neither, so this WP
@@ -1342,6 +1452,25 @@ tools from `cargo test`; they do not use `mag parity`. Python-side oracle
 dumps are produced by full inline invocations (`uv run python -c '...'`)
 recorded verbatim in `## Commands` so the verifier reproduces them; no
 uncommitted scripts.
+
+**A corpus-based oracle proves only what the corpus contains.** This is the
+single most repeated lesson of the execution so far. Edition 010 has no
+padded containers, which hid WP-5.1a's defect; no explicit ports and no
+non-printable characters, which hid WP-5.1b's two and WP-5.1c's one. So
+every port WP must state in evidence **which branches of its source module
+the corpus cannot reach**, and cover those by fixture. WP-5.1c did this
+well for the manifest's refusal branches and badly for character classes,
+and the character class is what bit. Enumerate by reading the Python for
+branches, not by reading the corpus for cases.
+
+**A helper that exists twice will drift.** Three of the six rejections in
+this run came from one behavior living in two places: WP-5.1c reintroduced,
+by copying, the exact `py_repr` defect WP-5.1b had already been rejected
+for and fixed, into the module with the widest exposure. A port WP may not
+copy a helper out of another model module. Import it, or, where rule 1's
+Owns boundary genuinely forbids that, add a test asserting the two copies
+agree on a shared case list and say in evidence why importing was not
+possible. WP-5.1d then consolidates.
 
 **Deliberate divergence, and its limits.** Where the Python CRASHES, the
 port does not reproduce the crash. Porting a crash is not fidelity, and
@@ -1390,6 +1519,24 @@ them or the divergence is a defect:
   `manifest.py`, provoked by fixture, mapped to a Rust error variant +
   message substring; enumerated in evidence, checked by the verifier
   against the raise sites.
+- **WP-5.1d consolidate the model helpers**: owns `mag/src/model/doc.rs`,
+  `records.rs`, `manifest.rs` and a new shared module. Target: `ValidationError`,
+  `py_repr`, and `io.py`'s `load_structured` and `safe_project_path` exist
+  in ONE place, with NO behavior change. This WP exists because the
+  duplication already shipped a defect: `manifest.rs` carried a copy of
+  `records.rs`'s `py_repr` that was the PRE-FIX body, reintroducing the
+  exact defect WP-5.1b had been rejected for, in the module with 25 call
+  sites over hand-authored `edition.yaml` text where anchors and extract
+  markers are pasted from the web. Five of seven probes diverged and no
+  test caught it, because the 74-case corpus holds no non-printable
+  characters.
+  Verify: every oracle in WP-5.1a, WP-5.1b and WP-5.1c replays
+  byte-identically before and after, plus a duplicate-helper audit that
+  FAILS if any helper is defined in two model modules. Sequencing: lands
+  only after WP-5.1b and WP-5.1c are both accepted, or it collides with
+  their reworks. It is a refactor, so it may not change a single oracle
+  byte; if it does, that is a defect in the consolidation, not a new
+  finding.
 - **WP-5.2 booklet imposition** (`booklet.py`): owns `mag/src/impose.rs`.
   Oracle: impose the same 010 reader.pdf both ways; display-list equality
   and raster zero-diff per sheet, spread order text identical. Zero-diff is
@@ -1450,11 +1597,90 @@ them or the divergence is a defect:
   Verify: bridge outputs pre-generated; with `uv` removed from PATH, render
   010 `--engine typst` and `mag parity 010 --pre-rendered` against the
   bridge outputs: Tier E green, package/web oracles green.
-- **WP-5.7 capture's PDF transcription** (`tools/pdf2md.py`): owns
-  `mag/src/capture.rs` (the `uv run` call site), `mag/src/pdf_text.rs`.
-  First step: read `pdf2md.py`, record whether it is deterministic. Oracle:
-  byte-identical markdown on three captured-PDF fixtures if deterministic,
-  else `awaiting-fran` with the variance and a proposed structural oracle.
+- **WP-5.7 capture's PDF transcription** (`tools/pdf2md.py`): SUPERSEDED by
+  WP-5.7a and WP-5.7b below. The original WP asked for byte-identical
+  markdown against `pdf2md.py` on three captured-PDF fixtures, and it
+  ended `blocked` having established the one thing it was told to check
+  first: `pdf2md.py` IS deterministic (three runs byte-identical at both
+  the markdown and raw-extraction level, the wrapper provably pure, scoped
+  to pypdf 6.14.2 which nothing pins). It blocked on two findings the plan
+  had not anticipated, both of which stand up:
+  1. byte-identity is a LIBRARY port, not a script port: a real extraction
+     drives 90 pypdf functions across 12 modules, and while `lopdf` covers
+     the object model, reader and filters, the text layer is 1701 lines
+     over four modules plus 18452 lines of data tables. What would be
+     reproduced is pypdf's HEURISTICS, not the PDF specification:
+     `crlf_space_check` breaks a line at `0.8 * min(...)`, `_handle_tf`
+     sets the space width to HALF a space and says so in a comment, and TJ
+     is never treated as an operator, being decomposed into synthetic `Tj`
+     calls that inject a space when `abs(op) >= _space_width * 0.95`. Since
+     `pdf2md.py` derives paragraphs from `splitlines()`, any one of those
+     shifting a break shifts the markdown: it is all or nothing.
+  2. the oracle's three fixtures do not exist. The repository holds exactly
+     ONE real captured PDF and no `library/sources` record carries a `.pdf`
+     URL, so two of three would be synthetic and authored by the same agent
+     that chose which paths to implement. That is the masked-defect pattern
+     which has already produced two rejections in this execution.
+
+  **Decision (revision 12): re-scope the oracle from byte-identity to
+  transcription fidelity.** The reasoning, because this is the one place
+  the plan deliberately changes what "the same" means:
+  - Byte-identity here anchors on an arbitrary choice. pypdf is one
+    extractor among several, and the specific numbers that would have to be
+    reproduced are self-described hacks. Reproducing a hack to stay
+    byte-equal to a tool being deleted is the same category as porting a
+    crash, which revision 11 already ruled is not fidelity.
+  - Nothing is being regenerated. Every article.md captured so far is
+    committed and is NEVER re-derived, so byte-identity could only ever
+    govern FUTURE captures, where there is no prior artifact to match. It
+    is a counterfactual, not a regression check. Existing sources keep
+    their text exactly as captured; this decision changes no committed
+    article.md, which the verbatim rule in `CLAUDE.md` requires.
+  - What the pipeline actually needs IS testable, and more directly:
+    article.md must be the source's substantive text verbatim.
+  This is a narrowing of scope only where the old criterion was arbitrary;
+  it is not permission to accept worse transcription. If no available Rust
+  extractor can meet the quality checks below, the fallback is the faithful
+  port of pypdf's text layer as 2 to 3 WPs, and that is a plan revision.
+  Keeping `pdf2md.py` as a Python exception is rejected: it strands an
+  entire toolchain in the pipeline for one script and defeats WP-6.1.
+
+- **WP-5.7a the PDF fixture corpus and the fidelity spec** (evidence and
+  fixtures only; owns `mag/tests/pdf_fixtures/` and its evidence). Exists
+  BEFORE any extractor is chosen, and is authored by someone other than
+  WP-5.7b's implementer, because implementer-authored fixtures have now
+  failed twice.
+  - Target: at least five REAL PDFs, captured from the wild rather than
+    synthesized, spanning the shapes capture actually meets (a
+    multi-column paper, a report with tables, one with code blocks, one
+    with ligature-heavy body text, the existing 51-page /Type1 sample).
+    For each, ground truth for the passages that matter, established by
+    DISAGREEMENT REVIEW rather than by assertion: run two independent
+    extractors, and wherever they differ, record which is right and why.
+    Agreement is evidence; disagreement is where the work is.
+  - Target: the fidelity checks, as machine-decidable assertions, at
+    minimum: a line-end hyphen is never silently deleted (poppler 25.08.0
+    WELDS them, turning `input-\nheavy` into `inputheavy` and
+    `DeepSeek-V4.1-\nFlash` into `DeepSeek-V4.1Flash`, which is word
+    corruption in a file the magazine treats as verbatim); real hyphens
+    survive; reading order matches the ground truth; fenced code survives
+    intact; no text dropped and none duplicated.
+  - Verify: the checks run against BOTH pypdf's output and poppler's on
+    all five fixtures, and the results are recorded. Neither is required
+    to pass. The point is to prove the checks discriminate before anything
+    is built against them.
+
+- **WP-5.7b the Rust transcription** (owns `mag/src/pdf_text.rs`,
+  `mag/src/capture.rs`'s `uv run` call site). Depends on WP-5.7a.
+  - Target: extraction in Rust passing every WP-5.7a check on every
+    fixture, with anything unhandled (encrypted, no `/ToUnicode`, CID
+    fonts without a usable mapping) failing loud rather than guessing. The
+    extractor library is chosen on measured fidelity and recorded.
+  - Verify: the WP-5.7a checks green, plus the determinism property the
+    original WP established, three runs byte-identical. Record the pypdf
+    diff on the real fixture as an observation, not a pass condition: it
+    says where the two disagree, which is useful, and proves nothing about
+    which is right.
 
 ## Phase 4: the gate, the flip, and the hyphenation proof
 
@@ -1553,7 +1779,8 @@ which the parallel presentation below otherwise hides
 WP-0.0c (independent, owns html_edition.py alone) -> WP-2.3
 WP-1.5 -> WP-2.0a                      (decision recorded, no Fran gate left)
 WP-2.0a -> WP-2.0b
-(010 content-final, Fran-recorded) -> WP-2.0a
+(010 content-final, Fran-recorded) -> WP-3.1   (revision 12: was WP-2.0a;
+   Phase 2 is same-run throughout, the ratchet starts at WP-3.1)
 WP-5.1a -> WP-5.1b -> WP-5.1c
 WP-5.1c + WP-2.0b -> WP-2.1 -> WP-2.2a -> WP-2.2b -> WP-2.2c -> WP-2.3
 WP-1.6 (done) -> WP-1.7 (evidence only) -> WP-2.2a (cites its interval)
@@ -1627,8 +1854,9 @@ serial.
   WP-5.4), the editorial path is out of scope (see Scope notes), and
   `--adhoc` gives a free cross-check on any other edition at any time.
 - **010 is the live intake edition**: the staleness guard binds every
-  verdict and baseline entry to its staged-input digest, and Phase 2 waits
-  for Fran's content-final record.
+  verdict and baseline entry to its staged-input digest, and PHASE 3 waits
+  for Fran's content-final record. Phase 2 proceeds against a moving
+  corpus by design, since every comparison there is same-run.
 
 ## Non-goals
 
