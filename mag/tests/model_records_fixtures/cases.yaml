@@ -335,3 +335,59 @@
     - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
   rows:
     - {id: x1, caption: Leyenda, anchor: ''}
+- name: figures_unsafe_path_nul
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: "../x\u0000y.png", caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_unsafe_path_bell
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: "../x\u0007y.png", caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_unsafe_path_escape
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: "../x\u001by.png", caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_unsafe_path_next_line
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: "../x\u0085y.png", caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_unsafe_path_zero_width_space
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: "../x\u200by.png", caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: localize_extracts_not_a_list
+  kind: localize_extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+  rows: nope
+- name: localize_extracts_missing_and_unknown
+  kind: localize_extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+  rows:
+    - {id: xz, caption: Leyenda, anchor: Encabezado Alfa}

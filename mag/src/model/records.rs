@@ -102,13 +102,19 @@ fn host_and_port(netloc: &str) -> Result<(String, Option<u32>)> {
     };
     let parsed = if port.is_empty() {
         None
+    } else if !port.chars().all(|character| character.is_ascii_digit()) {
+        return Err(ValidationError::one(format!(
+            "Port could not be cast to integer value as {}",
+            py_repr(port)
+        )));
     } else {
-        let number: u32 = port.parse().map_err(|_| {
-            ValidationError::one(format!(
-                "Port could not be cast to integer value as {port:?}"
-            ))
-        })?;
-        if number > 65535 {
+        let digits = port.trim_start_matches('0');
+        let number: u32 = if digits.is_empty() {
+            0
+        } else {
+            digits.parse().unwrap_or(u32::MAX)
+        };
+        if digits.len() > 5 || number > 65535 {
             return Err(ValidationError::one(
                 "Port out of range 0-65535".to_string(),
             ));
@@ -184,7 +190,7 @@ pub fn canonicalize_url(url: &str) -> Result<String> {
     query.sort();
     let (hostname, port) = host_and_port(&parts.netloc)?;
     let mut host = hostname;
-    if let Some(number) = port {
+    if let Some(number) = port.filter(|number| *number != 0) {
         let default =
             (parts.scheme == "http" && number == 80) || (parts.scheme == "https" && number == 443);
         if !default {
@@ -235,11 +241,32 @@ fn py_repr(text: &str) -> String {
                 out.push('\\');
                 out.push(other);
             }
-            other => out.push(other),
+            other if printable(other) => out.push(other),
+            other => out.push_str(&escape(other)),
         }
     }
     out.push(quote);
     out
+}
+
+fn printable(character: char) -> bool {
+    character == ' ' || !nonprintable().is_match(character.encode_utf8(&mut [0; 4]))
+}
+
+fn nonprintable() -> &'static Regex {
+    static PATTERN: OnceLock<Regex> = OnceLock::new();
+    PATTERN.get_or_init(|| Regex::new(r"^[\p{C}\p{Z}]$").expect("the pattern compiles"))
+}
+
+fn escape(character: char) -> String {
+    let point = character as u32;
+    if point < 0x100 {
+        format!("\\x{point:02x}")
+    } else if point < 0x10000 {
+        format!("\\u{point:04x}")
+    } else {
+        format!("\\U{point:08x}")
+    }
 }
 
 fn slashes() -> &'static Regex {
@@ -406,7 +433,12 @@ fn truthy(value: Option<&String>) -> bool {
 impl SourceRecord {
     pub fn create(request: &NewRecord) -> Result<Self> {
         let canonical = canonicalize_url(request.url)?;
-        let resolved = request.title.unwrap_or(&canonical).trim().to_string();
+        let resolved = request
+            .title
+            .filter(|title| !title.is_empty())
+            .unwrap_or(&canonical)
+            .trim()
+            .to_string();
         let mut unique: BTreeSet<String> = BTreeSet::new();
         for tag in request.tags {
             let cleaned = tag.trim();

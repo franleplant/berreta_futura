@@ -1,0 +1,26 @@
+{
+  "https://e.com: 80/": {
+    "python_value_error": "Port could not be cast to integer value as ' 80'"
+  },
+  "https://e.com:+80/": {
+    "python_value_error": "Port could not be cast to integer value as '+80'"
+  },
+  "https://e.com:-1/": {
+    "python_value_error": "Port could not be cast to integer value as '-1'"
+  },
+  "https://e.com:65536/": {
+    "python_value_error": "Port out of range 0-65535"
+  },
+  "https://e.com:80 /": {
+    "python_value_error": "Port could not be cast to integer value as '80 '"
+  },
+  "https://e.com:99999999999999/": {
+    "python_value_error": "Port out of range 0-65535"
+  },
+  "https://e.com:abc/": {
+    "python_value_error": "Port could not be cast to integer value as 'abc'"
+  },
+  "https://e.com:٨/": {
+    "python_value_error": "Port could not be cast to integer value as '٨'"
+  }
+}
