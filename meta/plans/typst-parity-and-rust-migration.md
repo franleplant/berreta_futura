@@ -1,883 +1,758 @@
 # Typst parity and the full-Rust migration
 
-Status: **proposed**, 2026-09-13, revision 6 (after four critic rounds;
-revision 6 removes humans from every pass/fail verification: the gate is
-display-list equality plus raster zero-diff, both mechanical. Fran appears
-only where the plan itself must change).
-Companion to `rust-rewrite.md` (which moved orchestration to Rust and left the
-renderer in Python). This plan finishes the job: a Typst-based renderer
-implemented in Rust inside `mag`, proven equivalent to the WeasyPrint renderer
-by rendering the same editions with both engines and comparing until they
-match, then porting every remaining Python module to Rust and deleting
-`src/magazine/`.
+Status: **proposed**, 2026-09-13, revision 8 (five critic rounds; the last
+one dissected the actual 010 render). Companion to `rust-rewrite.md`
+(which moved orchestration to Rust and left the renderer in Python). This
+plan finishes the job: a Typst-based renderer implemented in Rust inside
+`mag`, proven equivalent to the WeasyPrint renderer by rendering **edition
+010 (en)** with both engines and comparing mechanically until they are
+exactly the same, then porting every remaining Python module to Rust and
+deleting `src/magazine/`.
+
+Two decisions define this revision:
+
+- **The target is edition 010, English.** One edition, the current one,
+  already rendered (56 pp, figures, two verbatim articles, inline code, no
+  extracts, no fenced code blocks, no editorial; `cover.layout:
+  footer_caption`). No frozen corpus, no content pinning, no translations:
+  `mag parity` renders BOTH engines in one invocation from ONE staged copy
+  of the working tree, so the WeasyPrint leg of the same run is the
+  reference and there is nothing to pin. 010 is also the live intake
+  edition, so every verdict and baseline entry is bound to the
+  staged-input digest it was computed from (see Reference stability), and
+  Phase 2 starts only once Fran records 010 content-final (the ninth
+  source landed).
+- **No human in any pass/fail verification.** The gate is display-list
+  equality plus raster zero-diff, both decidable by machine. Fran appears
+  only where the plan itself must change (a fallback choice, an irreversible
+  deletion), never as an approver of sameness.
 
 The plan is executed by independent subagents. Every work package (WP) is a
-self-contained brief. Protocol rule 8 defines exactly what a subagent
-receives; a WP is done only on verifier acceptance (rule 3), never on its own
-say-so.
-
-One standing sanction this plan needs from Fran up front: the verification
-scaffolding under `meta/verification/` (corpus pins, golden artifacts,
-baselines, evidence files) is temporary migration tooling, deleted with
-WP-6.1. It exists despite the repo's no-pinning rule because parity against a
-moving target is meaningless; approving this plan approves that exception for
-the plan's lifetime.
+self-contained brief (protocol rule 8); a WP is done only on verifier
+acceptance (rule 3), never on its own say-so.
 
 ## End state
 
 - `mag render <NNN>` typesets the A5 reader with an embedded Typst engine,
   natively in Rust.
-- The Typst output has been proven equivalent to the WeasyPrint output on a
-  frozen corpus of editions, page by page, through the parity ladder below,
-  and Fran has signed off on the final side-by-side proof.
+- Edition 010 (en) rendered by Typst is Tier E-equal to the WeasyPrint
+  render: identical display lists, zero-diff rasters, all structural checks
+  green, verified by `mag parity 010` exiting 0.
 - `measure_article` / `measure_edition` / `render_edition` are native `mag`
   operations; the JSON bridge is gone.
 - Booklet imposition, cover compilation, render criticism, preflight,
   packaging, the web edition, and capture's PDF transcription helper are
-  Rust, each proven against its Python original as the oracle before that
-  original is deleted.
-- No Python runs anywhere in the pipeline. `tools/*.py` side tools are
-  individually dispositioned (ported, deleted, or explicitly kept by Fran) in
-  WP-6.1; the module disposition table in Appendix A covers every Python file
-  in the repo.
+  Rust, each proven against its Python original on edition 010's outputs
+  before that original is deleted.
+- No Python runs anywhere in the pipeline (Appendix A dispositions every
+  Python file in the repo).
+
+Scope notes, stated up front: the Typst engine targets the current format
+(editions 010+: no opening editorial). Translations (es) are not part of
+parity; the typeset path gains translation loading when a translated edition
+next needs it, as ordinary post-flip work. After WP-6.1 deletes WeasyPrint,
+pre-010 editions can no longer be re-rendered byte-faithfully; reprints of
+them would need the editorial feature added to the Typst engine first.
 
 ## What "EXACTLY the same" means (the parity ladder)
 
-Two different layout engines never produce byte-identical PDFs: object
-ordering, font subsetting, and compression differ even when every glyph sits
-at the same coordinate. "Exactly the same" is therefore defined at the level
-of the printed and read page, and it is strict.
+Two engines never produce byte-identical PDF files: object ordering, font
+subsetting, and compression differ even when every glyph sits at the same
+coordinate. Equality is therefore defined at the level that determines what
+a printer or reader receives: the drawing operations.
 
 ### The compared artifact
 
 Until the comparator's domain switch (WP-5.4g), the compared unit is the
-**interior domain**: pages 2 through n-1 of the oracle's `reader.pdf` versus
-pages 2 through n-1 of the Typst engine's `interior.pdf`, with n required
-equal (Tier S). This works because the bridge builds `reader.pdf` by
+**interior domain**: pages 2 through n-1 of the WeasyPrint `reader.pdf`
+versus pages 2 through n-1 of the Typst `interior.pdf`, with n required
+equal. This needs no oracle change: the bridge builds `reader.pdf` by
 replacing only the outer pages of the interior with the compiled covers
-(`replace_outer_pages` in `src/magazine/cover.py`), so interior pages 2..n-1
-pass through pypdf untouched in content, and it requires no change to the
-frozen oracle. Because the oracle side has passed through a pypdf rewrite and
-the Typst side has not, WP-0.2c calibrates merge invariance (see its verify)
-before any content-stream comparison is trusted. The Typst engine renders its
-interior with the same placeholder outer pages the WeasyPrint interior
-carries, so page numbering and folios align. From WP-5.4g on, `reader.pdf`
-is compared end to end, covers included.
+(`replace_outer_pages` in `src/magazine/cover.py`), so inner pages pass
+through pypdf with content intact; WP-0.2c calibrates that rewrite's noise
+before stream comparisons are trusted. The Typst interior carries the same
+placeholder outer pages, so numbering and folios align. From WP-5.4g on,
+`reader.pdf` is compared end to end.
 
-### Tier S (structural and content, exact, no tolerance)
+### Tier S (structural, exact, no tolerance)
 
-For every corpus edition and language, over the compared domain:
+Over the compared domain of edition 010 (en):
 
-- identical page count, read from the PDFs with `pdfinfo`, not from
-  engine-reported JSON
-- per-page MediaBox, CropBox, and TrimBox equal within 0.05 pt
-- per-page extracted text identical after normalization (see Normalization)
-- **code blocks**, in two halves because a PDF has no bytes to compare: at
-  the input level, the fenced runs in each engine's staged input (manuscript
-  for the oracle, source-tree projection for Typst) byte-equal the captured
-  `library/sources/<id>/article.md` runs; at the PDF level, engine vs engine
-  only, per-line word sequences and x-positions inside code-block boxes
-  (from `pdftotext -bbox-layout`, or content-stream text runs) identical
-  under the code normalization, which preserves internal whitespace.
-  PDF-vs-article.md byte comparison is never performed
+- identical page count, read with `pdfinfo`, never from engine-reported JSON
+- per-page MediaBox, CropBox, TrimBox equal within 0.05 pt
+- per-page extracted text identical after normalization
+- **code blocks**, in two halves because a PDF has no bytes: at the input
+  level, the fenced runs in each engine's staged input byte-equal the
+  captured `library/sources/<id>/article.md` runs; at the PDF level, engine
+  vs engine only, text runs inside code-block boxes identical under the code
+  normalization (internal whitespace preserved). PDF-vs-article.md byte
+  comparison is never performed
 - every figure and extract on the same page in both outputs
-- **color**: the sequence of (text-run, fill color) pairs and the set of
-  rule/background fill and stroke colors per page, extracted from the PDF
-  content streams, numerically equal after color-space normalization, and
-  both PDFs in the same color space family. Rasters cannot see near-black
-  ink differences (the body ink is `rgb(5.5% 7.5% 8.5%)`, not black); this
-  clause is what catches them
-- **navigation**: normalized link-annotation list per page (subtype, rect
-  quantized to 0.5 pt, destination page) and the outline/bookmark tree,
-  restricted to entries whose destinations land inside the compared domain;
-  entries targeting outer pages join at WP-5.4g. Document Title and Lang
-  equal; CreationDate/ModDate/Producer/trailer ID stripped and never
-  compared
-- the oracle's render-critic result is `pass` (guards oracle validity). The
-  critic verdict on the Typst output joins Tier S at WP-5.3g; the final gate
-  (WP-4.1) requires it
+- **color**: per-page (text-run, fill color) sequences and rule/background
+  paint from the content streams numerically equal after color-space
+  normalization; same color space family (raster thresholds cannot see the
+  near-black `rgb(5.5% 7.5% 8.5%)` body ink against pure black; this clause
+  can)
+- **navigation**: link annotations (subtype, rect quantized 0.5 pt,
+  destination page) and outline entries whose destinations land inside the
+  compared domain; document Title and Lang; dates/Producer/trailer ID
+  stripped and never compared
+- the WeasyPrint leg's render-critic result is `pass` (guards reference
+  validity); the Typst leg's critic verdict joins at WP-5.3g
 
-### Tier G (geometric, ratcheting tolerance)
+### Tier G and Tier V (progress meters only)
 
-Per page over the compared domain, from `pdftotext -bbox-layout`
-(flow/block/line/word structure) emitted by the pinned poppler:
+Used to measure convergence during Phase 3; they gate nothing final.
 
-- same line count per prose block; per line, x of the first word box and the
-  line box's y within tolerance; figure/ornament boxes within tolerance
-- ratchet: G1 = 2.0 pt, G2 = 0.5 pt, G3 = 0.1 pt
-- if WP-0.2a finds the extractor's coordinate precision too coarse for G3,
-  G3 geometry is measured from the content streams (WP-0.2b machinery)
-  instead; the choice is recorded in parity.yaml, once, before Phase 3
+- G, from `pdftotext -bbox-layout` (pinned poppler): same line count per
+  prose block; per-line first-word x and line y within tolerance; G1 =
+  2.0 pt, G2 = 0.5 pt (G3 = 0.1 pt is subsumed by Tier E's quantum)
+- V, from pinned `pdftoppm -r 300` (hard fail on raster dimension
+  mismatch): pixel differs when any channel delta exceeds 24/255; V1 =
+  below 1.0% of the page differing, V2 = below 0.1%
 
-### Tier V (visual, ratcheting tolerance)
+### Tier E (exact; the gate; fully mechanical)
 
-Per page, both PDFs rasterized by the same pinned `pdftoppm -r 300`; the
-comparator hard-fails (never skips) if the two rasters differ in pixel
-dimensions. A pixel differs when any channel delta exceeds 24/255; a cluster
-is a 4-connected component measured by pixel area:
+- **canonical display list**: both PDFs dumped by one pinned device-level
+  tracer (`mutool trace` or a Rust content-stream interpreter; decided in
+  WP-0.2b, recorded in parity.yaml) and normalized per page IN PAINT ORDER
+  (never sorted: sorting erases z-order; the diff REPORTER may sort for
+  readability, the comparison never does): every text show as (Unicode
+  string, font name via the `font_name_map`, size, fill color, position),
+  every vector path as (operators, points, paint, stroke parameters), every
+  clip operation as an ordered entry so each element carries its active
+  clip stack (010's interior uses `W`/`W*` clipping heavily), every image
+  as (SHA256 of decoded RGBA pixels with any SMask composited into the
+  alpha channel before hashing, placement rect), plus annotations,
+  outlines, page boxes. Coordinates quantized at 0.01 pt; colors in one
+  normalized space. Any ExtGState alpha other than 1 is fail-loud
+  unsupported (today all 162 entries in 010 are `/ca 1 /CA 1`). The two
+  canonical lists must be **equal**.
+- **raster guard**: both PDFs through pinned `pdftoppm -r 300`; every
+  differing pixel within `parity.yaml raster_bound`. The bound is not a
+  tunable tolerance: it is the measured consequence of the 0.01 pt
+  quantum, derived once by WP-0.2d's perturbation fixture (the WeasyPrint
+  leg's streams re-emitted with every coordinate perturbed uniformly
+  within half a quantum, rasterized, max per-channel delta recorded).
+  Sub-quantum float noise on antialiased edges legitimately reaches
+  several /255, so a naive 1/255 bound would be unreachable across
+  engines; the derived bound is exactly as tight as the quantum permits
+  and nothing more.
+- every Tier S clause.
 
-- ratchet: V1 = differing pixels below 1.0% of the page, V2 = below 0.1%,
-  V3 = below 0.02% with a cluster-area cap, AND per-page mean absolute
-  channel delta at or below 1/255 (catches large-area uniform shifts that
-  per-pixel thresholds ignore)
-- V3's numbers are **provisional**: a glyph edge shifted by the 0.4 px that
-  G3 still allows can antialias into clusters far larger than any naive
-  cap, so WP-0.2d measures cluster-area distributions at seeded offsets of
-  0.02/0.05/0.1/0.2 pt and the final V3 thresholds (cluster cap, or
-  per-word-box cluster evaluation gated on that page having passed G3) are
-  set from that data by the Fran-gated tightening WP-3.0g before WP-3.7
-
-### Tier F (Fran)
-
-A proof sheet interleaving both renders page by page at original resolution
-(`mag parity --proof-sheet`, WP-0.2c), with a SHA256 manifest of the sheets.
-Approval is per manifest; a new render invalidates it. The approval is
-recorded by Fran personally: a commit authored by Fran or a line Fran types
-into the evidence file, citing the manifest digest. A subagent transcribing
-"Fran approved" is not a record.
-
-**"EXACTLY the same" = Tier S + G3 + V3 + F over the whole frozen corpus.**
-The ratchets exist so early WPs land at G1/V1 and later WPs tighten; the
-default-engine flip happens only at the full standard. If a specific residual
-proves irreducible at G3/V3, it goes on the residual ledger (WP-3.7) with its
-cause, and only Fran may accept it; a subagent never may.
+**"EXACTLY the same" = Tier E over every compared page of edition 010
+(en).** No residual-acceptance path exists: a divergence that cannot be
+driven to Tier E is `Status: blocked` and a plan revision (fail loud), never
+a waiver.
 
 ### Known divergence sources and their treatment
 
 | Source | Treatment |
 |---|---|
 | Line breaking (Typst optimizes, WeasyPrint is greedy) | `par(linebreaks: "simple")` in the Typst template for the parity phase |
-| Hyphenation dictionaries (Pyphen vs Typst's hypher) | the design hyphenates today (`hyphens: auto` in `src/magazine/assets/weasyprint-a5.css`, with `manual` carve-outs for code, reference lists, name rosters). WP-1.3 measures and recommends; WP-1.5 applies the Fran-approved choice to both engines and regenerates goldens. Parity is never scored against a moving target |
-| Justification | the design is ragged-right (no `text-align: justify` in the CSS); WP-1.2 confirms this and the justification contingency is dropped unless the confirmation fails |
-| Text shaping (Pango+HarfBuzz vs rustybuzz) | same vendored TTFs; WP-1.1 proves advance-width parity before any layout work |
-| Syntax highlighting (pygments vs syntect) | token-boundary and color parity checked at the content-stream level (WP-3.3), never by raster |
-| pypdf rewrite noise on the oracle's inner pages | measured by WP-0.2c's merge-invariance calibration; any rewrite-induced stream difference becomes a normalization rule, recorded, before it can be mistaken for an engine diff |
-| PDF metadata, font subset names, object order, compression | normalized away or never compared, as listed in Tier S |
+| Hyphenation dictionaries (Pyphen vs Typst's hypher) | the design hyphenates (`hyphens: auto` in `src/magazine/assets/weasyprint-a5.css`, `manual` carve-outs for code, reference lists, name rosters). WP-1.3 measures, WP-1.5 applies the decided mechanism to both engines. Parity is never scored against a moving target |
+| Justification | the design is ragged-right (no `text-align: justify` in the CSS); WP-1.2 confirms |
+| Text shaping (Pango+HarfBuzz vs rustybuzz) | same vendored TTFs; WP-1.1 proves advance parity before any layout work |
+| Syntax highlighting (pygments vs syntect) | (text-run, fill color) sequences at the content-stream level (WP-3.3), never raster; 010 carries NO fenced code blocks or extracts, so WP-3.3 gates on a dedicated fixture edition, not vacuously on 010 |
+| Font names (WeasyPrint embeds aliases: Magazine-Serif, Magazine-Sans, ...; Typst embeds the faces' real names) | `parity.yaml font_name_map`, authored in WP-0.2b, each mapping pair validated by identical font-file digests |
+| pypdf rewrite noise on inner pages | measured by WP-0.2c's merge calibration; found noise becomes an explicit normalization rule before it can be mistaken for an engine diff |
+| PDF metadata, subset names, object order, compression | normalized away or never compared |
 
-After the flip, Typst-native improvements (optimized line breaks, native
-hyphenation if it was disabled) are separate, Fran-approved design changes
-with their own before/after proofs. They are out of scope here, except the
-mandatory post-flip hyphenation proof (WP-4.3, if WP-1.5 chose option (b)).
+Post-flip Typst-native improvements (optimized breaking, native hyphenation
+if disabled during parity) are deliberate design changes with their own
+before/after comparisons (WP-4.3); out of scope here.
 
-## Normalization (used by every text comparison)
+## Normalization
 
-- extraction by the pinned `pdftotext` for both PDFs
+- extraction by pinned tools for both PDFs
 - Unicode NFC; collapse whitespace runs to one space (prose only: inside
-  code-block boxes internal whitespace is preserved and compared); rejoin
-  words split by a line-end hyphenate character; strip soft hyphens
-- folios and running furniture are compared as content like everything else;
-  only position differences within the active G tolerance are tolerated
-- the machine-readable normalization spec lives in
-  `meta/verification/parity.yaml` under `normalization:` with keys
-  `strip_pdf_keys`, `whitespace`, `hyphen_rejoin`, `color_space_map`,
-  `merge_rewrite_rules` (from WP-0.2c's calibration); the comparator
-  implements exactly that spec and nothing more
+  code-block boxes internal whitespace is preserved); rejoin words split by
+  a line-end hyphenate character; strip soft hyphens
+- the machine-readable spec lives in `meta/verification/parity.yaml` under
+  `normalization:` (`strip_pdf_keys`, `whitespace`, `hyphen_rejoin`,
+  `color_space_map`, `merge_rewrite_rules`, `font_name_map`); the
+  comparator implements exactly that spec and nothing more
 
-## The oracle is frozen (mechanically)
+## Reference stability (no pinning)
 
-- `meta/verification/corpus.yaml` pins: edition ids and languages, the
-  content git commit, the run directory per edition (`--run` is always
-  passed explicitly, and WP-0.1 asserts each pinned run directory is fully
-  git-tracked and clean at the pinned commit; "newest complete run"
-  auto-selection is never used in parity work), SHA256 of every staged input
-  file including the staged `edition.yaml`, and `oracle_tree_sha`: one
-  digest over `src/magazine/**`, `pyproject.toml`, and `uv.lock`.
-- `mag parity` embeds in every `verdict.json` the digests of the oracle
-  tree, `parity.yaml`, `corpus.yaml`, and `meta/verification/golden/`, and
-  **refuses to run** if any differs from the pinned values. (The golden
-  digest check activates at WP-0.2a, when normalized digests first exist.)
-  Gaming a gate by touching the oracle, the thresholds, the normalization
-  spec, or the goldens is therefore a refused run, not a passed one.
-- **Zero model calls during parity.** `mag render` invokes a model to patch
-  figure anchors that match no run heading (`patch_anchors` in
-  `mag/src/render.rs`). WP-0.0 gives render a `--no-model` mode that errors
-  instead, and reports the pending-anchor count; every freeze and parity
-  render passes it. Corpus entries are frozen with zero pending anchors.
-- Golden PDFs are regenerated on demand from the pins; raw extraction dumps,
-  layout JSONs, and critic reports live under `meta/verification/golden/`,
-  and their normalized digests in `meta/verification/golden/digests.json`
-  (computed by WP-0.2a). Regenerating goldens is legal only in a WP whose
-  Owns list names `meta/verification/golden/` and whose brief carries a Fran
-  gate; there is no "regenerate in the same WP" escape hatch.
-- Behavioral changes to `src/magazine/` are forbidden except in the WPs that
-  name it under Owns (WP-0.0b and WP-1.5 only). Phase 1 spikes may instrument oracle
-  files uncommitted, in the working tree only, provided `git status` is
-  clean when the WP ends and no golden or pin is touched; this sentence is
-  the sanction protocol rule 1 defers to.
-- Tool versions (python, uv, weasyprint, poppler pdftotext/pdftoppm/pdfinfo,
-  typst crates, rustc) are pinned in `parity.yaml` under `tools:` at freeze
-  time and asserted by `mag parity` at startup. The oracle machine is
-  Fran's; CI is not a goal.
+- `mag parity 010` stages the working tree's edition 010 inputs ONCE
+  (edition.yaml, the run's manuscripts, `library/sources/<ids>` including
+  media, the CSS, the fonts) and renders both engines from that one staged
+  copy in one invocation. Same bytes in, so one comparison cannot drift; no
+  corpus file, no content commit, no golden storage.
+- **Staleness guard**: 010 is the live intake edition, so content can
+  change between runs. Every verdict and every `baseline.json` entry
+  records the staged-input digest it was computed from; `mag parity`
+  refuses ratchet comparison and page-set scoring when the current digest
+  differs, and the baseline is then rebased by the verifier from a fresh
+  run. Page sets are stored as RULES in parity.yaml and computed per run
+  from the oracle leg's manifest, never as page-number values. Phase 2
+  starts only after Fran records 010 content-final (same shape as the
+  anchors-resolved-once clause).
+- **Zero model calls.** `mag render` can invoke a model to patch figure
+  anchors (`patch_anchors` in `mag/src/render.rs`); parity renders run
+  `--no-model` (WP-0.0) and abort listing pending anchors instead. Edition
+  010's anchors are resolved through the normal pipeline before parity work
+  starts, once.
+- The run directory is passed explicitly (`--run`, existing flag); parity
+  records which run it used in the verdict.
+- WP-0.1 proves the WeasyPrint renderer deterministic (render twice,
+  identical dumps) so a fresh oracle leg per run is sound. Fields that
+  legitimately differ between runs (timestamp-shaped, scratch paths) go in
+  `normalization.strip_pdf_keys`; any other difference is `awaiting-fran`
+  as a repo bug, never normalized away by the agent.
+- Tool versions (python, uv, weasyprint, poppler, mutool if used, typst
+  crates, rustc) are recorded in `parity.yaml tools:` and asserted by
+  `mag parity` at startup.
+- Behavioral changes to `src/magazine/` are forbidden except in WPs naming
+  it under Owns (WP-0.0b and WP-1.5). Phase 1 spikes may instrument oracle
+  files uncommitted, working tree only, `git status` clean at WP end.
 
 ## Architecture
 
-- The Typst engine lives in `mag` as a native module (`mag/src/typeset/`),
-  embedding the `typst` + `typst-pdf` crates (exact versions decided by
-  WP-1.4, recorded in `parity.yaml`, pinned in `mag/Cargo.toml`) behind a
-  `World` implementation serving the vendored fonts and in-memory sources.
-  Fonts are read directly from `src/magazine/assets/fonts/` while both
-  engines coexist (one copy, zero drift risk); WP-6.1 relocates them. The
-  faces in play: Source Serif 4 SmText Regular/Italic/Bold + Display
-  Semibold, Inter Regular/Medium/SemiBold/Bold, Geist Mono
-  Regular/Medium/SemiBold, Archivo Condensed Bold (cover and web edition).
-- `mag render <NNN> --engine weasyprint|typst` selects the path; the default
-  comes from `magazine.toml [render] engine`, which today is **dead wiring**
-  (`mag/src/render.rs` hardcodes `weasyprint`; only `[publication] name` is
-  read from the toml); WP-2.0a makes the key real. `weasyprint` = today's
-  bridge call, unchanged.
+- The Typst engine lives in `mag/src/typeset/`, embedding the `typst` +
+  `typst-pdf` crates (versions decided by WP-1.4, pinned in
+  `mag/Cargo.toml`) behind a `World` serving the vendored fonts read
+  directly from `src/magazine/assets/fonts/` (one copy while both engines
+  coexist; WP-6.1 relocates). Faces: Source Serif 4 SmText
+  Regular/Italic/Bold + Display Semibold, Inter
+  Regular/Medium/SemiBold/Bold, Geist Mono Regular/Medium/SemiBold, Archivo
+  Condensed Bold (cover and web edition).
+- `mag render <NNN> --engine weasyprint|typst`; the default comes from
+  `magazine.toml [render] engine`, today dead wiring (`mag/src/render.rs`
+  hardcodes weasyprint; only `[publication] name` is read); WP-2.0a makes
+  it real. `weasyprint` = today's bridge call, unchanged.
 - The comparator is `mag parity`:
-  - `mag parity freeze` builds/refreshes `corpus.yaml` pins and golden raw
-    artifacts (WP-0.1)
-  - `mag parity <NNN> --lang <l> --pre-rendered <dirA> <dirB>` compares two
-    output trees (WP-0.2a..c)
-  - `mag parity <NNN> [--lang <l>]` stages once from the pins into a git
-    worktree at the pinned content commit (the worktree is the cwd for both
-    renders; `mag` requires the repo root layout), asserts `--no-model`,
-    runs both engines on the identical staged tree, compares (WP-2.0b)
-  - `mag parity --corpus` runs the whole pinned corpus and is
-    baseline-relative: it exits nonzero if any page scores below its
-    `meta/verification/baseline.json` entry, where an entry records the
-    achieved tier including which Tier S clauses pass (mid-convergence,
-    clauses owned by later WPs legitimately still fail). The absolute
-    full-Tier-S bar is enforced only at the WP-4.1 gate
-  - `mag parity --proof-sheet` emits the Tier F interleaved sheets plus
-    their SHA256 manifest (WP-0.2c)
-  - `mag parity <NNN> --set <page_set>` scores one page set for in-WP
-    iteration; acceptance always runs the full `--corpus`
-  - the oracle render is cached per (edition, language) keyed by
-    `oracle_tree_sha` + staged-input digests (WP-0.1's determinism proof is
-    the license); verdict.json records the cache key
-  - outputs per run: `output/parity/<NNN>/<lang>/verdict.json` (machine) and
-    `report.html` (side-by-side pages, diff heatmaps, per-line tables);
-    `output/` is gitignored, so durable records are the verdict digests
-    embedded in evidence files (rule 2). verdict.json is byte-deterministic:
-    no timestamps, durations, hostnames, or absolute paths
-- **Ratchet mechanics.** `baseline.json` records, per corpus page, the best
-  tier ever achieved. `mag parity --corpus` fails if any page scores below
-  its recorded tier; the comparator refuses a baseline edit that lowers any
-  entry. Raises are computed and committed only by the verifier (rule 3)
-  from its own rerun's verdict. A change that must temporarily regress a
-  page (for example a figure fix that reflows prose) lands together with
-  its fix in one WP, or waits for a Fran-gated baseline adjustment; the
-  serial ordering of Phase 3 makes this workable.
-- **Page sets.** Per-WP page-set filters for Phase 3 are derived from the
-  golden layout JSONs and written into `parity.yaml page_sets:` by WP-2.0b
-  (rules enumerated there), before any Phase 3 WP starts. Engine WPs never
-  choose their own scoring pages.
-- The Typst engine emits the same layout result the bridge reports
+  - `mag parity 010 --pre-rendered <dirA> <dirB>` compares two output
+    trees (WP-0.2a..c)
+  - `mag parity 010 [--run <dir>]` stages once, renders both engines
+    (`--no-model`), compares; exits nonzero below `baseline.json` or on
+    any failed clause the baseline says was passing (WP-2.0b)
+  - `mag parity 010 --set <page_set>` scores one page set for in-WP
+    iteration; acceptance always runs the full command
+  - the WeasyPrint leg is cached per staged-input digest within a working
+    session (WP-0.1's determinism proof is the license); the verdict
+    records the cache key
+  - outputs: `output/parity/010/verdict.json` (byte-deterministic: no
+    timestamps, durations, hostnames, absolute paths) and `report.html`
+    (side-by-side pages, diff heatmaps, per-line and display-list diff
+    tables). `output/` is gitignored; durable records are verdict digests
+    in evidence files (rule 2)
+- **Ratchet.** `meta/verification/baseline.json` records per page the best
+  tier achieved (including which S clauses pass). `mag parity` compares the
+  working-tree baseline against `git show <base>:...` and refuses to run if
+  any entry was lowered; raises are computed and committed only by the
+  verifier (rule 3). A change that must temporarily regress a page lands
+  together with its fix in one WP (Phase 3 is serial).
+- **Page sets.** Phase 3 scoring filters: WP-2.0b writes the derivation
+  RULES to `parity.yaml page_sets:` and the comparator evaluates them per
+  run from the oracle leg's `edition-manifest.json` (toc and opener fits
+  added by WP-0.0b); engine WPs never choose their own scoring pages.
+- The Typst engine emits the layout result the bridge reports
   (`RenderLayout` shape: toc, article_pages, editorial_pages, figure
-  placements with box_points, frame usage, terminal balance, opener fits).
-  The oracle's toc, opener fits, and figure placements are read from the
-  packaged `edition-manifest.json` (toc and opener fits added to it by
-  WP-0.0b; today they exist only in-process or in the bridge's stdout rows).
-- `measure_article`/`measure_edition` are today human-invoked via
-  `mag render --operation ...`; produce does not call them. Layout-result
-  parity still matters because those numbers gate page caps.
+  placements with box_points, frame usage, terminal balance, opener fits);
+  compared against the oracle leg's `edition-manifest.json`.
+- `measure_article`/`measure_edition` are human-invoked via `mag render
+  --operation ...` today; produce does not call them. Layout parity still
+  matters: those numbers gate page caps.
 
 ## Subagent execution protocol
 
 1. **Owned paths.** A WP may create or modify only the paths its brief
-   lists. Every WP implicitly owns its evidence file. A WP that adds crate
+   lists. Every WP implicitly owns its evidence file. A WP adding crate
    dependencies also owns `mag/Cargo.toml` + `mag/Cargo.lock`. Pairwise
-   serial regardless of the dependency graph: (a) WPs touching Cargo files,
-   (b) WPs touching `mag/src/typeset/**` or `mag/src/render.rs`, (c) WPs
-   touching `meta/verification/golden/`. Acceptance includes the verifier
-   running `git diff --name-only <base>` (the `## Base` SHA from evidence)
-   against the Owns list. Also pairwise serial: (d) WPs touching
-   `mag/src/parity*`. A WP diff that touches any `evidence/*.verify.md` or
-   `baseline.json` is rejected by the orchestrator before a verifier is
-   spawned, except a WP whose Owns names baseline.json explicitly (WP-0.2a:
-   schema and empty state; WP-5.4g: cover-page seed rows); only verifiers
-   write those otherwise.
+   serial regardless of the graph: (a) Cargo-file owners, (b)
+   `mag/src/typeset/**` or `mag/src/render.rs` owners, (c) `mag/src/parity*`
+   owners. Acceptance includes the verifier running
+   `git diff --name-only <base>` against the Owns list. A WP diff touching
+   any `evidence/*.verify.md` or `baseline.json` is rejected by the
+   orchestrator before a verifier is spawned, except a WP whose Owns names
+   baseline.json explicitly (WP-0.2a: schema and empty state; WP-5.4g:
+   cover-page seed rows); only verifiers write those otherwise.
 2. **Evidence.** A WP is done when its verification commands exit 0 AND it
-   has written `meta/verification/evidence/WP-<id>.md` with the skeleton:
-   `## Base` (the commit the WP branched from), `## Commands`,
-   `## Tool versions`, `## Metrics`, `## Verdicts` (sha256 + tier summary of
-   every verdict.json produced; "attach a verdict" always means this),
-   `## Residuals`, `## Status` (`done`, `blocked`, or `awaiting-fran`).
-3. **Verifier acceptance.** The WP agent's green run is a claim, not an
-   acceptance. A verifier agent, spawned by the orchestrating session (or
-   Fran), never by the WP agent, receives the WP's brief + the evidence file
-   + this rule; it checks out a fresh worktree at `## Base` with the WP's
-   diff applied, confirms the diff touches no verify file or baseline,
-   replays `## Commands` (which must be complete enough to rerun from that
-   worktree alone, inline one-liners included), compares verdict digests
-   against `## Verdicts`, and runs the Owns diff check. The verifier owns
-   `meta/verification/evidence/WP-<id>.verify.md` and
-   `meta/verification/baseline.json` (raise-only edits computed from its own
-   rerun; the verifier is the only legal writer of raises). Monotonicity is
-   mechanical: `mag parity` compares the working-tree baseline against
-   `git show <base>:meta/verification/baseline.json` and refuses to run if
-   any entry was lowered. For Phase 1 spikes (uncommitted instrumentation,
-   gone at WP end) verification downgrades to an evidence-consistency audit,
-   stated in the verify file.
+   has written `meta/verification/evidence/WP-<id>.md` with sections:
+   `## Base` (the commit branched from), `## Commands`, `## Tool versions`,
+   `## Metrics`, `## Verdicts` (sha256 + tier summary of every verdict.json;
+   "attach a verdict" means this), `## Residuals`, `## Status` (`done`,
+   `blocked`, `awaiting-fran`).
+3. **Verifier acceptance.** The WP agent's green run is a claim. A verifier
+   agent, spawned by the orchestrating session (never the WP agent),
+   receives the WP's brief + the evidence file + this rule; it checks out a
+   fresh worktree at `## Base` with the WP's diff applied, confirms the
+   diff touches no verify file or baseline, replays `## Commands` (complete
+   enough to rerun from the worktree alone, inline one-liners included),
+   compares verdict digests against `## Verdicts`, and runs the Owns diff
+   check. The verifier owns `evidence/WP-<id>.verify.md` and
+   `baseline.json` (raise-only edits from its own rerun; the verifier is
+   the only legal writer of raises). For Phase 1 spikes (uncommitted
+   instrumentation, gone at WP end) verification downgrades to an
+   evidence-consistency audit, stated in the verify file.
 4. **The comparator and an engine never change in the same WP.** Comparator
-   territory: `mag/src/parity*`, `parity.yaml`, `corpus.yaml`,
-   `baseline.json`, `golden/`. Comparator changes get their own WP. Three
-   exceptions, all Fran-gated one-line WPs: tier enforcement may be
-   *tightened* (never loosened), the two scheduled comparator switches
-   (WP-5.3g, WP-5.4g), and WP-3.0g (final V3 thresholds from calibration
-   data).
+   territory: `mag/src/parity*`, `parity.yaml`, `baseline.json`. Comparator
+   changes get their own WP (WP-3.0g, WP-4.0g, WP-5.3g, WP-5.4g are the
+   scheduled ones). Thresholds and the Tier E definition may never be
+   loosened by any WP; loosening is a revision of this plan, which no WP
+   owns.
 5. **Repo rules apply**: `cargo fmt`, `cargo clippy -D warnings`,
    `cargo test` (includes `tools/nocomments.py`), `uvx ruff` for touched
-   Python, no comments, no U+2014, hooks installed. A WP that leaves any of
-   these red is not done.
+   Python, no comments, no U+2014, hooks installed.
 6. **Fail loud.** A WP that cannot meet its target writes the measured gap
-   into its evidence file with `Status: blocked` and stops; it never weakens
-   a check, narrows a corpus or page set, adds a normalization rule, or
-   marks itself done with a workaround.
-7. **Fran gates.** A WP whose completion requires a human decision ends by
-   writing `Status: awaiting-fran` plus its recommendation and stops. The
-   decision is recorded by Fran (commit authored by Fran, or a line Fran
-   types into the file); a successor WP resumes from it. Fran-gated WPs:
-   0.1 (regression discoveries), 1.3/1.5 (hyphenation), 3.0g (final V3
-   thresholds), 3.7 (residual ledger), 4.1 (proof sheets), 4.2 (the flip),
-   5.3g/5.4g (comparator switches), 6.1 (tools disposition, rollback
-   deletion).
-8. **The brief.** A subagent receives: its WP section verbatim, the preamble
-   of its phase, and these plan sections: the parity ladder, Normalization,
-   the oracle freeze, Architecture, and this protocol. The brief bounds the
-   plan text an agent receives; every file in the worktree at `## Base`
-   (evidence files of completed WPs included) is readable. Where a phase
-   preamble states Owns or commands, they bind as if written in the WP
-   section.
+   with `Status: blocked` and stops; it never weakens a check, narrows a
+   page set, adds a normalization rule, or works around.
+7. **Fran gates** exist only where the plan must change or something
+   irreversible happens; every `awaiting-fran` in this plan is one of
+   these kinds: a failed spike or discovered repo anomaly (0.1, 1.1, 1.4,
+   5.7), a structural line-break miss (1.2), the hyphenation mechanism
+   (1.3/1.5), 010 content-final before Phase 2, the post-flip typography
+   change (4.3), tools disposition and rollback deletion (6.1). A gated WP
+   ends `Status: awaiting-fran` with its recommendation; the decision is
+   recorded by Fran (commit authored by Fran or a line Fran types). No
+   verification gate is human.
+8. **The brief.** A subagent receives: its WP section verbatim, its phase
+   preamble, and these sections: the parity ladder, Normalization,
+   Reference stability, Architecture, and this protocol. The brief bounds
+   the plan text; every file in the worktree at `## Base` (completed WPs'
+   evidence included) is readable. Phase-preamble Owns and commands bind as
+   if written in the WP section.
 
-## Phase 0: instrument and freeze (no engine work)
+## Phase 0: instrument (no engine work)
 
 ### WP-0.0 render determinism switches
 
 - Owns: `mag/src/render.rs`, `mag/src/main.rs` (flag registration lines).
-- Target: `mag render` gains `--no-model`, under which a render that would
-  invoke the model (anchor patching) fails with the pending-anchor list
-  instead; the render result reports the pending-anchor count either way.
-  Behavior without the flag is unchanged (verified against an existing
-  rendered edition).
+- Target: `mag render` gains `--no-model`: a render that would invoke the
+  model (anchor patching) fails listing the pending anchors; the render
+  result reports the pending-anchor count either way. Behavior without the
+  flag unchanged.
 - Verify: a fixture edition with one unresolvable anchor fails under
-  `--no-model` naming the figure; a clean edition renders identically with
-  and without the flag, compared as `pdftotext` dumps plus `pdfinfo` page
-  boxes plus the packaged JSONs (PDF byte-determinism is not established
-  and not assumed).
+  `--no-model` naming the figure; edition 010 renders identically with and
+  without the flag, compared as `pdftotext` dumps + `pdfinfo` boxes + the
+  packaged JSONs (PDF byte-determinism is not assumed).
 
 ### WP-0.0b manifest amendment (sanctioned oracle change)
 
 - Owns: `src/magazine/engine_render_bridge.py`.
 - Target: `_render_manifest` also emits `layout.toc` and
-  `layout.article_opener_fits` (today `toc` exists only in-process on
-  `RenderLayout` and opener fits only in the bridge's stdout rows), so the
-  packaged `edition-manifest.json` carries every field the comparator and
-  page-set derivation need. No other behavioral change; runs before the
-  freeze, so no golden regeneration exists to do.
-- Verify: render one edition before and after; the `edition-manifest.json`
-  diff is exactly the two new keys, and the `pdftotext` dumps and critic
-  report are unchanged; `uvx ruff` clean.
+  `layout.article_opener_fits` (today toc exists only in-process and opener
+  fits only in the bridge's stdout rows), so `edition-manifest.json`
+  carries everything page-set derivation and layout comparison need.
+- Verify: render 010 before and after; the `edition-manifest.json` diff is
+  exactly the two new keys; `pdftotext` dumps and critic report unchanged;
+  `uvx ruff` clean.
 
-### WP-0.1 corpus freeze and `mag parity freeze`
+### WP-0.1 oracle determinism proof
 
-- Owns: `mag/src/parity.rs` (freeze subcommand only), `mag/src/main.rs`
-  (subcommand registration lines only), `mag/Cargo.toml` +
-  `mag/Cargo.lock`, `meta/verification/corpus.yaml`,
-  `meta/verification/golden/`.
-- Target: a pinned corpus of every edition+language that renders cleanly
-  with WeasyPrint today, with raw golden artifacts stored, a determinism
-  proof for the oracle, and zero model calls in any corpus render.
-- Work: implement `mag parity freeze`. For each edition directory under
-  `editions/` (corpus ids are the numeric ids `mag render` accepts; where
-  both a bare and a slugged directory exist for one number, the one
-  `mag render` resolves is the corpus entry), attempt `mag render <NNN>
-  --run <newest complete run at freeze time> --no-model` for every language
-  with committed translations (record per-edition languages; that is the es
-  scope: nothing is generated for the occasion). Assert each pinned run
-  directory is fully git-tracked and clean at the pinned commit (top-level
-  `runs/` is gitignored but `editions/*/run-*` are tracked; `editions/*/
-  render-*` are not and are never pinned). A corpus render that would need
-  the model is excluded and reported. Render each entry twice into scratch;
-  raw per-page `pdftotext` dumps, layout JSONs (`edition-manifest.json`,
-  `render-critic.json`), and critic results must be identical across the
-  two runs byte-for-byte except fields on a closed whitelist: values
-  matching an ISO-8601 timestamp pattern or containing a path under the
-  scratch root. Any other differing field is unexplained nondeterminism and
-  ends the WP `awaiting-fran`; it never becomes a normalization rule by the
-  agent's own hand. List every whitelisted field in corpus.yaml under
-  `observed_nondeterminism:` for WP-0.2a to turn into normalization rules.
-  Store the raw artifacts under `golden/` (not normalized digests;
-  normalization does not exist yet). Write corpus.yaml: entries, pinned
-  runs, content commit, staged-input SHA256s, `oracle_tree_sha`, and
-  `dev_edition:` / `dev_article:` naming the development target, chosen by
-  a coverage table (per-candidate counts of figures, extracts, code blocks,
-  plates) recorded in corpus.yaml so the choice is checkable.
-- Verify: `mag parity freeze` rerun reproduces identical raw artifacts;
-  corpus contains at least editions 004 and 009; evidence lists every
-  excluded edition and why. An edition that fails to render on main is a
-  regression: `Status: awaiting-fran`, and the plan blocks.
+- Owns: `meta/verification/parity.yaml` (initial `normalization:` +
+  `tools:`), evidence.
+- Target: rendering edition 010 (en) twice with `--no-model --run <same>`
+  produces identical raw `pdftotext` dumps, layout JSONs, and critic
+  results, byte-for-byte except fields on a closed whitelist
+  (timestamp-shaped values, paths under the scratch root), which are
+  recorded as `normalization.strip_pdf_keys`. Any other difference is
+  `awaiting-fran` as a repo bug. Also: confirm 010 has zero pending figure
+  anchors (else resolve them via the normal pipeline first, once, and
+  commit).
+- Verify: the double-render comparison script is inline in `## Commands`
+  and reproduces for the verifier.
 
 ### WP-0.2 comparator (four serial WPs)
 
-All four own `mag/src/parity.rs` (module registration and driver wiring) and
+All four own `mag/src/parity.rs` (module registration, driver wiring) and
 `mag/Cargo.toml` + `mag/Cargo.lock` in addition to the paths below.
 
-**WP-0.2a text, geometry, boxes**
-- Owns: `mag/src/parity.rs`, `mag/src/parity/text.rs`,
-  `mag/src/parity/geometry.rs`, `meta/verification/parity.yaml`
-  (normalization + tools + tier tables), `meta/verification/golden/
-  digests.json`, `meta/verification/baseline.json` (schema + empty state).
-- Target: `mag parity --pre-rendered` implements Tier S text, page count and
-  page boxes via `pdfinfo`, and Tier G from `pdftotext -bbox-layout`;
-  verdict.json carries the freeze digests, refuses on mismatch, and is
-  byte-deterministic (no timestamps, durations, hostnames, or absolute
-  paths); normalized golden digests computed over WP-0.1's raw artifacts
-  and stored.
-- Verify: oracle self-test: one corpus edition rendered twice compares at
-  Tier S text + G3 (zero tolerance consumed) and produces byte-identical
-  verdict.json twice; the extractor's coordinate precision is measured and
-  the G3 source (bbox vs content streams) recorded in parity.yaml.
+**WP-0.2a text, geometry, boxes, verdicts**
+- Owns: `mag/src/parity/text.rs`, `mag/src/parity/geometry.rs`,
+  `meta/verification/parity.yaml` (tier tables), `meta/verification/
+  baseline.json` (schema + empty state).
+- Target: `mag parity 010 --pre-rendered` implements Tier S text, page
+  count and boxes via `pdfinfo`, and Tier G via `pdftotext -bbox-layout`;
+  verdict.json is byte-deterministic.
+- Verify: self-test on the same weasyprint output twice: Tier S text green,
+  G deltas zero, byte-identical verdict.json twice.
 
-**WP-0.2b content streams**
-- Owns: `mag/src/parity/streams.rs`.
-- Target: Tier S color and navigation clauses implemented (extraction crate
-  or pinned `mutool`, decided in-WP and recorded in parity.yaml tools).
-- Verify: oracle self-test extended to the stream clauses; a hand-built
-  two-PDF fixture with one changed fill color and one dropped annotation is
-  caught.
+**WP-0.2b the display-list extractor (the Tier E instrument)**
+- Owns: `mag/src/parity/display.rs`, `mag/src/parity/streams.rs`,
+  `meta/verification/parity.yaml` (`font_name_map` key only).
+- Target: the canonical display-list dump and comparison exactly as Tier E
+  specifies (paint order preserved, clip stack carried, tracer choice
+  recorded in parity.yaml `tools:`), plus the Tier S color and navigation
+  clauses (projections of the same data), plus the `font_name_map`
+  (WeasyPrint aliases such as Magazine-Serif mapped to the real face
+  names Typst embeds), each pair validated by identical font-file
+  digests.
+- Verify: self-test: same PDF twice gives equal canonical lists;
+  hand-built fixtures each caught: one fill color changed, one glyph
+  substituted (same width), one annotation dropped, one image re-encoded
+  with different bytes but same pixels (must PASS: RGBA hash equal), one
+  path point moved 0.02 pt (must FAIL: above quantum), two elements with
+  swapped paint order at the same coordinates (must FAIL: z-order), one
+  figure clipped vs unclipped with identical paint ops (must FAIL: clip
+  state), one SMask'd image with the mask altered (must FAIL: composited
+  alpha).
 
-**WP-0.2c raster, clusters, report, proof sheets, merge calibration**
+**WP-0.2c raster zero-diff, report, merge calibration**
 - Owns: `mag/src/parity/raster.rs`, `mag/src/parity/report.rs`,
   `meta/verification/parity.yaml` (`merge_rewrite_rules` key only).
-- Target: Tier V, `report.html`, `--proof-sheet` with SHA256 manifest, and
-  the pypdf merge-invariance calibration: extract
-  page 1 and page n of a golden `reader.pdf` as single-page cover stand-ins
-  (the function demands single-page A5 covers), run `replace_outer_pages`
-  with an explicit output path (omitted, it overwrites its input), and
-  compare inner pages before/after at the stream level; rewrite noise found
+- Target: Tier V meters and the Tier E raster zero-diff check;
+  `report.html`; the pypdf merge calibration: extract page 1 and page n of
+  an existing 010 reader.pdf as single-page cover stand-ins (the function
+  demands single-page A5 covers), run `replace_outer_pages` with an
+  explicit output path (omitted, it overwrites its input), and compare
+  inner pages before/after at display-list level; found rewrite noise
   becomes `normalization.merge_rewrite_rules`.
-- Verify: oracle self-test at V3; the merge calibration report and the
-  measured full-corpus wall-clock (so Fran knows the per-WP verification
-  cost before Phase 3) in evidence.
+- Verify: raster self-test zero-diff on the same PDF twice; merge
+  calibration report in evidence with measured full-run wall-clock.
 
 **WP-0.2d fault suite and calibration**
 - Owns: `mag/tests/parity_faults*`, `meta/verification/parity.yaml`
-  (expected-detections matrix key only).
-- Target: a seeded fault suite built by rendering scratch copies of staged
-  inputs/CSS (never touching tracked files): swapped words, a line moved
-  0.3 pt, a figure shifted one page, a 30 px recolor, body ink flipped to
-  pure black, a dropped link annotation, a MediaBox off by 0.5 pt. Each
-  fault is flagged by **at least** its intended tier (coarser tiers may also
-  fire; the matrix states exactly which checks fire per fault and the test
-  asserts the matrix); no seeded fault passes the full ladder. Additionally
-  the V3 calibration: line offsets seeded at 0.02/0.05/0.1/0.2 pt, with the
-  measured cluster-area distribution and per-page mean delta per offset
-  recorded in evidence; this data is what WP-3.0g turns into the final V3
-  thresholds. Also write `parity.yaml critic_metric_tolerances:` from the
-  measured corpus metric distributions (the fixed pass bars WP-5.3a is held
-  to; that WP never authors its own).
+  (expected-detections matrix, `raster_bound`, and
+  `critic_metric_tolerances:` keys only).
+- Target: seeded faults built by rendering scratch copies of staged
+  inputs/CSS (tracked files untouched): swapped words, a line moved
+  0.05 pt and 0.3 pt, a figure shifted one page, a 30 px recolor, body ink
+  flipped to pure black, a dropped link annotation, a MediaBox off by
+  0.5 pt. Each fault flagged by at least its intended check per the
+  expected-detections matrix, which the test asserts exactly; no fault
+  passes Tier E. Two calibrations, both derivations rather than choices:
+  (1) `raster_bound` = max per-channel delta measured from the
+  perturbation fixture (the oracle leg's streams with every coordinate
+  perturbed uniformly within half the 0.01 pt quantum, rasterized against
+  the original); (2) `critic_metric_tolerances:` = exact equality for
+  integer metrics, and for float metrics a fixed relative epsilon of 1e-6
+  (evaluation-order slack between the Python and Rust float pipelines),
+  with near-threshold fixtures carrying any metric that sits within 10x
+  that epsilon of a critic decision threshold.
 - Verify: the suite runs under `cargo test`.
 
 ## Phase 1: feasibility spikes (throwaway code, binding numbers)
 
 Preamble (binds per rule 8): spike code lives uncommitted in the working
 tree or scratchpad; each WP owns only its evidence file. Instrumenting
-`src/magazine/` uncommitted is sanctioned here only (see the oracle-freeze
-section), with `git status` clean at WP end. Verifier acceptance for this
-phase is the rule-3 evidence-consistency audit. A failed spike does not
-improvise a fallback: it reports `awaiting-fran` with the numbers.
+`src/magazine/` uncommitted is sanctioned here only, `git status` clean at
+WP end. Verifier acceptance is the rule-3 evidence-consistency audit. A
+failed spike reports `awaiting-fran` with numbers, never an improvised
+fallback.
 
 ### WP-1.1 shaping parity
 
-- Target: for the vendored faces listed in Architecture, rustybuzz (as used
-  by Typst) and Pango/HarfBuzz (as used by WeasyPrint) produce cumulative
-  line advances agreeing within 0.01 pt on real corpus text from
-  `dev_edition` (corpus.yaml), en and es, including ligature and kerning
-  cases.
-- Work: dump every (font, size, text) line WeasyPrint lays out for
-  `dev_edition` via uncommitted adapter instrumentation (the adapter already
-  walks text boxes with style access); shape the same strings with rustybuzz
-  at the same sizes; compare.
-- Verify: evidence with the delta distribution, worst offenders, go/no-go.
-  Fallback on no-go: identify the divergent OpenType feature set and align
-  Typst's feature flags; `awaiting-fran` only if alignment fails.
+- Target: for the vendored faces, rustybuzz (Typst) and Pango/HarfBuzz
+  (WeasyPrint) produce cumulative line advances agreeing within 0.01 pt on
+  every line of edition 010, ligature and kerning cases included.
+- Work: dump every (font, size, text) line WeasyPrint lays out for 010 via
+  uncommitted adapter instrumentation (the adapter already walks text boxes
+  with style access); shape the same strings with rustybuzz; compare.
+- Verify: delta distribution, worst offenders, go/no-go in evidence.
+  Fallback on no-go: align OpenType feature flags; `awaiting-fran` only if
+  alignment fails.
 
 ### WP-1.2 line-break parity and the ragged-right confirmation
 
-- Target: confirm the design is ragged-right (no `text-align: justify` in
-  the CSS); then, given identical measure, font, size, leading, and greedy
-  breaking, Typst (`linebreaks: "simple"`, hyphenation off both sides via
-  uncommitted switches) reproduces WeasyPrint's break points on at least
-  99.5% of `dev_edition` body paragraphs, with every miss explained. The
-  target for Phase 3 remains 100% (Tier S text equality corpus-wide);
-  unexplained residuals here mean `awaiting-fran` before Phase 2 starts, not
-  a tolerance.
-- Work: minimal Typst document replicating `dev_article` body-text geometry
-  (page size, margins, font, size, leading transcribed from the CSS);
-  line-by-line comparison against the instrumented oracle.
-- Verify: evidence with the break-point match rate and per-miss causes,
-  every miss classified `fixable` (naming the mechanism and the Phase 2/3
-  WP that fixes it) or `structural`; any `structural` miss ends the WP
-  `awaiting-fran` exactly like an unexplained one. 100% or a recorded Fran
-  decision; nothing in between enters Phase 2. Forced breaks are NOT an
-  acceptable mechanism for the final engine; if simple linebreaking cannot
-  converge, `awaiting-fran`: tolerance acceptance at Tier G versus
-  abandoning line-level parity for a page-level standard.
+- Target: confirm ragged-right (no `text-align: justify` in the CSS); then,
+  with identical measure, font, size, leading, greedy breaking, and
+  hyphenation off both sides (uncommitted switches), Typst
+  (`linebreaks: "simple"`) reproduces WeasyPrint's break points on every
+  paragraph of edition 010.
+- Verify: break-point match rate with every miss classified `fixable`
+  (naming the mechanism and the WP that fixes it) or `structural`; any
+  `structural` miss ends `awaiting-fran`. 100% or a recorded Fran decision;
+  nothing in between enters Phase 2. Forced breaks are NOT acceptable in
+  the final engine.
 
 ### WP-1.3 hyphenation measurement and recommendation
 
-- Target: a numbers-backed recommendation between (a) porting Pyphen's en/es
+- Target: a numbers-backed recommendation between (a) porting Pyphen's en
   dictionary lookup to Rust and injecting soft hyphens into both engines'
-  input, and (b) disabling hyphenation in both engines for the parity
-  corpus, re-enabling native hyphenation after the flip as a Fran-approved
-  change (with the WP-4.3 proof).
-- Work: measure current hyphenation incidence (the adapter reports hyphen
-  ladders); render the oracle with hyphenation off (uncommitted CSS switch)
-  and quantify: page-count changes per article, page-cap violations, count
-  of changed line breaks.
-- Verify: evidence with those three numbers. "Negligible" means exactly:
-  zero page-count changes and zero cap violations; the line-break delta is
-  reported for Fran to weigh. Ends `awaiting-fran`.
+  input, and (b) disabling hyphenation in both engines for parity,
+  re-enabling native hyphenation post-flip via WP-4.3.
+- Work: measure 010's hyphenation incidence (the adapter reports hyphen
+  ladders); render with hyphenation off (uncommitted CSS switch); quantify:
+  page-count changes per article, page-cap violations, changed line breaks.
+- Verify: those three numbers in evidence. "Negligible" = zero page-count
+  changes and zero cap violations. Ends `awaiting-fran`.
 
 ### WP-1.4 Typst measurement interface and version pin
 
-- Target: proof that the typst crates expose per-element positions
-  sufficient to emit `RenderLayout` (page and box of every paragraph line,
-  figure, heading, ornament, at sub-0.1 pt precision) from Rust without
-  parsing the PDF, and a concrete crate-version pin.
-- Work: spike a `World`, compile a two-page document with a placed image and
-  a code block, walk the laid-out frames, confirm positions against a
-  rasterized overlay.
-- Verify: evidence with the API path used (frame introspection vs `query`),
-  the exact `typst`/`typst-pdf` versions to pin, and their MSRV. WP-2.0a
-  writes the pin into `parity.yaml` and `Cargo.toml` from this evidence.
+- Target: proof the typst crates expose per-element positions sufficient
+  for `RenderLayout` (page and box of every line, figure, heading,
+  ornament, sub-0.1 pt) from Rust without parsing the PDF, plus the exact
+  crate versions to pin.
+- Verify: evidence with the API path (frame walk vs `query`), versions,
+  MSRV. WP-2.0a writes the pin into Cargo.toml and parity.yaml from this
+  evidence.
 
 ### WP-1.5 apply the hyphenation decision (sanctioned oracle change)
 
 - Owns: `src/magazine/assets/weasyprint-a5.css` (the switch, if (b)),
-  `meta/verification/corpus.yaml`, `meta/verification/golden/`,
-  `meta/verification/parity.yaml` (decision record + regenerated digests),
-  evidence.
-- Gate: starts only from Fran's recorded WP-1.3 decision. Serial with
-  WP-2.0a (golden-mutating; protocol rule 1c) and ordered before it in the
-  graph.
-- If (a): records the decision; the Pyphen-equivalent soft-hyphen injection
-  lands in WP-2.1 (its brief says so).
-- If (b): apply the CSS switch, regenerate goldens via `mag parity freeze`,
-  recompute `golden/digests.json`, update `oracle_tree_sha`; WP-4.3 becomes
-  mandatory.
-- Verify: `mag parity freeze` reproducible twice; WP-0.2a's oracle
-  self-test re-run green against the new goldens.
+  `meta/verification/parity.yaml` (decision record), evidence.
+- Gate: starts only from Fran's recorded WP-1.3 decision. If (a): records
+  the decision; the soft-hyphen injection lands in WP-2.1. If (b): apply
+  the CSS switch; WP-4.3 becomes mandatory.
+- Verify: WP-0.1's double-render determinism check re-run green.
 
 ## Phase 2: the Typst engine skeleton
 
 ### WP-2.0a engine dispatch
 
-- Owns: `mag/src/main.rs` (`--engine` flag, `mod typeset;` registration),
-  `mag/src/render.rs` (engine selection: `magazine.toml [render] engine` +
-  `--engine` override; typst branch stubs to a clear "not implemented"
-  error), `mag/src/typeset/mod.rs` (stub), `mag/Cargo.toml` +
-  `mag/Cargo.lock` (typst crates pinned per WP-1.4 evidence),
-  `meta/verification/parity.yaml` (the crate-pin record only).
-- Target: `mag render <NNN> --engine weasyprint` matches the golden raw
-  artifacts; `--engine typst` fails loud; the toml key is live and defaults
-  to weasyprint.
-- Verify: render the corpus to scratch, extract with the pinned tools, and
-  compare normalized digests against `golden/digests.json` (the only
-  comparison machinery existing at this graph position is `--pre-rendered`
-  plus the digest file); `cargo test`.
+- Owns: `mag/src/main.rs` (`--engine` flag, `mod typeset;`),
+  `mag/src/render.rs` (engine selection from `magazine.toml [render]
+  engine` + `--engine` override; typst branch stubs to a loud "not
+  implemented"), `mag/src/typeset/mod.rs` (stub), Cargo files (typst crates
+  pinned per WP-1.4), `meta/verification/parity.yaml` (crate-pin record
+  only).
+- Target: `--engine weasyprint` output unchanged (dumps + boxes + JSONs vs
+  a pre-change render); `--engine typst` fails loud; the toml key is live,
+  default weasyprint.
+- Verify: the before/after comparison inline in `## Commands`;
+  `cargo test`.
 
 ### WP-2.0b parity render mode and page sets
 
 - Owns: `mag/src/parity.rs`, `meta/verification/parity.yaml` (`page_sets:`
   key only).
-- Target: `mag parity <NNN> [--lang]` stages exactly once from the
-  corpus.yaml pins into a git worktree at the pinned content commit (the
-  worktree is the cwd for both renders; note `mag` requires the repo-root
-  layout with `prompts/` present, and pinned runs are tracked so the
-  worktree carries them), passes `--no-model`, runs both engines on the
-  identical staged tree, compares over the interior domain.
-  `mag parity --corpus` iterates the corpus against `baseline.json`, and
-  `--set <page_set>` scores one set. Implement the oracle render cache.
-  Derive the Phase 3 page sets and write them under `parity.yaml
-  page_sets:`: `body` = pages with no figure placements and no opener/TOC
-  (from the golden manifests' toc and figure placements); `openers` =
-  opener and TOC pages (from toc); `placement` = pages with
-  figure/plate/ornament placements; `furniture` = all interior pages;
-  `code` cannot come from the layout JSONs (they carry no code-block
-  pages): match the staged manuscripts' fenced runs and resolved extract
-  texts against the golden per-page `pdftotext` dumps, a page joining
-  `code` when a run's first line lands on it, with the matched-run count in
-  evidence; per-language variants of each set.
-- Verify: with the typst branch still stubbed, `mag parity dev_edition`
-  reports the typst failure cleanly and oracle-vs-golden digests hold; an
-  oracle-only dry-run mode (`--corpus --oracle-only`, comparing oracle to
-  golden) is green.
+- Target: `mag parity 010 [--run <dir>]` stages the working tree's 010
+  inputs once, renders both engines from the staged copy with `--no-model
+  --langs en` (both legs; the typst leg has no translation loading by
+  scope, and a stray es render would break the run asymmetrically),
+  compares over the interior domain against `baseline.json` with the
+  staleness guard; `--set` scores one page set; the oracle-leg cache keyed
+  by staged-input digest. Write the page-set RULES to parity.yaml,
+  evaluated per run from the oracle leg's manifest: `body` = pages with no
+  figure placements and no opener/TOC; `openers` = opener and TOC pages
+  (from toc); `placement` = pages with figure/plate/ornament placements;
+  `furniture` = all interior pages; `code` = pages where a staged fenced
+  run's or resolved extract's first line lands (empty for 010 itself,
+  which carries neither; WP-3.3 gates on its fixture instead).
+- Verify: with typst stubbed, `mag parity 010` reports the typst failure
+  cleanly; an oracle-only mode (`--oracle-only`: weasyprint leg vs itself)
+  is Tier E green end to end.
 
 ### WP-2.1 content pipeline: staged inputs to Typst source tree
 
 - Owns: `mag/src/typeset/content.rs`, fixtures under `mag/tests/typeset_*`,
-  `mag/Cargo.toml` + `mag/Cargo.lock`.
-- Depends: WP-5.1c (consumes the ported document model and manifest loader
-  under `mag/src/model/`; it owns neither a markdown parser nor edition
-  validation of its own). The refusal fixture list from WP-5.1c's matrix is
-  copied into this brief verbatim when the WP is cut.
-- Target: for every corpus edition and language, the pipeline turns the
-  staged inputs (edition.yaml, manuscripts, translations, extracts, figures)
-  into a deterministic in-memory Typst source tree whose plain-text
-  projection equals the golden normalized text (Tier S text, pre-layout).
-- Work: extracts resolution with the same ambiguity refusals `manifest.py`
-  enforces; figure/caption/anchor wiring; es variant loading equivalent to
-  `load_translation`. If WP-1.5 recorded decision (a), the soft-hyphen
-  injection is in scope here, driven by the dictionaries named in
-  parity.yaml.
-- Verify: `cargo test` comparing the projection against golden normalized
-  text for the whole corpus; extracts byte-exactness; the refusal matrix
-  from WP-5.1c re-exercised through this pipeline (ambiguous begin/end
-  marker, marker not found, manuscript already carrying the run verbatim,
-  unknown source id, figure path escaping the source dir).
+  Cargo files.
+- Depends: WP-5.1c (consumes `mag/src/model/` for the document model and
+  manifest loading; owns neither a markdown parser nor edition validation).
+  The refusal fixture list from WP-5.1c's matrix is copied into this brief
+  verbatim when the WP is cut.
+- Target: the pipeline turns 010's staged inputs (edition.yaml,
+  manuscripts, extracts, figures) into a deterministic in-memory Typst
+  source tree whose plain-text projection equals the oracle leg's
+  normalized text (Tier S text, pre-layout).
+- Work: extracts resolution with `manifest.py`'s ambiguity refusals;
+  figure/caption/anchor wiring; soft-hyphen injection if WP-1.5 chose (a).
+- Verify: `cargo test`: projection vs oracle text for all of 010; extract
+  byte-exactness; the refusal matrix re-exercised (ambiguous marker, marker
+  not found, run already verbatim in manuscript, unknown source id, figure
+  path escaping the source dir).
 
 ### WP-2.2 the reader template (three serial slices)
 
 Preamble (binds per rule 8): each slice owns `mag/src/typeset/template.rs`,
 `mag/src/typeset/**` submodules it introduces, and `mag/assets/typeset/`;
-slices are serial and each extends the mapping table in its evidence file:
-every transcribed value cites its origin (`src/magazine/assets/
-weasyprint-a5.css` selector or `weasyprint_adapter.py` constant). The
-adapter is 3,000 lines nobody fully remembers; the mapping table is the
-forcing function, and anything found-but-not-transcribed is listed as
-pending, never dropped silently.
+serial; each extends its evidence mapping table: every transcribed value
+cites its origin (`weasyprint-a5.css` selector or `weasyprint_adapter.py`
+constant). Anything found-but-not-transcribed is listed as pending, never
+dropped silently.
 
-**WP-2.2a geometry and body**: A5 page geometry, margins, body/quote/code
-text styles, folios, placeholder outer pages. Target: `mag render
-dev_edition --engine typst` emits an interior.pdf; `mag parity dev_edition`
-produces a verdict.json with every tier evaluated and a nonzero exit on
-failure (digest in evidence); page boxes pass Tier S.
+**WP-2.2a geometry and body**: A5 geometry, margins, body/quote/code
+styles, folios, placeholder outer pages. Target: `mag render 010 --engine
+typst` emits an interior.pdf; `mag parity 010` produces a verdict with
+every tier evaluated and nonzero exit on failure (digest in evidence);
+page boxes pass Tier S.
 
-**WP-2.2b architecture**: article openers, headings, TOC, editorial (for
-pre-010 corpus editions), page caps. Target: Tier S page count on
-`dev_edition`; verdict digests recorded in evidence as the running baseline.
+**WP-2.2b architecture**: article openers, headings, TOC, page caps.
+Target: Tier S page count on 010; verdict digest recorded as the running
+baseline.
 
-**WP-2.2c placement**: figures, extracts, plates, tail ornaments, anchor
-resolution. Target: every corpus figure/extract present on some page;
-Tier S same-page not yet required (that is WP-3.4); verdict digests
-recorded.
+**WP-2.2c placement**: figures, extracts, plates, tail ornaments, anchors.
+Target: every 010 figure/extract present on some page (same-page equality
+is WP-3.4); verdict digest recorded.
 
 ### WP-2.3 layout result and measure operations
 
-- Owns: `mag/src/typeset/layout.rs`, `mag/src/render.rs` (typst branch
-  wiring of measure operations).
-- Target: `--engine typst` emits the full layout JSON (RenderLayout shape)
-  and supports `measure_article`/`measure_edition` natively. Minimum
-  comparison set: on `dev_edition`, Typst-reported `article_pages`,
-  `editorial_pages`, and `article_opener_fits` equal the oracle's (from
-  `edition-manifest.json`); across the rest of the corpus every field is
-  compared and every mismatch enumerated in evidence (mismatches gated on
-  unfinished Phase 3 parity are listed as pending with their WP, never
-  skipped).
-- Verify: a corpus loop under `cargo test` attaching the field-by-field
-  table to evidence.
+- Owns: `mag/src/typeset/layout.rs`, `mag/src/render.rs` (typst measure
+  wiring).
+- Target: `--engine typst` emits the full RenderLayout JSON and native
+  `measure_article`/`measure_edition`; on 010, `article_pages`,
+  `editorial_pages`, `article_opener_fits` equal the oracle leg's manifest
+  values; every other field compared, mismatches enumerated with the
+  Phase 3 WP that owns them (never skipped).
+- Verify: the field-by-field table under `cargo test`, attached to
+  evidence.
 
 ## Phase 3: convergence
 
-Preamble (binds per rule 8): one WP per feature area, strictly serial, in
-this order. Every Phase 3 WP except WP-3.0g owns `mag/src/typeset/**` plus
-its evidence file and NOTHING else; comparator territory is out of bounds
-(rule 4, whose third exception is WP-3.0g). Each
-WP is scored on its named `page_sets:` entry from parity.yaml, already
-written by WP-2.0b. Verification for every Phase 3 WP is the same two
-commands: `mag parity --corpus` green against `baseline.json` (no page
-anywhere regresses; raises are the verifier's), and the WP's named page set
-reaching its named tier.
+Preamble (binds per rule 8): strictly serial, this order. Every Phase 3 WP
+except WP-3.0g owns `mag/src/typeset/**` plus its evidence file and NOTHING
+else; comparator territory is out of bounds (rule 4). Each WP is scored on
+its named `page_sets:` entry. Verification, identical for all: `mag parity
+010` green against `baseline.json` (no page regresses; raises are the
+verifier's), and the named page set at the named standard.
 
 - **WP-3.1 body text** (`page_sets.body`): Tier S text+color + G2.
 - **WP-3.2 headings, openers, TOC** (`page_sets.openers`): Tier S + G2;
-  opener-fit booleans exact corpus-wide.
-- **WP-3.3 code blocks and extracts** (`page_sets.code`): byte-exact text;
-  per-code-block (text-run, fill color) sequences from the content streams
-  identical (raster similarity is not accepted: near-palette colors sit
-  under the V threshold); G2 boxes.
+  opener-fit booleans exact.
+- **WP-3.3 code blocks and extracts**: 010 carries neither, so this WP
+  gates on a committed fixture edition (fenced code in two languages, one
+  extract with begin/end markers, built once under `mag/tests/typeset_*`
+  fixtures) rendered by both engines and compared `--pre-rendered`:
+  input-level byte-exactness green; (text-run, fill color) sequences
+  identical inside code boxes; G2 boxes. `page_sets.code` stays as the
+  rule for future editions that do carry them.
 - **WP-3.4 figures, plates, ornaments** (`page_sets.placement`): Tier S
-  same-page + G2 boxes; effective_ppi equal within 0.5.
+  same-page; G2 boxes; effective_ppi equal within 0.5.
 - **WP-3.5 furniture and navigation** (`page_sets.furniture`): G2
-  everywhere; Tier S navigation clause corpus-wide.
-- **WP-3.6 Spanish corpus**: every prior tier held on the es entries.
-- **WP-3.0g tier tightening (Fran-gated comparator WP, rule 4 exception)**:
-  owns `parity.yaml`; writes the final V3 thresholds from WP-0.2d's offset
-  calibration data and raises the ratchet targets WP-3.7 must reach (the
-  corpus-wide pass bar stays baseline-relative; the absolute bar is
-  WP-4.1's).
-- **WP-3.7 the G3/V3 ratchet**: burn residuals page by page under the
-  WP-3.0g thresholds. Evidence is the residual ledger: every page not at
-  G3/V3, its diff, its cause. Ends when the ledger is empty or every
-  remaining line carries Fran's recorded acceptance (`awaiting-fran` until
-  then).
+  everywhere; Tier S navigation clause.
+- **WP-3.0g enforcement flip (comparator WP)**: owns `parity.yaml`;
+  raises the ratchet target to Tier E (a pure tightening; rule 4).
+- **WP-3.7 the Tier E burn-down**: drive every compared page to display-
+  list equality and raster zero-diff. Evidence is the residual ledger:
+  every non-equal page, the exact display-list diff, the cause. Ends only
+  when the ledger is empty; an entry that cannot be emptied is
+  `Status: blocked` and a plan revision (fail loud). No acceptance path.
 
 ## Phase 5: port the rest of Python to Rust
 
-Numbered 5 for historical reasons but starts alongside Phase 2/3: the gate
-and the flip need the Rust critic and cover. Preamble (binds per rule 8):
-each WP owns the named new Rust module, `mag/tests/<wp-slug>*`, Cargo files,
-and its evidence file; originals stay in place until WP-6.1; none of these
-WPs touches `mag/src/typeset/**`, `mag/src/render.rs` (except WP-5.6), or
-comparator territory. Oracle-equality tests that need rasters shell the
-pinned `pdftoppm` from `cargo test`; they do not use `mag parity`.
+Preamble (binds per rule 8): each WP owns the named Rust module,
+`mag/tests/<wp-slug>*`, Cargo files, and its evidence; originals stay until
+WP-6.1; none touches `mag/src/typeset/**`, `mag/src/render.rs` (except
+WP-5.6), or comparator territory. Oracle-equality tests shell the pinned
+tools from `cargo test`; they do not use `mag parity`. Python-side oracle
+dumps are produced by full inline invocations (`uv run python -c '...'`)
+recorded verbatim in `## Commands` so the verifier reproduces them; no
+uncommitted scripts.
 
-- **WP-5.1 model ports (three serial WPs)**
-  - Dump replayability rule for all three: the Python-side oracle dump is
-    produced by a full inline invocation (`uv run python -c '...'`) recorded
-    verbatim in `## Commands`, so the rule-3 verifier reproduces it from the
-    worktree alone; no uncommitted scripts.
-  - **WP-5.1a document model** (`publication_document.py`,
-    `document_structure.py`, `reader_text.py`): owns `mag/src/model/doc.rs`
-    (+ the markdown crate decision). Oracle: the plain-text and structural
-    projection of every corpus manuscript equals the Python model's dump.
-  - **WP-5.1b records** (`records.py`, `media_schema.py`): owns
-    `mag/src/model/records.rs`. Oracle: loaded-record equality dump over
-    `library/sources/` at the pinned commit.
-  - **WP-5.1c manifest** (`manifest.py`): owns `mag/src/model/manifest.rs`.
-    Oracle: the loader-owned subset of `edition-manifest.json`, extracted
-    identically from golden and Rust dump with
-    `jq -S '{edition, layout: (.layout | {maximum_article_pages,
-    article_page_caps, article_content_modes, maximum_editorial_pages})}'`
-    (note the `.layout |` pipe: without it jq builds the keys from the root
-    and every value is null), byte-equal for the corpus, with a sanity
-    clause: the extraction of one golden manifest must contain no null
-    values (layout-derived fields such as `layout.article_pages`,
-    `article_terminal_balance`, and `layout.figures[*]` placements, and
-    request-derived fields such as `publication` and `inputs`, are
-    excluded: they are the renderer's, not the loader's; note the es
-    `edition:` is synthesized by `_translation_raw`, which the port must
-    reproduce). Plus the refusal matrix: every ValidationError raise site
-    in `manifest.py`, provoked by fixture, mapped to a Rust error variant +
-    message substring; the matrix is enumerated in the WP evidence and
-    checked by the verifier against `manifest.py`'s raise sites.
+- **WP-5.1a document model** (`publication_document.py`,
+  `document_structure.py`, `reader_text.py`): owns `mag/src/model/doc.rs`
+  (+ markdown crate). Oracle: plain-text and structural projection of every
+  010 manuscript equals the Python model's dump.
+- **WP-5.1b records** (`records.py`, `media_schema.py`): owns
+  `mag/src/model/records.rs`. Oracle: loaded-record equality over
+  `library/sources/`.
+- **WP-5.1c manifest** (`manifest.py`): owns `mag/src/model/manifest.rs`.
+  Oracle: the loader-owned subset of 010's `edition-manifest.json`,
+  extracted identically from both sides with
+  `jq -S '{edition, layout: (.layout | {maximum_article_pages,
+  article_page_caps, article_content_modes, maximum_editorial_pages})}'`
+  (note the `.layout |` pipe; without it every value is null), byte-equal,
+  with a no-null sanity check on the oracle extraction; layout-derived
+  fields (`article_pages`, `article_terminal_balance`, `figures[*]`) and
+  request-derived fields (`publication`, `inputs`) excluded as the
+  renderer's. Plus the refusal matrix: every ValidationError raise site in
+  `manifest.py`, provoked by fixture, mapped to a Rust error variant +
+  message substring; enumerated in evidence, checked by the verifier
+  against the raise sites.
 - **WP-5.2 booklet imposition** (`booklet.py`): owns `mag/src/impose.rs`.
-  Oracle: impose the same golden reader.pdf both ways; page-wise raster
-  equality at the V3 thresholds and Tier S text per sheet in spread order,
-  computed inside its own cargo tests.
-- **WP-5.3 render critic (three serial WPs)**
-  - **WP-5.3a raster metrics** (`image_contrast.py`, `concurrency.py`'s
-    role): owns `mag/src/critic/metrics.rs`. Oracle: metric values on
-    corpus pages within per-metric tolerances fixed BEFORE the WP starts
-    (exact equality for integer metrics; named epsilons for float metrics,
-    written into this brief or parity.yaml by a prior comparator WP); the
-    WP agent never authors its own tolerances.
-  - **WP-5.3b rules** (`render_critic.py` checks): owns
-    `mag/src/critic/rules.rs`. Oracle: render-critic.json equality on the
-    corpus over the exact-match field set {result, issue codes, severities,
-    pages, spread tables}; corpus metrics must sit outside a stated margin
-    of every decision threshold, with near-threshold fixtures added where
-    they do not.
-  - **WP-5.3c calibration and faults**: owns `mag/tests/critic_*`. The
-    critic fault suite: swapped spread, missing tail band, low-ppi figure;
-    both critics emit the same issue codes.
-  - **WP-5.3g comparator switch (Fran-gated, one line)**: owns
-    `mag/src/parity.rs` + `parity.yaml`: the Typst side's critic verdict
-    (Rust critic) joins Tier S.
-- **WP-5.4 cover compiler** (`cover.py`): owns `mag/src/cover/`. Depends on
-  WP-5.1c (consumes the Rust Edition model), not on the typst text stack:
-  covers are fontTools glyph outlines rasterized through resvg and placed
-  by reportlab, no typeset text runs. Drawing backend decided in-WP and
-  recorded. Oracle: raster parity at V3 thresholds + stream-level color
-  parity of front/back cover PDFs across every corpus edition and every
-  cover.layout mode (framed, footer_caption, honored_plate), in its own
-  cargo tests; the brief enumerates which corpus entries exercise which
-  mode, with fixture editions added for any mode the corpus misses.
-  - **WP-5.4g comparator switch (Fran-gated, one line)**: owns
-    `mag/src/parity.rs` + `parity.yaml` + `baseline.json` seed rows for
-    cover pages: the compared artifact becomes `reader.pdf` end to end.
-    Gated on WP-3.7 + WP-5.4 (switching mid-Phase-3 would score cover pages
-    against baselines that only cover the interior).
-- **WP-5.5 preflight + package + web edition** (`preflight.py`,
-  `package.py`, `web_edition.py`, `html_edition.py`): owns
-  `mag/src/package/`, `mag/src/web/`. Oracle: byte-identical `web/` tree
-  files, SHA256SUMS, preflight.json, printing instructions,
-  edition-manifest.json on the corpus. Archives (`package.zip`,
-  `web-output.zip`) compare per-entry (name order, unix mode, timestamp,
-  CRC32, uncompressed bytes), never as whole-file bytes: Python zlib and
-  Rust flate2 streams differ legitimately. Note: `html_edition.py` also
-  builds the WeasyPrint interior HTML; that role dies with the oracle and
-  is not ported, only the web path is.
+  Oracle: impose the same 010 reader.pdf both ways; display-list equality
+  and raster zero-diff per sheet, spread order text identical.
+- **WP-5.3a critic raster metrics** (`image_contrast.py`,
+  `concurrency.py`'s role): owns `mag/src/critic/metrics.rs`. Oracle: 010
+  metric values within `parity.yaml critic_metric_tolerances:` (fixed by
+  WP-0.2d; this WP never authors tolerances).
+- **WP-5.3b critic rules** (`render_critic.py`): owns
+  `mag/src/critic/rules.rs`. Oracle: render-critic.json equality on 010
+  over {result, issue codes, severities, pages, spread tables}; metrics
+  sitting near a decision threshold get near-threshold fixtures.
+- **WP-5.3c critic faults**: owns `mag/tests/critic_*`. Fault suite:
+  swapped spread, missing tail band, low-ppi figure; both critics emit the
+  same issue codes.
+- **WP-5.3g comparator switch (comparator WP)**: owns `mag/src/parity.rs`
+  + `parity.yaml`: the Typst leg's critic verdict (Rust critic) joins
+  Tier S.
+- **WP-5.4 cover compiler** (`cover.py`): owns `mag/src/cover/`. Depends
+  on WP-5.1c (consumes the Rust Edition model); needs no typst text stack
+  (covers are fontTools glyph outlines rasterized via resvg, placed by
+  reportlab). Backend decided in-WP, recorded. Oracle: display-list + raster
+  zero-diff parity of front/back cover PDFs for 010's cover.layout mode,
+  plus fixture editions covering the other modes (framed, footer_caption,
+  honored_plate).
+- **WP-5.4g comparator switch (comparator WP)**: owns `mag/src/parity.rs`
+  + `parity.yaml` + `baseline.json` cover-page seed rows: the compared
+  artifact becomes `reader.pdf` end to end. Gated on WP-3.7 + WP-5.4.
+- **WP-5.5 preflight + package + web** (`preflight.py`, `package.py`,
+  `web_edition.py`, `html_edition.py`): owns `mag/src/package/`,
+  `mag/src/web/`. Oracle: byte-identical `web/` tree files, SHA256SUMS,
+  preflight.json, printing instructions, edition-manifest.json for 010;
+  archives compare per-entry (name order, mode, timestamp, CRC32,
+  uncompressed bytes), never whole-file (zlib vs flate2 streams differ
+  legitimately). `html_edition.py`'s interior-HTML role dies with the
+  oracle; only the web path is ported.
 - **WP-5.6 native render_edition**: owns `mag/src/render.rs`,
-  `mag/src/typeset/**` glue (serial with Phase 3 per rule 1b; scheduled
-  after WP-3.7). Depends: WP-2.3, WP-3.7, WP-5.2, WP-5.3b, WP-5.4, WP-5.5.
-  Target: `--engine typst` runs cover, critic, package, web natively; no
-  bridge spawn for any operation on that path. Verify: bridge outputs
-  pre-generated from the pins; then, with `uv` removed from PATH, render
-  the corpus `--engine typst` and run `mag parity --pre-rendered` against
-  those bridge outputs: all tiers at their current baseline, package/web
-  oracles green.
+  `mag/src/typeset/**` glue (serial per rule 1b; after WP-3.7). Depends:
+  WP-2.3, WP-3.7, WP-5.2, WP-5.3b, WP-5.4, WP-5.5. Target: `--engine
+  typst` runs cover, critic, package, web natively; no bridge spawn.
+  Verify: bridge outputs pre-generated; with `uv` removed from PATH, render
+  010 `--engine typst` and `mag parity 010 --pre-rendered` against the
+  bridge outputs: Tier E green, package/web oracles green.
 - **WP-5.7 capture's PDF transcription** (`tools/pdf2md.py`): owns
-  `mag/src/capture.rs` (the `uv run python tools/pdf2md.py` call site),
-  `mag/src/pdf_text.rs`. The brief's first step is reading `tools/
-  pdf2md.py` and recording in evidence whether it is deterministic; oracle:
-  byte-identical markdown on three captured-PDF fixtures named in evidence
-  if deterministic, else `awaiting-fran` with the observed variance and a
-  proposed structural oracle.
+  `mag/src/capture.rs` (the `uv run` call site), `mag/src/pdf_text.rs`.
+  First step: read `pdf2md.py`, record whether it is deterministic. Oracle:
+  byte-identical markdown on three captured-PDF fixtures if deterministic,
+  else `awaiting-fran` with the variance and a proposed structural oracle.
 
 ## Phase 4: the gate, the flip, and the hyphenation proof
 
-### WP-4.1 full parity gate
+### WP-4.1 full parity gate (mechanical)
 
-- Owns: evidence and `output/parity/proof/` only.
+- Owns: evidence only.
 - Depends: WP-3.7, WP-5.3g, WP-5.4g.
-- Target: `mag parity --corpus` green at Tier S (all clauses, critic on
-  both sides, reader.pdf end to end) + G3 + V3, both languages, run twice
-  from a clean checkout with identical verdicts; proof sheets via
-  `mag parity --proof-sheet` with their SHA256 manifest embedded in
-  evidence.
-- Then `Status: awaiting-fran`; Tier F approval recorded by Fran per rule 7,
-  citing the manifest digest.
+- Target: `mag parity 010` green at Tier E (all clauses, critic on both
+  sides, reader.pdf end to end), run twice from a clean checkout with
+  byte-identical verdicts. That exit code is the gate; no human approves
+  sameness.
 
 ### WP-4.0g ad hoc parity mode (comparator WP)
 
 - Owns: `mag/src/parity.rs`.
-- Target: `mag parity --adhoc <NNN> --run <dir>` for editions outside the
-  corpus: skip pin/baseline assertions, render both engines fresh from the
-  working tree in one staged worktree (still `--no-model`; pending anchors
-  must be resolved through the normal pipeline first), evaluate Tier S only,
-  report G/V informationally.
-- Verify: `--adhoc` on a corpus edition agrees with the pinned run's Tier S
-  verdict.
+- Target: `mag parity --adhoc <NNN> --run <dir>` for any other edition:
+  render both engines fresh (`--no-model`; pending anchors resolved via
+  the normal pipeline first), evaluate Tier S, report Tier E and G/V
+  informationally, no baseline.
+- Verify: `--adhoc 010` agrees with `mag parity 010` clause for clause.
 
 ### WP-4.2 the flip
 
 - Owns: `magazine.toml`, `CLAUDE.md` (pipeline paragraph), `docs/`
   (transition record superseding `docs/RENDERER_MIGRATION.md`, which still
   describes the deleted TypeScript engine), evidence.
-- Gate: WP-4.1's recorded Tier F approval.
-- Target: `[render] engine = "typst"` default; `weasyprint` remains
-  selectable as the rollback exactly as `reportlab` did in the last
-  migration; CLAUDE.md and docs describe the actual pipeline.
-- Verify: render every corpus edition plus the newest in-flight edition end
-  to end with the new default; critic passes; `mag parity --adhoc` (WP-4.0g)
-  on the in-flight edition: Tier S must pass, G/V numbers reported to Fran;
-  a template gap exposed by the in-flight edition blocks the flip until
-  fixed and re-gated. Fran prints one booklet.
+- Gate: WP-4.1's verdict digests in its evidence file.
+- Target: `[render] engine = "typst"` default; `weasyprint` stays
+  selectable as the rollback exactly as `reportlab` did last migration;
+  docs describe the actual pipeline.
+- Verify: render 010 and the newest in-flight edition end to end with the
+  new default; critic passes; `mag parity --adhoc` on the in-flight
+  edition: Tier S must pass, Tier E reported; a template gap it exposes
+  blocks the flip until fixed and re-gated.
 
-### WP-4.3 post-flip hyphenation proof (only if WP-1.5 chose (b))
+### WP-4.3 post-flip hyphenation change (only if WP-1.5 chose (b))
 
 - Owns: `mag/src/typeset/**` (enable native hyphenation), evidence.
-- Target: Typst with native hyphenation vs the ORIGINAL pre-WP-1.5
-  hyphenating goldens: Tier S text with hyphen-normalization + equal page
-  counts + zero cap violations; the line-break residual quantified.
-  `awaiting-fran` for acceptance.
+- Target: quantify the deliberate divergence: native-hyphenation render vs
+  the parity render, page counts equal, zero cap violations, changed line
+  breaks counted. This is a design change, so it ends `awaiting-fran`: a
+  product decision, not a sameness verification.
 
 ## Phase 6: decommission
 
 ### WP-6.1 delete Python
 
-- Gate: one real edition shipped on the Typst engine (same acceptance rule
-  as rust-rewrite.md: a released edition, not tests). Deleting WeasyPrint
-  deletes the rollback; that is Fran's call, recorded.
+- Gate: one real edition shipped on the Typst engine (rust-rewrite.md's
+  rule: a released edition, not tests). Deleting WeasyPrint deletes the
+  rollback AND the ability to re-render pre-010 editions byte-faithfully;
+  both are Fran's call, recorded.
 - Owns: deletion of `src/magazine/`, `pyproject.toml`, `uv.lock`, ruff
   config; font relocation to `mag/assets/fonts/` (byte-identical, checked);
   `.githooks` update (drop the ruff steps AND the direct
   `python3 tools/nocomments.py` invocation); the no-comments check ported
-  into `cargo test` natively so `tools/nocomments.py` can go; `tools/*.py`
-  disposition per Appendix A, each keep/delete confirmed by Fran;
-  `CLAUDE.md`, `docs/`, and `meta/verification/` scaffolding deletion
-  (corpus, goldens, baselines, evidence remain in git history); a final
+  into `cargo test` natively; `tools/*.py` disposition per Appendix A,
+  each keep/delete confirmed by Fran; `CLAUDE.md`, `docs/`, and deletion of
+  the `meta/verification/` scaffolding (history keeps it); a final
   transition record.
 - Target: `git grep -lE "uv run|mag-render-adapter|weasyprint"` over
   tracked files hits only docs history and this plan; `mag render`,
   `mag capture` (including a PDF source), `cargo test`, and a full render
-  of the shipped edition all pass on a machine with no Python toolchain
-  configured for this repo.
+  of the shipped edition pass with no Python toolchain configured for this
+  repo.
 
 ## Dependency graph (authoritative over section order)
 
@@ -885,59 +760,61 @@ pinned `pdftoppm` from `cargo test`; they do not use `mag parity`.
 WP-0.0 -> WP-0.0b -> WP-0.1 -> WP-0.2a -> WP-0.2b -> WP-0.2c -> WP-0.2d
 WP-0.2d -> WP-1.1, WP-1.2, WP-1.3, WP-1.4      (1.1-1.4 parallel)
 WP-1.3 -> WP-1.5 (Fran gate between)
-WP-1.5 -> WP-2.0a (also serial via rule 1c)
-WP-1.4 -> WP-2.0a -> WP-2.0b
+WP-1.5 -> WP-2.0a
+WP-1.1 + WP-1.2 + WP-1.4 -> WP-2.0a -> WP-2.0b
+(010 content-final, Fran-recorded) -> WP-2.0a
 WP-0.2d -> WP-5.1a -> WP-5.1b -> WP-5.1c
 WP-5.1c + WP-2.0b -> WP-2.1 -> WP-2.2a -> WP-2.2b -> WP-2.2c -> WP-2.3
-WP-2.3 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5 -> WP-3.6
-WP-3.6 -> WP-3.0g (Fran gate) -> WP-3.7
+WP-2.3 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5
+WP-3.5 -> WP-3.0g -> WP-3.7
 WP-0.2d -> WP-5.2, WP-5.3a, WP-5.7             (parallel with Phase 2/3)
-WP-5.3a -> WP-5.3b -> WP-5.3c -> WP-5.3g (Fran gate)
-WP-5.1c -> WP-5.4;  WP-3.7 + WP-5.4 -> WP-5.4g (Fran gate)
+WP-5.3a -> WP-5.3b -> WP-5.3c -> WP-5.3g
+WP-5.1c -> WP-5.4;  WP-3.7 + WP-5.4 -> WP-5.4g
 WP-5.1c -> WP-5.5
 WP-2.3 + WP-3.7 + WP-5.2 + WP-5.3b + WP-5.4 + WP-5.5 -> WP-5.6
-WP-3.7 + WP-5.3g + WP-5.4g -> WP-4.1 (Fran gate) -> WP-4.2
+WP-3.7 + WP-5.3g + WP-5.4g -> WP-4.1 -> WP-4.2
 WP-3.7 -> WP-4.0g -> WP-4.2
 WP-5.6 -> WP-4.2
 WP-4.2 -> WP-4.3 (if applicable) -> shipped edition -> WP-6.1 (Fran gate)
+WP-5.7 -> WP-6.1
 Serialization overrides (rule 1): Cargo-file owners pairwise serial;
-typeset/render.rs owners pairwise serial; golden-mutating WPs pairwise
-serial; mag/src/parity* owners pairwise serial.
+typeset/render.rs owners pairwise serial; mag/src/parity* owners pairwise
+serial.
 ```
 
 ## Risks
 
-- **rustybuzz/Pango disagreement** on these fonts: caught by WP-1.1 before
-  any engine code exists.
-- **Typst crate API churn**: versions pinned; upgrades are their own WP with
-  a full `mag parity --corpus` rerun.
-- **The 3,000-line adapter encodes behavior nobody remembers**: the mapping
-  tables (WP-2.2a/b/c) and the residual ledger (WP-3.7) force everything
-  into the open; anything unexplained lands on the ledger, not under the
-  rug.
-- **Oracle drift**: `oracle_tree_sha` + verdict digest checks make drift a
-  refused run.
-- **Subagents gaming gates**: rules 1, 3, 4, 6; digests over thresholds,
-  goldens, and oracle; verifier reruns from clean worktrees; baseline
-  monotonicity enforced by the comparator with the verifier as the only
-  legal writer.
-- **Corpus too thin in es**: scope is honestly "editions with committed
-  translations at freeze time"; if that is only legacy editions, WP-0.1
-  reports it and Fran may commission one modern es translation before the
-  freeze (a content decision, outside this plan's WPs).
+- **rustybuzz/Pango disagreement**: caught by WP-1.1 before engine code
+  exists.
+- **Typst crate churn**: pinned; upgrades are their own WP with a full
+  parity rerun.
+- **The 3,000-line adapter encodes behavior nobody remembers**: the
+  WP-2.2 mapping tables and WP-3.7's display-list residual ledger force it
+  into the open.
+- **Gaming**: rules 1, 3, 4, 6; verdicts byte-deterministic and rerun by a
+  verifier from a clean worktree; the Tier E definition can only be changed
+  by revising this plan.
+- **Display-list extraction cost**: the Tier E instrument (WP-0.2b) is the
+  largest comparator investment; the fixture suite in its Verify is what
+  proves it trustworthy before anything depends on it.
+- **010 doesn't exercise everything** (no editorial, no extracts, no
+  fenced code blocks, one cover mode): deliberately accepted; fixtures
+  gate the misses that matter (code/extracts in WP-3.3, cover modes in
+  WP-5.4), the editorial path is out of scope (see Scope notes), and
+  `--adhoc` gives a free cross-check on any other edition at any time.
+- **010 is the live intake edition**: the staleness guard binds every
+  verdict and baseline entry to its staged-input digest, and Phase 2 waits
+  for Fran's content-final record.
 
 ## Non-goals
 
-Typst-native typography improvements before the flip (except the WP-4.3
-proof), CI infrastructure, rendering editions outside the frozen corpus
-during parity (the WP-4.2 in-flight check excepted), InDesign/Prince
-detours, keeping the reportlab engine (it dies with WP-6.1 alongside
-everything else Python), provenance ceremony beyond the sanctioned,
-temporary `meta/verification/` scaffolding.
+Typst-native typography improvements before the flip (except WP-4.3),
+multi-edition frozen corpora, translation parity, CI infrastructure,
+InDesign/Prince detours, keeping the reportlab engine (it dies in WP-6.1
+with everything else Python), provenance ceremony (the small
+`meta/verification/` scaffolding is temporary and dies in WP-6.1).
 
 ## Appendix A: Python disposition table
-
-Every Python file in the repo and where it goes.
 
 | File | Disposition |
 |---|---|
@@ -958,11 +835,11 @@ Every Python file in the repo and where it goes.
 | `src/magazine/html_edition.py` | web path ported WP-5.5; interior-HTML path dies with the oracle |
 | `src/magazine/weasyprint_adapter.py` | replaced by `mag/src/typeset/`; deleted WP-6.1 |
 | `src/magazine/render.py` (reportlab engine) | deleted WP-6.1, never ported |
-| `src/magazine/render_engine.py` | superseded by Rust engine dispatch (WP-2.0a); deleted WP-6.1 |
+| `src/magazine/render_engine.py` | superseded by Rust dispatch (WP-2.0a); deleted WP-6.1 |
 | `src/magazine/engine_render_bridge.py` | deleted WP-6.1 |
 | `src/magazine/reader_layout.py` | shape ported as the layout JSON (WP-2.3); deleted WP-6.1 |
 | `src/magazine/errors.py`, `io.py`, `__init__.py` | die with the package, WP-6.1 |
 | `tools/pdf2md.py` | ported, WP-5.7 |
 | `tools/nocomments.py` | check ported into `cargo test`, WP-6.1 |
-| `tools/capture.py`, `tools/compare.py`, `tools/coverproof.py`, `tools/letter.py`, `tools/read.py` | side tools: individually keep/port/delete by Fran in WP-6.1; none is pipeline-load-bearing |
+| `tools/capture.py`, `tools/compare.py`, `tools/coverproof.py`, `tools/letter.py`, `tools/read.py` | side tools: keep/port/delete by Fran in WP-6.1; none is pipeline-load-bearing |
 | `art-directions/experiments/vignette-wilted-sprout/wordless/letter.py` | experiment artifact: keep/delete by Fran in WP-6.1 |
