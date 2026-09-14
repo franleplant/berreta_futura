@@ -1,0 +1,1684 @@
+- name: manifest_not_found
+  edition_id: '010'
+  known_sources: []
+  files: {}
+
+- name: manifest_not_a_mapping
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      - just
+      - a list
+
+- name: manifest_unparseable
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      title: "unterminated
+
+- name: valid_minimum
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Alpha Edition
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: header_missing_fields
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: ''
+      issue_number: null
+      title: []
+      articles: []
+
+- name: header_id_mismatch
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '011'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      sections: []
+
+- name: header_id_not_a_string
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: 10
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+
+- name: sources_not_a_list
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      sources: {}
+      articles: []
+
+- name: sources_null
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      sources:
+      articles: []
+
+- name: sources_blank_entries
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      sources: ['  ', 5]
+      articles: []
+
+- name: sources_unknown
+  edition_id: '010'
+  known_sources: [known]
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      sources: [zeta, alpha, known]
+      articles: []
+
+- name: neither_sections_nor_articles
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+
+- name: format_not_a_mapping
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      format: illustrated
+      articles: []
+
+- name: format_invalid_article_opener
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      format:
+        article_opener: spots_v2
+      articles: []
+
+- name: illustrated_requires_art_direction_path
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      format:
+        article_opener: illustrated_paper_spots_v1
+      articles: []
+
+- name: articles_not_a_list
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      sections: []
+      articles: {}
+
+- name: article_not_a_mapping
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - just a string
+
+- name: article_missing_keys
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+
+- name: article_id_blank_string
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: '   '
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_source_ids_not_strings
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        source_ids: [4]
+        manuscript: editions/010/a1.md
+
+- name: article_author_note_too_long
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        author_note: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_house_byline_with_note
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: The Editors
+        content_mode: article
+        author_note: A note that should not be here.
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_duplicate_id_and_unknown_sources
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [zeta, alpha]
+        manuscript: editions/010/a1.md
+
+- name: article_manuscript_missing_file
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/nowhere.md
+
+- name: article_manuscript_not_a_string
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: 17
+
+- name: article_manuscript_escapes_root
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: ../../../outside.md
+
+- name: article_manuscript_editions_prefix_missing
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/missing-under-editions.md
+
+- name: article_display_problems
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Beta
+        display_emphasis: Gamma
+        opener_variant: corner
+        author: Writer
+        content_mode: memoir
+        minimum_reader_pages: 9
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_short_title_too_long
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_minimum_reader_pages_not_an_int
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        minimum_reader_pages: many
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_key_ideas_invalid
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        key_ideas: []
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_key_ideas_over_budget
+  edition_id: '010'
+  known_sources: [s1]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        key_ideas:
+        - one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree twentyfour twentyfive
+        - one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree twentyfour twentyfive
+        - one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree twentyfour twentyfive
+        - one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree twentyfour twentyfive
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: article_key_ideas_and_tail_art
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        key_ideas: [One clear claim]
+        tail_art_path: editions/010/tail.png
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: illustrated_opener_requirements
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  files:
+    editions/010/a1.md: |
+      # Heading first
+
+      Paragraph second.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      art_direction_path: art-directions/x.yaml
+      format:
+        article_opener: illustrated_paper_spots_v1
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: illustrated_opener_art_incomplete
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      art_direction_path: art-directions/x.yaml
+      format:
+        article_opener: illustrated_paper_spots_v1
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        author_note: A real note.
+        opener_art:
+          path: editions/010/opener.png
+          alt_text: '  '
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: verbatim_multiple_sources
+  edition_id: '010'
+  known_sources: [s1, s2]
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: verbatim
+        source_ids: [s1, s2]
+        manuscript: editions/010/a1.md
+
+- name: verbatim_title_must_match_record
+  edition_id: '010'
+  known_sources: [s1]
+  records:
+    s1:
+      title: The Captured Title
+      url: https://example.com/a
+      published_at: '2026-02-03'
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: verbatim
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: verbatim_title_matches_record
+  edition_id: '010'
+  known_sources: [s1]
+  records:
+    s1:
+      title: Alpha
+      url: https://example.com/a
+      published_at: '2026-02-03'
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: verbatim
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: sections_not_a_list
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      sections: nope
+
+- name: section_problems
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/g.md: |
+      Glossary body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      sections:
+      - kind: glossary
+      - kind: Colophon
+        path: editions/010/g.md
+      - kind: appendix
+        path: editions/010/g.md
+      - kind: glossary
+        path: editions/010/g.md
+      - kind: try_it
+        path: editions/010/missing.md
+
+- name: cover_not_a_mapping
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      cover: a string
+      tail_art_fit: squeeze
+
+- name: cover_art_missing_file
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      cover:
+        art_path: editions/010/nope.png
+
+- name: closing_plates_not_a_list
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      closing_plates: 3
+
+- name: closing_plate_problems
+  edition_id: '010'
+  known_sources: []
+  allow_missing_art: true
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      closing_plates:
+      - title: One
+      - title: Plate
+        art_path: editions/010/p1.png
+      - title: plate
+        art_path: editions/010/p1.png
+
+- name: art_repeats_across_slots
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      cover:
+        art_path: editions/010/art/plate-v1.png
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        tail_art_path: editions/010/art/plate-v2.png
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: editorial_without_frontmatter
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/editorial.md: |
+      No frontmatter here.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      editorial: editions/010/editorial.md
+
+- name: editorial_frontmatter_without_title
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/editorial.md: |
+      ---
+      byline: Someone
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      editorial: editions/010/editorial.md
+
+- name: editorial_frontmatter_unparseable
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/editorial.md: |
+      ---
+      title: "unterminated
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      editorial: editions/010/editorial.md
+
+- name: editorial_loads
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/editorial.md: |
+      ---
+      title: The Last Meter
+      byline: The editors
+      label: OPENING
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      editorial: editions/010/editorial.md
+
+- name: editorial_defaults_byline_and_label
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/editorial.md: |
+      ---
+      title: The Last Meter
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      editorial: editions/010/editorial.md
+
+- name: section_titles_default_by_kind
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/s.md: |
+      Section body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      sections:
+      - kind: glossary
+        path: editions/010/s.md
+      - kind: try_it
+        path: editions/010/s.md
+      - kind: source_record
+        title: Custom Title
+        path: editions/010/s.md
+
+- name: language_and_locale_defaults
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      language: es
+      articles: []
+      sections: []
+
+- name: dateline_and_source_url_from_records
+  edition_id: '010'
+  known_sources: [s1, s2]
+  records:
+    s1:
+      title: First
+      url: https://example.com/first
+      published_at: '2026-02-03'
+    s2:
+      title: Second
+      url: https://example.com/second
+      published_at: '2026-07-19'
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1, s2]
+        manuscript: editions/010/a1.md
+
+- name: opener_art_not_a_mapping
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      art_direction_path: art-directions/x.yaml
+      format:
+        article_opener: illustrated_paper_spots_v1
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        author_note: A real note.
+        opener_art: not-a-mapping
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: tail_art_fit_invalid
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      cover:
+        headline: H
+      tail_art_fit: squeeze
+
+- name: translation_manifest_not_found
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: translation_header_and_cover
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      cover:
+        headline: H
+        deck: D
+        back_text: B
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: fr
+      cover:
+        headline: Hache
+      articles: []
+
+- name: translation_cover_not_a_mapping
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: nope
+      articles: nope
+      sections: nope
+
+- name: translation_article_membership
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: zz
+        title: Zeta
+        short_title: Zeta
+        manuscript: editions/010/translations/es/zz.md
+      sections: []
+
+- name: translation_article_fields
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph with a [link](https://example.com/one) and `code`.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial con un [enlace](https://example.com/two) y `codigo`.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        author_note: Source note.
+        key_ideas: [First claim, Second claim]
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Beta
+        display_emphasis: Gamma
+        author: '   '
+        manuscript: editions/010/translations/es/a1.md
+        key_ideas: [Una sola afirmacion]
+      sections: []
+
+- name: translation_article_requires_fields
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+      sections: []
+
+- name: translation_author_note_mismatch
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        author_note: 'Una nota que la fuente no tiene.'
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_structure_invariants
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph with `code`.
+
+      ```python
+      print("one")
+      ```
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+
+      ```python
+      print("dos")
+      ```
+
+      Un parrafo de mas.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_editorial_and_sections
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/g.md: |
+      Glossary body.
+    editions/010/editorial.md: |
+      ---
+      title: The Last Meter
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      editorial: editions/010/editorial.md
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      sections:
+      - kind: glossary
+        path: editions/010/g.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/a1.md
+      sections:
+      - kind: try_it
+        title: Pruebalo
+        path: editions/010/g.md
+
+- name: translation_closing_plate_titles
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      closing_plates:
+      - title: One
+        art_path: editions/010/p1.png
+      - title: Two
+        art_path: editions/010/p2.png
+      - title: Three
+        art_path: editions/010/p3.png
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      closing_plate_titles: [Uno, uno, '  ']
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_closing_plate_count
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      closing_plates:
+      - title: One
+        art_path: editions/010/p1.png
+      - title: Two
+        art_path: editions/010/p2.png
+      - title: Three
+        art_path: editions/010/p3.png
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      closing_plate_titles: [Uno]
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_loads_cleanly
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph with a [link](https://example.com/one) and `code`.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial con un [link](https://example.com/one) y `code`.
+    editions/010/g.md: |
+      Glossary body.
+    editions/010/translations/es/g.md: |
+      Cuerpo del glosario.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      cover:
+        headline: H
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        author_note: Source note.
+        key_ideas: [First claim]
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      sections:
+      - kind: glossary
+        path: editions/010/g.md
+      closing_plates:
+      - title: One
+        art_path: editions/010/p1.png
+      - title: Two
+        art_path: editions/010/p2.png
+      - title: Three
+        art_path: editions/010/p3.png
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      locale: es-AR
+      title: Titulo Base
+      cover:
+        headline: Hache
+      closing_plate_titles: [Uno, Dos, Tres]
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        author_note: Nota de origen.
+        key_ideas: [Primera afirmacion]
+        manuscript: editions/010/translations/es/a1.md
+      sections:
+      - kind: glossary
+        title: Glosario
+        path: editions/010/translations/es/g.md
+
+- name: closing_plates_too_few
+  edition_id: '010'
+  known_sources: []
+  allow_missing_art: true
+  files:
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      closing_plates:
+      - title: One
+        art_path: editions/010/p1.png
+      - title: Two
+        art_path: editions/010/p2.png
+
+- name: illustrated_manuscript_unparseable
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  files:
+    editions/010/a1.md: |
+      ---
+      - not a mapping
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      art_direction_path: art-directions/x.yaml
+      format:
+        article_opener: illustrated_paper_spots_v1
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        author_note: A real note.
+        opener_art:
+          path: editions/010/opener.png
+          alt_text: Alt
+          credit: Credit
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: translation_key_ideas_absent_in_source
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        key_ideas: [Una afirmacion]
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_key_ideas_missing
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        key_ideas: [First claim]
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        key_ideas: []
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_closing_titles_not_unique
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      closing_plates:
+      - title: One
+        art_path: editions/010/p1.png
+      - title: Two
+        art_path: editions/010/p2.png
+      - title: Three
+        art_path: editions/010/p3.png
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      closing_plate_titles: [Uno, uno, Tres]
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_section_count_mismatch
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/g.md: |
+      Glossary body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      sections:
+      - kind: glossary
+        path: editions/010/g.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/a1.md
+      sections: []
+
+- name: translation_manuscripts_unparseable
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      ---
+      - not a mapping
+      ---
+
+      Body.
+    editions/010/translations/es/a1.md: |
+      ---
+      - tampoco un mapa
+      ---
+
+      Cuerpo.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/a1.md
+      sections: []

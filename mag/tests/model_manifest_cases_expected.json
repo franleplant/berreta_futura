@@ -1,0 +1,757 @@
+{
+ "art_repeats_across_slots": {
+  "errors": [
+   "Referenced file does not exist: editions/010/art/plate-v1.png",
+   "article a1 tail repeats the art of cover (plate); every filler image appears once per edition; generate more with mag art <edition> --only closing"
+  ]
+ },
+ "article_author_note_too_long": {
+  "errors": [
+   "Article a1 author_note must be a single line of at most 160 characters"
+  ]
+ },
+ "article_display_problems": {
+  "errors": [
+   "Article a1 has invalid content_mode: memoir",
+   "Article a1 minimum_reader_pages must be an integer from 1 to 7",
+   "Article a1 display_emphasis must occur in its localized title",
+   "Article a1 short_title must occur in its localized title",
+   "Article a1 has invalid opener_variant: corner"
+  ]
+ },
+ "article_duplicate_id_and_unknown_sources": {
+  "errors": [
+   "Duplicate article id: a1",
+   "Article a1 references unknown sources: alpha, zeta"
+  ]
+ },
+ "article_house_byline_with_note": {
+  "errors": [
+   "Article a1 must omit author_note for the self-explanatory house byline 'The Editors'"
+  ]
+ },
+ "article_id_blank_string": {
+  "errors": [
+   "Article 1 id must be a non-empty string"
+  ]
+ },
+ "article_key_ideas_and_tail_art": {
+  "errors": [
+   "Article a1 declares both key_ideas and tail_art_path; an article closes with one object, not two -- drop whichever the piece needs less"
+  ]
+ },
+ "article_key_ideas_invalid": {
+  "errors": [
+   "Article a1 key_ideas must be a non-empty list of single-line strings"
+  ]
+ },
+ "article_key_ideas_over_budget": {
+  "errors": [
+   "Article a1 key_ideas run to 100 words; the budget is 90. State the claims a reader needs to use the thing, not a summary of the piece"
+  ]
+ },
+ "article_manuscript_editions_prefix_missing": {
+  "errors": [
+   "Referenced file does not exist: editions/010/missing-under-editions.md"
+  ]
+ },
+ "article_manuscript_escapes_root": {
+  "errors": [
+   "Path escapes project root: ../../../outside.md"
+  ]
+ },
+ "article_manuscript_missing_file": {
+  "errors": [
+   "Referenced file does not exist: editions/010/nowhere.md"
+  ]
+ },
+ "article_manuscript_not_a_string": {
+  "errors": [
+   "Referenced path must be a non-empty string, got 17"
+  ]
+ },
+ "article_minimum_reader_pages_not_an_int": {
+  "errors": [
+   "Article a1 minimum_reader_pages must be an integer from 1 to 7"
+  ]
+ },
+ "article_missing_keys": {
+  "errors": [
+   "Article a1 missing: short_title, opener_variant, author, source_ids, manuscript"
+  ]
+ },
+ "article_not_a_mapping": {
+  "errors": [
+   "Article 1 must be a mapping"
+  ]
+ },
+ "article_short_title_too_long": {
+  "errors": [
+   "Article a1 short_title must be a single line of at most 40 characters"
+  ]
+ },
+ "article_source_ids_not_strings": {
+  "errors": [
+   "Article a1 source_ids must be a non-empty list of strings"
+  ]
+ },
+ "articles_not_a_list": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Edition articles must be a list"
+  ]
+ },
+ "closing_plate_problems": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Closing plate 1 requires title and art_path",
+   "Closing plate title must be unique: plate",
+   "Closing plate art_path must be unique: editions/010/p1.png",
+   "closing plate 'plate' repeats the art of closing plate 'Plate' (editions/010/p1.png); every filler image appears once per edition; generate more with mag art <edition> --only closing"
+  ]
+ },
+ "closing_plates_not_a_list": {
+  "crash": "TypeError: 'int' object is not iterable"
+ },
+ "closing_plates_too_few": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Edition closing_plates must define at least three unique padding plates"
+  ]
+ },
+ "cover_art_missing_file": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Referenced file does not exist: editions/010/nope.png"
+  ]
+ },
+ "cover_not_a_mapping": {
+  "crash": "AttributeError: 'str' object has no attribute 'get'"
+ },
+ "dateline_and_source_url_from_records": {
+  "ok": {
+   "articles": [
+    {
+     "author": "Writer",
+     "author_note": "",
+     "content_mode": "article",
+     "dateline": "2026 07",
+     "display_emphasis": "",
+     "extracts": [],
+     "figures": [],
+     "id": "a1",
+     "key_ideas": [],
+     "manuscript": "editions/010/a1.md",
+     "minimum_reader_pages": 1,
+     "opener_art": null,
+     "opener_variant": "split_axis",
+     "short_title": "Alpha",
+     "source_ids": [
+      "s1",
+      "s2"
+     ],
+     "source_url": "https://example.com/first",
+     "tail_art": null,
+     "title": "Alpha"
+    }
+   ],
+   "closing_plates": [],
+   "cover": {},
+   "cover_art": null,
+   "editorial": null,
+   "id": "010",
+   "issue_number": "1",
+   "language": "en",
+   "locale": "en",
+   "publication_date": "2026-01-01",
+   "publication_name": "Magazine",
+   "raw": {
+    "articles": [
+     {
+      "author": "Writer",
+      "content_mode": "article",
+      "id": "a1",
+      "manuscript": "editions/010/a1.md",
+      "opener_variant": "split_axis",
+      "short_title": "Alpha",
+      "source_ids": [
+       "s1",
+       "s2"
+      ],
+      "title": "Alpha"
+     }
+    ],
+    "id": "010",
+    "issue_number": 1,
+    "publication_date": "2026-01-01",
+    "title": "T"
+   },
+   "sections": [],
+   "title": "T"
+  }
+ },
+ "editorial_defaults_byline_and_label": {
+  "errors": [
+   "Edition requires either sections or articles"
+  ]
+ },
+ "editorial_frontmatter_unparseable": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Cannot parse editorial frontmatter <ROOT>/editions/010/editorial.md: while scanning a quoted scalar\n  in \"<unicode string>\", line 1, column 8:\n    title: \"unterminated\n           ^\nfound unexpected end of stream\n  in \"<unicode string>\", line 1, column 21:\n    title: \"unterminated\n                        ^"
+  ]
+ },
+ "editorial_frontmatter_without_title": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Editorial requires a non-empty title: <ROOT>/editions/010/editorial.md"
+  ]
+ },
+ "editorial_loads": {
+  "errors": [
+   "Edition requires either sections or articles"
+  ]
+ },
+ "editorial_without_frontmatter": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Editorial requires YAML frontmatter with a title: <ROOT>/editions/010/editorial.md"
+  ]
+ },
+ "format_invalid_article_opener": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Edition has invalid format.article_opener: spots_v2"
+  ]
+ },
+ "format_not_a_mapping": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Edition format must be a mapping"
+  ]
+ },
+ "header_id_mismatch": {
+  "errors": [
+   "Edition id '011' does not match directory '010'",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "header_id_not_a_string": {
+  "errors": [
+   "Edition id 10 does not match directory '010'",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "header_missing_fields": {
+  "errors": [
+   "Edition missing required field: id",
+   "Edition missing required field: issue_number",
+   "Edition missing required field: title",
+   "Edition missing required field: publication_date",
+   "Edition id '' does not match directory '010'",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "illustrated_manuscript_unparseable": {
+  "errors": [
+   "Article a1 manuscript cannot be parsed as a publication document: YAML frontmatter must be a mapping with string keys"
+  ]
+ },
+ "illustrated_opener_art_incomplete": {
+  "errors": [
+   "Article a1 opener_art requires non-empty alt_text, credit"
+  ]
+ },
+ "illustrated_opener_requirements": {
+  "errors": [
+   "Article a1 requires author_note for format.article_opener illustrated_paper_spots_v1",
+   "Article a1 requires a non-empty opener_art mapping for format.article_opener illustrated_paper_spots_v1",
+   "Article a1 first manuscript block must be a paragraph for format.article_opener illustrated_paper_spots_v1"
+  ]
+ },
+ "illustrated_requires_art_direction_path": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Edition format.article_opener illustrated_paper_spots_v1 requires art_direction_path"
+  ]
+ },
+ "language_and_locale_defaults": {
+  "errors": [
+   "Edition requires either sections or articles"
+  ]
+ },
+ "manifest_not_a_mapping": {
+  "errors": [
+   "<ROOT>/editions/010/edition.yaml must contain a mapping"
+  ]
+ },
+ "manifest_not_found": {
+  "errors": [
+   "Edition manifest not found: <ROOT>/editions/010/edition.yaml"
+  ]
+ },
+ "manifest_unparseable": {
+  "errors": [
+   "Cannot read <ROOT>/editions/010/edition.yaml: while scanning a quoted scalar\n  in \"<unicode string>\", line 2, column 8:\n    title: \"unterminated\n           ^\nfound unexpected end of stream\n  in \"<unicode string>\", line 3, column 1:\n    \n    ^"
+  ]
+ },
+ "neither_sections_nor_articles": {
+  "errors": [
+   "Edition requires either sections or articles"
+  ]
+ },
+ "opener_art_not_a_mapping": {
+  "crash": "AttributeError: 'str' object has no attribute 'get'"
+ },
+ "section_problems": {
+  "errors": [
+   "Section 1 requires kind and path",
+   "Colophon sections are no longer supported",
+   "Section 3 has unknown kind 'appendix'; the known kinds are original_editorial, source_introduction, original_synthesis, source_record, production_note, glossary, try_it, cheat_sheet",
+   "Referenced file does not exist: editions/010/missing.md"
+  ]
+ },
+ "section_titles_default_by_kind": {
+  "ok": {
+   "articles": [],
+   "closing_plates": [],
+   "cover": {},
+   "cover_art": null,
+   "editorial": null,
+   "id": "010",
+   "issue_number": "1",
+   "language": "en",
+   "locale": "en",
+   "publication_date": "2026-01-01",
+   "publication_name": "Magazine",
+   "raw": {
+    "articles": [],
+    "id": "010",
+    "issue_number": 1,
+    "publication_date": "2026-01-01",
+    "sections": [
+     {
+      "kind": "glossary",
+      "path": "editions/010/s.md"
+     },
+     {
+      "kind": "try_it",
+      "path": "editions/010/s.md"
+     },
+     {
+      "kind": "source_record",
+      "path": "editions/010/s.md",
+      "title": "Custom Title"
+     }
+    ],
+    "title": "T"
+   },
+   "sections": [
+    {
+     "kind": "glossary",
+     "path": "editions/010/s.md",
+     "title": "Glossary"
+    },
+    {
+     "kind": "try_it",
+     "path": "editions/010/s.md",
+     "title": "Try It in Fifteen Minutes"
+    },
+    {
+     "kind": "source_record",
+     "path": "editions/010/s.md",
+     "title": "Custom Title"
+    }
+   ],
+   "title": "T"
+  }
+ },
+ "sections_not_a_list": {
+  "errors": [
+   "Edition sections must be a list"
+  ]
+ },
+ "sources_blank_entries": {
+  "errors": [
+   "Edition sources must contain non-empty source id strings",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "sources_not_a_list": {
+  "errors": [
+   "Edition sources must be a list",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "sources_null": {
+  "errors": [
+   "Edition sources must be a list",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "sources_unknown": {
+  "errors": [
+   "Edition references unknown sources: alpha, zeta",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "tail_art_fit_invalid": {
+  "errors": [
+   "Edition requires either sections or articles",
+   "Edition tail_art_fit must be cover or contain"
+  ]
+ },
+ "translation_article_fields": {
+  "errors": [
+   "Translation 'es' article a1 requires author_note because the source article has one",
+   "Translation 'es' article a1 author cannot be blank",
+   "Translation 'es' article a1 display_emphasis must occur in its localized title",
+   "Translation 'es' article a1 short_title must occur in its localized title",
+   "Translation 'es' article a1 must translate all 2 key_ideas lines, not 1",
+   "Translation 'es' article a1 does not preserve link targets and order",
+   "Translation 'es' article a1 does not preserve inline code identifiers and order"
+  ]
+ },
+ "translation_article_membership": {
+  "errors": [
+   "Translation 'es' is missing articles: a1",
+   "Translation 'es' has unknown articles: zz"
+  ]
+ },
+ "translation_article_requires_fields": {
+  "errors": [
+   "Translation 'es' article a1 requires title, short_title, and manuscript"
+  ]
+ },
+ "translation_author_note_mismatch": {
+  "errors": [
+   "Translation 'es' article a1 must omit author_note because the source article omits it"
+  ]
+ },
+ "translation_closing_plate_count": {
+  "errors": [
+   "Translation 'es' requires exactly 3 closing_plate_titles"
+  ]
+ },
+ "translation_closing_plate_titles": {
+  "errors": [
+   "Translation 'es' closing_plate_titles cannot be blank"
+  ]
+ },
+ "translation_closing_titles_not_unique": {
+  "errors": [
+   "Translation 'es' closing_plate_titles must be unique"
+  ]
+ },
+ "translation_cover_not_a_mapping": {
+  "errors": [
+   "Translation 'es' requires translated cover copy",
+   "Translation 'es' articles must be a list",
+   "Translation 'es' is missing articles: a1",
+   "Translation 'es' sections must be a list"
+  ]
+ },
+ "translation_editorial_and_sections": {
+  "errors": [
+   "Translation 'es' requires an editorial path",
+   "Translation 'es' section 1 must preserve kind 'glossary' and provide title and path"
+  ]
+ },
+ "translation_header_and_cover": {
+  "errors": [
+   "Translation language 'fr' does not match directory 'es'",
+   "Translation source_language must be 'en'",
+   "Translation 'es' cover is missing deck",
+   "Translation 'es' cover is missing back_text",
+   "Translation 'es' is missing articles: a1",
+   "Translation 'es' sections must be a list"
+  ]
+ },
+ "translation_key_ideas_absent_in_source": {
+  "errors": [
+   "Translation 'es' article a1 must omit key_ideas because the source article omits them"
+  ]
+ },
+ "translation_key_ideas_missing": {
+  "errors": [
+   "Translation 'es' article a1 key_ideas must be a non-empty list of single-line strings",
+   "Translation 'es' article a1 requires key_ideas because the source article has them"
+  ]
+ },
+ "translation_loads_cleanly": {
+  "ok": {
+   "articles": [
+    {
+     "author": "Writer",
+     "author_note": "Nota de origen.",
+     "content_mode": "article",
+     "dateline": null,
+     "display_emphasis": "",
+     "extracts": [],
+     "figures": [],
+     "id": "a1",
+     "key_ideas": [
+      "Primera afirmacion"
+     ],
+     "manuscript": "editions/010/translations/es/a1.md",
+     "minimum_reader_pages": 1,
+     "opener_art": null,
+     "opener_variant": "split_axis",
+     "short_title": "Alfa",
+     "source_ids": [
+      "s1"
+     ],
+     "source_url": null,
+     "tail_art": null,
+     "title": "Alfa"
+    }
+   ],
+   "closing_plates": [
+    {
+     "art_path": "editions/010/p1.png",
+     "title": "Uno"
+    },
+    {
+     "art_path": "editions/010/p2.png",
+     "title": "Dos"
+    },
+    {
+     "art_path": "editions/010/p3.png",
+     "title": "Tres"
+    }
+   ],
+   "cover": {
+    "headline": "Hache"
+   },
+   "cover_art": null,
+   "editorial": null,
+   "id": "010",
+   "issue_number": "1",
+   "language": "es",
+   "locale": "es-AR",
+   "publication_date": "2026-01-01",
+   "publication_name": "Magazine",
+   "raw": {
+    "articles": [
+     {
+      "author": "Writer",
+      "author_note": "Nota de origen.",
+      "content_mode": "article",
+      "display_emphasis": "",
+      "figures": [],
+      "id": "a1",
+      "key_ideas": [
+       "Primera afirmacion"
+      ],
+      "manuscript": "editions/010/translations/es/a1.md",
+      "opener_variant": "split_axis",
+      "short_title": "Alfa",
+      "source_ids": [
+       "s1"
+      ],
+      "tail_art_path": null,
+      "title": "Alfa"
+     }
+    ],
+    "closing_plates": [
+     {
+      "art_path": "editions/010/p1.png",
+      "title": "Uno"
+     },
+     {
+      "art_path": "editions/010/p2.png",
+      "title": "Dos"
+     },
+     {
+      "art_path": "editions/010/p3.png",
+      "title": "Tres"
+     }
+    ],
+    "cover": {
+     "headline": "Hache"
+    },
+    "editorial": null,
+    "id": "010",
+    "issue_number": 1,
+    "language": "es",
+    "locale": "es-AR",
+    "publication_date": "2026-01-01",
+    "sections": [
+     {
+      "kind": "glossary",
+      "path": "editions/010/translations/es/g.md",
+      "title": "Glosario"
+     }
+    ],
+    "subtitle": "",
+    "title": "Titulo Base",
+    "translation": {
+     "fallback_locale": null,
+     "policy": null,
+     "source_language": "en"
+    }
+   },
+   "sections": [
+    {
+     "kind": "glossary",
+     "path": "editions/010/translations/es/g.md",
+     "title": "Glosario"
+    }
+   ],
+   "title": "Titulo Base"
+  }
+ },
+ "translation_manifest_not_found": {
+  "errors": [
+   "Required 'es' translation manifest not found: editions/010/translations/es/edition.yaml"
+  ]
+ },
+ "translation_manuscripts_unparseable": {
+  "errors": [
+   "Translation 'es' article a1 English source <ROOT>/editions/010/a1.md cannot be parsed as a publication document: YAML frontmatter must be a mapping with string keys",
+   "Translation 'es' article a1 translation <ROOT>/editions/010/translations/es/a1.md cannot be parsed as a publication document: YAML frontmatter must be a mapping with string keys"
+  ]
+ },
+ "translation_section_count_mismatch": {
+  "errors": [
+   "Translation 'es' must contain exactly 1 sections"
+  ]
+ },
+ "translation_structure_invariants": {
+  "errors": [
+   "Translation 'es' article a1 does not preserve the source Markdown block structure (2 source blocks, 3 translated blocks)",
+   "Translation 'es' article a1 does not preserve inline code identifiers and order",
+   "Translation 'es' article a1 does not preserve fenced code exactly"
+  ]
+ },
+ "valid_minimum": {
+  "ok": {
+   "articles": [
+    {
+     "author": "Writer",
+     "author_note": "",
+     "content_mode": "article",
+     "dateline": null,
+     "display_emphasis": "",
+     "extracts": [],
+     "figures": [],
+     "id": "a1",
+     "key_ideas": [],
+     "manuscript": "editions/010/a1.md",
+     "minimum_reader_pages": 1,
+     "opener_art": null,
+     "opener_variant": "split_axis",
+     "short_title": "Alpha",
+     "source_ids": [
+      "s1"
+     ],
+     "source_url": null,
+     "tail_art": null,
+     "title": "Alpha"
+    }
+   ],
+   "closing_plates": [],
+   "cover": {},
+   "cover_art": null,
+   "editorial": null,
+   "id": "010",
+   "issue_number": "1",
+   "language": "en",
+   "locale": "en",
+   "publication_date": "2026-01-01",
+   "publication_name": "Magazine",
+   "raw": {
+    "articles": [
+     {
+      "author": "Writer",
+      "content_mode": "article",
+      "id": "a1",
+      "manuscript": "editions/010/a1.md",
+      "opener_variant": "split_axis",
+      "short_title": "Alpha",
+      "source_ids": [
+       "s1"
+      ],
+      "title": "Alpha"
+     }
+    ],
+    "id": "010",
+    "issue_number": 1,
+    "publication_date": "2026-01-01",
+    "title": "Alpha Edition"
+   },
+   "sections": [],
+   "title": "Alpha Edition"
+  }
+ },
+ "verbatim_multiple_sources": {
+  "errors": [
+   "Article a1 verbatim articles carry exactly one source"
+  ]
+ },
+ "verbatim_title_matches_record": {
+  "ok": {
+   "articles": [
+    {
+     "author": "Writer",
+     "author_note": "",
+     "content_mode": "verbatim",
+     "dateline": "2026 02",
+     "display_emphasis": "",
+     "extracts": [],
+     "figures": [],
+     "id": "a1",
+     "key_ideas": [],
+     "manuscript": "editions/010/a1.md",
+     "minimum_reader_pages": 1,
+     "opener_art": null,
+     "opener_variant": "split_axis",
+     "short_title": "Alpha",
+     "source_ids": [
+      "s1"
+     ],
+     "source_url": "https://example.com/a",
+     "tail_art": null,
+     "title": "Alpha"
+    }
+   ],
+   "closing_plates": [],
+   "cover": {},
+   "cover_art": null,
+   "editorial": null,
+   "id": "010",
+   "issue_number": "1",
+   "language": "en",
+   "locale": "en",
+   "publication_date": "2026-01-01",
+   "publication_name": "Magazine",
+   "raw": {
+    "articles": [
+     {
+      "author": "Writer",
+      "content_mode": "verbatim",
+      "id": "a1",
+      "manuscript": "editions/010/a1.md",
+      "opener_variant": "split_axis",
+      "short_title": "Alpha",
+      "source_ids": [
+       "s1"
+      ],
+      "title": "Alpha"
+     }
+    ],
+    "id": "010",
+    "issue_number": 1,
+    "publication_date": "2026-01-01",
+    "title": "T"
+   },
+   "sections": [],
+   "title": "T"
+  }
+ },
+ "verbatim_title_must_match_record": {
+  "errors": [
+   "Article a1 verbatim title must stay the captured source title 'The Captured Title'"
+  ]
+ }
+}
