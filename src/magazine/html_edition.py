@@ -390,7 +390,7 @@ def _render_illustrated_article(
         f'data-figure-layouts="{_attr(_figure_layouts(article))}" '
         f'data-short-title="{_attr(article.short_title)}" '
         'data-article-opener="illustrated_paper_spots_v1">',
-        '  <header class="article-opener">',
+        f'  <header class="article-opener" data-article-id="{_attr(article.id)}">',
         '    <figure class="article-opener-art" data-asset-role="article_opener">',
         '      <span class="article-opener-art-offset" aria-hidden="true"></span>',
         f'      <img src="{_attr(art_asset.src)}" alt="{_attr(art_asset.alt_text)}">',
