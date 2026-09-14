@@ -59,6 +59,32 @@ unicode-normalization 0.1.25 (NFC step of the normalization spec).
 - A vs B: sha256 2d6bfbfeab1763fd94e981562874530e150f4ad1a39afe78d1cd14c6966949b2
   (same tier summary; differs from A-vs-A only in inputs.b_reader_sha256)
 
+## Critique round (critiquer-added)
+
+One defect fixed in mag/src/parity/geometry.rs: `layout_pages` now fails
+loud when `-bbox-layout` parses fewer pages than the requested range;
+before, a parse regression would have produced an all-zero Tier G meter
+indistinguishable from perfect agreement. Self-test verdict bytes are
+unchanged by the fix (digests above re-verified).
+
+Negative checks (worker's self-tests compared only agreeing inputs; these
+prove the comparator fails when it should). Fixture build, from the repo
+root with the two render trees present (T is any scratch dir):
+
+    T=<scratch>/wp02a-neg
+    mkdir -p $T/short/en $T/swap/en $T/pages
+    pdfseparate editions/010/render-2026-09-14T01-49-02/en/reader.pdf $T/pages/p-%03d.pdf
+    pdfunite $T/pages/p-0{01..55}.pdf $T/short/en/reader.pdf
+    seq -f "p-%03g.pdf" 1 56 | sed 's/p-010/SWAPA/; s/p-011/p-010/; s/SWAPA/p-011/' \
+      | sed "s|^|$T/pages/|" | tr '\n' ' ' | xargs -J % pdfunite % $T/swap/en/reader.pdf
+    cargo run --manifest-path mag/Cargo.toml -- parity 010 \
+      --pre-rendered editions/010/render-2026-09-14T01-47-59 $T/short   # then $T/swap
+
+Results: short (dropped last page): page_count fail 56 vs 55, exit 1,
+later clauses not evaluated. swap (pages 10 and 11 swapped): page_count
+and boxes pass, text fail on exactly 2 pages, Tier G structure mismatches
+2, exit 1.
+
 ## Residuals
 
 - Orchestrator grant recorded: the WP-0.2 preamble's "module registration,

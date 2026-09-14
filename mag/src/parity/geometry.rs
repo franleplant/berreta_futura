@@ -179,7 +179,16 @@ pub fn layout_pages(pdf: &Path, first: u32, last: u32) -> Result<Vec<Page>> {
         "pdftotext -bbox-layout failed on {}",
         pdf.display()
     );
-    Ok(parse_layout(&String::from_utf8_lossy(&out.stdout)))
+    let pages = parse_layout(&String::from_utf8_lossy(&out.stdout));
+    anyhow::ensure!(
+        pages.len() == (last - first + 1) as usize,
+        "bbox-layout parsed {} pages for {}..{} of {}",
+        pages.len(),
+        first,
+        last,
+        pdf.display()
+    );
+    Ok(pages)
 }
 
 pub fn compare_layout(a: &[Page], b: &[Page], first_page: u32, g1_pt: f64, g2_pt: f64) -> GeomTier {
