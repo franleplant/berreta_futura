@@ -1,6 +1,8 @@
 mod art;
 mod caller;
 mod capture;
+#[allow(dead_code)]
+mod model;
 mod parity;
 mod plan_cmd;
 mod print_cmd;
