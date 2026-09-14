@@ -114,6 +114,26 @@ tiers:
     link_rect_quantum_pt: 0.5
     raster_bound:
       authored_by: WP-0.2d
+      status: blocked
+      measured_max_channel_delta: 241
+      measurement: the oracle leg re-emitted through pypdf with every coordinate
+        operand of m/l/c/v/y/re/cm/Td/TD/Tm perturbed uniformly within half the
+        0.01 pt quantum (24452 operands, seed 0), rasterized against the original
+        at 300 dpi over the interior domain
+      control: the same rewrite at amplitude 0 is display-list equal and raster
+        zero-diff (max channel delta 0), so the rewrite itself contributes nothing
+      decomposition: text-positioning operands alone (Td/TD/Tm) already reach 241,
+        as do path operands alone; figures sit on pages 12, 37 and 42 while the
+        241 appears on nearly every page, so image resampling is not the cause
+      cause: FreeType grid-fits glyph outlines at 300 dpi, so a sub-quantum shift
+        can move a stem a whole pixel and flip that pixel between paper (255) and
+        body ink (14), a delta of 241
+      rasterizer_variants: pdftoppm -aa no still reaches 241; -freetype no reaches
+        0 only because it fails to build any embedded font and renders no text
+      why_no_value: recording 241 would leave the Tier E raster guard passing every
+        differing pixel below 242/255, which contradicts the plan's raster zero-diff
+        gate; protocol rule 4 reserves threshold changes to a plan revision, so the
+        key carries no value and the comparator keeps reporting not_evaluated
 tools:
   measured_at: WP-0.1
   os: macOS 26.6.2
@@ -133,3 +153,82 @@ tools:
     installed; the crate pin is asserted at mag parity startup
   typst_crates:
     pending: WP-1.4 pin, recorded by WP-2.0a
+fault_suite:
+  authored_by: WP-0.2d
+  asserted_by: mag/tests/parity_faults.rs under cargo test
+  clause_vocabulary:
+    - page_count
+    - boxes
+    - text
+    - color
+    - navigation
+    - display_list
+    - raster_guard
+    - raster_dimensions
+    - v1
+    - v2
+  fixture_route: the test builds both legs itself with lopdf (six A5 pages, one
+    Type1 font with ToUnicode, an image XObject, a GoTo link, a stroked path) so
+    the suite needs no renderer and survives the Python decommission; the same
+    eight faults were also seeded the plan's way, by rendering scratch copies of
+    edition 010's staged inputs and CSS in a throwaway worktree, and those
+    verdicts are recorded in the WP-0.2d evidence file
+  expected_detections:
+    swapped_words:
+      intended_check: text
+      must_flag: [color, display_list, text]
+    line_moved_005:
+      intended_check: display_list
+      must_flag: [display_list]
+    line_moved_03:
+      intended_check: display_list
+      must_flag: [display_list]
+    figure_shifted_page:
+      intended_check: display_list
+      must_flag: [display_list]
+    recolor_30px:
+      intended_check: display_list
+      must_flag: [display_list]
+    body_ink_pure_black:
+      intended_check: color
+      must_flag: [color, display_list]
+    dropped_link_annotation:
+      intended_check: navigation
+      must_flag: [display_list, navigation]
+    mediabox_off_05:
+      intended_check: boxes
+      must_flag: [boxes, display_list, raster_dimensions]
+critic_metric_tolerances:
+  authored_by: WP-0.2d
+  consumed_by: WP-5.3a and WP-5.3b, which never author tolerances
+  integer_metrics: exact equality
+  float_relative_epsilon: 1.0e-6
+  near_threshold_window: 1.0e-5
+  measured_on: edition 010 render-critic.json, 1450 integer leaves and 631 float
+    leaves over 56 pages
+  decision_thresholds:
+    ink_ratio: SPARSE_INK_RATIO 0.004
+    rgb_mae: OPENER_CROP_FIDELITY_MAX_RGB_MAE 8.0
+    frame_edge_delta_inches: OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES 0.01
+    height_points: VOID_MIN_HEIGHT_POINTS 96.0
+    width_fraction: VOID_MIN_WIDTH_FRACTION 0.9
+    trailing_gap_points: VOID_TRAILING_TOLERANCE_POINTS 16.0
+    live_fraction: TAIL_GAP_MIN_LIVE_FRACTION 0.35
+    height_vs_declared: TAIL_BAND_HEIGHT_TOLERANCE_POINTS 12.0
+    gap_symmetry: TAIL_BAND_SYMMETRY_TOLERANCE_POINTS 32.0
+    band_adjacency: TAIL_BAND_ADJACENCY_TOLERANCE_POINTS 8.0
+    opener_offset_points: OPENER_OFFSET_POINTS 4.1 within OPENER_OFFSET_TOLERANCE_PIXELS 2.0
+  near_threshold_fixtures_required:
+    - metric: pages[39].largest_void.height_points
+      value: 96.0
+      constant: VOID_MIN_HEIGHT_POINTS
+      threshold: 96.0
+      relative_margin: 0.0
+      decision: void height_points >= VOID_MIN_HEIGHT_POINTS
+      note: sits exactly on the boundary, so one ulp of evaluation-order slack
+        flips the void from reported to unreported; WP-5.3b carries a fixture
+  nearest_other_margins:
+    - metric: largest_void.height_points 92.0 and 100.0 vs 96.0, relative 0.0417
+    - metric: largest_void.width_fraction 0.939 vs 0.9, relative 0.0433
+    - metric: tail band height vs declared, relative 0.694
+    - metric: minimum non-zero ink_ratio 0.046483 vs 0.004, relative 10.6
