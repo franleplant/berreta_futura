@@ -1,7 +1,7 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-14, revision 10 (Phase 0 built and
-verified, the four Phase 1 spikes measured, revision 9's gate critiqued
+Status: **in execution**, 2026-09-14, revision 11 (Phase 0 built and
+verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired). Companion to `rust-rewrite.md`
 (which moved orchestration to Rust and left the renderer in Python). This
 plan finishes the job: a Typst-based renderer implemented in Rust inside
@@ -9,6 +9,41 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 11 changelog
+
+Four dispositions, three of them from completed WPs and one correcting
+revision 10's own text.
+
+- **Porting a crash is not fidelity.** WP-5.1c found `manifest.py`'s
+  `_check_unique_art` trusting shapes the validator has already rejected,
+  so a non-mapping `cover` or `opener_art` dies with AttributeError and a
+  non-iterable `closing_plates` with TypeError, DISCARDING diagnoses Python
+  had already accumulated. The Rust port returns those diagnoses instead.
+  Recorded as a **deliberate divergence**, not fixed in Python: the Phase 5
+  preamble now states the rule and its limits, so the remaining porting
+  WPs apply it consistently instead of deciding case by case.
+- **The web tree stays out of the parity ladder, and the guard moves to
+  where the risk actually is.** A ladder clause would compare nothing:
+  during Phase 2 and 3 the Typst leg produces no web output at all, so
+  there is no second side until WP-5.6. The real exposure is an oracle
+  change silently altering the web tree while every PDF clause stays green,
+  which is exactly what WP-0.0c's first attempt did. So the mandatory
+  web-tree comparison becomes a binding verify clause on sanctioned oracle
+  changes (Reference stability), not a tier.
+- **A translation smoke test before the Python dies.** WP-5.1c ported
+  `load_translation` in full, broader than English-only parity required and
+  the right instinct, but it leaves the Rust loader supporting a path
+  parity never exercises. WP-6.1 now must compare a translated edition
+  through both loaders BEFORE deleting the Python, because deletion is the
+  moment the oracle stops existing.
+- **Revision 10 quoted a reconciliation that does not hold.** WP-1.6
+  explained the gap between its 0.017432 pt and WP-1.1's 0.009897 pt as a
+  rounding and per-run difference; the WP-1.5/1.6 verifier showed both
+  halves fail, and the real cause is an uncontrolled variable. Corrected in
+  place, and generalized into protocol rule 9, because this is the SECOND
+  time two spikes measuring different corpora were chained into a causal
+  claim.
 
 ## Revision 10 changelog
 
@@ -383,7 +418,7 @@ a waiver.
 | Hyphenation dictionaries (Pyphen vs Typst's hypher) | DECIDED (WP-1.3, option b): off in both engines for parity, scoped to `:lang(en)` so Spanish editions keep it; WP-1.5 applies the switch, WP-4.3 is mandatory. Measured cost of disabling: zero page-count changes, zero new cap violations, 428 lines rebroken |
 | Justification | the design is ragged-right. CONFIRMED (WP-1.2) as a selector fact: the stylesheet's only `text-align` declaration is in the `@bottom-right` folio box and body text inherits `start`. Precisely: the word `justify` does occur four times, every one of them a flexbox `justify-content` or comment prose, none a `text-align` |
 | Text shaping (Pango+HarfBuzz vs rustybuzz) | same vendored TTFs. MEASURED (WP-1.1): 1488/1488 lines with identical glyph sequences, per-glyph advances within 0.00073 pt. Requires `liga`/`clig` off wherever letter-spacing is set (Pango suppresses ligatures under tracking) and tracking applied as exactly `(n-1) x letter_spacing` |
-| Glyph advance quantization (WeasyPrint breaks on `PangoRectangle.width`, an integer count of 1/1024 px; Typst sums exact font units) | RESOLVED as to mechanism by WP-1.6: systematic and one-sided at 0.000173 pt per glyph, mean drift 0.010476 pt, max 0.017432 pt, and 604 of 899 body lines exceed the 0.01 pt quantum. Two distinct consequences, do not conflate them. (a) LINE BREAKING: exactly one line of 899 flips, block 135; fixed by widening the Typst body column to WP-1.7's measured midpoint. (b) INTRA-LINE GLYPH POSITIONS: invisible to the display list at show-level granularity, so the raster guard is the only observer and WP-0.2f's floor must be derived to include it. WP-1.1's 0.009897 pt figure measures rustybuzz already rounded onto Pango's grid, a different quantity from the unrounded line width that decides breaking |
+| Glyph advance quantization (WeasyPrint breaks on `PangoRectangle.width`, an integer count of 1/1024 px; Typst sums exact font units) | RESOLVED as to mechanism by WP-1.6: systematic and one-sided at 0.000173 pt per glyph, mean drift 0.010476 pt, max 0.017432 pt, and 604 of 899 body lines exceed the 0.01 pt quantum. Two distinct consequences, do not conflate them. (a) LINE BREAKING: exactly one line of 899 flips, block 135; fixed by widening the Typst body column to WP-1.7's measured midpoint. (b) INTRA-LINE GLYPH POSITIONS: invisible to the display list at show-level granularity, so the raster guard is the only observer and WP-0.2f's floor must be derived to include it. do not chain WP-1.1's 0.009897 pt to these figures: it was measured with hyphenation ON over 1402 lines, WP-1.6's over 899 with it OFF, and drift accumulates per glyph, so they describe different line populations rather than different methods (rule 9) |
 | Syntax highlighting (pygments vs syntect) | (text-run, fill color) sequences at the content-stream level (WP-3.3), never raster; 010 carries NO fenced code blocks or extracts, so WP-3.3 gates on a dedicated fixture edition, not vacuously on 010 |
 | Font names (WeasyPrint embeds aliases: Magazine-Serif, Magazine-Sans, ...; Typst embeds the faces' real names) | `parity.yaml font_name_map`, authored in WP-0.2b, each mapping pair validated by identical font-file digests |
 | pypdf rewrite noise on inner pages | measured by WP-0.2c's merge calibration; found noise becomes an explicit normalization rule before it can be mistaken for an engine diff |
@@ -448,6 +483,25 @@ before/after comparisons (WP-4.3); out of scope here.
   it under Owns (WP-0.0b, WP-0.0c, WP-1.5, and WP-4.3's revert). Phase 1
   spikes may instrument oracle files uncommitted, working tree only,
   `git status` clean at WP end.
+- **Every sanctioned oracle change compares the WEB tree as well as the
+  reader PDFs**, byte for byte over `en/web/`, and states which files
+  changed and why. This is binding, not advisory: WP-0.0c's first attempt
+  left `pdftotext` dumps, `pdfinfo` boxes and the critic report all
+  unchanged while silently deleting nine articles' source QR links,
+  because `web_edition.py` recognizes its own markup by exact tag string.
+  A verify clause phrased only in terms of the PDFs would have passed it.
+  The comparison is meaningful because web HTML is byte-deterministic
+  across renders, which WP-0.0c established over all eleven files and
+  WP-0.1 never covered.
+- The web tree is deliberately NOT a parity-ladder clause. During Phase 2
+  and 3 the Typst leg produces no web output at all, so a tier would
+  compare one side against nothing and pass vacuously, which is the defect
+  WP-0.2g exists to stop reporting as a pass. The web tree becomes
+  engine-comparable only at WP-5.6, where `--engine typst` runs the web
+  path natively, and WP-5.5's byte-identical `web/` oracle is what proves
+  the port. Until then it is guarded by render determinism plus the clause
+  above, and that is the whole of its protection, stated so nobody assumes
+  otherwise.
 
 ## Architecture
 
@@ -574,6 +628,17 @@ before/after comparisons (WP-4.3); out of scope here.
    ends `Status: awaiting-fran` with its recommendation; the decision is
    recorded by Fran (commit authored by Fran or a line Fran types). No
    verification gate is human.
+9. **A number quoted from another WP carries its configuration.** Any
+   figure cited inside a WP's reasoning must travel with what it was
+   measured under: which corpus and how many items, which switches (for
+   this plan, above all hyphenation on or off), quantized or raw, and per
+   what unit (run, line, page). Two spikes measuring different populations
+   cannot be chained into a causal claim, and a WP that inherits one is
+   fixing a guess. This has now happened twice: WP-1.2 attributed its break
+   miss to WP-1.1's residual, and WP-1.6 explained away the gap between its
+   own number and WP-1.1's with a methodological difference that does not
+   exist. Both were caught by audit rather than by the authoring WP, which
+   is why it is a rule and not advice.
 8. **The brief.** A subagent receives: its WP section verbatim, its phase
    preamble, and these sections: the parity ladder, Normalization,
    Reference stability, Architecture, and this protocol. The brief bounds
@@ -907,7 +972,10 @@ fallback.
   are LETTER-SPACED display headlines; at normal spacing the worst line is
   0.009897 pt and none crosses the quantum. So this residual does not
   explain WP-1.2's body-text break miss, and WP-1.6 exists to find what
-  does.
+  does. **Configuration, which must travel with these numbers (rule 9):
+  hyphenation ON, 1402 lines, rustybuzz advances compared per laid-out
+  line (1488 lines, 1488 runs, 1:1).** They are not comparable to WP-1.6's
+  899-line hyphenation-off population.
 
 ### WP-1.2 line-break parity and the ragged-right confirmation
 
@@ -1034,12 +1102,26 @@ fallback.
   WP-1.2 found.
 - This does NOT overturn WP-1.1, but it does correct what its target
   sentence claimed. WP-1.1's shaping verdict stands (glyph ids 1488/1488,
-  per-glyph advances within one Pango unit); its "cumulative line advances
-  within 0.01 pt" figure compares rustybuzz ALREADY ROUNDED onto Pango's
-  grid, per run, while breaking is decided by Pango's unrounded line width,
-  per line. Both numbers are right about different quantities. WP-1.1's
-  stated fallback, aligning OpenType features, cannot fix this: the
-  features already agree.
+  per-glyph advances within one Pango unit), and its "cumulative line
+  advances within 0.01 pt" is not a per-line guarantee of the quantity that
+  decides breaking. WP-1.1's own 8-unit figure (max summed per-glyph
+  difference) supports that better than anything else in either spike.
+  WP-1.1's stated fallback, aligning OpenType features, cannot fix this:
+  the features already agree.
+- **Why the two numbers differ, corrected.** WP-1.6 explained the gap
+  between its 0.017432 pt and WP-1.1's 0.009897 pt as rustybuzz being
+  already rounded onto Pango's grid and measured per run; the WP-1.5/1.6
+  verifier showed BOTH halves fail. Per-run cannot explain anything:
+  WP-1.1 records 1488 laid-out lines and 1488 runs, an explicit 1:1. And
+  the rounding half points the wrong way: 0.009897 pt is 13.5 Pango units,
+  which EXCEEDS WP-1.1's own 8-unit max, so that residual looks like the
+  UNQUANTIZED quantity, the same one WP-1.6 measures. The likely real
+  cause is an uncontrolled variable neither spike connects: **WP-1.1
+  measured with hyphenation ON (1402 lines), WP-1.6 with it OFF (899
+  lines)**, and since drift accumulates per glyph, the two sampled
+  different line populations. Both numbers are correct; they are not
+  measurements of the same thing, and the plan must never again quote one
+  inside the other's reasoning without its configuration (rule 9).
 - DECISION: take the measure-widening route, and make it derived rather
   than tuned. Quantizing Typst's advances onto the 1/1024 px grid is the
   other option and is out of reach: it is engine-internal, unreachable from
@@ -1093,6 +1175,11 @@ fallback.
   render's page count is unchanged by the switch (the scoping is the point,
   so prove it rather than assume it); 010 en reproduces WP-1.3's measured
   numbers (56 pages, zero cap changes).
+- Erratum (evidence only, accepted): WP-1.5's evidence gives the max run of
+  consecutive hyphen-ended lines BEFORE the switch as 3; the verifier
+  measured 4, the 3 having been conflated with WP-1.3's separate finding of
+  3 hyphen ladders. The number that carries the claim, 2 after the switch,
+  is exact and is what parity.yaml records.
 
 ## Phase 2: the Typst engine skeleton
 
@@ -1256,6 +1343,33 @@ dumps are produced by full inline invocations (`uv run python -c '...'`)
 recorded verbatim in `## Commands` so the verifier reproduces them; no
 uncommitted scripts.
 
+**Deliberate divergence, and its limits.** Where the Python CRASHES, the
+port does not reproduce the crash. Porting a crash is not fidelity, and
+these crashes destroy information: `manifest.py`'s `_check_unique_art` runs
+after the validator has recorded shape errors but before raising them and
+trusts the shapes it just rejected, so a non-mapping `cover` or
+`opener_art` dies with AttributeError and a non-iterable `closing_plates`
+with TypeError, throwing away diagnoses Python had already accumulated (for
+`cover: text` it records "Edition cover must be a mapping" and then loses
+it). The Rust loader returns those diagnoses. Exact-message equality is
+untestable for such inputs anyway: a traceback is not a message, so nothing
+is weakened by diverging. WP-5.1b set the precedent, WP-5.1c follows it.
+
+The limits are strict, and a WP claiming a divergence must satisfy all of
+them or the divergence is a defect:
+
+- the divergence is only ever toward MORE diagnosis, never toward accepting
+  what Python refuses. A port that is more permissive than its original is
+  a bug, whatever the original does;
+- every diverging input is enumerated in evidence with the Python behavior
+  and the Rust behavior side by side, and is covered by a test;
+- the oracle comparison stays exact for every input Python handles without
+  crashing. A divergence is never a reason to loosen the oracle;
+- fixing the Python instead is available but not preferred: it needs a
+  sanctioned oracle-change WP, costs a re-render and a full verification
+  cycle, and improves code scheduled for deletion at WP-6.1. Choose it only
+  when the crash would otherwise hide a real difference.
+
 - **WP-5.1a document model** (`publication_document.py`,
   `document_structure.py`, `reader_text.py`): owns `mag/src/model/doc.rs`
   (+ markdown crate). Oracle: plain-text and structural projection of every
@@ -1388,8 +1502,9 @@ uncommitted scripts.
 - Target: quantify the deliberate divergence: native-hyphenation render vs
   the parity render, page counts equal, zero cap violations, changed line
   breaks counted. Report the es figures too, since WP-1.5 scoped its switch
-  to `:lang(en)` and Spanish never lost hyphenation. This is a design change, so it ends `awaiting-fran`: a
-  product decision, not a sameness verification.
+  to `:lang(en)` and Spanish never lost hyphenation. This is a design
+  change, so it ends `awaiting-fran`: a product decision, not a sameness
+  verification.
 
 ## Phase 6: decommission
 
@@ -1407,6 +1522,17 @@ uncommitted scripts.
   each keep/delete confirmed by Fran; `CLAUDE.md`, `docs/`, and deletion of
   the `meta/verification/` scaffolding (history keeps it); a final
   transition record.
+- **Translation oracle, run before deletion because it cannot be run
+  after.** WP-5.1c ported `load_translation` in full (41 of
+  `manifest.py`'s 87 raise sites live there), broader than English-only
+  parity required and the right instinct, since a partial port of a module
+  about to be deleted would break Spanish editions silently. It does leave
+  the Rust loader supporting a path parity never exercises. So while both
+  implementations still exist: load a translated edition through BOTH
+  loaders and compare the loaded structure and every refusal message, and
+  render one es edition end to end on the Typst engine. Deletion is the
+  moment the oracle stops existing, so this is possible exactly once. A
+  mismatch blocks the deletion.
 - Target: `git grep -lE "uv run|mag-render-adapter|weasyprint"` over
   tracked files hits only docs history and this plan; `mag render`,
   `mag capture` (including a PDF source), `cargo test`, and a full render
@@ -1458,10 +1584,12 @@ serial.
   advance rounding, 0.0174 pt on letter-spaced headlines and 0.009897 pt at
   normal spacing.
 - **Attributing a divergence to the nearest measured number**: WP-1.2's
-  break miss was assigned to that residual, which its own figures rule out.
-  The audit caught it; WP-1.6 now measures the cause. Worth generalising:
-  two spikes measuring different corpora and different quantities cannot be
-  chained into a causal claim, and a WP that inherits one is fixing a guess.
+  break miss was assigned to that residual, which its own figures rule out;
+  then WP-1.6 explained away the gap to WP-1.1's number with a
+  methodological difference that does not exist, when the real cause was
+  hyphenation on versus off. Twice is a pattern, so it is now protocol
+  rule 9: a number quoted from another WP carries the configuration it was
+  measured under, or it is not quotable.
 - **The raster guard measuring the rasterizer instead of the engines**:
   this already happened (WP-0.2d, 241/255 from FreeType grid-fitting) and
   is why WP-0.2f derives its bound under a two-sided constraint. The
