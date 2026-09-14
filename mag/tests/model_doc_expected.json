@@ -147,6 +147,55 @@
    ]
   ]
  },
+ "padded_containers": {
+  "block_signature": [
+   "body",
+   "body",
+   "body",
+   "body",
+   "body",
+   "body",
+   "body",
+   "body"
+  ],
+  "educated": "Alphabetagamma.\nDelta(epsilon)zeta.\nEta(theta)iota.\nKappalambdamu.\nNu*xi*omicron.\nPirho sigmatau.\nUpsilon phi chi.\nPsiomegaalpha.",
+  "folded": "Alphabetagamma.\nDelta(epsilon)zeta.\nEta(theta)iota.\nKappalambdamu.\nNu*xi*omicron.\nPirho sigmatau.\nUpsilon phi chi.\nPsiomegaalpha.",
+  "metadata_keys": [],
+  "visible_blocks": [
+   [
+    "p",
+    "Alphabetagamma."
+   ],
+   [
+    "p",
+    "Delta(epsilon)zeta."
+   ],
+   [
+    "p",
+    "Eta(theta)iota."
+   ],
+   [
+    "p",
+    "Kappalambdamu."
+   ],
+   [
+    "p",
+    "Nu*xi*omicron."
+   ],
+   [
+    "p",
+    "Pirho sigmatau."
+   ],
+   [
+    "p",
+    "Upsilon phi chi."
+   ],
+   [
+    "p",
+    "Psiomegaalpha."
+   ]
+  ]
+ },
  "structures": {
   "block_signature": [
    "h1",
