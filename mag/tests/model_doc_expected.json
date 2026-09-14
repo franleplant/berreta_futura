@@ -1,0 +1,247 @@
+{
+ "dots_frontmatter": {
+  "block_signature": [
+   "body"
+  ],
+  "educated": "Body after a dotted frontmatter terminator.",
+  "folded": "Body after a dotted frontmatter terminator.",
+  "metadata_keys": [
+   "count",
+   "title"
+  ],
+  "visible_blocks": [
+   [
+    "p",
+    "Body after a dotted frontmatter terminator."
+   ]
+  ]
+ },
+ "empty_frontmatter": {
+  "block_signature": [
+   "body"
+  ],
+  "educated": "Empty frontmatter above.",
+  "folded": "Empty frontmatter above.",
+  "metadata_keys": [],
+  "visible_blocks": [
+   [
+    "p",
+    "Empty frontmatter above."
+   ]
+  ]
+ },
+ "frontmatter": {
+  "block_signature": [
+   "body",
+   "h2",
+   "body"
+  ],
+  "educated": "Body text after the frontmatter.\nA heading\nMore body text.",
+  "folded": "Body text after the frontmatter.\nA heading\nMore body text.",
+  "metadata_keys": [
+   "content_mode",
+   "label",
+   "nested",
+   "source_ids"
+  ],
+  "visible_blocks": [
+   [
+    "p",
+    "Body text after the frontmatter."
+   ],
+   [
+    "h2",
+    "A heading"
+   ],
+   [
+    "p",
+    "More body text."
+   ]
+  ]
+ },
+ "glyphs": {
+  "block_signature": [
+   "body",
+   "body",
+   "body",
+   "body"
+  ],
+  "educated": "A non-breaking hyphen, a -minus sign, and a softhyphen.\nA line with a non breaking space and \u201cdouble quotes\u201d and \u2018single quotes\u2019 and it\u2019s apostrophe.\nSettable accents: caf\u00e9, na\u00efve, \u2013 en dash, \u2018quoted\u2019.\nUnsettable glyphs: \u6f22\u5b57 and \ud83d\ude42 and \u2603.",
+  "folded": "A non-breaking hyphen, a -minus sign, and a softhyphen.\nA line with a non breaking space and \u201cdouble quotes\u201d and \u2018single quotes\u2019 and it\u2019s apostrophe.\nSettable accents: caf\u00e9, na\u00efve, \u2013 en dash, \u2018quoted\u2019.\nUnsettable glyphs: ?? and ? and ?.",
+  "metadata_keys": [],
+  "visible_blocks": [
+   [
+    "p",
+    "A non-breaking hyphen, a -minus sign, and a softhyphen."
+   ],
+   [
+    "p",
+    "A line with a non breaking space and \"double quotes\" and 'single quotes' and it's apostrophe."
+   ],
+   [
+    "p",
+    "Settable accents: caf\u00e9, na\u00efve, \u2013 en dash, \u2018quoted\u2019."
+   ],
+   [
+    "p",
+    "Unsettable glyphs: \u6f22\u5b57 and \ud83d\ude42 and \u2603."
+   ]
+  ]
+ },
+ "inlines": {
+  "block_signature": [
+   "body",
+   "body",
+   "body",
+   "body",
+   "body",
+   "body"
+  ],
+  "educated": "Plain text with emphasis, strong, and inline code.\nNested strong with emphasis inside and emphasis with strong inside.\nA link and a titled link.\nA soft break across lines, and a hard break here after two spaces.\nEntities like & and \u00a9 plus escapes like *not emphasis* and _literal_.\nA link with code and emphasis inside it.",
+  "folded": "Plain text with emphasis, strong, and inline code.\nNested strong with emphasis inside and emphasis with strong inside.\nA link and a titled link.\nA soft break across lines, and a hard break here after two spaces.\nEntities like & and \u00a9 plus escapes like *not emphasis* and _literal_.\nA link with code and emphasis inside it.",
+  "metadata_keys": [],
+  "visible_blocks": [
+   [
+    "p",
+    "Plain text with emphasis, strong, and inline code."
+   ],
+   [
+    "p",
+    "Nested strong with emphasis inside and emphasis with strong inside."
+   ],
+   [
+    "p",
+    "A link and a titled link."
+   ],
+   [
+    "p",
+    "A soft break across lines, and a hard break here after two spaces."
+   ],
+   [
+    "p",
+    "Entities like & and \u00a9 plus escapes like *not emphasis* and _literal_."
+   ],
+   [
+    "p",
+    "A link with code and emphasis inside it."
+   ]
+  ]
+ },
+ "no_frontmatter": {
+  "block_signature": [
+   "body",
+   "rule",
+   "body"
+  ],
+  "educated": "This document opens with prose, so there is no frontmatter to split.\nA thematic break above is a horizontal rule, not a frontmatter fence.",
+  "folded": "This document opens with prose, so there is no frontmatter to split.\nA thematic break above is a horizontal rule, not a frontmatter fence.",
+  "metadata_keys": [],
+  "visible_blocks": [
+   [
+    "p",
+    "This document opens with prose, so there is no frontmatter to split."
+   ],
+   [
+    "p",
+    "A thematic break above is a horizontal rule, not a frontmatter fence."
+   ]
+  ]
+ },
+ "structures": {
+  "block_signature": [
+   "h1",
+   "body",
+   "h2",
+   "h3",
+   "quote[body,h3,ul[body;body]]",
+   "ul[body;body,body]",
+   "ol@3[body;body;body;body]",
+   "rule",
+   "code",
+   "code",
+   "code",
+   "body"
+  ],
+  "educated": "Top level heading\nA first paragraph of ordinary body prose.\nSecond level\nThird level\nA quoted paragraph.\nA heading inside the quote\na bullet inside the quote\na second bullet\nfirst bullet\nsecond bullet\na loose paragraph inside the second bullet\nthird\nfourth\nplain start\nsecond\ndef render(edition: str) -> None:\n    print(edition)\n\nno info string\n\nindented code block\nsecond line\n\nA closing paragraph.",
+  "folded": "Top level heading\nA first paragraph of ordinary body prose.\nSecond level\nThird level\nA quoted paragraph.\nA heading inside the quote\na bullet inside the quote\na second bullet\nfirst bullet\nsecond bullet\na loose paragraph inside the second bullet\nthird\nfourth\nplain start\nsecond\ndef render(edition: str) -> None:\n    print(edition)\n\nno info string\n\nindented code block\nsecond line\n\nA closing paragraph.",
+  "metadata_keys": [],
+  "visible_blocks": [
+   [
+    "h1",
+    "Top level heading"
+   ],
+   [
+    "p",
+    "A first paragraph of ordinary body prose."
+   ],
+   [
+    "h2",
+    "Second level"
+   ],
+   [
+    "h3",
+    "Third level"
+   ],
+   [
+    "quote",
+    "A quoted paragraph."
+   ],
+   [
+    "h3",
+    "A heading inside the quote"
+   ],
+   [
+    "bullet",
+    "a bullet inside the quote"
+   ],
+   [
+    "bullet",
+    "a second bullet"
+   ],
+   [
+    "bullet",
+    "first bullet"
+   ],
+   [
+    "bullet",
+    "second bullet"
+   ],
+   [
+    "bullet",
+    "a loose paragraph inside the second bullet"
+   ],
+   [
+    "ordered",
+    "third"
+   ],
+   [
+    "ordered",
+    "fourth"
+   ],
+   [
+    "ordered",
+    "plain start"
+   ],
+   [
+    "ordered",
+    "second"
+   ],
+   [
+    "code",
+    "def render(edition: str) -> None:\n    print(edition)\n"
+   ],
+   [
+    "code",
+    "no info string\n"
+   ],
+   [
+    "code",
+    "indented code block\nsecond line\n"
+   ],
+   [
+    "p",
+    "A closing paragraph."
+   ]
+  ]
+ }
+}
