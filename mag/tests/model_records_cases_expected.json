@@ -1,0 +1,267 @@
+{
+  "extracts_absent_null": {
+    "ok": []
+  },
+  "extracts_already_in_manuscript": {
+    "errors": [
+      "Article a1 extract 1 run already appears verbatim in the manuscript; drop the extract row or the manuscript's own copy"
+    ]
+  },
+  "extracts_bad_anchor": {
+    "errors": [
+      "Article a1 extract 1 anchor does not match an article heading: 'Nowhere'"
+    ]
+  },
+  "extracts_begin_absent": {
+    "errors": [
+      "Article a1 extract 1 begin marker must occur exactly once in the source (found 0): 'NO-SUCH-MARKER'"
+    ]
+  },
+  "extracts_begin_not_unique": {
+    "errors": [
+      "Article a1 extract 1 begin marker must occur exactly once in the source (found 2): 'twice-marker'"
+    ]
+  },
+  "extracts_code_whitespace": {
+    "errors": [
+      "Article a1 extract 1 run carries layout-significant whitespace (tabs or space runs), which a wrapping code panel cannot preserve; use begin/end markers that avoid it or style: quote"
+    ]
+  },
+  "extracts_duplicate_id": {
+    "errors": [
+      "Article a1 has duplicate extract id: x1"
+    ]
+  },
+  "extracts_end_not_unique": {
+    "errors": [
+      "Article a1 extract 1 end marker must occur exactly once at or after begin (found 2): 'twice-marker'"
+    ]
+  },
+  "extracts_invalid_style": {
+    "errors": [
+      "Article a1 extract 1 has invalid style: 'panel'; known: ['code', 'quote']"
+    ]
+  },
+  "extracts_missing_fields": {
+    "errors": [
+      "Article a1 extract 1 missing: begin, end, caption, anchor"
+    ]
+  },
+  "extracts_missing_source_article": {
+    "errors": [
+      "Article a1 extract 1 source article is missing: <ROOT>/library/sources/src-missing/article.md"
+    ]
+  },
+  "extracts_not_a_list": {
+    "errors": [
+      "Article a1 extracts must be a list"
+    ]
+  },
+  "extracts_ok_quote": {
+    "ok": [
+      {
+        "anchor": "Beta Heading",
+        "caption": "A caption",
+        "id": "x1",
+        "source_id": "src-a",
+        "style": "quote",
+        "text": "QUOTE-START some quoted words QUOTE-END"
+      }
+    ]
+  },
+  "extracts_row_not_mapping": {
+    "errors": [
+      "Article a1 extract 1 must be a mapping"
+    ]
+  },
+  "extracts_too_many": {
+    "errors": [
+      "Article a1 selects 3 extracts; maximum is 2"
+    ]
+  },
+  "extracts_unknown_source_id": {
+    "errors": [
+      "Article a1 extract 1 source_id must be one of the article source_ids"
+    ]
+  },
+  "figures_absent_empty": {
+    "ok": []
+  },
+  "figures_absent_null": {
+    "ok": []
+  },
+  "figures_absolute_path": {
+    "errors": [
+      "Article a1 figure 1 has unsafe path: '/etc/passwd'"
+    ]
+  },
+  "figures_bad_anchor": {
+    "errors": [
+      "Article a1 figure 1 anchor does not match an article heading: 'Nowhere'"
+    ]
+  },
+  "figures_bad_anchor_allowed": {
+    "ok": [
+      {
+        "alt_text": "a",
+        "anchor": "Nowhere",
+        "caption": "c",
+        "credit": "r",
+        "id": "f1",
+        "layout": "evidence_band",
+        "path": "library/sources/src-a/media/img.png",
+        "source_id": "src-a"
+      }
+    ]
+  },
+  "figures_credit_optional": {
+    "ok": [
+      {
+        "alt_text": "a",
+        "anchor": "Alpha Heading",
+        "caption": "c",
+        "credit": "",
+        "id": "f1",
+        "layout": "compact_band",
+        "path": "library/sources/src-a/media/img.png",
+        "source_id": "src-a"
+      }
+    ]
+  },
+  "figures_duplicate_id": {
+    "errors": [
+      "Article a1 has duplicate figure id: f1"
+    ]
+  },
+  "figures_invalid_layout": {
+    "errors": [
+      "Article a1 figure 1 has invalid layout: banner"
+    ]
+  },
+  "figures_missing_fields": {
+    "errors": [
+      "Article a1 figure 1 missing: caption, alt_text, layout"
+    ]
+  },
+  "figures_missing_image": {
+    "errors": [
+      "Article a1 figure 1 image file is missing: <ROOT>/library/sources/src-a/media/absent.png"
+    ]
+  },
+  "figures_not_a_list": {
+    "errors": [
+      "Article a1 figures must be a list"
+    ]
+  },
+  "figures_ok": {
+    "ok": [
+      {
+        "alt_text": "Alt words",
+        "anchor": "Alpha Heading",
+        "caption": "A caption",
+        "credit": "A credit",
+        "id": "fig-1",
+        "layout": "evidence_band",
+        "path": "library/sources/src-a/media/img.png",
+        "source_id": "src-a"
+      }
+    ]
+  },
+  "figures_opener_anchor": {
+    "ok": [
+      {
+        "alt_text": "a",
+        "anchor": "__opener__",
+        "caption": "c",
+        "credit": "r",
+        "id": "f1",
+        "layout": "landscape_plate",
+        "path": "library/sources/src-a/media/img.png",
+        "source_id": "src-a"
+      }
+    ]
+  },
+  "figures_row_not_mapping": {
+    "errors": [
+      "Article a1 figure 1 must be a mapping"
+    ]
+  },
+  "figures_too_many": {
+    "errors": [
+      "Article a1 selects 4 figures; maximum is 3"
+    ]
+  },
+  "figures_unknown_source_id": {
+    "errors": [
+      "Article a1 figure 1 source_id must be one of the article source_ids"
+    ]
+  },
+  "figures_unsafe_path": {
+    "errors": [
+      "Article a1 figure 1 has unsafe path: '../../secret.png'"
+    ]
+  },
+  "localize_extracts_absent_base": {
+    "errors": [
+      "Translation 'es' article a1 has extracts absent from English"
+    ]
+  },
+  "localize_extracts_incomplete_fields": {
+    "errors": [
+      "Translation 'es' extract x1 requires caption and anchor",
+      "Translation 'es' extract x1 anchor does not match a translated heading"
+    ]
+  },
+  "localize_extracts_ok": {
+    "ok": [
+      {
+        "anchor": "Encabezado Alfa",
+        "caption": "Leyenda",
+        "id": "x1",
+        "source_id": "src-a",
+        "style": "quote",
+        "text": "QUOTE-START some quoted words QUOTE-END"
+      }
+    ]
+  },
+  "localize_figures_absent_base": {
+    "errors": [
+      "Translation 'es' article a1 has figures absent from English"
+    ]
+  },
+  "localize_figures_bad_anchor": {
+    "errors": [
+      "Translation 'es' figure f1 anchor does not match a translated heading"
+    ]
+  },
+  "localize_figures_incomplete_fields": {
+    "errors": [
+      "Translation 'es' figure f1 requires caption, alt_text, and anchor"
+    ]
+  },
+  "localize_figures_missing_and_unknown": {
+    "errors": [
+      "Translation 'es' article a1 is missing figures: f1",
+      "Translation 'es' article a1 has unknown figures: fz"
+    ]
+  },
+  "localize_figures_not_a_list": {
+    "errors": [
+      "Translation 'es' article a1 figures must be a list"
+    ]
+  },
+  "localize_figures_ok": {
+    "ok": [
+      {
+        "alt_text": "Texto",
+        "anchor": "Encabezado Alfa",
+        "caption": "Leyenda",
+        "credit": "r",
+        "id": "f1",
+        "layout": "evidence_band",
+        "path": "library/sources/src-a/media/img.png",
+        "source_id": "src-a"
+      }
+    ]
+  }
+}

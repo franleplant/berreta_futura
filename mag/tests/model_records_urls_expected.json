@@ -1,0 +1,65 @@
+{
+  "  https://e.com/pad  ": {
+    "ok": "https://e.com/pad"
+  },
+  "HTTPS://E.com:443/A/": {
+    "ok": "https://e.com/A"
+  },
+  "ftp://e.com/x": {
+    "errors": [
+      "Expected an http(s) URL, got: ftp://e.com/x"
+    ]
+  },
+  "http://example.com:80/p/": {
+    "ok": "http://example.com/p"
+  },
+  "https:///nohost": {
+    "errors": [
+      "Expected an http(s) URL, got: https:///nohost"
+    ]
+  },
+  "https://Example.COM/a//b/?utm_source=x&b=2&a=1&ref=z": {
+    "ok": "https://example.com/a/b?a=1&b=2"
+  },
+  "https://e.com": {
+    "ok": "https://e.com/"
+  },
+  "https://e.com/%7Euser/": {
+    "ok": "https://e.com/%7Euser"
+  },
+  "https://e.com//////": {
+    "ok": "https://e.com/"
+  },
+  "https://e.com/?q=a b&q=c+d": {
+    "ok": "https://e.com/?q=a+b&q=c+d"
+  },
+  "https://e.com/a#frag": {
+    "ok": "https://e.com/a"
+  },
+  "https://e.com/a/b/../c": {
+    "ok": "https://e.com/a/b/../c"
+  },
+  "https://e.com/a?Utm_Campaign=1&UTM_x=2&Ref=3&keep=4": {
+    "ok": "https://e.com/a?keep=4"
+  },
+  "https://e.com/a?b=%C3%A9": {
+    "ok": "https://e.com/a?b=%C3%A9"
+  },
+  "https://e.com/path/?empty=": {
+    "ok": "https://e.com/path?empty="
+  },
+  "https://example.com:8443/": {
+    "ok": "https://example.com:8443/"
+  },
+  "https://user:pw@e.com/x": {
+    "ok": "https://e.com/x"
+  },
+  "https://x.com/a/b/": {
+    "ok": "https://x.com/a/b"
+  },
+  "not a url": {
+    "errors": [
+      "Expected an http(s) URL, got: not a url"
+    ]
+  }
+}

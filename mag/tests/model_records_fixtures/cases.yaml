@@ -1,0 +1,337 @@
+- name: figures_ok
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - id: fig-1
+      source_id: src-a
+      path: media/img.png
+      caption: A caption
+      credit: A credit
+      alt_text: Alt words
+      anchor: Alpha Heading
+      layout: evidence_band
+- name: figures_absent_null
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows: null
+- name: figures_absent_empty
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows: []
+- name: figures_not_a_list
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows: not a list
+- name: figures_too_many
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+    - {id: f2, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+    - {id: f3, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+    - {id: f4, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_row_not_mapping
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - a plain string
+- name: figures_missing_fields
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, credit: r, anchor: Alpha Heading}
+- name: figures_credit_optional
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, alt_text: a, anchor: Alpha Heading, layout: compact_band}
+- name: figures_duplicate_id
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Beta Heading, layout: evidence_band}
+- name: figures_unknown_source_id
+  kind: figures
+  article_id: a1
+  source_ids: [src-b]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_unsafe_path
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: ../../secret.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_absolute_path
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: /etc/passwd, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: figures_invalid_layout
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: banner}
+- name: figures_bad_anchor
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Nowhere, layout: evidence_band}
+- name: figures_bad_anchor_allowed
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  allow_unanchored: true
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Nowhere, layout: evidence_band}
+- name: figures_opener_anchor
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: __opener__, layout: landscape_plate}
+- name: figures_missing_image
+  kind: figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: f1, source_id: src-a, path: media/absent.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: extracts_ok_quote
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: A caption, anchor: Beta Heading}
+- name: extracts_absent_null
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows: null
+- name: extracts_not_a_list
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows: 7
+- name: extracts_too_many
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+    - {id: x2, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+    - {id: x3, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+- name: extracts_row_not_mapping
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - 5
+- name: extracts_missing_fields
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, style: quote}
+- name: extracts_duplicate_id
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+    - {id: x1, source_id: src-a, begin: 'intro line', end: 'intro line', style: quote, caption: c, anchor: Beta Heading}
+- name: extracts_unknown_source_id
+  kind: extracts
+  article_id: a1
+  source_ids: [src-b]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+- name: extracts_invalid_style
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: panel, caption: c, anchor: Beta Heading}
+- name: extracts_bad_anchor
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Nowhere}
+- name: extracts_missing_source_article
+  kind: extracts
+  article_id: a1
+  source_ids: [src-missing]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-missing, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+- name: extracts_begin_not_unique
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: twice-marker, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+- name: extracts_begin_absent
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: NO-SUCH-MARKER, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+- name: extracts_end_not_unique
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: '# Source', end: twice-marker, style: quote, caption: c, anchor: Beta Heading}
+- name: extracts_code_whitespace
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  rows:
+    - {id: x1, source_id: src-a, begin: 'let x = 1;', end: '}', style: code, caption: c, anchor: Beta Heading}
+- name: extracts_already_in_manuscript
+  kind: extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: dup.md
+  rows:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Alpha Heading}
+- name: localize_figures_ok
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+  rows:
+    - {id: f1, caption: Leyenda, alt_text: Texto, anchor: Encabezado Alfa}
+- name: localize_figures_absent_base
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base: []
+  rows:
+    - {id: f1, caption: Leyenda, alt_text: Texto, anchor: Encabezado Alfa}
+- name: localize_figures_not_a_list
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+  rows: nope
+- name: localize_figures_missing_and_unknown
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+  rows:
+    - {id: fz, caption: Leyenda, alt_text: Texto, anchor: Encabezado Alfa}
+- name: localize_figures_incomplete_fields
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+  rows:
+    - {id: f1, caption: '', alt_text: Texto, anchor: Encabezado Alfa}
+- name: localize_figures_bad_anchor
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+  rows:
+    - {id: f1, caption: Leyenda, alt_text: Texto, anchor: Nowhere}
+- name: localize_extracts_ok
+  kind: localize_extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+  rows:
+    - {id: x1, caption: Leyenda, anchor: Encabezado Alfa}
+- name: localize_extracts_absent_base
+  kind: localize_extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base: []
+  rows:
+    - {id: x1, caption: Leyenda, anchor: Encabezado Alfa}
+- name: localize_extracts_incomplete_fields
+  kind: localize_extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+  rows:
+    - {id: x1, caption: Leyenda, anchor: ''}

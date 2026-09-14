@@ -1,0 +1,127 @@
+{
+  "canonical_url_fallback": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-01-01T00:00:00Z",
+      "id": "a",
+      "published_at": null,
+      "synopsis": "",
+      "tags": [],
+      "title": "T",
+      "url": "https://e.com/c"
+    }
+  },
+  "empty_id": {
+    "errors": [
+      "Source record missing: id"
+    ]
+  },
+  "full": {
+    "ok": {
+      "author": "Writer",
+      "captured_at": "2026-01-01T00:00:00Z",
+      "id": "a",
+      "notes": "some notes",
+      "published_at": null,
+      "synopsis": "S",
+      "tags": [
+        "b",
+        "a"
+      ],
+      "title": "T",
+      "url": "https://e.com/p"
+    }
+  },
+  "metadata_fallback": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-01-01T00:00:00Z",
+      "id": "a",
+      "published_at": null,
+      "synopsis": "from metadata",
+      "tags": [
+        "x",
+        "y"
+      ],
+      "title": "T",
+      "url": "https://e.com/p"
+    }
+  },
+  "missing_fields": {
+    "errors": [
+      "Source record missing: id, captured_at"
+    ]
+  },
+  "plain_dates": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-07-29",
+      "id": "a",
+      "published_at": "2026-07-01T10:00:00-03:00",
+      "synopsis": "",
+      "tags": [],
+      "title": "T",
+      "url": "https://e.com/p"
+    }
+  },
+  "plain_timestamp": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-07-29T00:35:54+00:00",
+      "id": "a",
+      "published_at": null,
+      "synopsis": "",
+      "tags": [],
+      "title": "T",
+      "url": "https://e.com/p"
+    }
+  },
+  "plain_with_comment": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-07-29",
+      "id": "a",
+      "published_at": null,
+      "synopsis": "",
+      "tags": [],
+      "title": "T",
+      "url": "https://e.com/p"
+    }
+  },
+  "publication_date_fallback": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-01-01T00:00:00Z",
+      "id": "a",
+      "published_at": "2026-02-03",
+      "synopsis": "",
+      "tags": [],
+      "title": "T",
+      "url": "https://e.com/p"
+    }
+  },
+  "quoted_timestamp": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-07-29T00:35:54Z",
+      "id": "a",
+      "published_at": null,
+      "synopsis": "",
+      "tags": [],
+      "title": "T",
+      "url": "https://e.com/p"
+    }
+  },
+  "submitted_url_fallback": {
+    "ok": {
+      "author": null,
+      "captured_at": "2026-01-01T00:00:00Z",
+      "id": "a",
+      "published_at": null,
+      "synopsis": "",
+      "tags": [],
+      "title": "T",
+      "url": "https://e.com/s"
+    }
+  }
+}
