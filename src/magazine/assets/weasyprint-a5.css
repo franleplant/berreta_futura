@@ -654,6 +654,39 @@ p[data-name-roster] { hyphens: manual; }
  * inside a hyphenating paragraph or list item opts back out here. */
 code { hyphens: manual; }
 /*
+ * ENGLISH HYPHENATION IS OFF WHILE THE TYPST PARITY WORK RUNS (WP-1.5,
+ * meta/plans/typst-parity-and-rust-migration.md revision 9, option b).
+ *
+ * Pyphen and Typst's hypher are different dictionaries, so a hyphenated en
+ * edition cannot be proven identical across the two engines; the parity phase
+ * compares an unhyphenated English reader instead, and WP-4.3 re-enables
+ * hyphenation natively afterwards and measures what it changes.  MEASURED
+ * COST on edition 010 (WP-1.3): page count unchanged at 56, no article's span
+ * moves, no page cap newly breached; 126 soft-hyphen breaks and 3 ladders go,
+ * and 428 lines rebreak.  The reclaimed rag lands as open tail room, the same
+ * way the comment above records for edition 003.
+ *
+ * SCOPED TO ENGLISH, deliberately.  Spanish words run longer and the comment
+ * above measures es setting about four pages longer unhyphenated, with es
+ * article 3 sitting exactly on its seven-page cap, so a global switch could
+ * breach a cap in an edition nobody is looking at.  Parity is en-only, so the
+ * scope costs it nothing.  `html lang` is set per language
+ * (html_edition.py:94), and these selectors mirror the prose list above one
+ * for one so they outrank it on the same elements and nothing else.
+ *
+ * REVERT PATH (WP-4.3): delete this comment and the rule below.  The prose
+ * rule above is untouched and resumes hyphenating English exactly as before.
+ */
+html:lang(en) .editorial > p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+html:lang(en) .editorial > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+html:lang(en) article > p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+html:lang(en) article > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+html:lang(en) main > section > p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+html:lang(en) main > section > :not(header):not(ul):not(ol) p:not(.standfirst):not(.end-mark):not([data-name-roster]),
+html:lang(en) .editorial li, html:lang(en) article li, html:lang(en) main > section li {
+  hyphens: manual;
+}
+/*
  * A landscape-plate article reads on a 12.2pt leading (render.py:2112-2116), so
  * its body line box carries its baseline 9.605pt below its own top rather than
  * the 10.005 the page datum is cut for -- 0.3996pt of ink on every line of the
