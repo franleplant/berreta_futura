@@ -60,8 +60,8 @@ pub enum Element {
         font: String,
         size: i64,
         fill: Color,
-        x: i64,
-        y: i64,
+        glyphs: usize,
+        m: [i64; 6],
         clip: Vec<u32>,
     },
     Path {
@@ -83,7 +83,7 @@ pub enum Element {
     },
     Image {
         rgba_sha256: String,
-        rect: [i64; 4],
+        m: [i64; 6],
         clip: Vec<u32>,
     },
 }
@@ -363,15 +363,19 @@ impl Tracer<'_> {
 
     fn show(&mut self, items: &[Object]) -> Result<()> {
         let font = self.gs.font.clone().context("show without Tf")?;
-        let trm = mul(self.tm, self.gs.ctm);
-        let (x, y) = apply(trm, 0.0, self.gs.ts);
-        let size_eff = self.gs.size * (trm[2] * trm[2] + trm[3] * trm[3]).sqrt();
+        let th = self.gs.tz / 100.0;
+        let params = [self.gs.size * th, 0.0, 0.0, self.gs.size, 0.0, self.gs.ts];
+        let trm = mul(params, mul(self.tm, self.gs.ctm));
+        let size_eff = (trm[2] * trm[2] + trm[3] * trm[3]).sqrt();
         let mut s = String::new();
         let mut tx = 0.0;
+        let mut glyphs = 0;
         for item in items {
             match item {
                 Object::String(bytes, _) => {
-                    tx += self.decode_show(&font, bytes, &mut s)?;
+                    let (dx, n) = self.decode_show(&font, bytes, &mut s)?;
+                    tx += dx;
+                    glyphs += n;
                 }
                 other => tx -= num(other)? / 1000.0 * self.gs.size * (self.gs.tz / 100.0),
             }
@@ -381,15 +385,15 @@ impl Tracer<'_> {
             font: font.name.clone(),
             size: qc(size_eff),
             fill: self.gs.fill.clone(),
-            x: qc(x),
-            y: qc(y),
+            glyphs,
+            m: trm.map(qc),
             clip: self.gs.clips.clone(),
         });
         self.tm = mul(translate(tx, 0.0), self.tm);
         Ok(())
     }
 
-    fn decode_show(&self, font: &Font, bytes: &[u8], s: &mut String) -> Result<f64> {
+    fn decode_show(&self, font: &Font, bytes: &[u8], s: &mut String) -> Result<(f64, usize)> {
         let th = self.gs.tz / 100.0;
         let mut tx = 0.0;
         let codes: Vec<u32> = if font.two_byte {
@@ -401,6 +405,7 @@ impl Tracer<'_> {
         } else {
             bytes.iter().map(|b| u32::from(*b)).collect()
         };
+        let count = codes.len();
         for code in codes {
             let uni = font
                 .tounicode
@@ -415,7 +420,7 @@ impl Tracer<'_> {
             };
             tx += (w / 1000.0 * self.gs.size + self.gs.tc + word) * th;
         }
-        Ok(tx)
+        Ok((tx, count))
     }
 
     fn path_op(&mut self, operator: &str, args: &[Object]) -> Result<()> {
@@ -540,23 +545,9 @@ impl Tracer<'_> {
             self.caches.images.insert(id, decoded);
         }
         let (hash, _, _) = self.caches.images[&id].clone();
-        let corners = [
-            apply(self.gs.ctm, 0.0, 0.0),
-            apply(self.gs.ctm, 1.0, 0.0),
-            apply(self.gs.ctm, 1.0, 1.0),
-            apply(self.gs.ctm, 0.0, 1.0),
-        ];
-        let xs: Vec<f64> = corners.iter().map(|c| c.0).collect();
-        let ys: Vec<f64> = corners.iter().map(|c| c.1).collect();
-        let rect = [
-            qc(xs.iter().copied().fold(f64::INFINITY, f64::min)),
-            qc(ys.iter().copied().fold(f64::INFINITY, f64::min)),
-            qc(xs.iter().copied().fold(f64::NEG_INFINITY, f64::max)),
-            qc(ys.iter().copied().fold(f64::NEG_INFINITY, f64::max)),
-        ];
         self.out.push(Element::Image {
             rgba_sha256: hash,
-            rect,
+            m: self.gs.ctm.map(qc),
             clip: self.gs.clips.clone(),
         });
         Ok(())
