@@ -1,0 +1,398 @@
+{
+ "figures": [
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.125414,
+    "minimum_mark_contrast_ratio": 2.711,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.804305
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.125414,
+    "minimum_mark_contrast_ratio": 2.711,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.804305
+   },
+   "path": "library/sources/an-alignment-assessment-of-recent-cybersecurity-415f8f1a/media/001.png",
+   "source_mode": "RGB",
+   "source_sha256": "acb74ee421b829c31eeadf4daee08fca02ffd697a594dec547caa3e358f96e2e",
+   "source_size": [
+    2000,
+    1418
+   ],
+   "thumb_sha256": "ff611f02f3de26ac5a164a6fccfd0c1e27f2a122924e08d11bc2c6286bd91043",
+   "thumb_size": [
+    512,
+    363
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.052578,
+    "minimum_mark_contrast_ratio": 2.356,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.65939
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.052578,
+    "minimum_mark_contrast_ratio": 2.356,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.65939
+   },
+   "path": "library/sources/the-third-era-of-ai-software-development-7395f18d/media/001.png",
+   "source_mode": "P",
+   "source_sha256": "5f1fe2d75b3b3d62869101dc370a31e24c2d37a55daf1e07248194c412552007",
+   "source_size": [
+    2400,
+    1350
+   ],
+   "thumb_sha256": "d5fd79f24ec56f434ecc99f281b840671223b933b85c5330b79ed25b24080d91",
+   "thumb_size": [
+    512,
+    288
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.02219,
+    "minimum_mark_contrast_ratio": 2.192,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.962219
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.02219,
+    "minimum_mark_contrast_ratio": 2.192,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.962219
+   },
+   "path": "library/sources/towards-self-driving-codebases-3fd7b9ca/media/004.png",
+   "source_mode": "RGBA",
+   "source_sha256": "bb3a860815da6ac9e8cbafa582acbe81708b6e7bdb990ada5d710bd11e5222e8",
+   "source_size": [
+    2400,
+    1350
+   ],
+   "thumb_sha256": "76d7a896a73343310e1e57fddb656e613620cd2dd2891ed0d5b8d625414e9dfb",
+   "thumb_size": [
+    512,
+    288
+   ],
+   "unresolved": false
+  }
+ ],
+ "fixtures": [
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.973828,
+    "minimum_mark_contrast_ratio": 3.83,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.973828,
+    "minimum_mark_contrast_ratio": 3.83,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/extreme_aspect.png",
+   "source_mode": "RGB",
+   "source_sha256": "64af60469f642af96bd940d701f10aff930b6a114cde94d22f4f6dbf15dede40",
+   "source_size": [
+    2000,
+    40
+   ],
+   "thumb_sha256": "fab286ef441185d1c07a4cf1180c2d693de960391fb5bee0474d5de9e4b0a404",
+   "thumb_size": [
+    512,
+    10
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 1.673,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 1.673,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/gray8.png",
+   "source_mode": "L",
+   "source_sha256": "0f7c38b26aae315f3b3112cecc3c22346ccd3e01c7d890c9529455875ca6e5c6",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "0fc32b613efa441e387772d6dcbe8adc79f1a57f4a1741a764f5773d3d3cfc59",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 1.673,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 1.673,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/gray_alpha.png",
+   "source_mode": "LA",
+   "source_sha256": "0f7c38b26aae315f3b3112cecc3c22346ccd3e01c7d890c9529455875ca6e5c6",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "0fc32b613efa441e387772d6dcbe8adc79f1a57f4a1741a764f5773d3d3cfc59",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": true,
+   "after": {
+    "mark_pixel_ratio": 0.099707,
+    "minimum_mark_contrast_ratio": 2.097,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.897361
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.099707,
+    "minimum_mark_contrast_ratio": 1.497,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.900293
+   },
+   "path": "mag/tests/critic_metrics_fixtures/low_contrast.png",
+   "source_mode": "RGB",
+   "source_sha256": "d62ab8a1568393b32c60599e844e77176110f00bb6dea5c0af8abb590109535c",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "4118218556b18892abbfe5d9de37c694bb8789908928853770618980a0a8b932",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.978482,
+    "minimum_mark_contrast_ratio": 3.777,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.978482,
+    "minimum_mark_contrast_ratio": 3.777,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/odd_reduce.png",
+   "source_mode": "RGB",
+   "source_sha256": "fee4310cfc0818f637d765dabd0afec39424ae5b13f3143c72d11b5175ce3680",
+   "source_size": [
+    2401,
+    1351
+   ],
+   "thumb_sha256": "8e12c3084f2ab8995b3a59a605a6a5dd070140613e2d09b1819b93752009145c",
+   "thumb_size": [
+    512,
+    288
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": true,
+   "after": {
+    "mark_pixel_ratio": 0.099707,
+    "minimum_mark_contrast_ratio": 2.097,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.897361
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.099707,
+    "minimum_mark_contrast_ratio": 1.497,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.900293
+   },
+   "path": "mag/tests/critic_metrics_fixtures/palette_trns.png",
+   "source_mode": "P",
+   "source_sha256": "d62ab8a1568393b32c60599e844e77176110f00bb6dea5c0af8abb590109535c",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "4118218556b18892abbfe5d9de37c694bb8789908928853770618980a0a8b932",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 21.0,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 21.0,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/pure_black.png",
+   "source_mode": "RGB",
+   "source_sha256": "943696a366338cdf1765680dd633ef600abb4a015c7c6bd3d41cd7d585bc98c8",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "c012b3535201f75275ea9b0dc4915a207d31654f3447bf13f29de07a4d68f458",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.0,
+    "minimum_mark_contrast_ratio": 21.0,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 1.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.0,
+    "minimum_mark_contrast_ratio": 21.0,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 1.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/pure_white.png",
+   "source_mode": "RGB",
+   "source_sha256": "112adb85e186f340a4d75de4253fb7ba68973179a9fbd038e97b5ab2705e7dcf",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "7bc09c1b6d63a15b6f54e3af7606f448c12356bd03aade02fd39df4b4a72c98d",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.501466,
+    "minimum_mark_contrast_ratio": 2.932,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.498534
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.501466,
+    "minimum_mark_contrast_ratio": 2.932,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.498534
+   },
+   "path": "mag/tests/critic_metrics_fixtures/rgba_alpha.png",
+   "source_mode": "RGBA",
+   "source_sha256": "6155af961babc1a1b02c6cb6261626735fa5dee07b35824f02cc3e056ca3fdf9",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "ef9dfe41a6c0f891937910c735fa999cad97b124dc79667bac821413177b8bff",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 2.26,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 2.26,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/tiny.png",
+   "source_mode": "RGB",
+   "source_sha256": "63222d00e4e563f5b9e1b03adce1a216c3e1afa2c9ea225a4509d4f2a0d55384",
+   "source_size": [
+    3,
+    2
+   ],
+   "thumb_sha256": "63222d00e4e563f5b9e1b03adce1a216c3e1afa2c9ea225a4509d4f2a0d55384",
+   "thumb_size": [
+    3,
+    2
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 3.949,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 3.949,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "mag/tests/critic_metrics_fixtures/uniform_gray.png",
+   "source_mode": "RGB",
+   "source_sha256": "9b0f47dea8d3a181c7194a2961607c31bf97b0a07333db27bf5e996b7f05ec37",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "997b5756e9fb39400eb8b8231dd9f174fbb6dc247c36f3d2e0062b3a95d566e5",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": false
+  }
+ ]
+}
