@@ -128,7 +128,7 @@ fn assert_poppler(spec: &serde_yaml::Value) -> Result<()> {
         .and_then(|v| v.as_str())
         .context("parity.yaml tools.poppler missing")?
         .to_string();
-    for tool in ["pdfinfo", "pdftotext"] {
+    for tool in ["pdfinfo", "pdftotext", "pdftoppm"] {
         let out = Command::new(tool)
             .arg("-v")
             .output()

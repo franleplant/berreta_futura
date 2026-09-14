@@ -123,6 +123,81 @@ pdfseparate, pdftotext, pdfinfo), rustc 1.96.0, lopdf 0.45.0 tracer, python
   after comparison; peak transient disk is two rasterized legs (about
   1.4 GB at 300 dpi for 54 pages).
 
+## Critique (critiquer pass)
+
+Two defects fixed, both verdict-neutral (the A-vs-A self-test digest below is
+unchanged from the worker's run):
+
+1. `assert_poppler` pinned `pdfinfo` and `pdftotext` but not `pdftoppm`, which
+   this WP introduced as the rasterizer for the Tier V meters and the Tier E
+   raster guard. A mismatched `pdftoppm` would have rasterized both legs
+   outside the pinned tool set with no startup failure. `pdftoppm` now joins
+   the asserted loop (banner format is identical across the three).
+2. `report.rs push_gallery` guessed pdftoppm's zero padding as
+   `if last >= 100 { 3 } else { 2 }`. Poppler pads by the digit count of the
+   document's total page count, and the compared domain ends at `last = n - 1`,
+   so a 100-page edition would emit `a-002.png` while the report linked
+   `a-02.png` (broken previews, report-only). Replaced with the exact rule,
+   `(last + 1).to_string().len()`.
+
+Negative check (the worker's runs were all zero-diff, so raster sensitivity was
+unproven). Fixture: 010 render B with pages 10 and 11 swapped, built with pypdf
+because pdfunite output does not parse (see the finding below):
+
+    T=<scratch>/wp02c-neg
+    mkdir -p $T/swap2/en
+    uv run python -c "
+    from pypdf import PdfReader, PdfWriter
+    r = PdfReader('editions/010/render-2026-09-14T01-49-02/en/reader.pdf')
+    w = PdfWriter()
+    order = list(range(len(r.pages)))
+    order[9], order[10] = order[10], order[9]
+    for i in order:
+        w.add_page(r.pages[i])
+    with open('$T/swap2/en/reader.pdf','wb') as f:
+        w.write(f)
+    "
+    ./mag/target/debug/mag parity 010-negcheck \
+      --pre-rendered editions/010/render-2026-09-14T01-47-59 $T/swap2
+
+Measured: differing pixels on exactly pages 10 and 11, fraction 0.672317 each,
+max channel delta 255 on both; the other 52 compared pages zero differing
+pixels; dimension mismatches 0 (the swap preserves geometry, so the hard fail
+correctly stays silent); V1 fail and V2 fail (meters, gating nothing); tier E
+raster still not_evaluated pending WP-0.2d; heatmaps written for exactly
+`heatmap-010.bmp` and `heatmap-011.bmp`; exit 1, driven by the text, color,
+navigation and display-list clauses as expected. Report HTML audit on that run:
+zero absolute paths, every `src` relative under `report/`, every referenced
+asset present.
+
+Finding for WP-0.2d (fixture construction, not a comparator defect): pdfunite
+writes `/ID` as binary literal strings containing raw newlines, and the lopdf
+tracer rejects the result with "invalid file trailer". The comparator fails
+loud and exits 1, never a silent pass, so the behavior is correct; but seeded
+faults must not be built with pdfunite. pypdf output parses (the merge
+calibration above already traced a pypdf-written PDF end to end), and WP-0.2d's
+planned route, rendering scratch copies of staged inputs, avoids the issue
+entirely. The WP-0.2a negative checks predate the tracer and were unaffected.
+
+Accepted without change: PPM parsing (P6 asserted, maxval 255 asserted,
+comments and whitespace handled, truncated pixel data fails loud); pixel
+differs at `delta > channel_delta` (exceeds, per the plan) with the max taken
+per channel; V1/V2 scored on the worst page fraction against `< 0.01` and
+`< 0.001`; dimension mismatch sets the tier status to fail and gates the exit
+code while V1/V2 do not; the Tier E guard uses max-delta semantics over every
+pixel (strictest reading of "every differing pixel within raster_bound") and
+reports not_evaluated naming WP-0.2d when `tiers.e.raster_bound.value` is
+absent, with no default; `verdict.json` is written before report generation and
+carries no timestamps, durations, hostnames or paths; heatmap padding is
+self-consistent between writer and reader. Bulk rasterization (both legs
+rendered before comparison, pages deleted as they are consumed) is a
+disk-for-process-spawns trade already recorded in Residuals; not changed.
+
+Reruns after the fixes: A-vs-A self-test digest
+`bc0da32c966b2106cea0e85424f2142fc41dba8773804e129d50ef158f156503`, identical
+to the worker's; `cargo fmt`, `cargo clippy --all-targets -D warnings` and
+`cargo test` green.
+
 ## Status
 
 done
