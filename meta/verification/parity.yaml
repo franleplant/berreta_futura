@@ -130,6 +130,37 @@ tiers:
         differing pixel below 242/255, which contradicts the plan's raster zero-diff
         gate; protocol rule 4 reserves threshold changes to a plan revision, so the
         key carries no value and the comparator keeps reporting not_evaluated
+      wp_0_2f:
+        status: blocked
+        still_no_value: no candidate configuration reaches the required
+          ceiling >= 2x floor, so the key stays valueless and the Tier E raster
+          clause keeps reporting not_evaluated
+        candidates_measured: pdftoppm at 300 dpi; pdftocairo at 300 dpi; pdftoppm
+          supersampled 2x and 4x with box downsampling; mutool draw 1.26.4 at
+          300 dpi, with -A 8, and supersampled 2x, 4x and 8x
+        best_candidate: mutool draw 1.26.4 supersampled 8x (2400 dpi) and box
+          downsampled to 300 dpi
+        floor_drift_term: 30.125 at the best candidate, from WP-1.6's measured
+          intra-line drift of 0.000173 pt per glyph over all 69071 glyphs,
+          display-list equal
+        ceiling_quietest: 30.125 for a compensating 0.02 pt kern and 60.250 for
+          0.05 pt, so the ratio is 1.00 against the quietest fixture and exactly
+          2.00 only if nothing quieter than 0.05 pt must be caught
+        floor_linear_matrix_term: not constructible as a display-list-equal
+          fixture here (the display list quantizes device space while the fixture
+          perturbs operand space, and the oracle leg composes a 4/3 px-to-pt scale
+          into Tm), but revision 13 puts the admitted displacement at 0.1625 pt at
+          body measure, whose magnitude is bracketed by the 0.2 pt kern fixture at
+          151.641; that term alone exceeds every ceiling measured
+        finer_quantum_does_not_help: perturbing text origins within 0.001 pt
+          buckets still reaches 122 under mutool, because origin snapping means any
+          nonzero shift can cross a rounding boundary for some glyph; path operands
+          do degrade proportionally (21 at 0.01 pt, 9 at 0.001 pt)
+        affordability: a full 54-page interior comparison at 2400 dpi is roughly
+          9 to 15 minutes of rasterization per run, against about 82 s today
+        blocking_fix: WP-0.2g's tightening of the linear text-matrix quantum, after
+          which the floor is re-derived; the re-derivation should perturb in device
+          space through the Rust tracer rather than through pypdf on raw operands
 tools:
   measured_at: WP-0.1
   os: macOS 26.6.2
