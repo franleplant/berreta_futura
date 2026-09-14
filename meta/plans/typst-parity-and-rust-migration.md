@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-14, revision 13 (Phase 0 built and
+Status: **in execution**, 2026-09-14, revision 14 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,23 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 14 changelog
+
+**A mis-scoped WP bullet, corrected before it misbriefs two more.** WP-5.3a
+found that the plan pairs `image_contrast.py` with `concurrency.py` as
+"critic raster metrics", but only `concurrency.py` feeds
+`render_critic.py`. `image_contrast.py` is consumed by `preflight.py`, the
+reportlab `render.py` (which dies at WP-6.1) and `weasyprint_adapter.py`,
+and its numbers land in preflight.json. Three corrections, all notes rather
+than moves, since WP-5.3a is done and its code is right where it is:
+`mag/src/critic/metrics.rs` is deliberately not renamed and WP-5.5 is told
+it already exists and must consume rather than re-port it; WP-5.3b is told
+it inherits `render_critic.py`'s own raster helpers (PIL grayscale,
+histograms, `ImageChops.difference`, a LANCZOS resize), which the plan had
+left unnamed; and `critic_metric_tolerances` is attributed to WP-5.3b's
+oracle, where it will first actually be exercised, since WP-5.3a hit exact
+equality and consumed none of it.
 
 ## Revision 13 changelog
 
@@ -1645,10 +1662,43 @@ them or the divergence is a defect:
   `concurrency.py`'s role): owns `mag/src/critic/metrics.rs`. Oracle: 010
   metric values within `parity.yaml critic_metric_tolerances:` (fixed by
   WP-0.2d; this WP never authors tolerances).
+  **Scope correction, found by the WP itself**: only `concurrency.py`
+  actually feeds `render_critic.py`. `image_contrast.py` is not used by the
+  critic at all; its consumers are `preflight.py`, the reportlab
+  `render.py` (never ported, dies at WP-6.1) and `weasyprint_adapter.py`,
+  and its numbers land in **preflight.json**, not render-critic.json. So
+  the real downstream consumer of `mag/src/critic/metrics.rs` is **WP-5.5**
+  (preflight), and the module's name is misleading about where it belongs.
+  It is deliberately NOT renamed: the code is correct where it sits, it is
+  already shipped and verified, and a cross-WP rename to satisfy a taxonomy
+  would cost more than the confusion it removes. This note is the fix.
+  RESULT (done): the tolerance was entirely unconsumed, because the port
+  achieved EXACT equality, relative delta 0.0 across all 14 images,
+  asserted at three levels (decoded pixels matching PIL's `convert("RGB")`
+  by SHA256, thumbnails matching PIL's LANCZOS pixel for pixel, and every
+  analysis field). So `critic_metric_tolerances` has not yet been tested by
+  anything; its first real exercise is WP-5.3b. The WP added `png` 0.18
+  rather than `image` on purpose: PIL drops alpha WITHOUT compositing and
+  ignores `tRNS` on palette images, and a decoder that silently normalises
+  to RGBA would hide exactly that behaviour. It also caught two of its own
+  fixtures passing vacuously because they were uniform, and recorded that
+  one of four revert probes does not discriminate on this corpus (no
+  luminance lands on a .5 histogram boundary), adding a direct rounding
+  oracle against Python instead. That is the corpus rule working.
 - **WP-5.3b critic rules** (`render_critic.py`): owns
   `mag/src/critic/rules.rs`. Oracle: render-critic.json equality on 010
   over {result, issue codes, severities, pages, spread tables}; metrics
   sitting near a decision threshold get near-threshold fixtures.
+  **This WP owns `render_critic.py`'s OWN raster helpers**, which WP-5.3a
+  does not cover and which the plan previously left unnamed: PIL grayscale
+  conversion, histograms, `ImageChops.difference`, and a LANCZOS resize.
+  Scope them at the start; a WP that meets unscoped work mid-flight either
+  overruns or quietly skips it.
+  **This is also where `parity.yaml critic_metric_tolerances:` is first
+  actually exercised** (WP-5.3a hit exact equality and consumed none of
+  it), including WP-0.2d's single near-threshold metric,
+  `pages[39].largest_void.height_points` at exactly 96.0 against a 96.0
+  `>=` boundary. That metric gets a near-threshold fixture either way.
 - **WP-5.3c critic faults**: owns `mag/tests/critic_*`. Fault suite:
   swapped spread, missing tail band, low-ppi figure; both critics emit the
   same issue codes.
@@ -1670,7 +1720,12 @@ them or the divergence is a defect:
   artifact becomes `reader.pdf` end to end. Gated on WP-3.7 + WP-5.4.
 - **WP-5.5 preflight + package + web** (`preflight.py`, `package.py`,
   `web_edition.py`, `html_edition.py`): owns `mag/src/package/`,
-  `mag/src/web/`. Oracle: byte-identical `web/` tree files, SHA256SUMS,
+  `mag/src/web/`. **`mag/src/critic/metrics.rs` ALREADY EXISTS** (WP-5.3a)
+  and is what the preflight port consumes: `image_contrast.py`'s metrics
+  land in preflight.json, not render-critic.json, so do not re-port them.
+  The module lives under `critic/` for historical reasons the plan records
+  at WP-5.3a; consume it, do not move it.
+  Oracle: byte-identical `web/` tree files, SHA256SUMS,
   preflight.json, printing instructions, edition-manifest.json for 010;
   archives compare per-entry (name order, mode, timestamp, CRC32,
   uncompressed bytes), never whole-file (zlib vs flate2 streams differ
@@ -1975,7 +2030,7 @@ with everything else Python), provenance ceremony (the small
 | `src/magazine/reader_text.py` | ported, WP-5.1a |
 | `src/magazine/booklet.py` | ported, WP-5.2 |
 | `src/magazine/render_critic.py` | ported, WP-5.3a/b/c |
-| `src/magazine/image_contrast.py` | ported, WP-5.3a |
+| `src/magazine/image_contrast.py` | ported, WP-5.3a (into `mag/src/critic/metrics.rs`, though its consumer is preflight, so WP-5.5 is what uses it; not used by the critic at all) |
 | `src/magazine/concurrency.py` | absorbed (rayon or std), WP-5.3a |
 | `src/magazine/cover.py` | ported, WP-5.4 |
 | `src/magazine/preflight.py` | ported, WP-5.5 |
