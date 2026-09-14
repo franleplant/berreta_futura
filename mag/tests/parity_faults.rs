@@ -1,5 +1,5 @@
 use lopdf::{dictionary, Document, Object, Stream};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -145,34 +145,69 @@ fn tree(dir: &Path, name: &str, spec: &Spec) -> PathBuf {
     dir.join(name)
 }
 
-fn failing_clauses(verdict: &serde_json::Value) -> BTreeSet<String> {
-    let mut failing = BTreeSet::new();
-    let s = &verdict["tier_s"];
-    for clause in ["page_count", "boxes", "text", "color", "navigation"] {
-        if s[clause]["status"] == "fail" {
-            failing.insert(clause.to_string());
+fn clause_states(verdict: &serde_json::Value) -> BTreeMap<String, String> {
+    let mut states = BTreeMap::new();
+    for tier in ["tier_s", "tier_e"] {
+        let Some(clauses) = verdict[tier].as_object() else {
+            continue;
+        };
+        for (key, clause) in clauses {
+            if let Some(status) = clause["status"].as_str() {
+                let name = if key == "raster" { "raster_guard" } else { key };
+                states.insert(name.to_string(), status.to_string());
+            }
         }
     }
-    if verdict["tier_e"]["display_list"]["status"] == "fail" {
-        failing.insert("display_list".into());
+    let tier_v = &verdict["tier_v"];
+    for meter in ["v1", "v2"] {
+        if let Some(status) = tier_v[meter].as_str() {
+            states.insert(meter.to_string(), status.to_string());
+        }
     }
-    if verdict["tier_e"]["raster"]["status"] == "fail" {
-        failing.insert("raster_guard".into());
+    if let Some(mismatches) = tier_v["dimension_mismatches"].as_array() {
+        let failed = !mismatches.is_empty();
+        assert_eq!(
+            failed,
+            tier_v["status"] == "fail",
+            "tier_v status disagrees with dimension_mismatches"
+        );
+        states.insert(
+            "raster_dimensions".into(),
+            if failed { "fail" } else { "pass" }.into(),
+        );
     }
-    let v = &verdict["tier_v"];
-    if !v["dimension_mismatches"]
-        .as_array()
-        .is_none_or(|a| a.is_empty())
-    {
-        failing.insert("raster_dimensions".into());
-    }
-    if v["v1"] == false {
-        failing.insert("v1".into());
-    }
-    if v["v2"] == false {
-        failing.insert("v2".into());
-    }
-    failing
+    states
+}
+
+fn failing_clauses(verdict: &serde_json::Value) -> BTreeSet<String> {
+    clause_states(verdict)
+        .into_iter()
+        .filter(|(_, status)| status == "fail")
+        .map(|(name, _)| name)
+        .collect()
+}
+
+fn assert_vocabulary_observable(verdict: &serde_json::Value) {
+    let states = clause_states(verdict);
+    let declared: BTreeSet<String> = vocabulary()
+        .as_sequence()
+        .expect("clause_vocabulary")
+        .iter()
+        .map(|v| v.as_str().unwrap_or_default().to_string())
+        .collect();
+    let observed: BTreeSet<String> = states.keys().cloned().collect();
+    let blind: Vec<&String> = declared.difference(&observed).collect();
+    assert!(blind.is_empty(), "declared clauses unobservable: {blind:?}");
+    let evaluated: BTreeSet<String> = states
+        .iter()
+        .filter(|(_, status)| *status != "not_evaluated")
+        .map(|(name, _)| name.clone())
+        .collect();
+    let undeclared: Vec<&String> = evaluated.difference(&declared).collect();
+    assert!(
+        undeclared.is_empty(),
+        "evaluated clauses absent from clause_vocabulary: {undeclared:?}"
+    );
 }
 
 fn parity(label: &str, a: &Path, b: &Path) -> (serde_json::Value, i32) {
@@ -199,10 +234,18 @@ fn parity(label: &str, a: &Path, b: &Path) -> (serde_json::Value, i32) {
     )
 }
 
-fn matrix() -> serde_yaml::Value {
+fn fault_suite_spec() -> serde_yaml::Value {
     let raw = std::fs::read_to_string(root().join("meta/verification/parity.yaml")).unwrap();
     let spec: serde_yaml::Value = serde_yaml::from_str(&raw).unwrap();
-    spec["fault_suite"]["expected_detections"].clone()
+    spec["fault_suite"].clone()
+}
+
+fn matrix() -> serde_yaml::Value {
+    fault_suite_spec()["expected_detections"].clone()
+}
+
+fn vocabulary() -> serde_yaml::Value {
+    fault_suite_spec()["clause_vocabulary"].clone()
 }
 
 fn faults() -> Vec<(&'static str, Spec)> {
@@ -273,6 +316,7 @@ fn seeded_faults_are_detected() {
     let _ = std::fs::remove_dir_all(&dir);
     let clean = tree(&dir, "clean", &Spec::default());
     let (control, control_code) = parity("fault-control", &clean, &clean);
+    assert_vocabulary_observable(&control);
     assert_eq!(control_code, 0, "clean pair must pass");
     assert!(
         failing_clauses(&control).is_empty(),
@@ -285,6 +329,7 @@ fn seeded_faults_are_detected() {
     for (name, spec) in faults() {
         let faulty = tree(&dir, name, &spec);
         let (verdict, code) = parity(&format!("fault-{name}"), &clean, &faulty);
+        assert_vocabulary_observable(&verdict);
         let flags = failing_clauses(&verdict);
         let intended = expected[name]["intended_check"].as_str().unwrap_or("");
         assert!(

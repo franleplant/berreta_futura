@@ -185,10 +185,10 @@ fault_suite:
       must_flag: [display_list]
     figure_shifted_page:
       intended_check: display_list
-      must_flag: [display_list]
+      must_flag: [display_list, v1, v2]
     recolor_30px:
       intended_check: display_list
-      must_flag: [display_list]
+      must_flag: [display_list, v1, v2]
     body_ink_pure_black:
       intended_check: color
       must_flag: [color, display_list]
