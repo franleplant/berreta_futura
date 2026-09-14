@@ -17,9 +17,11 @@ substantive_edits_require_approval = true
 editorial_additions_must_be_labeled = true
 
 [render]
-# Which renderer typesets the A5 reader. "weasyprint" (the default when this key
-# is absent) is the HTML/CSS path; "reportlab" is the legacy typesetter kept as
-# the rollback. Anything else fails at load. See docs/RENDERER_MIGRATION.md.
+# Which renderer typesets the A5 reader, read by mag's Rust dispatch and
+# overridable per run with `mag render --engine`. "weasyprint" (the default when
+# this key is absent) is the HTML/CSS path; "typst" is the native engine being
+# built in meta/plans/typst-parity-and-rust-migration.md and currently refuses
+# loudly. Anything else fails at load.
 engine = "weasyprint"
 # Design direction of the reportlab engine. Read only when that engine is
 # selected; the weasyprint engine has one design and names it itself.

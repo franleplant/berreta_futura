@@ -191,31 +191,60 @@ fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     }
 }
 
-pub(crate) fn publication_name(repo_root: &Path) -> String {
-    let path = repo_root.join("magazine.toml");
-    let Ok(text) = fs::read_to_string(&path) else {
-        return "Magazine".to_string();
-    };
-    let mut in_publication = false;
+fn toml_value(repo_root: &Path, section: &str, key: &str) -> Option<String> {
+    let text = fs::read_to_string(repo_root.join("magazine.toml")).ok()?;
+    let header = format!("[{section}]");
+    let mut inside = false;
     for line in text.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with('[') {
-            in_publication = trimmed == "[publication]";
+            inside = trimmed == header;
             continue;
         }
-        if !in_publication {
+        if !inside {
             continue;
         }
-        if let Some(rest) = trimmed.strip_prefix("name").map(str::trim_start) {
-            if let Some(value) = rest.strip_prefix('=') {
-                let value = value.trim().trim_matches('"');
-                if !value.is_empty() {
-                    return value.to_string();
-                }
+        let Some(rest) = trimmed.strip_prefix(key).map(str::trim_start) else {
+            continue;
+        };
+        if let Some(value) = rest.strip_prefix('=') {
+            let value = value.trim().trim_matches('"');
+            if !value.is_empty() {
+                return Some(value.to_string());
             }
         }
     }
-    "Magazine".to_string()
+    None
+}
+
+pub(crate) fn publication_name(repo_root: &Path) -> String {
+    toml_value(repo_root, "publication", "name").unwrap_or_else(|| "Magazine".to_string())
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum Engine {
+    Weasyprint,
+    Typst,
+}
+
+fn parse_engine(value: &str, origin: &str) -> Result<Engine> {
+    match value {
+        "weasyprint" => Ok(Engine::Weasyprint),
+        "typst" => Ok(Engine::Typst),
+        other => {
+            bail!("unknown render engine '{other}' from {origin}: expected weasyprint or typst")
+        }
+    }
+}
+
+pub(crate) fn select_engine(repo_root: &Path, flag: Option<&str>) -> Result<Engine> {
+    match flag {
+        Some(value) => parse_engine(value, "--engine"),
+        None => match toml_value(repo_root, "render", "engine") {
+            Some(value) => parse_engine(&value, "magazine.toml [render] engine"),
+            None => Ok(Engine::Weasyprint),
+        },
+    }
 }
 
 fn stage_article_figures(staging: &mut Staging, article: &serde_yaml::Value) -> Result<()> {
@@ -455,15 +484,89 @@ fn parse_anchor_reply(
     Ok(out)
 }
 
-pub fn run(
-    edition: &str,
-    operation: &str,
-    article: Option<&str>,
-    langs: Option<&str>,
-    run_flag: Option<&str>,
-    anchor_model: &ModelSpec,
-    no_model: bool,
-) -> Result<i32> {
+#[derive(clap::Args)]
+pub(crate) struct RenderArgs {
+    pub edition: String,
+    #[arg(
+        long,
+        default_value = "render_edition",
+        help = "measure_article, measure_edition, or render_edition"
+    )]
+    pub operation: String,
+    #[arg(long, help = "Article id, required for measure_article")]
+    pub article: Option<String>,
+    #[arg(
+        long,
+        help = "Comma-separated languages to render (default: en + es if translations exist)"
+    )]
+    pub langs: Option<String>,
+    #[arg(
+        long,
+        help = "Run dir whose finals to render (default: newest complete run, else committed files)"
+    )]
+    pub run: Option<String>,
+    #[arg(
+        long = "anchor-model",
+        default_value = "haiku",
+        help = "Cheap model that re-anchors figures to this run's headings"
+    )]
+    pub anchor_model: String,
+    #[arg(
+        long = "no-model",
+        help = "Refuse model calls: abort listing pending figure anchors instead of patching them"
+    )]
+    pub no_model: bool,
+    #[arg(
+        long,
+        help = "Typesetting engine: weasyprint or typst (default: magazine.toml [render] engine)"
+    )]
+    pub engine: Option<String>,
+}
+
+struct EditionInputs {
+    dir: PathBuf,
+    yaml_path: PathBuf,
+    yaml: serde_yaml::Value,
+    id: String,
+    articles: Vec<serde_yaml::Value>,
+    article_ids: Vec<String>,
+}
+
+fn load_edition(edition: &str) -> Result<EditionInputs> {
+    let dir = resolve_edition_dir(edition)?;
+    let yaml_path = dir.join("edition.yaml");
+    if !yaml_path.exists() {
+        bail!("{} not found", yaml_path.display());
+    }
+    let yaml = read_yaml(&yaml_path)?;
+    let id = str_field(&yaml, "id")
+        .map(str::to_string)
+        .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().to_string());
+    let articles = yaml
+        .get("articles")
+        .and_then(|v| v.as_sequence())
+        .ok_or_else(|| anyhow!("edition.yaml missing 'articles' list"))?
+        .clone();
+    let article_ids = articles
+        .iter()
+        .filter_map(|a| str_field(a, "id").map(str::to_string))
+        .collect();
+    Ok(EditionInputs {
+        dir,
+        yaml_path,
+        yaml,
+        id,
+        articles,
+        article_ids,
+    })
+}
+
+pub fn run(args: &RenderArgs) -> Result<i32> {
+    let operation = args.operation.as_str();
+    let article = args.article.as_deref();
+    let langs = args.langs.as_deref();
+    let run_flag = args.run.as_deref();
+    let no_model = args.no_model;
     if !OPERATIONS.contains(&operation) {
         bail!(
             "unknown operation '{operation}': expected one of {}",
@@ -478,30 +581,16 @@ pub fn run(
         .context("resolving current directory")?
         .canonicalize()
         .context("canonicalizing repo root")?;
-    let edition_dir = resolve_edition_dir(edition)?;
-    let edition_yaml_path = edition_dir.join("edition.yaml");
-    if !edition_yaml_path.exists() {
-        bail!("{} not found", edition_yaml_path.display());
-    }
-    let edition_yaml = read_yaml(&edition_yaml_path)?;
-    let edition_id = str_field(&edition_yaml, "id")
-        .map(str::to_string)
-        .unwrap_or_else(|| {
-            edition_dir
-                .file_name()
-                .unwrap()
-                .to_string_lossy()
-                .to_string()
-        });
-    let articles = edition_yaml
-        .get("articles")
-        .and_then(|v| v.as_sequence())
-        .ok_or_else(|| anyhow!("edition.yaml missing 'articles' list"))?
-        .clone();
-    let article_ids: Vec<String> = articles
-        .iter()
-        .filter_map(|a| str_field(a, "id").map(str::to_string))
-        .collect();
+    let engine = select_engine(&repo_root, args.engine.as_deref())?;
+    let anchor_model = &ModelSpec::parse(&args.anchor_model)?;
+    let EditionInputs {
+        dir: edition_dir,
+        yaml_path: edition_yaml_path,
+        yaml: edition_yaml,
+        id: edition_id,
+        articles,
+        article_ids,
+    } = load_edition(&args.edition)?;
     if let Some(wanted) = article.filter(|_| operation == "measure_article") {
         if !article_ids.iter().any(|id| id == wanted) {
             bail!(
@@ -566,7 +655,10 @@ pub fn run(
         artifact_root: repo_root.to_string_lossy().to_string(),
         inputs: staging.rows,
     };
-    run_adapter(&repo_root, &render_dir, &request)
+    match engine {
+        Engine::Weasyprint => run_adapter(&repo_root, &render_dir, &request),
+        Engine::Typst => crate::typeset::render_edition(),
+    }
 }
 
 fn pick_content_run(

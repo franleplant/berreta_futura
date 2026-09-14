@@ -148,7 +148,19 @@ tools:
     (mag/src/parity/streams.rs on the lopdf crate) over mutool, which is not
     installed; the crate pin is asserted at mag parity startup
   typst_crates:
-    pending: WP-1.4 pin, recorded by WP-2.0a
+    recorded_by: WP-2.0a
+    proven_by: WP-1.4
+    typst: =0.15.1
+    typst-layout: =0.15.1
+    typst-library: =0.15.1
+    typst-pdf: =0.15.1
+    typst-syntax: =0.15.1
+    note: the five exact direct dependencies in mag/Cargo.toml. typst-layout
+      and typst-syntax are not optional (PagedDocument, PagedIntrospector and
+      Page live in the former; the main FileId needs the latter's RootedPath,
+      VirtualRoot and VirtualPath); comemo is not needed as a direct
+      dependency. MSRV 1.92 against rustc 1.96.0, no edition bump. Adding them
+      takes mag/Cargo.lock from 203 to 397 packages.
 fault_suite:
   authored_by: WP-0.2d
   asserted_by: mag/tests/parity_faults.rs under cargo test

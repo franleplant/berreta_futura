@@ -11,6 +11,7 @@ mod print_cmd;
 mod produce;
 mod render;
 mod translate;
+mod typeset;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -175,28 +176,8 @@ enum Cmd {
         #[arg(long, default_value = "sonnet")]
         model: String,
     },
-    /// Render an edition via the Python renderer seam (mag-render-adapter)
-    Render {
-        edition: String,
-        /// measure_article, measure_edition, or render_edition
-        #[arg(long, default_value = "render_edition")]
-        operation: String,
-        /// Article id, required for measure_article
-        #[arg(long)]
-        article: Option<String>,
-        /// Comma-separated languages to render (default: en + es if translations exist)
-        #[arg(long)]
-        langs: Option<String>,
-        /// Run dir whose finals to render (default: newest complete run, else committed files)
-        #[arg(long)]
-        run: Option<String>,
-        /// Cheap model that re-anchors figures to this run's headings
-        #[arg(long = "anchor-model", default_value = "haiku")]
-        anchor_model: String,
-        /// Refuse model calls: abort listing pending figure anchors instead of patching them
-        #[arg(long = "no-model")]
-        no_model: bool,
-    },
+    /// Render an edition: weasyprint via the Python seam, typst natively
+    Render(render::RenderArgs),
     /// Compare two engines' renders of an edition against the parity ladder
     Parity {
         edition: String,
@@ -348,26 +329,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             image_cap,
             layout,
         }),
-        Cmd::Render {
-            edition,
-            operation,
-            article,
-            langs,
-            run,
-            anchor_model,
-            no_model,
-        } => {
-            let anchor = caller::ModelSpec::parse(&anchor_model)?;
-            render::run(
-                &edition,
-                &operation,
-                article.as_deref(),
-                langs.as_deref(),
-                run.as_deref(),
-                &anchor,
-                no_model,
-            )
-        }
+        Cmd::Render(args) => render::run(&args),
         Cmd::Parity {
             edition,
             pre_rendered,
