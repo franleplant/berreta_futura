@@ -3,15 +3,18 @@ normalization:
     pdf_info:
       - CreationDate
       - ModDate
+      - File size
       - trailer ID
       - Producer dates
     json_leaves:
       preflight.json:
-        - .cover_art.path
-        - .figures[*].path
+        - leaf: .cover_art.path
+          only_if_both_values_contain: /mag-engine-render-stage-
+        - leaf: .figures[*].path
+          only_if_both_values_contain: /mag-engine-render-stage-
       render-critic.json:
-        - .visual_review.booklet_sha256
-        - .visual_review.reader_sha256
+        - leaf: .visual_review.booklet_sha256
+        - leaf: .visual_review.reader_sha256
     derived_from_pdf_bytes_never_compared:
       - SHA256SUMS
       - package.zip
@@ -24,7 +27,8 @@ normalization:
     rejoin: words split by a line-end hyphenate character
     strip: soft hyphens
   color_space_map:
-    authored_by: WP-0.2b
+    authored_by: unassigned
+    note: plan gap flagged by WP-0.1 critique, no WP Owns names this key (WP-0.2b owns font_name_map only)
     entries: {}
   merge_rewrite_rules:
     authored_by: WP-0.2c
