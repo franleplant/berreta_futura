@@ -52,8 +52,12 @@ both, and the claim gets stronger rather than weaker.
   within 0.01 pt on 1484/1488, the four misses reaching 0.0174 pt purely
   from Pango's own rounding. WP-1.2: 148/149 paragraphs break identically
   with zero structural misses, the one miss being a line Typst measures
-  0.01 pt over the column. Both are recorded as Phase 3 obligations owned by
-  a named WP, not waived: Tier E still has to find them equal.
+  0.01 pt over the column. Neither is waived: Tier E still has to find them
+  equal. The Phase 1 audit also caught WP-1.2 misattributing its miss to
+  WP-1.1's residual, which cannot be the cause (WP-1.1's normal-spacing
+  lines top out at 0.009897 pt and none crosses the quantum; its larger
+  misses are letter-spaced headlines), so **WP-1.6 measures where the
+  0.01 pt actually comes from** before WP-3.1 tries to fix it.
 - **Hyphenation is off for parity** (WP-1.3 measured zero page-count changes
   and zero new cap violations from disabling it), scoped to `:lang(en)` so
   no Spanish edition is disturbed in the meantime, and WP-4.3 becomes
@@ -247,11 +251,11 @@ a waiver.
 
 | Source | Treatment |
 |---|---|
-| Line breaking (Typst optimizes, WeasyPrint is greedy) | `par(linebreaks: "simple")` in the Typst template for the parity phase. MEASURED (WP-1.2): 148/149 paragraphs identical, zero structural misses; the one miss is the advance residual below, owned by WP-3.1 |
+| Line breaking (Typst optimizes, WeasyPrint is greedy) | `par(linebreaks: "simple")` in the Typst template for the parity phase. MEASURED (WP-1.2): 148/149 paragraphs identical, zero structural misses; the one miss is a 0.01 pt width disagreement whose source is NOT yet established (WP-1.1's shaping numbers do not account for it), measured by WP-1.6 then fixed under WP-3.1 |
 | Hyphenation dictionaries (Pyphen vs Typst's hypher) | DECIDED (WP-1.3, option b): off in both engines for parity, scoped to `:lang(en)` so Spanish editions keep it; WP-1.5 applies the switch, WP-4.3 is mandatory. Measured cost of disabling: zero page-count changes, zero new cap violations, 428 lines rebroken |
-| Justification | the design is ragged-right. CONFIRMED (WP-1.2) as a selector fact: the stylesheet's only `text-align` is in the `@bottom-right` folio box, no `justify` anywhere, body text inherits `start` |
+| Justification | the design is ragged-right. CONFIRMED (WP-1.2) as a selector fact: the stylesheet's only `text-align` declaration is in the `@bottom-right` folio box and body text inherits `start`. Precisely: the word `justify` does occur four times, every one of them a flexbox `justify-content` or comment prose, none a `text-align` |
 | Text shaping (Pango+HarfBuzz vs rustybuzz) | same vendored TTFs. MEASURED (WP-1.1): 1488/1488 lines with identical glyph sequences, per-glyph advances within 0.00073 pt. Requires `liga`/`clig` off wherever letter-spacing is set (Pango suppresses ligatures under tracking) and tracking applied as exactly `(n-1) x letter_spacing` |
-| Glyph advance quantization (Pango rounds to 1/1024 px, rustybuzz does not) | cumulative drift up to 0.0174 pt on the longest lines. Invisible to the display list (each line is its own show with its own absolute position) and covered by the raster bound; it becomes a Tier E failure only where it moves a line break, which is WP-3.1's single known case |
+| Glyph advance quantization (Pango rounds to 1/1024 px, rustybuzz does not) | cumulative drift up to 0.0174 pt, and ONLY on letter-spaced display headlines: at normal spacing the worst case is 0.009897 pt and no line crosses the quantum. Invisible to the display list (each line is its own show with its own absolute position) and covered by the raster bound. Note this is why it does not explain WP-1.2's body-text miss; see WP-1.6 |
 | Syntax highlighting (pygments vs syntect) | (text-run, fill color) sequences at the content-stream level (WP-3.3), never raster; 010 carries NO fenced code blocks or extracts, so WP-3.3 gates on a dedicated fixture edition, not vacuously on 010 |
 | Font names (WeasyPrint embeds aliases: Magazine-Serif, Magazine-Sans, ...; Typst embeds the faces' real names) | `parity.yaml font_name_map`, authored in WP-0.2b, each mapping pair validated by identical font-file digests |
 | pypdf rewrite noise on inner pages | measured by WP-0.2c's merge calibration; found noise becomes an explicit normalization rule before it can be mistaken for an engine diff |
@@ -668,8 +672,12 @@ fallback.
   glyph). The residual reaches no Tier E coordinate directly (the CSS has
   no `justify` and no `text-align: center`; the only width-dependent
   positions are `space-between` label rows, worst residual 0.0070 pt,
-  inside the quantum), and the raster bound accounts for it. It is NOT
-  waived where it moves a line break: see WP-1.2 and WP-3.1.
+  inside the quantum), and the raster bound accounts for it. Note the shape
+  of the residual precisely, because WP-1.2 read it wrong: the four misses
+  are LETTER-SPACED display headlines; at normal spacing the worst line is
+  0.009897 pt and none crosses the quantum. So this residual does not
+  explain WP-1.2's body-text break miss, and WP-1.6 exists to find what
+  does.
 
 ### WP-1.2 line-break parity and the ragged-right confirmation
 
@@ -688,17 +696,28 @@ fallback.
   structural misses.** The single miss is `fixable` and owned: Typst
   measures a 67-character line at 325.01 pt against a 325 pt column and
   breaks a word early, cascading through five lines; it reproduces
-  WeasyPrint's breaks at 325.01 pt and above, so the mechanism is WP-1.1's
-  advance residual crossing a column boundary, not a breaking-algorithm
-  difference.
+  WeasyPrint's breaks at 325.01 pt and above but not at 325.005 pt. It is
+  NOT a breaking-algorithm difference: `linebreaks: "simple"` agrees
+  everywhere else. **The cause is not yet established.** WP-1.2 attributed
+  it to WP-1.1's advance residual, and the Phase 1 audit showed that does
+  not follow: WP-1.1's normal-spacing lines top out at 0.009897 pt with
+  ZERO over 0.01 pt, and its four larger misses are letter-spaced display
+  headlines, not body text. The two spikes measured different corpora
+  (hyphens on vs off) and different quantities (raw rustybuzz-vs-Pango
+  advances vs Typst's own `measure()`), so this is not a formal
+  contradiction, but the 67-character body line needs a disagreement of at
+  least 0.0100 pt that WP-1.1's numbers do not show. WP-1.6 locates it.
 - **Revision 9 changes this clause.** Revision 8 read "100% or a recorded
   Fran decision; nothing in between enters Phase 2", which would block
   Phase 2 on a measurement Phase 3 has to make anyway. The spike's purpose
   was feasibility, and zero structural misses settles that. Phase 2
-  proceeds; the miss becomes a named obligation of **WP-3.1**, where Tier E
-  must find those five lines equal. This relocates the check, it does not
-  relax it: an unequal line still fails the gate, and if WP-3.1 cannot
-  drive it to equality that is `blocked` and another revision.
+  proceeds; the miss becomes a named obligation of **WP-1.6 then WP-3.1**,
+  where Tier E must find those five lines equal. This relocates the check,
+  it does not relax it: an unequal line still fails the gate, and if WP-3.1
+  cannot drive it to equality that is `blocked` and another revision.
+  WP-1.6 must report before WP-3.1 scores `page_sets.body`, so that WP
+  starts knowing which of three mechanisms it is fixing rather than
+  guessing.
 - Carried into Phase 2 (WP-2.2a's mapping table must hold all of these):
   body paragraphs run at THREE measures, 325 pt, 311 pt (24 blocks) and
   312.1614 pt (one); inline-code paragraphs carry per-run SIZE (8.2 pt
@@ -739,6 +758,36 @@ fallback.
   MSRV. WP-2.0a writes the pin into Cargo.toml and parity.yaml from this
   evidence.
 
+### WP-1.6 locate the 0.01 pt measure disagreement
+
+- Owns: evidence only (Phase 1 preamble binds: uncommitted spike code, own
+  worktree, `git status` clean at WP end).
+- Why: WP-1.2's single break miss needs Typst to measure a 67-character
+  body line at least 0.0100 pt wider than WeasyPrint does, and WP-1.1's
+  shaping numbers do not account for it (0.009897 pt worst case at normal
+  spacing, zero lines over the quantum). Something between raw glyph
+  advances and Typst's laid-out line width is adding the difference, and
+  nobody has measured which thing. Assigning the miss to WP-1.1 would gate
+  on work WP-1.1 says is already done, and the miss would then walk into
+  WP-3.1 unexplained.
+- Target: for that exact line, and for a sample of the widest body lines,
+  decompose the width disagreement into its three candidate sources and say
+  which one carries the 0.01 pt:
+  1. **rustybuzz vs Pango advances** for the same string, font and size
+     (WP-1.1's instrument, re-run on THIS line rather than its corpus);
+  2. **Typst's `measure()`** against the sum of those advances, which is
+     where per-line rounding, tracking or space handling could enter;
+  3. **the column width itself**, 325 pt as transcribed against what
+     WeasyPrint's box model actually offers the text (the content box after
+     padding and border rounding).
+  State the measured contribution of each in pt.
+- Verify: the three contributions sum to the observed disagreement within
+  0.001 pt, and the WP names the owning mechanism and the WP that fixes it.
+  If the dominant term is (1), WP-1.1's go recommendation needs revisiting
+  and that is `awaiting-fran`; if (2) or (3), the fix belongs to WP-2.2a's
+  template transcription and WP-3.1 scores it.
+- Must report before WP-3.1 scores `page_sets.body`.
+
 ### WP-1.5 apply the hyphenation decision (sanctioned oracle change)
 
 - Owns: `src/magazine/assets/weasyprint-a5.css`,
@@ -747,10 +796,14 @@ fallback.
   engines for parity, re-enabled natively post-flip by WP-4.3.
 - Target: disable hyphenation **scoped to `:lang(en)`**, not globally. The
   stylesheet's own comment records Spanish setting about four pages longer
-  unhyphenated (edition 003: en 36, es 40) with one es article sitting
+  than English (edition 003: en 36, es 40) with one es article sitting
   exactly on its seven-page cap, and `html lang` is already set per
   language, so the scoped switch costs one selector and keeps every
-  Spanish edition rendered between here and WP-4.3 off a cap breach.
+  Spanish edition rendered between here and WP-4.3 off a cap breach. Read
+  the whole comment before weighting this: the same note records edition
+  003 paginating IDENTICALLY with and without hyphenation in both
+  languages, so the cap breach is a tail risk, not an expectation. One
+  selector is cheap enough to buy anyway.
   Parity is en-only, so the scope loses nothing it needs. The Typst leg
   disables hyphenation for the same language in WP-2.2a.
 - Verify: WP-0.1's double-render determinism check re-run green; an es
@@ -1073,7 +1126,8 @@ WP-2.0a -> WP-2.0b
 (010 content-final, Fran-recorded) -> WP-2.0a
 WP-5.1a -> WP-5.1b -> WP-5.1c
 WP-5.1c + WP-2.0b -> WP-2.1 -> WP-2.2a -> WP-2.2b -> WP-2.2c -> WP-2.3
-WP-2.3 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5
+WP-1.6 (independent, evidence only) -> WP-3.1
+WP-2.3 + WP-1.6 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5
 WP-3.5 + WP-0.2f -> WP-3.0g -> WP-3.7          (the ratchet cannot be
                                                 raised to Tier E before the
                                                 raster bound exists)
@@ -1097,8 +1151,13 @@ serial.
 
 - **rustybuzz/Pango disagreement**: measured by WP-1.1 before engine code
   existed. Glyph sequences agree exactly; the residual is Pango's own
-  advance rounding, bounded at 0.0174 pt and reaching a Tier E coordinate
-  only where it moves a line break (one known case, owned by WP-3.1).
+  advance rounding, 0.0174 pt on letter-spaced headlines and 0.009897 pt at
+  normal spacing.
+- **Attributing a divergence to the nearest measured number**: WP-1.2's
+  break miss was assigned to that residual, which its own figures rule out.
+  The audit caught it; WP-1.6 now measures the cause. Worth generalising:
+  two spikes measuring different corpora and different quantities cannot be
+  chained into a causal claim, and a WP that inherits one is fixing a guess.
 - **The raster guard measuring the rasterizer instead of the engines**:
   this already happened (WP-0.2d, 241/255 from FreeType grid-fitting) and
   is why WP-0.2f derives its bound under a two-sided constraint. The
