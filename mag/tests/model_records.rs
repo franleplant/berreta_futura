@@ -330,18 +330,29 @@ fn canonical_urls_match_python() {
 }
 
 #[test]
-fn create_and_source_id_match_python() {
-    let expected = committed("model_records_create_expected.json");
-    let tags = |items: &[&str]| {
-        items
-            .iter()
-            .map(|item| item.to_string())
-            .collect::<Vec<String>>()
-    };
-    let plain_tags = tags(&["  Beta ", "alpha", "ALPHA", "  "]);
-    let unicode_tags = tags(&["x"]);
-    let long_title = "x".repeat(60);
-    let cases: Vec<(&str, NewRecord)> = vec![
+fn port_refusal_messages_match_python() {
+    let expected = committed("model_records_ports_expected.json");
+    for (url, entry) in expected.as_object().expect("the table is an object") {
+        let message = entry
+            .get("python_value_error")
+            .and_then(Json::as_str)
+            .expect("every port case raises ValueError in Python");
+        match canonicalize_url(url) {
+            Ok(value) => panic!("{url} canonicalized to {value}, Python raised {message}"),
+            Err(ValidationError(errors)) => assert_eq!(
+                errors,
+                vec![message.to_string()],
+                "the Rust port refusal diverged from urllib for {url}"
+            ),
+        }
+    }
+}
+
+fn create_cases<'a>(
+    plain_tags: &'a [String],
+    unicode_tags: &'a [String],
+) -> Vec<(&'a str, NewRecord<'a>)> {
+    vec![
         (
             "plain",
             NewRecord {
@@ -350,7 +361,7 @@ fn create_and_source_id_match_python() {
                 author: Some("  Writer  "),
                 published_at: Some("2026-01-02"),
                 captured_at: "2026-03-04T05:06:07Z",
-                tags: &plain_tags,
+                tags: plain_tags,
                 synopsis: "  S  ",
                 notes: "  N  ",
             },
@@ -389,7 +400,7 @@ fn create_and_source_id_match_python() {
                 author: None,
                 published_at: None,
                 captured_at: "2026-03-04T05:06:07Z",
-                tags: &unicode_tags,
+                tags: unicode_tags,
                 synopsis: "",
                 notes: "",
             },
@@ -407,7 +418,67 @@ fn create_and_source_id_match_python() {
                 notes: "",
             },
         ),
-    ];
+    ]
+}
+
+fn falsy_create_cases<'a>() -> Vec<(&'a str, NewRecord<'a>)> {
+    vec![
+        (
+            "empty_title",
+            NewRecord {
+                url: "https://example.com/f",
+                title: Some(""),
+                author: None,
+                published_at: None,
+                captured_at: "2026-03-04T05:06:07Z",
+                tags: &[],
+                synopsis: "",
+                notes: "",
+            },
+        ),
+        (
+            "whitespace_title",
+            NewRecord {
+                url: "https://example.com/g",
+                title: Some("   "),
+                author: None,
+                published_at: None,
+                captured_at: "2026-03-04T05:06:07Z",
+                tags: &[],
+                synopsis: "",
+                notes: "",
+            },
+        ),
+        (
+            "empty_author",
+            NewRecord {
+                url: "https://example.com/h",
+                title: Some("T"),
+                author: Some(""),
+                published_at: None,
+                captured_at: "2026-03-04T05:06:07Z",
+                tags: &[],
+                synopsis: "",
+                notes: "",
+            },
+        ),
+    ]
+}
+
+#[test]
+fn create_and_source_id_match_python() {
+    let expected = committed("model_records_create_expected.json");
+    let tags = |items: &[&str]| {
+        items
+            .iter()
+            .map(|item| item.to_string())
+            .collect::<Vec<String>>()
+    };
+    let plain_tags = tags(&["  Beta ", "alpha", "ALPHA", "  "]);
+    let unicode_tags = tags(&["x"]);
+    let long_title = "x".repeat(60);
+    let mut cases = create_cases(&plain_tags, &unicode_tags);
+    cases.extend(falsy_create_cases());
     let mut created = Map::new();
     for (name, request) in &cases {
         let value = match SourceRecord::create(request) {

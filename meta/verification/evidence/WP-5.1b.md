@@ -315,10 +315,122 @@ Behavioural notes a later WP should know:
   `mod model;` in `main.rs` (WP-5.1a) still applies and was not touched; nothing
   in the binary consumes the model yet. WP-5.1c and WP-2.1 remove it when they
   wire the model in.
+- A malformed or out-of-range port raises an uncaught `ValueError` in Python
+  and crashes the caller; the port returns `ValidationError`, which
+  `mag capture` handles as a refusal. The message text matches exactly; only
+  the type differs. Pinned by `model_records_ports_expected.json`.
 - `ValidationError` is defined in `records.rs` as a `Vec<String>` mirroring
   `errors.py`. WP-5.1c ports `manifest.py`, which raises the same type; whoever
   cuts that WP should lift this into a shared module rather than define a
   second one.
+
+## Rework after rejection (verify commit 44fb08c)
+
+The first submission (f044b99) was rejected for two material divergences in
+paths no committed oracle reached, plus two smaller findings. All are resolved.
+
+### Defect 1, port falsiness
+
+`records.py:29` tests `if parts.port`, and Python's integer `0` is falsy, so
+`:0` never joins the host. The port entered the branch on `Some(0)` and
+appended `:0`, so `https://e.com:0/` canonicalized differently on the two
+sides. Because `source_id` hashes the canonical URL, the two implementations
+minted different record ids for the same page. Fixed by filtering `Some(0)` at
+the use site, which is where Python's falsiness test lives.
+
+Probing `urlsplit` for the surrounding behaviour found two more port
+divergences the sweep had not reached, both now fixed in `host_and_port`:
+`u32::from_str` accepts a leading `+`, so `:+80` parsed as 80 where Python
+raises; and it rejects overflow, so `:99999999999999` reported "could not be
+cast" where Python reports "out of range". The port string is now required to
+be ASCII digits, and an overflowing digit string is out of range.
+
+### Defect 2, py_repr non-printables
+
+Python's `repr` escapes every character failing `str.isprintable()`, which is
+category-based: false for all of Cc, Cf, Cs, Co, Cn, Zl, Zp, and for Zs other
+than U+0020. The port escaped only the quote, backslash, `\n`, `\r` and `\t`.
+Fixed with a `printable` predicate over `regex`'s Unicode general-category
+data (`[\p{C}\p{Z}]`, space excepted), which is already a dependency, and
+Python's own escape forms: `\xNN` below U+0100, `\uNNNN` below U+10000,
+`\UNNNNNNNN` above. No crate was added.
+
+### Finding 3, malformed port exception type
+
+Resolved as a recorded divergence rather than a code change. Python's
+`parts.port` raises an uncaught `ValueError` and crashes the caller; Rust
+returns `ValidationError`, which `mag capture` handles as a refusal. Refusing
+rather than crashing is the better behaviour and matching it would mean
+panicking, so the type divergence stands and is now listed in Residuals. The
+message text no longer diverges: the port message was quoted with Rust's
+`{:?}` (double quotes) and now uses `py_repr`.
+
+A new oracle, `mag/tests/model_records_ports_expected.json`, records Python's
+`ValueError` message for eight malformed and out-of-range ports, and
+`port_refusal_messages_match_python` asserts the Rust refusal carries exactly
+that text. The divergence is therefore pinned by a test rather than left to
+prose.
+
+### Finding 4, the two unmapped raise sites
+
+`media_schema.py:332` (extracts not a list) and `:340-347` (missing and extra
+ids) had figures analogues but no extracts ones. Both are now cases in
+`cases.yaml`: `localize_extracts_not_a_list` and
+`localize_extracts_missing_and_unknown`. The matrix is 49 cases.
+
+The duplicate-URL raise site stays out, as the verifier confirmed it must:
+Python's message names whichever duplicate `Path.glob` met first. Comparing a
+sorted set instead would exercise the branch but would no longer be the
+message comparison this WP's oracles are built on, so it remains recorded.
+
+### Python truthiness sweep
+
+Every `if x` and `x or y` in `records.py` and `media_schema.py` was checked
+against its translation. One further divergence was found and fixed:
+`records.py:76` reads `(title or canonical).strip()`, so an empty title falls
+back to the canonical URL, while `unwrap_or` only falls back on `None`. Three
+create cases now cover it (`empty_title`, `whitespace_title`, `empty_author`);
+Python yields the canonical URL for an empty title and `''` for a whitespace
+one, and the port now matches both.
+
+Checked and already correct: the `url` and `published_at` fallback chains in
+`from_value` use the `truthy` helper, so an empty string falls through as
+Python's `or` does; required-field detection treats an empty string as missing
+on both sides; the `tags` pipeline strips, drops empties, lowercases and sorts;
+and `author` was fixed before the first submission. `if not row` in
+`localize_*` cannot observe an empty mapping, because `by_id` only admits rows
+with a truthy `id`, so `Some(row)` and Python's truthiness agree.
+
+### Verification of the rework
+
+- The verifier's preserved 41-case differential harness re-run against the
+  fixed port: **39 cases identical, 2 differing only in exception type**
+  (`ValueError` versus `ValidationError`) with identical message text. All six
+  previously material divergences are gone. The harness stays uncommitted; it
+  lives at `/Users/franguijarro/.claude/jobs/7d99e27f/tmp/`.
+- The new fixtures are discriminating, not decorative. Reverting the three
+  fixes in place fails `canonical_urls_match_python`, `create_and_source_id_match_python`
+  and `figure_and_extract_refusals_match_python`; restoring them returns all
+  eight tests to green.
+- `cargo test --test model_records`: 8 passed. `rustfmt` and
+  `cargo clippy --test model_records` clean. A tree-wide `cargo fmt`/`clippy`
+  could not be run from the shared tree because concurrent agents hold
+  in-progress files there.
+
+### Oracle digests after the rework
+
+| file | sha256 |
+|---|---|
+| `model_records_expected.json` | `611d885cb7f67269790110a2e6447be855657b9d9495e95ae7f47aa7c5452d2d` |
+| `model_records_records_expected.json` | `1e9bc57520012bc3013a6d7a3e1c0d24b825b964d6fad1cf4ae024e14735181f` |
+| `model_records_urls_expected.json` | `271f1aed2dc84e10fa172e5ed3c07c6cd7a4ce74af67af63609c19d0b01ae8c7` |
+| `model_records_ports_expected.json` | `331c78f351061f0db6fef3f7579f6ea4a4b146e628c04aec8a065ecbeee93288` |
+| `model_records_create_expected.json` | `be1563b161c129fedc88789322a8bec74382e8dd6f9c107e9cef6f1cae20ffe7` |
+| `model_records_cases_expected.json` | `b2054e454094f9a2dd5715c0e6049418fc586f2f8e8cf1825457a24e087f6c27` |
+
+The corpus and record-fixture oracles are unchanged, as expected: no corpus
+record carries an explicit port, a non-printable character or an empty title.
+That is precisely why the defects survived the first submission.
 
 ## Status
 

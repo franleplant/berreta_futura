@@ -10,6 +10,9 @@
       "Expected an http(s) URL, got: ftp://e.com/x"
     ]
   },
+  "http://e.com:0/x": {
+    "ok": "http://e.com/x"
+  },
   "http://example.com:80/p/": {
     "ok": "http://example.com/p"
   },
@@ -47,6 +50,21 @@
   },
   "https://e.com/path/?empty=": {
     "ok": "https://e.com/path?empty="
+  },
+  "https://e.com:/": {
+    "ok": "https://e.com/"
+  },
+  "https://e.com:0/": {
+    "ok": "https://e.com/"
+  },
+  "https://e.com:00/": {
+    "ok": "https://e.com/"
+  },
+  "https://e.com:000/": {
+    "ok": "https://e.com/"
+  },
+  "https://e.com:080/": {
+    "ok": "https://e.com:80/"
   },
   "https://example.com:8443/": {
     "ok": "https://example.com:8443/"

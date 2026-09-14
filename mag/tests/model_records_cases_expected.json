@@ -201,6 +201,31 @@
       "Article a1 figure 1 has unsafe path: '../../secret.png'"
     ]
   },
+  "figures_unsafe_path_bell": {
+    "errors": [
+      "Article a1 figure 1 has unsafe path: '../x\\x07y.png'"
+    ]
+  },
+  "figures_unsafe_path_escape": {
+    "errors": [
+      "Article a1 figure 1 has unsafe path: '../x\\x1by.png'"
+    ]
+  },
+  "figures_unsafe_path_next_line": {
+    "errors": [
+      "Article a1 figure 1 has unsafe path: '../x\\x85y.png'"
+    ]
+  },
+  "figures_unsafe_path_nul": {
+    "errors": [
+      "Article a1 figure 1 has unsafe path: '../x\\x00y.png'"
+    ]
+  },
+  "figures_unsafe_path_zero_width_space": {
+    "errors": [
+      "Article a1 figure 1 has unsafe path: '../x\\u200by.png'"
+    ]
+  },
   "localize_extracts_absent_base": {
     "errors": [
       "Translation 'es' article a1 has extracts absent from English"
@@ -210,6 +235,17 @@
     "errors": [
       "Translation 'es' extract x1 requires caption and anchor",
       "Translation 'es' extract x1 anchor does not match a translated heading"
+    ]
+  },
+  "localize_extracts_missing_and_unknown": {
+    "errors": [
+      "Translation 'es' article a1 is missing extracts: x1",
+      "Translation 'es' article a1 has unknown extracts: xz"
+    ]
+  },
+  "localize_extracts_not_a_list": {
+    "errors": [
+      "Translation 'es' article a1 extracts must be a list"
     ]
   },
   "localize_extracts_ok": {
