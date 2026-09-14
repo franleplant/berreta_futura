@@ -1,0 +1,126 @@
+{
+ "half_even": [
+  {
+   "value": 0.5,
+   "expected": 0
+  },
+  {
+   "value": 1.5,
+   "expected": 2
+  },
+  {
+   "value": 2.5,
+   "expected": 2
+  },
+  {
+   "value": 3.5,
+   "expected": 4
+  },
+  {
+   "value": -0.5,
+   "expected": 0
+  },
+  {
+   "value": 60.5,
+   "expected": 60
+  },
+  {
+   "value": 59.5,
+   "expected": 60
+  },
+  {
+   "value": 0.0,
+   "expected": 0
+  },
+  {
+   "value": 100.0,
+   "expected": 100
+  },
+  {
+   "value": 12.5,
+   "expected": 12
+  },
+  {
+   "value": 13.5,
+   "expected": 14
+  },
+  {
+   "value": 0.4999999999,
+   "expected": 0
+  },
+  {
+   "value": 0.5000000001,
+   "expected": 1
+  },
+  {
+   "value": 99.5,
+   "expected": 100
+  },
+  {
+   "value": 98.5,
+   "expected": 98
+  }
+ ],
+ "places": [
+  {
+   "value": 0.8043045,
+   "places": 6,
+   "expected": 0.804304
+  },
+  {
+   "value": 0.1234565,
+   "places": 6,
+   "expected": 0.123456
+  },
+  {
+   "value": 0.1234575,
+   "places": 6,
+   "expected": 0.123457
+  },
+  {
+   "value": 2.3565,
+   "places": 3,
+   "expected": 2.357
+  },
+  {
+   "value": 2.3575,
+   "places": 3,
+   "expected": 2.357
+  },
+  {
+   "value": 5e-07,
+   "places": 6,
+   "expected": 0.0
+  },
+  {
+   "value": 21.0,
+   "places": 3,
+   "expected": 21.0
+  },
+  {
+   "value": 1.0005,
+   "places": 3,
+   "expected": 1.0
+  },
+  {
+   "value": 0.9999995,
+   "places": 6,
+   "expected": 1.0
+  },
+  {
+   "value": 0.0,
+   "places": 6,
+   "expected": 0.0
+  },
+  {
+   "value": 0.052578,
+   "places": 6,
+   "expected": 0.052578
+  },
+  {
+   "value": 2.192,
+   "places": 3,
+   "expected": 2.192
+  }
+ ]
+}
