@@ -1682,3 +1682,111 @@
         short_title: Alfa
         manuscript: editions/010/translations/es/a1.md
       sections: []
+
+- name: nonprintable_edition_id
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: "010​"
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      sections: []
+
+- name: nonprintable_section_kind
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/g.md: |
+      Glossary body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      sections:
+      - kind: "glossary\x07"
+        path: editions/010/g.md
+
+- name: nonprintable_verbatim_title
+  edition_id: '010'
+  known_sources: [s1]
+  records:
+    s1:
+      title: "Captured\x1bTitle"
+      url: https://example.com/a
+      published_at: '2026-02-03'
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: verbatim
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: nonprintable_astral_verbatim_title
+  edition_id: '010'
+  known_sources: [s1]
+  records:
+    s1:
+      title: "Captured\U000f0000Title"
+      url: https://example.com/a
+      published_at: '2026-02-03'
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: verbatim
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+
+- name: nonprintable_translation_language
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: "es​"
+      cover:
+        headline: Hache
+      articles: []

@@ -2,8 +2,16 @@
 
 ## Base
 
-6e8abb8 (`feat(parity): WP-0.0c opener header carries data-article-id`), on
-`art_directed`. Plan revision 9.
+First submission: 6e8abb8 (`feat(parity): WP-0.0c opener header carries
+data-article-id`), on `art_directed`, plan revision 9. That submission was
+REJECTED by verify commit `66f6f90` for a stale `py_repr` copy.
+
+Rework: 9a5c1cb, plan revision 11. The rework changes `py_repr` in
+`manifest.rs`, adds five non-printable fixture cases with their oracle
+entries, and corrects the claims in clauses 3, 8, 9, 10 and `## Metrics`.
+Nothing else in the port changed, and the clauses the verifier confirmed
+sound (the 010 oracle chain, refusal coverage, the shared `ValidationError`,
+ordering, both declared divergences) were deliberately left alone.
 
 ## Commands
 
@@ -219,6 +227,49 @@ The file must regenerate byte-for-byte; `git diff --stat` is the check.
 
     cd mag && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
 
+### 7. Rework: the discriminating proof for the `py_repr` fix
+
+Regenerating the oracle (clause 5, unchanged) must be purely additive
+against the committed file:
+
+    git diff --numstat mag/tests/model_manifest_cases_expected.json
+    # expect: 29	0   (five new entries, no pre-existing case altered)
+
+Confirm the five new cases carry the intended codepoints on the Python side
+before trusting any comparison:
+
+    uv run python -c '
+    import yaml
+    from pathlib import Path
+    for c in yaml.safe_load(Path("mag/tests/model_manifest_fixtures/cases.yaml").read_text()):
+        if not c["name"].startswith("nonprintable"): continue
+        for k, v in (c.get("records") or {}).items():
+            print(c["name"], "record title", [hex(ord(x)) for x in v["title"] if ord(x) < 32 or ord(x) > 126])
+        for name, content in (c.get("files") or {}).items():
+            inner = yaml.safe_load(content)
+            if not isinstance(inner, dict): continue
+            for key in ("id", "language"):
+                if isinstance(inner.get(key), str):
+                    print(c["name"], key, [hex(ord(x)) for x in inner[key]])
+            for s in inner.get("sections") or []:
+                if isinstance(s, dict) and isinstance(s.get("kind"), str):
+                    print(c["name"], "section kind", [hex(ord(x)) for x in s["kind"]])
+    '
+    # expect 0x200b (edition id), 0x7 (section kind), 0x1b and 0xf0000
+    # (record titles), 0x200b (translation language)
+
+The fix is discriminating in both directions. Revert the two escaping arms
+of `py_repr` in `mag/src/model/manifest.rs`, leaving `printable`,
+`nonprintable` and `escape` present but unused (add `#[allow(dead_code)]` to
+each so `-D warnings` does not mask the result), then:
+
+    cd mag && cargo test --test model_manifest 2>&1 | grep -E "diverge|nonprintable|test result"
+    # expect: 5 cases diverge, naming exactly the five nonprintable_* cases,
+    # and NO other case. Restore the arms and expect 4 passed.
+
+That the other 74 cases pass in both states is the rejection's diagnosis
+confirmed rather than merely accepted.
+
 ## Tool versions
 
     python 3.12.11, pyyaml 6.0.3, uv 0.8.17, rustc 1.96.0, jq 1.8.1
@@ -251,12 +302,17 @@ Case suite:
 
 | quantity | value |
 |---|---|
-| cases | 74 (62 base path, 12 translation) |
+| cases | 79 (66 base path, 13 translation) |
 | cases loading successfully | 5 |
-| cases refusing | 66 |
-| distinct error messages compared | 122 |
+| cases refusing | 71 |
+| distinct error messages compared | 131 |
 | cases where Python crashes | 3 |
-| expectation file bytes | 20,211 |
+| non-printable cases (rework) | 5 |
+
+Of the 79, five were added by the rework and are the only ones carrying a
+non-printable character; before them the corpus held none, which is why the
+stale `py_repr` survived the first submission. They raise the refusing count
+from 66 to 71 and the compared messages from 122 to 131.
 
 Refusal-site coverage, clause 6:
 
@@ -281,9 +337,10 @@ would silently break Spanish editions.
 - `edition_010_matches_the_python_loader`: PASS with real inputs, and FAILS
   on the perturbed oracle (one page cap changed from 10 to 7), so the check
   is not vacuous.
-- `cases_match_the_python_loader`: PASS, 71 of 74 cases compared field for
+- `cases_match_the_python_loader`: PASS, 76 of 79 cases compared field for
   field. Two cases are compared by prefix (see Residuals) and three are
-  handled by the crash test.
+  handled by the crash test. Reverting the rework's `py_repr` escaping makes
+  exactly the five `nonprintable_*` cases diverge and no others.
 - `python_crashes_are_reported_as_validation_errors`: PASS. Asserts the exact
   diagnosis list the port produces where Python dies.
 - `the_oracle_is_not_vacuous`: PASS. Altering one article title in the
@@ -332,13 +389,40 @@ port itself authors is compared exactly. This mirrors WP-5.1b's precedent for
 
 **3. `ValidationError` is reused, not duplicated.** `manifest.rs` imports it
 from `super::records`, so there is one type (option (a) of the brief).
-`py_repr` could not be reused the same way: it is private in `records.rs`,
-which I do not own, so `manifest.rs` carries an identical private copy.
-Recommended follow-up, unchanged from WP-5.1b's recommendation and now
-covering three items: lift `ValidationError`, `py_repr`, and the `io.py`
+`py_repr` cannot be reused the same way: it is private in `records.rs`, which
+this WP does not own, so `manifest.rs` carries a private copy.
+
+That copy was the defect this rework exists to fix. As first submitted it was
+the PRE-FIX body: it lacked the `printable` predicate and the `escape`
+helper, so every non-printable character was emitted raw, and 5 of 7 probes
+diverged from Python. The corrected body existed in the tree when the copy
+was made (WP-5.1b's fix `b39ccf3` is an ancestor of `4120821`), so the copy
+was stale rather than independently written. It now carries `printable`,
+`nonprintable` and `escape` with the same bodies as `records.rs`, and the
+five fixtures in clause 9 below compare them against Python.
+
+Recommended follow-up, unchanged and now with a demonstrated defect behind
+it rather than tidiness: lift `ValidationError`, `py_repr` and the `io.py`
 helpers (`load_structured`, `safe_project_path`) into a shared module. That
 edit spans files owned by WP-5.1b and WP-5.1c, so it belongs to whichever WP
 next legitimately owns both, or to WP-6.1.
+
+**3b. Stale-copy audit.** Every function name defined in both
+`records.rs` and `manifest.rs`, and every helper `manifest.rs` ports from a
+Python module that `records.rs` also draws on:
+
+| helper | status |
+|---|---|
+| `py_repr` | WAS STALE, fixed by this rework; bodies now agree, fixtures added |
+| `printable`, `nonprintable`, `escape` | were ABSENT from `manifest.rs`, which is what made `py_repr` stale; added with bodies identical to `records.rs` |
+| `truthy` | duplicated NAME only, not a copy: `records.rs:429` takes `Option<&String>` and tests emptiness; `manifest.rs:2153` takes `Option<&Value>` and implements Python truthiness over every YAML type. Different signatures, different domains, both correct for their own |
+| `load_structured` | ported from `io.py`; single copy in the Rust tree, `records.rs` has none. Not duplicated |
+| `safe_project_path` | ported from `io.py`; single copy, `records.rs` has none. `records.rs:793 unsafe_path` is a different function (media_schema path validation), not a variant of this one |
+
+Method: `grep -oP '^(pub )?fn \K\w+'` over both files, `comm -12` on the
+sorted name lists, which yields exactly `py_repr` and `truthy`; then each
+`io.py` helper checked against `src/magazine/io.py` and against `records.rs`
+for a second copy. No third stale copy exists.
 
 **4. Branches edition 010 alone would have missed.** The 010 comparison
 exercises 9 `article`/`verbatim` rows in an illustrated-opener edition with a
@@ -376,6 +460,73 @@ files as siblings (`#[path = "../src/model/<name>.rs"]`) rather than through
 `model.rs`, because child modules do not resolve through a `#[path]`-ed
 parent; `manifest.rs` reaches its siblings by `super::`, which is correct in
 both the binary tree and the test tree.
+
+**8. Rework: the non-printable fixtures.** The rejection noted that the
+74-case corpus contained zero non-printable characters, which is why no test
+caught the stale `py_repr`. Five cases now drive non-printables through
+distinct `py_repr` call sites, chosen so the character reaches the repr
+because the value is wrong:
+
+| case | character | call site | Python message |
+|---|---|---|---|
+| `nonprintable_edition_id` | U+200B (Cf) | `:222` `repr_option` + `:223` `py_repr(edition_id)` | `Edition id '010​' does not match directory '010'` |
+| `nonprintable_section_kind` | U+0007 (Cc) | `:839` `py_repr(&kind)` | `Section 1 has unknown kind 'glossary\x07'; ...` |
+| `nonprintable_verbatim_title` | U+001B (Cc) | `:770` `py_repr(&record.title)` | `Article a1 verbatim title must stay the captured source title 'Captured\x1bTitle'` |
+| `nonprintable_astral_verbatim_title` | U+F0000 (Co) | `:770` | `... 'Captured\U000f0000Title'` |
+| `nonprintable_translation_language` | U+200B (Cf) | `:1115` `repr_option` + `:1116` `py_repr(language)` | `Translation language 'es​' does not match directory 'es'` |
+
+The set exercises all three escape widths Python chooses between: `\xNN`
+(BEL, ESC), `\uNNNN` (ZWSP) and `\UNNNNNNNN` (U+F0000). The astral case
+matters because it is the only one that reaches the `point >= 0x10000` branch
+of `escape`.
+
+The characters are carried as YAML double-quoted escapes inside each case's
+`files` block scalar, so `cases.yaml` stays ASCII and the inner
+`edition.yaml` is what holds the non-printable after the loader parses it.
+Both parsers were checked to agree on the codepoints before the oracle was
+regenerated.
+
+Regenerating the oracle with the command in `## Commands` clause 5 is purely
+additive: `git diff --numstat` reports `29 0`, so the pre-existing 74 cases
+regenerate byte-for-byte and only the five new entries appear.
+
+**9. The fix is discriminating, proven in both directions.** With the
+`printable`/`escape` arms reverted in place and the three helpers left
+present but unused, `cases_match_the_python_loader` fails with exactly
+`5 cases diverge`, naming all five new cases and no others. Restoring the
+arms returns the suite to green. That the other 74 cases pass in BOTH states
+is the rejection's diagnosis confirmed: the old corpus could not see this
+defect class at all.
+
+**10. Compliance with revision 11's deliberate-divergence limits.** The plan
+gained a Phase 5 policy after this WP was first submitted; both divergences
+here satisfy all four limits.
+
+| limit | the `_check_unique_art` crash divergence | the foreign-parser prefix divergence |
+|---|---|---|
+| only toward MORE diagnosis, never more permissive | the port still REFUSES all three inputs, returning the diagnoses Python accumulated and then discarded; nothing Python rejects is accepted | both sides refuse; only PyYAML's own wording is outside the compared region |
+| every diverging input enumerated with both behaviors, covered by a test | the three cases are named in `PYTHON_CRASHES`, and `python_crashes_are_reported_as_validation_errors` asserts BOTH that Python recorded an `AttributeError`/`TypeError` and the exact recovered list | the two cases are named in `PARSER_DIAGNOSTIC_CASES` and compared by `compare_parser_diagnostics`, which checks count, ordering and the shared prefix |
+| the oracle stays exact for every input Python handles without crashing | the other 76 cases compare whole JSON values exactly | the message template and the interpolated path stay inside the compared prefix, which must end with `": "` and contain `<ROOT>` |
+| fixing the Python is available but not preferred | recorded: it needs a sanctioned oracle-change WP for a module deleted at WP-6.1, and a traceback is not a message, so exact equality is untestable either way | not applicable: the divergence is PyYAML's wording, not a crash |
+
+**Rework residual: duplicated helpers are a demonstrated defect source.**
+`py_repr` was fixed in `records.rs` and then reintroduced stale in
+`manifest.rs`, in the module that actually validates `edition.yaml` and so
+sees hand-authored text most often. The shared-module consolidation
+(`ValidationError`, `py_repr` with `printable`/`nonprintable`/`escape`, and
+`io.py`'s `load_structured`/`safe_project_path`) is no longer a tidiness
+item; until it happens, any WP copying a helper between model modules must
+diff it against its source and say so in evidence. The audit table in
+clause 3b is the form that check should take.
+
+**Rework residual: a uniformly well-formed corpus proves less than its case
+count suggests.** 74 cases and 122 compared messages did not catch a defect
+that 5 cases and 9 messages caught immediately, because the corpus contained
+no non-printable character anywhere. This is the third instance of the
+pattern (WP-5.1a's padded containers absent from 010, WP-5.1b's explicit
+port and non-printables absent from `library/sources/`). The remaining
+Phase 5 ports should treat "which inputs does my corpus structurally lack"
+as a required question rather than an afterthought.
 
 ## Status
 

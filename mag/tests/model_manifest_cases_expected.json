@@ -300,6 +300,35 @@
    "Edition requires either sections or articles"
   ]
  },
+ "nonprintable_astral_verbatim_title": {
+  "errors": [
+   "Article a1 verbatim title must stay the captured source title 'Captured\\U000f0000Title'"
+  ]
+ },
+ "nonprintable_edition_id": {
+  "errors": [
+   "Edition id '010\\u200b' does not match directory '010'",
+   "Edition requires either sections or articles"
+  ]
+ },
+ "nonprintable_section_kind": {
+  "errors": [
+   "Section 1 has unknown kind 'glossary\\x07'; the known kinds are original_editorial, source_introduction, original_synthesis, source_record, production_note, glossary, try_it, cheat_sheet"
+  ]
+ },
+ "nonprintable_translation_language": {
+  "errors": [
+   "Translation language 'es\\u200b' does not match directory 'es'",
+   "Translation source_language must be 'en'",
+   "Translation 'es' is missing articles: a1",
+   "Translation 'es' sections must be a list"
+  ]
+ },
+ "nonprintable_verbatim_title": {
+  "errors": [
+   "Article a1 verbatim title must stay the captured source title 'Captured\\x1bTitle'"
+  ]
+ },
  "opener_art_not_a_mapping": {
   "crash": "AttributeError: 'str' object has no attribute 'get'"
  },

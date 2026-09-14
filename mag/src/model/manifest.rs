@@ -2247,9 +2247,30 @@ fn py_repr(text: &str) -> String {
                 out.push('\\');
                 out.push(other);
             }
-            other => out.push(other),
+            other if printable(other) => out.push(other),
+            other => out.push_str(&escape(other)),
         }
     }
     out.push(quote);
     out
+}
+
+fn printable(character: char) -> bool {
+    character == ' ' || !nonprintable().is_match(character.encode_utf8(&mut [0; 4]))
+}
+
+fn nonprintable() -> &'static Regex {
+    static PATTERN: OnceLock<Regex> = OnceLock::new();
+    PATTERN.get_or_init(|| Regex::new(r"^[\p{C}\p{Z}]$").expect("the pattern compiles"))
+}
+
+fn escape(character: char) -> String {
+    let point = character as u32;
+    if point < 0x100 {
+        format!("\\x{point:02x}")
+    } else if point < 0x10000 {
+        format!("\\u{point:04x}")
+    } else {
+        format!("\\U{point:08x}")
+    }
 }
