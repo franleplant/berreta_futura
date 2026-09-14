@@ -1,6 +1,7 @@
 mod art;
 mod caller;
 mod capture;
+mod parity;
 mod plan_cmd;
 mod print_cmd;
 mod produce;
@@ -192,6 +193,13 @@ enum Cmd {
         #[arg(long = "no-model")]
         no_model: bool,
     },
+    /// Compare two engines' renders of an edition against the parity ladder
+    Parity {
+        edition: String,
+        /// Two pre-rendered output trees to compare instead of rendering
+        #[arg(long = "pre-rendered", num_args = 2, value_names = ["DIR_A", "DIR_B"])]
+        pre_rendered: Option<Vec<PathBuf>>,
+    },
 }
 
 fn main() {
@@ -355,6 +363,17 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
                 &anchor,
                 no_model,
             )
+        }
+        Cmd::Parity {
+            edition,
+            pre_rendered,
+        } => {
+            let pair = pre_rendered.map(|mut dirs| {
+                let b = dirs.pop().expect("clap enforces two dirs");
+                let a = dirs.pop().expect("clap enforces two dirs");
+                (a, b)
+            });
+            parity::run(&edition, pair)
         }
         _ => unreachable!(),
     }
