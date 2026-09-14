@@ -1,7 +1,7 @@
 use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -290,55 +290,72 @@ struct AnchorOutcome {
     dropped: Vec<String>,
 }
 
+struct PendingFigures {
+    idx: Vec<usize>,
+    ids: Vec<String>,
+    anchors: Vec<String>,
+    meta: String,
+}
+
+fn pending_figures(article: &serde_yaml::Value, headings: &[String]) -> PendingFigures {
+    let mut pending = PendingFigures {
+        idx: Vec::new(),
+        ids: Vec::new(),
+        anchors: Vec::new(),
+        meta: String::new(),
+    };
+    let figs = article
+        .get("figures")
+        .and_then(|v| v.as_sequence())
+        .into_iter()
+        .flatten();
+    for (i, fig) in figs.enumerate() {
+        let anchor = str_field(fig, "anchor").unwrap_or("");
+        if anchor.is_empty() || anchor == "__opener__" || headings.iter().any(|h| h == anchor) {
+            continue;
+        }
+        let fig_id = str_field(fig, "id")
+            .unwrap_or("<unknown-figure>")
+            .to_string();
+        pending.meta += &format!("- id: {fig_id}\n");
+        for key in ["caption", "alt_text", "rationale", "anchor"] {
+            if let Some(v) = str_field(fig, key) {
+                let label = if key == "anchor" {
+                    "previous_section"
+                } else {
+                    key
+                };
+                pending.meta += &format!("  {label}: {v}\n");
+            }
+        }
+        pending.idx.push(i);
+        pending.ids.push(fig_id);
+        pending.anchors.push(anchor.to_string());
+    }
+    pending
+}
+
 fn resolve_article_anchors(
     caller: &Caller,
     anchor_model: &ModelSpec,
     article_id: &str,
     manuscript_path: &Path,
+    headings: &[String],
+    pending: &PendingFigures,
     article: &mut serde_yaml::Value,
 ) -> Result<AnchorOutcome> {
     let mut outcome = AnchorOutcome {
         changed: false,
         dropped: Vec::new(),
     };
-    let headings = manuscript_headings(manuscript_path);
-
-    let mut pending_idx: Vec<usize> = Vec::new();
-    let mut pending_ids: Vec<String> = Vec::new();
-    let mut pending_meta = String::new();
-    {
-        let Some(figs) = article.get("figures").and_then(|v| v.as_sequence()) else {
-            return Ok(outcome);
-        };
-        for (i, fig) in figs.iter().enumerate() {
-            let anchor = str_field(fig, "anchor").unwrap_or("");
-            if anchor.is_empty() || anchor == "__opener__" || headings.iter().any(|h| h == anchor) {
-                continue;
-            }
-            let fig_id = str_field(fig, "id")
-                .unwrap_or("<unknown-figure>")
-                .to_string();
-            pending_meta += &format!("- id: {fig_id}\n");
-            for key in ["caption", "alt_text", "rationale", "anchor"] {
-                if let Some(v) = str_field(fig, key) {
-                    let label = if key == "anchor" {
-                        "previous_section"
-                    } else {
-                        key
-                    };
-                    pending_meta += &format!("  {label}: {v}\n");
-                }
-            }
-            pending_idx.push(i);
-            pending_ids.push(fig_id);
-        }
-    }
-    if pending_idx.is_empty() {
+    if pending.idx.is_empty() {
         return Ok(outcome);
     }
+    let pending_ids = &pending.ids;
+    let pending_meta = &pending.meta;
 
     let resolutions: Vec<Option<String>> = if headings.is_empty() {
-        vec![None; pending_idx.len()]
+        vec![None; pending.idx.len()]
     } else {
         let manuscript = fs::read_to_string(manuscript_path)
             .with_context(|| format!("reading {}", manuscript_path.display()))?;
@@ -355,16 +372,16 @@ fn resolve_article_anchors(
             &format!("{article_id} figure anchors"),
             anchor_model,
             &prompt,
-            |reply| parse_anchor_reply(reply, &pending_ids, &headings),
+            |reply| parse_anchor_reply(reply, pending_ids, headings),
         )?
     };
 
     let figs = article
         .get_mut("figures")
         .and_then(|v| v.as_sequence_mut())
-        .expect("figures existed in the read pass");
+        .expect("figures existed in the pending scan");
     let mut drop_idx: HashSet<usize> = HashSet::new();
-    for ((&i, fig_id), resolution) in pending_idx.iter().zip(&pending_ids).zip(resolutions) {
+    for ((&i, fig_id), resolution) in pending.idx.iter().zip(pending_ids).zip(resolutions) {
         let old = str_field(&figs[i], "anchor").unwrap_or("?").to_string();
         match resolution {
             Some(heading) => {
@@ -445,6 +462,7 @@ pub fn run(
     langs: Option<&str>,
     run_flag: Option<&str>,
     anchor_model: &ModelSpec,
+    no_model: bool,
 ) -> Result<i32> {
     if !OPERATIONS.contains(&operation) {
         bail!(
@@ -497,7 +515,7 @@ pub fn run(
     let content_run = pick_content_run(run_flag, &edition_dir, &article_ids, &edition_yaml)?;
     let mut staging = Staging::new(repo_root.clone());
     let staged_edition_path = match &content_run {
-        Some(run) => patch_anchors(run, &render_dir, &edition_yaml, anchor_model)?
+        Some(run) => patch_anchors(run, &render_dir, &edition_yaml, anchor_model, no_model)?
             .unwrap_or_else(|| edition_yaml_path.clone()),
         None => edition_yaml_path.clone(),
     };
@@ -584,7 +602,29 @@ fn patch_anchors(
     render_dir: &Path,
     edition_yaml: &serde_yaml::Value,
     anchor_model: &ModelSpec,
+    no_model: bool,
 ) -> Result<Option<PathBuf>> {
+    let mut scans: HashMap<String, (Vec<String>, PendingFigures)> = HashMap::new();
+    let mut stale: Vec<String> = Vec::new();
+    for article in articles_of(edition_yaml) {
+        let Some(id) = str_field(article, "id") else {
+            continue;
+        };
+        let headings = manuscript_headings(&run.join("articles").join(id).join("final.md"));
+        let pending = pending_figures(article, &headings);
+        for (fig_id, anchor) in pending.ids.iter().zip(&pending.anchors) {
+            stale.push(format!("{id}:{fig_id} (anchor '{anchor}')"));
+        }
+        scans.insert(id.to_string(), (headings, pending));
+    }
+    println!("  pending anchors: {}", stale.len());
+    if no_model && !stale.is_empty() {
+        bail!(
+            "--no-model: {} figure anchor(s) need model patching:\n  {}",
+            stale.len(),
+            stale.join("\n  ")
+        );
+    }
     fs::create_dir_all(render_dir)?;
     let caller = Caller::new(render_dir);
     let mut patched = edition_yaml.clone();
@@ -598,9 +638,19 @@ fn patch_anchors(
             let Some(id) = str_field(article, "id").map(str::to_string) else {
                 continue;
             };
+            let Some((headings, pending)) = scans.get(&id) else {
+                continue;
+            };
             let manuscript_path = run.join("articles").join(&id).join("final.md");
-            let outcome =
-                resolve_article_anchors(&caller, anchor_model, &id, &manuscript_path, article)?;
+            let outcome = resolve_article_anchors(
+                &caller,
+                anchor_model,
+                &id,
+                &manuscript_path,
+                headings,
+                pending,
+                article,
+            )?;
             changed |= outcome.changed;
             dropped.extend(outcome.dropped);
         }

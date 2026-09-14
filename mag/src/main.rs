@@ -188,6 +188,9 @@ enum Cmd {
         /// Cheap model that re-anchors figures to this run's headings
         #[arg(long = "anchor-model", default_value = "haiku")]
         anchor_model: String,
+        /// Refuse model calls: abort listing pending figure anchors instead of patching them
+        #[arg(long = "no-model")]
+        no_model: bool,
     },
 }
 
@@ -340,6 +343,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             langs,
             run,
             anchor_model,
+            no_model,
         } => {
             let anchor = caller::ModelSpec::parse(&anchor_model)?;
             render::run(
@@ -349,6 +353,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
                 langs.as_deref(),
                 run.as_deref(),
                 &anchor,
+                no_model,
             )
         }
         _ => unreachable!(),
