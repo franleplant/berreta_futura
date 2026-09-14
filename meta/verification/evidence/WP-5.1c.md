@@ -270,6 +270,32 @@ each so `-D warnings` does not mask the result), then:
 That the other 74 cases pass in both states is the rejection's diagnosis
 confirmed rather than merely accepted.
 
+### 8. Rework 2: the cross-copy agreement test
+
+`py_repr_copies_agree` in `mag/tests/model_manifest.rs` drives one shared
+case list through a public refusal in each module and asserts the escaped
+renderings are identical. Both refusals repr their argument before touching
+the filesystem, so the test is pure and needs no fixture root:
+
+    cd mag && cargo test --test model_manifest py_repr_copies_agree
+    # expect: 1 passed
+
+It discriminates in both directions. Perturb the copy in
+`mag/src/model/manifest.rs` and rerun:
+
+    # A: revert the two escaping arms of py_repr to the pre-fix body
+    #    (replace the printable/escape arms with `other => out.push(other),`)
+    # expect: FAILED, naming "zero\u{200b}width"
+
+    # B: drop the astral branch of escape()
+    #    (fold `point < 0x10000` and the else arm into one \u branch)
+    # expect: FAILED, naming "astral\u{f0000}stop"
+
+    # restore manifest.rs and expect: 1 passed
+
+Both perturbations were run and both failed as stated, each naming exactly
+the case that distinguishes it.
+
 ## Tool versions
 
     python 3.12.11, pyyaml 6.0.3, uv 0.8.17, rustc 1.96.0, jq 1.8.1
@@ -345,8 +371,13 @@ would silently break Spanish editions.
   diagnosis list the port produces where Python dies.
 - `the_oracle_is_not_vacuous`: PASS. Altering one article title in the
   expectation makes the comparison fail.
-- `cargo test`: 86 tests pass across the suite. `cargo fmt --check` and
-  `cargo clippy --all-targets -- -D warnings` clean.
+- `py_repr_copies_agree`: PASS, seven cases. Reverting the escaping arms of
+  the `manifest.rs` copy fails it naming `zero\u{200b}width`; dropping the
+  astral branch of `escape` fails it naming `astral\u{f0000}stop`. Both
+  perturbations were run, and the test returns to green on restore.
+- `cargo test`: 88 tests pass across the suite (87 before this rework, plus
+  `py_repr_copies_agree`). `cargo fmt --check` and `cargo clippy
+  --all-targets -- -D warnings` clean.
 
 ## Residuals
 
@@ -500,7 +531,10 @@ defect class at all.
 
 **10. Compliance with revision 11's deliberate-divergence limits.** The plan
 gained a Phase 5 policy after this WP was first submitted; both divergences
-here satisfy all four limits.
+here satisfy all four limits. Note this clause addresses the
+deliberate-divergence rule only; revision 12's separate requirement that a
+forced helper copy carry a test asserting the two copies agree is clause 11,
+and its absence was the sole ground for the second rejection.
 
 | limit | the `_check_unique_art` crash divergence | the foreign-parser prefix divergence |
 |---|---|---|
@@ -508,6 +542,46 @@ here satisfy all four limits.
 | every diverging input enumerated with both behaviors, covered by a test | the three cases are named in `PYTHON_CRASHES`, and `python_crashes_are_reported_as_validation_errors` asserts BOTH that Python recorded an `AttributeError`/`TypeError` and the exact recovered list | the two cases are named in `PARSER_DIAGNOSTIC_CASES` and compared by `compare_parser_diagnostics`, which checks count, ordering and the shared prefix |
 | the oracle stays exact for every input Python handles without crashing | the other 76 cases compare whole JSON values exactly | the message template and the interpolated path stay inside the compared prefix, which must end with `": "` and contain `<ROOT>` |
 | fixing the Python is available but not preferred | recorded: it needs a sanctioned oracle-change WP for a module deleted at WP-6.1, and a traceback is not a message, so exact equality is untestable either way | not applicable: the divergence is PyYAML's wording, not a crash |
+
+**11. The forced copy carries a cross-copy agreement test.** Revision 12's
+Phase 5 preamble requires a forced helper copy to "add a test asserting the
+two copies agree on a shared case list". Copying `py_repr` was forced, since
+it is private in `records.rs` and this WP does not own that file, and making
+it public is not this WP's to do. `py_repr_copies_agree` closes the window
+the rejection identified: a future change to the `records.rs` original would
+otherwise leave this copy stale with `cargo test` green.
+
+The shared list is seven cases, chosen to reach every branch of both the
+quote selection and the escape width: a plain ASCII string; `caf\u{e9}`, a
+non-ASCII printable that must stay raw; `\u{200b}` (Cf, the `\uNNNN` width);
+`\u{7}` and `\u{1b}` (Cc, the `\xNN` width); `\u{f0000}` (Co, the only case
+reaching the `\UNNNNNNNN` eight-hex branch); and a string containing both an
+apostrophe and a double quote, which exercises the quote-selection branch.
+
+Each case is driven through one public refusal per module, both of which
+repr their argument before any filesystem access:
+
+| module | entry point | refusal message |
+|---|---|---|
+| `manifest` | `load_translation(root, base, language)` against a root with no translation manifest | `Required {repr} translation manifest not found: {path}` |
+| `records` | `localize_figures(&[], Some(&rows), "a1", manuscript, language)` with an empty English base and non-absent rows | `Translation {repr} article a1 has figures absent from English` |
+
+The escaped form is extracted from each message by its surrounding literal
+text and the two are compared. The test therefore exercises the copies as
+they are actually reached in production rather than by calling the private
+helper directly, and it needed no visibility change in `records.rs`.
+
+**Rework residual: a name-based duplicate audit is not sufficient in
+principle.** The verifier redid clause 3b's audit structurally, over
+normalised function bodies rather than function names, and confirmed its
+conclusion while noting the method's limit: a behavior duplicated under two
+different names would escape a name-based comparison. Three cross-name pairs
+scored high structurally and are all false positives: `slashes` and
+`nonprintable` share only the `OnceLock<Regex>` idiom with different
+patterns; `is_absent` and `blank_header_field` differ genuinely, the latter
+also treating an empty string as blank; `mapping_get` and `insert` are noise
+on two-line bodies. No second stale copy exists. WP-5.1d's duplicate-helper
+audit clause should therefore be written structurally rather than by name.
 
 **Rework residual: duplicated helpers are a demonstrated defect source.**
 `py_repr` was fixed in `records.rs` and then reintroduced stale in
@@ -534,6 +608,8 @@ done
 
 The port is complete, the 010 loader-owned subset matches the Python loader
 and the real rendered manifest exactly, and every reachable refusal site is
-covered by fixture. Residual 1 is a finding about `src/magazine/`, not an
-unfinished part of this WP: it is pinned by three fixtures and an exact
-assertion, and it needs an owner for the one-line oracle fix.
+covered by fixture. The forced `py_repr` copy now carries the cross-copy
+agreement test revision 12 requires (clause 11), proven to fail in both
+directions. Residual 1 is a finding about `src/magazine/`, not an unfinished
+part of this WP: it is pinned by three fixtures and an exact assertion, and
+it needs an owner for the one-line oracle fix.

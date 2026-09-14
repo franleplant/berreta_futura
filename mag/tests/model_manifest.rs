@@ -9,9 +9,9 @@ mod manifest;
 mod records;
 
 use manifest::{load_edition, load_translation, Edition, LoadOptions, Records};
-use records::{SourceRecord, ValidationError};
+use records::{localize_figures, SourceRecord, ValidationError};
 use serde_json::{json, Map, Value as Json};
-use serde_yaml::Value;
+use serde_yaml::{Mapping, Value};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -473,4 +473,69 @@ fn recovered_diagnoses(name: &str) -> &'static Vec<Json> {
         .find(|(key, _)| *key == name)
         .map(|(_, value)| value)
         .unwrap_or_else(|| panic!("{name} has recorded diagnoses"))
+}
+
+const REPR_CASES: &[&str] = &[
+    "plain",
+    "caf\u{e9}",
+    "zero\u{200b}width",
+    "bell\u{7}stop",
+    "esc\u{1b}stop",
+    "astral\u{f0000}stop",
+    "it's \"both\"",
+];
+
+fn repr_base_edition() -> Edition {
+    Edition {
+        id: "010".to_string(),
+        publication_name: String::new(),
+        issue_number: String::new(),
+        title: String::new(),
+        publication_date: String::new(),
+        language: "en".to_string(),
+        locale: String::new(),
+        editorial: None,
+        articles: Vec::new(),
+        sections: Vec::new(),
+        cover: Mapping::new(),
+        cover_art: None,
+        closing_plates: Vec::new(),
+        raw: Value::Null,
+    }
+}
+
+fn between(message: &str, prefix: &str, suffix: &str) -> String {
+    let rest = message
+        .strip_prefix(prefix)
+        .unwrap_or_else(|| panic!("{message:?} starts with {prefix:?}"));
+    let end = rest
+        .find(suffix)
+        .unwrap_or_else(|| panic!("{message:?} contains {suffix:?}"));
+    rest[..end].to_string()
+}
+
+fn manifest_py_repr(case: &str) -> String {
+    let base = repr_base_edition();
+    let error = load_translation(Path::new("/mag-no-such-root"), &base, case)
+        .expect_err("a missing translation manifest refuses");
+    between(&error.0[0], "Required ", " translation manifest not found:")
+}
+
+fn records_py_repr(case: &str) -> String {
+    let rows = Value::Sequence(vec![Value::String("f1".to_string())]);
+    let error = localize_figures(&[], Some(&rows), "a1", Path::new("m.md"), case)
+        .expect_err("figures absent from English refuse");
+    between(&error.0[0], "Translation ", " article a1 has figures")
+}
+
+#[test]
+fn py_repr_copies_agree() {
+    for case in REPR_CASES {
+        let from_manifest = manifest_py_repr(case);
+        let from_records = records_py_repr(case);
+        assert_eq!(
+            from_manifest, from_records,
+            "manifest and records py_repr disagree on {case:?}"
+        );
+    }
 }
