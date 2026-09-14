@@ -1,5 +1,7 @@
 mod display;
 mod geometry;
+mod raster;
+mod report;
 mod streams;
 mod text;
 
@@ -21,14 +23,14 @@ struct Verdict {
     domain: Domain,
     tier_s: TierS,
     tier_g: Option<geometry::GeomTier>,
-    tier_v: NotEvaluated,
+    tier_v: Option<raster::RasterTier>,
     tier_e: TierE,
 }
 
 #[derive(Serialize)]
 struct TierE {
     display_list: Option<display::DisplayClause>,
-    raster: NotEvaluated,
+    raster: Option<raster::RasterGuard>,
 }
 
 #[derive(Serialize)]
@@ -163,10 +165,25 @@ pub fn run(edition: &str, pre_rendered: Option<(PathBuf, PathBuf)>) -> Result<i3
     let mut inputs = BTreeMap::new();
     inputs.insert("a_reader_sha256".into(), sha256_file(&pdf_a)?);
     inputs.insert("b_reader_sha256".into(), sha256_file(&pdf_b)?);
-    let (na, nb) = (geometry::page_count(&pdf_a)?, geometry::page_count(&pdf_b)?);
-    let verdict = build_verdict(&spec, edition, inputs, &pdf_a, &pdf_b, na, nb)?;
-    write_verdict(edition, &verdict)?;
+    let out_dir = PathBuf::from("output/parity").join(edition);
+    fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
+    let verdict = build_verdict(&spec, edition, inputs, &pdf_a, &pdf_b, &out_dir)?;
+    write_verdict(&out_dir, &verdict)?;
     summarize(&verdict);
+    let value = serde_json::to_value(&verdict)?;
+    let domain = verdict
+        .tier_g
+        .is_some()
+        .then_some((verdict.domain.first_page, verdict.domain.last_page));
+    let g2 = spec_f64(&spec, &["tiers", "g", "g2_pt"])?;
+    let report = report::write(
+        &out_dir,
+        &value,
+        domain.map(|_| (&*pdf_a, &*pdf_b)),
+        domain,
+        g2,
+    )?;
+    println!("report: {}", report.display());
     Ok(i32::from(!all_evaluated_pass(&verdict)))
 }
 
@@ -176,9 +193,9 @@ fn build_verdict(
     inputs: BTreeMap<String, String>,
     pdf_a: &Path,
     pdf_b: &Path,
-    na: u32,
-    nb: u32,
+    out_dir: &Path,
 ) -> Result<Verdict> {
+    let (na, nb) = (geometry::page_count(pdf_a)?, geometry::page_count(pdf_b)?);
     let counts_equal = na == nb && na >= 3;
     let (first, last) = (2, na.saturating_sub(1));
     let mut verdict = Verdict {
@@ -204,10 +221,10 @@ fn build_verdict(
             critic: not_evaluated("WP-2.0b oracle leg, WP-5.3g typst leg"),
         },
         tier_g: None,
-        tier_v: not_evaluated("WP-0.2c"),
+        tier_v: None,
         tier_e: TierE {
             display_list: None,
-            raster: not_evaluated("WP-0.2c"),
+            raster: None,
         },
     };
     if !counts_equal {
@@ -235,7 +252,34 @@ fn build_verdict(
     verdict.tier_s.color = Some(display::compare_color(&dump_a, &dump_b, first));
     verdict.tier_s.navigation = Some(display::compare_navigation(&dump_a, &dump_b, first));
     verdict.tier_e.display_list = Some(display::compare_display(&dump_a, &dump_b, first)?);
+    let vspec = raster::VSpec {
+        dpi: spec_f64(spec, &["tiers", "v", "dpi"])? as u32,
+        channel_delta: spec_f64(spec, &["tiers", "v", "channel_delta"])? as u8,
+        v1_page_fraction: spec_f64(spec, &["tiers", "v", "v1_page_fraction"])?,
+        v2_page_fraction: spec_f64(spec, &["tiers", "v", "v2_page_fraction"])?,
+    };
+    let bound = raster_bound(spec)?;
+    let heatmap_dir = out_dir.join("report");
+    fs::create_dir_all(&heatmap_dir)?;
+    let (tier_v, guard) = raster::compare(pdf_a, pdf_b, first, last, &vspec, bound, &heatmap_dir)?;
+    verdict.tier_v = Some(tier_v);
+    verdict.tier_e.raster = Some(guard);
     Ok(verdict)
+}
+
+fn raster_bound(spec: &serde_yaml::Value) -> Result<Option<u8>> {
+    let node = spec
+        .get("tiers")
+        .and_then(|t| t.get("e"))
+        .and_then(|e| e.get("raster_bound"))
+        .context("parity.yaml tiers.e.raster_bound missing")?;
+    match node.get("value") {
+        None => Ok(None),
+        Some(v) => Ok(Some(
+            u8::try_from(v.as_u64().context("raster_bound.value not an integer")?)
+                .context("raster_bound.value out of range")?,
+        )),
+    }
 }
 
 fn all_evaluated_pass(v: &Verdict) -> bool {
@@ -251,11 +295,14 @@ fn all_evaluated_pass(v: &Verdict) -> bool {
             .display_list
             .as_ref()
             .is_some_and(|c| c.status == "pass")
+        && v.tier_v.as_ref().is_some_and(|r| r.status == "pass")
+        && !matches!(
+            v.tier_e.raster,
+            Some(raster::RasterGuard::Evaluated { ref status, .. }) if status == "fail"
+        )
 }
 
-fn write_verdict(edition: &str, verdict: &Verdict) -> Result<()> {
-    let dir = PathBuf::from("output/parity").join(edition);
-    fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
+fn write_verdict(dir: &Path, verdict: &Verdict) -> Result<()> {
     let path = dir.join("verdict.json");
     let json = serde_json::to_string_pretty(verdict)? + "\n";
     fs::write(&path, json).with_context(|| format!("writing {}", path.display()))?;
@@ -309,5 +356,30 @@ fn summarize(v: &Verdict) {
             d.status,
             d.pages_differing.len()
         );
+    }
+    if let Some(r) = &v.tier_v {
+        println!(
+            "tier V: dims {} (mismatches {}), V1 {}, V2 {}, worst page fraction {:.6}, max channel delta {}",
+            r.status,
+            r.dimension_mismatches.len(),
+            r.v1,
+            r.v2,
+            r.worst_page_fraction,
+            r.max_channel_delta
+        );
+    }
+    match &v.tier_e.raster {
+        Some(raster::RasterGuard::Evaluated {
+            status,
+            bound,
+            pages_beyond,
+        }) => println!(
+            "tier E raster: {status} (bound {bound}, {} pages beyond)",
+            pages_beyond.len()
+        ),
+        Some(raster::RasterGuard::NotEvaluated { owner, .. }) => {
+            println!("tier E raster: not_evaluated ({owner})");
+        }
+        None => {}
     }
 }
