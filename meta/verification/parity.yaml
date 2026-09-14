@@ -1,0 +1,51 @@
+normalization:
+  strip_pdf_keys:
+    pdf_info:
+      - CreationDate
+      - ModDate
+      - trailer ID
+      - Producer dates
+    json_leaves:
+      preflight.json:
+        - .cover_art.path
+        - .figures[*].path
+      render-critic.json:
+        - .visual_review.booklet_sha256
+        - .visual_review.reader_sha256
+    derived_from_pdf_bytes_never_compared:
+      - SHA256SUMS
+      - package.zip
+      - web-output.zip
+  whitespace:
+    unicode: NFC
+    prose: collapse whitespace runs to one space
+    code_blocks: internal whitespace preserved
+  hyphen_rejoin:
+    rejoin: words split by a line-end hyphenate character
+    strip: soft hyphens
+  color_space_map:
+    authored_by: WP-0.2b
+    entries: {}
+  merge_rewrite_rules:
+    authored_by: WP-0.2c
+    entries: {}
+  font_name_map:
+    authored_by: WP-0.2b
+    entries: {}
+tools:
+  measured_at: WP-0.1
+  os: macOS 26.6.2
+  python: 3.12.11
+  uv: 0.8.17
+  weasyprint: 69.0
+  pydyf: 0.12.1
+  pyphen: 0.17.2
+  pypdf: 6.14.2
+  pygments: 2.21.0
+  pillow: 12.3.0
+  poppler: 25.08.0
+  rustc: 1.96.0
+  mutool:
+    pending: WP-0.2b tracer decision
+  typst_crates:
+    pending: WP-1.4 pin, recorded by WP-2.0a
