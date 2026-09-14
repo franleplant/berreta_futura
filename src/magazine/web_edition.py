@@ -38,6 +38,7 @@ _PROVENANCE_SPAN = re.compile(r'<span data-source-id="([^"]*)">(.*?)</span>')
 
 
 _FIGURE_IMAGE = re.compile(r'(<img src="([^"]*)"[^>]*>)')
+_ILLUSTRATED_OPENER_HEADER = re.compile(r'<header\b[^>]*\bclass="article-opener"')
 _SOURCE_LINK_LINE = re.compile(
     r'^(?P<indent>\s*)<a class="source-link" '
     r'data-source-link="primary" data-source-id="(?P<source_id>[^"]*)" '
@@ -257,7 +258,7 @@ def _install_illustrated_source_codes(html: str, source_codes: Mapping[str, str]
     lines: list[str] = []
     in_illustrated_opener = False
     for line in html.split("\n"):
-        if '<header class="article-opener">' in line:
+        if _ILLUSTRATED_OPENER_HEADER.search(line):
             in_illustrated_opener = True
         match = _SOURCE_LINK_LINE.match(line) if in_illustrated_opener else None
         if match is not None:
