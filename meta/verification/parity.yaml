@@ -35,7 +35,57 @@ normalization:
     entries: {}
   font_name_map:
     authored_by: WP-0.2b
-    entries: {}
+    method: alias from the weasyprint-a5.css font-family mapped through its
+      declared TTF; face is that file's PostScript name (name id 6), the name
+      the typst leg embeds from the same file; each pair proven by the shared
+      file digest below; typst-side names provisional until a typst PDF exists
+    cover_faces_note: Helvetica, Inter-Regular aliases and Archivo appear only
+      on cover pages 1 and n, outside the compared domain until WP-5.4g
+    entries:
+      Magazine-Serif:
+        face: SourceSerif4SmText-Regular
+        file: src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-Regular.ttf
+        sha256: 54379656e8fa22bfbb7a783f8fe4269c9ae4eb966c1c3fcb17ee3b50cba95813
+      Magazine-Serif-Italic:
+        face: SourceSerif4SmText-It
+        file: src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-It.ttf
+        sha256: 74963111a9dc458611e6eaa62a6bff8811855f67e015f91b728fb52567020c5e
+      Magazine-Serif-Bold:
+        face: SourceSerif4SmText-Bold
+        file: src/magazine/assets/fonts/source-serif-4/SourceSerif4SmText-Bold.ttf
+        sha256: 072c77a0dbffbcb7e99dda31de16e096bd99d1345fd6037d3e153ea315547c25
+      Magazine-Serif-Display-Semi-Bold:
+        face: SourceSerif4Display-Semibold
+        file: src/magazine/assets/fonts/source-serif-4/SourceSerif4Display-Semibold.ttf
+        sha256: ba711c7443224e9c95bc5fcd24a98f3d921e50b3873c27667884351067927a03
+      Magazine-Sans:
+        face: Inter-Regular
+        file: src/magazine/assets/fonts/inter/Inter-Regular.ttf
+        sha256: 40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82
+      Magazine-Sans-Medium:
+        face: Inter-Medium
+        file: src/magazine/assets/fonts/inter/Inter-Medium.ttf
+        sha256: 97ad806f526e41546d46365bb3a393145f75b7b1568913db74549ad8b8dba872
+      Magazine-Sans-Semi-Bold:
+        face: Inter-SemiBold
+        file: src/magazine/assets/fonts/inter/Inter-SemiBold.ttf
+        sha256: 78a843fade9d4612a5567302fb595b56976eb5fcebf4fea5a5912d638bafcde3
+      Magazine-Sans-Bold:
+        face: Inter-Bold
+        file: src/magazine/assets/fonts/inter/Inter-Bold.ttf
+        sha256: 288316099b1e0a47a4716d159098005eef7c0066921f34e3200393dbdb01947f
+      Magazine-Mono:
+        face: GeistMono-Regular
+        file: src/magazine/assets/fonts/geist-mono/GeistMono-Regular.ttf
+        sha256: 42d8ad2e610238e64e8abfcde3037c63f7850a73928742b7ab7229d897bcb155
+      Magazine-Mono-Medium:
+        face: GeistMono-Medium
+        file: src/magazine/assets/fonts/geist-mono/GeistMono-Medium.ttf
+        sha256: 90b15711dc3779b2e64e8aff5228154dd019a90bce4947549c4a8a8a43f2ac25
+      Magazine-Mono-Semi-Bold:
+        face: GeistMono-SemiBold
+        file: src/magazine/assets/fonts/geist-mono/GeistMono-SemiBold.ttf
+        sha256: 8b6e127117b03046495b40d4227de66bf5f81f7fe2f4546ee578e89738052314
 tiers:
   s:
     box_tolerance_pt: 0.05
@@ -73,7 +123,9 @@ tools:
   pillow: 12.3.0
   poppler: 25.08.0
   rustc: 1.96.0
-  mutool:
-    pending: WP-0.2b tracer decision
+  display_tracer: lopdf-0.45.0
+  display_tracer_note: WP-0.2b chose a Rust content-stream interpreter
+    (mag/src/parity/streams.rs on the lopdf crate) over mutool, which is not
+    installed; the crate pin is asserted at mag parity startup
   typst_crates:
     pending: WP-1.4 pin, recorded by WP-2.0a

@@ -1,4 +1,6 @@
+mod display;
 mod geometry;
+mod streams;
 mod text;
 
 use anyhow::{Context, Result};
@@ -20,7 +22,13 @@ struct Verdict {
     tier_s: TierS,
     tier_g: Option<geometry::GeomTier>,
     tier_v: NotEvaluated,
-    tier_e: NotEvaluated,
+    tier_e: TierE,
+}
+
+#[derive(Serialize)]
+struct TierE {
+    display_list: Option<display::DisplayClause>,
+    raster: NotEvaluated,
 }
 
 #[derive(Serialize)]
@@ -36,8 +44,8 @@ struct TierS {
     boxes: Option<geometry::BoxClause>,
     text: Option<text::TextClause>,
     code_blocks: NotEvaluated,
-    color: NotEvaluated,
-    navigation: NotEvaluated,
+    color: Option<display::SimpleClause>,
+    navigation: Option<display::NavClause>,
     critic: NotEvaluated,
 }
 
@@ -77,6 +85,40 @@ fn spec_f64(spec: &serde_yaml::Value, path: &[&str]) -> Result<f64> {
         .with_context(|| format!("{SPEC_PATH} {} is not a number", path.join(".")))
 }
 
+const TRACER: &str = "lopdf-0.45.0";
+
+fn assert_tracer(spec: &serde_yaml::Value) -> Result<()> {
+    let recorded = spec
+        .get("tools")
+        .and_then(|t| t.get("display_tracer"))
+        .and_then(|v| v.as_str())
+        .context("parity.yaml tools.display_tracer missing")?;
+    anyhow::ensure!(
+        recorded == TRACER,
+        "display tracer {TRACER} does not match recorded {recorded}"
+    );
+    Ok(())
+}
+
+fn font_name_map(spec: &serde_yaml::Value) -> Result<BTreeMap<String, String>> {
+    let entries = spec
+        .get("normalization")
+        .and_then(|n| n.get("font_name_map"))
+        .and_then(|f| f.get("entries"))
+        .and_then(|e| e.as_mapping())
+        .context("parity.yaml normalization.font_name_map.entries missing")?;
+    let mut map = BTreeMap::new();
+    for (alias, entry) in entries {
+        let alias = alias.as_str().context("font_name_map alias not a string")?;
+        let face = entry
+            .get("face")
+            .and_then(|f| f.as_str())
+            .with_context(|| format!("font_name_map {alias} missing face"))?;
+        map.insert(alias.to_string(), face.to_string());
+    }
+    Ok(map)
+}
+
 fn assert_poppler(spec: &serde_yaml::Value) -> Result<()> {
     let pinned = spec
         .get("tools")
@@ -113,6 +155,7 @@ fn sha256_file(path: &Path) -> Result<String> {
 pub fn run(edition: &str, pre_rendered: Option<(PathBuf, PathBuf)>) -> Result<i32> {
     let spec = spec()?;
     assert_poppler(&spec)?;
+    assert_tracer(&spec)?;
     let (dir_a, dir_b) = pre_rendered.context(
         "mag parity without --pre-rendered arrives with WP-2.0b; pass --pre-rendered <dirA> <dirB>",
     )?;
@@ -156,13 +199,16 @@ fn build_verdict(
             boxes: None,
             text: None,
             code_blocks: not_evaluated("WP-0.2b input level, WP-3.3 fixture"),
-            color: not_evaluated("WP-0.2b"),
-            navigation: not_evaluated("WP-0.2b"),
+            color: None,
+            navigation: None,
             critic: not_evaluated("WP-2.0b oracle leg, WP-5.3g typst leg"),
         },
         tier_g: None,
         tier_v: not_evaluated("WP-0.2c"),
-        tier_e: not_evaluated("WP-0.2b display list, WP-0.2c raster"),
+        tier_e: TierE {
+            display_list: None,
+            raster: not_evaluated("WP-0.2c"),
+        },
     };
     if !counts_equal {
         return Ok(verdict);
@@ -183,6 +229,12 @@ fn build_verdict(
     verdict.tier_g = Some(geometry::compare_layout(
         &layout_a, &layout_b, first, g1, g2,
     ));
+    let map = font_name_map(spec)?;
+    let dump_a = display::extract(pdf_a, first, last, &map)?;
+    let dump_b = display::extract(pdf_b, first, last, &map)?;
+    verdict.tier_s.color = Some(display::compare_color(&dump_a, &dump_b, first));
+    verdict.tier_s.navigation = Some(display::compare_navigation(&dump_a, &dump_b, first));
+    verdict.tier_e.display_list = Some(display::compare_display(&dump_a, &dump_b, first)?);
     Ok(verdict)
 }
 
@@ -190,6 +242,15 @@ fn all_evaluated_pass(v: &Verdict) -> bool {
     v.tier_s.page_count.status == "pass"
         && v.tier_s.boxes.as_ref().is_some_and(|c| c.status == "pass")
         && v.tier_s.text.as_ref().is_some_and(|c| c.status == "pass")
+        && v.tier_s.color.as_ref().is_some_and(|c| c.status == "pass")
+        && v.tier_s
+            .navigation
+            .as_ref()
+            .is_some_and(|c| c.status == "pass")
+        && v.tier_e
+            .display_list
+            .as_ref()
+            .is_some_and(|c| c.status == "pass")
 }
 
 fn write_verdict(edition: &str, verdict: &Verdict) -> Result<()> {
@@ -226,6 +287,27 @@ fn summarize(v: &Verdict) {
             "tier G: max dx {:.3} pt, max dy {:.3} pt, beyond G1 {}, beyond G2 {}, structure mismatches {}",
             g.max_dx_pt, g.max_dy_pt, g.lines_beyond_g1, g.lines_beyond_g2,
             g.block_or_line_count_mismatches
+        );
+    }
+    if let Some(c) = &v.tier_s.color {
+        println!(
+            "tier S color: {} ({} pages differ)",
+            c.status,
+            c.pages_differing.len()
+        );
+    }
+    if let Some(n) = &v.tier_s.navigation {
+        println!(
+            "tier S navigation: {} ({} mismatches)",
+            n.status,
+            n.mismatches.len()
+        );
+    }
+    if let Some(d) = &v.tier_e.display_list {
+        println!(
+            "tier E display list: {} ({} pages differ)",
+            d.status,
+            d.pages_differing.len()
         );
     }
 }
