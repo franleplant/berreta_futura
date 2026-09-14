@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-14, revision 12 (Phase 0 built and
+Status: **in execution**, 2026-09-14, revision 13 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,42 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 13 changelog
+
+**A quantum that bounds a length does not bound a ratio.** WP-0.2e's
+verifier (which ACCEPTED the WP: the matrices are strictly stronger than
+the start point and bounding box they replaced) found that applying the
+0.01 pt quantum to the LINEAR components of a text matrix bounds nothing
+useful, because those components multiply the accumulated advance inside
+the show. A `trm[0]` differing by 0.00499 quantizes identically and still
+moves a 34-glyph 226.8 pt line 0.0945 pt at its end, as does a 0.000415
+rad rotation; images are unaffected, since their matrix maps the unit
+square and the error stays inside the half quantum.
+
+Three consequences, all recorded:
+
+- Tier E now states the quantization rule in two parts, and says what it
+  therefore asserts for text: geometric equality of glyph ORIGINS, with
+  everything downstream of the origin inside a show covered
+  photometrically. That is the division revision 10 already drew for
+  intra-line placement; this names the second mechanism feeding it.
+- The enumeration of what the display list cannot see gains item 5, phrased
+  as a bound with numbers rather than as a hole, since Fran's sentence
+  depends on it: up to `(half quantum / font size) x measure`, which is
+  0.0945 pt measured at 12 pt and 0.1625 pt derived for 010's body text,
+  16x the coordinate quantum and 0.68 px at 300 dpi.
+- WP-0.2f's floor gains a THIRD fixture for it, and it is the largest of
+  the three on paper, so it may be what decides whether the 2x window is
+  open. **But the better answer is to remove the term rather than
+  accommodate it**, so WP-0.2g now quantizes the linear components finely
+  enough that their amplified effect stays inside the coordinate quantum,
+  about 3.1e-4 at body measure against 0.01 today, derived from the
+  distribution both engines actually emit rather than picked. Both emit
+  clean values for these components, so this should cost nothing and it
+  shrinks the raster guard's load. If WP-0.2f's window collapses first,
+  this tightening is the blocking fix and is done before the floor is
+  re-derived.
 
 ## Revision 12 changelog
 
@@ -369,7 +405,23 @@ Used to measure convergence during Phase 3; they gate nothing final.
   interior uses `W`/`W*` clipping heavily), every image as (SHA256 of
   decoded RGBA pixels with any SMask composited into the alpha channel
   before hashing, **placement matrix**), plus annotations, outlines, page
-  boxes. Coordinates quantized at 0.01 pt; colors in one normalized space.
+  boxes. Colors in one normalized space.
+  **Quantization has two rules, because a matrix carries two kinds of
+  number** (WP-0.2e's verifier): TRANSLATION components are lengths, and
+  the 0.01 pt quantum bounds them directly, as it does every plain
+  coordinate. LINEAR components are ratios, and their positional effect is
+  multiplied by the accumulated advance inside the show, so the same
+  numeric quantum admits a displacement proportional to the line measure:
+  `(half quantum / font size) x measure`. Measured: a 34-glyph 226.8 pt
+  line at 12 pt whose `trm[0]` differs by 0.00499 quantizes identically and
+  yet ends 0.0945 pt away, and a 0.000415 rad rotation does the same
+  vertically. Images are NOT affected, because their matrix maps the unit
+  square directly, so the error stays inside the half quantum.
+  What Tier E therefore asserts for text is geometric equality of glyph
+  ORIGINS; everything downstream of the origin within a show is covered
+  photometrically by the raster bound. That is the same division revision
+  10 already recorded for intra-line placement, with a second mechanism
+  named.
   Any ExtGState alpha other than 1 is fail-loud unsupported (today all 162
   entries in 010 are `/ca 1 /CA 1`). The two canonical lists must be
   **equal**.
@@ -428,6 +480,22 @@ Used to measure convergence during Phase 3; they gate nothing final.
   4. **annotation appearance streams**. Annotations are compared by
      subtype, rect and destination, not by their `/AP`. Links draw nothing
      in this design; a bordered annotation would reach the raster guard.
+  5. **transform-amplified intra-show displacement**, stated as a bound
+     rather than a hole. A difference in the LINEAR components of a text
+     matrix below half a quantum passes the display list while displacing
+     glyphs within the show by up to `(half quantum / font size) x
+     measure`. Measured at 12 pt over a 226.8 pt line: 0.0945 pt, which is
+     9.5x the coordinate quantum and 5.4x the intra-line drift of item 1.
+     Derived from the same formula for 010's body text (10 pt, 325 pt
+     measure, NOT separately measured): 0.1625 pt, 16x the quantum and
+     0.68 px at 300 dpi. Like item 1 this is caught only by the raster
+     clause, so WP-0.2f's floor must cover it. Unlike item 1 it is
+     REMOVABLE rather than intrinsic: quantizing the linear components
+     finely enough that their positional effect stays inside the
+     coordinate quantum needs about 3.1e-4 at body measure, roughly 32x
+     finer than today, and both engines emit clean values for these
+     components. WP-0.2g does that, measured rather than assumed, and the
+     floor is then re-derived without this term.
   Deliberately out of scope rather than blind: `/PageLabels` and other
   viewer-only metadata, which no printed page shows.
 - **raster guard**: both PDFs rasterized at 300 dpi by the configuration
@@ -942,6 +1010,16 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
     amplitude 0 it is provably inert), but it perturbs randomly within half
     a quantum and must be corrected to the bucket-extreme rule before its
     number means anything: its 241 is a floor on the floor.
+    (iii) **transform-amplified displacement** (Tier E blind spot 5): a
+    text run whose TRM LINEAR components differ by just under half a
+    quantum over a full-measure line, display lists asserted equal. This
+    term is the largest of the three on paper (0.1625 pt derived at body
+    measure against 0.017432 pt for (ii)), so it may be what decides
+    whether the 2x window is open. If it collapses the window that is
+    `Status: blocked` and another revision, not a wider bound; the
+    intended answer in that case is WP-0.2g's finer linear quantum, which
+    removes the term rather than accommodating it, after which this
+    fixture and the floor are re-derived.
     (ii) **intra-line glyph drift**, which revision 9 did not model at all:
     glyphs displaced progressively within each line up to the 0.017432 pt
     WP-1.6 measured between Pango's integer 1/1024 px line widths and
@@ -1014,6 +1092,24 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   TrimBox: it is print-visible and one key wide, and a 180 degree
   difference leaves page dimensions equal, so today it would reach only the
   raster guard.
+- Target, and the one that matters most here: **quantize the text matrix's
+  LINEAR components finely enough that their amplified positional effect
+  stays inside the 0.01 pt coordinate quantum** (Tier E blind spot 5).
+  The requirement is `linear quantum <= coordinate quantum x font size /
+  measure`, about 3.1e-4 for 010's body text against the 0.01 used today.
+  Derive it, do not pick it: measure the actual distribution of linear
+  components emitted by the oracle leg (and by the Typst leg once one
+  exists), and set the quantum as fine as those values allow while meeting
+  the requirement. If the observed values will not tolerate a quantum that
+  fine, that is a finding, not a defeat: record it, leave the remainder to
+  the raster floor, and say by how much. Translation components keep the
+  0.01 pt quantum, which bounds them directly.
+- Verify for that target: 010 A-vs-A and A-vs-B stay Tier E equal under the
+  finer quantum (a false-fail here would mean the two legs genuinely
+  disagree on a font size or scale, which is worth knowing); the fixture
+  that motivated it FAILS, namely a 34-glyph line whose `trm[0]` differs by
+  0.00499, which passes today while ending 0.0945 pt away; WP-0.2f's floor
+  is re-derived afterwards and the plan records the before and after.
 - Verify: 010 A-vs-A and A-vs-B unchanged in pass/fail with cardinalities
   reported and the navigation clause showing 0 outlines, 0 Title, 0 Lang,
   84 links; a fixture with `/Rotate 180` on one side FAILS the boxes
@@ -1408,8 +1504,9 @@ WP-2.0a: this is where claims start accumulating across runs, and a moving
 corpus makes a per-page ratchet meaningless). Strictly serial, this order.
 Every Phase 3 WP except WP-3.0g owns `mag/src/typeset/**` plus its evidence
 file and NOTHING else; comparator territory is out of bounds (rule 4). Each
-WP is scored on its named `page_sets:` entry. Verification, identical for all: `mag parity
-010` green against `baseline.json` (no page regresses; raises are the
+WP is scored on its named `page_sets:` entry. Verification, identical for
+all: `mag parity 010` green against `baseline.json` (no page regresses;
+raises are the
 verifier's), and the named page set at the named standard.
 
 - **WP-3.1 body text** (`page_sets.body`): Tier S text+color + G2. Also
