@@ -32,7 +32,11 @@ normalization:
     entries: {}
   merge_rewrite_rules:
     authored_by: WP-0.2c
-    entries: {}
+    measured: replace_outer_pages on the 010 reader (pages 1 and 56 re-attached
+      as cover stand-ins, explicit output path) leaves every inner page
+      display-list equal and raster zero-diff at 300 dpi, max channel delta 0;
+      pypdf rewrite noise on inner pages is nil, so no rule exists
+    entries: []
   font_name_map:
     authored_by: WP-0.2b
     method: alias from the weasyprint-a5.css font-family mapped through its
