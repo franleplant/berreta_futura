@@ -4,11 +4,66 @@
 
 0465b73 (refactor(parity): WP-0.2c critique fixes)
 
+## Rework after verifier rejection (83d7bee)
+
+The verifier rejected the fault suite. `failing_clauses` tested the Tier V
+meters with `v["v1"] == false` / `v["v2"] == false`, but the comparator emits
+those fields as JSON strings (`"pass"` / `"fail"`, see `RasterTier` in
+`mag/src/parity/raster.rs`), so both branches were dead and no verdict could
+ever report v1 or v2. The committed matrix was therefore wrong for two faults,
+and the "asserted exactly" claim was made against an observer blind to a whole
+clause family.
+
+The fix replaces the hand-listed clause checks with `clause_states`, which
+reads every clause family generically from the verdict: each `tier_s` and
+`tier_e` child carrying a `status` string (so `code_blocks` and `critic`
+report `not_evaluated` rather than going unseen), the `v1` and `v2` strings
+under `tier_v`, and `raster_dimensions` from `dimension_mismatches`. The
+`tier_e.raster` key maps to the vocabulary name `raster_guard`. It also
+asserts the comparator invariant that `tier_v.status` fails exactly when
+`dimension_mismatches` is non-empty. `failing_clauses` is now a filter over
+that map, so it cannot drift from the verdict schema.
+
+`assert_vocabulary_observable` is the recurrence guard, run on the control
+verdict and on every fault verdict. It fails if any name declared in
+`fault_suite.clause_vocabulary` is unobservable, and it fails if any clause
+the verdict actually evaluates (status other than `not_evaluated`) is absent
+from the vocabulary. Proven to fire: with the `v1`/`v2` lookup removed, the
+suite fails with `declared clauses unobservable: ["v1", "v2"]`, which is
+exactly the rejected defect.
+
+Re-derived matrix, measured by the fixed observer (not copied from the verify
+file). It agrees with the verifier's corrections in both rows:
+
+| fault | must_flag | worst page fraction | max channel delta | v1/v2 |
+|---|---|---|---|---|
+| swapped_words | color, display_list, text | 0.000446 | 241 | pass/pass |
+| line_moved_005 | display_list | 0.000585 | 241 | pass/pass |
+| line_moved_03 | display_list | 0.000879 | 241 | pass/pass |
+| figure_shifted_page | display_list, v1, v2 | 0.043412 | 255 | fail/fail |
+| recolor_30px | display_list, v1, v2 | 0.020341 | 255 | fail/fail |
+| body_ink_pure_black | color, display_list | 0.000000 | 22 | pass/pass |
+| dropped_link_annotation | display_list, navigation | 0.000000 | 0 | pass/pass |
+| mediabox_off_05 | boxes, display_list, raster_dimensions | 0.000000 | 0 | pass/pass |
+
+Only `figure_shifted_page` and `recolor_30px` changed; the other six rows are
+unchanged. `parity.yaml` edits are confined to those two `must_flag` lists.
+
+Fragility, recorded rather than tuned away, per the verifier's note:
+`line_moved_03` differs on 0.000879 of its worst page against the V2 threshold
+of 0.001, inside it by 12 percent, so a small fixture change could move that
+row into `v2`. `line_moved_005` (0.000585) and `swapped_words` (0.000446) sit
+further under the same threshold. The fixture is untouched; if a future change
+flips the row, the matrix assertion fails loudly and the row is re-derived.
+
+Re-run: `cargo test` green, fault suite 19.0 s; `cargo fmt`, `cargo clippy
+--all-targets -- -D warnings`, and the no-comments check all clean.
+
 ## Status
 
 blocked
 
-Two of the three deliverables are complete and green: the seeded fault suite
+The fault suite deliverable is complete and green after the rework above: it
 runs under `cargo test` and asserts the expected-detections matrix exactly,
 and `critic_metric_tolerances:` is authored with its near-threshold fixture
 list. The third, `tiers.e.raster_bound.value`, is NOT authored: the plan's
@@ -120,6 +175,41 @@ Repo checks:
 cd mag && cargo fmt --check && cargo clippy -q --all-targets -- -D warnings && cargo test
 python3 tools/nocomments.py
 git status --short
+```
+
+Rework replay (poppler 25.08.0 must be on PATH; no render or run directory is
+needed, the suite builds both legs itself):
+
+```
+cd mag && cargo test --test parity_faults
+```
+
+Per-fault raster numbers behind the re-derived matrix, read from the verdicts
+the run above leaves in `output/parity/fault-<name>/verdict.json`:
+
+```
+python3 -c "
+import json
+names=['swapped_words','line_moved_005','line_moved_03','figure_shifted_page','recolor_30px','body_ink_pure_black','dropped_link_annotation','mediabox_off_05']
+for n in names:
+    v=json.load(open(f'output/parity/fault-{n}/verdict.json'))['tier_v']
+    print(n, v['worst_page_fraction'], v['max_channel_delta'], v['v1'], v['v2'])
+"
+```
+
+Recurrence-guard proof: replace the meter list in `clause_states` with an
+empty one, which reproduces the rejected blindness, and confirm the suite
+fails with `declared clauses unobservable: ["v1", "v2"]`, then restore it:
+
+```
+cp mag/tests/parity_faults.rs /tmp/pf_backup.rs
+python3 - <<'EOF'
+p='mag/tests/parity_faults.rs'
+s=open(p).read().replace('    for meter in ["v1", "v2"] {','    for meter in [] as [&str; 0] {')
+open(p,'w').write(s)
+EOF
+cd mag && cargo test --test parity_faults 2>&1 | grep -E "panicked|unobservable"
+cp /tmp/pf_backup.rs mag/tests/parity_faults.rs
 ```
 
 ## Tool versions
