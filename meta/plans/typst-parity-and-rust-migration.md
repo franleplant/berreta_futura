@@ -1,7 +1,9 @@
 # Typst parity and the full-Rust migration
 
-Status: **proposed**, 2026-09-13, revision 5 (after four critic rounds; the
-final round's residual findings are all incorporated).
+Status: **proposed**, 2026-09-13, revision 6 (after four critic rounds;
+revision 6 removes humans from every pass/fail verification: the gate is
+display-list equality plus raster zero-diff, both mechanical. Fran appears
+only where the plan itself must change).
 Companion to `rust-rewrite.md` (which moved orchestration to Rust and left the
 renderer in Python). This plan finishes the job: a Typst-based renderer
 implemented in Rust inside `mag`, proven equivalent to the WeasyPrint renderer
