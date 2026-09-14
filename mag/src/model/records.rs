@@ -743,7 +743,9 @@ fn python_text(value: Option<&Value>) -> Result<String> {
         Some(Value::Number(number)) => {
             if number.is_f64() {
                 let float = number.as_f64().unwrap_or_default();
-                if float.fract() == 0.0 && float.is_finite() {
+                if float == 0.0 {
+                    String::new()
+                } else if float.fract() == 0.0 && float.is_finite() {
                     format!("{float:.1}")
                 } else {
                     format!("{float}")
@@ -1146,7 +1148,6 @@ pub fn localize_figures(
     }
     let items = match rows {
         Some(Value::Sequence(items)) => items.clone(),
-        None | Some(Value::Null) => Vec::new(),
         _ => {
             return Err(ValidationError::one(format!(
                 "Translation {language} article {article_id} figures must be a list"
@@ -1225,7 +1226,6 @@ pub fn localize_extracts(
     }
     let items = match rows {
         Some(Value::Sequence(items)) => items.clone(),
-        None | Some(Value::Null) => Vec::new(),
         _ => {
             return Err(ValidationError::one(format!(
                 "Translation {language} article {article_id} extracts must be a list"

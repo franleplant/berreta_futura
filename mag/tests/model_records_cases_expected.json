@@ -260,6 +260,16 @@
       }
     ]
   },
+  "localize_extracts_rows_absent": {
+    "errors": [
+      "Translation 'es' article a1 extracts must be a list"
+    ]
+  },
+  "localize_extracts_rows_null": {
+    "errors": [
+      "Translation 'es' article a1 extracts must be a list"
+    ]
+  },
   "localize_figures_absent_base": {
     "errors": [
       "Translation 'es' article a1 has figures absent from English"
@@ -268,6 +278,11 @@
   "localize_figures_bad_anchor": {
     "errors": [
       "Translation 'es' figure f1 anchor does not match a translated heading"
+    ]
+  },
+  "localize_figures_float_zero_caption": {
+    "errors": [
+      "Translation 'es' figure f1 requires caption, alt_text, and anchor"
     ]
   },
   "localize_figures_incomplete_fields": {
@@ -298,6 +313,16 @@
         "path": "library/sources/src-a/media/img.png",
         "source_id": "src-a"
       }
+    ]
+  },
+  "localize_figures_rows_absent": {
+    "errors": [
+      "Translation 'es' article a1 figures must be a list"
+    ]
+  },
+  "localize_figures_rows_null": {
+    "errors": [
+      "Translation 'es' article a1 figures must be a list"
     ]
   }
 }

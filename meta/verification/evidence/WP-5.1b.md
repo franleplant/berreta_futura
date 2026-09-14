@@ -27,7 +27,9 @@ print('records:', len(records))
 ```
 
 Regenerate the record-loader fixtures oracle (11 documents under
-`mag/tests/model_records_fixtures/records/`) and the URL table (19 inputs):
+`mag/tests/model_records_fixtures/records/`) and the URL table (25 inputs).
+The URL list must match `URL_CASES` in `mag/tests/model_records.rs`; the test
+compares the whole table, so any drift in either direction fails loudly:
 
 ```
 uv run python -c "
@@ -50,7 +52,9 @@ urls = ['https://Example.COM/a//b/?utm_source=x&b=2&a=1&ref=z','http://example.c
         'https://x.com/a/b/','https://e.com','https://e.com/?q=a b&q=c+d','https://e.com/path/?empty=',
         'HTTPS://E.com:443/A/','ftp://e.com/x','not a url','https:///nohost','  https://e.com/pad  ',
         'https://user:pw@e.com/x','https://e.com/a?Utm_Campaign=1&UTM_x=2&Ref=3&keep=4','https://e.com/%7Euser/',
-        'https://e.com/a#frag','https://e.com/a?b=%C3%A9','https://e.com//////','https://e.com/a/b/../c']
+        'https://e.com/a#frag','https://e.com/a?b=%C3%A9','https://e.com//////','https://e.com/a/b/../c',
+        'http://e.com:0/x','https://e.com:/','https://e.com:0/','https://e.com:00/','https://e.com:000/',
+        'https://e.com:080/']
 table = {}
 for u in urls:
     try: table[u] = {'ok': canonicalize_url(u)}
@@ -76,6 +80,9 @@ cases = [
   {'name':'blank_author','url':'https://example.com/c','title':'T','author':'   ','published_at':None,'captured_at':'2026-03-04T05:06:07Z','tags':None,'synopsis':'','notes':''},
   {'name':'unicode_title','url':'https://example.com/d','title':'Ünïcode — Tïtle!!','author':None,'published_at':None,'captured_at':'2026-03-04T05:06:07Z','tags':['x'],'synopsis':'','notes':''},
   {'name':'bad_url','url':'ftp://example.com/e','title':'T','author':None,'published_at':None,'captured_at':'2026-03-04T05:06:07Z','tags':[],'synopsis':'','notes':''},
+  {'name':'empty_title','url':'https://example.com/f','title':'','author':None,'published_at':None,'captured_at':'2026-03-04T05:06:07Z','tags':[],'synopsis':'','notes':''},
+  {'name':'whitespace_title','url':'https://example.com/g','title':'   ','author':None,'published_at':None,'captured_at':'2026-03-04T05:06:07Z','tags':[],'synopsis':'','notes':''},
+  {'name':'empty_author','url':'https://example.com/h','title':'T','author':'','published_at':None,'captured_at':'2026-03-04T05:06:07Z','tags':[],'synopsis':'','notes':''},
 ]
 out = {}
 for c in cases:
@@ -94,7 +101,34 @@ print('create cases:', len(out), 'source_id cases:', len(ids))
 "
 ```
 
-Regenerate the refusal-matrix oracle (42 cases over
+Regenerate the port-refusal oracle. These eight inputs make `urlsplit` raise an
+uncaught `ValueError` in Python; the port returns `ValidationError` carrying the
+same text, which is the deliberate divergence recorded in Residuals. The list
+must match `PORT_CASES` in `mag/tests/model_records.rs`:
+
+```
+uv run python -c "
+import json, sys
+sys.path.insert(0, 'src')
+from pathlib import Path
+from magazine.records import canonicalize_url
+ports = ['https://e.com:abc/','https://e.com:-1/','https://e.com:65536/','https://e.com:99999999999999/',
+         'https://e.com:+80/','https://e.com: 80/','https://e.com:80 /','https://e.com:٨/']
+table = {}
+for u in ports:
+    try:
+        canonicalize_url(u)
+    except ValueError as exc:
+        table[u] = {'python_value_error': str(exc)}
+    else:
+        raise SystemExit('expected ValueError for ' + u)
+Path('mag/tests/model_records_ports_expected.json').write_text(
+    json.dumps(table, indent=2, sort_keys=True, ensure_ascii=False) + '\n', encoding='utf-8')
+print('ports:', len(table))
+"
+```
+
+Regenerate the refusal-matrix oracle (53 cases over
 `mag/tests/model_records_fixtures/cases.yaml`). The absolute fixture root is
 replaced by the literal `<ROOT>` so the committed file is machine independent;
 the Rust test applies the same substitution.
@@ -162,8 +196,11 @@ cd mag && cargo test --test model_records
 ```
 
 Regenerating every oracle above and rerunning `cargo test --test model_records`
-must leave the four committed JSON files byte-identical and the seven tests
-green; that is the whole acceptance check for this WP.
+must leave the six committed JSON files byte-identical and the eight tests
+green; that is the whole acceptance check for this WP. Every test derives its
+case list from the Rust side or from a committed input fixture and compares the
+whole table, so a shrunken oracle fails loudly instead of quietly reducing
+coverage.
 
 ## Tool versions
 
@@ -431,6 +468,98 @@ with a truthy `id`, so `Some(row)` and Python's truthiness agree.
 The corpus and record-fixture oracles are unchanged, as expected: no corpus
 record carries an explicit port, a non-printable character or an empty title.
 That is precisely why the defects survived the first submission.
+
+## Second rework after rejection (verify commit 2f1886a)
+
+The first rework was rejected for a behavioural divergence no oracle covered
+and for an evidence section which, replayed as written, destroyed the
+regression coverage for the defects that caused the first rejection.
+
+### Finding 1, the isinstance divergence, and the class sweep
+
+`media_schema.py:135` and `:331` guard with `if not isinstance(rows, list)`,
+and `None` is not a list, so Python refuses an absent or null `figures:` /
+`extracts:` key with `must be a list`. The port matched
+`None | Some(Value::Null) => Vec::new()`, treating absent as empty and falling
+through to the missing-ids comparison. Both arms are deleted: only
+`Some(Value::Sequence(_))` is a Python list, so everything else now refuses.
+That is also one arm shorter than before.
+
+Sweeping the class, every `Value::Null` normalisation in the port against its
+Python guard, found one further divergence and confirmed four sites correct:
+
+| site | Python | port before | verdict |
+|---|---|---|---|
+| `localize_figures` rows | `isinstance(rows, list)` | absent to empty vec | FIXED |
+| `localize_extracts` rows | `isinstance(rows, list)` | absent to empty vec | FIXED |
+| `python_text` float zero | `str(0.0 or "")` is `""` | `"0.0"` | FIXED |
+| `text_field` | `data.get(key)` conflates absent and null | both to `None` | correct |
+| `resolve_tags` | `tags or []` | null to `None` | correct |
+| `is_absent` | `rows in (None, [])` | null and empty seq to true | correct |
+
+The float-zero case is the same falsiness class the first rework swept for and
+missed, because it checked integer zero and empty containers but not `0.0`.
+Python: `0.0 or ""` and `-0.0 or ""` both yield `""`. Rust `float == 0.0` is
+true for `-0.0`, so one comparison covers both.
+
+### Finding 2, the self-weakening oracle
+
+`canonical_urls_match_python` and `port_refusal_messages_match_python` both
+derived their case list from `expected.as_object()`, so a shrunken oracle
+silently became a smaller test. Both now iterate `URL_CASES` and `PORT_CASES`,
+Rust-side constants, and compare the whole table, so a missing or extra key
+fails in either direction. The refusal matrix drives from `cases.yaml`, a
+committed input fixture, and compares whole maps, so it already failed loudly;
+`create_and_source_id_match_python` builds its cases Rust-side and already
+failed loudly. Those four are every test that could derive its own inputs.
+
+`## Commands` now regenerates exactly the committed oracles: the URL list
+carries all 25 inputs, the create list all 8 cases, and the port oracle has a
+regeneration command it previously lacked.
+
+### Round trip, run before submitting
+
+Replaying the five documented blocks regenerates the corpus, record-fixture,
+URL, create and port oracles byte-identically; only the refusal matrix changes,
+by the five cases added here. Each fix then reverted in place, its named test
+rerun, and restored:
+
+| reverted fix | test | result |
+|---|---|---|
+| port-0 filtering | `canonical_urls_match_python` | FAILED |
+| `printable` escaping | `figure_and_extract_refusals_match_python` | FAILED |
+| empty-title fallback | `create_and_source_id_match_python` | FAILED |
+| isinstance rows | `figure_and_extract_refusals_match_python` | FAILED |
+| float-zero text | `figure_and_extract_refusals_match_python` | FAILED |
+
+Dropping one case from each oracle (`http://e.com:0/x`,
+`https://e.com:65536/`) now fails both tests; under the previous shape the URL
+test passed. That is the structural fix demonstrated rather than asserted.
+
+### Fixtures added
+
+`localize_figures_rows_absent`, `localize_figures_rows_null`,
+`localize_extracts_rows_absent`, `localize_extracts_rows_null` pin
+`must be a list` for both the omitted key and the explicit null, and
+`localize_figures_float_zero_caption` pins the float-zero coercion through the
+caption field, where Python's empty string triggers the
+`requires caption, alt_text, and anchor` refusal. The matrix is 54 cases,
+44 refusing.
+
+### Oracle digests after the second rework
+
+| file | sha256 |
+|---|---|
+| `model_records_expected.json` | `611d885cb7f67269790110a2e6447be855657b9d9495e95ae7f47aa7c5452d2d` |
+| `model_records_records_expected.json` | `1e9bc57520012bc3013a6d7a3e1c0d24b825b964d6fad1cf4ae024e14735181f` |
+| `model_records_urls_expected.json` | `271f1aed2dc84e10fa172e5ed3c07c6cd7a4ce74af67af63609c19d0b01ae8c7` |
+| `model_records_create_expected.json` | `be1563b161c129fedc88789322a8bec74382e8dd6f9c107e9cef6f1cae20ffe7` |
+| `model_records_ports_expected.json` | `331c78f351061f0db6fef3f7579f6ea4a4b146e628c04aec8a065ecbeee93288` |
+| `model_records_cases_expected.json` | `34feb1a9c45901513bbffa724476815b8660aa932c77c9c6cf7d0c933d027e2f` |
+
+Verification: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`
+and `cargo test` all exit 0; 8 records tests, 69 unit tests, `nocomments`, and
+`parity_faults` at 20.6 s.
 
 ## Status
 
