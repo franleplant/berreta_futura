@@ -232,3 +232,30 @@ critic_metric_tolerances:
     - metric: largest_void.width_fraction 0.939 vs 0.9, relative 0.0433
     - metric: tail band height vs declared, relative 0.694
     - metric: minimum non-zero ink_ratio 0.046483 vs 0.004, relative 10.6
+hyphenation:
+  authored_by: WP-1.5
+  decision: option b, hyphenation off during parity, re-enabled natively by WP-4.3
+  decided_in: plan revision 9, from WP-1.3's measurement
+  scope: ':lang(en) only; Spanish editions keep hyphenation'
+  mechanism: src/magazine/assets/weasyprint-a5.css, an html:lang(en) rule mirroring
+    the prose selector list and setting hyphens manual; the prose rule above it is
+    untouched
+  typst_leg: WP-2.2a disables hyphenation for the same language
+  measured_on_010_en:
+    page_count: 56 before and after
+    article_pages: identical before and after, every span unmoved
+    cap_violations_introduced: 0
+    pre_existing_cap_violation: dario-amodei-we-must-pace-the-frontier 13 pages against
+      cap 10, present before and after, unrelated to this switch
+    hyphen_ended_lines: 142 before, 16 after, a delta of 126 matching WP-1.3's
+      measured soft-hyphen breaks
+    max_consecutive_hyphen_ended_lines: 2 after, so no ladder
+  scoping_proof:
+    method: a scratch es translation of 010 rendered with --langs en,es before and
+      after the switch, built in a throwaway worktree, no tracked file touched
+    es_pdftotext_dumps: byte-identical before and after
+    es_page_count: 56 before and after
+    es_hyphen_ended_lines: 162 before and after
+    es_max_consecutive_hyphen_ended_lines: 4, so Spanish still hyphenates and still
+      ladders, which is the point of the scope
+  revert: WP-4.3 deletes the rule and its comment; nothing else depends on it
