@@ -271,7 +271,7 @@ fn push_gallery(
     last: u32,
     assets: &Path,
 ) -> Result<()> {
-    let digits = if last >= 100 { 3 } else { 2 };
+    let digits = (last + 1).to_string().len();
     html.push_str("<h2>pages (A, B, diff heatmap)</h2>");
     for page in first..=last {
         let frac = &verdict["tier_v"]["pages"][page.to_string()]["differing_fraction"];
