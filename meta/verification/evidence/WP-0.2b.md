@@ -311,6 +311,142 @@ cd mag && cargo fmt --check && cargo clippy -- -D warnings && cargo test
 - Scratch fixtures live under the job tmp directory and are fully
   regenerable from the inline scripts; nothing binary is committed.
 
+## Critique round (critiquer commit)
+
+Two defects found and fixed in mag/src/parity/display.rs; everything else
+accepted (streams.rs interpreter audited against the PDF spec: Tm/Td/TD/
+T*/TJ advance arithmetic with Tc/Tw/Tz, Tw only on single-byte code 32,
+cm concatenation order, paint-time line-width scaling, pending W/W* clip
+applied after the painting op with the pre-clip stack on the painted
+element, image bbox from the unit square, PNG predictor and paeth,
+ascii85 z/tilde/trailing-group handling).
+
+1. collect_outlines silently swallowed destination-resolution errors and
+   could not resolve outline /A GoTo actions (an if-let-Ok dropped both).
+   Fixed by routing outline entries through the same link_dest resolver
+   annotations use; resolution errors now propagate (fail loud), URI
+   outlines are out of the page domain by definition and skip.
+2. Title/Lang/outline/URI strings were decoded from_utf8_lossy; PDF text
+   strings with a FE FF BOM are UTF-16BE (typst writes these), so one leg
+   would have garbled. Fixed with a text_string decoder (BOM UTF-16BE,
+   else byte-to-char).
+
+Regression demos (fixtures built by wp02b_nav_demo.py, inline below; run
+against the pre-fix build via git stash and the fixed build):
+
+```
+uv run python <scratch>/wp02b_nav_demo.py <scratch>/demo
+mag parity nav --pre-rendered <scratch>/demo/nav-base <scratch>/demo/nav-outl
+mag parity title --pre-rendered <scratch>/demo/title-plain <scratch>/demo/title-utf16
+```
+
+- nav-base vs nav-outl (one side carries an outline entry whose target is
+  an /A GoTo action to page 2): pre-fix pass exit 0 (outline silently
+  dropped, false pass); fixed navigation fail exit 1.
+- title-plain vs title-utf16 (same Title, one PDFDoc bytes, one UTF-16BE
+  with BOM): pre-fix navigation fail exit 1 (false fail); fixed pass
+  exit 0.
+
+Post-fix reruns, all green: fixture matrix 15/15 OK with the expected
+exit codes; 010 A-vs-A verdict digest
+710878fb3f6453f6d7dee26a82a3b1af646c08050a62fd988310ab2877a2e891 and
+A-vs-B digest
+a195f86db2d4b5ae3e6efeb78e8ba95ba784d924fc679e2c1d60ad34c9dd9ea7 twice,
+identical to the pre-critique values (010 exercises neither defect);
+cargo fmt --check, clippy -D warnings, cargo test green.
+
+`wp02b_nav_demo.py`:
+
+```python
+import sys
+from pathlib import Path
+
+from pypdf import PdfWriter
+from pypdf.generic import (
+    ArrayObject,
+    ByteStringObject,
+    DecodedStreamObject,
+    DictionaryObject,
+    NameObject,
+    NumberObject,
+    TextStringObject,
+)
+
+ROOT = Path(sys.argv[1])
+
+
+def base_writer():
+    w = PdfWriter()
+    for _ in range(3):
+        page = w.add_blank_page(100, 100)
+        stream = DecodedStreamObject()
+        stream.set_data(b"0 0 10 10 re f")
+        page[NameObject("/Contents")] = w._add_object(stream)
+        page[NameObject("/Resources")] = DictionaryObject()
+    return w
+
+
+def save(w, name):
+    out = ROOT / name / "en"
+    out.mkdir(parents=True, exist_ok=True)
+    with open(out / "reader.pdf", "wb") as fh:
+        w.write(fh)
+
+
+def with_action_outline():
+    w = base_writer()
+    dest = ArrayObject(
+        [
+            w.pages[1].indirect_reference,
+            NameObject("/XYZ"),
+            NumberObject(0),
+            NumberObject(0),
+            NumberObject(0),
+        ]
+    )
+    action = DictionaryObject(
+        {NameObject("/S"): NameObject("/GoTo"), NameObject("/D"): dest}
+    )
+    item = DictionaryObject(
+        {
+            NameObject("/Title"): TextStringObject("via action"),
+            NameObject("/A"): w._add_object(action),
+        }
+    )
+    item_ref = w._add_object(item)
+    outlines = DictionaryObject(
+        {
+            NameObject("/First"): item_ref,
+            NameObject("/Last"): item_ref,
+            NameObject("/Count"): NumberObject(1),
+        }
+    )
+    w._root_object[NameObject("/Outlines")] = w._add_object(outlines)
+    return w
+
+
+def with_title(raw):
+    w = base_writer()
+    w.add_metadata({})
+    info = w._info.get_object()
+    info[NameObject("/Title")] = ByteStringObject(raw)
+    return w
+
+
+save(base_writer(), "nav-base")
+save(with_action_outline(), "nav-outl")
+save(with_title(b"Fixture"), "title-plain")
+save(with_title(b"\xfe\xff" + "Fixture".encode("utf-16-be")), "title-utf16")
+print("demo fixtures written to", ROOT)
+```
+
+Accepted without change, for the record: annotation comparison is
+order-sensitive (stricter than a set comparison, can only false-fail,
+revisit only if the typst leg orders annots differently); image placement
+is a bounding box, so a pure flip with identical pixels is display-list
+invisible (raster guards); intra-show TJ kerning residue as already noted
+in Residuals.
+
 ## Status
 
 done

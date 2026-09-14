@@ -64,6 +64,19 @@ fn qr(v: f64) -> i64 {
     (v * 2.0).round() as i64
 }
 
+fn text_string(bytes: &[u8]) -> String {
+    match bytes.strip_prefix(&[0xFE, 0xFF]) {
+        Some(rest) => {
+            let units: Vec<u16> = rest
+                .chunks(2)
+                .map(|c| u16::from(c[0]) << 8 | u16::from(c.get(1).copied().unwrap_or(0)))
+                .collect();
+            String::from_utf16_lossy(&units)
+        }
+        None => bytes.iter().map(|&b| char::from(b)).collect(),
+    }
+}
+
 fn page_annots(
     doc: &Document,
     page_id: lopdf::ObjectId,
@@ -85,7 +98,7 @@ fn page_annots(
         let nums: Result<Vec<f64>> = rect_arr.iter().map(|o| number(doc, o)).collect();
         let nums = nums?;
         let rect = [qr(nums[0]), qr(nums[1]), qr(nums[2]), qr(nums[3])];
-        let dest = annot_dest(doc, dict, page_ids)?;
+        let dest = link_dest(doc, dict, page_ids)?;
         out.push(Annot {
             subtype,
             rect,
@@ -95,7 +108,7 @@ fn page_annots(
     Ok(out)
 }
 
-fn annot_dest(
+fn link_dest(
     doc: &Document,
     dict: &lopdf::Dictionary,
     page_ids: &BTreeMap<u32, lopdf::ObjectId>,
@@ -111,7 +124,7 @@ fn annot_dest(
         Ok(Object::Name(s)) if s == b"URI" => {
             let uri = deref(doc, action.get(b"URI")?)?;
             match uri {
-                Object::String(bytes, _) => Ok(format!("uri:{}", String::from_utf8_lossy(bytes))),
+                Object::String(bytes, _) => Ok(format!("uri:{}", text_string(bytes))),
                 other => bail!("URI action target {other:?}"),
             }
         }
@@ -224,12 +237,12 @@ fn doc_nav(
         .and_then(|info| info.as_dict().ok())
         .and_then(|info| info.get(b"Title").ok())
         .and_then(|t| match t {
-            Object::String(bytes, _) => Some(String::from_utf8_lossy(bytes).into_owned()),
+            Object::String(bytes, _) => Some(text_string(bytes)),
             _ => None,
         });
     let catalog = doc.catalog()?;
     let lang = catalog.get(b"Lang").ok().and_then(|l| match l {
-        Object::String(bytes, _) => Some(String::from_utf8_lossy(bytes).into_owned()),
+        Object::String(bytes, _) => Some(text_string(bytes)),
         _ => None,
     });
     let mut outlines = vec![];
@@ -256,19 +269,16 @@ fn collect_outlines(
     while let Some(Object::Reference(id)) = child {
         let entry = doc.get_dictionary(id)?.clone();
         let title = match entry.get(b"Title") {
-            Ok(Object::String(bytes, _)) => String::from_utf8_lossy(bytes).into_owned(),
+            Ok(Object::String(bytes, _)) => text_string(bytes),
             _ => String::new(),
         };
-        if let Ok(dest) = entry.get(b"Dest").or_else(|_| entry.get(b"A")) {
-            if let Ok(target) = dest_target(doc, deref(doc, dest)?, page_ids) {
-                if let Some(page) = target
-                    .strip_prefix("page:")
-                    .and_then(|n| n.parse::<u32>().ok())
-                {
-                    if page >= first && page <= last {
-                        out.push((title, page));
-                    }
-                }
+        let target = link_dest(doc, &entry, page_ids)?;
+        if let Some(page) = target
+            .strip_prefix("page:")
+            .and_then(|n| n.parse::<u32>().ok())
+        {
+            if page >= first && page <= last {
+                out.push((title, page));
             }
         }
         collect_outlines(doc, &entry, page_ids, first, last, out)?;
