@@ -26,10 +26,6 @@ normalization:
   hyphen_rejoin:
     rejoin: words split by a line-end hyphenate character
     strip: soft hyphens
-  color_space_map:
-    authored_by: unassigned
-    note: plan gap flagged by WP-0.1 critique, no WP Owns names this key (WP-0.2b owns font_name_map only)
-    entries: {}
   merge_rewrite_rules:
     authored_by: WP-0.2c
     measured: replace_outer_pages on the 010 reader (pages 1 and 56 re-attached
