@@ -391,3 +391,52 @@
     - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
   rows:
     - {id: xz, caption: Leyenda, anchor: Encabezado Alfa}
+- name: localize_figures_rows_absent
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+- name: localize_figures_rows_null
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+  rows: null
+- name: localize_extracts_rows_absent
+  kind: localize_extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+- name: localize_extracts_rows_null
+  kind: localize_extracts
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: x1, source_id: src-a, begin: QUOTE-START, end: QUOTE-END, style: quote, caption: c, anchor: Beta Heading}
+  rows: null
+- name: localize_figures_float_zero_caption
+  kind: localize_figures
+  article_id: a1
+  source_ids: [src-a]
+  manuscript: en.md
+  language: es
+  translated_manuscript: es.md
+  base:
+    - {id: f1, source_id: src-a, path: media/img.png, caption: c, credit: r, alt_text: a, anchor: Alpha Heading, layout: evidence_band}
+  rows:
+    - {id: f1, caption: 0.0, alt_text: Texto, anchor: Encabezado Alfa}

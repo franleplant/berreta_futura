@@ -311,41 +311,79 @@ fn record_fixtures_match_the_python_loader() {
     );
 }
 
+const URL_CASES: &[&str] = &[
+    "  https://e.com/pad  ",
+    "HTTPS://E.com:443/A/",
+    "ftp://e.com/x",
+    "http://e.com:0/x",
+    "http://example.com:80/p/",
+    "https:///nohost",
+    "https://Example.COM/a//b/?utm_source=x&b=2&a=1&ref=z",
+    "https://e.com",
+    "https://e.com/%7Euser/",
+    "https://e.com//////",
+    "https://e.com/?q=a b&q=c+d",
+    "https://e.com/a#frag",
+    "https://e.com/a/b/../c",
+    "https://e.com/a?Utm_Campaign=1&UTM_x=2&Ref=3&keep=4",
+    "https://e.com/a?b=%C3%A9",
+    "https://e.com/path/?empty=",
+    "https://e.com:/",
+    "https://e.com:0/",
+    "https://e.com:00/",
+    "https://e.com:000/",
+    "https://e.com:080/",
+    "https://example.com:8443/",
+    "https://user:pw@e.com/x",
+    "https://x.com/a/b/",
+    "not a url",
+];
+
+const PORT_CASES: &[&str] = &[
+    "https://e.com: 80/",
+    "https://e.com:+80/",
+    "https://e.com:-1/",
+    "https://e.com:65536/",
+    "https://e.com:80 /",
+    "https://e.com:99999999999999/",
+    "https://e.com:abc/",
+    "https://e.com:٨/",
+];
+
 #[test]
 fn canonical_urls_match_python() {
-    let expected = committed("model_records_urls_expected.json");
     let mut produced = Map::new();
-    for key in expected.as_object().expect("the table is an object").keys() {
+    for key in URL_CASES {
         let value = match canonicalize_url(key) {
             Ok(url) => json!({ "ok": url }),
             Err(ValidationError(errors)) => json!({ "errors": errors }),
         };
-        produced.insert(key.clone(), value);
+        produced.insert((*key).to_string(), value);
     }
     assert_eq!(
         Json::Object(produced),
-        expected,
+        committed("model_records_urls_expected.json"),
         "the Rust canonicalizer diverged from urllib"
     );
 }
 
 #[test]
 fn port_refusal_messages_match_python() {
-    let expected = committed("model_records_ports_expected.json");
-    for (url, entry) in expected.as_object().expect("the table is an object") {
-        let message = entry
-            .get("python_value_error")
-            .and_then(Json::as_str)
-            .expect("every port case raises ValueError in Python");
-        match canonicalize_url(url) {
-            Ok(value) => panic!("{url} canonicalized to {value}, Python raised {message}"),
-            Err(ValidationError(errors)) => assert_eq!(
-                errors,
-                vec![message.to_string()],
-                "the Rust port refusal diverged from urllib for {url}"
-            ),
-        }
+    let mut produced = Map::new();
+    for url in PORT_CASES {
+        let entry = match canonicalize_url(url) {
+            Ok(value) => panic!("{url} canonicalized to {value}, Python raises ValueError"),
+            Err(ValidationError(errors)) => {
+                json!({ "python_value_error": errors.join("|") })
+            }
+        };
+        produced.insert((*url).to_string(), entry);
     }
+    assert_eq!(
+        Json::Object(produced),
+        committed("model_records_ports_expected.json"),
+        "the Rust port refusal diverged from urllib"
+    );
 }
 
 fn create_cases<'a>(
