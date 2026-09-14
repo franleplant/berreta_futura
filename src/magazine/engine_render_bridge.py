@@ -223,6 +223,8 @@ def _render_manifest(
                 (variant.raw.get("format") or {}).get("max_article_pages", 7)
             ),
             "article_pages": layout.article_pages,
+            "toc": layout.toc,
+            "article_opener_fits": layout.article_opener_fits,
             "article_page_caps": {
                 article.id: article_page_cap(article.content_mode) for article in variant.articles
             },
