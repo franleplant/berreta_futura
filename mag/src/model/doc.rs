@@ -380,23 +380,20 @@ fn flatten(blocks: &[Block], into: &mut Vec<(String, String)>, container: Option
 
 fn inline_visible(inlines: &[Inline]) -> String {
     let mut buffer = String::new();
-    push_visible(inlines, &mut buffer);
+    for inline in inlines {
+        match inline {
+            Inline::Text(value) | Inline::Code(value) => buffer.push_str(value),
+            Inline::Emphasis(children)
+            | Inline::Strong(children)
+            | Inline::Link { children, .. } => buffer.push_str(&inline_visible(children)),
+            Inline::LineBreak { .. } => buffer.push(' '),
+        }
+    }
     buffer
         .split(is_python_space)
         .filter(|part| !part.is_empty())
         .collect::<Vec<_>>()
         .join(" ")
-}
-
-fn push_visible(inlines: &[Inline], buffer: &mut String) {
-    for inline in inlines {
-        match inline {
-            Inline::Text(value) | Inline::Code(value) => buffer.push_str(value),
-            Inline::Emphasis(children) | Inline::Strong(children) => push_visible(children, buffer),
-            Inline::Link { children, .. } => push_visible(children, buffer),
-            Inline::LineBreak { .. } => buffer.push(' '),
-        }
-    }
 }
 
 pub fn block_signature(blocks: &[Block]) -> Vec<String> {
