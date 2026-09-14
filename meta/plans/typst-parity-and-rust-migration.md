@@ -1,14 +1,83 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-14, revision 9 (Phase 0 built and
-verified, the four Phase 1 spikes measured; this revision resolves what
-they found). Companion to `rust-rewrite.md`
+Status: **in execution**, 2026-09-14, revision 10 (Phase 0 built and
+verified, the four Phase 1 spikes measured, revision 9's gate critiqued
+adversarially and repaired). Companion to `rust-rewrite.md`
 (which moved orchestration to Rust and left the renderer in Python). This
 plan finishes the job: a Typst-based renderer implemented in Rust inside
 `mag`, proven equivalent to the WeasyPrint renderer by rendering **edition
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 10 changelog
+
+Revision 9 was critiqued adversarially (`meta/verification/evidence/
+REVISION-9-CRITIQUE.md`) and came back sound with fixes. The two-sided bound
+survives; what did not survive is revision 9's claim to have enumerated the
+display list's blind spots. Four repairs, one of them substantive:
+
+- **Glyph identity was an unlisted blind spot, and it is the only one this
+  project has observed in the wild.** `Element::Text` records the decoded
+  string, not the glyphs, so a ligature and its components are display-list
+  equal. WP-1.1 measured exactly that between the engines (rustybuzz formed
+  `ft`, Pango suppressed it under letter-spacing). WP-0.2e now records the
+  GLYPH COUNT per show, never raw CID codes, which the two engines assign
+  independently. Worse than the hole itself: WP-0.2f would have derived its
+  ceiling from a fixture set missing a whole fault class, which is the same
+  incomplete-enumeration mistake that produced the 241.
+- **The containment argument for intra-show kerning was wrong, and it is now
+  measured rather than argued.** In 010's reader.pdf, across 54 interior
+  pages, 360 text objects and 1488 shows, the number of shows that inherit a
+  previous show's advance is **zero**: every show is repositioned by
+  `Tm`/`Td`/`TD`/`T*` first, and `Td` resets the text matrix from the line
+  matrix, discarding any accumulated advance. So the raster guard is the SOLE
+  check on intra-show glyph positioning, for every line. It is load-bearing,
+  not a backstop, and WP-0.2f must be sized knowing that.
+- **The reachability floor was a random sample, not a bound.** Perturbing
+  each coordinate to a random point in its bucket understates the worst
+  legitimate case and makes the number seed-dependent, so "derived, never
+  chosen" was not true in practice. WP-0.2f now perturbs to the bucket
+  extremes in both directions, two deterministic runs, floor = the max.
+- **WP-0.0c was missing from Reference stability's sanctioned list**, so a
+  verifier applying that sentence literally would have rejected its diff.
+
+Two findings landed while this revision was being written, and both change
+the gate rather than merely annotating it:
+
+- **WP-0.0c: a verify clause that would have passed a real regression.** The
+  clause for sanctioned oracle changes says "`pdftotext` dumps and critic
+  report unchanged", and the opener attribute left both unchanged while
+  silently deleting nine articles' source QR links from the web edition,
+  because `web_edition.py` recognizes its own markup by exact tag string.
+  **A WP that touches the HTML the renderer consumes must compare the web
+  output too, not only the reader PDFs.** WP-0.0c's Owns now covers
+  `web_edition.py` for the detection fix, and WP-5.5 carries a residual to
+  port those string matches as structural tests.
+- **WP-1.6: the line-break miss is engine-intrinsic, and it has a second
+  consequence nobody had modelled.** WeasyPrint breaks on an integer count
+  of 1/1024 px while Typst sums exact font units, so (a) one body line of
+  899 breaks differently, fixed by widening the Typst column to an interval
+  WP-1.7 must measure rather than a constant anyone picks, and (b) the two
+  engines place glyphs WITHIN every line at systematically different
+  positions, up to 0.017432 pt, which the display list cannot see at all.
+  Revision 9's reachability floor modelled only coordinate quantization, so
+  WP-0.2f would have met this as an unexplained failure and blocked. The
+  floor now derives from two fixtures, and Tier E states outright what the
+  gate does and does not claim about intra-line glyph placement.
+
+Also adopted from the critique's optional list: a required 2x margin between
+floor and ceiling rather than bare `floor < ceiling`; WP-0.2f's fallback
+written down in advance; and a new WP-0.2g for compared-cardinality
+reporting and `/Rotate`.
+
+**What changed for a WP already in flight:** WP-0.2e gains the glyph count
+and a fourth fixture (a ligature case: same string, same origin, same total
+advance, different glyph sequence, must fail). WP-0.0c is unchanged in
+substance but is now explicitly sanctioned to touch `src/magazine/`. Nothing
+else in flight changes; cardinality and `/Rotate` went to a new WP rather
+than into WP-0.2e's brief precisely because that brief is already executing,
+and rule 1 binds a WP to the Owns list it was given.
 
 ## Revision 9 changelog
 
@@ -146,7 +215,9 @@ placeholder outer pages, so numbering and folios align. From WP-5.4g on,
 Over the compared domain of edition 010 (en):
 
 - identical page count, read with `pdfinfo`, never from engine-reported JSON
-- per-page MediaBox, CropBox, TrimBox equal within 0.05 pt
+- per-page MediaBox, CropBox, TrimBox equal within 0.05 pt, and `/Rotate`
+  equal exactly (WP-0.2g adds the rotation; it is print-visible, and a 180
+  degree difference keeps dimensions equal so nothing else would catch it)
 - per-page extracted text identical after normalization
 - **code blocks**, in two halves because a PDF has no bytes: at the input
   level, the fenced runs in each engine's staged input byte-equal the
@@ -189,7 +260,8 @@ Used to measure convergence during Phase 3; they gate nothing final.
   normalized per page IN PAINT ORDER (never sorted: sorting erases z-order;
   the diff REPORTER may sort for readability, the comparison never does):
   every text show as (Unicode string, font name via the `font_name_map`,
-  size, fill color, position, **text matrix**), every vector path as
+  size, fill color, position, **text matrix**, **glyph count**), every
+  vector path as
   (operators, points, paint, stroke parameters), every clip operation as an
   ordered entry so each element carries its active clip stack (010's
   interior uses `W`/`W*` clipping heavily), every image as (SHA256 of
@@ -199,19 +271,63 @@ Used to measure convergence during Phase 3; they gate nothing final.
   Any ExtGState alpha other than 1 is fail-loud unsupported (today all 162
   entries in 010 are `/ca 1 /CA 1`). The two canonical lists must be
   **equal**.
-  The two matrices are WP-0.2e's addition: a start point plus a size
-  magnitude cannot see a mirrored glyph run, and a bounding box cannot see
-  a flipped image. Both are sign changes, not sub-quantum drift, so
-  recording them costs nothing and can never false-fail.
-- **what the display list deliberately does not see**: intra-show TJ kern
-  numbers. WP-0.2b tracks advances exactly, so a kern difference moves
-  every later show in the same text object and surfaces there; what remains
-  hidden is a kern difference in a show nothing follows, or one whose
-  adjustments cancel. Recording raw kern numbers instead would fail on
-  Pango's 1/1024 px advance rounding (WP-1.1: accumulating to 0.0174 pt on
-  the longest lines) rather than on any difference a reader could see. The
-  raster guard is the answer to this residue, and WP-0.2f's bound is
-  required to be small enough to prove it.
+  The matrices and the glyph count are WP-0.2e's additions: a start point
+  plus a size magnitude cannot see a mirrored glyph run, a bounding box
+  cannot see a flipped image, and the decoded string cannot see a ligature
+  standing in for its components (WP-1.1 measured that difference between
+  these two engines). None of the three is sub-quantum drift, so recording
+  them costs nothing and can never false-fail. Glyph COUNT, never raw CID
+  codes: the engines subset and assign codes independently, so codes would
+  false-fail everywhere.
+- **what the display list cannot see, enumerated.** Revision 9 claimed this
+  set was one item and was wrong, so it is now listed exhaustively and each
+  item says what covers it:
+  1. **intra-line glyph positioning** (TJ kern numbers, and the effect of
+     `Tc`/`Tw`/`Tz` within one show). Covered by the raster guard ALONE,
+     which revision 9 got wrong: it argued a kern difference surfaces in a
+     later show, but measurement says otherwise. In 010's reader.pdf, 54
+     interior pages carry 360 text objects and 1488 shows, and **zero**
+     shows inherit a previous show's advance, because `Td`/`TD`/`T*` reset
+     the text matrix from the line matrix and discard it. Every line is
+     independently positioned, so the raster guard is the sole check on
+     where glyphs sit inside a line.
+     This is not a hypothetical residue: WP-1.6 measured a SYSTEMATIC
+     engine difference here. WeasyPrint breaks on `PangoRectangle.width`,
+     an INTEGER count of 1/1024 px, while Typst sums exact font units, so
+     the two place glyphs within a line at steadily diverging positions,
+     one-sided at 0.000173 pt per glyph, mean drift 0.010476 pt and max
+     0.017432 pt over 899 body lines. Tier E cannot see any of it.
+     **What the gate therefore claims about intra-line placement, stated
+     plainly because "renders the same" is the sentence at stake**: every
+     line starts at the same point, carries the same string, the same
+     glyph count, font, size, colour and matrix, and the rasterized page
+     differs nowhere beyond a bound derived to accommodate that measured
+     drift. Where individual glyphs sit inside a line is verified
+     photometrically, not geometrically. The drift is 0.017 pt at worst,
+     which is 0.07 px at 300 dpi and 0.57 dots on a 2400 dpi imagesetter,
+     so it is below the resolution of any device the magazine is printed
+     on. That is the argument for absorbing it in the bound rather than
+     failing on it, and it is recorded here as a decision rather than left
+     to whatever the instrument happens to measure.
+     Recording per-glyph positions instead would false-fail on exactly this
+     drift, which is why the guard carries it, why WP-0.2f's floor must be
+     derived to include it, and why WP-0.2f's ceiling must be measured
+     against a kern fixture.
+  2. **glyph substitution preserving both count and advance** (a stylistic
+     alternate, say). The glyph count catches the ligature class, the case
+     actually observed; an equal-count equal-advance substitution remains
+     raster-only. Closing it properly means mapping codes to GIDs through
+     the shared vendored face, which the font-file digests already make
+     possible; it is not worth doing until something needs it.
+  3. **optional content and marked-content groups**. `BMC`/`BDC`/`EMC`/
+     `MP`/`DP` are no-ops in the tracer, so content a viewer would hide
+     appears as painted. Neither engine emits OCGs today: latent, not live.
+     If either starts, this becomes a fail-loud case, not a silent one.
+  4. **annotation appearance streams**. Annotations are compared by
+     subtype, rect and destination, not by their `/AP`. Links draw nothing
+     in this design; a bordered annotation would reach the raster guard.
+  Deliberately out of scope rather than blind: `/PageLabels` and other
+  viewer-only metadata, which no printed page shows.
 - **raster guard**: both PDFs rasterized at 300 dpi by the configuration
   WP-0.2f selects and parity.yaml pins; every differing pixel within
   `parity.yaml tiers.e.raster_bound.value`. The bound is derived, never
@@ -219,17 +335,29 @@ Used to measure convergence during Phase 3; they gate nothing final.
   - **reachable**: at least the max per-channel delta measured from the
     perturbation fixture, so noise the display list cannot see by
     construction cannot fail the gate. The fixture re-emits the oracle
-    leg's streams with every coordinate moved to a random position INSIDE
-    ITS OWN QUANTIZATION BUCKET, and asserts the two display lists are
-    still equal. Revision 8 perturbed within half a quantum, which
-    understates the worst case by half: two coordinates that quantize
-    equal share a bucket of width 0.01 pt, so they can differ by nearly a
-    full quantum, not half of one;
-  - **meaningful**: strictly less than the smallest MAXIMUM. Each
+    leg's streams with every coordinate moved to the EXTREME of its own
+    quantization bucket, once toward each edge (two deterministic runs,
+    floor = the max of the two), asserting display-list equality both
+    times. Two earlier attempts at this were both wrong: revision 8
+    perturbed within half a quantum, which understates the worst case by
+    half, since two coordinates that quantize equal share a bucket 0.01 pt
+    wide and can differ by nearly all of it; revision 9 moved each
+    coordinate to a RANDOM point in its bucket, which is a sample rather
+    than a bound, understates the maximum over 24452 operands, and makes
+    the result seed-dependent, so "derived, never chosen" was untrue. The
+    extremes are realizable (each coordinate is independent) and
+    reproducible by anyone;
+  - **meaningful**: comfortably less than the smallest MAXIMUM. Each
     blind-spot fixture produces a max per-channel delta (most of its pixels
     are unchanged, which is why the minimum is always 0 and meaningless);
     the ceiling is the smallest of those maxima, because that is the
     quietest blind-spot fault the guard still has to flag.
+  - **margin**: ceiling >= 2x floor, recorded as a ratio. A bare
+    `floor < ceiling` is satisfied by 7 against 8 while leaving no room for
+    content that differs from 010 (another edition, a different body size,
+    a figure-heavy page), and the squeeze would then be discovered on real
+    work rather than here. Below 2x is `blocked`, same as a collapsed
+    window.
   Revision 8 assumed one pinned rasterizer would satisfy both. It does not:
   `pdftoppm` grid-fits glyphs through FreeType, which turns sub-quantum
   noise into whole-pixel stem flips (241/255 measured, `-aa no` unchanged),
@@ -255,7 +383,7 @@ a waiver.
 | Hyphenation dictionaries (Pyphen vs Typst's hypher) | DECIDED (WP-1.3, option b): off in both engines for parity, scoped to `:lang(en)` so Spanish editions keep it; WP-1.5 applies the switch, WP-4.3 is mandatory. Measured cost of disabling: zero page-count changes, zero new cap violations, 428 lines rebroken |
 | Justification | the design is ragged-right. CONFIRMED (WP-1.2) as a selector fact: the stylesheet's only `text-align` declaration is in the `@bottom-right` folio box and body text inherits `start`. Precisely: the word `justify` does occur four times, every one of them a flexbox `justify-content` or comment prose, none a `text-align` |
 | Text shaping (Pango+HarfBuzz vs rustybuzz) | same vendored TTFs. MEASURED (WP-1.1): 1488/1488 lines with identical glyph sequences, per-glyph advances within 0.00073 pt. Requires `liga`/`clig` off wherever letter-spacing is set (Pango suppresses ligatures under tracking) and tracking applied as exactly `(n-1) x letter_spacing` |
-| Glyph advance quantization (Pango rounds to 1/1024 px, rustybuzz does not) | cumulative drift up to 0.0174 pt, and ONLY on letter-spaced display headlines: at normal spacing the worst case is 0.009897 pt and no line crosses the quantum. Invisible to the display list (each line is its own show with its own absolute position) and covered by the raster bound. Note this is why it does not explain WP-1.2's body-text miss; see WP-1.6 |
+| Glyph advance quantization (WeasyPrint breaks on `PangoRectangle.width`, an integer count of 1/1024 px; Typst sums exact font units) | RESOLVED as to mechanism by WP-1.6: systematic and one-sided at 0.000173 pt per glyph, mean drift 0.010476 pt, max 0.017432 pt, and 604 of 899 body lines exceed the 0.01 pt quantum. Two distinct consequences, do not conflate them. (a) LINE BREAKING: exactly one line of 899 flips, block 135; fixed by widening the Typst body column to WP-1.7's measured midpoint. (b) INTRA-LINE GLYPH POSITIONS: invisible to the display list at show-level granularity, so the raster guard is the only observer and WP-0.2f's floor must be derived to include it. WP-1.1's 0.009897 pt figure measures rustybuzz already rounded onto Pango's grid, a different quantity from the unrounded line width that decides breaking |
 | Syntax highlighting (pygments vs syntect) | (text-run, fill color) sequences at the content-stream level (WP-3.3), never raster; 010 carries NO fenced code blocks or extracts, so WP-3.3 gates on a dedicated fixture edition, not vacuously on 010 |
 | Font names (WeasyPrint embeds aliases: Magazine-Serif, Magazine-Sans, ...; Typst embeds the faces' real names) | `parity.yaml font_name_map`, authored in WP-0.2b, each mapping pair validated by identical font-file digests |
 | pypdf rewrite noise on inner pages | measured by WP-0.2c's merge calibration; found noise becomes an explicit normalization rule before it can be mistaken for an engine diff |
@@ -317,8 +445,9 @@ before/after comparisons (WP-4.3); out of scope here.
   crates, rustc) are recorded in `parity.yaml tools:` and asserted by
   `mag parity` at startup.
 - Behavioral changes to `src/magazine/` are forbidden except in WPs naming
-  it under Owns (WP-0.0b and WP-1.5). Phase 1 spikes may instrument oracle
-  files uncommitted, working tree only, `git status` clean at WP end.
+  it under Owns (WP-0.0b, WP-0.0c, WP-1.5, and WP-4.3's revert). Phase 1
+  spikes may instrument oracle files uncommitted, working tree only,
+  `git status` clean at WP end.
 
 ## Architecture
 
@@ -415,10 +544,19 @@ before/after comparisons (WP-4.3); out of scope here.
    evidence-consistency audit, stated in the verify file.
 4. **The comparator and an engine never change in the same WP.** Comparator
    territory: `mag/src/parity*`, `parity.yaml`, `baseline.json`. Comparator
-   changes get their own WP (WP-0.2e, WP-0.2f, WP-3.0g, WP-4.0g, WP-5.3g,
-   WP-5.4g are the scheduled ones). Thresholds and the Tier E definition may never be
-   loosened by any WP; loosening is a revision of this plan, which no WP
-   owns.
+   changes get their own WP (WP-0.2e, WP-0.2f, WP-0.2g, WP-3.0g, WP-4.0g,
+   WP-5.3g, WP-5.4g are the scheduled ones). Thresholds and the Tier E
+   definition may never be loosened by any WP; loosening is a revision of
+   this plan, which no WP owns.
+5b. **Committing under concurrency.** The pre-commit hook runs `cargo fmt`
+   and `cargo clippy` over the WHOLE tree, so a WP touching only docs or
+   evidence still fails if another agent has in-progress Rust. Prefer a
+   direct staged commit in the main tree when `git status` is clean for
+   other agents' paths: it passes the hook first try and cannot lose a
+   race. Fall back to committing from a clean worktree on a temp branch and
+   fast-forwarding only when the main tree is dirty, and expect to retry
+   under load: that dance re-races every time the branch moves, and a WP
+   has lost three attempts to it. Never `--no-verify`.
 5. **Repo rules apply**: `cargo fmt`, `cargo clippy -D warnings`,
    `cargo test` (includes `tools/nocomments.py`), `uvx ruff` for touched
    Python, no comments, no U+2014, hooks installed.
@@ -472,7 +610,9 @@ before/after comparisons (WP-4.3); out of scope here.
 
 ### WP-0.0c opener-fit attribution (sanctioned oracle change)
 
-- Owns: `src/magazine/html_edition.py`.
+- Owns: `src/magazine/html_edition.py` and `src/magazine/web_edition.py`
+  (the second added in flight, for the one detection fix the first one
+  breaks; see the outcome below).
 - Why: `article_opener_fits` is empty on every render because
   `html_edition.py` emits the opener as `<header class="article-opener">`
   while the id sits on the parent `<article>`, and the adapter's `_note_box`
@@ -488,6 +628,31 @@ before/after comparisons (WP-4.3); out of scope here.
   critic report unchanged modulo WP-0.1's whitelist; `uvx ruff` clean.
 - Must land before WP-2.3. If the attribute turns out to change rendered
   output in any way, that is `blocked`, not a workaround.
+- OUTCOME (blocked in flight, 2026-09-14, and the clause above is exactly
+  why): the reader side of the target is met. `edition-manifest.json` gains
+  nine `article_opener_fits` leaves whose ids equal `layout.toc`'s, all
+  `true`, zero leaves removed or changed; the reader PDF is untouched
+  (`mag parity 010 --pre-rendered` Tier E green, `pdftotext -raw` and
+  `pdfinfo -box` byte-identical) and the critic still passes. But the WEB
+  edition loses every article's source QR link: nine
+  `en/web/article-*.html` plus `en/web/edition.html` change.
+- CAUSE and resolution: `web_edition.py:262` detects the illustrated opener
+  by matching the ENTIRE header tag as a string
+  (`'<header class="article-opener">' in line`), so any added attribute
+  makes the match fail, the source link is never upgraded to the
+  QR-bearing `opener-source-link`, and the print-only pass then deletes it.
+  The QR SVGs are still written to `en/web/assets/` with nothing
+  referencing them, which is why no error surfaced. WP-0.0c's Owns was
+  extended to `web_edition.py` for that one detection fix. The agent proved
+  the loss was its own change rather than render variance with a third
+  control render, which also established that the web HTML is
+  byte-deterministic across renders, a property WP-0.1 never covered (it
+  compared only `pdftotext` dumps, layout JSONs and critic results).
+- Verify, amended by the above: the `en/web/` tree must be byte-identical
+  except for the opener header line the change is meant to alter, and the
+  nine `opener-source-link` QR references must survive. Until WP-0.0c
+  lands, WP-2.3 and WP-3.2 must treat the oracle's opener fits as absent
+  and say so, rather than comparing `{}` against `{}` and reporting a pass.
 
 ### WP-0.1 oracle determinism proof
 
@@ -590,19 +755,25 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   `meta/verification/parity.yaml` (deletion of the unowned
   `color_space_map` key only).
 - Target: the canonical display list records the full text matrix on every
-  text show and the full placement matrix on every image, in place of a
-  start point and a bounding box. A mirrored, rotated or skewed glyph run
-  or image then differs; today it does not. Delete `normalization.
-  color_space_map`: colour normalization is computed and every unmapped
-  colour operator already fails loud, so the key is a promise nothing
-  keeps.
+  text show, the full placement matrix on every image, and the GLYPH COUNT
+  per show, in place of a start point, a bounding box and a decoded string
+  alone. A mirrored, rotated or skewed glyph run or image then differs, and
+  so does a ligature standing in for its components; today none of them
+  does. Record the count only, never raw CID codes: the engines subset and
+  assign codes independently, so codes would false-fail on every page. The
+  count is already computed in the decode loop, is exact, and has no
+  rounding to false-fail on. Delete `normalization.color_space_map`: colour
+  normalization is computed and every unmapped colour operator already
+  fails loud, so the key is a promise nothing keeps.
 - Verify: 010 A-vs-A and A-vs-B stay Tier E equal with byte-deterministic
-  verdicts (this addition can only false-fail if an engine genuinely
-  mirrors something, and the oracle leg mirrors nothing); three new
-  fixtures each FAIL: an image placed with a negative-determinant matrix
-  and identical pixels, a text run placed with a mirrored text matrix and
-  identical string and origin, a text run rotated 180 degrees about its
-  origin. `cargo test`, `fmt`, `clippy -D warnings` green.
+  verdicts (these additions can only false-fail if an engine genuinely
+  mirrors or re-shapes something, and the oracle leg does neither against
+  itself); four new fixtures each FAIL: an image placed with a
+  negative-determinant matrix and identical pixels, a text run placed with a
+  mirrored text matrix and identical string and origin, a text run rotated
+  180 degrees about its origin, and a ligature case (same string, same
+  origin, same total advance, different glyph sequence). `cargo test`,
+  `fmt`, `clippy -D warnings` green.
 
 ### WP-0.2f rasterizer selection and the raster bound (comparator WP)
 
@@ -611,20 +782,42 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
 - Target: select a rasterizer configuration and derive
   `tiers.e.raster_bound.value` under the two-sided constraint stated in
   Tier E, recording every measurement:
-  - the **reachability floor**: max per-channel delta from the perturbation
-    fixture as Tier E now defines it, coordinates moved WITHIN their own
-    quantization bucket and the resulting display lists asserted equal.
+  - the **reachability floor**: the max per-channel delta over TWO
+    fixtures, because the display list is blind to two different things
+    and the floor has to cover both:
+    (i) **coordinate quantization**, as Tier E defines it: coordinates
+    moved to the EXTREMES of their own buckets in both directions (two
+    deterministic runs, no seed), display-list equality asserted on both.
     WP-0.2d's `perturb.py` is the starting point and is replayable (at
-    amplitude 0 it is provably inert), but it perturbs within half a
-    quantum and must be corrected to the bucket rule before its number
-    means anything: its 241 is a floor on the floor.
+    amplitude 0 it is provably inert), but it perturbs randomly within half
+    a quantum and must be corrected to the bucket-extreme rule before its
+    number means anything: its 241 is a floor on the floor.
+    (ii) **intra-line glyph drift**, which revision 9 did not model at all:
+    glyphs displaced progressively within each line up to the 0.017432 pt
+    WP-1.6 measured between Pango's integer 1/1024 px line widths and
+    Typst's exact font-unit sums. This is systematic and engine-intrinsic,
+    not noise, and the display list cannot see it, so a floor derived
+    without it would leave WP-0.2f discovering it later as an unexplained
+    failure and blocking.
+    Both fixtures are synthesized on the oracle leg, so WP-0.2f can run
+    before a Typst render exists.
+  - **re-derivation on the real pair**: the floor above is synthetic. Once
+    a Typst leg exists, WP-3.0g re-derives it from the actual
+    Typst-vs-WeasyPrint pair before raising the ratchet to Tier E, and
+    fails loud if the real floor exceeds the synthetic one, which would
+    mean a divergence nobody has enumerated. A synthetic floor is what lets
+    Phase 0 finish; it is not what the gate finally rests on.
   - the **meaningfulness ceiling**: the smallest per-fixture MAX
-    per-channel delta across the blind-spot fault fixtures. After WP-0.2e
-    the only display-list blind spot left is intra-show kerning, so the
-    fixture is a TJ array whose kern numbers are changed but whose total
-    advance is preserved (a non-compensating change moves every later show
-    and is already visible, so it would not measure the blind spot).
-  - `value` = the floor, and the WP fails loud unless floor < ceiling.
+    per-channel delta across the blind-spot fault fixtures, which after
+    WP-0.2e are the items Tier E enumerates as raster-only: a TJ array
+    whose kern numbers change but whose total advance is preserved (a
+    non-compensating change is visible by other means, so it would not
+    measure the blind spot), and an equal-count equal-advance glyph
+    substitution if one can be built from the vendored faces. Measure the
+    kern fixture at more than one magnitude: intra-show positioning is the
+    guard's sole responsibility (Tier E item 1), so the interesting number
+    is the SMALLEST kern shift the guard still catches, not the largest.
+  - `value` = the floor, and the WP fails loud unless ceiling >= 2x floor.
   Candidates, in the order worth trying: MuPDF `mutool draw` (does not
   grid-fit; needs installing and pinning); `pdftoppm` supersampled and
   box-downsampled to 300 dpi, which bounds a grid-fit flip to a fraction of
@@ -635,9 +828,46 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   winning configuration named and pinned; 010 A-vs-A raster-equal and
   A-vs-B raster-equal under the derived bound; the Tier E raster clause
   stops reporting `not_evaluated`; the fixtures that define the ceiling all
-  fail. If every candidate leaves floor >= ceiling, `Status: blocked` with
-  every measurement recorded, and the plan is revised again rather than the
-  bound widened.
+  fail. If no candidate reaches the 2x margin, `Status: blocked` with every
+  measurement recorded, and the plan is revised again rather than the bound
+  widened.
+- The fallback, written down now so a blocked WP-0.2f is a decision rather
+  than a scramble: close the remaining display-list blind spots so the
+  raster guard stops being load-bearing, then demote raster to meters. That
+  means encoding intra-show glyph positions in the display list (Tier E
+  item 1) alongside the glyph count already added. The catch that keeps
+  this a fallback rather than the primary design: per-glyph positions at
+  the 0.01 pt quantum would false-fail on letter-spaced headlines, where
+  WP-1.1 measured 0.0174 pt of Pango rounding drift, so the encoding needs
+  thought first. A per-show advance CHECKSUM at a coarser quantum, or
+  positions quantized per-show relative to the show origin, are the two
+  shapes worth costing before adopting either.
+
+### WP-0.2g compared cardinality and page rotation (comparator WP)
+
+- Owns: `mag/src/parity/geometry.rs`, `mag/src/parity/display.rs`,
+  `mag/src/parity.rs` (verdict fields), `meta/verification/parity.yaml`
+  (the boxes clause key). Serial after WP-0.2e and WP-0.2f (rule 1c).
+- Why cardinality: on 010, `/Outlines` is empty and `pdfinfo` reports no
+  Title and no Lang, so two thirds of the Tier S navigation clause compare
+  empty against empty and report `pass` having checked nothing. The link
+  half is real (84 `/Link` annotations across 21 `/Annots` pages) and the
+  WP-0.2b fixtures prove the instrument works, so this is reporting
+  honesty, not a hole. The plan's Risks section already states the
+  principle and revision 9 assigned it to nobody, which is how a principle
+  becomes decoration.
+- Target: every clause that compares a collection records the CARDINALITY
+  it compared, and the verdict reports it. A clause that compared zero
+  items reports `pass (0 compared)`, never a bare `pass`. This changes no
+  pass/fail semantics: an empty collection on both sides is still equal.
+  Additionally, compare `/Rotate` per page alongside MediaBox, CropBox and
+  TrimBox: it is print-visible and one key wide, and a 180 degree
+  difference leaves page dimensions equal, so today it would reach only the
+  raster guard.
+- Verify: 010 A-vs-A and A-vs-B unchanged in pass/fail with cardinalities
+  reported and the navigation clause showing 0 outlines, 0 Title, 0 Lang,
+  84 links; a fixture with `/Rotate 180` on one side FAILS the boxes
+  clause; verdict stays byte-deterministic.
 
 ## Phase 1: feasibility spikes (throwaway code, binding numbers)
 
@@ -787,6 +1017,59 @@ fallback.
   and that is `awaiting-fran`; if (2) or (3), the fix belongs to WP-2.2a's
   template transcription and WP-3.1 scores it.
 - Must report before WP-3.1 scores `page_sets.body`.
+- RESULT (done, `awaiting-fran`, decision recorded here): candidate (1)
+  carries **100%** of it. rustybuzz vs Pango advances contribute
+  0.0109765625 pt; Typst's `measure()` contributes 0.0000000000 pt (at upem
+  1000 and 10 pt, advances are exact multiples of 0.01 pt); the column
+  transcription contributes 0.0000000000 pt (WeasyPrint's content width is
+  433.3333333333333 px, exactly 325.0 pt, so the template's 325 pt is
+  right); residual against the observed disagreement 0.000000 pt.
+  Mechanism, confirmed in WeasyPrint's source: `line_size()` returns
+  `logical_extents.width * FROM_UNITS` with `FROM_UNITS = 1/1024` and
+  `PangoRectangle.width` an INTEGER, so WeasyPrint breaks on an integer
+  count of 1/1024 px while Typst sums exact font units. All 899 measured
+  line widths are integer Pango-unit counts. Exactly ONE line of 899 lands
+  in the window where Typst overflows while Pango fits, and it is block
+  135: an independent instrument on a fresh render predicting the very line
+  WP-1.2 found.
+- This does NOT overturn WP-1.1, but it does correct what its target
+  sentence claimed. WP-1.1's shaping verdict stands (glyph ids 1488/1488,
+  per-glyph advances within one Pango unit); its "cumulative line advances
+  within 0.01 pt" figure compares rustybuzz ALREADY ROUNDED onto Pango's
+  grid, per run, while breaking is decided by Pango's unrounded line width,
+  per line. Both numbers are right about different quantities. WP-1.1's
+  stated fallback, aligning OpenType features, cannot fix this: the
+  features already agree.
+- DECISION: take the measure-widening route, and make it derived rather
+  than tuned. Quantizing Typst's advances onto the 1/1024 px grid is the
+  other option and is out of reach: it is engine-internal, unreachable from
+  a template, and would mean forking pinned crates. So WP-2.2a sets the
+  body column slightly wider than 325 pt, and **WP-1.7 measures the safe
+  interval first**. The lower bound is measured (325.010000 pt); the upper
+  bound is not, and without it any chosen value is a tuned constant that
+  could silently flip a different line. Do not let a number reach WP-2.2a
+  by guess.
+- Post-flip, this compensation exists only to match an engine that will no
+  longer exist. Returning the body column to exactly 325 pt is a deliberate
+  design change with its own before/after comparison, and belongs with
+  WP-4.3's typography changes rather than being carried forever.
+
+### WP-1.7 the safe body-measure interval
+
+- Owns: evidence only (Phase 1 preamble binds).
+- Why: WP-1.6 fixed the mechanism and the lower bound but not the upper,
+  and a column width picked without the upper bound can reproduce block
+  135's break while breaking a line nobody looked at.
+- Target: over every body line of 010, compute the interval of column
+  widths that reproduces WeasyPrint's break set EXACTLY: the lower bound is
+  the widest line that must still fit (325.010000 pt from WP-1.6), the
+  upper bound is the narrowest width at which some line would pull its next
+  word up. Report the interval and its midpoint.
+- Verify: rendering the Typst leg at the midpoint reproduces WeasyPrint's
+  breaks on 899/899 body lines. An EMPTY interval is `Status: blocked` and
+  a plan revision: it would mean no single column width satisfies both
+  engines, and the fix would have to move to the engine.
+- Feeds WP-2.2a's mapping table, which cites this WP for the number.
 
 ### WP-1.5 apply the hyphenation decision (sanctioned oracle change)
 
@@ -889,7 +1172,11 @@ WP-2.2a unless a later measurement overrides them:
   WP-1.5's scoped switch.
 - THREE body measures, not one: 325 pt, 311 pt (24 blocks), 312.1614 pt
   (one block). A template assuming a single measure diverges on 25
-  paragraphs.
+  paragraphs. The 325 pt figure is confirmed exact (WeasyPrint's content
+  width is 433.3333333333333 px), but the Typst column is set slightly
+  WIDER, at the midpoint WP-1.7 measures, to compensate Pango's integer
+  1/1024 px line widths (WP-1.6). Cite WP-1.7 for the number; never pick
+  one.
 - Per-run SIZE as well as per-run family: the inline-code paragraphs set
   8.2 pt against 10 pt body.
 
@@ -946,7 +1233,11 @@ verifier's), and the named page set at the named standard.
 - **WP-3.5 furniture and navigation** (`page_sets.furniture`): G2
   everywhere; Tier S navigation clause.
 - **WP-3.0g enforcement flip (comparator WP)**: owns `parity.yaml`;
-  raises the ratchet target to Tier E (a pure tightening; rule 4).
+  raises the ratchet target to Tier E (a pure tightening; rule 4). Before
+  raising it, re-derives WP-0.2f's reachability floor from the real
+  Typst-vs-WeasyPrint pair that now exists, and fails loud if it exceeds
+  the synthetic floor: that would mean a divergence outside Tier E's
+  enumeration, which is a plan revision rather than a wider bound.
 - **WP-3.7 the Tier E burn-down**: drive every compared page to display-
   list equality and raster agreement within the derived bound. Evidence is
   the residual ledger:
@@ -1026,7 +1317,18 @@ uncommitted scripts.
   archives compare per-entry (name order, mode, timestamp, CRC32,
   uncompressed bytes), never whole-file (zlib vs flate2 streams differ
   legitimately). `html_edition.py`'s interior-HTML role dies with the
-  oracle; only the web path is ported.
+  oracle; only the web path is ported. The byte-identical `web/` oracle is
+  sound because web HTML is byte-deterministic across renders, which
+  WP-0.0c established with a third control render.
+- **Port the string matches as structural tests** (residual from WP-0.0c):
+  `web_edition.py` recognizes its own markup by exact tag strings and by
+  regexes keyed to exact attribute order (`_PRINT_ONLY_LINE`,
+  `_SOURCE_LINK_LINE`, and the opener match at line 262 that blocked
+  WP-0.0c). Any future attribute on a figure, a source link or a closing
+  plate silently drops web content the same way the opener attribute
+  dropped nine QR links. The Rust port must test structure, not the
+  spelling of a tag, and its fixtures must include a tag carrying an extra
+  unrelated attribute.
 - **WP-5.6 native render_edition**: owns `mag/src/render.rs`,
   `mag/src/typeset/**` glue (serial per rule 1b; after WP-3.7). Depends:
   WP-2.3, WP-3.7, WP-5.2, WP-5.3b, WP-5.4, WP-5.5. Target: `--engine
@@ -1117,17 +1419,19 @@ uncommitted scripts.
 DONE: WP-0.0 -> WP-0.0b -> WP-0.1 -> WP-0.2a -> WP-0.2b -> WP-0.2c
 DONE: WP-1.1, WP-1.2, WP-1.3, WP-1.4 (spikes; decisions in revision 9)
 DONE: WP-5.1a
-WP-0.2e -> WP-0.2f -> WP-0.2d matrix re-derivation
+WP-0.2e -> WP-0.2f -> WP-0.2g -> WP-0.2d matrix re-derivation
                                        (serial: rule 1c, and the matrix
-                                        depends on both)
+                                        depends on all three)
+WP-2.0b is ALSO serial with WP-0.2e/f/g (rule 1c, all own mag/src/parity*),
+which the parallel presentation below otherwise hides
 WP-0.0c (independent, owns html_edition.py alone) -> WP-2.3
 WP-1.5 -> WP-2.0a                      (decision recorded, no Fran gate left)
 WP-2.0a -> WP-2.0b
 (010 content-final, Fran-recorded) -> WP-2.0a
 WP-5.1a -> WP-5.1b -> WP-5.1c
 WP-5.1c + WP-2.0b -> WP-2.1 -> WP-2.2a -> WP-2.2b -> WP-2.2c -> WP-2.3
-WP-1.6 (independent, evidence only) -> WP-3.1
-WP-2.3 + WP-1.6 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5
+WP-1.6 (done) -> WP-1.7 (evidence only) -> WP-2.2a (cites its interval)
+WP-2.3 + WP-1.7 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5
 WP-3.5 + WP-0.2f -> WP-3.0g -> WP-3.7          (the ratchet cannot be
                                                 raised to Tier E before the
                                                 raster bound exists)
@@ -1165,10 +1469,19 @@ serial.
   the floor by blurring away real differences; the ceiling measurement is
   exactly the check against that.
 - **A gate that cannot fail**: the opener-fit clause was vacuous ({} vs {})
-  until WP-0.0c, and WP-0.2d's V-meter assertions were dead code until its
-  rework. Both were caught by verifiers, not by the authoring WP. Every
-  clause that compares a collection should assert the collection is
-  non-empty before comparing it.
+  until WP-0.0c, WP-0.2d's V-meter assertions were dead code until its
+  rework, and the navigation clause compares empty outlines and absent
+  Title/Lang on 010. All three were caught by a verifier or a critic, never
+  by the authoring WP. WP-0.2g makes every collection clause report the
+  cardinality it compared, so the artifact stops saying `pass` where
+  nothing was checked.
+- **Trusting an enumeration because it is written down**: revision 9 stated
+  the display list's blind spots as one item and missed glyph identity, the
+  only blind spot this project has actually observed between the engines
+  (WP-1.1's ligature). WP-0.2f would then have derived its ceiling from an
+  incomplete fixture set, repeating the mistake that produced the 241. The
+  enumeration in Tier E is now exhaustive and each item names what covers
+  it; anything added to the display list later must be checked against it.
 - **Typst crate churn**: pinned; upgrades are their own WP with a full
   parity rerun.
 - **The 3,000-line adapter encodes behavior nobody remembers**: the
