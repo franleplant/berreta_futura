@@ -1,274 +1,156 @@
 # WP-5.1b verification
 
-## Scope
+Verdict: **ACCEPTED** (third verification, second rework).
 
-Re-verification of the records port after rework. Protocol rule 3, critique
-duty folded in.
+## Base
 
-- First submission `f044b99`: REJECTED at `44fb08c` for two material
-  divergences found by a 41-case differential sweep. `canonicalize_url` kept
-  an explicit port `0` where Python's `if parts.port` treats the integer as
-  falsy, and because `source_id` hashes the canonical URL the two sides minted
-  different record ids for the same page. `py_repr` did not escape
-  non-printable characters, diverging on 5 of 13 probes and governing eight
-  message sites.
-- Rework under verification: `b39ccf3`.
+Worker commit `57d6929` (`fix(model): WP-5.1b isinstance divergence and
+self-weakening oracle`). Verified in a fresh worktree at that commit.
 
-## Verdict
+## Rejection history
 
-**REJECTED.** The three code fixes are correct and well proven, and every
-oracle digest reproduces. Two material findings block acceptance: a behavioural
-divergence in `localize_figures` and `localize_extracts` that no oracle covers,
-and an evidence section which, replayed as written, destroys the regression
-coverage for the very defects that caused the first rejection.
+| submission | verdict | cause |
+|---|---|---|
+| `f044b99` | rejected at `44fb08c` | `canonicalize_url` kept an explicit port `0` (Python's `if parts.port` treats the integer as falsy), so `source_id` hashed a different canonical URL and the two sides minted different record ids for the same page; `py_repr` did not escape non-printables |
+| `b39ccf3` | rejected at `2f1886a` | an isinstance divergence (absent or null `figures:`/`extracts:` where Python's `if not isinstance(rows, list)` refuses but the port normalized to empty); and a self-weakening oracle: replaying `## Commands` deleted the regression fixtures, and `canonical_urls_match_python` iterated the oracle file's own keys, so a shrunken oracle silently became a smaller test |
+| `57d6929` | **accepted** | both causes fixed and proven; see below |
 
 ## Owns
 
-`b39ccf3` touches exactly eight files, all within Owns: `mag/src/model/records.rs`,
-`mag/tests/model_records.rs`, four committed oracle JSON files, one fixture
-file, and `meta/verification/evidence/WP-5.1b.md`. No Cargo files, no
-`mag/src/model.rs`, no `doc.rs` or `manifest.rs`, no `*.verify.md`, no
-`baseline.json`. PASS.
+`git show --stat 57d6929` lists exactly five paths: `mag/src/model/records.rs`,
+`mag/tests/model_records.rs`, `mag/tests/model_records_cases_expected.json`,
+`mag/tests/model_records_fixtures/cases.yaml`, and this WP's evidence file.
+No Cargo files, no `mag/src/model.rs`, no `doc.rs` or `manifest.rs`, no
+`*.verify.md`, no `baseline.json`.
 
 ## Baseline
 
-In a clean worktree at `b39ccf3`: `cargo fmt --check` exit 0,
-`cargo clippy --all-targets -- -D warnings` exit 0, `cargo test` green
-(8 records tests, `nocomments`, `parity_faults` 21.09 s).
+`cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and
+`cargo test` all exit 0 in the worktree: 69 unit tests, 8 records tests,
+`nocomments`, and `parity_faults` at 21.20 s.
 
-All six oracle digests match the evidence table exactly, including
-`model_records_expected.json` at 58040 bytes.
+## The round trip
 
-## Finding 1, material: absent figure and extract rows diverge
+This is the heart of this verification, because the second rejection was
+precisely that the documented commands did not reproduce the artifacts. All
+five documented blocks were replayed from the worktree. Every one of the six
+committed oracles regenerates **byte-identically**, and `git diff` over
+`mag/tests/` is empty afterwards.
 
-Found by my own probe; no existing oracle covers it.
+| oracle | sha256 after replay | matches committed |
+|---|---|---|
+| `model_records_expected.json` | `611d885cb7f67269790110a2e6447be855657b9d9495e95ae7f47aa7c5452d2d` | yes |
+| `model_records_records_expected.json` | `1e9bc57520012bc3013a6d7a3e1c0d24b825b964d6fad1cf4ae024e14735181f` | yes |
+| `model_records_urls_expected.json` | `271f1aed2dc84e10fa172e5ed3c07c6cd7a4ce74af67af63609c19d0b01ae8c7` | yes |
+| `model_records_create_expected.json` | `be1563b161c129fedc88789322a8bec74382e8dd6f9c107e9cef6f1cae20ffe7` | yes |
+| `model_records_ports_expected.json` | `331c78f351061f0db6fef3f7579f6ea4a4b146e628c04aec8a065ecbeee93288` | yes |
+| `model_records_cases_expected.json` | `34feb1a9c45901513bbffa724476815b8660aa932c77c9c6cf7d0c933d027e2f` | yes |
 
-When `base` is non-empty and `rows` is absent (`None`) or YAML null:
+Counts reported by the generators: 96 records, 11 record fixtures, 25 URLs,
+8 create cases, 4 `source_id` cases, 8 ports, 54 matrix cases of which 44
+refuse. These match the evidence.
 
-| side | message |
-|---|---|
-| Python | `Translation 'es' article a1 figures must be a list` |
-| Rust | `Translation 'es' article a1 is missing figures: f1` |
+## The structural fix, proven in both directions
 
-The same divergence holds for extracts (`extracts must be a list` against
-`is missing extracts: e1`). Both sides refuse, so nothing is silently
-accepted, but the messages differ and full-message comparison is exactly the
-discipline this WP's oracles are built on.
+The claim is that `canonical_urls_match_python` and
+`port_refusal_messages_match_python` now iterate Rust-side `URL_CASES` and
+`PORT_CASES` constants and compare the whole table, so a missing *or* extra
+oracle key fails loudly. Proven by mutation rather than by reading:
 
-The cause is a Python truthiness translation of the kind the rework swept for
-and missed here. `media_schema.py` reads:
+| mutation | test | result |
+|---|---|---|
+| drop `http://e.com:0/x` from the URL oracle | `canonical_urls_match_python` | FAILED |
+| add a spurious `https://spurious.example/zz` | `canonical_urls_match_python` | FAILED |
+| drop `https://e.com:65536/` from the ports oracle | `port_refusal_messages_match_python` | FAILED |
+| add a spurious `https://e.com:777777/` | `port_refusal_messages_match_python` | FAILED |
+| both restored | both | ok |
 
-```
-if not isinstance(rows, list):
-    raise ValidationError(f"Translation {language!r} article {article_id} figures must be a list")
-```
+Under the previous shape the drop case passed silently. That is the defect
+closed.
 
-`None` is not a list, so Python raises. `records.rs` reads:
+## Revert proofs
 
-```
-None | Some(Value::Null) => Vec::new(),
-```
-
-which treats an absent key as an empty list and falls through to the
-missing-ids comparison.
-
-Reachability is ordinary rather than exotic: a translated `edition.yaml`
-whose article omits the `figures:` or `extracts:` key while English carries
-them. Forgetting to translate a figures block is among the likelier authoring
-mistakes this validator exists to catch.
-
-## Finding 2, material: replaying ## Commands destroys regression coverage
-
-The evidence states its own acceptance check: "Regenerating every oracle above
-and rerunning `cargo test --test model_records` must leave the four committed
-JSON files byte-identical and the seven tests green; that is the whole
-acceptance check for this WP."
-
-That check fails as written. I extracted the four documented `uv run python`
-blocks programmatically and ran them. Two committed files changed:
-
-- `model_records_urls_expected.json` lost six cases: `http://e.com:0/x`,
-  `https://e.com:/`, `https://e.com:0/`, `https://e.com:00/`,
-  `https://e.com:000/`, `https://e.com:080/`.
-- `model_records_create_expected.json` lost three cases: `empty_title`,
-  `whitespace_title`, `empty_author`.
-
-Those nine are precisely the regression fixtures for the port-`0` and
-empty-title defects. The documented URL list is still the pre-fix 19 inputs
-and the documented create list is still the pre-fix 5 cases.
-
-The two halves fail differently, and the asymmetry is the dangerous part:
-
-- `create_and_source_id_match_python` builds its cases on the Rust side, so
-  the shrunken oracle fails loudly.
-- `canonical_urls_match_python` iterates `expected.as_object().keys()`, so the
-  oracle file *is* the case list. Shrinking it shrinks the test. After
-  regeneration that test passes with the port-`0` coverage gone.
-
-So an agent following this evidence to regenerate oracles silently removes the
-guard on one of the two defects that caused the rejection, and the suite still
-reports green.
-
-## Finding 3, minor: the ports oracle has no regeneration command
-
-`model_records_ports_expected.json` is pinned in the digest table and asserted
-by `port_refusal_messages_match_python`, but `## Commands` carries no command
-that produces it. It cannot be regenerated from the worktree alone, which rule
-3 requires.
-
-## Finding 4, minor: stale counts in ## Commands
-
-The refusal-matrix header says "42 cases" where the file holds 49 (39 errors),
-and the closing paragraph says "the four committed JSON files" where six are
-committed.
-
-## Verified sound
-
-**The three fixes are correct, and each is discriminating.** I reverted each
-in place and confirmed the named test fails, then restored and confirmed green:
+Each fix reverted in place, its named test rerun, then restored:
 
 | reverted fix | test | result |
 |---|---|---|
-| port-`0` filtering | `canonical_urls_match_python` | FAILED |
-| `printable` escaping | `figure_and_extract_refusals_match_python` | FAILED |
-| empty-title fallback | `create_and_source_id_match_python` | FAILED |
+| float-zero coercion in `python_text` | `figure_and_extract_refusals_match_python` | FAILED |
+| isinstance arms in both `localize_*` | `figure_and_extract_refusals_match_python` | FAILED |
+| restored | both above, plus `canonical_urls_match_python` | ok |
 
-**The `printable` predicate genuinely matches `str.isprintable()`.** I swept 28
-codepoints through `py_repr` by way of the public `localize_figures` language
-argument, against a Python mirror. All 28 agree, covering Cc (U+0000, U+0007,
-U+001B, U+001F, U+007F), Cf (U+00AD, U+200B, U+200E, U+2060, U+FEFF, U+180E,
-U+1D173), Cn unassigned and noncharacter (U+0378, U+0605, U+FDD0, U+10FFFF),
-Co (U+E000), Zl (U+2028), Zp (U+2029), Zs (U+00A0, U+202F, U+3000), and
-printables (U+0020, U+00E9, U+4E2D, U+1F600, U+115F). The regex class
-`[\p{C}\p{Z}]` with space excepted therefore covers exactly Python's exclusion
-set, Cn included, which was the specific doubt worth testing. Five quote-
-selection cases (`it's`, `say "hi"`, `both'"q`, backslash, tab and newline)
-also agree.
+Working tree clean after restoration.
 
-**Ten further URL probes agree exactly**: empty string, scheme-relative
-`//e.com/x`, bare `e.com/x`, lowercase and uppercase percent-encoding
-(`%7e` and `%7E` both preserved), uppercase scheme and host with `%2F`,
-`%c3%a9` upcased to `%C3%A9`, `?=novalue`, and duplicate query keys sorted.
+## Reading the two fixes against the Python
 
-**Two tag probes agree**: an empty string among tags is dropped, a
-whitespace-only tag yields an empty list.
+- `media_schema.py` carries **four** `isinstance(rows, list)` guards, at
+  lines 43, 135, 203 and 331, not two. The two `resolve_*` sites (43, 203)
+  are preceded by `if rows in (None, []): return ()`, which the port matches
+  with `is_absent` (true for `None`, `Null` and an empty sequence). The two
+  `localize_*` sites (135, 331) have **no** such short-circuit once `base` is
+  non-empty, so `None` falls through to the isinstance guard and refuses.
+  That asymmetry is exactly what the fix turns on, and the port now mirrors
+  it: only `Some(Value::Sequence(_))` counts as a Python list.
+- The empty-`base` branch of `localize_*` is separately correct: Python's
+  `if rows not in (None, [])` raises "absent from English", and the port
+  guards the same branch with `is_absent`, which agrees on all three inputs.
+- Python falsiness confirmed directly: `str(v or "")` yields `""` for `0`,
+  `0.0`, `-0.0`, `""`, `[]`, `{}` and `False`, and `"0.5"`/`"1.0"` for
+  non-zero floats. The port's `python_text` matches, including
+  `Bool(true) -> "True"` (Python's `str(True)`) and empty sequence or mapping
+  to `""`. Rust's `float == 0.0` also covers `-0.0`, as claimed.
 
-**The deliberate divergence is adequately handled and correctly judged.** For
-`https://e.com:65536/` Python raises an uncaught `ValueError` and Rust returns
-`ValidationError`, but the message text is identical
-(`Port out of range 0-65535`). Refusing rather than crashing is the better
-behaviour, matching it would mean panicking, and the message is pinned by
-`model_records_ports_expected.json`. Recording it as a divergence rather than
-hiding it is right.
+## Extended sweep, third angle
 
-**The corpus oracle is not vacuous.** My own mutation, record index 40's
-`captured_at` set to `1999-12-31T23:59:59Z`, a field and index no previous
-agent used, fails `library_sources_match_the_python_dump`.
+Two previous sweeps each found a divergence the previous one missed
+(truthiness, then float falsiness), so the class was probed again end to end
+rather than by reading: 13 new cases were appended to the fixture, the Python
+oracle regenerated over them, and the port run against it. **All 13 agree.**
+They are discriminating rather than trivially equal, producing five distinct
+behaviours:
 
-## Required to clear
+| probe | Python behaviour |
+|---|---|
+| `caption` as `false`, `[]`, `{}`, `0` | coerced to `""`, then refused: "requires caption, alt_text, and anchor" |
+| row `id` as `0`, `""`, `false` | dropped by the `by_id` truthiness filter, then "is missing figures: f1" |
+| `credit: 0` with a base credit | falls through the double fallback to `BaseCredit` |
+| `localize` rows as `false` or `0` | "Translation 'es' article a1 figures must be a list" |
+| `resolve` rows as `false`, `0`, `{}` | "Article a1 figures must be a list" |
 
-1. Match Python for absent `figures:` and `extracts:` rows in `localize_figures`
-   and `localize_extracts`, and add both to the refusal matrix. While there,
-   re-sweep the remaining `isinstance` translations the same way the truthiness
-   sweep was done, since this defect is an `isinstance` case rather than a
-   truthiness case and the earlier sweep was scoped to the latter.
-2. Update `## Commands` so replaying it reproduces the committed oracles: the
-   URL list must carry the six port cases, the create list the three new cases,
-   and the ports oracle needs its own regeneration command.
-3. Consider making `canonical_urls_match_python` drive its cases from the Rust
-   side, as the create test does, so a shrunken oracle fails loudly instead of
-   quietly reducing coverage. This is the structural fix for finding 2.
-4. Correct the stale "42 cases" and "four committed JSON files" text.
+The falsy-`id` and `credit`-fallback positions were reached by no previous
+sweep. On this evidence the falsiness and isinstance class now looks closed;
+the fixtures were restored afterwards and the tree left clean.
 
-## Commands
+## Deliberate divergences, checked against the recorded list
 
-```
-git show --stat b39ccf3
-git worktree add /Users/franguijarro/.claude/jobs/7d99e27f/tmp/verify-wp51b2 b39ccf3
-cd mag && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
-```
+The evidence enumerates three, each in the refuse-rather-than-guess
+direction and none reachable from the current corpus. One deserves note
+because the sweep reached it independently: a figure or extract row field
+holding a **non-empty** sequence or mapping is refused by the port, where
+Python would stringify it (`"['a']"`) and usually fail a later validation
+with different text. It is recorded, so it is a declared divergence rather
+than a surprise. The port-65536 divergence (Rust `ValidationError` where
+Python raises an uncaught `ValueError`, identical message text) was judged
+sound at the previous verification and is pinned by
+`model_records_ports_expected.json`.
 
-Oracle replay, extracting the documented blocks rather than retyping them:
+## U+2014
 
-```
-python3 - <<'PY'
-import re, pathlib
-txt = pathlib.Path('meta/verification/evidence/WP-5.1b.md').read_text()
-cmds = txt.split('## Commands')[1].split('## Tool versions')[0]
-blocks = re.findall(r'```\n(.*?)```', cmds, re.S)
-body = ["set -e", "cd <worktree>"] + [b.strip() for b in blocks if 'uv run python' in b]
-pathlib.Path('/tmp/replay51b.sh').write_text("\n".join(body) + "\n")
-PY
-bash /tmp/replay51b.sh && git status --short
-```
-
-Divergence probe, Rust side, as a temporary `mag/tests/zz_probe.rs` including
-the module by `#[path = "../src/model/records.rs"]` and calling
-`localize_figures(&base, rows, "a1", Path::new(...), language)` with `base`
-non-empty and `rows` both `None` and `Some(Value::Null)`; Python mirror:
-
-```
-uv run python -c "
-import sys; sys.path.insert(0,'src')
-from pathlib import Path
-from magazine.errors import ValidationError
-from magazine.media_schema import localize_figures, Figure
-base=(Figure('f1','s1',Path('/tmp/probe51b/x.png'),'','','','',''),)
-try:
-    localize_figures(base, None, article_id='a1', manuscript=Path('/tmp/probe51b/m.md'), language='es')
-except ValidationError as e:
-    print('|'.join(e.errors))
-"
-```
-
-Discriminating proofs, each reverted with `sed -i ''` then restored from a copy:
-
-```
-sed -i '' 's/if let Some(number) = port.filter(|number| \*number != 0)/if let Some(number) = port/' src/model/records.rs
-sed -i '' 's/other if printable(other) => out.push(other),/other if true => out.push(other),/' src/model/records.rs
-sed -i '' 's/\.filter(|title| !title.is_empty())//' src/model/records.rs
-cargo test --test model_records <name>
-```
-
-Negative check:
-
-```
-python3 -c "
-import json,pathlib
-p=pathlib.Path('mag/tests/model_records_expected.json'); d=json.loads(p.read_text())
-d[40]['captured_at']='1999-12-31T23:59:59Z'
-p.write_text(json.dumps(d,indent=2,sort_keys=True,ensure_ascii=False))"
-cargo test --test model_records library_sources
-```
-
-## Tool versions
-
-python 3.12.11, uv 0.8.17, rustc 1.96.0, poppler 25.08.0 (parity_faults only).
-
-## Metrics
-
-- Owns: 8 files, all within scope.
-- Oracle digests: 6 of 6 match the evidence table.
-- Documented-command replay: 2 of 6 oracle files changed, 9 cases lost.
-- Discriminating proofs: 3 of 3 fired.
-- New probes: 45 total, 43 agreeing, 2 divergent (figures and extracts absent
-  rows). 28 codepoint, 5 quote, 10 URL, 2 tag probes all agree.
-- Negative check: fires under a previously unused mutation.
-
-## Verdicts
-
-No parity verdict.json is produced by this WP; its oracles are JSON dumps,
-digests listed above.
+Five occurrences in the corpus oracle are real captured source titles, which
+the repo rule permits verbatim. The `unicode_title` fixture string appears in
+`model_records_create_expected.json` and `model_records.rs`; it is fixture
+data that must byte-match the Python oracle, it mirrors the em dashes that
+genuinely occur in captured titles, and `git show f044b99` confirms it
+predates this rework. Not authored prose; the rule is satisfied.
 
 ## Residuals
 
-- The `canonical_urls_match_python` pattern of driving cases from the oracle
-  file is worth auditing wherever else it appears in the Phase 5 ports, since
-  it converts a shrunken oracle into silent coverage loss rather than a
-  failure.
-- The duplicate-URL raise site remains outside the refusal matrix, correctly,
-  because Python's message names whichever duplicate `Path.glob` met first.
+- `WP-5.1c`'s private `py_repr` copy is the pre-fix body, which this WP's
+  non-printable escaping makes a live divergence between two copies of one
+  helper. That is WP-5.1c's rejection and the WP-5.1d consolidation
+  follow-up, not this WP's.
+- The corpus remains uniformly happy-path; every non-corpus branch is
+  covered by fixture, which is what the three sweeps have been establishing.
 
 ## Status
 
-rejected
+accepted
