@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-15, revision 16 (Phase 0 built and
+Status: **in execution**, 2026-09-15, revision 17 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,49 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 17 changelog
+
+**A correction to revision 16, which carried a false claim in three
+places.** I wrote that `article-stub-last-page` is the only text-derived
+decision boundary in the critic, propagating it from WP-5.3d's evidence
+without checking the source. It is wrong, a verifier proved it (verify
+commit 6c24379, which rejected WP-5.3d while explicitly UPHOLDING its
+decision), and I have now confirmed it in `render_critic.py` myself:
+`body_text_lines < 5` is the only numeric THRESHOLD, but FIVE text-derived
+fields feed TEN issue sites (`text_order_matches` :152 :176 :198, `blank`
+:291 :452 :476, `ink_free` :299 :460 :484, `standalone_punctuation_lines`
+:309, `body_text_lines` :380; `blank` and `ink_free` are conjunctions on
+`not text.strip()`, and `sparse` is ink-ratio only and correctly out).
+
+This mattered because I had narrowed WP-5.3c's obligation on the strength
+of it, and marked the narrowing so nobody would inherit the wider version.
+A WP-5.3c briefed that way would have fixtured one threshold and left four
+fields unfaulted, under a path whose whole premise is that the fault suite
+carries the weight. **WP-5.3c now owes fault coverage on all five fields**;
+what stays bounded is only the NEAR-THRESHOLD work, since `body_text_lines`
+is the one field with a numeric edge to straddle.
+
+The decision itself is unchanged and the argument for it is stronger than
+what it replaced: path B is safe not because only one decision consumes
+text, but because the tracer AGREES with pypdf on every field behind the
+other nine sites, measured at 0 of 56 divergences on
+`standalone_punctuation_lines` and text-emptiness and 27 of 27 traceable
+sides on `text_order_matches`. Absence was the wrong argument; agreement is
+the right one, and it was in the measurements all along.
+
+Two consequences of the cover pages being unreadable, now stated where they
+cannot be dropped as redundant. `cover-booklet-page-order` cannot be
+computed AT ALL under a tracer-fed critic, because `cover_spread_checks`
+runs over the wrap carrying reader pages 1 and 56, so **WP-0.2h is a hard
+prerequisite of WP-5.3b**, not a quality improvement. And WP-5.4g brings
+those same pages into the Tier E compared domain, so a tracer that fails
+loud on them is a hole in the gate rather than an inconvenience.
+
+Also carried into WP-5.3b: the corrected join rule has a bounded mirror
+failure, where joining with a space gives a word split across two adjacent
+shows a spurious space `normalized()` cannot remove. Reachable in principle
+("BERRETA FUTURA04"), did not fire on 010.
 
 ## Revision 16 changelog
 
@@ -30,11 +73,15 @@ principle.
 **The luck caveat is measured away, so WP-5.3b's brief is re-cut rather
 than inherited.** Revision 15 made the fault suite carry an open-ended
 obligation because 010's issue set might have been surviving an extractor
-swap by chance. It is not: `article-stub-last-page` is the ONLY
-text-derived decision boundary in the critic and no page changes side under
-the tracer's count, with page 36 the near-threshold case at 4 against 3,
-both below. WP-5.3c now owes near-threshold fixtures on THAT boundary
-rather than on every metric. WP-5.3d also supplies the measured basis for
+swap by chance. It is not, though revision 16 justified that with a claim
+that is false and revision 17 corrects: `body_text_lines < 5` is the only
+numeric THRESHOLD, but FIVE text-derived fields feed TEN issue sites. The
+argument that actually holds is not "only one decision consumes text", it
+is that the tracer AGREES with pypdf on every field feeding the other nine
+sites: 0 of 56 divergences on `standalone_punctuation_lines` and on
+text-emptiness, and 27 of 27 traceable sides on `text_order_matches`. So
+WP-5.3c owes fixtures on all five fields, not one. WP-5.3d also supplies
+the measured basis for
 the "not worse" requirement the plan had been asserting: 27 of 27 traceable
 spread sides against poppler's 7 of 28, and 47 of 54 pages against 16 of
 56.
@@ -1252,10 +1299,18 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   non-embedded standard-14 face the code-to-Unicode mapping is determined
   by StandardEncoding or WinAnsiEncoding per the PDF specification. Read
   the spec, implement it, fail loud on anything outside it.
-- Why this is not optional: WP-5.4g makes `reader.pdf` compared END TO END,
-  which brings the cover pages into the compared domain, so Tier E needs
-  this before WP-5.4g regardless of what the critic needs. WP-5.3b needs it
-  sooner.
+- Why this is not optional, stated so it cannot later be dropped as
+  redundant: TWO consumers need it for different reasons, and neither is a
+  quality improvement.
+  - **WP-5.3b cannot compute an issue without it.** `cover_spread_checks`
+    (render_critic.py:184) runs over `cover_wrap_plan`, the wrap carrying
+    reader pages 1 and 56, which are precisely the unreadable pages. So
+    `cover-booklet-page-order` is not computed DIFFERENTLY under a
+    tracer-fed critic, it cannot be computed AT ALL. Hard prerequisite.
+  - **Tier E acquires a gap without it.** WP-5.4g makes `reader.pdf`
+    compared END TO END, which brings the cover pages into the compared
+    domain. A tracer that fails loud on them is then a hole in THE GATE,
+    not an inconvenience for a consumer.
 - Verify: 010 A-vs-A and A-vs-B verdicts byte-identical to before (this is
   a seam and a decode addition, not a semantic change); the cover pages
   decode, with page 56's character and line counts recorded; a text
@@ -1862,18 +1917,40 @@ them or the divergence is a defect:
     line ("Government Rails Site HitHours After CVE Patch") where the
     tracer correctly keeps two shows 28.8 pt apart in y. Record it, do not
     chase it.
-  - **The fault-suite obligation is BOUNDED, not open-ended**, which is a
-    change from revision 15's wording. `article-stub-last-page`
-    (`body_text_lines < 5`) is the only text-derived decision boundary in
-    the critic, and WP-5.3d measured that no page changes side under the
-    tracer's count (page 36 is the near-threshold case, 4 against 3, both
-    below). WP-5.3c must still carry near-threshold fixtures on both sides
-    of THAT boundary; it does not inherit a general duty to fixture every
-    metric.
+  - **The fault-suite obligation, stated correctly.** Revision 16 narrowed
+    it on a false premise (that `article-stub-last-page` was the only
+    text-derived decision) and revision 17 restores the real enumeration:
+    `body_text_lines < 5` (`STUB_BODY_LINE_MINIMUM`, render_critic.py:62)
+    is the only numeric THRESHOLD, but **five text-derived fields feed ten
+    issue sites**: `text_order_matches` at :152, :176 and :198, `blank` at
+    :291, :452 and :476, `ink_free` at :299, :460 and :484,
+    `standalone_punctuation_lines` at :309, `body_text_lines` at :380.
+    `blank` and `ink_free` are conjunctions including `not text.strip()`,
+    so they are text-derived; `sparse` is ink-ratio only and is correctly
+    excluded. **WP-5.3c must fault all five fields.** What IS bounded is
+    the near-threshold work: only `body_text_lines` has a numeric edge to
+    straddle, and WP-5.3d measured that no page changes side under the
+    tracer's count (page 36 at 4 against 3, both below).
+    The reason path B is safe is therefore NOT that one decision consumes
+    text; it is that the tracer AGREES with pypdf on every field feeding
+    the other nine sites, measured: 0 of 56 divergences on
+    `standalone_punctuation_lines` and text-emptiness, 27 of 27 traceable
+    sides on `text_order_matches`.
+  - **`cover-booklet-page-order` cannot be computed at all** under a
+    tracer-fed critic until WP-0.2h lands: `cover_spread_checks`
+    (render_critic.py:184) runs over `cover_wrap_plan`, the wrap carrying
+    reader pages 1 and 56, which are exactly the pages the tracer cannot
+    read. That makes WP-0.2h a HARD PREREQUISITE of this WP, not a quality
+    improvement.
   - **The naive join rule is wrong and looks right.** WP-5.3d's first
     spread-table attempt scored 6 of 27 because it joined shows with the
     empty string, welding one page's last token to the next page's first.
-    Reconstruct lines with the separator the geometry implies.
+    Reconstruct lines with the separator the geometry implies. The
+    CORRECTED rule has a bounded mirror failure worth knowing before it
+    surprises someone: joining with a space gives a word split across two
+    adjacent shows a spurious space that `normalized()` cannot remove.
+    Adjacent shows do occur ("BERRETA FUTURA04"), so it is reachable in
+    principle; it did not fire on 010.
   `text_characters` and the spread table remain COMPUTED and reported, and
   differences in them are evidence about the text source rather than gate
   failures; WP-5.3d is the measured basis for the "not worse" claim the
@@ -1993,13 +2070,17 @@ them or the divergence is a defect:
     half-a-space width, which is the "reproduce a hack to stay equal to a
     tool we are deleting" category this plan has now rejected three times:
     here, at WP-5.7, and at `_check_unique_art`.
-  - **The luck caveat is measured away**, which is the part that changes
-    how path B should be briefed. `article-stub-last-page`
-    (`body_text_lines < 5`) is the ONLY text-derived decision boundary in
-    the critic, and NO page changes side under the tracer's count. Page 36
-    is the near-threshold case, tracer 4 against pypdf 3, both below. The
-    fault suite still carries the weight, but the job is BOUNDED: one
-    boundary, not an open-ended obligation.
+  - **The luck caveat is measured away, but not the way WP-5.3d's evidence
+    argued it.** Its claim that `article-stub-last-page` is the only
+    text-derived decision is false and got the WP rejected (verify commit
+    6c24379) while UPHOLDING the decision: five text-derived fields feed
+    ten issue sites, and `body_text_lines < 5` is merely the only numeric
+    threshold. The surviving and stronger argument is agreement rather than
+    absence: the tracer matches pypdf on every field behind the other nine
+    sites, 0 of 56 on `standalone_punctuation_lines` and text-emptiness and
+    27 of 27 traceable sides on `text_order_matches`. Near-threshold work
+    is bounded to `body_text_lines` (page 36, 4 against 3, both below);
+    fault coverage is not, and spans all five fields.
   - The third disposition stays available and is nobody's first choice:
     port pypdf's text layer as shared work with WP-5.7b, one investment
     serving two consumers, at 1701 lines plus 18452 lines of data tables.
