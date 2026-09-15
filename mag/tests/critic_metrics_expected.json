@@ -341,6 +341,34 @@
   {
    "adjusted": false,
    "after": {
+    "mark_pixel_ratio": 0.096774,
+    "minimum_mark_contrast_ratio": 1.497,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.695015
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.096774,
+    "minimum_mark_contrast_ratio": 1.497,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.695015
+   },
+   "path": "mag/tests/critic_metrics_fixtures/tint_band.png",
+   "source_mode": "RGB",
+   "source_sha256": "e6234b6b40e68014d6badc29d0094b5de536d6c3c87869c0ee6d711a673e08ac",
+   "source_size": [
+    600,
+    400
+   ],
+   "thumb_sha256": "ea405ee5fef2e42a8059ad14232157968a302950d6712b517002bf4a1f2ac194",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
     "mark_pixel_ratio": 1.0,
     "minimum_mark_contrast_ratio": 2.26,
     "needs_treatment": false,
