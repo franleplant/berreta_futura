@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-15, revision 15 (Phase 0 built and
+Status: **in execution**, 2026-09-15, revision 16 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,53 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 16 changelog
+
+WP-5.3d decided the critic's oracle by measurement, as it was cut to do,
+and the answer is **path B with the TRACER as the text source**. What makes
+it more than a verdict is the reason path A failed: the tracer cannot
+reproduce pypdf's MISTAKES. All seven `body_text_lines` divergences are one
+cause, pypdf merging a two-line headline into a single line ("Government
+Rails Site HitHours After CVE Patch") where the tracer correctly sees two
+shows 28.8 pt apart; `text_characters` diverges because pypdf injects
+synthetic spaces into letter-spaced runs. Matching either means
+reimplementing `crlf_space_check` and the `abs(op) >= _space_width * 0.95`
+rule, which is the "reproduce a hack to stay equal to a tool we are
+deleting" category this plan has now rejected three times, here and at
+WP-5.7 and at `_check_unique_art`. Three independent measurements, one
+principle.
+
+**The luck caveat is measured away, so WP-5.3b's brief is re-cut rather
+than inherited.** Revision 15 made the fault suite carry an open-ended
+obligation because 010's issue set might have been surviving an extractor
+swap by chance. It is not: `article-stub-last-page` is the ONLY
+text-derived decision boundary in the critic and no page changes side under
+the tracer's count, with page 36 the near-threshold case at 4 against 3,
+both below. WP-5.3c now owes near-threshold fixtures on THAT boundary
+rather than on every metric. WP-5.3d also supplies the measured basis for
+the "not worse" requirement the plan had been asserting: 27 of 27 traceable
+spread sides against poppler's 7 of 28, and 47 of 54 pages against 16 of
+56.
+
+**Two residuals get a home: WP-0.2h**, which revision 15 named only inside
+a path that was not taken. It now exists as a comparator WP with two
+targets. The seam: expose the tracer's TEXT path without the navigation
+path, because `display::extract` resolves annotations and dies on
+`booklet-a4.pdf` with a missing `/Names` key while `streams::trace_page`
+reads the same file. The decode: 010's COVER PAGES are currently
+unreadable, since Helvetica is non-embedded with no `/ToUnicode`, and they
+are not empty (page 56 carries 380 characters and 6 body lines). The fix is
+specified rather than guessed, since the standard-14 encodings determine
+the mapping. That second target is not optional for the critic's sake
+alone: WP-5.4g brings the cover pages into the compared domain, so Tier E
+needs it too.
+
+Carried into WP-5.3b's brief so it is not rediscovered: the seven headline
+merges are one known difference, and the naive join rule is wrong in a way
+that looks right (WP-5.3d's first attempt scored 6 of 27 by joining shows
+with the empty string, welding one page's last token to the next page's
+first).
 
 ## Revision 15 changelog
 
@@ -1186,6 +1233,35 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   fixture with `/Rotate 180` on one side FAILS the boxes clause; verdict
   stays byte-deterministic.
 
+### WP-0.2h the shared tracer text path (comparator WP)
+
+- Owns: `mag/src/parity/streams.rs`, a new shared module exposing its text
+  path, `mag/src/parity/display.rs` (call-site only). Serial with the other
+  `mag/src/parity*` owners (rule 1c). Consumers: the comparator, and
+  WP-5.3b's critic.
+- Target 1, the seam: expose the TEXT path WITHOUT the navigation path.
+  `display::extract` is the wrong entry point for a text consumer: it
+  resolves annotations and dies on `booklet-a4.pdf` with a missing `/Names`
+  key, while `streams::trace_page` reads the same file happily. A consumer
+  that only wants glyphs must not fail on an outline structure it never
+  asked for.
+- Target 2, the standard-14 faces: the tracer currently cannot read 010's
+  COVER PAGES at all, because Helvetica is non-embedded and carries no
+  `/ToUnicode`, and those pages are not empty (page 56 holds 380 characters
+  and 6 body lines). The fix is specified rather than guessed: for a
+  non-embedded standard-14 face the code-to-Unicode mapping is determined
+  by StandardEncoding or WinAnsiEncoding per the PDF specification. Read
+  the spec, implement it, fail loud on anything outside it.
+- Why this is not optional: WP-5.4g makes `reader.pdf` compared END TO END,
+  which brings the cover pages into the compared domain, so Tier E needs
+  this before WP-5.4g regardless of what the critic needs. WP-5.3b needs it
+  sooner.
+- Verify: 010 A-vs-A and A-vs-B verdicts byte-identical to before (this is
+  a seam and a decode addition, not a semantic change); the cover pages
+  decode, with page 56's character and line counts recorded; a text
+  consumer reads `booklet-a4.pdf` without touching navigation; `cargo test`,
+  `fmt`, `clippy -D warnings` green.
+
 ### WP-0.2i per-glyph positions (comparator WP)
 
 - Owns: `mag/src/parity/streams.rs`, `mag/src/parity/display.rs`,
@@ -1772,9 +1848,38 @@ them or the divergence is a defect:
   luminance lands on a .5 histogram boundary), adding a direct rounding
   oracle against Python instead. That is the corpus rule working.
 - **WP-5.3b critic rules** (`render_critic.py`): owns
-  `mag/src/critic/rules.rs`. Oracle: render-critic.json equality on 010
-  over {result, issue codes, severities, pages, spread tables}; metrics
-  sitting near a decision threshold get near-threshold fixtures.
+  `mag/src/critic/rules.rs`. **Oracle RE-CUT by WP-5.3d (revision 16):
+  the critic's DECISIONS on 010, {result, issue codes, severities,
+  pages}**, each implementation using its own text source, with the Rust
+  side reading the TRACER (not poppler, not pypdf) through WP-0.2h's shared
+  text path. The spread table and the raw page-row metrics leave the
+  oracle, because matching them means reimplementing pypdf's merge
+  threshold and synthetic-space rule; see WP-5.3d for the measurement and
+  the reasoning.
+  Three things the brief must carry so they are not rediscovered:
+  - **The seven `body_text_lines` differences are ONE known cause, not
+    seven findings**: pypdf merges a two-line article headline into one
+    line ("Government Rails Site HitHours After CVE Patch") where the
+    tracer correctly keeps two shows 28.8 pt apart in y. Record it, do not
+    chase it.
+  - **The fault-suite obligation is BOUNDED, not open-ended**, which is a
+    change from revision 15's wording. `article-stub-last-page`
+    (`body_text_lines < 5`) is the only text-derived decision boundary in
+    the critic, and WP-5.3d measured that no page changes side under the
+    tracer's count (page 36 is the near-threshold case, 4 against 3, both
+    below). WP-5.3c must still carry near-threshold fixtures on both sides
+    of THAT boundary; it does not inherit a general duty to fixture every
+    metric.
+  - **The naive join rule is wrong and looks right.** WP-5.3d's first
+    spread-table attempt scored 6 of 27 because it joined shows with the
+    empty string, welding one page's last token to the next page's first.
+    Reconstruct lines with the separator the geometry implies.
+  `text_characters` and the spread table remain COMPUTED and reported, and
+  differences in them are evidence about the text source rather than gate
+  failures; WP-5.3d is the measured basis for the "not worse" claim the
+  plan previously asked for as an assertion (tracer 27 of 27 traceable
+  spread sides against poppler's 7 of 28, 47 of 54 pages on
+  `body_text_lines` against 16 of 56).
   **This WP owns `render_critic.py`'s OWN raster helpers**, which WP-5.3a
   does not cover and which the plan previously left unnamed: PIL grayscale
   conversion, histograms, `ImageChops.difference`, and a LANCZOS resize.
@@ -1869,6 +1974,32 @@ them or the divergence is a defect:
     sides of every decision boundary, and the Rust text source must pass
     named not-worse checks in WP-5.7a's shape (no word welding, correct
     reading order per page).
+  - RESULT (done, commit 2bc3900): **path B, with the TRACER as the text
+    source rather than poppler.** Measured on the same tree WP-5.3b used,
+    tracer against the poppler baseline: `text_order_matches` 27 of 27
+    traceable sides against 7 of 28; `body_text_lines` 47 of 54 pages
+    against 16 of 56; `text_characters` 7 of 54 against 9 of 56; cover
+    pages 1 and 56 untraceable, 0 of 2, where pypdf reads both.
+  - Path A fails its criterion, and **the reason matters more than the
+    verdict: the tracer cannot reproduce pypdf's MISTAKES.** All seven
+    `body_text_lines` divergences share one cause, pypdf merging a two-line
+    article headline into a single line, visible as a missing space
+    ("Government Rails Site HitHours After CVE Patch"), while the tracer is
+    geometrically right every time, the two shows sitting at distinct y
+    origins 28.8 pt apart. `text_characters` fails the same way: pypdf
+    injects synthetic spaces into letter-spaced runs ("BY  FRANK RIETTA").
+    Matching either means reimplementing `crlf_space_check`'s merge
+    threshold and the `abs(op) >= _space_width * 0.95` rule with its
+    half-a-space width, which is the "reproduce a hack to stay equal to a
+    tool we are deleting" category this plan has now rejected three times:
+    here, at WP-5.7, and at `_check_unique_art`.
+  - **The luck caveat is measured away**, which is the part that changes
+    how path B should be briefed. `article-stub-last-page`
+    (`body_text_lines < 5`) is the ONLY text-derived decision boundary in
+    the critic, and NO page changes side under the tracer's count. Page 36
+    is the near-threshold case, tracer 4 against pypdf 3, both below. The
+    fault suite still carries the weight, but the job is BOUNDED: one
+    boundary, not an open-ended obligation.
   - The third disposition stays available and is nobody's first choice:
     port pypdf's text layer as shared work with WP-5.7b, one investment
     serving two consumers, at 1701 lines plus 18452 lines of data tables.
@@ -2097,8 +2228,10 @@ them or the divergence is a defect:
 DONE: WP-0.0 -> WP-0.0b -> WP-0.1 -> WP-0.2a -> WP-0.2b -> WP-0.2c
 DONE: WP-1.1, WP-1.2, WP-1.3, WP-1.4 (spikes; decisions in revision 9)
 DONE: WP-5.1a
-WP-0.2e -> WP-0.2f (blocked, raster withdrawn) -> WP-0.2i -> WP-0.2g
-       -> WP-0.2d matrix re-derivation
+WP-0.2e -> WP-0.2f (blocked, raster withdrawn) -> WP-0.2h -> WP-0.2i
+       -> WP-0.2g -> WP-0.2d matrix re-derivation
+WP-0.2h -> WP-5.3b   (the critic's text source)
+WP-0.2h -> WP-5.4g   (cover pages enter the compared domain there)
                                        (serial: rule 1c, and the matrix
                                         depends on all three)
 WP-2.0b is ALSO serial with WP-0.2e/f/g (rule 1c, all own mag/src/parity*),
