@@ -1,0 +1,11 @@
+{
+ "astral\udb80\udc00stop": "'astral\\U000f0000stop'",
+ "back\\slash\nnew\rret\ttab": "'back\\\\slash\\nnew\\rret\\ttab'",
+ "bell\u0007stop": "'bell\\x07stop'",
+ "caf\u00e9": "'caf\u00e9'",
+ "esc\u001bstop": "'esc\\x1bstop'",
+ "it's \"both\"": "'it\\'s \"both\"'",
+ "it's plain": "\"it's plain\"",
+ "plain": "'plain'",
+ "zero\u200bwidth": "'zero\\u200bwidth'"
+}

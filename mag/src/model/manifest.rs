@@ -1,7 +1,10 @@
 use super::doc::{block_signature, parse_publication_document, Block};
 use super::records::{
     localize_extracts, localize_figures, resolve_extracts, resolve_figures, Extract,
-    ExtractRequest, Figure, FigureRequest, Result, SourceRecord, ValidationError,
+    ExtractRequest, Figure, FigureRequest, SourceRecord,
+};
+use super::shared::{
+    load_structured, normalize, py_repr, safe_project_path, Result, ValidationError,
 };
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
@@ -1932,40 +1935,11 @@ fn primary_source_url(source_ids: &[String], records: Option<&Records>) -> Optio
     }
 }
 
-fn normalize(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for component in path.components() {
-        match component {
-            Component::CurDir => {}
-            Component::ParentDir => {
-                out.pop();
-            }
-            other => out.push(other.as_os_str()),
-        }
-    }
-    out
-}
-
 fn relative_display(path: &Path, root: &Path) -> String {
     path.strip_prefix(root)
         .unwrap_or(path)
         .to_string_lossy()
         .to_string()
-}
-
-fn safe_project_path(root: &Path, value: &str, must_exist: bool) -> Result<PathBuf> {
-    let candidate = normalize(&root.join(value));
-    if candidate.strip_prefix(normalize(root)).is_err() {
-        return Err(ValidationError(vec![format!(
-            "Path escapes project root: {value}"
-        )]));
-    }
-    if must_exist && !candidate.is_file() {
-        return Err(ValidationError(vec![format!(
-            "Referenced file does not exist: {value}"
-        )]));
-    }
-    Ok(candidate)
 }
 
 fn edition_path(
@@ -2119,28 +2093,6 @@ pub fn source_code_payload(url: &str) -> String {
     payload.strip_prefix("www.").unwrap_or(payload).to_string()
 }
 
-fn load_structured(path: &Path) -> Result<Value> {
-    let text = std::fs::read_to_string(path).map_err(|error| {
-        ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
-    })?;
-    let data: Value = if path.extension().is_some_and(|suffix| suffix == "json") {
-        serde_json::from_str(&text).map_err(|error| {
-            ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
-        })?
-    } else {
-        serde_yaml::from_str(&text).map_err(|error| {
-            ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
-        })?
-    };
-    if !matches!(data, Value::Mapping(_)) {
-        return Err(ValidationError(vec![format!(
-            "{} must contain a mapping",
-            path.display()
-        )]));
-    }
-    Ok(data)
-}
-
 fn blank_header_field(value: Option<&Value>) -> bool {
     match value {
         None | Some(Value::Null) => true,
@@ -2226,51 +2178,5 @@ fn repr_option(value: Option<&Value>) -> String {
     match value {
         None => "None".to_string(),
         Some(value) => py_repr_value(value),
-    }
-}
-
-fn py_repr(text: &str) -> String {
-    let quote = if text.contains('\'') && !text.contains('"') {
-        '"'
-    } else {
-        '\''
-    };
-    let mut out = String::new();
-    out.push(quote);
-    for character in text.chars() {
-        match character {
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            other if other == quote => {
-                out.push('\\');
-                out.push(other);
-            }
-            other if printable(other) => out.push(other),
-            other => out.push_str(&escape(other)),
-        }
-    }
-    out.push(quote);
-    out
-}
-
-fn printable(character: char) -> bool {
-    character == ' ' || !nonprintable().is_match(character.encode_utf8(&mut [0; 4]))
-}
-
-fn nonprintable() -> &'static Regex {
-    static PATTERN: OnceLock<Regex> = OnceLock::new();
-    PATTERN.get_or_init(|| Regex::new(r"^[\p{C}\p{Z}]$").expect("the pattern compiles"))
-}
-
-fn escape(character: char) -> String {
-    let point = character as u32;
-    if point < 0x100 {
-        format!("\\x{point:02x}")
-    } else if point < 0x10000 {
-        format!("\\u{point:04x}")
-    } else {
-        format!("\\U{point:08x}")
     }
 }
