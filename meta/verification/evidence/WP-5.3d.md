@@ -12,6 +12,12 @@ every page row and the whole spread table; the tracer reproduces neither, on
 three independent grounds, so path B is taken by the rule rather than by
 preference.
 
+Resubmitted. The first submission was rejected at `6c24379` for understating
+the text-derived decision surface: it claimed one decision boundary where
+there are five fields and eleven sites. The decision was upheld and the
+enumeration is corrected under Metrics, which also changes what WP-5.3c must
+fault.
+
 The nuance that matters for the re-cut brief: path A fails **not because the
 tracer is worse but because it cannot reproduce pypdf's mistakes**. On the
 one field where the two disagree about something a reader would notice, the
@@ -109,13 +115,48 @@ RIETTA` and `BERRETA FUTURA 04` where the tracer's shows carry `BY FRANK
 RIETTA` and `BERRETA FUTURA04`. Reproducing the count means reimplementing
 that rule and its half-a-space `_space_width`.
 
-**Zero threshold flips.** `article-stub-last-page` fires on
-`body_text_lines < 5` and is the only text-derived decision boundary in the
-critic. Across all 54 interior pages, no page changes side under the tracer's
-count. Page 36 is the near-threshold case the plan warned about: tracer 4,
-pypdf 3, both below, so the issue fires either way. 010's committed issue set
-is `whitespace-void`, `article-stub-last-page`, `tail-art-dropped`,
-`article-page-cap`, result `pass`.
+### The text-derived decision surface
+
+An earlier revision of this file claimed `article-stub-last-page` was the
+only text-derived decision boundary. That was wrong and it was the
+load-bearing claim, so it is corrected here with the enumeration behind it.
+`body_text_lines < 5` (`STUB_BODY_LINE_MINIMUM = 5`, `render_critic.py:62`)
+is the only numeric THRESHOLD, but **five text-derived fields feed eleven
+issue sites emitting eleven distinct codes**:
+
+| field | sites | issue codes |
+|---|---|---|
+| `text_order_matches` | `:152`, `:176`, `:198` | `booklet-page-order`, `interior-booklet-page-order`, `cover-booklet-page-order` |
+| `blank` | `:291`, `:452`, `:476` | `inside-cover-reader-not-blank`, `inside-cover-booklet-not-blank`, `cover-booklet-inside-not-blank` |
+| `ink_free` | `:299`, `:460`, `:484` | `blank-page`, `blank-booklet-side`, `blank-cover-booklet-side` |
+| `standalone_punctuation_lines` | `:309` | `orphan-punctuation` |
+| `body_text_lines` | `:380` | `article-stub-last-page` |
+
+`blank` and `ink_free` are conjunctions whose text half is `not
+text.strip()`; their raster halves (`pure_white`, `ink_pixels == 0`) are
+unaffected by the text source. `sparse` is ink-ratio only and is correctly
+not in this table. **`text_characters` is consumed by NO issue**: it appears
+only at its definition (`:1007`) and is a reported metric, which is why the
+field with the worst agreement in this spike drives no decision.
+
+So the argument for path B is not that only one decision consumes text. It
+is that **the tracer agrees with pypdf on every field feeding ten of the
+eleven sites, and on the eleventh it disagrees without changing the
+outcome**:
+
+| field | sites | tracer vs pypdf |
+|---|---|---|
+| text-emptiness (`blank`, `ink_free`) | 6 | **54 of 54** interior pages |
+| `standalone_punctuation_lines` | 1 | **54 of 54** interior pages |
+| `text_order_matches` | 3 | **27 of 27** traceable sides |
+| `body_text_lines` | 1 | 47 of 54, and **zero threshold flips** |
+
+Zero threshold flips: across all 54 interior pages no page changes side of
+`body_text_lines < 5` under the tracer's count. Page 36 is the near-threshold
+case the plan warned about, tracer 4 against pypdf 3, both below, so the
+issue fires either way. 010's committed issue set is `whitespace-void`,
+`article-stub-last-page`, `tail-art-dropped`, `article-page-cap`, result
+`pass`.
 
 ## Verdicts
 
@@ -128,12 +169,24 @@ path is taken. Reader pages 1 and 56 and booklet side 1 fail loud with
 `operator Tf: loading font F1: font Helvetica lacks ToUnicode`. They are not
 empty: the committed rows give page 1 `text_characters` 170 and page 56
 `text_characters` 380 with `body_text_lines` 6. The covers are compiled by a
-different toolchain and embed Helvetica without a `ToUnicode` map. WP-5.3b
-needs a named decision. One principled option: for a non-embedded standard-14
-face the PDF specification determines code to Unicode through
-StandardEncoding or WinAnsiEncoding, so supporting it is reading the spec
-rather than guessing, and would not weaken the fail-loud rule that exists to
-stop the tracer inventing text for fonts it genuinely cannot resolve.
+different toolchain and embed Helvetica without a `ToUnicode` map.
+
+**The consequence, which the measurement shows and the first revision of
+this file failed to draw: one issue cannot be computed AT ALL.**
+`cover_spread_checks` (`render_critic.py:186`) is built over
+`cover_wrap_plan`, and `cover_wrap_plan(56)` is `((56, 1),)` exactly the two
+pages the tracer cannot read. So under a tracer-fed critic
+`cover-booklet-page-order` (`:198`) is not computed differently, it is not
+computable. That is a missing decision rather than a divergent one, and it
+is why the 27 of 27 above is stated over TRACEABLE sides.
+
+**The forward gap is wider than the critic.** WP-5.4g makes `reader.pdf`
+compared end to end, so pages 1 and 56 enter the Tier E compared domain. A
+tracer that fails loud on them is then a gap in THE GATE, not only in the
+critic, and it arrives on a schedule nobody chose. Revision 16 has created
+**WP-0.2h** to fix the decode; this WP does not re-propose a fix, it records
+that WP-0.2h is a prerequisite for both the cover-bearing critic sites and
+WP-5.4g's domain switch.
 
 **`display::extract` is the wrong entry point for a critic text source.** It
 resolves annotations, and on `booklet-a4.pdf` that fails with `resolving
@@ -143,6 +196,25 @@ shared module should expose the text path without the navigation path.
 
 **The `glyphs` field is already recorded per show** (WP-0.2e), so a future
 consumer needing a glyph count per line gets it without another traversal.
+
+**The corrected join rule has a bounded mirror failure**, stated because the
+rule is the deliverable. Joining shows with a space gives a word split
+across two adjacent shows a spurious space that `normalized()` cannot
+remove, which is the exact inverse of the welding defect the empty-string
+join produced. It is reachable in principle, since adjacent shows on one
+line do occur here (`BERRETA FUTURA04` is one show sequence), and it did not
+fire on this corpus. A rule keyed on the gap between a show's end and the
+next show's origin would decide it geometrically instead of assuming; that
+is work for whoever implements the seam, not a defect measured here.
+
+**Reproducibility is adequate but thin in one place.** The pypdf oracle
+above reruns verbatim. The probe is given by shape and interface (the module
+declaration, the call, the emitted fields) rather than in full, so a
+reimplementation is required to rerun the tracer side. The crux is explicit
+and is the part that matters: the line grouping is by quantized y origin
+with shows concatenated in paint order, and the join rule is a newline
+between lines for the page fields and a space between shows for the spread
+comparison.
 
 Not measured, and out of scope: whether the tracer's line grouping survives
 an edition whose body text uses superscripts or inline vertical shifts, which
@@ -159,11 +231,26 @@ would place shows of one visual line at different y origins. 010 has none.
    welds hyphenated line breaks (WP-5.7's finding), which the tracer cannot
    do because it never joins lines.
 3. **The fault suite carries the weight**, per the plan's binding caveat, and
-   this spike makes that tractable rather than open-ended: there is exactly
-   ONE text-derived decision boundary, `body_text_lines < 5`, so WP-5.3c
-   needs near-threshold cases on both sides of that one threshold, plus the
-   raster- and manifest-derived boundaries which are unaffected by the text
-   source.
+   it must cover ALL FIVE text-derived fields, not the one numeric
+   threshold. WP-5.3c's brief should require, per the table above:
+   - `body_text_lines`: near-threshold cases on both sides of
+     `body_text_lines < 5`, the only numeric boundary.
+   - `text_order_matches`: a swapped spread (already in WP-5.3c's scope) for
+     each of the three sites, interior AND cover, noting the cover site
+     cannot currently be computed at all (see the cover residual).
+   - `blank` and `ink_free`: a page that is text-empty but not ink-free and
+     one that is ink-free but not text-empty, so the conjunction is faulted
+     on its text half rather than only its raster half. Six sites depend on
+     this and a raster-only fault leaves the text half unexercised.
+   - `standalone_punctuation_lines`: a page ending in an orphaned
+     punctuation line.
+   The agreement measured here (54 of 54, 54 of 54, 27 of 27) is evidence
+   that the text source is sound on this edition, NOT a substitute for
+   faulting each field: 010 exercises none of these issues except
+   `article-stub-last-page`.
 4. **Record the seven merges as a known, single-cause difference** rather
    than discovering them again: pypdf's line merge on two-line headlines.
 5. **Decide the cover pages** before porting, per the residual above.
+6. **`text_characters` needs no fault**, since no issue consumes it, but the
+   port must still emit it for report parity; its 7 of 54 disagreement is
+   therefore a reporting difference and not a decision risk.
