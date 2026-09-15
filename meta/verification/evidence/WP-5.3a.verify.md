@@ -1,138 +1,152 @@
 # WP-5.3a verification
 
-## Verdict
+Verdict: **ACCEPTED**.
 
-REJECTED, on one clause: a reachable branch of `image_contrast.py` is covered by no
-fixture and no oracle row, while the evidence claims every branch edition 010 cannot
-reach is covered. Everything else verified, including the claims that were hardest to
-believe.
+Verifies commit `0a68eb4` (rework). Supersedes the rejection at `a3d61c9`.
 
-## Base
+## Record of the rejection
 
-WP commit `5d9d154` (parent `11b1a9f`). Verified in a fresh worktree at `5d9d154`.
+The first submission (`5d9d154`) was rejected because the tint-ratio early
+return (`image_contrast.py:149-150`, port `metrics.rs:543`) was reached by no
+fixture and no oracle row, while the evidence claimed every branch edition 010
+cannot reach was covered by fixture. The rework adds `tint_band.png`, replaces
+the blanket claim with a traced branch table, and corrects the near-threshold
+figure. No production code changed.
 
 ## Owns
 
-`git show --stat 5d9d154` touches 20 paths, all within Owns: `mag/src/critic/metrics.rs`,
-`mag/src/critic.rs` and the `mod critic;` line in `mag/src/main.rs` (registration, declared
-in Residuals), `mag/tests/critic_metrics.rs`, two committed oracle JSONs, eleven fixture
-PNGs, `mag/Cargo.toml` + `mag/Cargo.lock`, and the evidence file. No `*.verify.md`, no
-`baseline.json`, no comparator territory, no `mag/src/model/**`.
+`git show --stat 0a68eb4` touches exactly three paths:
 
-`meta/verification/parity.yaml` is NOT touched, which confirms mechanically that
-`critic_metric_tolerances` was consumed and not authored (rule 4).
+    mag/tests/critic_metrics_expected.json
+    mag/tests/critic_metrics_fixtures/tint_band.png
+    meta/verification/evidence/WP-5.3a.md
+
+No verify file, no `baseline.json`, no Cargo files, no comparator territory.
+
+`git diff 5d9d154 0a68eb4 -- mag/src/critic/metrics.rs` is empty (0 lines), so
+`metrics.rs` is byte-identical to the accepted state. The defect was missing
+coverage, not wrong behaviour, and the rework correctly changed no code.
 
 ## Baseline
 
-In the worktree at `5d9d154`: `cargo fmt --check` exit 0, `cargo clippy --all-targets --
--D warnings` clean, `cargo test` all green (metrics suite 21.27 s).
+In a clean worktree at `0a68eb4`:
 
-## Verified
+    cargo test --test critic_metrics    5 passed, 0 failed
+    cargo fmt --check                   clean
+    cargo clippy --all-targets -D warnings   clean
 
-**PIL semantics, checked against Python directly rather than accepted.** Both claims that
-motivate the `png` crate choice hold: `convert("RGB")` on a fully transparent red RGBA
-pixel yields `(255, 0, 0)`, so alpha is dropped and never composited (compositing would
-give `(255,255,255)` on white or `(0,0,0)` on black), and a palette image saved with
-`transparency=0` converts index 0 to its palette colour `(255,255,255)` rather than
-honouring `tRNS`. `rgba_alpha.png` and `palette_trns.png` cover exactly these.
+## Replayed claims
 
-**Round trip: clean, both halves.** Replaying the evidence's fixture-generation block
-regenerates all eleven PNGs byte-identically (sha256 before and after identical), and
-replaying both oracle blocks regenerates `critic_metrics_expected.json` and
-`critic_metrics_rounding_expected.json` byte-identically, with `git status` empty
-afterwards. The fixture list is globbed from disk, so it cannot silently shrink. This is
-the defect class that rejected WP-5.1b once; it is closed here.
+**The fixture.** `tint_band.png` is reached, and it is the sole cover for the
+branch. The evidence's trace command reproduces verbatim:
 
-**LANCZOS pixel-for-pixel agreement, probed on shapes no fixture uses.** I added two probe
-fixtures, regenerated the oracle over them and ran the port: `zz_probe_prime.png`
-(1021x769, both prime, reduce factor 0, so pure LANCZOS at odd sizes) and
-`zz_probe_bigreduce.png` (5003x3001, prime dimensions, asymmetric reduce factor 4x2 which
-is larger than any committed fixture and exercises remainder columns, rows and corner).
-Both pass: 13/13 fixtures plus 3/3 figures match PIL pixel for pixel. The claim survives
-inputs the worker did not choose. Probes removed afterwards; tree restored clean.
+    71  UNREACHED
+    102 UNREACHED
+    111 UNREACHED
+    150 ['tint_band.png']
+    158 UNREACHED
 
-**Discriminating probes reproduced.** Probe B (dropping `reduce()`'s rounding amend,
-`acc = [(scale/2) as u64; 3]` to `[0u64; 3]`) fails both suites, and specifically fails
-`extreme_aspect.png` AND `odd_reduce.png` - the two fixtures the worker caught passing
-vacuously and regenerated. They are now genuinely discriminating rather than decorative.
-Probe D (half-even to half-down in `round_half_even`) leaves all 14 images passing and
-fails `rounding_matches_python_round`, exactly as the evidence records: the corpus has no
-luminance on a `.5` boundary, which is why the direct rounding oracle exists. The worker's
-honest recording of that gap is accurate.
+**Discriminating proof, both directions, reproduced independently.**
 
-**Concurrency** is exercised by two tests, `worker_count_matches_the_python_bounds` and
-`ordered_map_preserves_order_and_reports_the_first_failure`, so `concurrency.py`'s absorbed
-role is covered rather than assumed.
+| perturbation of `metrics.rs` | observed |
+|---|---|
+| delete the `:149` guard | `fixtures_match_the_python_metrics` FAILED on `tint_band.png` alone: "adjusted true expected false", "post-treatment analysis differs". Figures test still ok; no other fixture named. |
+| invert the guard to `<` | FAILED on `tint_band.png` (wrongly enhanced) **and** `low_contrast.png` and `palette_trns.png` (both "adjusted false expected true", "unresolved differs") |
 
-**Rounded versus unrounded, a subtle detail the port gets right.** `tint_ratio` is computed
-from `before.paper_pixel_ratio` and `before.mark_pixel_ratio`, which are the values already
-passed through `round_places(_, 6)`, matching Python's use of the rounded dataclass fields;
-`needs_treatment` is computed from the unrounded `mark_ratio` and `contrast`, matching
-Python line 129. Getting one of these backwards would shift behaviour at the boundary.
+Deleting pins the branch from one side and inverting pins it from the other, so
+the guard's threshold is constrained in both directions rather than merely
+present. Restored from a pristine copy afterwards: `git status` clean, 5/5 green.
 
-**Scope finding: CONFIRMED.** `image_contrast` is imported only by `render.py:14`,
-`weasyprint_adapter.py:1790` and `preflight.py:9`; `render_critic.py` does not import it at
-all, taking only `ordered_map` and `worker_count` from `concurrency` at `:22`. Its metrics
-land in `preflight.json` (`preflight.py:128`). `render_critic.py` carries its own raster
-helpers (`ImageOps.grayscale` and histograms at 968-977, `convert` + LANCZOS resize +
-`ImageChops.difference` + histogram at 1084-1089, more at 1139, 1250, 1389-1410), which are
-unported work belonging to WP-5.3b and are what the render-critic tolerances apply to.
+**Fixture regeneration.** Re-running the evidence's generation command rewrote
+all twelve fixtures with zero drift (`git status` clean afterwards), so the new
+fixture is deterministic on the same footing as the eleven pre-existing ones.
 
-## The defect
+**Near-threshold corrected figure confirmed.** The corrected survey reports
 
-**The tint-ratio early return is implemented but reached by nothing.**
-`image_contrast.py:149-150` returns unchanged when
-`tint_ratio >= _MAX_ENHANCEABLE_TINT_RATIO` (0.05); the port implements it at
-`metrics.rs:543`. No fixture and no oracle row reaches it. Computing
-`1 - paper_pixel_ratio - mark_pixel_ratio` across all 14 rows, every image with
-`needs_treatment: true` has tint at or below 0.0:
+    smallest relative margin: 4.8500e-02 at
+    ('mag/tests/critic_metrics_fixtures/low_contrast.png', 'after',
+     'minimum_mark_contrast_ratio', 2.097)
 
-| image | paper | mark | tint | needs_treatment | path taken |
-|---|---|---|---|---|---|
-| gray8.png | 0.0000 | 1.0000 | 0.0000 | true | enters loop |
-| gray_alpha.png | 0.0000 | 1.0000 | 0.0000 | true | enters loop |
-| low_contrast.png | 0.9003 | 0.0997 | -0.0000 | true | enters loop |
-| palette_trns.png | 0.9003 | 0.0997 | -0.0000 | true | enters loop |
+matching the evidence. The earlier 9.6e-2 came from a script reading only each
+row's `analysis` block and skipping `after`; the corrected script scans both and
+names the row, so the number is auditable. The conclusion is unchanged: 4.85e-2
+is more than three orders of magnitude outside the 1e-5 near-threshold window,
+so no metric owned by this WP requires a near-threshold fixture.
 
-Every other row returns at `:145` before reaching the tint test at all. The closest any
-row comes to the 0.05 threshold is a relative margin of 4.06e-1, and those rows never
-reach the test.
+## Judgment on the four unreached lines
 
-**The branch is easily reachable, and I demonstrated it.** A 400x300 white page with a 20%
-mid-tone band and a 10% light-grey mark band produces `paper 0.70, mark 0.10, tint 0.20,
-contrast 1.497, needs_treatment true`, taking the early return, at every band value from
-228 through 240. That is an ordinary figure shape (a screenshot with a tinted panel and
-grey text), not a contrivance.
+An uncovered branch is acceptable only as an unreachability claim or a stated
+mechanism, so each was examined rather than accepted.
 
-**Why this is rejection-level rather than a note.** The evidence states "Branches edition
-010 cannot reach, covered by fixture: all of them", which is false. Revision 12's Phase 5
-preamble requires a port to state which branches its corpus cannot reach and cover those by
-fixture, enumerating by reading the Python for branches rather than the corpus for cases.
-This is the same rule family WP-5.1c was rejected under at `11b1a9f`, and the same vacuity
-pattern that produced the defects in WP-5.1a, WP-5.1b (twice) and WP-5.1c: a uniformly
-well-formed corpus hiding an untested path. The implementation looks correct by inspection,
-but inspection is precisely what failed in those four cases.
+**`:71` `_open_rgb` seeks a `BinaryIO` — disposition correct.** Every production
+call site passes a `Path`:
 
-**Remedy, small and inside Owns:** add a fixture of the shape above, regenerate the oracle
-(purely additive), and prove it discriminates by perturbing the comparison at `:543` and
-confirming the new row fails. Then correct the completeness claim in the evidence.
+    src/magazine/render.py:701,981      prepare_print_image(path)
+    src/magazine/weasyprint_adapter.py:1804  prepare_print_image(path)
+    src/magazine/preflight.py:110       prepare_print_image(path)
 
-## Other findings, not blocking
+and `prepare_print_image` reaches `_open_rgb` via `_prepared_bytes(str(path.resolve()))`,
+always with a `Path`. The `BinaryIO` arm is an unused affordance of the Python
+type signature, not behaviour any caller depends on. A Rust counterpart would be
+speculative generality, so `decode_rgb(&Path)` is the right surface. Recording it
+as a line rather than adding a fixture is correct.
 
-**The near-threshold survey understates its own number.** The evidence reports a smallest
-relative margin of 9.6e-2, but its survey script reads only `r['analysis']` and ignores
-`r['after']`. Including both gives 4.85e-2, at `low_contrast.png`'s `after` block
-(`minimum_mark_contrast_ratio` 2.097 against the 2.0 threshold). The conclusion is
-unaffected: 4.85e-2 is still more than three orders of magnitude outside the 1e-5
-near-threshold window, so no metric owned by this WP requires a near-threshold fixture. The
-reported figure should be corrected to what the survey actually supports.
+**`:102` background-estimator fall-through — the unreachability proof HOLDS.**
+Checked line by line against the source:
 
-**`_open_rgb`'s BinaryIO branch** (`image_contrast.py:70-71`) is exercised by no oracle.
-The Python flow reaches the `Image.Image` branch at `:69` (via `_prepared_bytes` passing an
-opened image to `analyze_print_contrast`, and again for each enhancement candidate), which
-the port covers structurally, but a `BytesIO` source is never tested. No current caller
-passes one; worth a recorded line rather than a fixture.
+- the guard at `:92` returns unless `dominant / total >= 0.18`, so on reaching
+  `:94` we have `dominant >= 0.18 * total`;
+- `required = max(0.18 * total, dominant / 2)`, and both terms are `<= dominant`
+  (the first by the guard, the second since `dominant >= 0`), so `required <= dominant`;
+- `dominant = max(neighborhood(b) for b in range(floor_bin, 101))`, so some
+  `b*` in `[floor_bin, 100]` attains it;
+- the loop iterates `range(100, floor_bin - 1, -1)`, which covers exactly
+  `[floor_bin, 100]` and therefore includes `b*`;
+- at `b*`, `neighborhood(b*) = dominant >= required`, so the loop returns at
+  `:101` at or before `b*`.
+
+`total >= 1` is guaranteed because `analyze_print_contrast` returns at `:111`
+when `not total`, and `dominant = 0` would have returned at `:93`. So `:102` is
+genuinely dead code in the Python, faithfully reproduced. Worth having in the
+record: it is an upstream redundancy, not a porting gap.
+
+**`:111` empty-image stub — accepted.** `total = len(pixels)` after a thumbnail
+of a decoded PNG; the PNG format forbids zero dimensions, so no decodable input
+reaches it.
+
+**`:158` `continue` when a candidate loses its marks — accepted as stated, and I
+could not construct it.** The worker recorded it as reachable in principle with
+the mechanism named, so I attempted the construction rather than take the
+argument. A structured search over 315 two- and three-band images (bulk value
+110-193, dark fraction 0.02-25%, paper fraction 0-80%), of which **84 passed both
+`needs_treatment` and the `tint_ratio < 0.05` guard and entered the enhancement
+loop, produced zero hits** on any of the five contrast factors.
+
+The analytic reason matches the worker's and is tighter than "constructions
+collapsed". All factors are `> 1`, so `ImageEnhance.Contrast` moves pixels away
+from the image mean, and a mark can only lose mark status by moving lighter,
+which requires it to sit above the mean. That forces the bulk of the image below
+the mark threshold (luminance `0.757` at background `1.0`), and then:
+
+- if that bulk sits above the background floor (`_MIN_BACKGROUND_LUMINANCE` 0.60)
+  and carries at least 18% of the mass, `_estimate_background_luminance` makes it
+  the background, so it is reclassified as paper and `needs_treatment` is false
+  before the loop is reached;
+- if it sits below 0.60, lifting it past `0.757` needs `d * (f - 1) > 0.377` for a
+  dark fraction `d`, i.e. `d > 0.14` even at the largest factor, and that dark mass
+  is itself marks that survive enhancement, so `mark_pixel_ratio` stays far above
+  `0.001`.
+
+The two escapes close against each other, which is why the search finds nothing.
+Leaving it uncovered with the mechanism stated is the right disposition; proving
+full unreachability would cost more than the branch is worth, and the evidence
+does not overclaim it.
 
 ## Status
 
-rejected
+ACCEPTED. All previously established findings stand (PIL `convert("RGB")`
+semantics justifying `png` over `image`; LANCZOS pixel-identity surviving the
+1021x769 and 5003x3001 prime-dimension probes; the clean round trip and globbed
+fixture list; the confirmed scope finding that `image_contrast` is consumed by
+`preflight.py`, `render.py` and `weasyprint_adapter.py` rather than by
+`render_critic.py`).
