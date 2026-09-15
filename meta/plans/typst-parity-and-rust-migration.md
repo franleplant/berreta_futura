@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-15, revision 17 (Phase 0 built and
+Status: **in execution**, 2026-09-15, revision 18 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,36 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 18 changelog
+
+**Cargo-file serialization is dropped and replaced by a check.** Rule 1's
+clause (a) made Cargo-file owners pairwise serial, and since the Phase 5
+preamble gives every port WP the Cargo files, it made the whole phase a
+single queue: five deep when this was decided, with WP-5.4 waiting behind
+WP-5.5 waiting behind WP-5.2, and WP-5.6 (which gates the flip) depending
+on four of them. That is a lot of critical path to spend on conflicts in a
+generated file.
+
+The replacement is rule 1a, and it is stricter about the thing that
+actually matters. The hazard was never the CONFLICT, which is loud and
+mechanical, especially under the landing protocol this execution grew after
+a commit was silently dropped: work in your own worktree, rebase onto
+current `art_directed` before landing, confirm afterwards that both your
+sha and the pre-land HEAD are ancestors. The hazard is a bad RESOLUTION
+silently changing a pinned version, and serialization never prevented that,
+since one agent resolving badly produces it with no second WP involved. So
+rule 1a requires crates to be added last, immediately after a rebase; locks
+to be REGENERATED rather than hand-merged on conflict; and a post-landing
+check that `Cargo.lock`'s `(name, version)` set has only GAINED entries,
+with none removed and none changed. A version that must genuinely move is
+declared, and for a crate the plan pins by name it is a plan revision.
+
+Clauses (b) and (c) stand, and the plan now says WHY they are different
+rather than leaving the distinction to be re-litigated: they serialize
+genuine LOGICAL coupling, where two WPs can each be right and jointly
+wrong, while (a) only ever serialized a mechanical conflict in a generated
+file. Dropping (a) is therefore not a precedent for dropping them.
 
 ## Revision 17 changelog
 
@@ -867,14 +897,46 @@ before/after comparisons (WP-4.3); out of scope here.
 1. **Owned paths.** A WP may create or modify only the paths its brief
    lists. Every WP implicitly owns its evidence file. A WP adding crate
    dependencies also owns `mag/Cargo.toml` + `mag/Cargo.lock`. Pairwise
-   serial regardless of the graph: (a) Cargo-file owners, (b)
-   `mag/src/typeset/**` or `mag/src/render.rs` owners, (c) `mag/src/parity*`
-   owners. Acceptance includes the verifier running
+   serial regardless of the graph: (b) `mag/src/typeset/**` or
+   `mag/src/render.rs` owners, (c) `mag/src/parity*` owners. Clause (a),
+   Cargo-file owners, was DROPPED in revision 18 and replaced by rule 1a
+   below; (b) and (c) stand, because they serialize genuine LOGICAL
+   coupling (two WPs editing the same engine or the same comparator can
+   both be individually correct and jointly wrong), where (a) only ever
+   serialized a MECHANICAL conflict in a generated file.
+   Acceptance includes the verifier running
    `git diff --name-only <base>` against the Owns list. A WP diff touching
    any `evidence/*.verify.md` or `baseline.json` is rejected by the
    orchestrator before a verifier is spawned, except a WP whose Owns names
    baseline.json explicitly (WP-0.2a: schema and empty state; WP-5.4g:
    cover-page seed rows); only verifiers write those otherwise.
+1a. **Dependency hygiene, which replaces Cargo-file serialization.** Rule
+   1's clause (a) made every Phase 5 WP wait on every other, since the
+   phase preamble gives them all the Cargo files; at the time of dropping
+   it the queue was five deep and fed WP-5.6, which gates the flip. It is
+   replaced by a check that targets the actual hazard better than the
+   queue did. The hazard was never the conflict, which is loud: it is a
+   bad resolution silently changing a pinned version, an unpinned `typst`
+   or `lopdf` being exactly what this plan pins on purpose. Serialization
+   never prevented that, because a single agent resolving badly, or a
+   `cargo` run re-resolving, produces it with no second WP involved.
+   A WP that adds crates must therefore:
+   - add them as its LAST step before landing, and rebase onto current
+     `art_directed` immediately before doing so, so the lock it writes is
+     resolved against the tree it lands on;
+   - on a `Cargo.lock` conflict, REGENERATE rather than hand-merge: take
+     the incoming lock wholesale and re-add its own crates, letting cargo
+     resolve. A hand-merged lock hunk is never acceptable;
+   - verify after landing that the set of `(name, version)` pairs in
+     `Cargo.lock` has only GAINED entries: none removed, none changed.
+     Its own additions and their transitive dependencies are the only
+     permitted delta, and the check is one script over the lock file;
+   - a version that must genuinely change is an explicit, declared act in
+     the evidence, and for a crate the plan pins by name it is a plan
+     revision, not a WP's call.
+   The pre-commit hook then runs `fmt`, `clippy` and `cargo test` on the
+   REBASED tree, so a resolution that breaks the build is caught before it
+   lands rather than after.
 2. **Evidence.** A WP is done when its verification commands exit 0 AND it
    has written `meta/verification/evidence/WP-<id>.md` with sections:
    `## Base` (the commit branched from), `## Commands`, `## Tool versions`,
@@ -2340,9 +2402,10 @@ WP-5.6 -> WP-4.2
 WP-4.2 -> WP-4.3 (MANDATORY, WP-1.3 chose (b)) -> shipped edition
        -> WP-6.1 (Fran gate)
 WP-5.7 -> WP-6.1
-Serialization overrides (rule 1): Cargo-file owners pairwise serial;
-typeset/render.rs owners pairwise serial; mag/src/parity* owners pairwise
-serial.
+Serialization overrides (rule 1): typeset/render.rs owners pairwise
+serial; mag/src/parity* owners pairwise serial. Cargo-file owners are NOT
+serialized (revision 18); rule 1a governs them instead, so Phase 5 WPs run
+in parallel up to their real dependencies.
 ```
 
 ## Risks
