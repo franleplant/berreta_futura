@@ -1,13 +1,17 @@
 #[path = "../src/model/records.rs"]
 mod records;
+#[path = "../src/model/shared.rs"]
+#[allow(dead_code)]
+mod shared;
 
 use records::{
     canonicalize_url, load_records, localize_extracts, localize_figures, resolve_extracts,
     resolve_figures, source_id, Extract, ExtractRequest, Figure, FigureRequest, NewRecord,
-    SourceRecord, ValidationError,
+    SourceRecord,
 };
 use serde_json::{json, Map, Value as Json};
 use serde_yaml::Value;
+use shared::ValidationError;
 use std::path::{Path, PathBuf};
 
 fn repository() -> PathBuf {
@@ -29,7 +33,7 @@ fn committed(name: &str) -> Json {
         .expect("the oracle dump is JSON")
 }
 
-fn outcome<T>(result: records::Result<T>, encode: impl Fn(T) -> Json, root: &str) -> Json {
+fn outcome<T>(result: shared::Result<T>, encode: impl Fn(T) -> Json, root: &str) -> Json {
     match result {
         Ok(value) => json!({ "ok": encode(value) }),
         Err(ValidationError(errors)) => json!({

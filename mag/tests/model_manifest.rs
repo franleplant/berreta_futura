@@ -7,11 +7,15 @@ mod manifest;
 #[path = "../src/model/records.rs"]
 #[allow(dead_code)]
 mod records;
+#[path = "../src/model/shared.rs"]
+#[allow(dead_code)]
+mod shared;
 
 use manifest::{load_edition, load_translation, Edition, LoadOptions, Records};
-use records::{localize_figures, SourceRecord, ValidationError};
+use records::{localize_figures, SourceRecord};
 use serde_json::{json, Map, Value as Json};
 use serde_yaml::{Mapping, Value};
+use shared::{py_repr, ValidationError};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -531,13 +535,25 @@ fn records_py_repr(case: &str) -> String {
 }
 
 #[test]
-fn py_repr_copies_agree() {
+fn repr_cases_match_python() {
+    let expected = committed("model_manifest_repr_expected.json");
+    let expected = expected.as_object().expect("the oracle is an object");
+    assert_eq!(expected.len(), REPR_CASES.len());
     for case in REPR_CASES {
-        let from_manifest = manifest_py_repr(case);
-        let from_records = records_py_repr(case);
+        let python = expected
+            .get(*case)
+            .and_then(Json::as_str)
+            .unwrap_or_else(|| panic!("the oracle covers {case:?}"));
+        assert_eq!(py_repr(case), python, "py_repr differs on {case:?}");
         assert_eq!(
-            from_manifest, from_records,
-            "manifest and records py_repr disagree on {case:?}"
+            manifest_py_repr(case),
+            python,
+            "the manifest route differs on {case:?}"
+        );
+        assert_eq!(
+            records_py_repr(case),
+            python,
+            "the records route differs on {case:?}"
         );
     }
 }
