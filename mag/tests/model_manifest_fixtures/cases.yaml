@@ -1790,3 +1790,15 @@
       cover:
         headline: Hache
       articles: []
+
+- name: apostrophe_only_edition_id
+  edition_id: '010'
+  known_sources: []
+  files:
+    editions/010/edition.yaml: |
+      id: "010'"
+      issue_number: 1
+      title: T
+      publication_date: '2026-01-01'
+      articles: []
+      sections: []
