@@ -371,12 +371,21 @@ would silently break Spanish editions.
   diagnosis list the port produces where Python dies.
 - `the_oracle_is_not_vacuous`: PASS. Altering one article title in the
   expectation makes the comparison fail.
-- `py_repr_copies_agree`: PASS, seven cases. Reverting the escaping arms of
-  the `manifest.rs` copy fails it naming `zero\u{200b}width`; dropping the
-  astral branch of `escape` fails it naming `astral\u{f0000}stop`. Both
-  perturbations were run, and the test returns to green on restore.
-- `cargo test`: 88 tests pass across the suite (87 before this rework, plus
-  `py_repr_copies_agree`). `cargo fmt --check` and `cargo clippy
+- `py_repr_copies_agree`: PASS, nine cases. Four perturbations of the
+  `manifest.rs` copy each fail it, naming the distinguishing case: reverting
+  the escaping arms names `zero\u{200b}width`; dropping the astral branch of
+  `escape` names `astral\u{f0000}stop`; diverging the `'\\'` arm names
+  `back\slash...`; forcing the quote selection to `'` names `it's plain`.
+  The last two PASSED against the seven-case list and are the divergences
+  the verifier proved undetected. All four return to green on restore.
+- `cases_match_the_python_loader`: PASS, 80 cases. The added
+  `apostrophe_only_edition_id` case covers the quote-selection branch for
+  CORRECTNESS, which `py_repr_copies_agree` cannot: a copy-agreement test
+  asserts the two copies agree, not that either matches Python, so both
+  could be wrong identically. With the quote selection forced to `'`, this
+  test now reports `1 cases diverge` where it previously passed. Python's
+  expected output is `Edition id "010'" does not match directory '010'`.
+- `cargo test`: the suite passes. `cargo fmt --check` and `cargo clippy
   --all-targets -- -D warnings` clean.
 
 ## Residuals
@@ -551,12 +560,34 @@ it public is not this WP's to do. `py_repr_copies_agree` closes the window
 the rejection identified: a future change to the `records.rs` original would
 otherwise leave this copy stale with `cargo test` green.
 
-The shared list is seven cases, chosen to reach every branch of both the
-quote selection and the escape width: a plain ASCII string; `caf\u{e9}`, a
-non-ASCII printable that must stay raw; `\u{200b}` (Cf, the `\uNNNN` width);
-`\u{7}` and `\u{1b}` (Cc, the `\xNN` width); `\u{f0000}` (Co, the only case
-reaching the `\UNNNNNNNN` eight-hex branch); and a string containing both an
-apostrophe and a double quote, which exercises the quote-selection branch.
+The shared list is nine cases. The first rework shipped seven and claimed
+they reached every branch; the verifier proved five branches unreached and
+two of those admit an undetected divergence, so the list is now stated
+branch by branch rather than in blanket terms.
+
+`py_repr` has two quote-selection outcomes and seven character arms. Which
+case reaches each:
+
+| branch | reached by |
+|---|---|
+| quote `"` (`contains('\'') && !contains('"')`) | `it's plain` |
+| quote `'` (else) | every other case |
+| `'\\'` arm | `back\slash<LF>new<CR>ret<TAB>tab` |
+| `'\n'` arm | same |
+| `'\r'` arm | same |
+| `'\t'` arm | same |
+| `other == quote` arm | `it's "both"` (quote is `'`, the apostrophe matches) |
+| `printable(other)` arm | `plain`, `caf\u{e9}` |
+| `escape(other)` arm | `\u{200b}`, `\u{7}`, `\u{1b}`, `\u{f0000}` |
+
+`escape` has three width branches, all reached: `\xNN` by `\u{7}` and
+`\u{1b}`, `\uNNNN` by `\u{200b}`, `\UNNNNNNNN` by `\u{f0000}`, which is the
+only case above `0x10000`.
+
+One branch is unreachable by construction and is recorded rather than
+covered: `other == quote` with quote `"` would need a double quote in a
+string that selects `"`, but selecting `"` requires the string to contain no
+double quote.
 
 Each case is driven through one public refusal per module, both of which
 repr their argument before any filesystem access:

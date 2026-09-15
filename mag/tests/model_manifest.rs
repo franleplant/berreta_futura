@@ -483,6 +483,8 @@ const REPR_CASES: &[&str] = &[
     "esc\u{1b}stop",
     "astral\u{f0000}stop",
     "it's \"both\"",
+    "back\\slash\nnew\rret\ttab",
+    "it's plain",
 ];
 
 fn repr_base_edition() -> Edition {

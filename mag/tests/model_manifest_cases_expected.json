@@ -1,4 +1,10 @@
 {
+ "apostrophe_only_edition_id": {
+  "errors": [
+   "Edition id \"010'\" does not match directory '010'",
+   "Edition requires either sections or articles"
+  ]
+ },
  "art_repeats_across_slots": {
   "errors": [
    "Referenced file does not exist: editions/010/art/plate-v1.png",
