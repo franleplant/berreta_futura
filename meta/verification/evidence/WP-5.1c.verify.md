@@ -1,167 +1,117 @@
-# WP-5.1c verification (manifest port)
-
-## Base
-
-Verified commit: `17eb66b` (second rework, parent `b8bd499`, plan revision 14).
-Verification worktree at `17eb66b`, detached.
+# WP-5.1c verification (fourth pass)
 
 ## Verdict
 
-**REJECTED**, narrowly, on the same clause as the previous verification.
-
-The test that was missing now exists, is well built, and discriminates at branch
-granularity on the branches its case list reaches. It is rejected because the
-case list leaves five of `py_repr`'s branches unreached, two of which I proved
-empirically admit an undetected divergence between the two copies, and because
-the evidence states a coverage claim that is false.
-
-Everything else about this WP is sound and is recorded below as not needing
-rework.
+**ACCEPTED.** Commit `b12a2a3` closes the copy-agreement clause that stood
+open across three rejections.
 
 ## Rejection history
 
-- `4120821` rejected at `66f6f90`: `manifest.rs`'s private `py_repr` copy
-  carried the pre-fix body, 5 of 7 probes diverging. Material because 25 call
-  sites carry user-authored text and `py_repr_value` reprs any string drawn
-  from `edition.yaml`.
-- `9278501` rejected at `11b1a9f`: revision 12's Phase 5 preamble requires a
-  forced helper copy to carry a test asserting the two copies agree on a shared
-  case list. No such test existed. Everything else verified.
-- `17eb66b` (this verification): the test exists; its case list has a
-  demonstrated hole.
+| submission | verdict | cause |
+|---|---|---|
+| `4120821` | rejected at `66f6f90` | `manifest.rs`'s private `py_repr` copy carried the pre-fix body; 5 of 7 probes diverged |
+| `9278501` | rejected at `11b1a9f` | revision 12 requires a forced helper copy to carry a test asserting the two copies agree; no such test existed |
+| `17eb66b` | rejected at `507d10c` | the test discriminated over the branches it reached, but five branches were unreached and two were proved to admit an undetected divergence |
+| `b12a2a3` | **accepted** | two cases added; all four perturbations now caught |
+
+## Scope
+
+Narrow, per the outstanding clause plus non-regression. Facts established by
+the earlier passes were not redone: the `py_repr`/`printable`/`nonprintable`/
+`escape` bodies are byte-identical to `records.rs`; the 010 oracle chain holds
+(Rust port = Python loader = shipped `edition-manifest.json`); the stale-copy
+audit was confirmed structurally; the test genuinely reads both copies.
+
+`mag/src/model/manifest.rs` is byte-identical between `9278501` and `b12a2a3`
+(`git diff` empty over `manifest.rs`, `records.rs`, `doc.rs`, `model.rs`), so
+the 010 oracle chain was correctly not re-run. The Cargo delta in that range
+belongs to WP-2.0a's typst pins, not to this commit.
 
 ## Owns
 
-`git show --stat 17eb66b` touches exactly two paths:
+`git show --stat b12a2a3` lists exactly four paths: `mag/tests/model_manifest.rs`,
+`mag/tests/model_manifest_fixtures/cases.yaml`,
+`mag/tests/model_manifest_cases_expected.json`,
+`meta/verification/evidence/WP-5.1c.md`. No source module, no Cargo file, no
+verify file, no `baseline.json`.
 
-- `mag/tests/model_manifest.rs`
-- `meta/verification/evidence/WP-5.1c.md`
+## The two added cases
 
-No `records.rs`, no `doc.rs`, no `mag/src/model.rs`, no Cargo files, no
-`*.verify.md`, no `baseline.json`. Clean.
+`REPR_CASES` gains `"back\\slash\nnew\rret\ttab"` (backslash, LF, CR, tab) and
+`"it's plain"` (apostrophe, no double quote).
 
-`git diff 9278501 17eb66b -- mag/src/model/manifest.rs` is empty, so
-`manifest.rs` is byte-identical to the state the previous verification checked.
-Skipping the 010 oracle chain was therefore correct rather than a shortcut: the
-change is test-only and cannot affect that comparison.
+## Perturbation reproductions
 
-## Commands
+Each perturbs only the `manifest.rs` copy; all four reproduced, each naming its
+distinguishing case.
 
-Baseline in the worktree:
-
-    cargo test                                   # 93 passed, 0 failed
-    cargo fmt --check                            # clean
-    cargo clippy --all-targets -- -D warnings    # clean
-
-`model_manifest` is 5 tests as claimed. The evidence's total of 88 predates
-WP-5.3a landing 5 further `critic_metrics` tests; 93 is the current figure and
-the discrepancy is sibling commits, not a defect.
-
-Perturbations and probes were applied to `mag/src/model/manifest.rs` in the
-worktree from a pristine copy, one at a time, restoring between each.
-
-## Metrics
-
-### Reproduced: both discriminating perturbations
-
-| perturbation | result | case named |
+| perturbation | previous pass | this pass |
 |---|---|---|
-| escaping arms reverted to the pre-fix body | FAILED | `"zero\u{200b}width"` |
-| astral branch of `escape` dropped to 4-hex | FAILED | `"astral\u{f0000}stop"` |
-| restored to pristine | passes | n/a |
+| revert the escaping arms | FAIL `zero\u{200b}width` | FAIL `zero\u{200b}width` |
+| drop the astral branch of `escape` | FAIL `astral\u{f0000}stop` | FAIL `astral\u{f0000}stop` |
+| diverge the `'\\'` arm | **PASS, undetected** | FAIL `back\\slash\nnew\rret\ttab` |
+| force quote selection to `'` | **PASS, undetected** | FAIL `it's plain` |
 
-Each perturbation names exactly the case that distinguishes it, so the test
-does discriminate at branch granularity over the branches it reaches.
+The two previously undetected divergences are now caught, which is the defect
+the third rejection named.
 
-### Both copies are genuinely read
+One observation strengthening the clause: the backslash perturbation is caught
+**only** by `py_repr_copies_agree`; `cases_match_the_python_loader` still passes
+under it. So the copy-agreement test does work the corpus test cannot, rather
+than duplicating it. The quote-selection perturbation is caught by both.
 
-Perturbations A and B changed only the `manifest.rs` copy and the test failed.
-Had `records_py_repr` routed through the same implementation, both sides would
-have moved together and the test would have passed. It did not, so the two
-sides are independent. Confirmed in source: `records.rs:1140` calls its own
-`py_repr(language)` before any filesystem access, and `manifest.rs`'s
-`load_translation` reprs its argument likewise, so both entry points are pure
-and reach production code paths without altering visibility in `records.rs`.
+## The corpus addition
 
-A copy-agreement test asserts agreement, not correctness: two copies that
-diverge identically from Python would still pass. Correctness is asserted
-separately by `cases_match_the_python_loader` against the real Python loader,
-so the pair is sound in combination. Recorded because the distinction matters
-for WP-5.1d.
+`apostrophe_only_edition_id` was the right call, and the worker's reasoning
+holds: `py_repr_copies_agree` asserts the copies **agree**, not that either
+matches Python, so both could be wrong identically and still pass. Only
+`cases_match_the_python_loader` checks correctness, and it was missing that
+branch.
 
-### The defect: five unreached branches, two proved to admit divergence
+Verified by replaying the clause-5 regeneration command verbatim: it drives the
+real Python loader over every case and reproduces
+`model_manifest_cases_expected.json` **byte-identically** (`git diff --stat`
+empty, `cmp` identical). The committed expectation for that case is therefore
+Python's own output:
 
-`py_repr` has seven arms plus a two-way quote selection. The seven cases reach:
-the printable arm (`plain`, `caf\u{e9}`), the quote-escape arm (`it's "both"`),
-and all three widths of `escape` (`\x07`/`\x1b`, `​`, `\U000f0000`).
+    Edition id "010'" does not match directory '010'
 
-They do not reach:
+which confirms the `"` selection independently of the Rust side.
 
-| unreached | why |
-|---|---|
-| `'\\' => "\\\\"` | no case contains a backslash |
-| `'\n' => "\\n"` | no case contains a newline |
-| `'\r' => "\\r"` | no case contains a carriage return |
-| `'\t' => "\\t"` | no case contains a tab |
-| quote selection's true branch (`'"'` chosen) | the only quote case contains **both** quote kinds, so `contains('\'') && !contains('"')` is false and it takes the else |
+## The unreachable-by-construction branch
 
-Two probes, each diverging the `manifest.rs` copy only and running the whole
-`model_manifest` suite:
+Sound, and I checked the implication rather than the wording.
 
-| probe | divergence introduced | suite result |
-|---|---|---|
-| C | `'\\' => out.push('\\')` (backslash no longer doubled) | **5 passed, 0 failed** |
-| D | `let quote = if false` (never selects `'"'`) | **5 passed, 0 failed** |
+`py_repr` selects `quote = '"'` only when `text.contains('\'') && !text.contains('"')`.
+The `other if other == quote` arm fires only when the text contains the quote
+character. With `quote == '"'` that requires `text.contains('"')`, which
+contradicts the selection condition. The branch is therefore unreachable, not
+merely uncovered.
 
-Both are exactly the failure the clause exists to prevent: a divergence between
-the two copies that `cargo test` reports green. Probe D also shows that no
-fixture among the 79 cases carries an apostrophe-without-double-quote string,
-so `cases_match_the_python_loader` does not cover that branch either.
+The companion is reachable and covered: with `quote == '\''` the arm fires on
+`"it's \"both\""`, where both quote kinds are present so `'` is selected and
+escaped. This matches Python, which prefers `'`, switches to `"` only for a
+string containing `'` and not `"`, and escapes `'` when both are present.
 
-This is not a hypothetical class. A string with an apostrophe and no double
-quote is ordinary in hand-authored `edition.yaml` content (a possessive in a
-title or an anchor), which makes the quote-selection branch the more likely of
-the two to be hit in production.
+## Branch enumeration
 
-### The evidence's coverage claim is false
+Confirmed against the source. `py_repr` carries two quote outcomes and seven
+character arms (`'\\'`, `'\n'`, `'\r'`, `'\t'`, `other == quote`, `printable`,
+`escape`); `escape` carries three width branches (`< 0x100`, `< 0x10000`, else).
+The evidence's table names a reaching case for each, with the single
+unreachable-by-construction entry argued rather than asserted. The blanket
+coverage claim that caused earlier rejections is gone.
 
-The evidence states the cases "cover every branch of both the escape width and
-the quote selection". Escape width: true, all three widths are reached. Quote
-selection: false, one of two branches is reached. Accepting would enter a false
-coverage claim into the verified record.
+## Baseline
 
-## Verdicts
-
-No verdict.json is produced by this WP.
+In a clean worktree at `b12a2a3`: `cargo fmt --check` clean;
+`cargo clippy --all-targets -- -D warnings` clean; full `cargo test` green
+(69 + 5 + 8 + 5 + 3 + 1 + 1 + 1 passing across targets), `model_manifest` at 5
+tests. Worktree `git status` empty after all perturbations were restored.
 
 ## Residuals
 
-Remedy, small and entirely inside this WP's Owns: add two cases to
-`REPR_CASES`, and no code change is required.
-
-1. A string containing a backslash, a newline, a carriage return and a tab,
-   covering all four literal-escape arms at once.
-2. A string containing an apostrophe and **no** double quote, covering the
-   quote-selection branch that selects `'"'`.
-
-Re-run the two existing perturbations plus probes C and D; C and D must then
-fail where they currently pass.
-
-Not to be redone on rework, all confirmed by this or the previous verification:
-the `py_repr`/`printable`/`nonprintable`/`escape` bodies are byte-identical to
-`records.rs` at `57d6929`; the regeneration block reproduces all 79 committed
-expectations byte-identically; `git diff --numstat 4120821 9278501` is `29 0`,
-purely additive; Python's three escape widths are confirmed; the stale-copy
-audit's conclusion holds (no second stale copy), redone structurally; both
-declared divergences are soundly reasoned; the 010 oracle chain holds
-(Rust port = Python loader = shipped `edition-manifest.json`).
-
-For WP-5.1d: this verification is the third demonstration in this execution
-that a guard proves only what its cases contain. Its duplicate-helper audit
-clause should be written structurally over normalised function bodies rather
-than by name, and consolidation would remove the need for a copy-agreement
-test on this helper entirely.
-
-## Status
-
-rejected
+- The duplicated `py_repr` remains a forced copy. WP-5.1d's consolidation is
+  still the structural fix, and its duplicate-helper audit should be written
+  structurally over normalised bodies rather than by function name, per the
+  third pass's finding.
