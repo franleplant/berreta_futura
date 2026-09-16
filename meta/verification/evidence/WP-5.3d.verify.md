@@ -1,138 +1,150 @@
 # WP-5.3d verification
 
-Worker commit `2bc3900`, evidence `meta/verification/evidence/WP-5.3d.md`.
-Verifier base `53d8b60`.
+Verdict: **ACCEPTED**, with one presentation finding recorded below.
 
-## Scope and downgrade
+Re-verification of the rework at `0b32501`. Rule 3 applies in its
+evidence-consistency form (the Phase 1 spike downgrade): the probe code was
+uncommitted and removed at WP end, so the tracer half of each measurement is
+audited rather than replayed. That downgrade is stated here as the protocol
+requires, and the limits of what it let me check are set out under
+"What I verified directly".
 
-The spike instrumentation was uncommitted and removed at WP end, so per the
-Phase 1 preamble this is an **evidence-consistency audit**, not a replay.
-Audited harder than a pure measurement because the output decides a plan
-clause: it is the basis for moving WP-5.3b's oracle to decisions and for
-making the display-list tracer the critic's text source.
+## History
 
-## Verdict: REJECTED
+`2bc3900` was REJECTED at verify `6c24379`. The verdict itself, path B (the
+critic oracle moves to the critic's decisions, with the display-list tracer
+rather than poppler as the text source), was upheld as correct and well
+supported and is not re-litigated here. The rejection was for one
+load-bearing claim: "article-stub-last-page is the only text-derived decision
+boundary", which is false. The claim had also propagated into plan revision
+16 in three places; the planner corrected the plan in revision 17.
 
-Narrowly, and not on the decision. **Path B is correct and well supported**:
-path A's criterion was fixed in advance, the tracer fails it on three
-independent grounds, and the failures are measured rather than asserted. I am
-not disputing the recommendation's direction.
+## Site count, counted independently
 
-The rejection is on the claim that carries recommendation 3, and on a residual
-that is recorded without its consequence.
+I counted from `src/magazine/render_critic.py` without reference to either
+prior count, taking a "site" to be one `issue(...)` call whose guarding
+condition reads a text-derived field, and requiring each to emit a distinct
+code string.
 
-## Finding 1, material: the text-derived decision surface is understated
-
-The evidence states that `article-stub-last-page` is "the only text-derived
-decision boundary in the critic", and recommendation 3 scopes WP-5.3c to
-"near-threshold cases on both sides of that one threshold".
-
-`body_text_lines < 5` is indeed the only numeric **threshold** on a text-derived
-count (`STUB_BODY_LINE_MINIMUM = 5` at `render_critic.py:62`, so the `< 5` is
-right). But **five** text-derived fields feed **ten** issue sites:
-
-| field | sites | issue codes |
+| field | sites | codes |
 |---|---|---|
-| `text_order_matches` | :152, :176, :198 | `booklet-page-order`, `interior-booklet-page-order`, `cover-booklet-page-order` |
-| `blank` | :291, :452, :476 | `inside-cover-reader-not-blank`, `inside-cover-booklet-not-blank`, `cover-booklet-inside-not-blank` |
-| `ink_free` | :299, :460, :484 | `blank-page`, `blank-booklet-side`, `blank-cover-booklet-side` |
-| `standalone_punctuation_lines` | :309 | `orphan-punctuation` |
-| `body_text_lines` | :380 | `article-stub-last-page` |
+| `text_order_matches` | `:152`, `:176`, `:198` | `booklet-page-order`, `interior-booklet-page-order`, `cover-booklet-page-order` |
+| `blank` | `:291`, `:452`, `:476` | `inside-cover-reader-not-blank`, `inside-cover-booklet-not-blank`, `cover-booklet-inside-not-blank` |
+| `ink_free` | `:299`, `:460`, `:484` | `blank-page`, `blank-booklet-side`, `blank-cover-booklet-side` |
+| `standalone_punctuation_lines` | `:309` | `orphan-punctuation` |
+| `body_text_lines` | `:380` | `article-stub-last-page` |
 
-`blank` (`:1008`) and `ink_free` (`:1009`) are conjunctions that include
-`not text.strip()`, so both are partly text-derived; `sparse` (`:1010`) is
-ink-ratio only and is correctly excluded.
+**Eleven sites, eleven distinct codes.** This matches the rework and not the
+rejecting verifier's ten; the third reading breaks the tie in the rework's
+favour. `sparse` is ink-ratio only and is correctly excluded. `blank` and
+`ink_free` are conjunctions whose text half is `not text.strip()` and whose
+raster halves (`pure_white`, `ink_pixels == 0`) do not depend on the text
+source.
 
-Why this is material rather than pedantic: path B's whole premise is that the
-**fault suite carries the weight** instead of 010's agreement. A WP-5.3c
-briefed from recommendation 3 as written would build faults for one threshold
-and leave four fields with no fault coverage. The under-scoping is caused by
-the overstated claim, which is the same defect family this execution has
-already rejected twice (WP-5.3a's blanket coverage claim, WP-5.1c's).
+`STUB_BODY_LINE_MINIMUM = 5` at `:62` is confirmed as the only numeric
+threshold over a text-derived field. `standalone_punctuation_lines` is a list
+tested for truthiness at `:309`, an empty/non-empty boundary rather than a
+tunable numeric one, so the distinction the evidence draws is right.
 
-The substance survives: WP-5.3b measured `standalone_punctuation_lines` and
-text-emptiness differing on 0 of 56 pages, and this spike measures
-`text_order_matches` at 27 of 27. So no decision is known to flip. That is the
-argument the evidence should make, and it is a different argument from "there
-is only one".
+## `text_characters` drives no issue: CONFIRMED
 
-## Finding 2, material: the cover residual disables a specific issue
+`grep -rn "text_characters" src/magazine/ mag/src/` returns exactly one hit,
+`render_critic.py:1007`, its definition. Nothing consumes it in either the
+Python package or the Rust tree. The field with the spike's worst agreement
+(7 of 54) therefore feeds no decision, which materially strengthens path B.
 
-The evidence records that the tracer cannot read reader pages 1 and 56
-(`font Helvetica lacks ToUnicode`) and says WP-5.3b "needs a named decision".
-It does not connect that to the decision it actually disables.
+## `cover_wrap_plan(56)`: CONFIRMED
 
-`cover_spread_checks` (`:184`) is computed from `cover_booklet_texts` and
-`reader_texts` over `cover_wrap_plan(page_count)`, which is exactly the wrap
-carrying reader pages 1 and 56. So under a tracer-fed critic,
-`cover-booklet-page-order` cannot be computed at all, and the evidence's own
-"side 1 is untraceable because it carries reader pages 56 and 1" is the same
-fact seen from the other end without the inference being drawn. An issue code
-that cannot be evaluated is not a near-threshold worry; it is a missing check.
+    uv run python -c 'from magazine.booklet import cover_wrap_plan; print(cover_wrap_plan(56))'
+    ((56, 1),)
 
-## Finding 3, forward gap the evidence does not notice
+Exactly the two pages the tracer cannot read. So `cover-booklet-page-order`
+(`:198`, guarded on `cover_spread_checks`, which `:184` computes over
+`cover_wrap_plan`) is **not computable at all** under a tracer-fed critic,
+rather than computed differently. The evidence draws this correctly, and
+records the forward consequence: WP-5.4g brings the same two pages into the
+Tier E compared domain, so a tracer that fails loud on them is a gap in the
+gate and not only in the critic, with WP-0.2h referenced as the prerequisite
+rather than a fix re-proposed.
 
-The cover residual reaches beyond the critic. The Tier E compared domain is
-today pages 2..n-1, which excludes the covers; **WP-5.4g makes `reader.pdf`
-compared end to end**, at which point the cover pages enter the compared domain
-and the tracer that fails loud on them becomes a gap in the gate itself, not
-only in the critic. The evidence says the residual "binds whichever path is
-taken" but scopes it to WP-5.3b. Whoever owns the standard-14
-StandardEncoding/WinAnsiEncoding fix (or WP-5.4's port emitting a `ToUnicode`)
-should know it is on the gate's critical path, not just the critic's.
+## What I verified directly
 
-## Checks that passed
+I reproduced the **pypdf half** of both new measurements from the same tree
+the spike used (`editions/010/render-2026-09-14T01-47-59/en/reader.pdf`),
+using `_STANDALONE_PUNCTUATION` imported from the module under test rather
+than a reimplementation:
 
-**Owns**: `2bc3900` touches only `meta/verification/evidence/WP-5.3d.md`. No
-tracked source, no `*.verify.md`, no `baseline.json`; the working tree carried
-nothing of the spike's.
+    uv run python -c '
+    import sys; sys.path.insert(0,"src")
+    from magazine.render_critic import _STANDALONE_PUNCTUATION
+    from pypdf import PdfReader
+    r=PdfReader("editions/010/render-2026-09-14T01-47-59/en/reader.pdf")
+    empty=[]; punct={}
+    for n in range(2,56):
+        t=r.pages[n-1].extract_text() or ""
+        if not t.strip(): empty.append(n)
+        p=[l.strip() for l in t.splitlines() if _STANDALONE_PUNCTUATION.fullmatch(l.strip())]
+        if p: punct[n]=p
+    print(len(range(2,56)), empty, punct)'
 
-**Single-cause claim: shows all seven, does not generalise from one.** The
-table names each divergent page with the merged line pypdf emits, every page is
-an article opener, and each merge is visible as a missing space at the join.
-Every row is internally consistent (tracer exactly one more line than pypdf in
-all seven). The geometric counter-evidence is given for page 4 (two shows at
-30011 and 27131, a 28.8 pt leading).
+    54 [2, 10, 30, 35, 45, 54, 55] {}
 
-**Denominators: fairly stated.** The tracer's 47/54 and 7/54 exclude the two
-untraceable covers while poppler's 16/56 and 9/56 do not, so the pairs are not
-like-for-like. The table discloses this in its own fourth row ("0 of 2,
-untraceable") and the Commands section states 54 traceable interior pages up
-front. Counting the covers as tracer failures gives 47/56 against poppler's
-16/56, so the conclusion is unaffected in direction or magnitude. Poppler's
-16/56 also reconciles with WP-5.3b's independently reported 40/56 divergences.
+I did **not** rebuild the tracer probe. WP-0.2i is concurrently modifying
+`mag/src/parity/streams.rs` and `display.rs`, the two files the probe
+`#[path]`-includes, so a probe built now would measure a different tracer
+from the one WP-5.3d measured, and agreement or disagreement would be
+evidence about neither. Recorded as a limit rather than worked around.
 
-**Reproducibility: adequate, thin in one place.** The pypdf oracle is a full
-inline invocation and reruns as written. The probe is described by its `#[path]`
-module shape, its env-var interface and the fields it writes, rather than given
-verbatim, so a rerun means reconstructing roughly twenty lines; the crux, the
-line-grouping and join rule, is stated explicitly in Metrics. Sufficient, but a
-verbatim probe would have been better.
+## Finding: the two 54-of-54 figures are not equally strong
 
-**Self-caution is right, and the corrected rule has a bounded failure mode.**
-The empty-string join welding `BERRETA FUTURA04objects` across a page boundary
-is a real trap and correctly recorded. The corrected rule (join shows with a
-space, sound because `normalized()` at `:113` collapses whitespace) has the
-mirror failure: a single word split across two shows gains a spurious space,
-which `normalized()` cannot remove because the comparison is `actual ==
-expected` on normalized text. The evidence's own `text_characters` finding shows
-within-line shows do sit adjacent without spaces (`BERRETA FUTURA04`), so the
-mode is reachable in principle; it did not fire here (27 of 27). Worth a line in
-the re-cut brief, not a defect.
+Both are true. They are not comparable evidence, and the evidence presents
+them in one register.
 
-## Remedy
+**text-emptiness is genuinely discriminating, and the evidence understates
+it.** pypdf finds text empty on 7 of the 54 interior pages (2, 10, 30, 35,
+45, 54, 55) and non-empty on the other 47. For the tracer to agree 54 of 54
+it must reproduce that exact partition: find nothing on those seven, find
+something on the other 47. A tracer that read a full-page plate as carrying
+text, or missed text on a text page, would fail. That is a real result and
+the evidence sells it short by tabulating it as a bare count.
 
-Small, and all in the evidence:
+**`standalone_punctuation_lines` agrees vacuously.** pypdf produces zero
+punctuation-only lines on all 54 pages, so the 54-of-54 agreement is `0 == 0`
+on every page. It establishes that the tracer does not *invent* such lines;
+it establishes nothing about whether the tracer would produce the *same*
+lines where any exist. Presented beside a 7/47 partition and a 27/27 spread
+table, it reads as stronger than it is.
 
-1. Replace "the only text-derived decision boundary" with the accurate
-   statement: one numeric threshold, five text-derived fields, ten issue sites,
-   and the measured argument that none is known to flip (0 of 56 on
-   `standalone_punctuation_lines` and text-emptiness, 27 of 27 on
-   `text_order_matches`).
-2. Extend recommendation 3 so WP-5.3c's fault surface names all five fields,
-   not just the one threshold.
-3. Connect the cover residual to `cover-booklet-page-order`, which it disables.
-4. Record finding 3: the same residual becomes a gate gap at WP-5.4g.
+This is not a false claim and it does not touch the decision, which is why it
+is a finding rather than a rejection. Two things already contain it: the
+evidence itself says at `:247` that the measured agreement is evidence the
+source is sound on *this* edition rather than a substitute for faulting each
+field, and recommendation 3 already names a per-field fault including "a page
+ending in an orphaned punctuation line". Both should stay. The wording in the
+comparison table should say which agreements discriminate and which are
+empty-set agreements, because this execution has now rejected several times
+over checks that pass without being able to fail, and WP-0.2g exists to
+report exactly this as cardinality.
 
-Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01E6ATvPwrSFQPyq3AtsB9bE
+## Not redone
+
+Established by the first verification and not disturbed by the rework: the
+single-cause check on the seven `body_text_lines` divergences (all seven
+shown rather than generalised, each page named with the line pypdf merges,
+geometric counter-evidence for page 4); denominator fairness (47/54 excludes
+the two untraceable covers while poppler's 16/56 does not, disclosed in the
+table, and counting the covers as tracer failures gives 47/56 against 16/56
+with the conclusion unaffected; poppler's 16/56 reconciles with WP-5.3b's
+independent 40 of 56); and the reproducibility assessment, adequate with the
+probe given by interface and the crux explicit.
+
+Both smaller notes from the rejection are present: reproducibility honestly
+described as thin, and the join rule's bounded mirror failure stated, with a
+geometric gap-based rule noted as the real fix for whoever implements the
+seam in WP-0.2h.
+
+## Owns
+
+`git show --stat 0b32501` touches exactly
+`meta/verification/evidence/WP-5.3d.md`. No tracked source, no `*.verify.md`,
+no `baseline.json`.
