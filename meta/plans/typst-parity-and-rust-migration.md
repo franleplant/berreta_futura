@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-15, revision 18 (Phase 0 built and
+Status: **in execution**, 2026-09-16, revision 19 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,61 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 19 changelog
+
+**The undeclared-edge class is closed by reading the imports.** WP-5.5 ended
+`blocked` on four dependencies, three of which the graph did not express,
+and named the systemic cause: the graph was drawn from the plan's WP
+groupings rather than from the Python import graph, which is cheap to read.
+That was the third undeclared edge found the expensive way. The whole
+internal import graph among modules Appendix A assigns to WPs has now been
+reconciled into the dependency graph, and the Phase 5 preamble carries the
+rule so the next cut checks imports rather than themes.
+
+**WP-5.5 is re-cut along the seam its dependencies actually create**, into
+WP-5.5a (web), WP-5.5b (preflight, which needs only WP-5.2 and WP-5.3a and
+is runnable the moment WP-5.2 lands) and WP-5.5c (package and SHA256SUMS,
+which needs WP-5.2 and WP-5.3b). WP-5.6 now depends on the three of them
+severally rather than on one blocked WP.
+
+**The unassigned cover-helper seam becomes WP-5.4a.** `web_edition.py:18`
+imports four PURE TEXT functions from `cover.py` that are not the PDF
+compiler at all, and with `mag/src/cover/` not yet existing and the
+duplicated-helper rule forbidding a copy, whoever arrived first would have
+had to invent the seam. Cut as its own small WP rather than folded into
+WP-5.4, so the web path does not wait on the cover compiler.
+
+**The QR codes are decided, and the trap is named.** All nine regenerate
+byte-identically, every payload is byte mode so mode segmentation is not a
+variable, but segno BOOSTS the requested error level L to M on 6 of 9,
+which is a segno policy rather than ISO/IEC 18004. A spec-correct encoder
+asked for L would differ on two thirds of this edition's codes while
+looking correct in isolation, so the boost is reproduced deliberately and
+the effective level asserted per payload. The primary oracle is STRUCTURAL,
+comparing the decoded module matrix, payload, version, mask and effective
+level; byte-identity stays the web-tree bar, with any divergence declared
+and enumerated rather than absorbed.
+
+**`3 Tr` gets a decision, not a fail-loud.** 010's covers use invisible text
+as well as non-embedded Helvetica, so they had TWO unowned reasons to break
+the gate once WP-5.4g compares them, and only the ToUnicode half had an
+owner. WP-0.2h now RECORDS invisible text with the render mode on the
+element rather than skipping it: it contributes no pixels, so it is not
+what is printed, but it is the selectable-text layer that usually carries
+the real title, and a difference there is a real difference in what a
+reader can select, copy and search. Recording costs nothing and compares
+invisible text only against invisible text; Tier S's extracted-text clause
+covers the same content independently, which is the right division, Tier S
+for content and Tier E for rendering.
+
+**Structural comparison is named as a general move**, since it has now
+rescued two dead ends (the critic's text source and the QR matrices):
+compare the decoded structure rather than the serialization, insensitive to
+how a library writes bytes while still catching a wrong version, mask,
+level or ordering. With the limit stated, because it could otherwise become
+an excuse: it is not a licence to weaken an oracle whose BYTES are
+themselves the artifact, which is why the web tree keeps byte-identity.
 
 ## Revision 18 changelog
 
@@ -1354,6 +1409,21 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   key, while `streams::trace_page` reads the same file happily. A consumer
   that only wants glyphs must not fail on an outline structure it never
   asked for.
+- Target 2b, INVISIBLE TEXT (`3 Tr`): 010's cover pages use invisible text
+  rendering mode as well as non-embedded Helvetica, and the tracer fails
+  loud on both, so the covers currently have TWO unowned reasons to break
+  the gate once WP-5.4g compares them. **Decision: RECORD it, with the text
+  render mode carried on the element**, rather than skipping it. Invisible
+  text contributes no pixels, so it is not part of what is printed, but it
+  is the selectable-text layer that usually carries the real title, and a
+  difference there is a real difference in the artifact: what a reader can
+  select, copy and search. Recording costs nothing, keeps the display list
+  a faithful record, and compares invisible text only against invisible
+  text. Tier S's extracted-text clause independently covers the same
+  content, which is the right division of labour: Tier S for content, Tier
+  E for rendering. Modes other than 0 and 3 stay fail-loud until something
+  needs them; "fail loud forever" was never available here, since the
+  covers must eventually be compared.
 - Target 2, the standard-14 faces: the tracer currently cannot read 010's
   COVER PAGES at all, because Helvetica is non-embedded and carries no
   `/ToUnicode`, and those pages are not empty (page 56 holds 380 characters
@@ -1846,6 +1916,26 @@ dumps are produced by full inline invocations (`uv run python -c '...'`)
 recorded verbatim in `## Commands` so the verifier reproduces them; no
 uncommitted scripts.
 
+**Derive the dependency graph from the IMPORT graph, not from the plan's
+own groupings.** Three undeclared edges were each discovered the expensive
+way, by a WP walking into an unlanded callee, before anyone simply read the
+imports. The reconciliation is now done and the graph carries every
+internal edge among modules Appendix A assigns to WPs. When a WP is cut or
+re-cut, check it against the imports of the Python it ports; that is a
+cheap read and it is authoritative in a way a grouping by theme is not.
+
+**Compare the decoded STRUCTURE, not the serialization.** When an artifact's
+bytes are one tool's way of writing a meaning that is itself checkable,
+compare the meaning: it is insensitive to how a library formats output
+while still catching a wrong version, mask, level or ordering. This has now
+rescued two situations that looked like dead ends, the critic's text source
+(WP-5.3d, compare decisions and tracer-derived structure rather than
+pypdf's exact line breaking) and the QR codes (WP-5.5a, compare the module
+matrix rather than segno's SVG). It is the first thing to reach for when an
+oracle seems to demand reproducing a library's formatting choices. It is
+NOT a licence to weaken an oracle whose bytes are themselves the artifact,
+which is why the web tree keeps byte-identity as its bar.
+
 **A corpus-based oracle proves only what the corpus contains.** This is the
 single most repeated lesson of the execution so far. Edition 010 has no
 padded containers, which hid WP-5.1a's defect; no explicit ports and no
@@ -1946,7 +2036,7 @@ them or the divergence is a defect:
   critic at all; its consumers are `preflight.py`, the reportlab
   `render.py` (never ported, dies at WP-6.1) and `weasyprint_adapter.py`,
   and its numbers land in **preflight.json**, not render-critic.json. So
-  the real downstream consumer of `mag/src/critic/metrics.rs` is **WP-5.5**
+  the real downstream consumer of `mag/src/critic/metrics.rs` is **WP-5.5b**
   (preflight), and the module's name is misleading about where it belongs.
   It is deliberately NOT renamed: the code is correct where it sits, it is
   already shipped and verified, and a cross-WP rename to satisfy a taxonomy
@@ -2166,33 +2256,108 @@ them or the divergence is a defect:
 - **WP-5.4g comparator switch (comparator WP)**: owns `mag/src/parity.rs`
   + `parity.yaml` + `baseline.json` cover-page seed rows: the compared
   artifact becomes `reader.pdf` end to end. Gated on WP-3.7 + WP-5.4.
-- **WP-5.5 preflight + package + web** (`preflight.py`, `package.py`,
-  `web_edition.py`, `html_edition.py`): owns `mag/src/package/`,
-  `mag/src/web/`. **`mag/src/critic/metrics.rs` ALREADY EXISTS** (WP-5.3a)
-  and is what the preflight port consumes: `image_contrast.py`'s metrics
-  land in preflight.json, not render-critic.json, so do not re-port them.
-  The module lives under `critic/` for historical reasons the plan records
-  at WP-5.3a; consume it, do not move it.
-  Oracle: byte-identical `web/` tree files, SHA256SUMS,
-  preflight.json, printing instructions, edition-manifest.json for 010;
-  archives compare per-entry (name order, mode, timestamp, CRC32,
-  uncompressed bytes), never whole-file (zlib vs flate2 streams differ
-  legitimately). `html_edition.py`'s interior-HTML role dies with the
-  oracle; only the web path is ported. The byte-identical `web/` oracle is
-  sound because web HTML is byte-deterministic across renders, which
-  WP-0.0c established with a third control render.
-- **Port the string matches as structural tests** (residual from WP-0.0c):
-  `web_edition.py` recognizes its own markup by exact tag strings and by
-  regexes keyed to exact attribute order (`_PRINT_ONLY_LINE`,
-  `_SOURCE_LINK_LINE`, and the opener match at line 262 that blocked
-  WP-0.0c). Any future attribute on a figure, a source link or a closing
-  plate silently drops web content the same way the opener attribute
-  dropped nine QR links. The Rust port must test structure, not the
-  spelling of a tag, and its fixtures must include a tag carrying an extra
-  unrelated attribute.
+- **WP-5.5 RE-CUT (revision 19) into WP-5.4a, WP-5.5a, WP-5.5b, WP-5.5c.**
+  The original WP ended `blocked` with no code written (evidence
+  `meta/verification/evidence/WP-5.5.md`) on four measured dependencies,
+  three of which the graph did not express, and the re-cut follows the seam
+  those dependencies actually create rather than the plan's old grouping.
+  Notes that bind ALL of the successors:
+  - **`mag/src/critic/metrics.rs` ALREADY EXISTS** (WP-5.3a) and is what
+    the preflight port consumes: `image_contrast.py`'s metrics land in
+    preflight.json, not render-critic.json. Do not re-port them, and do not
+    move the module; it lives under `critic/` for the historical reason
+    recorded at WP-5.3a.
+  - `html_edition.py`'s interior-HTML role dies with the oracle; only the
+    web path is ported.
+  - The byte-identical `web/` oracle is sound because web HTML is
+    byte-deterministic across renders, which WP-0.0c established with a
+    third control render.
+  - Archives compare per-entry (name order, mode, timestamp, CRC32,
+    uncompressed bytes), never whole-file: zlib and flate2 streams differ
+    legitimately.
+  - WP-5.5's evidence already enumerates, per module, the branches edition
+    010 cannot reach (the corpus rule). The successors inherit that
+    enumeration and must not re-derive it.
+
+- **WP-5.4a cover text helpers**: owns `mag/src/cover/text.rs` and its
+  tests. Depends on WP-5.1c only. `web_edition.py:18` imports
+  `_cover_contributors`, `_cover_date`, `cover_tab_identity` and
+  `cover_tab_issue` from `cover.py`, and these are NOT the PDF compiler:
+  they are four pure functions over `Edition` producing strings (an author
+  roster upper-cased with a deck fallback, a re-spaced date, a tab string,
+  a zero-padded issue label). The duplicated-helper rule forbids copying
+  them and `mag/src/cover/` does not exist yet, so whoever arrived first
+  would have had to invent the seam; the plan assigns it instead. Cut as
+  its own WP rather than folded into WP-5.4 so the web path does not wait
+  on the cover PDF compiler, which is much larger. Oracle: exact string
+  equality against the Python functions over 010 and over fixtures
+  exercising the deck fallback and the zero-padding. WP-5.4 and WP-5.5a
+  both consume it.
+
+- **WP-5.5a web** (`web_edition.py`, `html_edition.py`'s web path): owns
+  `mag/src/web/`. Depends on WP-5.1a/5.1b/5.1c (html_edition imports
+  manifest, media_schema, publication_document, reader_text) and on
+  WP-5.4a (the cover text helpers above).
+  - Oracle: byte-identical `web/` tree files for 010.
+  - **The QR codes are the substance of this WP, and they are measured,
+    not feared.** The nine codes were regenerated against the committed
+    render tree and came back 9 of 9 byte-identical, so segno's parameters
+    are fully understood. Two findings decide the shape. Every payload is
+    BYTE mode, because `source_code_payload` strips the scheme from a
+    lowercased URL and alphanumeric mode cannot carry lowercase, so mode
+    segmentation, where QR encoders usually diverge, is not a variable.
+    And **segno BOOSTS the error level**: `error="L"` is requested and the
+    effective level is M on 6 of 9. That is a segno policy, not
+    ISO/IEC 18004, so a spec-correct encoder asked for L emits a different
+    matrix for two thirds of this edition's codes while looking perfectly
+    correct in isolation. Reproduce the boost deliberately and ASSERT the
+    effective level per payload; a silent L would pass every unit test
+    anyone would think to write.
+  - **Two oracles, primary structural**: decode both SVGs to a module
+    matrix and compare matrix, payload, version, mask and effective error
+    level. That is insensitive to how a library serializes an SVG while
+    still catching every way a code can be wrong, and it is the technique
+    the Phase 5 preamble names. Byte-identity of the SVG remains the
+    web-tree bar and is achievable on the evidence; if it turns out to
+    require reproducing a segno formatting choice that is not the spec,
+    the divergence is DECLARED and enumerated, the structural oracle
+    carries the proof, and the web-tree oracle is restated as
+    "byte-identical except the nine QR SVGs, which are structurally
+    equal". Never a silent fallback.
+  - Carries WP-0.0c's unfinished business: `_PRINT_ONLY_LINE`,
+    `_SOURCE_LINK_LINE`, `_PIECE_OPENING`, and the repaired opener regex
+    that still requires the class to be exactly `article-opener`. All four
+    recognise markup by exact spelling and drop web content silently when
+    an attribute is added, which is how nine source QRs vanished. Port
+    them as STRUCTURAL tests, with fixtures carrying an extra unrelated
+    attribute on a figure, a source link, a closing plate and an opener.
+
+- **WP-5.5b preflight** (`preflight.py`): owns `mag/src/package/preflight.rs`.
+  Depends on WP-5.2 (`preflight.py:8` takes `A4_LANDSCAPE_POINTS` and
+  `section_reader_pages` from `booklet.py`, and `section_reader_pages`
+  decides `reader_pages` and `expected_sheets`, both preflight.json fields
+  inside this WP's own oracle) and on WP-5.3a (`image_contrast`). The
+  smallest of the three and runnable the moment WP-5.2 lands. Oracle:
+  preflight.json equality on 010.
+
+- **WP-5.5c package and SHA256SUMS** (`package.py`): owns
+  `mag/src/package/`. Depends on WP-5.2 (`impose_a5_on_a4` at :11) and
+  WP-5.3b (`inspect_render` at :14), plus WP-5.5b. `package_release`
+  imposes three times and writes render-critic.json BEFORE preflight.json,
+  and SHA256SUMS digests all of it plus the critic's contact sheets, so
+  ORDER is part of the oracle, not an implementation detail. Oracle:
+  SHA256SUMS, printing instructions and edition-manifest.json byte-equal
+  for 010, archives per-entry.
+  Do NOT land `package.py`'s portable leaves (`sha256`,
+  `_adopt_rendered_layout`, `_printing_instructions`, `_studio_note`) ahead
+  of their callees. WP-5.5 explicitly declined to, on the ground that a
+  half-orchestrator is how stale copies start, which is the
+  duplicated-helper rule applied with judgment rather than by rote.
+
 - **WP-5.6 native render_edition**: owns `mag/src/render.rs`,
   `mag/src/typeset/**` glue (serial per rule 1b; after WP-3.7). Depends:
-  WP-2.3, WP-3.7, WP-5.2, WP-5.3b, WP-5.4, WP-5.5. Target: `--engine
+  WP-2.3, WP-3.7, WP-5.2, WP-5.3b, WP-5.4, WP-5.5a, WP-5.5b, WP-5.5c.
+  Target: `--engine
   typst` runs cover, critic, package, web natively; no bridge spawn.
   Verify: bridge outputs pre-generated; with `uv` removed from PATH, render
   010 `--engine typst` and `mag parity 010 --pre-rendered` against the
@@ -2394,8 +2559,23 @@ WP-3.5 + WP-0.2i -> WP-3.0g -> WP-3.7          (the ratchet cannot be
 WP-5.2, WP-5.3a, WP-5.7                        (parallel with Phase 2/3)
 WP-5.3a -> WP-5.3b -> WP-5.3c -> WP-5.3g
 WP-5.1c -> WP-5.4;  WP-3.7 + WP-5.4 -> WP-5.4g
-WP-5.1c -> WP-5.5
-WP-2.3 + WP-3.7 + WP-5.2 + WP-5.3b + WP-5.4 + WP-5.5 -> WP-5.6
+Phase 5 edges below are RECONCILED AGAINST THE PYTHON IMPORT GRAPH
+(revision 19), not against the plan's groupings; three were undeclared
+until a WP walked into each one:
+  WP-5.1c                       -> WP-5.4a -> WP-5.4, WP-5.5a
+  WP-5.1a + WP-5.1b + WP-5.1c   -> WP-5.5a   (html_edition imports manifest,
+                                              media_schema,
+                                              publication_document,
+                                              reader_text)
+  WP-5.2 + WP-5.3a              -> WP-5.5b   (preflight imports booklet,
+                                              image_contrast)
+  WP-5.2 + WP-5.3b + WP-5.5b    -> WP-5.5c   (package imports booklet,
+                                              preflight, render_critic)
+  WP-5.2                        -> WP-5.3b   (render_critic imports booklet,
+                                              concurrency)
+  WP-0.2h                       -> WP-5.3b, WP-5.4g
+WP-2.3 + WP-3.7 + WP-5.2 + WP-5.3b + WP-5.4 + WP-5.5a + WP-5.5b
+       + WP-5.5c -> WP-5.6
 WP-3.7 + WP-5.3g + WP-5.4g -> WP-4.1 -> WP-4.2
 WP-3.7 -> WP-4.0g -> WP-4.2
 WP-5.6 -> WP-4.2
@@ -2482,13 +2662,13 @@ with everything else Python), provenance ceremony (the small
 | `src/magazine/reader_text.py` | ported, WP-5.1a |
 | `src/magazine/booklet.py` | ported, WP-5.2 |
 | `src/magazine/render_critic.py` | ported, WP-5.3a/b/c |
-| `src/magazine/image_contrast.py` | ported, WP-5.3a (into `mag/src/critic/metrics.rs`, though its consumer is preflight, so WP-5.5 is what uses it; not used by the critic at all) |
+| `src/magazine/image_contrast.py` | ported, WP-5.3a (into `mag/src/critic/metrics.rs`, though its consumer is preflight, so WP-5.5b is what uses it; not used by the critic at all) |
 | `src/magazine/concurrency.py` | absorbed (rayon or std), WP-5.3a |
 | `src/magazine/cover.py` | ported, WP-5.4 |
-| `src/magazine/preflight.py` | ported, WP-5.5 |
-| `src/magazine/package.py` | ported, WP-5.5 |
-| `src/magazine/web_edition.py` | ported, WP-5.5 |
-| `src/magazine/html_edition.py` | web path ported WP-5.5; interior-HTML path dies with the oracle |
+| `src/magazine/preflight.py` | ported, WP-5.5b |
+| `src/magazine/package.py` | ported, WP-5.5c |
+| `src/magazine/web_edition.py` | ported, WP-5.5a (cover text helpers via WP-5.4a) |
+| `src/magazine/html_edition.py` | web path ported WP-5.5a; interior-HTML path dies with the oracle |
 | `src/magazine/weasyprint_adapter.py` | replaced by `mag/src/typeset/`; deleted WP-6.1 |
 | `src/magazine/render.py` (reportlab engine) | deleted WP-6.1, never ported |
 | `src/magazine/render_engine.py` | superseded by Rust dispatch (WP-2.0a); deleted WP-6.1 |
