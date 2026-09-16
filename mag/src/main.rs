@@ -2,6 +2,8 @@ mod art;
 mod caller;
 mod capture;
 #[allow(dead_code)]
+mod cover;
+#[allow(dead_code)]
 mod critic;
 #[allow(dead_code)]
 mod model;

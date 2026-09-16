@@ -1,0 +1,50 @@
+{
+ "cover_contributors": {
+  "010_shape": "ADA LOVELACE / GRACE HOPPER",
+  "blank_skipped": "ADA",
+  "deck_absent": "",
+  "deck_bool": "True",
+  "deck_empty": "",
+  "deck_int": "5",
+  "deck_list": "['a', 'b']",
+  "deck_null": "None",
+  "deck_string": "A deck",
+  "dup_case": "ADA LOVELACE",
+  "dup_casefold_sharp_s": "STRASSE",
+  "dup_exact": "ADA LOVELACE",
+  "edition_010": "FRANK RIETTA / ANTHROPIC / DARIO AMODEI / SANTI RUIZ / MICHAEL TRUELL / WILSON LIN / DEEPSEEK-AI / JON LEE, CHAOMIN YU, BEN RIES",
+  "ligature_upper": "FIRE ADA",
+  "sharp_s_upper": "STRASSE",
+  "single": "ADA LOVELACE",
+  "strip_ascii": "ADA LOVELACE",
+  "strip_u001f": "ADA / GRACE"
+ },
+ "cover_date": {
+  "": "",
+  "-09-13": "-09-13",
+  "2026": "2026",
+  "2026--13": "2026--13",
+  "2026-09": "2026-09",
+  "2026-09-": "2026-09-",
+  "2026-09-13": "2026 09 13",
+  "2026-09-13-14": "2026-09-13-14"
+ },
+ "cover_tab_identity": {
+  "edition_010": "BERRETA FUTURA / BUENOS AIRES",
+  "lower": "BERRETA FUTURA / BUENOS AIRES",
+  "plain": "BERRETA FUTURA / BUENOS AIRES",
+  "sharp_s": "STRASSE / BUENOS AIRES"
+ },
+ "cover_tab_issue": {
+  "edition_010": "ISSUE 010",
+  "empty_issue": "ISSUE 000",
+  "empty_lang": "NÚMERO 010",
+  "en_010": "ISSUE 010",
+  "en_us": "ISSUE 010",
+  "es": "NÚMERO 010",
+  "es_ar": "NÚMERO 007",
+  "negative": "ISSUE -01",
+  "pad_1": "ISSUE 001",
+  "wide": "ISSUE 1234"
+ }
+}
