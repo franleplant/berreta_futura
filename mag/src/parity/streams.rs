@@ -76,6 +76,7 @@ pub enum Element {
         glyphs: usize,
         gids: Vec<u32>,
         m: [i64; 6],
+        tr: i64,
         clip: Vec<u32>,
         #[serde(skip)]
         offs: Vec<[i64; 2]>,
@@ -111,6 +112,7 @@ struct Font {
     widths: HashMap<u32, f64>,
     tounicode: HashMap<u32, String>,
     ids: HashMap<u32, u32>,
+    metrics: bool,
 }
 
 #[derive(Clone)]
@@ -131,6 +133,7 @@ struct GState {
     tz: f64,
     tl: f64,
     ts: f64,
+    tr: i64,
 }
 
 impl GState {
@@ -152,6 +155,7 @@ impl GState {
             tz: 100.0,
             tl: 0.0,
             ts: 0.0,
+            tr: 0,
         }
     }
 }
@@ -303,7 +307,7 @@ impl Tracer<'_> {
             "Tw" => self.gs.tw = num(&args[0])?,
             "Tz" => self.gs.tz = num(&args[0])?,
             "Ts" => self.gs.ts = num(&args[0])?,
-            "Tr" => anyhow::ensure!(num(&args[0])? == 0.0, "text render mode != 0 unsupported"),
+            "Tr" => self.gs.tr = render_mode(num(&args[0])?)?,
             "Tj" => self.show(&[args[0].clone()])?,
             "'" => {
                 self.td(0.0, -self.gs.tl);
@@ -426,6 +430,7 @@ impl Tracer<'_> {
             glyphs: starts.len(),
             gids,
             m: trm.map(qc),
+            tr: self.gs.tr,
             clip: self.gs.clips.clone(),
             offs,
         });
@@ -452,6 +457,11 @@ impl Tracer<'_> {
         } else {
             bytes.iter().map(|b| u32::from(*b)).collect()
         };
+        anyhow::ensure!(
+            font.metrics || codes.is_empty(),
+            "font {} shows text but carries no Widths; standard-14 AFM metrics are not implemented",
+            font.name
+        );
         for code in codes {
             let uni = font
                 .tounicode
@@ -746,6 +756,158 @@ fn glyph_ids(
     Ok(ids)
 }
 
+fn render_mode(v: f64) -> Result<i64> {
+    let mode = v as i64;
+    anyhow::ensure!(
+        v == mode as f64 && (mode == 0 || mode == 3),
+        "text render mode {v} unsupported (only 0 fill and 3 invisible are recorded)"
+    );
+    Ok(mode)
+}
+
+const STANDARD_14: [&str; 12] = [
+    "Courier",
+    "Courier-Bold",
+    "Courier-BoldOblique",
+    "Courier-Oblique",
+    "Helvetica",
+    "Helvetica-Bold",
+    "Helvetica-BoldOblique",
+    "Helvetica-Oblique",
+    "Times-Bold",
+    "Times-BoldItalic",
+    "Times-Italic",
+    "Times-Roman",
+];
+
+const WINANSI_HIGH: [(u32, u32); 27] = [
+    (128, 0x20AC),
+    (130, 0x201A),
+    (131, 0x0192),
+    (132, 0x201E),
+    (133, 0x2026),
+    (134, 0x2020),
+    (135, 0x2021),
+    (136, 0x02C6),
+    (137, 0x2030),
+    (138, 0x0160),
+    (139, 0x2039),
+    (140, 0x0152),
+    (142, 0x017D),
+    (145, 0x2018),
+    (146, 0x2019),
+    (147, 0x201C),
+    (148, 0x201D),
+    (149, 0x2022),
+    (150, 0x2013),
+    (151, 0x2014),
+    (152, 0x02DC),
+    (153, 0x2122),
+    (154, 0x0161),
+    (155, 0x203A),
+    (156, 0x0153),
+    (158, 0x017E),
+    (159, 0x0178),
+];
+
+const STANDARD_HIGH: [(u32, u32); 54] = [
+    (161, 0x00A1),
+    (162, 0x00A2),
+    (163, 0x00A3),
+    (164, 0x2044),
+    (165, 0x00A5),
+    (166, 0x0192),
+    (167, 0x00A7),
+    (168, 0x00A4),
+    (169, 0x0027),
+    (170, 0x201C),
+    (171, 0x00AB),
+    (172, 0x2039),
+    (173, 0x203A),
+    (174, 0xFB01),
+    (175, 0xFB02),
+    (177, 0x2013),
+    (178, 0x2020),
+    (179, 0x2021),
+    (180, 0x00B7),
+    (182, 0x00B6),
+    (183, 0x2022),
+    (184, 0x201A),
+    (185, 0x201E),
+    (186, 0x201D),
+    (187, 0x00BB),
+    (188, 0x2026),
+    (189, 0x2030),
+    (191, 0x00BF),
+    (193, 0x0060),
+    (194, 0x00B4),
+    (195, 0x02C6),
+    (196, 0x02DC),
+    (197, 0x00AF),
+    (198, 0x02D8),
+    (199, 0x02D9),
+    (200, 0x00A8),
+    (202, 0x02DA),
+    (203, 0x00B8),
+    (205, 0x02DD),
+    (206, 0x02DB),
+    (207, 0x02C7),
+    (208, 0x2014),
+    (225, 0x00C6),
+    (227, 0x00AA),
+    (232, 0x0141),
+    (233, 0x00D8),
+    (234, 0x0152),
+    (235, 0x00BA),
+    (241, 0x00E6),
+    (245, 0x0131),
+    (248, 0x0142),
+    (249, 0x00F8),
+    (250, 0x0153),
+    (251, 0x00DF),
+];
+
+fn builtin_encoding(base: &str, encoding: Option<&str>) -> Result<HashMap<u32, String>> {
+    anyhow::ensure!(
+        STANDARD_14.contains(&base),
+        "font {base} lacks ToUnicode and is not a standard-14 text face"
+    );
+    let name = encoding.unwrap_or("StandardEncoding");
+    let mut map = HashMap::new();
+    let winansi = match name {
+        "WinAnsiEncoding" => true,
+        "StandardEncoding" => false,
+        other => bail!("font {base} lacks ToUnicode and uses {other}, which has no builtin table"),
+    };
+    for code in 32..=126u32 {
+        let point = match (winansi, code) {
+            (false, 39) => 0x2019,
+            (false, 96) => 0x2018,
+            _ => code,
+        };
+        map.insert(code, char_of(point)?);
+    }
+    let table: Vec<(u32, u32)> = if winansi {
+        WINANSI_HIGH
+            .iter()
+            .copied()
+            .chain((160..=255u32).map(|c| (c, c)))
+            .collect()
+    } else {
+        STANDARD_HIGH.to_vec()
+    };
+    for (code, point) in table {
+        map.insert(code, char_of(point)?);
+    }
+    Ok(map)
+}
+
+fn char_of(point: u32) -> Result<String> {
+    Ok(char::from_u32(point)
+        .with_context(|| format!("codepoint {point:#x} invalid"))?
+        .to_string())
+}
+
 fn load_font(
     doc: &Document,
     dict: &Dictionary,
@@ -755,11 +917,16 @@ fn load_font(
     let base = name_str(resolve(doc, dict.get(b"BaseFont")?)?)?;
     let stripped = strip_subset_tag(&base);
     let entry = map.get(&stripped);
-    let name = entry.map_or(stripped, |f| f.face.clone());
+    let name = entry.map_or_else(|| stripped.clone(), |f| f.face.clone());
     let subtype = name_str(dict.get(b"Subtype")?)?;
+    let encoding = dict
+        .get(b"Encoding")
+        .ok()
+        .map(|o| name_str(resolve(doc, o)?))
+        .transpose()?;
     let tounicode = match dict.get(b"ToUnicode") {
         Ok(o) => parse_tounicode(&decode_stream(doc, resolve(doc, o)?.as_stream()?)?)?,
-        Err(_) => bail!("font {base} lacks ToUnicode"),
+        Err(_) => builtin_encoding(&stripped, encoding.as_deref())?,
     };
     if subtype == "Type0" {
         let enc = name_str(dict.get(b"Encoding")?)?;
@@ -792,14 +959,20 @@ fn load_font(
             widths,
             tounicode,
             ids,
+            metrics: true,
         });
     }
-    let first = num(resolve(doc, dict.get(b"FirstChar")?)?)? as u32;
-    let arr = resolve(doc, dict.get(b"Widths")?)?.as_array()?;
     let mut widths = HashMap::new();
-    for (i, w) in arr.iter().enumerate() {
-        widths.insert(first + i as u32, num(resolve(doc, w)?)?);
-    }
+    let metrics = match (dict.get(b"FirstChar"), dict.get(b"Widths")) {
+        (Ok(f), Ok(w)) => {
+            let first = num(resolve(doc, f)?)? as u32;
+            for (i, w) in resolve(doc, w)?.as_array()?.iter().enumerate() {
+                widths.insert(first + i as u32, num(resolve(doc, w)?)?);
+            }
+            true
+        }
+        _ => false,
+    };
     Ok(Font {
         name,
         two_byte: false,
@@ -807,6 +980,7 @@ fn load_font(
         widths,
         tounicode,
         ids: HashMap::new(),
+        metrics,
     })
 }
 
@@ -1062,15 +1236,21 @@ fn image_pixels(doc: &Document, stream: &lopdf::Stream) -> Result<(Vec<u8>, u32,
     let height = num(resolve(doc, dict.get(b"Height")?)?)? as u32;
     let bpc = num(resolve(doc, dict.get(b"BitsPerComponent")?)?)? as u32;
     anyhow::ensure!(bpc == 8, "image bpc {bpc} unsupported");
-    if dict.get(b"Decode").is_ok() {
-        bail!("image Decode array unsupported");
-    }
     let cs = name_str(resolve(doc, dict.get(b"ColorSpace")?)?)?;
     let channels = match cs.as_str() {
         "DeviceRGB" => 3,
         "DeviceGray" => 1,
         other => bail!("image color space {other} unsupported"),
     };
+    if let Ok(obj) = dict.get(b"Decode") {
+        let arr = resolve(doc, obj)?.as_array()?;
+        let values: Result<Vec<f64>> = arr.iter().map(|o| num(resolve(doc, o)?)).collect();
+        let identity: Vec<f64> = (0..channels).flat_map(|_| [0.0, 1.0]).collect();
+        anyhow::ensure!(
+            values? == identity,
+            "image Decode array is not the identity for {cs}, which would remap samples"
+        );
+    }
     let mut data = decode_stream(doc, stream)?;
     if let Ok(parms) = dict.get(b"DecodeParms") {
         let parms = resolve(doc, parms)?;
