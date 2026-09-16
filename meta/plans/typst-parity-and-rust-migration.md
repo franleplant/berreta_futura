@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-16, revision 22 (Phase 0 built and
+Status: **in execution**, 2026-09-16, revision 23 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,53 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 23 changelog
+
+**A port can be wrong by being too strict, and that is the quiet direction.**
+WP-5.4 blocked because `metrics.rs:95`, WP-5.3a's accepted code, bails on
+ANY eXIf chunk while PIL happily returns 010's cover art unrotated (EXIF
+tag 34665, no tag 274, and the Python cover compiler never calls
+`exif_transpose`), so an accepted port refused the very image it exists to
+grade, with WP-5.5b's preflight next in line over the same decoder. The
+plan already licensed the opposite direction, a port reporting where Python
+crashes; this revision states the mirror, which is NOT licensed, and draws
+the line that keeps it consistent with the plan's fail-loud discipline:
+fail-loud is right for the COMPARATOR, where an unknown operator must stop
+rather than be mis-compared, and wrong for a PORT beyond what its oracle
+refuses, where the Python IS the specification. Strictness gets declared
+and argued like any other divergence. The Owns extension to `metrics.rs`
+for the narrow fix is recorded alongside WP-0.0c's precedent, with the
+requirement to re-run WP-5.3a's full oracle before and after.
+
+**Covers move out of the risky column.** The front cover rasterizes to the
+SAME sha256 the probe got from the SVG Python emitted before porting began,
+0 of 4,335,040 pixels differ, the graded art matches independently, and the
+markup skeleton matches to 8 decimal places. `Cargo.lock` gained nothing:
+397 entries before and after, since the typst crates already pulled resvg,
+usvg and tiny-skia transitively at exactly the versions the Python binding
+embeds.
+
+**Two method findings worth more than the WP they came from.** A
+fill-only outline probe is not evidence about STROKED elements, because
+`ttf-parser` emits a redundant closing lineto before `Z` that fontTools
+omits, identical under fill and different under stroke; WP-5.4's earlier
+834-glyph probe saw nothing for exactly that reason, and the wordmark is
+the cover's only stroked element. And a transposed parameter pair
+(horizontal_scale 105.1 with stroke_width 0.30 against 106.6 with 0.15)
+passed EVERY structural check while differing on 10,768 pixels. That second
+one is a limit on the technique revision 19 named, so it is recorded there
+too: **a structural comparison cannot see a wrong constant that produces
+structurally identical output.** Structure and pixels answer different
+questions, and where an artifact can be rasterized the plan asks both.
+
+**The protocol blesses withholding a red test.** WP-5.4 wrote its test,
+proved it passes with the blocker removed locally, and deliberately did not
+commit it, because a red test in the shared tree blocks every concurrent
+agent's pre-commit hook. The naive reading of "commit your evidence" would
+have broken six work packages to document one, so rule 5b now says the
+evidence carries the test and the proof while the commit waits for the
+unblocking WP.
 
 ## Revision 22 changelog
 
@@ -2084,7 +2131,14 @@ pypdf's exact line breaking) and the QR codes (WP-5.5a, compare the module
 matrix rather than segno's SVG). It is the first thing to reach for when an
 oracle seems to demand reproducing a library's formatting choices. It is
 NOT a licence to weaken an oracle whose bytes are themselves the artifact,
-which is why the web tree keeps byte-identity as its bar.
+which is why the web tree keeps byte-identity as its bar. And it has a
+second, sharper limit, measured by WP-5.4: **a structural comparison cannot
+see a wrong CONSTANT that produces structurally identical output.** A
+transposed parameter pair on the cover wordmark (horizontal_scale 105.1
+with stroke_width 0.30, against the orange tail's 106.6 with 0.15) passed
+every structural check while differing on 10,768 pixels in a band at
+x 428-966, y 221-325. Where an artifact can be rasterized, structure and
+pixels answer different questions, and the plan asks both.
 
 **A corpus-based oracle proves only what the corpus contains.** This is the
 single most repeated lesson of the execution so far. Edition 010 has no
@@ -2124,6 +2178,31 @@ copy a helper out of another model module. Import it, or, where rule 1's
 Owns boundary genuinely forbids that, add a test asserting the two copies
 agree on a shared case list and say in evidence why importing was not
 possible. WP-5.1d then consolidates.
+
+**A port STRICTER than its oracle is a defect too, and a quieter one.**
+The deliberate-divergence rule below licenses a port that reports where
+Python crashes. Its mirror is not licensed: a port that REFUSES an input
+Python accepts is a defect of the same family, and harder to find, because
+it only surfaces when someone finally feeds it the input the oracle was
+always happy with. Two instances now, pointing opposite ways.
+`manifest.rs`'s `_check_unique_art` was LOOSER in a good way and is
+recorded below as a deliberate divergence. `metrics.rs:95` was STRICTER: it
+bails on ANY eXIf chunk, while PIL's `Image.open().convert("RGB")` returns
+edition 010's cover art unrotated at 1440x2160, its EXIF holding tag 34665
+(ExifOffset) and NO tag 274 (Orientation), and the Python cover compiler
+never calls `exif_transpose`. So the guard was a divergence from PIL
+wearing the clothes of a safety measure, and it blocked WP-5.4 from grading
+the very image it exists to grade, with WP-5.5b's preflight port next in
+line over the same decoder.
+The distinction that keeps this from contradicting the plan's fail-loud
+discipline: **fail-loud is right for the COMPARATOR**, where an unknown
+operator or colour space must stop rather than be mis-compared, and wrong
+for a PORT beyond what its oracle refuses, where the Python IS the
+specification. A port that wants to be stricter declares and argues it like
+any other divergence, never assuming strictness is free.
+Prefer NARROWING a guard to deleting it (here: bail on an orientation tag
+whose value is not 1), and re-run the original WP's full oracle before and
+after, so an accepted verification is not silently invalidated.
 
 **Deliberate divergence, and its limits.** Where the Python CRASHES, the
 port does not reproduce the crash. Porting a crash is not fidelity, and
@@ -2521,6 +2600,37 @@ them or the divergence is a defect:
     legitimately differ.
   - The Rust PDF writer this needs must be written GENERALLY, not for one
     layout mode; WP-5.4b adds coverage, not a second writer.
+  - **SETTLED, not merely feasible**: the `footer_caption` front cover
+    rasterizes to sha256 `4b4549e9b97ead36...`, the SAME hash the probe
+    produced from the SVG PYTHON emitted before any porting began; decoded
+    RGB through PIL gives 0 of 4,335,040 pixels differing; the graded cover
+    art matches independently at `695de5df97203c55...`; and the markup
+    skeleton, every transform, translate and scale, matches Python to 8
+    decimal places. `Cargo.lock` gained nothing at all, 397 entries before
+    and after, because the typst crates already pulled resvg 0.47.0, usvg
+    0.47.0 and tiny-skia 0.12.0 transitively at exactly the versions the
+    Python binding embeds; the additions merely promote them to direct
+    dependencies. Covers are answered; the plan no longer lists them as a
+    risk.
+  - **Owns EXTENSION, granted (precedent: WP-0.0c's extension to
+    `web_edition.py`)**: `mag/src/critic/metrics.rs` for the eXIf fix only.
+    WP-5.3a's accepted code bails on ANY eXIf chunk and 010's cover art has
+    one, so `decode_rgb` refused the very image WP-5.4 grades. Narrow the
+    guard rather than delete it, and re-run WP-5.3a's FULL oracle (all 14
+    images at three levels, plus the tint_band fixture and the rounding
+    oracle) recording before and after, so an accepted verification is not
+    silently invalidated. The general rule this instance produced is in the
+    Phase 5 preamble.
+  - **Two method findings, both general, both earned the hard way.**
+    (a) `ttf-parser` emits a redundant closing lineto before `Z` that
+    fontTools omits: IDENTICAL for fills, DIFFERENT for strokes. WP-5.4's
+    own earlier 834-glyph probe saw nothing because it tested fills only,
+    and the wordmark is the cover's ONLY stroked element. **A fill-only
+    outline probe is not evidence about stroked elements.**
+    (b) A transposed parameter pair passed every structural check while
+    differing on 10,768 pixels. Together these are the strongest argument
+    in this execution for raster EQUALITY as the cover oracle, which is
+    what the bullet above requires.
   - Note for WP-0.2h, measured here: `/F1` is reportlab's default
     Helvetica, set at the top of the stream and never shown, and by stream
     order it PRECEDES any `3 Tr`. WP-5.3d measured the tracer's failure
