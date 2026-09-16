@@ -1,4 +1,4 @@
-use super::streams::{self, qc, Caches, Color, Element};
+use super::streams::{self, qc, Caches, Color, Element, Face};
 use anyhow::{bail, Context, Result};
 use lopdf::{Document, Object};
 use serde::Serialize;
@@ -35,7 +35,7 @@ pub fn extract(
     pdf: &Path,
     first: u32,
     last: u32,
-    font_map: &BTreeMap<String, String>,
+    font_map: &BTreeMap<String, Face>,
 ) -> Result<Dump> {
     let doc = Document::load(pdf).with_context(|| format!("loading {}", pdf.display()))?;
     let page_ids = doc.get_pages();
@@ -94,6 +94,10 @@ fn page_annots(
             Ok(Object::Name(n)) => String::from_utf8_lossy(n).into_owned(),
             _ => "unknown".into(),
         };
+        anyhow::ensure!(
+            dict.get(b"AP").is_err(),
+            "annotation {subtype} carries an appearance stream, which the display list does not compare (fail loud per Tier E)"
+        );
         let rect_arr = deref(doc, dict.get(b"Rect")?)?.as_array()?;
         let nums: Result<Vec<f64>> = rect_arr.iter().map(|o| number(doc, o)).collect();
         let nums = nums?;
@@ -376,6 +380,102 @@ fn clipped(s: &str) -> String {
 pub struct SimpleClause {
     pub status: String,
     pub pages_differing: Vec<u32>,
+}
+
+#[derive(Serialize)]
+pub struct GlyphClause {
+    pub status: String,
+    pub glyphs: usize,
+    pub shows: usize,
+    pub worst_excess_pt: f64,
+    pub worst_ratio: f64,
+    pub worst: Option<String>,
+    pub violations: Vec<String>,
+}
+
+fn axis_shape(d: &[i64]) -> bool {
+    let mut sign = 0i64;
+    let mut prev = 0i64;
+    for v in d {
+        let s = v.signum();
+        if s != 0 {
+            if sign != 0 && s != sign {
+                return false;
+            }
+            sign = s;
+        }
+        if v.abs() < prev {
+            return false;
+        }
+        prev = v.abs();
+    }
+    true
+}
+
+pub fn compare_glyphs(a: &Dump, b: &Dump, first: u32) -> GlyphClause {
+    let mut glyphs = 0;
+    let mut shows = 0;
+    let mut worst_excess = f64::NEG_INFINITY;
+    let mut worst_ratio = 0.0f64;
+    let mut worst = None;
+    let mut violations = vec![];
+    for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
+        let page = first + i as u32;
+        for (j, (ea, eb)) in pa.elements.iter().zip(&pb.elements).enumerate() {
+            let (Element::Text { offs: oa, .. }, Element::Text { offs: ob, .. }) = (ea, eb) else {
+                continue;
+            };
+            if oa.len() != ob.len() {
+                violations.push(format!(
+                    "page {page} element {j}: {} glyphs vs {}",
+                    oa.len(),
+                    ob.len()
+                ));
+                continue;
+            }
+            shows += 1;
+            glyphs += oa.len();
+            let dx: Vec<i64> = oa.iter().zip(ob).map(|(p, q)| p[0] - q[0]).collect();
+            let dy: Vec<i64> = oa.iter().zip(ob).map(|(p, q)| p[1] - q[1]).collect();
+            for (k, (x, y)) in dx.iter().zip(&dy).enumerate() {
+                let mag = ((*x as f64).hypot(*y as f64)) * streams::GLYPH_QUANTUM;
+                let bound = k as f64 * streams::GLYPH_DRIFT_PT;
+                if bound > 0.0 {
+                    worst_ratio = worst_ratio.max(mag / bound);
+                }
+                let excess = mag - bound;
+                if excess > worst_excess {
+                    worst_excess = excess;
+                    worst = Some(format!("page {page} element {j} glyph {k}: {mag:.6} pt"));
+                }
+                if excess > 0.0 {
+                    violations.push(format!(
+                        "page {page} element {j} glyph {k}: {mag:.6} pt exceeds bound {:.6} pt",
+                        k as f64 * streams::GLYPH_DRIFT_PT
+                    ));
+                }
+            }
+            if !axis_shape(&dx) || !axis_shape(&dy) {
+                violations.push(format!(
+                    "page {page} element {j}: difference sequence is not one-signed and monotone"
+                ));
+            }
+        }
+    }
+    violations.truncate(40);
+    GlyphClause {
+        status: status(violations.is_empty()),
+        glyphs,
+        shows,
+        worst_excess_pt: if worst_excess.is_finite() {
+            worst_excess
+        } else {
+            0.0
+        },
+        worst_ratio,
+        worst,
+        violations,
+    }
 }
 
 fn status(pass: bool) -> String {
