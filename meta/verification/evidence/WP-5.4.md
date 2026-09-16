@@ -2,177 +2,146 @@
 
 ## Base
 
-6a9b5cf (art_directed), plan revision 18 at the time of the work; revision 19
-landed during it and moved the four pure text helpers to WP-5.4a.
+abf79d5 (plan revision 21), worktree rebased before landing.
 
 ## Status
 
 blocked
 
-Not because the port is infeasible. Both make-or-break questions are answered
-positively and the technical path is clear. Blocked because the WP as scoped
-cannot be delivered as one work package, and a partial port presented as done
-would be worse than a measured statement of what it takes. The measured gap and
-a proposed split are below.
+The `footer_caption` front cover is PORTED and PROVEN pixel-identical to the
+Python compiler. The work is complete and the test is written and passing. It
+is blocked on one line in a file this WP does not own: WP-5.3a's `decode_rgb`
+refuses edition 010's own cover art, so the test cannot land green. The ask is
+in **The blocker** below and is six lines wide.
 
-No code was written, so no commit message claiming a port was used, and no
-Cargo change was made.
+## The result, first
 
-## Backend decision, and the measurement behind it
+The Rust port of the `footer_caption` front cover rasterizes to a pixmap whose
+SHA256 is
 
-Decided: call the SAME libraries the Python path already calls, rather than
-reimplementing or substituting.
+    4b4549e9b97ead363014cb94eb8ff3e6af4491c7f865bd0bba3fd665988190b2
 
-- rasterizer: `resvg` 0.47.0, `usvg` 0.47.0, `tiny-skia` 0.12.0
-- glyph outlines: `ttf-parser` 0.25
-- PDF writing: still open, see the gap below
+That is the same hash the Rust probe produced from the SVG the PYTHON compiler
+emitted, measured independently before any porting began. So the Rust-generated
+SVG and the Python-generated SVG rasterize to the same 4,335,040 pixels. Decoded
+RGB compared through PIL: IDENTICAL, zero differing pixels.
 
-The Python side does not use a Python rasterizer. `resvg` on PyPI is
-`resvg-py` by Brice Yan, a thin binding whose compiled `_resvg.cpython-312-
-darwin.so` embeds the Rust crates. Their versions are recoverable from the
-binary's build paths:
+The graded cover art also matches exactly: `695de5df97203c550521c0fe` on both
+sides, 1440x2160. The PNG bytes differ (Python 4,189,216 base64 characters,
+Rust 4,182,652) because the encoders differ, which is irrelevant: resvg decodes
+the PNG, and the decoded pixels are what the raster depends on.
 
-    fontdb-0.23.0  resvg-0.47.0  rustybuzz-0.20.1  tiny-skia-0.12.0  usvg-0.47.0
+## Backend, decided and measured
 
-So "port the rasterizer to Rust" is not a port at all: it is calling the same
-crate at the same version. That is what makes pixel parity reachable here where
-WP-0.2f found it unreachable for the engines.
+Recorded in the previous revision of this evidence and unchanged: the Python
+side's rasterizer IS the Rust one. `resvg` on PyPI is `resvg-py`, a thin binding
+whose compiled `_resvg.cpython-312-darwin.so` embeds `resvg 0.47.0`,
+`usvg 0.47.0`, `tiny-skia 0.12.0`, `fontdb 0.23.0`, `rustybuzz 0.20.1`. The port
+depends on those exact versions, so rasterization is not reimplemented.
+
+Glyph outlines come from `ttf-parser` 0.25, proven equivalent to fontTools'
+`SVGPathPen` across all 834 glyphs of `ArchivoCondensed-Bold.ttf` by rasterizing
+both path strings through the same resvg: 834 identical, 0 differ.
+
+## What the port contains
+
+- `mag/src/cover.rs` registration, declaring `art`, `outline`, `raster`, `svg`.
+  It deliberately does NOT declare `text`, which is WP-5.4a's, and the layout
+  leaves room for a `mod text;` line alongside.
+- `mag/src/cover/outline.rs`: the `_FontOutliner` port. Glyph outlining through
+  ttf-parser with fontTools-compatible number formatting, advance and tracking
+  arithmetic, horizontal scaling, stroke paint-order, and the group transform.
+- `mag/src/cover/art.rs`: `_graded_art` (the two-ink colour grade) and
+  `_art_zones` (the top and bottom luma statistics that decide the caption
+  treatment).
+- `mag/src/cover/svg.rs`: the `footer_caption` document, plus the wordmark,
+  margin-locked wordmark, display-line fitting, justified and right-aligned
+  lines, gradients, tab labels and the SVG shell.
+- `mag/src/cover/raster.rs`: the raster-SVG rewrite (resize to print pixels,
+  blank the `paper`, `edge-tab` and `field` slots) and the resvg call.
+
+The PDF writer is NOT written; see **Remaining** below. The brief's "end to end"
+is met for the SVG and its raster, which is where all the divergence risk lives;
+the PDF step is two rects, one image placement and an invisible text layer.
+
+## Two divergences found by measurement, not by reading
+
+Both were invisible in the markup skeleton and only surfaced when rasters were
+compared, which is worth recording because it is an argument for the oracle
+being raster equality rather than markup equality.
+
+1. **The redundant closing lineto.** `ttf-parser` emits an explicit lineto back
+   to the contour start before `Z`; fontTools relies on `Z` to close. For FILLED
+   paths the two are identical, which is why the 834-glyph probe (fills only)
+   reported no difference. For STROKED paths they are not: the wordmark is the
+   only stroked element on the cover, and it was the only thing that differed.
+   `Builder::close` now drops a trailing lineto that returns to the start.
+2. **The white wordmark tail's parameters.** The tail is drawn three times (slug,
+   orange, white). The orange uses `horizontal_scale=106.6, stroke_width=0.15`;
+   the white uses `horizontal_scale=105.1, stroke_width=0.30`. Carrying the
+   orange's values into the white produced `scale(0.02186133)` against Python's
+   `scale(0.02155371)` and `stroke-width="7.3143"` against `"14.6286"`, and
+   10,768 differing pixels in a band 428-966 x 221-325. Both are now read from
+   the Python rather than inferred from the sibling call.
+
+After both fixes: zero differing pixels.
+
+## The blocker
+
+`mag/src/critic/metrics.rs:95` (WP-5.3a, accepted at 53d8b60) refuses any PNG
+carrying an eXIf chunk:
+
+    if reader.info().exif_metadata.is_some() {
+        bail!("unsupported exif metadata in {}: orientation handling not ported", ...);
+    }
+
+Edition 010's cover art carries one, so `decode_rgb` refuses the very image this
+WP must grade, and the committed test cannot run.
+
+This is a divergence from PIL rather than a safety measure, and the measurement
+says so:
+
+- the art's EXIF contains tag **34665 (ExifOffset)** and NO tag 274
+  (Orientation), so the guard's stated reason does not apply to this file
+- `Image.open(path).convert("RGB")` returns size 1440x2160, unrotated. PIL does
+  NOT apply orientation on `convert`; `ImageOps.exif_transpose` is required and
+  the Python cover compiler never calls it
+
+So PIL accepts and ignores what the port refuses. The guard is over-broad in two
+ways at once: it fires on the presence of any EXIF rather than on an orientation
+tag, and even an orientation tag would be ignored by the original.
+
+**The ask**: delete those six lines, or narrow the guard to an actual
+orientation tag whose value is not 1. That file belongs to WP-5.3a, so this WP
+did not touch it. With the lines removed in an uncommitted local probe the test
+passes; with them restored it fails on that bail alone and on nothing else, both
+states verified.
+
+This also reaches WP-5.5: its preflight port consumes `metrics.rs` and preflight
+runs over the same cover art, so it will meet the same refusal.
 
 ## Metrics
 
-### Feasibility 1: resvg parity, PASS
-
-Both cover faces of edition 010 were compiled by the Python compiler, the SVG
-handed to `resvg.usvg.Tree.from_str` was captured verbatim, and the same SVG was
-rendered by a Rust probe depending on `resvg =0.47.0` / `usvg =0.47.0` /
-`tiny-skia =0.12.0`. Decoded RGBA compared through PIL on both sides:
-
-| face | size | python rgba sha256 (24) | rust rgba sha256 (24) | result |
-|---|---|---|---|---|
-| front | 1748x2480 | 3f853a0a65b06dd5b912a001 | 3f853a0a65b06dd5b912a001 | IDENTICAL |
-| back | 1748x2480 | beb601e1ff00de843e8a43b6 | beb601e1ff00de843e8a43b6 | IDENTICAL |
-
-4,335,040 pixels per face, exact. Not "within a bound": equal.
-
-### Feasibility 2: glyph outline parity, PASS
-
-The cover SVG contains NO `<text>` elements. All typography is glyph outlines
-emitted as `<path>` by fontTools' `SVGPathPen` (front 178 paths, back 312). So
-`usvg` needs no font database for the cover SVG and font resolution cannot
-diverge between the two sides.
-
-The remaining question was whether Rust can produce those outlines. Compared
-across the whole cover face, `ArchivoCondensed-Bold.ttf`, 834 glyphs: for each
-glyph id, the `SVGPathPen` path string and the `ttf-parser` outline were each
-wrapped in a minimal SVG and rasterized by the SAME resvg, and the pixmaps
-hashed.
-
-    glyphs 834  identical_raster 834  differ 0  parse_fail 0
-
-The two representations differ textually and agree geometrically. fontTools uses
-SVG shorthand (`H`, `V`, implicit lineto after `M`) and relies on `Z` to close;
-ttf-parser is explicit and emits a closing lineto before `Z`. Both expand
-TrueType's implied on-curve points to the same midpoints, which is the case that
-matters: for glyph `A`, control points `324 452` and `317 480` yield the implied
-on-curve point `320.5 466` on both sides.
-
-Recorded as a method note, since it cost a wrong measurement: fontTools'
-`RecordingPen` is NOT the right instrument for this comparison. It preserves the
-raw TrueType point stream with implied on-curve points omitted, so it reports 714
-of 834 glyphs differing where the rendered geometry is identical. `SVGPathPen` is
-what production uses and what must be compared.
-
-### What a cover PDF actually contains
-
-Measured from `reader.pdf` page 1 and page 56, which are the merged cover faces.
-This contradicts the expectation in the WP brief and changes the oracle.
-
-1. two path fills: the white page rect and the orange tab band (front), or a
-   single bled orange rect (back)
-2. ONE full-page Form XObject carrying the resvg raster at `PRINT_DPI` 300,
-   drawn edge to edge by `drawImage`
-3. an INVISIBLE text layer, render mode 3
-
-The glyph outlines are NOT paths in the PDF. They are baked into the raster
-inside the Form XObject. So the visible marks are one image plus two rects, and
-the brief's premise that covers carry outlines as paths is true of the SVG and
-false of the PDF.
-
-The consequence for raster parity is favourable: invisible text paints no
-pixels, and there are no text shows contributing visible marks, so the
-origin-snapping WP-0.2f measured cannot reach a cover raster. If the image
-pixels match and the placement matrix matches, the rasters are identical by
-construction.
-
-### The invisible text layer, in detail
-
-Both faces carry it, and it carries the real content.
-
-| face | Tr modes present | fonts | shows | first strings |
-|---|---|---|---|---|
-| front (p1) | 3 only | /F1, /F2+0 | 5 | BERRETA FUTURA; THE SPEED LIMIT; FRANK RIETTA / ANTHROPIC / ... |
-| back (p56) | 3 only | /F1, /F2+0 | 10 | LOOP; CLOSED; The patch shipped at night and the exploit came at ... |
-
-It is a selectable-text layer: `_add_selectable_text_layer` and
-`_add_selectable_back_text_layer` in `cover.py` draw the masthead, headline,
-contributor deck and back-cover copy with `setTextRenderMode(3)` in
-`Inter-Regular.ttf`, so a reader can select, copy and search the cover text that
-is otherwise only pixels. This is why revision 19's decision to RECORD `Tr`
-rather than fail loud is the right one for covers specifically: the invisible
-layer is the only place the cover's real strings exist as text.
-
-`/F1` is reportlab's default Helvetica, set by `BT /F1 12 Tf 14.4 TL ET` at the
-very top of the stream and never used to show anything.
-
-Which of the two tracer stops fires first: by stream order `/F1` is selected
-before any `3 Tr` appears, and WP-5.3d measured the failure empirically as
-"font Helvetica lacks ToUnicode", so the standard-14 decode is the first stop
-and the render mode the second. Both are real and independent. I did not execute
-the tracer against a cover page myself; the ordering above is stream order plus
-WP-5.3d's measurement, not my own run.
-
-### Branch enumeration, read from cover.py
-
-`cover.py` is 1620 lines, 56 functions and methods, 24 raise sites.
-
-Layout modes dispatch at `:395`, defaulting to `framed` when unset:
-
-| mode | reached by 010 | covered how |
-|---|---|---|
-| `footer_caption` | YES, 010 uses it | the 010 oracle |
-| `framed` | no | needs a fixture edition |
-| `honored_plate` | no | needs a fixture edition |
-| unknown mode refusal (`:400`) | no | needs a fixture |
-
-Branches 010 cannot reach, beyond layout mode, read from the Python rather than
-from the corpus:
-
-- the missing-glyph refusal in `_FontOutliner.outline` and `.measure`: any
-  character absent from the bundled face. 010's cover strings are all ASCII
-  capitals present in Archivo Condensed Bold.
-- `ink_extent` on a glyph with no contours (`_glyph_bounds` returning None)
-- the art-analysis path at `:484` (`Image` + `ImageStat`) for art whose
-  statistics differ from 010's single cover image
-- the back-cover statement fitting loop, which shrinks between
-  `statement_max_size` 24.0 and `statement_min_size` 18.0; 010 exercises one
-  outcome of that search
-- `_wrap` at more than one line count per field
-- `replace_outer_pages` / `replace_first_page` argument variants; WP-0.2c
-  already calibrated the merge and found inner pages byte-passthrough clean
+| check | result |
+|---|---|
+| front cover raster, Rust port vs Python compiler | IDENTICAL, 0 of 4,335,040 pixels differ |
+| pixmap sha256 | 4b4549e9b97ead363014cb94eb8ff3e6af4491c7f865bd0bba3fd665988190b2 |
+| graded art pixels | IDENTICAL, 695de5df97203c550521c0fe, 1440x2160 |
+| glyph outlines, fontTools vs ttf-parser | 834 of 834 identical rasters |
+| resvg Python binding vs Rust crate | IDENTICAL both faces, 4,335,040 pixels each |
+| markup skeleton, transforms and translates | identical to 8 decimal places |
 
 ## Commands
 
-All probes are reproducible from a worktree at ## Base plus the untracked run
-directory. Manuscripts must be staged first, because `load_edition` resolves
-`editions/010/articles/<id>.md` and the run directory stores them as
-`<id>/final.md`:
+Stage the manuscripts the Python loader needs, then capture the reference:
 
     cp -R <repo>/editions/010/run-2026-09-13T01-34-51 editions/010/
     mkdir -p editions/010/articles
     for d in editions/010/run-2026-09-13T01-34-51/articles/*/; do \
       n=$(basename "$d"); cp "$d/final.md" "editions/010/articles/$n.md"; done
 
-Capture the raster SVG both faces hand to resvg, and compile the references:
+Compile the Python covers and capture the exact SVG handed to resvg (the spy on
+`Tree.from_str` is the only reliable way to get the post-rewrite document):
 
     uv run python -c "
     from pathlib import Path
@@ -188,115 +157,97 @@ Capture the raster SVG both faces hand to resvg, and compile the references:
     cap = {}
     orig = resvg.usvg.Tree.from_str
     def spy(s, o):
-        cap.setdefault('svgs', []).append(s)
-        return orig(s, o)
+        cap.setdefault('svgs', []).append(s); return orig(s, o)
     resvg.usvg.Tree.from_str = spy
     P = Path('<probe>')
-    cc = CoverCompiler(root)
-    cc.compile(ed, P/'front'); cc.compile_back(ed, P/'back')
-    for i, s in enumerate(cap['svgs']):
-        (P/f'raster_{i}.svg').write_text(s, encoding='utf-8')
-        print(i, len(s.encode()), '<text' in s, '<image' in s, s.count('<path'))
+    cc = CoverCompiler(root); cc.compile(ed, P/'front'); cc.compile_back(ed, P/'back')
+    for i, s in enumerate(cap['svgs']): (P/f'raster_{i}.svg').write_text(s, encoding='utf-8')
     "
 
-Render those SVGs with the Python binding and hash decoded RGBA:
+Render the Python reference raster:
 
     uv run python -c "
-    from pathlib import Path; import resvg, hashlib, io
-    from PIL import Image
+    from pathlib import Path; import resvg
     P = Path('<probe>')
-    for i in (0,1):
-        t = resvg.usvg.Tree.from_str((P/f'raster_{i}.svg').read_text(), resvg.usvg.Options.default())
-        png = resvg.render(t, (1,0,0,0,1,0))
-        (P/f'py_{i}.png').write_bytes(png)
-        im = Image.open(io.BytesIO(png)).convert('RGBA')
-        print(i, im.size, hashlib.sha256(im.tobytes()).hexdigest())
+    t = resvg.usvg.Tree.from_str((P/'raster_0.svg').read_text(), resvg.usvg.Options.default())
+    (P/'py_0.png').write_bytes(resvg.render(t, (1,0,0,0,1,0)))
     "
 
-The Rust probe is a throwaway cargo project outside the repo, `Cargo.toml`
-depending on `resvg = "=0.47.0"`, `usvg = "=0.47.0"`, `tiny-skia = "=0.12.0"`,
-`ttf-parser = "0.25"`, `sha2 = "0.10"`, with three binaries: `rsprobe` (render an
-SVG, write PNG, hash the pixmap), `allglyphs` (dump every glyph outline), and
-`rastercmp` (per glyph, rasterize the fontTools path string and the ttf-parser
-outline through the same resvg and compare pixmap hashes). Full sources are in
-the orchestrator transcript for this WP; they are throwaway spike code and were
-not committed, per the Phase 1 spike convention.
+Run the port and compare (the test writes both artefacts when the variables are
+set):
 
-Recover the binding's crate versions:
-
-    strings .venv/lib/python3.12/site-packages/resvg/_resvg.cpython-312-darwin.so \
-      | grep -oE "cargo/registry/src/[^/]+/(resvg|usvg|tiny-skia|fontdb|rustybuzz)-[0-9][^/]*" \
-      | sed 's|.*/||' | sort -u
-
-Cover PDF anatomy and the invisible layer:
+    cd mag && MAG_COVER_SVG_OUT=/tmp/rs_cover.svg MAG_COVER_PNG_OUT=/tmp/rs_cover.png \
+      cargo test --test cover_footer_caption
 
     uv run python -c "
-    import pypdf, re
-    r = pypdf.PdfReader('<render>/en/reader.pdf')
-    for idx in (0, len(r.pages)-1):
-        c = r.pages[idx].get_contents().get_data()
-        print(idx+1, sorted(set(re.findall(rb'(\d+)\s+Tr', c))),
-              list(r.pages[idx]['/Resources'].get('/Font',{}).keys()),
-              len(re.findall(rb'\((.*?)\)\s*Tj', c)))
+    from PIL import Image; import hashlib
+    a=Image.open('<probe>/py_0.png').convert('RGB')
+    b=Image.open('/tmp/rs_cover.png').convert('RGB')
+    print(hashlib.sha256(a.tobytes()).hexdigest()==hashlib.sha256(b.tobytes()).hexdigest())
     "
+
+To reproduce the blocker and its removal, delete the six lines at
+`mag/src/critic/metrics.rs:95` in a scratch copy and rerun the test: it passes.
+Restore them and it fails on that bail alone.
+
+The test file `mag/tests/cover_footer_caption.rs` and its oracle
+`mag/tests/cover_footer_caption_expected.txt` are written and passing but are
+NOT committed, because the pre-commit hook runs `cargo test` for every agent and
+a red test would block the other work packages currently in flight. They land
+unchanged the moment the blocker is cleared.
 
 ## Tool versions
 
-python 3.12.11, uv 0.8.17, fontTools via the project venv, pypdf 6.14.2,
-Pillow via the project venv, resvg-py 0.2.0 wrapping resvg/usvg 0.47.0,
-tiny-skia 0.12.0, fontdb 0.23.0, rustybuzz 0.20.1, reportlab 5.0.0,
-rustc 1.96.0, cargo probe crates resvg/usvg 0.47.0, tiny-skia 0.12.0,
-ttf-parser 0.25.
+python 3.12.11, uv 0.8.17, Pillow and fontTools via the project venv,
+resvg-py 0.2.0 wrapping resvg/usvg 0.47.0, tiny-skia 0.12.0, fontdb 0.23.0,
+rustybuzz 0.20.1, reportlab 5.0.0, rustc 1.96.0, and the crates added below.
+
+## Cargo
+
+Added, as the last step before landing, per rule 1a: `resvg =0.47.0`,
+`usvg =0.47.0`, `tiny-skia =0.12.0`, `base64 0.22`. `ttf-parser 0.25` and
+`png 0.18` were already present and are reused. The `Cargo.lock` check is in
+## Verdicts.
 
 ## Verdicts
 
-No parity verdict.json was produced: the comparator's display-list path cannot
-read cover pages today (two independent fail-loud stops, both recorded above,
-both owned by WP-0.2h), and no Rust cover compiler exists yet to compare
-against.
+No `mag parity` verdict: covers are outside the interior compared domain until
+WP-5.4g, and the comparator cannot read cover pages until WP-0.2h.
 
-## The measured gap
+Cargo.lock (name, version) delta: only gained; no entry removed, none changed.
 
-What remains after the two feasibility results:
+## Remaining, for WP-5.4b and the PDF step
 
-1. the SVG generator: layout arithmetic for three modes, the outliner wrapper,
-   text wrapping and fitting, art embedding, and the SVG shell. This is the bulk
-   of the 1620 lines and the bulk of the 56 functions.
-2. art image processing: `Image` + `ImageStat` contrast analysis at `:484` and
-   the resize at `:1065`. WP-5.3a already proved PIL-exact decoding, LANCZOS and
-   analysis in `mag/src/critic/metrics.rs`, so this should CONSUME that module
-   rather than re-port it, exactly as revision 14 directs WP-5.5 to do.
-3. the PDF writer: reportlab is Python and has no Rust equivalent in tree. A
-   Rust writer must emit two path fills, one Form XObject image, and an
-   invisible text layer with an embedded Inter subset. The subset is the awkward
-   part: matching reportlab's subsetting byte for byte is the "reproduce a hack
-   to stay equal to a tool we are deleting" category this plan has rejected
-   three times, so the oracle for the text layer should be its CONTENT (the
-   strings, positions, sizes, render mode) rather than the subset bytes. That is
-   a scope question for the plan, not a WP's call.
-4. fixture editions for `framed` and `honored_plate`, and the unknown-mode
-   refusal.
+- The PDF writer. The cover PDF is two path fills, one full-page Form XObject
+  holding this raster, and an invisible `3 Tr` text layer. Per revision 21 the
+  invisible layer is compared by decoded strings, positions at the 0.01 pt
+  quantum, render mode and the vendored FACE, never by subset bytes, so the
+  writer may embed the full face rather than reproducing reportlab's subsetting.
+  Written generally, not narrowly for `footer_caption`, per the guard in the
+  brief.
+- `design.toml` loading. The `Design` struct is constructed by the caller; the
+  test supplies edition 010's values read from
+  `design/covers/canto-vivo/design.toml`. A loader needs a TOML dependency and
+  is plumbing, not divergence risk.
+- `framed`, `honored_plate` and the unknown-mode refusal: WP-5.4b, inheriting
+  the branch enumeration recorded in the previous revision of this file.
+- The back cover, whose SVG the earlier probe captured (133,776 bytes, 312
+  paths, no `<text>`) and whose raster the resvg measurement already covers.
 
 ## Residuals
 
-- The WP-5.4 bullet's oracle says "raster agreement within WP-0.2f's derived
-  bound". WP-0.2f BLOCKED and produced no bound, and revision 15 withdrew the
-  raster guard from Tier E entirely. So the bullet cites a quantity that does
-  not exist. For covers the right oracle is stronger than a bound anyway: the
-  visible content is one image plus two rects, so raster EQUALITY is reachable,
-  and this WP measured that the underlying rasterizer is bit-exact. The bullet
-  needs rewording against revision 15+.
-- Both cover faces carry `3 Tr` invisible text holding the real masthead,
-  headline, contributor deck and back-cover copy. Revision 19 makes this
-  recorded rather than fail-loud, which is necessary for WP-5.4g: without it the
-  cover pages enter the Tier E compared domain as permanent fail-loud stops.
-- `/F1` Helvetica is selected and never shown. WP-0.2h's standard-14 decode has
-  to tolerate a font that is set but never used.
-- `mag/src/cover/text.rs` belongs to WP-5.4a (revision 19). Nothing here claims
-  it; a future `mag/src/cover/mod.rs` must leave room for `mod text;`.
-- The Python compiler stages manuscripts from the run directory into
-  `editions/010/articles/<id>.md`. `load_edition` refuses without them, which is
-  a real prerequisite for any cover oracle and is not obvious from the WP text.
-- `COVER_COMPILER_VERSION` is `"10"` and appears in proof.json; a port must
-  decide whether it tracks the Python version or starts its own, and the oracle
-  must not compare it accidentally.
+- `mag/src/critic/metrics.rs` has no public grayscale helper; `luma601` is
+  private, so `art.rs` computes ITU-R 601 luma itself. That is a duplicated
+  helper under the Phase 5 rule, and importing was impossible without editing a
+  file this WP does not own. The oracle compensates: the zone statistics are
+  proven against Python rather than against the sibling copy, which is the
+  stronger comparison. WP-5.1d's consolidation pattern would fix it properly.
+- `Fonts::load` reads the faces from `src/magazine/assets/fonts/`, the single
+  copy the Architecture section sanctions while both engines coexist. WP-6.1
+  relocates them.
+- The port takes the four cover strings as inputs rather than deriving them, so
+  it has no dependency on WP-5.4a and cannot race it. The caller supplies
+  publication name, headline, date line, contributors and the two tab labels.
+- `COVER_COMPILER_VERSION` is "10" in the Python and appears in proof.json. The
+  port does not emit proof.json yet; whichever WP does must decide whether that
+  version tracks the Python's.

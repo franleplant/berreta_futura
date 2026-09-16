@@ -30,6 +30,10 @@ typst-layout = "=0.15.1"
 typst-library = "=0.15.1"
 typst-pdf = "=0.15.1"
 typst-syntax = "=0.15.1"
+resvg = "=0.47.0"
+usvg = "=0.47.0"
+tiny-skia = "=0.12.0"
+base64 = "0.22"
 
 [lints.clippy]
 cognitive_complexity = "warn"

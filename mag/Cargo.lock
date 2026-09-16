@@ -1703,6 +1703,7 @@ name = "mag"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "clap",
  "ego-tree",
  "flate2",
@@ -1711,11 +1712,13 @@ dependencies = [
  "png",
  "pulldown-cmark",
  "regex",
+ "resvg",
  "scraper",
  "serde",
  "serde_json",
  "serde_yaml",
  "sha2 0.10.9",
+ "tiny-skia",
  "ttf-parser",
  "typst",
  "typst-layout",
@@ -1724,6 +1727,7 @@ dependencies = [
  "typst-syntax",
  "unicode-normalization",
  "url",
+ "usvg",
 ]
 
 [[package]]
