@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-16, revision 21 (Phase 0 built and
+Status: **in execution**, 2026-09-16, revision 22 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,47 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 22 changelog
+
+**Python and Rust disagree on Unicode, on 55 codepoints, silently.** Python
+is on 15.0.0 and Rust's std is newer; `char::to_uppercase` supplies an
+uppercase where CPython gives none across U+019B, U+0264, U+1C8A,
+U+A7CD-A7DB, Garay (U+10D70-U+10D85) and U+16EBB-U+16EC4, and
+`to_lowercase` disagrees on U+1C89. WP-5.4a did not accept the divergence:
+it pinned both operations to Python's tables and swept all 1,112,064
+codepoints three times. This is a plan rule rather than an evidence note
+because of HOW it would have failed: these functions feed the web edition,
+whose oracle is byte-identical output, so an unpinned mapping surfaces as a
+baffling mismatch long afterwards, only when a manuscript happens to
+contain one of 55 codepoints. Three remaining ports are exposed the same
+way, one of them non-obviously: WP-5.3b's `body_text_lines` filter is a
+lowercase test, which is a case operation.
+The cost is recorded rather than left to be discovered: pinning FREEZES
+these operations on Unicode 15.0.0, correct while Python is the oracle and
+wrong once it is gone, so **WP-6.1 must decide explicitly whether to
+unfreeze**. A permanent freeze nobody chose is the failure mode.
+
+**The duplicate-helper audit guards four files out of seven directories,
+and WP-5.4a walked into the gap.** It needed `is_python_space` and `py_str`,
+both private in modules it does not own, could not import them, and
+duplicated them into `cover/text.rs` where the audit cannot see the copies.
+It pinned both to Python over the whole plane rather than merely to the
+other Rust copy, which is stronger than the rule requires, so the exposure
+is structural rather than behavioural.
+
+**WP-5.1e takes BOTH options, not one**, and the reason is that the choice
+was posed as a fork when the evidence makes it a conjunction. Lifting alone
+is insufficient because the Unicode rule this same revision adds guarantees
+the next cross-cutting helper: WP-5.5a and WP-5.3b will need exactly
+WP-5.4a's pinned case tables, so leaving them in `cover/text.rs` schedules
+the next duplication instead of preventing it. Widening alone leaves
+today's duplicates where they are. So: lift `is_python_space`, `py_str` AND
+the case tables into the shared module, and widen the audit to every module
+under `mag/src/`. The 40-character body floor goes with it, since short
+bodies are precisely where trivial Python-semantics helpers live and a
+length threshold is the silent exemption rule 10 forbids; genuine
+coincidences get an allowlist with reasons.
 
 ## Revision 21 changelog
 
@@ -2055,6 +2096,26 @@ well for the manifest's refusal branches and badly for character classes,
 and the character class is what bit. Enumerate by reading the Python for
 branches, not by reading the corpus for cases.
 
+**Pin Unicode-dependent operations to Python's tables while Python is the
+oracle.** Python runs Unicode 15.0.0 and Rust's std is newer, and they
+DISAGREE on 55 codepoints: `char::to_uppercase` supplies an uppercase where
+CPython gives none across U+019B, U+0264, U+1C8A, U+A7CD-A7DB, U+10D70-
+U+10D85 (Garay) and U+16EBB-U+16EC4, and `to_lowercase` disagrees on
+U+1C89. This is not hypothetical and it is not loud: these operations feed
+the WEB EDITION, whose oracle is byte-identical output, so an unpinned
+mapping surfaces as a baffling byte mismatch months later, only when a
+manuscript happens to contain one of 55 codepoints. A port that
+upper-cases, lower-cases, casefolds or strips must therefore either PIN the
+operation to Python's tables or DEMONSTRATE agreement over the whole plane;
+WP-5.4a did both, pinning 1530 and 1525 entries and sweeping all 1,112,064
+codepoints three times. Currently exposed: WP-5.5a (web), WP-5.3b (the
+critic's `body_text_lines` lowercase filter IS a case operation), and
+WP-5.4/WP-5.4b wherever cover typography touches case.
+The cost, recorded rather than discovered: this FREEZES those operations on
+Unicode 15.0.0, which is right while Python is the oracle and wrong the
+moment it is gone. WP-6.1 carries the obligation to revisit it, so the
+freeze is a choice someone makes rather than an inheritance nobody noticed.
+
 **A helper that exists twice will drift.** Three of the six rejections in
 this run came from one behavior living in two places: WP-5.1c reintroduced,
 by copying, the exact `py_repr` defect WP-5.1b had already been rejected
@@ -2129,6 +2190,40 @@ them or the divergence is a defect:
   their reworks. It is a refactor, so it may not change a single oracle
   byte; if it does, that is a defect in the consolidation, not a new
   finding.
+- **WP-5.1e widen the duplicate-helper audit and lift the Python-semantics
+  helpers**: owns `mag/src/model/shared.rs` (or wherever WP-5.1d put the
+  shared module), the audit itself, and the call sites it updates,
+  including `mag/src/cover/text.rs`. Lands after WP-5.4a's verification.
+  **BOTH halves, not one.** The choice was framed as widen-the-audit or
+  lift-the-helpers; the evidence says the second alone is already
+  insufficient and the first alone leaves today's duplicates in place.
+  - **Lift**: `is_python_space` (private in `doc.rs`) and `py_str` (private
+    in `manifest.rs`) join `py_repr` in the shared module, because WP-5.4a
+    needed both, could not import either, and duplicated them into
+    `cover/text.rs`. It pinned its copies to PYTHON over the whole plane
+    rather than merely to the other Rust copy, which is stronger than the
+    duplicated-helper rule asks, but the exposure is structural, not
+    behavioural. **WP-5.4a's pinned case tables belong in the same module**:
+    the Unicode rule above guarantees WP-5.5a and WP-5.3b need exactly
+    those tables, so leaving them in `cover/text.rs` schedules the next
+    duplication rather than preventing it. That is why "these two are the
+    only cross-cutting cases" is false: the rule this revision adds creates
+    more.
+  - **Widen**: the audit from WP-5.1d scans only the four model modules,
+    and the codebase now has Rust in `model/`, `critic/`, `cover/`,
+    `parity/`, `impose.rs`, and soon `package/` and `web/`. It keys on
+    (name, signature, normalised body), so widening to every module under
+    `mag/src/` is mechanical.
+  - **Remove the 40-character body floor.** The verifier found the audit
+    skips short bodies, and a wider scan makes that matter more, because
+    short bodies are exactly where trivial Python-semantics helpers live. A
+    length threshold is a silent exemption of the kind rule 10 now forbids;
+    if the wider scan produces genuine coincidences, the answer is an
+    ALLOWLIST with a reason per entry, never a blanket floor.
+  - Verify: the audit fails on a deliberately planted duplicate in a
+    non-model module and on a planted short-bodied one; every existing
+    oracle in WP-5.1a/b/c and WP-5.4a replays byte-identically, since this
+    is a refactor and may not change an oracle byte.
 - **WP-5.2 booklet imposition** (`booklet.py`): owns `mag/src/impose.rs`.
   Oracle: impose the same 010 reader.pdf both ways; display-list equality
   and raster zero-diff per sheet, spread order text identical. Zero-diff is
@@ -2708,6 +2803,13 @@ them or the divergence is a defect:
   each keep/delete confirmed by Fran; `CLAUDE.md`, `docs/`, and deletion of
   the `meta/verification/` scaffolding (history keeps it); a final
   transition record.
+- **Unfreeze the Unicode tables, or decide not to.** Phase 5 ports pin
+  case operations to Python's Unicode 15.0.0 tables because Python is the
+  oracle. Once it is deleted the right behaviour becomes whatever Rust's
+  std does, and the pin becomes a frozen copy of a dead dependency's
+  tables. Decide explicitly: unpin and accept std's Unicode version, or
+  keep the pin and say why. Either is defensible; inheriting it silently is
+  not, which is the only outcome this clause exists to prevent.
 - **Translation oracle, run before deletion because it cannot be run
   after.** WP-5.1c ported `load_translation` in full (41 of
   `manifest.py`'s 87 raise sites live there), broader than English-only
@@ -2758,6 +2860,7 @@ Phase 5 edges below are RECONCILED AGAINST THE PYTHON IMPORT GRAPH
 (revision 19), not against the plan's groupings; three were undeclared
 until a WP walked into each one:
   WP-5.1c                       -> WP-5.4a -> WP-5.4 -> WP-5.4b
+  WP-5.1d + WP-5.4a             -> WP-5.1e   (lift helpers, widen audit)
   WP-5.4a                       -> WP-5.5a
   WP-5.1a + WP-5.1b + WP-5.1c   -> WP-5.5a   (html_edition imports manifest,
                                               media_schema,
