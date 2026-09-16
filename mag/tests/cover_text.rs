@@ -260,7 +260,7 @@ fn casefold_matches_python_over_all_codepoints() {
             None => character.to_string(),
         };
         assert_eq!(
-            text::python_casefold(&character.to_string()),
+            shared::py_casefold(&character.to_string()),
             want,
             "casefold U+{code:04X}"
         );
@@ -283,7 +283,7 @@ fn uppercase_matches_python_over_all_codepoints() {
             None => character.to_string(),
         };
         assert_eq!(
-            text::python_upper(&character.to_string()),
+            shared::py_upper(&character.to_string()),
             want,
             "upper U+{code:04X}"
         );
@@ -306,7 +306,7 @@ fn python_strip_matches_python_over_all_codepoints() {
         };
         let padded = format!("{character}x{character}");
         assert_eq!(
-            text::python_strip(&padded) == "x",
+            shared::py_strip(&padded) == "x",
             spaces.contains(&code),
             "strip U+{code:04X}"
         );
@@ -326,7 +326,7 @@ fn zfill_matches_python_on_sign_and_width() {
         ("+", "+00"),
     ];
     for (input, want) in rows {
-        assert_eq!(text::python_zfill(input, 3), want, "zfill({input:?})");
+        assert_eq!(shared::py_zfill(input, 3), want, "zfill({input:?})");
     }
 }
 
@@ -334,9 +334,9 @@ fn zfill_matches_python_on_sign_and_width() {
 fn tagged_arm_has_no_python_oracle_and_unwraps() {
     let tagged: Value = serde_yaml::from_str("!mytag x").expect("serde_yaml accepts a custom tag");
     assert!(matches!(tagged, Value::Tagged(_)), "fixture is Tagged");
-    assert_eq!(text::python_str(&tagged), "x");
+    assert_eq!(shared::py_str(&tagged), "x");
     let nested: Value = serde_yaml::from_str("!outer !!int 7").unwrap_or(Value::Null);
     if matches!(nested, Value::Tagged(_)) {
-        assert_eq!(text::python_str(&nested), "7");
+        assert_eq!(shared::py_str(&nested), "7");
     }
 }

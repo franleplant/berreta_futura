@@ -1,5 +1,8 @@
 #[path = "../src/model/doc.rs"]
 mod doc;
+#[path = "../src/model/shared.rs"]
+#[allow(dead_code)]
+mod shared;
 
 use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;

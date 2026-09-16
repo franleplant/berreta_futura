@@ -4,7 +4,8 @@ use super::records::{
     ExtractRequest, Figure, FigureRequest, SourceRecord,
 };
 use super::shared::{
-    load_structured, normalize, py_repr, safe_project_path, Result, ValidationError,
+    load_structured, normalize, py_repr, py_repr_value, py_str, safe_project_path, Result,
+    ValidationError,
 };
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
@@ -2137,41 +2138,6 @@ fn to_int(value: Option<&Value>) -> i64 {
 
 fn casefold(text: &str) -> String {
     text.to_lowercase()
-}
-
-fn py_str(value: &Value) -> String {
-    match value {
-        Value::Null => "None".to_string(),
-        Value::Bool(true) => "True".to_string(),
-        Value::Bool(false) => "False".to_string(),
-        Value::Number(number) => number.to_string(),
-        Value::String(text) => text.clone(),
-        other => py_repr_value(other),
-    }
-}
-
-fn py_repr_value(value: &Value) -> String {
-    match value {
-        Value::String(text) => py_repr(text),
-        Value::Sequence(items) => format!(
-            "[{}]",
-            items
-                .iter()
-                .map(py_repr_value)
-                .collect::<Vec<String>>()
-                .join(", ")
-        ),
-        Value::Mapping(mapping) => format!(
-            "{{{}}}",
-            mapping
-                .iter()
-                .map(|(key, item)| format!("{}: {}", py_repr_value(key), py_repr_value(item)))
-                .collect::<Vec<String>>()
-                .join(", ")
-        ),
-        Value::Tagged(tagged) => py_repr_value(&tagged.value),
-        other => py_str(other),
-    }
 }
 
 fn repr_option(value: Option<&Value>) -> String {

@@ -557,3 +557,17 @@ fn repr_cases_match_python() {
         );
     }
 }
+
+#[test]
+fn tagged_values_are_refused_as_pyyaml_refuses_them() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/tmp/model_manifest/tagged");
+    std::fs::create_dir_all(&dir).expect("the case root is creatable");
+    let path = dir.join("edition.yaml");
+    std::fs::write(&path, "edition: \"010\"\ndeck: !mytag x\n").expect("fixture is writable");
+    let error = shared::load_structured(&path).expect_err("a tagged value is refused");
+    assert!(
+        error.0[0].contains("could not determine a constructor for the tag '!mytag'"),
+        "message was {:?}",
+        error.0
+    );
+}
