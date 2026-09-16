@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-16, revision 20 (Phase 0 built and
+Status: **in execution**, 2026-09-16, revision 21 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,61 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 21 changelog
+
+**Covers stop being a risk item.** WP-5.4 blocked on SCOPE, not
+feasibility, and both make-or-break questions came back positive, so the
+plan now records answers where it used to record hazards. The backend was
+never a choice: the `resvg` PyPI package is a thin binding whose compiled
+library embeds resvg 0.47.0, usvg 0.47.0, tiny-skia 0.12.0, fontdb 0.23.0
+and rustybuzz 0.20.1, so the port calls the same crates at the same
+versions. resvg reproduces EXACTLY, decoded RGBA identical on both faces at
+4,335,040 pixels each. And the cover SVG has no `<text>` elements at all,
+only outlines, so font resolution cannot diverge; across all 834 glyphs of
+Archivo Condensed Bold the fontTools and ttf-parser outlines rasterize
+identically, differing textually and agreeing geometrically. The method
+note is kept because it would cost the next person a day: `RecordingPen` is
+the wrong instrument and falsely reports 714 of 834 differing.
+
+**Three decisions.**
+
+1. **Raster EQUALITY for covers, not a bound.** WP-5.4's bullet cited "WP-0.2f's
+   derived bound", which never existed: WP-0.2f blocked and revision 15
+   withdrew the raster guard outright. Citing a withdrawn artifact is worse
+   than citing nothing, since it reads as settled. For covers the stronger
+   bar is also the correct one, because the visible marks are two path
+   fills and one Form XObject holding the resvg raster, with no text show
+   contributing a visible mark, so origin snapping cannot reach them. The
+   plan is swept: the only other citation was WP-5.2's, which referred to
+   the bound only to say it must not absorb a divergence, and now says so
+   without invoking a thing that does not exist.
+2. **The invisible text layer is compared by CONTENT AND PLACEMENT, never
+   by subset bytes.** Matching reportlab's Inter subsetting byte-for-byte
+   is the reproduce-a-hack category, rejected for the fourth time, and it
+   contradicts revision 19's division: Tier S for content, Tier E for
+   rendering. An invisible layer contributes no rendering, so content is
+   the only thing it has. Compared: decoded strings in order, positions at
+   the 0.01 pt quantum, render mode 3, and the vendored FACE the subset
+   derives from. Not compared: the embedded font program, since two
+   subsets of one face legitimately differ.
+3. **WP-5.4 splits, with WP-5.4b carrying the modes 010 never exercises.**
+   010 uses `footer_caption` only, so `framed`, `honored_plate` and the
+   unknown-mode refusal are corpus-unreachable and must be fixtured, along
+   with the missing-glyph refusals, the contourless-glyph path, the
+   art-analysis branch and the back-cover statement-fitting search. Split
+   on the same seam logic as WP-5.5, so the mode that actually ships does
+   not wait on fixtures for modes it does not use. **WP-5.6 depends on
+   WP-5.4 only; WP-6.1 depends on WP-5.4b**, because deleting the Python
+   must not delete a capability nothing has proven. The Rust PDF writer is
+   written generally in WP-5.4; WP-5.4b adds coverage, not a second writer.
+
+WP-5.4 also supplied WP-0.2h with the ordering it needs on the covers:
+`/F1` is reportlab's default Helvetica, set at the top of the stream and
+never shown, and it PRECEDES any `3 Tr`, so the Helvetica decode is the
+first stop and the render mode the second. It did not run the tracer itself
+and said so, which is why that is recorded as a pointer rather than a
+result.
 
 ## Revision 20 changelog
 
@@ -2079,8 +2134,9 @@ them or the divergence is a defect:
   and raster zero-diff per sheet, spread order text identical. Zero-diff is
   the right bar here because both implementations place the same page
   content by the same arithmetic; a sub-quantum difference means the
-  arithmetic diverged and must be explained in evidence, never absorbed by
-  WP-0.2f's bound.
+  arithmetic diverged and must be explained in evidence. (Revision 15
+  withdrew WP-0.2f's raster bound entirely, so there is no bound to absorb
+  it into even if anyone wanted to.)
 - **WP-5.3a critic raster metrics** (`image_contrast.py`,
   `concurrency.py`'s role): owns `mag/src/critic/metrics.rs`. Oracle: 010
   metric values within `parity.yaml critic_metric_tolerances:` (fixed by
@@ -2322,16 +2378,76 @@ them or the divergence is a defect:
 - **WP-5.3g comparator switch (comparator WP)**: owns `mag/src/parity.rs`
   + `parity.yaml`: the Typst leg's critic verdict (Rust critic) joins
   Tier S.
-- **WP-5.4 cover compiler** (`cover.py`): owns `mag/src/cover/`. Depends
-  on WP-5.1c (consumes the Rust Edition model); needs no typst text stack
-  (covers are fontTools glyph outlines rasterized via resvg, placed by
-  reportlab). Backend decided in-WP, recorded. Oracle: display-list equality
-  plus raster agreement within WP-0.2f's derived bound for front/back cover
-  PDFs in 010's cover.layout mode, plus fixture editions covering the other
-  modes (framed, footer_caption, honored_plate). The bound applies here for
-  the same reason it applies to the engines: two different generators place
-  outlines at coordinates that can differ below the quantum, and a
-  grid-fitting rasterizer turns that into whole-pixel flips.
+- **WP-5.4 cover compiler** (`cover.py`, the mode 010 uses): owns
+  `mag/src/cover/`. Depends on WP-5.1c (the Rust Edition model) and
+  WP-5.4a (the text helpers). The hard questions are now ANSWERED rather
+  than open, and the plan should stop treating covers as risky:
+  - **The backend is not a choice**: the Python side calls no Python
+    rasterizer. The `resvg` PyPI package is a thin binding whose compiled
+    library embeds resvg 0.47.0, usvg 0.47.0, tiny-skia 0.12.0, fontdb
+    0.23.0 and rustybuzz 0.20.1, recoverable from the binary's build paths.
+    The port calls THE SAME crates at THE SAME versions; pin them.
+  - **resvg reproduces exactly, not within a bound**: the exact SVG each
+    face hands to resvg, rendered through a Rust probe at those versions,
+    gives decoded RGBA identical on both faces at 4,335,040 pixels each
+    (front `3f853a0a65b06dd5...`, back `beb601e1ff00de84...`).
+  - **Glyph outlines agree**: the cover SVG contains NO `<text>` elements
+    at all, only outlines as `<path>` (178 front, 312 back), so usvg needs
+    no font database and font resolution cannot diverge. Over all 834
+    glyphs of Archivo Condensed Bold, the fontTools `SVGPathPen` string and
+    the ttf-parser outline rasterize identically, 834 identical and 0
+    differing; they differ textually (H/V and implicit lineto against
+    explicit) and agree geometrically. Method note worth keeping:
+    `RecordingPen` is the WRONG instrument and falsely reports 714 of 834
+    differing.
+  - **Oracle: display-list equality plus raster EQUALITY** for the front
+    and back cover PDFs. Revision 13 wrote "within WP-0.2f's derived
+    bound"; that bound never existed, revision 15 withdrew the raster guard
+    outright, and for covers equality is both correct and STRONGER. The
+    reasoning revision 13 gave (two generators placing outlines sub-quantum
+    apart, a grid-fitting rasterizer turning that into pixel flips) does
+    not apply: the cover PDF's visible marks are two path fills and one
+    full-page Form XObject holding the resvg raster at 300 dpi, and no text
+    show contributes a visible mark, so origin snapping cannot reach a
+    cover raster at all.
+  - **The invisible text layer's oracle is CONTENT AND PLACEMENT, never
+    subset bytes.** Both faces carry a `3 Tr` layer via
+    `_add_selectable_text_layer` in Inter-Regular holding the real strings
+    (front BERRETA FUTURA / THE SPEED LIMIT / the contributor deck; back
+    LOOP / CLOSED / the back-cover copy). Matching reportlab's Inter
+    SUBSETTING byte-for-byte would be reproducing a hack to stay equal to a
+    tool we are deleting, which this plan has now rejected four times. It
+    also contradicts the division revision 19 drew: Tier S for content,
+    Tier E for rendering. An invisible layer contributes NO rendering, so
+    content is the only thing it has. Compare therefore: the decoded
+    strings in order, their positions at the 0.01 pt quantum, render mode
+    3, and the underlying VENDORED FACE the subset derives from. Never the
+    embedded font program or its digest, since two subsets of one face
+    legitimately differ.
+  - The Rust PDF writer this needs must be written GENERALLY, not for one
+    layout mode; WP-5.4b adds coverage, not a second writer.
+  - Note for WP-0.2h, measured here: `/F1` is reportlab's default
+    Helvetica, set at the top of the stream and never shown, and by stream
+    order it PRECEDES any `3 Tr`. WP-5.3d measured the tracer's failure
+    empirically as the Helvetica decode, so that is the first stop and the
+    render mode the second. WP-5.4 did not run the tracer itself and says
+    so.
+
+- **WP-5.4b cover modes and refusals**: owns `mag/tests/cover_*` fixtures
+  and whatever `mag/src/cover/` needs to cover them. Depends on WP-5.4.
+  Exists because of the corpus rule: 010 uses `footer_caption` ONLY, so
+  `framed`, `honored_plate` and the unknown-mode refusal are unreachable
+  from the live edition and must be fixtured. WP-5.4's evidence already
+  enumerates the branches 010 cannot reach across 1620 lines, 56 functions
+  and 24 raise sites, including the missing-glyph refusals, the
+  contourless-glyph path, the art-analysis branch and the back-cover
+  statement-fitting search; inherit that enumeration rather than
+  re-deriving it. Split from WP-5.4 so the mode 010 actually ships does not
+  wait on fixture work for modes it does not use, which is the same seam
+  logic as the WP-5.5 re-cut. **WP-5.6 depends on WP-5.4 only; WP-6.1
+  depends on WP-5.4b**, because deleting the Python must not delete a
+  capability that nothing has yet proven.
+
 - **WP-5.4g comparator switch (comparator WP)**: owns `mag/src/parity.rs`
   + `parity.yaml` + `baseline.json` cover-page seed rows: the compared
   artifact becomes `reader.pdf` end to end. Gated on WP-3.7 + WP-5.4.
@@ -2641,7 +2757,8 @@ WP-5.1c -> WP-5.4;  WP-3.7 + WP-5.4 -> WP-5.4g
 Phase 5 edges below are RECONCILED AGAINST THE PYTHON IMPORT GRAPH
 (revision 19), not against the plan's groupings; three were undeclared
 until a WP walked into each one:
-  WP-5.1c                       -> WP-5.4a -> WP-5.4, WP-5.5a
+  WP-5.1c                       -> WP-5.4a -> WP-5.4 -> WP-5.4b
+  WP-5.4a                       -> WP-5.5a
   WP-5.1a + WP-5.1b + WP-5.1c   -> WP-5.5a   (html_edition imports manifest,
                                               media_schema,
                                               publication_document,
@@ -2660,7 +2777,7 @@ WP-3.7 -> WP-4.0g -> WP-4.2
 WP-5.6 -> WP-4.2
 WP-4.2 -> WP-4.3 (MANDATORY, WP-1.3 chose (b)) -> shipped edition
        -> WP-6.1 (Fran gate)
-WP-5.7 -> WP-6.1
+WP-5.7 -> WP-6.1;  WP-5.4b -> WP-6.1   (modes 010 never exercises)
 Serialization overrides (rule 1): typeset/render.rs owners pairwise
 serial; mag/src/parity* owners pairwise serial. Cargo-file owners are NOT
 serialized (revision 18); rule 1a governs them instead, so Phase 5 WPs run
@@ -2743,7 +2860,7 @@ with everything else Python), provenance ceremony (the small
 | `src/magazine/render_critic.py` | ported, WP-5.3a/b/c |
 | `src/magazine/image_contrast.py` | ported, WP-5.3a (into `mag/src/critic/metrics.rs`, though its consumer is preflight, so WP-5.5b is what uses it; not used by the critic at all) |
 | `src/magazine/concurrency.py` | absorbed (rayon or std), WP-5.3a |
-| `src/magazine/cover.py` | ported, WP-5.4 |
+| `src/magazine/cover.py` | ported, WP-5.4 (footer_caption) + WP-5.4b (other modes, refusals); text helpers WP-5.4a |
 | `src/magazine/preflight.py` | ported, WP-5.5b |
 | `src/magazine/package.py` | ported, WP-5.5c |
 | `src/magazine/web_edition.py` | ported, WP-5.5a (cover text helpers via WP-5.4a) |
