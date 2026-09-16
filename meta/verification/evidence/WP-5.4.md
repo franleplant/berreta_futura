@@ -6,13 +6,13 @@ abf79d5 (plan revision 21), worktree rebased before landing.
 
 ## Status
 
-blocked
+done
 
-The `footer_caption` front cover is PORTED and PROVEN pixel-identical to the
-Python compiler. The work is complete and the test is written and passing. It
-is blocked on one line in a file this WP does not own: WP-5.3a's `decode_rgb`
-refuses edition 010's own cover art, so the test cannot land green. The ask is
-in **The blocker** below and is six lines wide.
+The `footer_caption` front cover is ported, proven pixel-identical to the Python
+compiler, and its test is committed and green. The eXIf guard that blocked it
+was fixed under an orchestrator grant extending this WP's Owns to
+`mag/src/critic/metrics.rs` for that guard only; WP-5.3a's full oracle was
+re-run and did not move. See **The eXIf guard** below.
 
 ## The result, first
 
@@ -86,7 +86,7 @@ being raster equality rather than markup equality.
 
 After both fixes: zero differing pixels.
 
-## The blocker
+## The eXIf guard, fixed under an orchestrator grant
 
 `mag/src/critic/metrics.rs:95` (WP-5.3a, accepted at 53d8b60) refuses any PNG
 carrying an eXIf chunk:
@@ -111,14 +111,25 @@ So PIL accepts and ignores what the port refuses. The guard is over-broad in two
 ways at once: it fires on the presence of any EXIF rather than on an orientation
 tag, and even an orientation tag would be ignored by the original.
 
-**The ask**: delete those six lines, or narrow the guard to an actual
-orientation tag whose value is not 1. That file belongs to WP-5.3a, so this WP
-did not touch it. With the lines removed in an uncommitted local probe the test
-passes; with them restored it fails on that bail alone and on nothing else, both
-states verified.
+**Fixed by NARROWING, not deleting**, which was the instructed preference and is
+the right one here: the guard now parses the eXIf blob's TIFF structure, reads
+tag 274, and bails only when an orientation is present and is not 1. Other EXIF
+content is ignored, which is what PIL does.
 
-This also reaches WP-5.5: its preflight port consumes `metrics.rs` and preflight
-runs over the same cover art, so it will meet the same refusal.
+Narrowing was cleanly implementable: the eXIf chunk payload is a bare TIFF
+header, so `exif_orientation` reads the byte order from `II`/`MM`, checks the
+42 magic, walks IFD0's 12-byte entries and returns tag 274's SHORT value. No
+dependency was added.
+
+One honesty note about what the retained bail is FOR. Since PIL never applies
+orientation on `convert("RGB")`, a naive decode matches PIL whatever the tag
+says, so the bail is not a fidelity requirement. It is a conservative stop for
+an image whose intended display differs from its stored pixels, which a human
+should look at before it reaches a cover. That is worth keeping and worth
+stating plainly rather than implying the port would otherwise diverge.
+
+This also reached WP-5.5: its preflight port consumes `metrics.rs` and preflight
+runs over the same cover art, so the fix unblocks that WP too.
 
 ## Metrics
 
@@ -130,6 +141,17 @@ runs over the same cover art, so it will meet the same refusal.
 | glyph outlines, fontTools vs ttf-parser | 834 of 834 identical rasters |
 | resvg Python binding vs Rust crate | IDENTICAL both faces, 4,335,040 pixels each |
 | markup skeleton, transforms and translates | identical to 8 decimal places |
+| WP-5.3a oracle BEFORE the guard change | 5 of 5 tests pass, oracle digest c519fdfb764af26a9ff2664545eb846a, 12 fixtures |
+| WP-5.3a oracle AFTER the guard change | 5 of 5 tests pass, oracle digest c519fdfb764af26a9ff2664545eb846a, unchanged |
+| exif_orientation unit test | orientation 6 read as 6, orientation 1 read as 1, ExifOffset-only blob and non-EXIF bytes both None |
+| full suite after the change | 11 test binaries, all ok |
+
+WP-5.3a's oracle covers all 14 images at its three levels (decoded pixels by
+SHA256 against PIL's `convert("RGB")`, thumbnails pixel-for-pixel against
+Pillow's LANCZOS, and every `PrintContrastAnalysis` field plus `adjusted`,
+`unresolved` and the post-treatment analysis), plus the `tint_band` fixture and
+the rounding oracle. Nothing moved: the committed expectation file is
+byte-identical before and after, so WP-5.3a's verification is not invalidated.
 
 ## Commands
 
@@ -190,11 +212,15 @@ To reproduce the blocker and its removal, delete the six lines at
 `mag/src/critic/metrics.rs:95` in a scratch copy and rerun the test: it passes.
 Restore them and it fails on that bail alone.
 
-The test file `mag/tests/cover_footer_caption.rs` and its oracle
-`mag/tests/cover_footer_caption_expected.txt` are written and passing but are
-NOT committed, because the pre-commit hook runs `cargo test` for every agent and
-a red test would block the other work packages currently in flight. They land
-unchanged the moment the blocker is cleared.
+The test `mag/tests/cover_footer_caption.rs` and its oracle
+`mag/tests/cover_footer_caption_expected.txt` are committed and green.
+
+They were deliberately HELD OUT of the tree on the first submission, and that was
+a decision rather than a mechanic: the pre-commit hook runs `cargo test` for
+every agent, so committing a test that fails on a sibling module's guard would
+have blocked every other work package in flight from committing anything. The
+right move was to land the port, report the six-line blocker precisely, and hold
+the test until the guard was fixed, which is what happened.
 
 ## Tool versions
 
@@ -215,6 +241,24 @@ No `mag parity` verdict: covers are outside the interior compared domain until
 WP-5.4g, and the comparator cannot read cover pages until WP-0.2h.
 
 Cargo.lock (name, version) delta: only gained; no entry removed, none changed.
+
+## Why the oracle had to be raster equality
+
+The two divergences this WP found are the strongest argument in this execution
+for comparing covers by raster rather than by structure, and neither would have
+been caught by any structural check:
+
+- the redundant closing lineto is **identical for fills and different for
+  strokes**. The 834-glyph probe that cleared ttf-parser tested FILLS ONLY, so it
+  reported 834 of 834 identical and would have shipped the wordmark wrong. Only
+  the stroked wordmark exposed it.
+- the transposed `horizontal_scale`/`stroke_width` pair on the white tail
+  (105.1/0.30, against the orange tail's 106.6/0.15 sitting three lines above it
+  in the Python) produced a markup skeleton that diffed clean on every transform
+  and translate, and 10,768 differing pixels in a band at x 428-966, y 221-325.
+
+Both pass structural comparison and fail a pixel comparison. That is the case for
+equality being the clause.
 
 ## Remaining, for WP-5.4b and the PDF step
 
@@ -238,10 +282,12 @@ Cargo.lock (name, version) delta: only gained; no entry removed, none changed.
 
 - `mag/src/critic/metrics.rs` has no public grayscale helper; `luma601` is
   private, so `art.rs` computes ITU-R 601 luma itself. That is a duplicated
-  helper under the Phase 5 rule, and importing was impossible without editing a
-  file this WP does not own. The oracle compensates: the zone statistics are
-  proven against Python rather than against the sibling copy, which is the
-  stronger comparison. WP-5.1d's consolidation pattern would fix it properly.
+  helper under the Phase 5 rule. It is deliberately NOT lifted here: **WP-5.1e**
+  owns lifting Python-semantics helpers into a shared module and widening the
+  duplicate audit across `mag/src/`, and `luma601` is on its list. The copy
+  stays, with the compensating discipline recorded: the zone statistics are
+  proven against PYTHON rather than against the sibling copy, which is the
+  stronger comparison of the two.
 - `Fonts::load` reads the faces from `src/magazine/assets/fonts/`, the single
   copy the Architecture section sanctions while both engines coexist. WP-6.1
   relocates them.

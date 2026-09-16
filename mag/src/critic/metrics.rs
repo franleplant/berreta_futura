@@ -84,6 +84,39 @@ pub fn round_places(value: f64, places: usize) -> f64 {
     format!("{value:.places$}").parse().unwrap_or(value)
 }
 
+fn exif_orientation(blob: &[u8]) -> Option<u16> {
+    let little = match blob.get(0..2)? {
+        b"II" => true,
+        b"MM" => false,
+        _ => return None,
+    };
+    let short = |at: usize| -> Option<u16> {
+        let bytes: [u8; 2] = blob.get(at..at + 2)?.try_into().ok()?;
+        Some(if little {
+            u16::from_le_bytes(bytes)
+        } else {
+            u16::from_be_bytes(bytes)
+        })
+    };
+    let long = |at: usize| -> Option<u32> {
+        let bytes: [u8; 4] = blob.get(at..at + 4)?.try_into().ok()?;
+        Some(if little {
+            u32::from_le_bytes(bytes)
+        } else {
+            u32::from_be_bytes(bytes)
+        })
+    };
+    if short(2)? != 42 {
+        return None;
+    }
+    let directory = long(4)? as usize;
+    let entries = short(directory)? as usize;
+    (0..entries).find_map(|index| {
+        let entry = directory.checked_add(2 + index * 12)?;
+        (short(entry)? == 274).then(|| short(entry + 8))?
+    })
+}
+
 pub fn decode_rgb(path: &Path) -> Result<Rgb> {
     let file = std::fs::File::open(path)
         .with_context(|| format!("cannot open image {}", path.display()))?;
@@ -92,11 +125,18 @@ pub fn decode_rgb(path: &Path) -> Result<Rgb> {
     let mut reader = decoder
         .read_info()
         .with_context(|| format!("cannot read png header {}", path.display()))?;
-    if reader.info().exif_metadata.is_some() {
-        bail!(
-            "unsupported exif metadata in {}: orientation handling not ported",
-            path.display()
-        );
+    if let Some(orientation) = reader
+        .info()
+        .exif_metadata
+        .as_deref()
+        .and_then(exif_orientation)
+    {
+        if orientation != 1 {
+            bail!(
+                "unsupported exif orientation {orientation} in {}: orientation handling not ported",
+                path.display()
+            );
+        }
     }
     let mut buffer = vec![0; reader.output_buffer_size().unwrap_or(0)];
     let frame = reader
@@ -621,4 +661,40 @@ where
         results.push(slot.expect("every slot is filled")?);
     }
     Ok(results)
+}
+
+#[cfg(test)]
+mod exif_tests {
+    use super::exif_orientation;
+
+    fn tiff(value: u16) -> Vec<u8> {
+        let mut out = b"II".to_vec();
+        out.extend_from_slice(&42u16.to_le_bytes());
+        out.extend_from_slice(&8u32.to_le_bytes());
+        out.extend_from_slice(&1u16.to_le_bytes());
+        out.extend_from_slice(&274u16.to_le_bytes());
+        out.extend_from_slice(&3u16.to_le_bytes());
+        out.extend_from_slice(&1u32.to_le_bytes());
+        out.extend_from_slice(&value.to_le_bytes());
+        out.extend_from_slice(&0u16.to_le_bytes());
+        out.extend_from_slice(&0u32.to_le_bytes());
+        out
+    }
+
+    #[test]
+    fn orientation_is_read_when_present_and_ignored_otherwise() {
+        assert_eq!(exif_orientation(&tiff(6)), Some(6));
+        assert_eq!(exif_orientation(&tiff(1)), Some(1));
+        let mut offset_only = b"II".to_vec();
+        offset_only.extend_from_slice(&42u16.to_le_bytes());
+        offset_only.extend_from_slice(&8u32.to_le_bytes());
+        offset_only.extend_from_slice(&1u16.to_le_bytes());
+        offset_only.extend_from_slice(&34665u16.to_le_bytes());
+        offset_only.extend_from_slice(&4u16.to_le_bytes());
+        offset_only.extend_from_slice(&1u32.to_le_bytes());
+        offset_only.extend_from_slice(&26u32.to_le_bytes());
+        offset_only.extend_from_slice(&0u32.to_le_bytes());
+        assert_eq!(exif_orientation(&offset_only), None);
+        assert_eq!(exif_orientation(b"not exif"), None);
+    }
 }
