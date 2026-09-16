@@ -150,6 +150,10 @@ fn contributor_cases() -> BTreeMap<String, Edition> {
             ])),
         ),
         ("deck_empty", Some(Value::String("   ".to_string()))),
+        (
+            "deck_map",
+            Some(serde_yaml::from_str::<Value>("{a: 1, b: x}").expect("mapping parses")),
+        ),
     ];
     for (key, deck) in decks {
         cases.insert(key.to_string(), with_deck(deck));
@@ -323,5 +327,16 @@ fn zfill_matches_python_on_sign_and_width() {
     ];
     for (input, want) in rows {
         assert_eq!(text::python_zfill(input, 3), want, "zfill({input:?})");
+    }
+}
+
+#[test]
+fn tagged_arm_has_no_python_oracle_and_unwraps() {
+    let tagged: Value = serde_yaml::from_str("!mytag x").expect("serde_yaml accepts a custom tag");
+    assert!(matches!(tagged, Value::Tagged(_)), "fixture is Tagged");
+    assert_eq!(text::python_str(&tagged), "x");
+    let nested: Value = serde_yaml::from_str("!outer !!int 7").unwrap_or(Value::Null);
+    if matches!(nested, Value::Tagged(_)) {
+        assert_eq!(text::python_str(&nested), "7");
     }
 }

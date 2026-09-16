@@ -7,6 +7,7 @@
   "deck_empty": "",
   "deck_int": "5",
   "deck_list": "['a', 'b']",
+  "deck_map": "{'a': 1, 'b': 'x'}",
   "deck_null": "None",
   "deck_string": "A deck",
   "dup_case": "ADA LOVELACE",

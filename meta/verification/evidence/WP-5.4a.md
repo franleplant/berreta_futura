@@ -2,13 +2,22 @@
 
 ## Base
 
-`1f60fd7` (verify(model): WP-5.1d accepted), plan revision 20 (`7684445`).
+First submission: `1f60fd7`, plan revision 20 (`7684445`).
+Rework base: `24de8d9`, plan revision 23, after rejection at `ff5cd21`.
 
 ## Commands
 
 Oracle generation. Both dumps are produced by these two inline invocations
 and nothing else; replaying them must reproduce the committed JSON
 byte-for-byte.
+
+**Use `uv run python`, not a bare `python3`.** This machine has two
+interpreters on different Unicode versions: the system `python3` is 3.9.6 on
+Unicode 13.0.0, while `uv run python` is 3.12.11 on 15.0.0. Regenerating the
+Unicode oracle or the packed tables with the system interpreter comes out
+roughly forty entries short in each map, and the sweeps then fail against the
+committed data. Every command below is pinned to `uv run python` for that
+reason.
 
 The four-function oracle, including the live edition 010 row:
 
@@ -34,6 +43,7 @@ contrib = {
  "deck_null": ed([], {"deck": None}), "deck_int": ed([], {"deck": 5}),
  "deck_bool": ed([], {"deck": True}), "deck_list": ed([], {"deck": ["a", "b"]}),
  "deck_empty": ed([], {"deck": "   "}),
+ "deck_map": ed([], {"deck": yaml.safe_load("{a: 1, b: x}")}),
 }
 issues = {
  "en_010": ed(language="en", issue="010"), "en_us": ed(language="en-US", issue="010"),
@@ -100,10 +110,14 @@ python 3.12.11 (`unicodedata.unidata_version` 15.0.0), uv 0.8.17, rustc 1.96.0.
 
 ## Metrics
 
-Four ports, 41 committed oracle rows: `cover_date` 8, `cover_contributors` 18,
+Four ports, 41 committed oracle rows: `cover_date` 8, `cover_contributors` 19,
 `cover_tab_issue` 10, `cover_tab_identity` 4. All agree byte-for-byte with the
 Python originals. Plus three whole-plane sweeps over 1,112,064 codepoints each
-(casefold, uppercase, `python_strip`).
+(casefold, uppercase, `python_strip`), and one Rust-only assertion for the
+`Tagged` arm, which has no Python oracle (see below).
+
+The first submission said 41 while its own breakdown summed to 40; the
+`deck_map` fixture added in this rework makes the total genuinely 41.
 
 ### Branch enumeration, read from the Python
 
@@ -114,21 +128,48 @@ parts returned unchanged; exactly 3 parts with one empty returned unchanged
 
 `_cover_contributors` (7 branches): at least one author, joined and uppercased;
 empty author skipped; duplicate-by-casefold skipped keeping the first casing;
-and the deck fallback in its four shapes (absent, null, scalar, container).
+and the deck fallback, whose value is handed to `python_str` and is enumerated
+arm by arm below.
 
 `cover_tab_issue` (4 branches): language prefix `en` versus anything else;
 `zfill` padding versus no padding; and `zfill`'s sign branch.
 
 `cover_tab_identity` (1 branch): uppercase of the publication name.
 
+### `python_str`, arm by arm
+
+The first submission put this function under a blanket "all covered by
+fixture", which was false for two arms and is the shape rule 10 forbids. Every
+arm, with its status:
+
+| arm | status |
+|---|---|
+| `Null` | reached by fixture `deck_null`, yields the literal `"None"` |
+| `Bool` | reached by fixture `deck_bool` |
+| `Number` | reached by fixture `deck_int` |
+| `String` | reached by fixture `deck_string` and by edition 010 |
+| `Sequence` | reached by fixture `deck_list` |
+| `Mapping` | reached by fixture `deck_map`, ADDED IN THIS REWORK |
+| `Tagged` | UNREACHABLE from safe-loaded YAML; no Python oracle exists |
+
+`Tagged` is unreachable because the input that produces it is one the Python
+oracle refuses outright: `yaml.safe_load("deck: !mytag x")` raises
+`ConstructorError`, while `serde_yaml` parses the same document into
+`Value::Tagged`. Standard tags do not reach the arm either, since both sides
+resolve `!!str 5` to a plain string. So no fixture can establish equality for
+it, and the arm is kept only for fidelity to the Python's own `match`
+structure over the value type.
+
 ### Branches edition 010 cannot reach
 
 010 has nine authored articles, so it reaches ONLY the authored branch of
 `_cover_contributors`, the `en` label, the padding branch of `zfill`, and the
 three-part date. Every other branch is unreachable from the corpus and is
-covered by fixture: all four deck-fallback shapes, the empty-author skip, the
-`zfill` sign branch, the non-`en` label, the non-padding and over-width issue
-numbers, and all four non-canonical date shapes.
+covered by fixture: all six reachable deck-fallback shapes, the empty-author
+skip, the `zfill` sign branch, the non-`en` label, the non-padding and
+over-width issue numbers, and all four non-canonical date shapes. The one
+exception is `python_str`'s `Tagged` arm, which is covered by no fixture for
+the reason given above rather than by oversight.
 
 010 does reach one branch worth naming, and it is not vacuous: `Anthropic`
 authors two of its nine articles, so the real edition exercises the dedup path
@@ -157,6 +198,9 @@ the source restored. All seven fire:
 | D | `python_zfill` loses the sign branch | `zfill` FAILED |
 | E | `deck: null` yields `""` instead of `"None"` | `cover_contributors` FAILED |
 | G | absent deck yields `"None"` instead of `""` | `cover_contributors` FAILED |
+| H | `Mapping` keys via `python_str` not `python_repr` | `cover_contributors` FAILED |
+| I | `Mapping` values via `python_str` not `python_repr` | `cover_contributors` FAILED |
+| J | `Tagged` routed through repr, as `manifest.rs` does | `tagged_arm` FAILED |
 
 One earlier probe did NOT discriminate and was corrected rather than recorded:
 perturbing the uppercase table's *hit* branch left the sweep green, because the
@@ -184,6 +228,32 @@ which is right while Python is the oracle and should be revisited at WP-6.1,
 when Python is deleted and Rust's tables become the definition; a later Unicode
 is arguably the correct behaviour then, but it is a product decision rather
 than a port decision.
+
+**The `Tagged` arm had already drifted from `manifest.rs`, and this WP decides
+it rather than leaving both.** `python_str(Tagged(String("x")))` yields `x`
+here and `'x'` in `manifest.rs`, str versus repr. Neither is verified, because
+neither can be: the Python refuses the input. The decision taken, and the
+reasoning, so WP-5.1e can adopt or overrule it deliberately:
+
+- **This port keeps `x`, unwrapping to the underlying value's `str()`.** The
+  function models Python's `str()`, and `str()` of a string never adds quotes.
+  `manifest.rs` produces `'x'` incidentally rather than by choice: its `py_str`
+  has no `Tagged` arm at all, so a tagged value falls through `other =>
+  py_repr_value(other)`, which is the right destination for `Sequence` and
+  `Mapping` (Python's `str(dict)` does repr its contents) and the wrong one for
+  a scalar that a caller asked to stringify.
+- **The real finding is at the loader, not in either copy.** Python and Rust
+  diverge one step earlier: `safe_load` REFUSES a custom tag while `serde_yaml`
+  accepts it, so the two sides disagree about whether the document loads at all.
+  Whatever `python_str` does with a `Tagged` is then unreachable in the Python
+  and reachable in the port. The fix that makes both copies moot is for the
+  manifest loader to refuse tagged values, which MATCHES Python's strictness
+  rather than exceeding it and so does not run into revision 23's rule that a
+  port may not be stricter than its oracle. Recommended to WP-5.1e and to
+  whoever owns `manifest.rs`; not done here, since this WP owns neither the
+  loader nor `manifest.rs`.
+- Probe J pins the decision: switching this arm to `manifest.rs`'s repr
+  behaviour fails `tagged_arm_has_no_python_oracle_and_unwraps`.
 
 **Two helpers are duplicated because rule 1's Owns boundary forbids importing
 them.** `is_python_space` is private in `mag/src/model/doc.rs:492` and `py_str`
