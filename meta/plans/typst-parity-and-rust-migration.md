@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-16, revision 19 (Phase 0 built and
+Status: **in execution**, 2026-09-16, revision 20 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,45 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 20 changelog
+
+**The vacuity pattern turned up inside an argument the plan now relies on**,
+which is why this is a revision rather than a footnote. Path B's safety
+rests on the tracer AGREEING with pypdf on the fields behind ten of eleven
+issue sites, and WP-5.3d's verifier (accept commit 513a970, decision
+upheld) graded those agreements: they are not equally strong.
+`text_order_matches` at 27 of 27 traceable sides discriminates, and so does
+text-emptiness at 54 of 54, which the evidence UNDERSELLS, since pypdf
+partitions 7 empty pages against 47 non-empty (pages 2, 10, 30, 35, 45, 54,
+55) and agreement means reproducing that exact partition. But
+`standalone_punctuation_lines` at 54 of 54 is `0 == 0` on every page: it
+proves the tracer invents nothing, and nothing at all about whether it
+would produce the same lines if any existed. In a table where both rows
+read "54 of 54", that difference is invisible.
+
+The decision is unaffected and stands on the two discriminating
+agreements. What changes is that WP-5.3c's fault coverage for
+`standalone_punctuation_lines` is now marked as the ONLY evidence there
+will ever be for that field, rather than a belt-and-braces extra.
+
+**Generalized as protocol rule 10**: evidence that cannot discriminate must
+say so. The plan already held that a gate which cannot fail is not a gate,
+and WP-0.2g makes clauses report their compared cardinality; rule 10 extends
+it to evidence, which is where it slipped through this time. The rule names
+its four instances so it reads as a pattern rather than a precaution.
+
+**WP-5.3d's numbers carry "pre-WP-0.2i tracer"** (rule 9), so WP-5.3b must
+re-measure rather than inherit them. WP-5.3d's verifier declined to rebuild
+the probe because WP-0.2i was concurrently editing the two files it
+`#[path]`-includes, which would have measured a different tracer than the
+one under verification. That restraint was right, and the consequence
+belongs in WP-5.3b's brief rather than in a footnote.
+
+Historical changelogs are left as written: revision 17's entry records what
+revision 17 claimed, and this entry is the amendment. Only the live WP text
+is corrected, which is the same treatment revision 15 gave revision 10's
+superseded reasoning.
 
 ## Revision 19 changelog
 
@@ -1043,6 +1082,21 @@ before/after comparisons (WP-4.3); out of scope here.
    ends `Status: awaiting-fran` with its recommendation; the decision is
    recorded by Fran (commit authored by Fran or a line Fran types). No
    verification gate is human.
+10. **Evidence that cannot discriminate must say so.** The plan already
+   rules that a gate which cannot fail is not a gate, and WP-0.2g makes
+   every collection clause report the cardinality it compared. This extends
+   the same discipline to EVIDENCE, which is where it slipped through: an
+   agreement or equality offered as proof, where both sides are an EMPTY
+   SET or the SAME CONSTANT throughout, must be labelled as such at the
+   point it is offered. It is still worth recording, since it shows nothing
+   was invented, but it is not interchangeable with an agreement that
+   reproduces a non-trivial partition, and a table of identical-looking
+   ratios conceals exactly that difference. The instances that earned this
+   rule: `article_opener_fits` comparing `{}` against `{}` and then nine
+   `true`s against nine `true`s, WP-5.3a's tint branch, WP-5.1a's masked
+   defect, and WP-5.3d's `standalone_punctuation_lines` at `0 == 0` on
+   every page while reading "54 of 54" beside two agreements that do
+   discriminate.
 9. **A number quoted from another WP carries its configuration.** Any
    figure cited inside a WP's reasoning must travel with what it was
    measured under: which corpus and how many items, which switches (for
@@ -2085,9 +2139,28 @@ them or the divergence is a defect:
     tracer's count (page 36 at 4 against 3, both below).
     The reason path B is safe is therefore NOT that one decision consumes
     text; it is that the tracer AGREES with pypdf on every field feeding
-    the other nine sites, measured: 0 of 56 divergences on
-    `standalone_punctuation_lines` and text-emptiness, 27 of 27 traceable
-    sides on `text_order_matches`.
+    the other nine sites. **Label which agreements discriminate and which
+    are empty-set**, because a table where every row reads "54 of 54" hides
+    the difference:
+    - `text_order_matches`, 27 of 27 traceable sides: DISCRIMINATING, and
+      the hardest of them, since poppler manages only 7 of 28.
+    - text-emptiness, 54 of 54 pages: DISCRIMINATING, and UNDERSOLD by the
+      evidence. pypdf finds 7 empty pages and 47 non-empty (pages 2, 10,
+      30, 35, 45, 54, 55), so agreement means the tracer reproduces that
+      exact partition, not that nothing was there to disagree about.
+    - `standalone_punctuation_lines`, 54 of 54 pages: **EMPTY-SET
+      agreement**. The field is zero on every page, so this is `0 == 0`
+      throughout. It proves the tracer does not INVENT such lines; it
+      proves nothing about whether it would produce the SAME ones if any
+      existed. WP-5.3c's fault coverage for this field is therefore not
+      optional, it is the only evidence there will be.
+  - **Re-measure; do not inherit WP-5.3d's numbers as current.** They carry
+    the configuration "pre-WP-0.2i tracer" (rule 9). WP-5.3d's verifier
+    deliberately did NOT rebuild the probe, because WP-0.2i was
+    concurrently editing the two files the probe `#[path]`-includes, so a
+    probe built then would have measured a different tracer than the one
+    WP-5.3d measured. That restraint was correct; the consequence is that
+    this WP measures against the post-WP-0.2i tracer itself.
   - **`cover-booklet-page-order` cannot be computed at all** under a
     tracer-fed critic until WP-0.2h lands: `cover_spread_checks`
     (render_critic.py:184) runs over `cover_wrap_plan`, the wrap carrying
@@ -2229,8 +2302,14 @@ them or the divergence is a defect:
     ten issue sites, and `body_text_lines < 5` is merely the only numeric
     threshold. The surviving and stronger argument is agreement rather than
     absence: the tracer matches pypdf on every field behind the other nine
-    sites, 0 of 56 on `standalone_punctuation_lines` and text-emptiness and
-    27 of 27 traceable sides on `text_order_matches`. Near-threshold work
+    sites. Its verifier (accept commit 513a970) graded those agreements,
+    and they are not equal in strength: `text_order_matches` at 27 of 27
+    traceable sides and text-emptiness at 54 of 54 both DISCRIMINATE (pypdf
+    partitions 7 empty against 47 non-empty, so agreement reproduces that
+    partition, which the evidence undersells), while
+    `standalone_punctuation_lines` at 54 of 54 is an EMPTY-SET agreement,
+    `0 == 0` on every page. The decision stands on the discriminating two;
+    the third is why WP-5.3c must fault that field. Near-threshold work
     is bounded to `body_text_lines` (page 36, 4 against 3, both below);
     fault coverage is not, and spans all five fields.
   - The third disposition stays available and is nobody's first choice:
