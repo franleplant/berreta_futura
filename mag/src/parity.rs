@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use streams::Face;
 
 const SPEC_PATH: &str = "meta/verification/parity.yaml";
 
@@ -30,6 +31,7 @@ struct Verdict {
 #[derive(Serialize)]
 struct TierE {
     display_list: Option<display::DisplayClause>,
+    glyph_positions: Option<display::GlyphClause>,
     raster: Option<raster::RasterGuard>,
 }
 
@@ -102,7 +104,7 @@ fn assert_tracer(spec: &serde_yaml::Value) -> Result<()> {
     Ok(())
 }
 
-fn font_name_map(spec: &serde_yaml::Value) -> Result<BTreeMap<String, String>> {
+fn font_name_map(spec: &serde_yaml::Value) -> Result<BTreeMap<String, Face>> {
     let entries = spec
         .get("normalization")
         .and_then(|n| n.get("font_name_map"))
@@ -116,7 +118,17 @@ fn font_name_map(spec: &serde_yaml::Value) -> Result<BTreeMap<String, String>> {
             .get("face")
             .and_then(|f| f.as_str())
             .with_context(|| format!("font_name_map {alias} missing face"))?;
-        map.insert(alias.to_string(), face.to_string());
+        let file = entry
+            .get("file")
+            .and_then(|f| f.as_str())
+            .with_context(|| format!("font_name_map {alias} missing file"))?;
+        map.insert(
+            alias.to_string(),
+            Face {
+                face: face.to_string(),
+                file: file.to_string(),
+            },
+        );
     }
     Ok(map)
 }
@@ -224,6 +236,7 @@ fn build_verdict(
         tier_v: None,
         tier_e: TierE {
             display_list: None,
+            glyph_positions: None,
             raster: None,
         },
     };
@@ -252,6 +265,7 @@ fn build_verdict(
     verdict.tier_s.color = Some(display::compare_color(&dump_a, &dump_b, first));
     verdict.tier_s.navigation = Some(display::compare_navigation(&dump_a, &dump_b, first));
     verdict.tier_e.display_list = Some(display::compare_display(&dump_a, &dump_b, first)?);
+    verdict.tier_e.glyph_positions = Some(display::compare_glyphs(&dump_a, &dump_b, first));
     let vspec = raster::VSpec {
         dpi: spec_f64(spec, &["tiers", "v", "dpi"])? as u32,
         channel_delta: spec_f64(spec, &["tiers", "v", "channel_delta"])? as u8,
@@ -293,6 +307,10 @@ fn all_evaluated_pass(v: &Verdict) -> bool {
             .is_some_and(|c| c.status == "pass")
         && v.tier_e
             .display_list
+            .as_ref()
+            .is_some_and(|c| c.status == "pass")
+        && v.tier_e
+            .glyph_positions
             .as_ref()
             .is_some_and(|c| c.status == "pass")
         && v.tier_v.as_ref().is_some_and(|r| r.status == "pass")
@@ -348,6 +366,17 @@ fn summarize(v: &Verdict) {
             "tier S navigation: {} ({} mismatches)",
             n.status,
             n.mismatches.len()
+        );
+    }
+    if let Some(g) = &v.tier_e.glyph_positions {
+        println!(
+            "tier E glyph positions: {} ({} glyphs, {} shows, worst excess {:.6} pt, worst ratio {:.4}, {} violations)",
+            g.status,
+            g.glyphs,
+            g.shows,
+            g.worst_excess_pt,
+            g.worst_ratio,
+            g.violations.len()
         );
     }
     if let Some(d) = &v.tier_e.display_list {

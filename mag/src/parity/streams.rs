@@ -35,6 +35,19 @@ pub fn qc(v: f64) -> i64 {
     (v * 100.0).round() as i64
 }
 
+pub const GLYPH_QUANTUM: f64 = 0.0001;
+
+pub const GLYPH_DRIFT_PT: f64 = 0.000_732_421_875;
+
+pub fn qo(v: f64) -> i64 {
+    (v / GLYPH_QUANTUM).round() as i64
+}
+
+pub struct Face {
+    pub face: String,
+    pub file: String,
+}
+
 fn qcolor(v: f64) -> i64 {
     (v * 1_000_000.0).round() as i64
 }
@@ -61,8 +74,11 @@ pub enum Element {
         size: i64,
         fill: Color,
         glyphs: usize,
+        gids: Vec<u32>,
         m: [i64; 6],
         clip: Vec<u32>,
+        #[serde(skip)]
+        offs: Vec<[i64; 2]>,
     },
     Path {
         d: String,
@@ -94,6 +110,7 @@ struct Font {
     dw: f64,
     widths: HashMap<u32, f64>,
     tounicode: HashMap<u32, String>,
+    ids: HashMap<u32, u32>,
 }
 
 #[derive(Clone)]
@@ -142,6 +159,7 @@ impl GState {
 pub struct Caches {
     images: HashMap<ObjectId, (String, u32, u32)>,
     fonts: HashMap<ObjectId, Rc<Font>>,
+    faces: HashMap<String, Rc<HashMap<String, u32>>>,
 }
 
 impl Caches {
@@ -149,13 +167,14 @@ impl Caches {
         Caches {
             images: HashMap::new(),
             fonts: HashMap::new(),
+            faces: HashMap::new(),
         }
     }
 }
 
 struct Tracer<'a> {
     doc: &'a Document,
-    font_map: &'a BTreeMap<String, String>,
+    font_map: &'a BTreeMap<String, Face>,
     caches: &'a mut Caches,
     out: Vec<Element>,
     gs: GState,
@@ -171,7 +190,7 @@ struct Tracer<'a> {
 pub fn trace_page(
     doc: &Document,
     page_id: ObjectId,
-    font_map: &BTreeMap<String, String>,
+    font_map: &BTreeMap<String, Face>,
     caches: &mut Caches,
 ) -> Result<Vec<Element>> {
     let content = doc.get_page_content(page_id);
@@ -249,7 +268,8 @@ impl Tracer<'_> {
             "j" => self.gs.join = num(&args[0])? as i64,
             "M" => self.gs.miter = num(&args[0])?,
             "d" => self.set_dash(args)?,
-            "i" | "ri" | "BMC" | "BDC" | "EMC" | "MP" | "DP" => {}
+            "BDC" => self.marked_content(args, res)?,
+            "i" | "ri" | "BMC" | "EMC" | "MP" | "DP" => {}
             "m" | "l" | "c" | "v" | "y" | "h" | "re" => self.path_op(operator, args)?,
             "S" | "s" | "f" | "F" | "f*" | "B" | "B*" | "b" | "b*" | "n" => {
                 self.paint_op(operator)?;
@@ -342,6 +362,20 @@ impl Tracer<'_> {
         Ok(())
     }
 
+    fn marked_content(&mut self, args: &[Object], res: &Dictionary) -> Result<()> {
+        if name_str(&args[0])? != "OC" {
+            return Ok(());
+        }
+        let prop = match &args[1] {
+            Object::Name(n) => {
+                let props = resolve(self.doc, res.get(b"Properties")?)?.as_dict()?;
+                resolve(self.doc, props.get(n)?)?.clone()
+            }
+            other => other.clone(),
+        };
+        bail!("optional content membership unsupported (fail loud per Tier E): {prop:?}")
+    }
+
     fn set_font(&mut self, args: &[Object], res: &Dictionary) -> Result<()> {
         let name = name_str(&args[0])?;
         self.gs.size = num(&args[1])?;
@@ -353,7 +387,7 @@ impl Tracer<'_> {
         };
         if !self.caches.fonts.contains_key(&id) {
             let dict = self.doc.get_dictionary(id)?.clone();
-            let font = load_font(self.doc, &dict, self.font_map)
+            let font = load_font(self.doc, &dict, self.font_map, &mut self.caches.faces)
                 .with_context(|| format!("loading font {name}"))?;
             self.caches.fonts.insert(id, Rc::new(font));
         }
@@ -367,35 +401,48 @@ impl Tracer<'_> {
         let params = [self.gs.size * th, 0.0, 0.0, self.gs.size, 0.0, self.gs.ts];
         let trm = mul(params, mul(self.tm, self.gs.ctm));
         let size_eff = (trm[2] * trm[2] + trm[3] * trm[3]).sqrt();
+        let base = mul(self.tm, self.gs.ctm);
         let mut s = String::new();
         let mut tx = 0.0;
-        let mut glyphs = 0;
+        let mut starts = vec![];
+        let mut gids = vec![];
         for item in items {
             match item {
                 Object::String(bytes, _) => {
-                    let (dx, n) = self.decode_show(&font, bytes, &mut s)?;
-                    tx += dx;
-                    glyphs += n;
+                    self.decode_show(&font, bytes, &mut s, &mut tx, &mut starts, &mut gids)?;
                 }
                 other => tx -= num(other)? / 1000.0 * self.gs.size * (self.gs.tz / 100.0),
             }
         }
+        let offs = starts
+            .iter()
+            .map(|v| [qo(v * base[0]), qo(v * base[1])])
+            .collect();
         self.out.push(Element::Text {
             s,
             font: font.name.clone(),
             size: qc(size_eff),
             fill: self.gs.fill.clone(),
-            glyphs,
+            glyphs: starts.len(),
+            gids,
             m: trm.map(qc),
             clip: self.gs.clips.clone(),
+            offs,
         });
         self.tm = mul(translate(tx, 0.0), self.tm);
         Ok(())
     }
 
-    fn decode_show(&self, font: &Font, bytes: &[u8], s: &mut String) -> Result<(f64, usize)> {
+    fn decode_show(
+        &self,
+        font: &Font,
+        bytes: &[u8],
+        s: &mut String,
+        tx: &mut f64,
+        starts: &mut Vec<f64>,
+        gids: &mut Vec<u32>,
+    ) -> Result<()> {
         let th = self.gs.tz / 100.0;
-        let mut tx = 0.0;
         let codes: Vec<u32> = if font.two_byte {
             anyhow::ensure!(bytes.len().is_multiple_of(2), "odd-length 2-byte string");
             bytes
@@ -405,22 +452,23 @@ impl Tracer<'_> {
         } else {
             bytes.iter().map(|b| u32::from(*b)).collect()
         };
-        let count = codes.len();
         for code in codes {
             let uni = font
                 .tounicode
                 .get(&code)
                 .with_context(|| format!("font {} lacks ToUnicode for code {code}", font.name))?;
             s.push_str(uni);
+            starts.push(*tx);
+            gids.push(font.ids.get(&code).copied().unwrap_or(UNRESOLVED_GID));
             let w = font.widths.get(&code).copied().unwrap_or(font.dw);
             let word = if !font.two_byte && code == 32 {
                 self.gs.tw
             } else {
                 0.0
             };
-            tx += (w / 1000.0 * self.gs.size + self.gs.tc + word) * th;
+            *tx += (w / 1000.0 * self.gs.size + self.gs.tc + word) * th;
         }
-        Ok((tx, count))
+        Ok(())
     }
 
     fn path_op(&mut self, operator: &str, args: &[Object]) -> Result<()> {
@@ -631,10 +679,83 @@ fn matrix(args: &[Object]) -> Result<M> {
     Ok([nums[0], nums[1], nums[2], nums[3], nums[4], nums[5]])
 }
 
-fn load_font(doc: &Document, dict: &Dictionary, map: &BTreeMap<String, String>) -> Result<Font> {
+pub const UNRESOLVED_GID: u32 = u32::MAX;
+
+const BLANK_GID: u32 = u32::MAX - 1;
+
+struct Outline(String);
+
+impl ttf_parser::OutlineBuilder for Outline {
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.0.push_str(&format!("M{x} {y};"));
+    }
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.0.push_str(&format!("L{x} {y};"));
+    }
+    fn quad_to(&mut self, a: f32, b: f32, x: f32, y: f32) {
+        self.0.push_str(&format!("Q{a} {b} {x} {y};"));
+    }
+    fn curve_to(&mut self, a: f32, b: f32, c: f32, d: f32, x: f32, y: f32) {
+        self.0.push_str(&format!("C{a} {b} {c} {d} {x} {y};"));
+    }
+    fn close(&mut self) {
+        self.0.push('Z');
+    }
+}
+
+fn outline_of(face: &ttf_parser::Face, gid: u16) -> Option<String> {
+    let mut o = Outline(String::new());
+    face.outline_glyph(ttf_parser::GlyphId(gid), &mut o)
+        .map(|_| o.0)
+}
+
+fn vendored_outlines(file: &str) -> Result<HashMap<String, u32>> {
+    let data = std::fs::read(file).with_context(|| format!("reading vendored face {file}"))?;
+    let face = ttf_parser::Face::parse(&data, 0)
+        .with_context(|| format!("parsing vendored face {file}"))?;
+    let mut map = HashMap::new();
+    for gid in 0..face.number_of_glyphs() {
+        if let Some(o) = outline_of(&face, gid) {
+            map.entry(o).or_insert(u32::from(gid));
+        }
+    }
+    Ok(map)
+}
+
+fn glyph_ids(
+    doc: &Document,
+    desc: &Dictionary,
+    codes: &[u32],
+    vend: &HashMap<String, u32>,
+    file: &str,
+) -> Result<HashMap<u32, u32>> {
+    let fd = resolve(doc, desc.get(b"FontDescriptor")?)?.as_dict()?;
+    let program = decode_stream(doc, resolve(doc, fd.get(b"FontFile2")?)?.as_stream()?)?;
+    let emb = ttf_parser::Face::parse(&program, 0).context("parsing embedded subset")?;
+    let mut ids = HashMap::new();
+    for &code in codes {
+        let gid = u16::try_from(code).with_context(|| format!("CID {code} exceeds u16"))?;
+        let id = match outline_of(&emb, gid) {
+            Some(o) => *vend.get(&o).with_context(|| {
+                format!("glyph for CID {code} is absent from the vendored face {file}")
+            })?,
+            None => BLANK_GID,
+        };
+        ids.insert(code, id);
+    }
+    Ok(ids)
+}
+
+fn load_font(
+    doc: &Document,
+    dict: &Dictionary,
+    map: &BTreeMap<String, Face>,
+    faces: &mut HashMap<String, Rc<HashMap<String, u32>>>,
+) -> Result<Font> {
     let base = name_str(resolve(doc, dict.get(b"BaseFont")?)?)?;
     let stripped = strip_subset_tag(&base);
-    let name = map.get(&stripped).cloned().unwrap_or(stripped);
+    let entry = map.get(&stripped);
+    let name = entry.map_or(stripped, |f| f.face.clone());
     let subtype = name_str(dict.get(b"Subtype")?)?;
     let tounicode = match dict.get(b"ToUnicode") {
         Ok(o) => parse_tounicode(&decode_stream(doc, resolve(doc, o)?.as_stream()?)?)?,
@@ -653,12 +774,24 @@ fn load_font(doc: &Document, dict: &Dictionary, map: &BTreeMap<String, String>) 
             Ok(o) => parse_cid_widths(resolve(doc, o)?.as_array()?, doc)?,
             Err(_) => HashMap::new(),
         };
+        let file = entry
+            .map(|f| f.file.clone())
+            .with_context(|| format!("font {name} has no vendored face in font_name_map"))?;
+        if !faces.contains_key(&file) {
+            faces.insert(file.clone(), Rc::new(vendored_outlines(&file)?));
+        }
+        let vend = Rc::clone(&faces[&file]);
+        let mut codes: Vec<u32> = tounicode.keys().copied().collect();
+        codes.sort_unstable();
+        let ids = glyph_ids(doc, desc, &codes, &vend, &file)
+            .with_context(|| format!("resolving glyph identity for {name}"))?;
         return Ok(Font {
             name,
             two_byte: true,
             dw,
             widths,
             tounicode,
+            ids,
         });
     }
     let first = num(resolve(doc, dict.get(b"FirstChar")?)?)? as u32;
@@ -673,6 +806,7 @@ fn load_font(doc: &Document, dict: &Dictionary, map: &BTreeMap<String, String>) 
         dw: 0.0,
         widths,
         tounicode,
+        ids: HashMap::new(),
     })
 }
 

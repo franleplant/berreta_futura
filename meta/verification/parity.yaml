@@ -108,6 +108,45 @@ tiers:
   e:
     coordinate_quantum_pt: 0.01
     link_rect_quantum_pt: 0.5
+    glyph_positions:
+      authored_by: WP-0.2i
+      status: derived
+      offset_quantum_pt: 0.0001
+      drift_bound_pt_per_glyph: 0.000732421875
+      bound_rule: the device-space offset of glyph k from its show origin may
+        differ between legs by at most k * drift_bound_pt_per_glyph, a function
+        of position in line rather than a flat number
+      mechanism: WeasyPrint advances by an integer count of 1/1024 px (Pango),
+        Typst sums exact font units, so the legitimate difference at glyph k is
+        bounded by k quantisation steps of 1/1024 px = 0.000732421875 pt. Derived
+        from the mechanism, never fitted to an observation
+      shape_rule: a legitimate difference accumulates, so the per-axis difference
+        sequence must be one-signed and monotone non-decreasing in magnitude; a
+        compensating kern produces a bump returning toward zero and fails on
+        shape whatever its magnitude, which is what makes the ceiling independent
+        of fault size and what the raster guard could never achieve
+      floor:
+        fixture: every glyph of the interior displaced by k * 0.000173 pt, the
+          rate WP-1.6 measured, injected as TJ kerns so the display list stays
+          equal (string, glyph count, matrix and clip unchanged)
+        glyphs: 68800
+        shows: 1488
+        worst_ratio_of_bound: 0.2731
+        result: pass
+      ceiling:
+        by_magnitude: compensating kern 0.02 pt gives ratio 10.2400; 0.005 pt
+          gives 2.5941; both exceed the bound and fail on magnitude alone
+        by_shape: compensating kern 0.001 pt gives ratio 0.5461 and 0.0001 pt
+          gives 0.0683, both far below the bound, and both FAIL on shape alone.
+          The shape constraint has no lower magnitude limit, so the ceiling does
+          not depend on how large the fault is
+      margin:
+        rule: bound must be at least 2x the realized legitimate drift
+        measured: 1 / 0.2731 = 3.66x
+        met: true
+      control: the same pypdf rewrite with no edits is glyph-equal (ratio 0.0000)
+      supersedes: the Tier E raster guard, which WP-0.2f proved impossible at any
+        resolution because every rasterizer snaps text-object origins
     raster_bound:
       authored_by: WP-0.2d
       status: blocked
@@ -202,6 +241,7 @@ fault_suite:
     - color
     - navigation
     - display_list
+    - glyph_positions
     - raster_guard
     - raster_dimensions
     - v1
