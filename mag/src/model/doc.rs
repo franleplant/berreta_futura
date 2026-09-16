@@ -1,3 +1,4 @@
+use super::shared::is_python_space;
 use anyhow::{bail, Result};
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde_yaml::{Mapping, Value};
@@ -487,10 +488,6 @@ pub fn fold_reader_characters(text: &str, settable: &BTreeSet<u32>) -> String {
             }
         })
         .collect()
-}
-
-fn is_python_space(character: char) -> bool {
-    character.is_whitespace() || matches!(character, '\u{1c}'..='\u{1f}')
 }
 
 pub fn settable_codepoints(fonts: &Path) -> Result<BTreeSet<u32>> {
