@@ -1,200 +1,187 @@
 # WP-5.4a verification
 
-## Base
-
-Worker commit `6a84018`, pre-land HEAD `abf79d5`. Verified in a clean worktree
-at `6a84018`. Protocol rule 3, critique duty folded in.
-
 ## Verdict
 
-**REJECTED**, narrowly. Every substantive claim verified, including the Unicode
-pin, which is independently confirmed and is the strongest part of the work. The
-rejection is for one uncovered-branch class under a blanket coverage claim, the
-same shape WP-5.3a was rejected for at `a3d61c9`, and it is not merely a
-documentation gap: the uncovered `Tagged` arm already disagrees with its sibling
-implementation in `manifest.rs`. Remedy is two fixtures and three corrected
-sentences.
+**ACCEPTED.** Commit `abaa9aa` (rework), verified at that commit.
+
+## Rejection record
+
+The first submission, commit `6a84018`, was REJECTED at verify `ff5cd21` for
+two linked defects:
+
+- `python_str`'s `Mapping` and `Tagged` arms were reached by no fixture, sitting
+  under a blanket heading "Branches edition 010 cannot reach, all covered by
+  fixture". That is the shape WP-5.3a was rejected for and which protocol
+  rule 10 forbids.
+- The `Tagged` arm had already DRIFTED from `manifest.rs`'s `py_str`: the cover
+  copy yielded `x` where the manifest copy yields `'x'`, str against repr.
+
+Everything substantive in that submission was confirmed independently at
+`ff5cd21` and was not re-verified here: the Unicode 15.0.0 divergence across
+55 codepoints, the three whole-plane sweeps at 1530 / 1525 / 29 over 1,112,064
+codepoints, the load-bearing dedup, three reproduced probes, and the
+eighth-probe correction.
 
 ## Owns
 
-`git show --stat 6a84018` lists exactly the seven declared paths: `mag/src/cover.rs`,
-`mag/src/cover/text.rs`, `mag/src/main.rs`, `mag/tests/cover_text.rs`,
-`mag/tests/cover_text_expected.json`, `mag/tests/cover_text_unicode_expected.json`,
-`meta/verification/evidence/WP-5.4a.md`. No verify file, no `baseline.json`, no
-Cargo change, nothing under `mag/src/model/`, `mag/src/parity/` or
-`mag/src/critic/`. Clean.
+`abaa9aa` touches exactly three paths:
 
-## Port fidelity, read against the Python
+| path | |
+|---|---|
+| `mag/tests/cover_text.rs` | +15 |
+| `mag/tests/cover_text_expected.json` | +1 |
+| `meta/verification/evidence/WP-5.4a.md` | +84 / -7 |
 
-Read `cover.py`'s four originals line by line against `mag/src/cover/text.rs`:
+`mag/src/cover/text.rs` is byte-identical between `6a84018` and `abaa9aa`
+(`git diff 6a84018 abaa9aa -- mag/src/cover/text.rs` is empty), so the rework
+is fixtures and evidence only, with no behaviour change. No `*.verify.md`, no
+`baseline.json`, nothing else under `mag/src/cover/`.
 
-- `_cover_date`: `all(parts)` is truthiness on strings, so an empty part fails it;
-  the port's `!part.is_empty()` is equivalent. Length-3 condition matches.
-- `_cover_contributors`: `strip` then `casefold` dedup then `" / ".join(...).upper()`,
-  else `str(edition.cover.get("deck", "")).strip()`. The port's `deck()` uses
-  `cover.get("deck").map(python_str).unwrap_or_default()`, which reproduces the
-  Python default exactly: key absent gives `""` (the `""` default, not `str(None)`),
-  key present and null gives the literal `"None"`. Correct and easy to get wrong.
-- `cover_tab_issue`: `split("-", 1)[0] == "en"` versus the port's
-  `split('-').next() == Some("en")` agree on the first element. `NÚMERO` is
-  `N\u{da}MERO`. Correct.
-- `cover_tab_identity`: matches.
-- `python_zfill`: CPython computes `width - len(self)` from the ORIGINAL length
-  including the sign, then emits `sign + zeros + rest`. The port does the same.
-  Correct, and the usual place a zfill port goes wrong.
+## The `Tagged` reachability argument
 
-## Baseline
+This is the crux of the rework and it holds in both directions, measured
+rather than accepted.
 
-In the worktree at `6a84018`: `cargo fmt --check` clean, `cargo clippy --all-targets
--- -D warnings` clean, `cargo test` green — 20 tests across 6 binaries, the
-whole-plane sweep binary taking 22.61s.
+The Python oracle REFUSES the input that produces the arm:
 
-## The three whole-plane sweeps: regenerated independently, exact
+```
+uv run python -c "import yaml; yaml.safe_load('deck: !mytag x')"
+-> ConstructorError: could not determine a constructor for the tag '!mytag'
+```
 
-Regenerated all three from scratch rather than replaying the worker's command, over
-every non-surrogate codepoint:
+Standard tags do NOT reach the arm, on either side. Python resolves
+`!!str 5` to a plain `str` of value `'5'`. A probe through the port's own
+`serde_yaml` confirms the Rust side agrees, and isolates which documents do
+reach `Tagged`:
 
-| sweep | mine | committed | result |
-|---|---|---|---|
-| casefold | 1530 | 1530 | EQUAL |
-| upper | 1525 | 1525 | EQUAL |
-| python_space | 29 | 29 | EQUAL |
-
-Codepoints swept: 1,112,064, matching the claim. The dict counts also reconcile
-with the in-source table sizes (1530 and 1525 entries; a naive `split(";")` over
-the source line yields 1531/1526 because of the statement terminator).
-
-**A hazard I hit, which confirms the evidence is right to pin its interpreter.**
-My first regeneration used bare `python3` and produced 1490/1485 — forty entries
-short in each map, the missing keys clustering in Vithkuqi (U+10570+) and U+A7D8.
-The cause is two Pythons on this machine with different Unicode versions: system
-`python3` is 3.9.6 / Unicode 13.0.0, while `uv run python` is 3.12.11 / Unicode
-15.0.0. Regenerated with `uv run python`, all three sweeps match exactly. The
-evidence's `## Commands` pin `uv run python` in all three invocations, so the
-recorded method is correct; this is noted because anyone replaying with the
-system interpreter would get a different oracle and mistake it for a port defect.
-
-## The Unicode 15.0.0 divergence: real, verified both sides
-
-(a) **The divergence is real.** Compiled a standalone probe with the repo's
-`rustc 1.96.0` and compared against `uv run python`:
-
-| codepoint | Python 15.0.0 upper | Rust std upper |
+| document | serde_yaml variant | `python_str` |
 |---|---|---|
-| U+019B | identity | U+A7DC |
-| U+0264 | identity | U+A7CB |
-| U+1C8A | identity | U+1C89 |
-| U+A7CD | identity | U+A7CC |
-| U+A7DB | identity | U+A7DA |
-| U+10D70 | identity | U+10D50 |
-| U+10D85 | identity | U+10D65 |
-| U+16EBB | identity | U+16EA0 |
-| U+16EC4 | identity | U+16EA9 |
+| `!!str 5` | `String` | `"5"` |
+| `!!int 7` | `Number` | `"7"` |
+| `!!bool true` | `Bool` | `"True"` |
+| `!mytag x` | **`Tagged`** | `"x"` |
 
-and `U+1C89` lower: Python identity, Rust `U+1C8A`. U+A7D0 agrees, as a control.
-Had the port used `char::to_uppercase`, it would diverge from the oracle on these.
+So `Tagged` is reachable only from a custom tag, which is exactly the document
+PyYAML's `safe_load` rejects. No Python-equality row can exist for it, and the
+worker's decision to test the arm without an oracle row is correct.
 
-(b) **The pinned tables exclude them.** All nine keys are absent from `UPPER_DATA`
-and `1c89` is absent from `FOLD_DATA`, so each takes the identity fallback and
-matches Python.
+## The chosen behaviour, and `manifest.rs`'s fall-through
 
-(c) **The identity fallback is correct everywhere else**, established by the
-whole-plane sweeps above: the maps hold exactly the codepoints Python maps, and
-every other codepoint is asserted unchanged.
+The worker's reading of `manifest.rs` is accurate. Its `py_str` (at :2142) has
+arms for `Null`, `Bool`, `Number` and `String`, then `other => py_repr_value(other)`
+with NO `Tagged` arm. `py_repr_value` (at :2153) carries
+`Value::Tagged(tagged) => py_repr_value(&tagged.value)`, and for a string that
+reaches `py_repr`, producing `'x'`.
 
-(d) **Freezing on Unicode 15.0.0 is the right call while Python is the oracle**,
-and it is a real decision rather than an accident: the alternative silently makes
-the port's output depend on the Rust toolchain version, which would have surfaced
-later as an inexplicable WP-5.5a web-oracle failure, since these functions feed
-the web edition whose oracle is byte-identical output. The evidence flags it for
-revisiting at WP-6.1, which is the correct owner: once Python is deleted the pin
-becomes a frozen table with no oracle behind it.
+So the manifest copy's `'x'` is INCIDENTAL: the fall-through bundles `Sequence`,
+`Mapping` and `Tagged` together, which is right for the first two (Python's
+`str(dict)` reprs its contents) and wrong for a tagged scalar.
 
-## Dedup on live edition 010: fires
+Keeping `x` in the cover copy is the better choice, and the WP argues it
+correctly: `python_str` models Python's `str()`, and `str()` of a string never
+adds quotes. The `Tagged` wrapper is a YAML-parser artifact with no Python
+counterpart, so unwrapping to the underlying value's `str()` is the coherent
+reading. Neither copy is a port here, because there is nothing to port; the
+cover copy is a decision, the manifest copy is a side effect.
 
-From the tracked `editions/010/edition.yaml`, nine articles carry nine author
-strings of which `Anthropic` appears twice; the dedup reduces them to eight. The
-`edition_010` row is therefore load-bearing rather than decorative, as claimed.
+## Per-arm coverage
+
+The blanket claim is replaced by an arm-by-arm table. The enumeration is
+complete against `serde_yaml::Value`'s seven variants as `python_str` matches
+them (the source splits `Bool` into `Bool(true)` and `Bool(false)`, which the
+table correctly treats as one arm):
+
+| arm | evidence status | confirmed |
+|---|---|---|
+| `Null` | fixture `deck_null`, literal `"None"` | yes |
+| `Bool` | fixture `deck_bool` | yes |
+| `Number` | fixture `deck_int` | yes |
+| `String` | fixture `deck_string` and edition 010 | yes |
+| `Sequence` | fixture `deck_list` | yes |
+| `Mapping` | fixture `deck_map`, added in the rework | yes |
+| `Tagged` | unreachable from safe-loaded YAML, no oracle | yes, above |
+
+Each disposition is accurate. No arm is unaccounted for.
+
+## Row count
+
+The oracle now carries 41 rows, and the breakdown reported (8 / 19 / 10 / 4)
+sums to 41:
+
+```
+cover_contributors: 19
+cover_date:          8
+cover_tab_identity:  4
+cover_tab_issue:    10
+TOTAL:              41
+```
+
+The evidence states explicitly that the previous breakdown summed to 40 and
+that `deck_map` makes it 41, rather than renumbering quietly.
 
 ## Discrimination probes
 
-Reproduced three of the seven, each by perturbing `mag/src/cover/text.rs` in the
-worktree and restoring afterwards:
+Reproduced independently by perturbing `mag/src/cover/text.rs` in the
+verification worktree and restoring from the committed blob afterwards.
 
-| probe | result |
-|---|---|
-| `is_python_space` loses the `U+001C..U+001F` range | FAIL: `python_strip_matches_python_over_all_codepoints` **and** `cover_contributors_matches_python` |
-| `python_casefold` replaced by `value.to_lowercase()` | FAIL: `casefold_matches_python_over_all_codepoints` **and** `cover_contributors_matches_python` |
-| `python_zfill` loses its sign branch | FAIL: `cover_tab_issue_matches_python` and `zfill_matches_python_on_sign_and_width` |
+| probe | perturbation | result |
+|---|---|---|
+| H | `Mapping` keys via `python_str` (unquoted) | `cover_contributors_matches_python` FAILED |
+| J | `Tagged` routed through repr, as `manifest.rs` does | `tagged_arm_has_no_python_oracle_and_unwraps` FAILED, `left: "'x'"` against `right: "x"` |
 
-**The eighth-probe correction is real.** The worker records that an earlier probe
-perturbing the uppercase table's hit branch did not discriminate, and says it
-corrected rather than recorded it. I tested the hit branch directly, making
-`mapped` return the original character on a map hit: four tests fail, including
-both the `upper` and `casefold` sweeps. The hit branch is genuinely covered.
+Probe J fails with exactly the divergence the rejection identified, which is
+what pins the decision rather than merely asserting it. `deck_map` reproduces
+against Python directly: `str(yaml.safe_load("{a: 1, b: x}"))` gives
+`{'a': 1, 'b': 'x'}`, matching the committed row.
 
-Restored to pristine after every probe; `git status` empty, suite green.
+## Round trip
 
-## The defect: two implemented arms reached by no fixture
+The four-function oracle regenerates BYTE-IDENTICALLY from the command
+recorded in `## Commands`, driving the real `magazine.cover` functions and
+including the live edition-010 row read from the tracked `edition.yaml`:
 
-`## Branches edition 010 cannot reach` claims fixtures cover them all. Two arms of
-`python_str` are reached by no fixture and no oracle row:
+```
+cmp mag/tests/cover_text_expected.json <backup>  -> identical
+```
 
-- **`Value::Mapping`.** `deck_list` covers `Sequence`; there is no mapping deck.
-  `deck: {a: 1}` is valid YAML in `edition.yaml`, so the arm is reachable. By
-  inspection it looks correct (Python's `str(dict)` reprs both keys and values,
-  which `python_repr` does), but inspection is what failed in the four prior
-  defects of this class.
-- **`Value::Tagged`.** No fixture, and this one is not merely untested: it
-  **already disagrees with its sibling implementation**. `cover/text.rs`'s
-  `python_str(Tagged(String("x")))` recurses to `python_str` and yields `x`,
-  while `manifest.rs`'s `py_str(Tagged(String("x")))` routes through
-  `py_repr_value` and yields `'x'` — str versus repr. Unreachable from
-  PyYAML-safe-loaded YAML, so not a live defect, but it is precisely the drift
-  the duplicated-helper rule exists to prevent, and a fixture would have exposed
-  it.
+The two-Pythons hazard is explicit at the head of `## Commands` (lines 14-19):
+this machine carries system Python 3.9.6 on Unicode 13.0.0 alongside
+`uv run python` 3.12.11 on 15.0.0, and a bare `python3` yields maps about forty
+entries short. Every recorded command is pinned to `uv run python`, which is
+why the method reproduces. I used `uv run python` throughout.
 
-This is the shape WP-5.3a was rejected for at `a3d61c9`: an implemented branch
-reached by nothing, under a blanket claim that all unreachable branches are
-covered. Consistency requires the same treatment.
+## Baseline
 
-## Two errata
+In a clean worktree at `abaa9aa`: `cargo fmt --check` clean,
+`cargo clippy --all-targets -- -D warnings` clean, full `cargo test` green at
+108 tests across 11 binaries, 0 failures. `cover_text` alone: 9 passed.
 
-- The evidence says "41 committed oracle rows"; the committed file holds **40**,
-  and the evidence's own breakdown (`cover_date` 8, `cover_contributors` 18,
-  `cover_tab_issue` 10, `cover_tab_identity` 4) sums to 40.
-- Rule 10 labelling is honest and correct: `deck_empty`, `deck_absent` and
-  `blank_skipped` do all produce `""`, are labelled non-discriminating, and are
-  justified as separating three code paths that end at one value.
+## The forward finding: the manifest loader should refuse tagged values
 
-## Remedy
+Assessed as asked, not acted on. The worker's claim is RIGHT.
 
-1. Add a mapping-deck fixture and regenerate the oracle.
-2. Either add a `Tagged` fixture, or record a proof that the arm is unreachable
-   from `edition.yaml` under PyYAML safe-load semantics — and in either case
-   record the `python_str`/`py_str` disagreement on that arm, since it is a live
-   inconsistency between two implementations of one Python semantic.
-3. Replace the blanket coverage heading with a per-arm statement naming what each
-   fixture reaches, as WP-5.3a did after its own rejection.
-4. Correct 41 to 40.
+`yaml.safe_load` raises `ConstructorError` on a custom tag; `serde_yaml` parses
+the same document happily. So the Rust loader is currently MORE PERMISSIVE than
+its oracle, accepting documents Python rejects. That is a divergence in the bad
+direction under revision 11's policy, which permits divergence only toward more
+diagnosis.
 
-## Seam residuals, assessed
+Making the manifest loader refuse tagged values MATCHES PyYAML rather than
+exceeding it, so it does not run into revision 23's rule that a port may not be
+stricter than its oracle. It also makes both copies' `Tagged` handling moot,
+which is a better outcome than two copies disagreeing about behaviour neither
+can reach from a valid document.
 
-- `is_python_space` is **byte-identical** between `mag/src/model/doc.rs:492` and
-  `mag/src/cover/text.rs:50`. A genuine duplicate, currently in agreement.
-- `py_str` / `python_str` are two structurally different implementations of
-  Python's `str()`, disagreeing on `Tagged` as described above.
-- `py_repr` was genuinely imported from `model::shared`, not copied. Correct.
-- **The audit-scope gap is confirmed.** `mag/tests/model_helpers.rs:4` reads
-  `const MODULES: [&str; 4] = ["doc.rs", "manifest.rs", "records.rs", "shared.rs"]`,
-  so WP-5.1d's duplicate audit cannot see `mag/src/cover/text.rs` at all. Note
-  also that widening the name-keyed check alone would not catch the
-  `py_str`/`python_str` pair, because the names differ; only the body-keyed check
-  would, and only if the bodies were closer than they are. This is a finding about
-  WP-5.1d's scope as much as this WP's, and belongs to the tracked follow-up that
-  lifts the Python-semantics helpers into `shared.rs` and widens the audit beyond
-  the model modules.
+This is a named obligation on WP-5.1e. Confirmed sound.
 
-## Status
+## Residual: WP-5.1e has since lifted these helpers
 
-rejected
+Verification is pinned to `abaa9aa` as submitted, which is correct under
+protocol rule 3. Note for the record that the concurrent WP-5.1e has since
+landed its lift in the main tree, so `mag/src/cover/text.rs` there now imports
+`py_casefold`, `py_str`, `py_strip`, `py_upper` and `py_zfill` from
+`crate::model::shared`. The `Tagged` decision verified here therefore moves into
+the shared module, where it becomes the single definition rather than one of
+two. That is the intended outcome and it does not affect this verdict, but
+WP-5.1e's own verification should confirm the decision survived the lift
+unchanged.
