@@ -235,18 +235,45 @@ string.
 
 ### `luma601`, decided explicitly
 
-The coordinator raised `luma601`, private in `critic/metrics.rs` and said to
-be duplicated into `cover/art.rs`. **It is not duplicated in the landed
-tree**: after rebasing onto `24de8d9`, which includes WP-5.4's `5a3fa71`,
-`grep -rn "luma601\|19595" mag/src/` matches only `critic/metrics.rs`. The
-widened audit is green on it, so there is nothing to lift or allowlist.
+This section originally concluded that no action was needed, on the strength
+of `grep -rn "luma601\|19595" mag/src/` matching only `critic/metrics.rs`.
+**That search could not have found the second implementation, so it proved
+nothing.** The correction is recorded here rather than quietly rewritten,
+because the failure mode is the point.
 
-Had it been duplicated, the decision would have been to make it
-`pub(crate)` in `critic/metrics.rs` rather than move it: `model/shared.rs`
-is a Python-semantics module under `model/`, and ITU-R 601 luma is colour
-science belonging to neither, so putting it there would start the junk
-drawer that kills shared modules. Recorded so the next agent does not
-re-open the question.
+There ARE two luma implementations, and neither grep term could match both:
+
+| site | formula | rounding |
+|---|---|---|
+| `cover/art.rs:12` `grey` | per-mille `r*299 + g*587 + b*114` | `(value + 500) / 1000`, clamped to 255 |
+| `critic/metrics.rs:541` `luma601` | PIL fixed-point `r*19595 + g*38470 + b*7471 + 0x8000` | `>> 16` |
+
+Both carry the ITU-R 601 coefficients, at different fixed-point scales and
+with different rounding. `19595` appears in one and not the other; the name
+`luma601` appears in one and not the other. A search for either term was
+structurally incapable of finding the pair.
+
+**The conclusion does not survive either.** WP-5.4's verification (commit
+`06d5cf6`) landed while this WP was in flight and found `art.rs::grey`
+**unfaithful to its own Python original**: `cover.py` reaches greyscale
+through PIL's `convert("L")`, which IS the fixed-point formula, so
+`metrics.rs::luma601` is already the correct implementation and `grey` is
+simply wrong. They are therefore not two faithful ports of two different
+originals. One is a defect, and that verification's prescribed remedy is to
+import `luma601` rather than to allowlist a divergence.
+
+So the right disposition is the opposite of what this section first said:
+`luma601` should become importable from `critic/metrics.rs` and `art.rs`
+should use it. The thematic objection this WP raised still stands, but it
+was never load-bearing: it rules out `model/shared.rs` as the destination,
+since that module is Python semantics and ITU-R 601 luma is colour science,
+and putting it there would start the junk drawer that kills shared modules.
+It never ruled out the one-word visibility change in `critic/metrics.rs`,
+which was available all along and is what the remedy prescribes. Ruling out
+one destination was mistaken for ruling out the lift.
+
+The fix belongs to whoever owns `critic/metrics.rs` and `cover/art.rs`, not
+to this WP, and WP-5.4's rework already carries it.
 
 ### The audit's blind spot, stated rather than left to be found
 
@@ -259,6 +286,28 @@ audit found nothing; a human verifier did.
 It is sharper than it first looks: one of the two copies was reachable only
 through a document the oracle rejects, so neither the audit nor the test
 suite could have found it. A human verifier did.
+
+**The luma pair above is the strongest instance, and it indicts this WP's own
+method rather than only the audit's.** `grey` and `luma601` differ in name,
+in body, in fixed-point scale AND in rounding, so neither key fires. But the
+new part is that a MANUAL SEARCH missed them too: the coefficients are
+written in different scales, so `299` and `19595` denote the same thing and
+share no substring, and no single grep term can match both sites. Detection
+failed at three levels, including the one a person would reach for first.
+
+That is the strongest available argument for the conclusion this WP already
+drew: **detection cannot close this class, and the rule is the real
+mitigation.** An audit finds copies that look alike. It cannot find two
+independent implementations of one idea, and the luma pair shows that no
+cheap search can either. What catches those is that each implementation is
+pinned to its own Python original by its own oracle, which is a stronger
+guarantee than agreeing with each other, because agreement between two Rust
+copies is satisfied just as well when both are wrong. That discipline is
+exactly what worked here: WP-5.4's oracle caught `grey` as unfaithful to
+`convert("L")`, and no comparison between the two Rust functions would have,
+since they were never compared. It is also the discipline WP-5.4a used when
+it pinned its copies to Python over the whole plane rather than to the other
+Rust copy.
 
 This is not fully solvable by detection, because at some point two functions with
 different names and different bodies are simply two functions. The honest
@@ -345,6 +394,14 @@ verdict-equivalent, and all are unchanged.
 - **`parity/display.rs`, `parity/streams.rs` and `parity/report.rs` were
   held by WP-0.2h** while this ran, which is why their duplicates are
   deferred rather than fixed.
+- **A luma implementation is duplicated and one copy is wrong**, which this
+  WP's first submission missed and wrongly reported as absent.
+  `cover/art.rs:12` `grey` uses per-mille coefficients with `(v+500)/1000`
+  rounding; `critic/metrics.rs:541` `luma601` uses PIL's fixed-point form.
+  WP-5.4's verification (`06d5cf6`) found `grey` unfaithful to `cover.py`'s
+  `convert("L")`, so the remedy is to import `luma601`, and it belongs to
+  WP-5.4's rework rather than here. The widened audit does NOT catch this
+  pair and cannot be made to: see the blind-spot section.
 - **The `Tagged` decision is reasoned, not measured**, because PyYAML cannot
   produce the input. If a future loader stops using `safe_load`, it becomes
   reachable and should be re-decided against real Python behaviour.
