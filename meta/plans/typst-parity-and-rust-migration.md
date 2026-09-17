@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 31 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 32 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,70 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 32 changelog
+
+**The duplicate audit is TUNED, not doubted, and the tuning matters because
+a tool made someone rename correct code.** A (name, signature) key fires on
+`load`, `new`, `open`, `read`, `write` and `default` forever; it caught
+`load` in two unrelated modules and WP-5.5b renamed its own function to
+`Pdf::read` to get past it. Before changing a key, note what each one
+catches: the BODY key catches an exact copy before it drifts, and the NAME
+key IS the drift detector, since a drifted copy has an unequal body by
+definition, which is how WP-5.1c's pre-fix `py_repr` would have been seen.
+So requiring body similarity too would delete the audit's whole purpose,
+and letting the allowlist grow turns the signal into noise a real duplicate
+can hide in. The key becomes an explicit **REGISTRY of names the shared
+module owns**, which may not be defined elsewhere, with nothing else firing
+on name: exact rather than heuristic, no false positives on ordinary Rust
+vocabulary, and it enforces precisely the rule the plan already states.
+Growing a registry is a deliberate act; growing an allowlist is an apology
+for a bad key. **And the principle the rename exposed: a tool that makes
+you rename CORRECT code is mis-specified, and the fix is the tool.**
+WP-5.5b's rename should be revisited on its own merits rather than left as
+a monument to a false positive.
+
+**The QR cost was misstated and the route changes, though the logic does
+not.** Reproducing segno's pad byte means owning the bitstream, the
+Reed-Solomon ECC, mask selection and matrix layout, because `qrcodegen`'s
+padding is internal with no hook. So the preferred route is now to treat
+the QR SVGs as committed ASSETS for the compared edition and use a
+SPEC-CORRECT encoder for new work: both legs read the same asset, Tier E is
+satisfied, nobody owns a bug-compatible encoder, and future editions get
+correct codes. Two supporting facts are verified here (the payload is a
+pure function of `source_url`; the print error level is chosen by a fitting
+loop, so an asset must record the LEVEL), two are not and the WP proves
+them before committing (that both legs can read the asset, via a sanctioned
+oracle change that must render byte-identical; that nothing else
+regenerates a code). Falls back to owning the encoder as its own WP.
+
+**Pygments is decided on its own terms, and explicitly not by analogy.**
+Revision 30 turned on the QR modules being inside Tier E's compared domain;
+highlighted code is `<span>` in the WEB TREE only, which no ladder clause
+inspects, so no gate forces reproduction. Highlighted code is therefore
+compared STRUCTURALLY, same token boundaries and class names so the CSS
+colours it identically, and the web-tree oracle is restated as
+byte-identical EXCEPT those spans. This is consistency rather than a new
+concession: the plan already compares pygments against syntect at the
+(text-run, fill colour) level for the print path and never at the markup
+level.
+
+**Two records.** WP-5.5b's f32 enumeration is the clean counter-case to
+WP-5.2's, showing the hazard can be DISCHARGED by enumeration rather than
+fixed everywhere: every parsed number flows only into
+`near(size, expected, 0.75)` with margins 17,595x to 28,550x the tolerance.
+And `studio.ready` looks UNREACHABLE for any input, since `studio_blockers`
+is seeded unconditionally and never emptied, which is rule 10's family in
+the PRODUCT rather than in the evidence: a preflight result that is a
+constant dressed as a measurement. If confirmed, the port still reproduces
+it, because the Python is the specification, and it is flagged to Fran as a
+separate product question.
+
+**And WP-5.5a's landed increment validates revision 26's strong form.** Its
+four matchers are pinned to PYTHON, not to the author's reading, and that
+caught two of its own bugs: a naive structural rewrite would have DELETED
+the 18 `source-link opener-source-link` elements in 010's shipped web tree,
+which is the exact defect this work exists to fix, inverted.
 
 ## Revision 31 changelog
 
@@ -2200,6 +2264,15 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   non-monotone or to mask a small compensating kern. So the honest prior is
   that this is NOT obviously negligible for the shape check even though it
   is comfortably inside the magnitude bound.
+- **The hazard is scope-dependent and can be DISCHARGED by enumeration
+  rather than fixed everywhere**, which WP-5.5b demonstrated as the clean
+  counter-case to WP-5.2's: every parsed PDF number in the preflight path
+  flows only into `near(size, expected, 0.75)`, with margins 17,595x to
+  28,550x the tolerance, so f32 provably cannot reach its outputs. A
+  consumer that enumerates where its parsed numbers go, and shows the
+  reachable error is orders below any threshold they meet, needs no exact
+  path. Record the enumeration; do not assume the hazard applies
+  everywhere, and do not assume it applies nowhere.
 - Verify: the 010 MediaBox case reproduces exactly (authored decimals
   recovered, scale 1.0000000151 rather than 1.0); a PDF using object
   streams either parses or fails loud by name; WP-0.2i's per-glyph verdicts
@@ -2912,6 +2985,38 @@ them or the divergence is a defect:
     because `299` and `19595` denote the same coefficient and share no
     substring. The audit is worth widening, but it cannot close this class,
     and the mitigation is the strong-form rule above.
+  - **The KEY is refined (revision 32), because a (name, signature) key
+    fires on `load`, `new`, `open`, `read`, `write` and `default` forever.**
+    It fired on `load` defined in both `cover/outline.rs` and
+    `package/preflight.rs` with unrelated bodies, the second false positive
+    of that class, and WP-5.5b renamed its own function to `Pdf::read` to
+    get past it. Note what the two keys actually catch before changing
+    either: the BODY key catches an exact copy before it drifts, and the
+    NAME key is the DRIFT detector, since a drifted copy has an unequal
+    body by definition (WP-5.1c's `py_repr` carried the pre-fix body and
+    only the name key could have seen it). So requiring body similarity as
+    well would delete the drift detector, which is the audit's whole
+    purpose, and letting the allowlist grow turns the signal into noise a
+    genuine duplicate can hide in.
+    Replace the (name, signature) key with an explicit **REGISTRY of names
+    the shared module owns** (`py_repr`, `py_str`, `is_python_space`,
+    `luma601`, the pinned case tables, and whatever is lifted later): those
+    names may not be defined anywhere else, and nothing else fires on name.
+    That is exact rather than heuristic, has NO false positives on ordinary
+    Rust vocabulary, and enforces precisely the rule the plan already
+    states, that Python-semantics helpers live in one place. Keep the body
+    key globally. Growing the registry is a deliberate act when a helper is
+    lifted, where growing an allowlist is an apology for a bad key.
+    **And the principle the rename exposed, which matters more than the
+    key: a tool that makes you rename CORRECT code is mis-specified, and
+    the fix is the tool, not the code.** WP-5.5b's rename was reasonable
+    under the circumstances and should now be revisited on its own merits,
+    keeping `Pdf::read` only if it is genuinely the better name rather than
+    as a monument to a false positive. An audit that distorts the code it
+    audits has inverted its relationship with it.
+    The audit is being TUNED, not doubted: it has already paid for itself
+    twice, reaching the `luma601`/`grey` territory and forcing this
+    decision before a third `load` appeared.
   - **Remove the 40-character body floor.** The verifier found the audit
     skips short bodies, and a wider scan makes that matter more, because
     short bodies are exactly where trivial Python-semantics helpers live. A
@@ -3346,8 +3451,77 @@ them or the divergence is a defect:
     modules, `"a"x61` and `"a"x60` differed at 68 and 82, correct in all
     three.
     Worth reporting upstream if Fran wants it filed: segno's pad-bit
-    deviation affects any encoder compared against it and reproduces in
-    three lines.
+    deviation affects any encoder compared against it.
+  - **COST CORRECTION (revision 32), and it changes the route without
+    changing the logic.** The deviation reproduces in three lines to
+    DESCRIBE and not to IMPLEMENT: `qrcodegen` cannot be used as-is,
+    because padding is internal to `encode_segments_advanced` with no hook,
+    so reproducing segno's spurious pad byte means owning the bitstream,
+    the Reed-Solomon ECC, mask selection and matrix layout. That is a QR
+    implementation, not a patch. Revision 30's reasoning is untouched (the
+    modules are inside Tier E's compared domain, so a different matrix
+    fails the gate and option (b) would weaken Tier E), but the price was
+    misstated and the decision deserves the real number.
+    **Preferred route: treat the QR SVGs as committed ASSETS for the
+    compared edition, and use a SPEC-CORRECT encoder for new work.** Both
+    legs then read the same asset, so the matrices are identical and Tier E
+    is satisfied without anyone reproducing a bug; future editions get
+    spec-correct codes, which is the product improvement already named as
+    Fran's post-flip item, and nothing has to own a bug-compatible
+    encoder. Two facts this rests on are verified: the payload is a pure
+    function of `source_url` (`manifest.py:1261`, scheme and `www.`
+    stripped), and the PRINT error level is chosen by a fitting loop over
+    available room (`weasyprint_adapter.py:1907`), so the asset must record
+    the chosen LEVEL and not merely the payload. Two are NOT verified and
+    the WP proves them before committing to this: that both legs can be
+    pointed at the asset (a sanctioned oracle change on the WP-0.0b
+    pattern, which must render byte-identical since the asset is exactly
+    what segno produces today), and that no other path regenerates a code.
+    If either fails, fall back to (a) with the encoder scoped as its OWN
+    WP, the segno deviation as a named requirement, and `qrcodegen`'s
+    `boost_ecl` retained as an independent check on version and effective
+    level, which it matched 9 of 9.
+  - **PYGMENTS: decided on its own terms, NOT by analogy to the QR
+    decision.** `html_edition.py:681`'s `_highlight_code` calls pygments
+    with `HtmlFormatter(nowrap=True)`, so byte-identical web HTML would
+    require reproducing its token markup, and 010 cannot reach the branch
+    at all (zero `<pre>` blocks and zero pygments token classes across all
+    eleven web files), so the corpus rule would demand a fixture and the
+    fixture would demand reproducing a second Python library byte for byte.
+    Revision 30 does NOT settle this and must not be cited as if it did:
+    that turned on the QR modules being inside Tier E's COMPARED DOMAIN,
+    and highlighted code is `<span class="...">` in the WEB TREE ONLY,
+    which no ladder clause inspects. No gate forces reproduction here.
+    **Decision: compare highlighted code STRUCTURALLY, not byte for byte.**
+    Same token boundaries and same class names, so the CSS colours it
+    identically; the library's markup formatting is not reproduced. The
+    plan already settled the analogous question for the PRINT path, where
+    the divergence table compares pygments against syntect at the
+    (text-run, fill colour) level and never at the markup level, so this is
+    consistency rather than a new concession, and `syntect` is the likely
+    implementation since WP-3.3 already contemplates it. The web-tree
+    oracle is therefore restated as **byte-identical EXCEPT highlighted-code
+    spans, which are structurally equal**, declared and enumerated in
+    evidence rather than absorbed, with a fixture edition exercising the
+    branch 010 cannot reach.
+  - **The increment that landed validates revision 26's strong form**, and
+    is worth recording because it caught the author's own errors. The four
+    brittle matchers are ported STRUCTURALLY and pinned to PYTHON: over 10
+    lines carrying an added attribute or class, Python fails to recognise 8
+    while the port recognises 10, which closes the WP-0.0c defect class.
+    Pinning to the oracle rather than to the author's reading then caught
+    TWO of its own bugs: `source_link()` must EXCLUDE an already-installed
+    `opener-source-link`, since its job is finding links that still need a
+    QR, and `is_print_only()` must drop `source-link` only when
+    `opener-source-link` is ABSENT. Exactly 18 `class="source-link
+    opener-source-link"` survive into 010's shipped web tree, so a naive
+    structural rewrite would have DELETED the QR links: the very defect
+    this work exists to fix, inverted. That is what revision 26 means by
+    pinning to the oracle rather than to a sibling or to one's own
+    understanding.
+    One detail worth keeping: the REORDERED-ATTRIBUTE case is WORSE than
+    the unrecognised one, because Python classifies it as print-only and
+    DELETES the link entirely rather than merely failing to upgrade it.
   - Carries WP-0.0c's unfinished business: `_PRINT_ONLY_LINE`,
     `_SOURCE_LINK_LINE`, `_PIECE_OPENING`, and the repaired opener regex
     that still requires the class to be exactly `article-opener`. All four
@@ -3357,6 +3531,16 @@ them or the divergence is a defect:
     attribute on a figure, a source link, a closing plate and an opener.
 
 - **WP-5.5b preflight** (`preflight.py`): owns `mag/src/package/preflight.rs`.
+  Finding for confirmation, and it is rule 10's family IN THE PRODUCT
+  rather than in the evidence: `studio.ready` is reportedly UNREACHABLE for
+  any input, because `studio_blockers` is seeded with the PDF/X-4 and bleed
+  messages unconditionally and never emptied, so a field the pipeline
+  reports can never take one of its values. A preflight result that is a
+  CONSTANT dressed as a measurement. If the verifier confirms it in the
+  Python, the PORT still reproduces it, since the Python is the
+  specification and a port that is looser or stricter than its oracle is a
+  defect either way; and it is flagged to Fran as a product bug, which is a
+  separate question from whether the port is faithful.
   Depends on WP-5.2 (`preflight.py:8` takes `A4_LANDSCAPE_POINTS` and
   `section_reader_pages` from `booklet.py`, and `section_reader_pages`
   decides `reader_pages` and `expected_sheets`, both preflight.json fields
