@@ -338,3 +338,36 @@ hyphenation:
     es_max_consecutive_hyphen_ended_lines: 4, so Spanish still hyphenates and still
       ladders, which is the point of the scope
   revert: WP-4.3 deletes the rule and its comment; nothing else depends on it
+page_sets:
+  authored_by: WP-2.0b
+  evaluated: per run from the oracle leg's en/edition-manifest.json, never stored as
+    page-number values, so a content change reshapes the sets instead of invalidating
+    them (protocol rule 9)
+  domain: the interior domain, reader.pdf pages 2..n-1
+  rules:
+    furniture:
+      description: every interior page
+      derivation: every page in the compared domain
+    openers:
+      description: article opener pages
+      derivation: the set of layout.toc values
+      coverage_note: layout.toc maps an article id to its opener page; the contents
+        page itself is not a manifest field, so this rule reaches article openers only
+        and a contents page is scored under body until a manifest field names it
+        (recorded under protocol rule 10 rather than left implied)
+    placement:
+      description: pages carrying a figure, plate or printed tail ornament
+      derivation: the set of layout.figures[*].page, plus for every layout.tail_arts
+        entry whose printed is true the last page of its article, computed as
+        layout.toc[article] + layout.article_pages[article] - 1
+    body:
+      description: prose pages with no placement and no opener
+      derivation: furniture minus openers minus placement
+    code:
+      description: pages where a staged fenced run's or a resolved extract's first
+        line lands
+      derivation: for each fenced run in a staged manuscript, the first interior page
+        whose normalized extracted text contains that run's first line
+      coverage_note: empty for edition 010, which carries neither fenced code blocks
+        nor extracts, so this rule is non-discriminating on the current corpus and
+        WP-3.3 gates on its own fixture edition instead (protocol rule 10)

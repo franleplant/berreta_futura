@@ -190,6 +190,15 @@ enum Cmd {
         /// Two pre-rendered output trees to compare instead of rendering
         #[arg(long = "pre-rendered", num_args = 2, value_names = ["DIR_A", "DIR_B"])]
         pre_rendered: Option<Vec<PathBuf>>,
+        /// Run dir whose finals both legs render
+        #[arg(long)]
+        run: Option<String>,
+        /// Render only the weasyprint leg and compare it against itself
+        #[arg(long = "oracle-only")]
+        oracle_only: bool,
+        /// Score one page set from parity.yaml page_sets
+        #[arg(long)]
+        set: Option<String>,
     },
 }
 
@@ -339,14 +348,42 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
         Cmd::Parity {
             edition,
             pre_rendered,
+            run,
+            oracle_only,
+            set,
         } => {
             let pair = pre_rendered.map(|mut dirs| {
                 let b = dirs.pop().expect("clap enforces two dirs");
                 let a = dirs.pop().expect("clap enforces two dirs");
                 (a, b)
             });
-            parity::run(&edition, pair)
+            parity::run(
+                &edition,
+                parity::Options {
+                    pre_rendered: pair,
+                    run_dir: run,
+                    oracle_only,
+                    set,
+                },
+            )
         }
         _ => unreachable!(),
+    }
+}
+
+#[cfg(test)]
+mod parity_text_seam_is_reachable {
+    use crate::parity::{trace_elements, Element, TextFace};
+    use std::collections::BTreeMap;
+    use std::path::Path;
+
+    #[test]
+    fn the_text_path_is_callable_from_outside_the_parity_module() {
+        let map: BTreeMap<String, TextFace> = BTreeMap::new();
+        let Err(err) = trace_elements(Path::new("does-not-exist.pdf"), 1, 1, &map) else {
+            panic!("a missing pdf must fail rather than succeed");
+        };
+        assert!(format!("{err:#}").contains("does-not-exist.pdf"));
+        let _: fn(&Element) -> bool = |e| matches!(e, Element::Text { .. });
     }
 }
