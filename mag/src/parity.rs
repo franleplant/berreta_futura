@@ -14,12 +14,32 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use streams::Face;
 
+#[allow(unused_imports)]
+pub(crate) use display::trace_elements;
+#[allow(unused_imports)]
+pub(crate) use streams::{Color, Element, Face as TextFace};
+
+#[allow(dead_code)]
+pub(crate) fn text_font_map() -> Result<BTreeMap<String, Face>> {
+    font_name_map(&spec()?)
+}
+
 const SPEC_PATH: &str = "meta/verification/parity.yaml";
 
 #[derive(Serialize)]
 struct Verdict {
     edition: String,
     mode: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    staged_input_digest: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    staleness: Option<Staleness>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    typst_leg: Option<LegFailure>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    page_sets: Option<BTreeMap<String, Vec<u32>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scored_set: Option<ScoredSet>,
     inputs: BTreeMap<String, String>,
     domain: Domain,
     tier_s: TierS,
@@ -64,6 +84,27 @@ struct PageCount {
 struct NotEvaluated {
     status: String,
     owner: String,
+}
+
+#[derive(Serialize)]
+struct Staleness {
+    status: String,
+    current: String,
+    baseline: Option<String>,
+}
+
+#[derive(Serialize)]
+struct LegFailure {
+    status: String,
+    engine: String,
+    error: String,
+}
+
+#[derive(Serialize)]
+struct ScoredSet {
+    name: String,
+    pages: Vec<u32>,
+    clauses_differing: BTreeMap<String, Vec<u32>>,
 }
 
 fn not_evaluated(owner: &str) -> NotEvaluated {
@@ -166,20 +207,431 @@ fn sha256_file(path: &Path) -> Result<String> {
     Ok(hex::encode(Sha256::digest(bytes)))
 }
 
-pub fn run(edition: &str, pre_rendered: Option<(PathBuf, PathBuf)>) -> Result<i32> {
+fn staged_digest(request: &Path) -> Result<String> {
+    let raw =
+        fs::read_to_string(request).with_context(|| format!("reading {}", request.display()))?;
+    let doc: serde_json::Value =
+        serde_json::from_str(&raw).with_context(|| format!("parsing {}", request.display()))?;
+    let rows = doc
+        .get("inputs")
+        .and_then(|v| v.as_array())
+        .with_context(|| format!("{} has no inputs array", request.display()))?;
+    let mut entries = Vec::new();
+    for row in rows {
+        let target = row
+            .get("targetPath")
+            .and_then(|v| v.as_str())
+            .context("input row missing targetPath")?;
+        let source = row
+            .get("sourcePath")
+            .and_then(|v| v.as_str())
+            .context("input row missing sourcePath")?;
+        entries.push(format!("{target}\u{1f}{}", sha256_file(Path::new(source))?));
+    }
+    entries.sort();
+    Ok(hex::encode(Sha256::digest(entries.join("\u{1e}"))))
+}
+
+fn render_dirs() -> Result<Vec<PathBuf>> {
+    let editions = Path::new("editions");
+    let mut dirs = Vec::new();
+    for entry in fs::read_dir(editions).context("reading editions/")? {
+        let edition = entry?.path();
+        let Ok(children) = fs::read_dir(&edition) else {
+            continue;
+        };
+        for child in children.filter_map(|c| c.ok()) {
+            let path = child.path();
+            if path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("render-"))
+            {
+                dirs.push(path);
+            }
+        }
+    }
+    dirs.sort();
+    Ok(dirs)
+}
+
+fn render_leg(edition: &str, run: Option<&str>, engine: &str) -> Result<PathBuf> {
+    let before = render_dirs()?;
+    let args = crate::render::RenderArgs {
+        edition: edition.to_string(),
+        operation: "render_edition".into(),
+        article: None,
+        langs: Some("en".into()),
+        run: run.map(str::to_string),
+        anchor_model: "haiku".into(),
+        no_model: true,
+        engine: Some(engine.to_string()),
+    };
+    crate::render::run(&args)?;
+    let fresh: Vec<PathBuf> = render_dirs()?
+        .into_iter()
+        .filter(|p| !before.contains(p))
+        .collect();
+    match fresh.len() {
+        1 => Ok(fresh.into_iter().next().expect("length checked")),
+        n => anyhow::bail!("{engine} leg produced {n} new render directories, expected exactly 1"),
+    }
+}
+
+fn manifest_pages(manifest: &serde_json::Value, key: &str) -> Result<BTreeMap<String, u32>> {
+    let node = manifest
+        .get("layout")
+        .and_then(|l| l.get(key))
+        .and_then(|v| v.as_object())
+        .with_context(|| format!("edition-manifest.json layout.{key} missing or not an object"))?;
+    node.iter()
+        .map(|(k, v)| {
+            let page = v
+                .as_u64()
+                .with_context(|| format!("layout.{key}.{k} is not an integer"))?;
+            Ok((k.clone(), u32::try_from(page).context("page out of range")?))
+        })
+        .collect()
+}
+
+fn placement_pages(manifest: &serde_json::Value) -> Result<Vec<u32>> {
+    let layout = manifest.get("layout").context("manifest missing layout")?;
+    let mut pages: Vec<u32> = layout
+        .get("figures")
+        .and_then(|v| v.as_array())
+        .map(|figs| {
+            figs.iter()
+                .filter_map(|f| f.get("page").and_then(|p| p.as_u64()))
+                .filter_map(|p| u32::try_from(p).ok())
+                .collect()
+        })
+        .unwrap_or_default();
+    let toc = manifest_pages(manifest, "toc")?;
+    let spans = manifest_pages(manifest, "article_pages")?;
+    if let Some(tails) = layout.get("tail_arts").and_then(|v| v.as_array()) {
+        for tail in tails {
+            if tail.get("printed").and_then(|p| p.as_bool()) != Some(true) {
+                continue;
+            }
+            let article = tail
+                .get("article")
+                .and_then(|a| a.as_str())
+                .context("tail_arts entry missing article")?;
+            let (start, span) = (toc.get(article), spans.get(article));
+            if let (Some(start), Some(span)) = (start, span) {
+                pages.push(start + span - 1);
+            }
+        }
+    }
+    pages.sort_unstable();
+    pages.dedup();
+    Ok(pages)
+}
+
+fn fenced_first_lines(request: &Path) -> Result<Vec<String>> {
+    let raw = fs::read_to_string(request)?;
+    let doc: serde_json::Value = serde_json::from_str(&raw)?;
+    let rows = doc
+        .get("inputs")
+        .and_then(|v| v.as_array())
+        .context("request.json has no inputs array")?;
+    let mut lines = Vec::new();
+    for row in rows {
+        let target = row.get("targetPath").and_then(|v| v.as_str()).unwrap_or("");
+        if !target.contains("/articles/") || !target.ends_with(".md") {
+            continue;
+        }
+        let source = row
+            .get("sourcePath")
+            .and_then(|v| v.as_str())
+            .context("input row missing sourcePath")?;
+        let body = fs::read_to_string(source)
+            .with_context(|| format!("reading staged manuscript {source}"))?;
+        let mut fenced = false;
+        for line in body.lines() {
+            if line.trim_start().starts_with("```") {
+                fenced = !fenced;
+                continue;
+            }
+            if fenced && !line.trim().is_empty() {
+                lines.push(line.trim().to_string());
+                fenced = false;
+            }
+        }
+    }
+    Ok(lines)
+}
+
+fn code_pages(request: &Path, texts: &[String], first: u32) -> Result<Vec<u32>> {
+    let needles = fenced_first_lines(request)?;
+    let mut pages = Vec::new();
+    for needle in needles {
+        let collapsed = needle.split_whitespace().collect::<Vec<_>>().join(" ");
+        if collapsed.is_empty() {
+            continue;
+        }
+        if let Some(offset) = texts.iter().position(|t| t.contains(&collapsed)) {
+            pages.push(first + u32::try_from(offset).context("page offset out of range")?);
+        }
+    }
+    pages.sort_unstable();
+    pages.dedup();
+    Ok(pages)
+}
+
+fn page_sets(
+    manifest: &Path,
+    first: u32,
+    last: u32,
+    code: Vec<u32>,
+) -> Result<BTreeMap<String, Vec<u32>>> {
+    let raw =
+        fs::read_to_string(manifest).with_context(|| format!("reading {}", manifest.display()))?;
+    let doc: serde_json::Value =
+        serde_json::from_str(&raw).with_context(|| format!("parsing {}", manifest.display()))?;
+    let furniture: Vec<u32> = (first..=last).collect();
+    let mut openers: Vec<u32> = manifest_pages(&doc, "toc")?.into_values().collect();
+    openers.sort_unstable();
+    openers.dedup();
+    openers.retain(|p| furniture.contains(p));
+    let mut placement = placement_pages(&doc)?;
+    placement.retain(|p| furniture.contains(p));
+    let body: Vec<u32> = furniture
+        .iter()
+        .filter(|p| !openers.contains(p) && !placement.contains(p))
+        .copied()
+        .collect();
+    let mut sets = BTreeMap::new();
+    sets.insert("body".to_string(), body);
+    sets.insert("code".to_string(), code);
+    sets.insert("furniture".to_string(), furniture);
+    sets.insert("openers".to_string(), openers);
+    sets.insert("placement".to_string(), placement);
+    Ok(sets)
+}
+
+fn baseline_digest() -> Result<Option<String>> {
+    let path = Path::new("meta/verification/baseline.json");
+    if !path.exists() {
+        return Ok(None);
+    }
+    let raw = fs::read_to_string(path)?;
+    let doc: serde_json::Value = serde_json::from_str(&raw)?;
+    Ok(doc
+        .get("staged_input_digest")
+        .and_then(|v| v.as_str())
+        .map(str::to_string))
+}
+
+fn staleness(current: &str) -> Result<Staleness> {
+    let baseline = baseline_digest()?;
+    let status = match &baseline {
+        Some(recorded) if recorded != current => "stale",
+        Some(_) => "fresh",
+        None => "unseeded",
+    };
+    Ok(Staleness {
+        status: status.into(),
+        current: current.to_string(),
+        baseline,
+    })
+}
+
+fn clause_pages(v: &Verdict) -> BTreeMap<String, Vec<u32>> {
+    let mut out = BTreeMap::new();
+    if let Some(c) = &v.tier_s.text {
+        out.insert("text".to_string(), c.pages_differing.clone());
+    }
+    if let Some(c) = &v.tier_s.color {
+        out.insert("color".to_string(), c.pages_differing.clone());
+    }
+    if let Some(c) = &v.tier_e.display_list {
+        let pages = c.pages_differing.iter().map(|d| d.page).collect();
+        out.insert("display_list".to_string(), pages);
+    }
+    out
+}
+
+fn score_set(v: &Verdict, name: &str) -> Result<ScoredSet> {
+    let sets = v
+        .page_sets
+        .as_ref()
+        .context("--set needs page sets, which require a rendered oracle leg")?;
+    let pages = sets
+        .get(name)
+        .with_context(|| {
+            format!(
+                "unknown page set '{name}': expected one of {}",
+                sets.keys().cloned().collect::<Vec<_>>().join(", ")
+            )
+        })?
+        .clone();
+    let clauses_differing = clause_pages(v)
+        .into_iter()
+        .map(|(clause, differing)| {
+            let hits: Vec<u32> = differing
+                .into_iter()
+                .filter(|p| pages.contains(p))
+                .collect();
+            (clause, hits)
+        })
+        .filter(|(_, hits)| !hits.is_empty())
+        .collect();
+    Ok(ScoredSet {
+        name: name.to_string(),
+        pages,
+        clauses_differing,
+    })
+}
+
+pub struct Options {
+    pub pre_rendered: Option<(PathBuf, PathBuf)>,
+    pub run_dir: Option<String>,
+    pub oracle_only: bool,
+    pub set: Option<String>,
+}
+
+struct Legs {
+    dir_a: PathBuf,
+    dir_b: PathBuf,
+    mode: &'static str,
+    digest: Option<String>,
+    typst_leg: Option<LegFailure>,
+}
+
+fn oracle_cache_path(out_dir: &Path) -> PathBuf {
+    out_dir.join("oracle-cache.json")
+}
+
+fn cached_oracle(out_dir: &Path) -> Option<(PathBuf, String)> {
+    let raw = fs::read_to_string(oracle_cache_path(out_dir)).ok()?;
+    let doc: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    let dir = PathBuf::from(doc.get("render_dir")?.as_str()?);
+    let recorded = doc.get("staged_input_digest")?.as_str()?.to_string();
+    let current = staged_digest(&dir.join("request.json")).ok()?;
+    (current == recorded && dir.join("en/reader.pdf").exists()).then_some((dir, recorded))
+}
+
+fn store_oracle(out_dir: &Path, dir: &Path, digest: &str) -> Result<()> {
+    let doc = serde_json::json!({
+        "render_dir": dir.to_string_lossy(),
+        "staged_input_digest": digest,
+    });
+    fs::write(
+        oracle_cache_path(out_dir),
+        serde_json::to_string_pretty(&doc)? + "\n",
+    )?;
+    Ok(())
+}
+
+fn stage_legs(edition: &str, opts: &Options, out_dir: &Path) -> Result<Legs> {
+    if let Some((dir_a, dir_b)) = &opts.pre_rendered {
+        return Ok(Legs {
+            dir_a: dir_a.clone(),
+            dir_b: dir_b.clone(),
+            mode: "pre_rendered",
+            digest: None,
+            typst_leg: None,
+        });
+    }
+    let run = opts.run_dir.as_deref();
+    let (oracle, digest) = match cached_oracle(out_dir) {
+        Some(hit) => {
+            println!("oracle leg: cached {}", hit.0.display());
+            hit
+        }
+        None => {
+            let dir = render_leg(edition, run, "weasyprint")?;
+            let digest = staged_digest(&dir.join("request.json"))?;
+            store_oracle(out_dir, &dir, &digest)?;
+            (dir, digest)
+        }
+    };
+    if opts.oracle_only {
+        return Ok(Legs {
+            dir_a: oracle.clone(),
+            dir_b: oracle,
+            mode: "oracle_only",
+            digest: Some(digest),
+            typst_leg: None,
+        });
+    }
+    match render_leg(edition, run, "typst") {
+        Ok(typst) => {
+            let after = staged_digest(&typst.join("request.json"))?;
+            anyhow::ensure!(
+                after == digest,
+                "staged inputs changed between the two legs: {digest} then {after}; re-run"
+            );
+            Ok(Legs {
+                dir_a: oracle,
+                dir_b: typst,
+                mode: "render",
+                digest: Some(digest),
+                typst_leg: None,
+            })
+        }
+        Err(e) => Ok(Legs {
+            dir_a: oracle.clone(),
+            dir_b: oracle,
+            mode: "typst_leg_failed",
+            digest: Some(digest),
+            typst_leg: Some(LegFailure {
+                status: "fail".into(),
+                engine: "typst".into(),
+                error: format!("{e:#}"),
+            }),
+        }),
+    }
+}
+
+pub fn run(edition: &str, opts: Options) -> Result<i32> {
     let spec = spec()?;
     assert_poppler(&spec)?;
     assert_tracer(&spec)?;
-    let (dir_a, dir_b) = pre_rendered.context(
-        "mag parity without --pre-rendered arrives with WP-2.0b; pass --pre-rendered <dirA> <dirB>",
-    )?;
+    let out_dir = PathBuf::from("output/parity").join(edition);
+    fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
+    let legs = stage_legs(edition, &opts, &out_dir)?;
+    let (dir_a, dir_b) = (legs.dir_a, legs.dir_b);
     let (pdf_a, pdf_b) = (dir_a.join("en/reader.pdf"), dir_b.join("en/reader.pdf"));
+    if let Some(failure) = &legs.typst_leg {
+        println!("typst leg: {} ({})", failure.status, failure.error);
+    }
     let mut inputs = BTreeMap::new();
     inputs.insert("a_reader_sha256".into(), sha256_file(&pdf_a)?);
     inputs.insert("b_reader_sha256".into(), sha256_file(&pdf_b)?);
-    let out_dir = PathBuf::from("output/parity").join(edition);
-    fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
-    let verdict = build_verdict(&spec, edition, inputs, &pdf_a, &pdf_b, &out_dir)?;
+    let mut verdict = build_verdict(&spec, edition, inputs, &pdf_a, &pdf_b, &out_dir)?;
+    verdict.mode = legs.mode.into();
+    verdict.typst_leg = legs.typst_leg;
+    if let Some(digest) = legs.digest {
+        let guard = staleness(&digest)?;
+        let fresh = guard.status != "stale";
+        verdict.staged_input_digest = Some(digest);
+        verdict.staleness = Some(guard);
+        if fresh {
+            let manifest = dir_a.join("en/edition-manifest.json");
+            let texts =
+                text::page_texts(&pdf_a, verdict.domain.first_page, verdict.domain.last_page)?;
+            let code = code_pages(
+                &dir_a.join("request.json"),
+                &texts,
+                verdict.domain.first_page,
+            )?;
+            verdict.page_sets = Some(page_sets(
+                &manifest,
+                verdict.domain.first_page,
+                verdict.domain.last_page,
+                code,
+            )?);
+            if let Some(name) = &opts.set {
+                verdict.scored_set = Some(score_set(&verdict, name)?);
+            }
+        } else if opts.set.is_some() {
+            anyhow::bail!(
+                "staged inputs differ from the baseline digest: page-set scoring and ratchet comparison are refused until a verifier rebases baseline.json from a fresh run"
+            );
+        }
+    }
     write_verdict(&out_dir, &verdict)?;
     summarize(&verdict);
     let value = serde_json::to_value(&verdict)?;
@@ -213,6 +665,11 @@ fn build_verdict(
     let mut verdict = Verdict {
         edition: edition.into(),
         mode: "pre_rendered".into(),
+        staged_input_digest: None,
+        staleness: None,
+        typst_leg: None,
+        page_sets: None,
+        scored_set: None,
         inputs,
         domain: Domain {
             description: "interior: reader.pdf pages 2..n-1, n required equal".into(),
@@ -297,7 +754,8 @@ fn raster_bound(spec: &serde_yaml::Value) -> Result<Option<u8>> {
 }
 
 fn all_evaluated_pass(v: &Verdict) -> bool {
-    v.tier_s.page_count.status == "pass"
+    v.typst_leg.is_none()
+        && v.tier_s.page_count.status == "pass"
         && v.tier_s.boxes.as_ref().is_some_and(|c| c.status == "pass")
         && v.tier_s.text.as_ref().is_some_and(|c| c.status == "pass")
         && v.tier_s.color.as_ref().is_some_and(|c| c.status == "pass")
@@ -329,6 +787,24 @@ fn write_verdict(dir: &Path, verdict: &Verdict) -> Result<()> {
 }
 
 fn summarize(v: &Verdict) {
+    if let Some(s) = &v.staleness {
+        println!("staged inputs: {} ({})", s.status, s.current);
+    }
+    if let Some(sets) = &v.page_sets {
+        let counts: Vec<String> = sets
+            .iter()
+            .map(|(name, pages)| format!("{name} {}", pages.len()))
+            .collect();
+        println!("page sets: {}", counts.join(", "));
+    }
+    if let Some(scored) = &v.scored_set {
+        println!(
+            "scored set {}: {} pages, {} clauses differing",
+            scored.name,
+            scored.pages.len(),
+            scored.clauses_differing.len()
+        );
+    }
     println!(
         "tier S page_count: {} ({} vs {})",
         v.tier_s.page_count.status, v.tier_s.page_count.a, v.tier_s.page_count.b
