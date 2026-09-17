@@ -13,13 +13,27 @@ The four brittle matchers from WP-0.0c are PORTED, tested and landed as
 path and `web_edition.py`'s document pipeline remain, and a SECOND
 sub-project blocker was found in the former (pygments, below).
 
-The QR question that originally blocked this WP has since been DECIDED by
-plan revision 30 (reproduce segno's deviation deliberately), on a ground that
-overturned the framing: `weasyprint_adapter.py` calls segno too
+Both blockers are now DECIDED, and neither asks for a Python library to be
+reproduced.
+
+**QR (revision 30, then revision 32).** Revision 30 first chose to reproduce
+segno's deviation, on the ground that `weasyprint_adapter.py` calls segno too
 (`_fitted_source_code` at :1902, `_source_code_matrix` at :1918), so the QR
 modules are inside Tier E's compared domain and a different matrix is
-different path geometry. That decision is recorded here for continuity; the
-encoder itself is not built.
+different path geometry. Revision 32 then changed route once the real cost
+was known (no padding hook in `qrcodegen`, so reproducing the deviation means
+owning bitstream, ECC, mask selection and layout): COMMITTED ASSETS for the
+compared edition, a spec-correct encoder for new work. Both legs read the
+same asset, so Tier E is satisfied without reproducing a bug. Leg 2 of that
+decision is proven below; leg 1 is not, and is what this WP owes next.
+
+**pygments (revision 32).** Decided on its own terms: no ladder clause
+inspects the web tree's spans, and the plan had ALREADY settled the analogous
+question for print, where pygments is compared against syntect at the
+(text-run, fill colour) level and never at markup level. So the web-tree
+oracle is byte-identical EXCEPT those spans, which is consistency with an
+existing decision rather than a new concession. The sizing below was taken
+before that decision and is kept as context.
 
 ### The second blocker, found before building against it
 
@@ -98,6 +112,74 @@ the web tree's oracle guarantees for highlighted code. Not sized here, and
 deliberately not built.
 
 ## Metrics
+
+### Leg 2 of the committed-asset decision: what regenerates a code
+
+Revision 32 asks this WP to prove two legs before any asset is committed.
+Leg 2 is answered here; leg 1 is not (see Residuals).
+
+**Exactly three segno call sites exist**, and the print path uses segno
+TWICE per code, for two different purposes:
+
+| site | purpose |
+|---|---|
+| `web_edition.py:236` | the web SVG, `error="L"` (segno boosts it) |
+| `weasyprint_adapter.py:1907` | inside `_fitted_source_code`, a SEARCH over levels |
+| `weasyprint_adapter.py:1920` | `_source_code_matrix`, redraws from the chosen level |
+
+The search is the part an asset must satisfy, not just the output. It loops
+`_CODE_ERROR_LEVELS = ("H","Q","M","L")`, takes each symbol's module count
+via `symbol_size(border=4)`, computes `module = room / modules`, skips any
+level below `_CODE_MIN_MODULE_POINTS` (0.35 mm = 0.9921 pt) and keeps the
+level with the LARGEST module. Every input is a constant
+(`room = _CODE_OPENER_SIDE_POINTS = 55.5`, `_MODULE_EPSILON = 1e-9`), so the
+fit is a pure function of the payload and its result is recordable.
+
+**So an asset must record more than the payload and the chosen level.** It
+needs the payload, the chosen level, the MODULE COUNT and the matrix:
+`SourceCode.modules` feeds layout (`module = room / modules`, and
+`side = quiet * module`), so recording the fit RESULT bypasses the search
+entirely, and the matrix is what `_source_code_source` draws.
+
+**Print and web choose the SAME code, 9 of 9 on edition 010** — same error
+level and same version for every article, so ONE asset serves both legs
+rather than one per leg. That was not previously verified.
+
+It is not coincidence. The fit maximises module size, which minimises module
+count, which minimises version; among levels tying at that version the loop
+keeps the earliest in `H,Q,M,L` order, since a tie never exceeds by
+`_MODULE_EPSILON`. That is "smallest version, strongest level at that
+version" — which is exactly segno's boost rule applied to `error="L"`. The
+two arrive at the same answer by construction.
+
+**Tested per rule 11, including where it should break.** Sweeping payload
+lengths at the real geometry:
+
+| payload length | print fit | web (`error="L"`) | agree |
+|---|---|---|---|
+| 20 | Q v2 | Q v2 | yes |
+| 40 | M v3 | M v3 | yes |
+| 60 | M v4 | M v4 | yes |
+| 80 | M v5 | M v5 | yes |
+| 100 | L v5 | L v5 | yes |
+| 120 | L v6 | L v6 | yes |
+| 154 | L v7 | L v7 | yes |
+| **155** | **none (declines)** | L v8 | **NO** |
+| 200 | none (declines) | L v9 | NO |
+
+The boundary is exact and has a reason: at most `55.5 / 0.9921 = 55` modules
+fit, so v8 (57 modules with the quiet zone) never fits at any level and
+`_fitted_source_code` returns `None`. Above 154 characters the two legs do
+not disagree about WHICH code to draw; print draws NO code at all.
+
+Two consequences for the asset format, neither of which is a problem for the
+compared edition (010's longest payload is 67 characters):
+
+- one asset per article serves both legs, and it should record the fit
+  result rather than the inputs to a search;
+- the format must be able to represent "print declines", which is a legitimate
+  state rather than an error, or a future edition with a URL over ~154
+  characters will look like a missing asset.
 
 ### The error-level boost is reproducible, which was the feared part
 
@@ -313,6 +395,33 @@ is not a project dependency, hence `--with`):
     print(len(blocks), "blocks;", spans, "spans;", len(classes), "classes;",
           "no lexer:", sorted(unknown))'
 
+Leg 2, print-versus-web fit agreement and its boundary (the sweep that
+locates 154/155):
+
+    cd <worktree> && uv run python -c '
+    import sys; sys.path.insert(0, "src")
+    import segno
+    ROOM, LEVELS, QUIET = 55.5, ("H","Q","M","L"), 4
+    MIN_MODULE, EPS = 0.35*72/25.4, 1e-9
+    def fit(payload):
+        best = None
+        for level in LEVELS:
+            sym = segno.make(payload, error=level, micro=False)
+            modules = int(sym.symbol_size(border=QUIET)[0])
+            if ROOM/modules < MIN_MODULE: continue
+            if best is None or ROOM/modules > best[2] + EPS:
+                best = (level, sym.version, ROOM/modules)
+        return best
+    for n in (20, 40, 60, 80, 100, 120, 154, 155, 160, 200):
+        p = "a" * n
+        f, w = fit(p), segno.make("a"*n, error="L", micro=False)
+        print(n, "none" if f is None else "%s v%d" % (f[0], f[1]),
+              "%s v%d" % (w.error, w.version))'
+
+Every segno call site (leg 2's enumeration):
+
+    grep -rn "segno" src/ mag/src/
+
 Which editions carry fenced code at all:
 
     for d in editions/*/; do echo "$d $(grep -rlE '^```[a-zA-Z0-9]+' $d | wc -l)"; done
@@ -389,7 +498,19 @@ No parity verdicts produced; this WP wrote no Rust and ran no render.
   any of them. Whoever builds this should expect the fixture surface to be
   larger than the corpus surface, and should inherit the blocked WP-5.5's
   per-module enumeration (commit 6a9b5cf) rather than re-deriving it.
-- **The QR encoder is specified but not built.** Revision 30 decided to
+- **LEG 1 IS NOT PROVEN and is the next thing this WP owes.** Revision 32's
+  decision needs both legs pointed at the committed asset to render
+  BYTE-IDENTICAL. Leg 2 is done above; leg 1 needs a sanctioned oracle change
+  to `web_edition.py` and `weasyprint_adapter.py` (reading the asset instead
+  of calling segno) plus a before/after render of 010 compared byte-for-byte
+  across the web tree AND the reader PDF. Note the web half already has
+  strong supporting evidence: the blocked WP-5.5 regenerated all nine web
+  SVGs byte-identically from segno's own parameters, so serialisation is
+  understood. The print half is the unproven one, and `_source_code_source`
+  draws from `code.module` and `code.side` as well as the matrix, so the
+  asset must reproduce the fit result exactly or the drawn geometry moves.
+- **The QR encoder is no longer the plan's route**, but if the fallback is
+  ever taken: Revision 30 decided to
   reproduce the deviation; the specification is eight spurious zero bits at
   `segno/encoder.py:330` when the post-terminator stream sits on a codeword
   boundary, which in byte mode is always, since that stream is `16 + n*8`
