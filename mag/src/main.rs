@@ -18,6 +18,7 @@ mod produce;
 mod render;
 mod translate;
 mod typeset;
+mod web;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};

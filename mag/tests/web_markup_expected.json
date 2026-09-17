@@ -1,0 +1,188 @@
+[
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "tail_figure_as_python_emits",
+    "piece_opening": null,
+    "print_only": true,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "closing_plate_as_python_emits",
+    "piece_opening": null,
+    "print_only": true,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "plain_source_link",
+    "piece_opening": null,
+    "print_only": true,
+    "source_link": {
+      "href": "https://example.com/a",
+      "indent": "      ",
+      "source_id": "s1"
+    }
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "opener_source_link_after_install",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": true,
+    "name": "illustrated_opener_header",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "plain_header",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "opener_art_figure_not_opener_header",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "piece_article",
+    "piece_opening": {
+      "id": "a1",
+      "kind": "article"
+    },
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "piece_section",
+    "piece_opening": {
+      "id": "s-intro",
+      "kind": "section"
+    },
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "body_paragraph",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "provenance_paragraph",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": true,
+    "illustrated_opener_header": false,
+    "name": "figure_with_id",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "tail_figure_extra_class",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "tail_figure_attr_before_class",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "tail_figure_bare",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "closing_plate_extra_class",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "source_link_extra_attr_first",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "source_link_reordered_attrs",
+    "piece_opening": null,
+    "print_only": true,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "opener_header_extra_class",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": true,
+    "name": "opener_header_class_last",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "piece_article_attr_before_id",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  },
+  {
+    "corpus": false,
+    "illustrated_opener_header": false,
+    "name": "piece_article_deeper_indent",
+    "piece_opening": null,
+    "print_only": false,
+    "source_link": null
+  }
+]

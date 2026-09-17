@@ -1,0 +1,25 @@
+[
+  {"name": "tail_figure_as_python_emits", "line": "      <figure class=\"article-tail\" data-article-id=\"a1\"><img src=\"x.png\" alt=\"\"></figure>", "corpus": true},
+  {"name": "closing_plate_as_python_emits", "line": "      <figure class=\"closing-plate\" data-plate-id=\"p1\"><img src=\"y.png\" alt=\"\"></figure>", "corpus": true},
+  {"name": "plain_source_link", "line": "      <a class=\"source-link\" data-source-link=\"primary\" data-source-id=\"s1\" href=\"https://example.com/a\">example.com/a</a>", "corpus": true},
+  {"name": "opener_source_link_after_install", "line": "      <a class=\"source-link opener-source-link\" data-source-link=\"primary\" data-source-id=\"s1\" href=\"https://example.com/a\" aria-label=\"https://example.com/a\"><img class=\"source-qr\" src=\"assets/source-code-s1.svg\" alt=\"\"></a>", "corpus": true},
+  {"name": "illustrated_opener_header", "line": "    <header class=\"article-opener\" data-article-id=\"a1\">", "corpus": true},
+  {"name": "plain_header", "line": "    <header>", "corpus": true},
+  {"name": "opener_art_figure_not_opener_header", "line": "      <figure class=\"article-opener-art\"><img src=\"o.png\" alt=\"\"></figure>", "corpus": true},
+  {"name": "piece_article", "line": "    <article id=\"a1\" data-short-title=\"Short\">", "corpus": true},
+  {"name": "piece_section", "line": "    <section id=\"s-intro\">", "corpus": true},
+  {"name": "body_paragraph", "line": "        <p>Ordinary body text.</p>", "corpus": true},
+  {"name": "provenance_paragraph", "line": "        <p class=\"provenance\"><span data-source-id=\"s1\">note</span></p>", "corpus": true},
+  {"name": "figure_with_id", "line": "      <figure data-figure-id=\"f1\"><img src=\"f.png\" alt=\"\"></figure>", "corpus": true},
+
+  {"name": "tail_figure_extra_class", "line": "      <figure class=\"article-tail wide\" data-article-id=\"a1\"><img src=\"x.png\" alt=\"\"></figure>", "corpus": false},
+  {"name": "tail_figure_attr_before_class", "line": "      <figure data-article-id=\"a1\" class=\"article-tail\"><img src=\"x.png\" alt=\"\"></figure>", "corpus": false},
+  {"name": "tail_figure_bare", "line": "      <figure class=\"article-tail\"><img src=\"x.png\" alt=\"\"></figure>", "corpus": false},
+  {"name": "closing_plate_extra_class", "line": "      <figure class=\"closing-plate framed\" data-plate-id=\"p1\"><img src=\"y.png\" alt=\"\"></figure>", "corpus": false},
+  {"name": "source_link_extra_attr_first", "line": "      <a data-variant=\"wide\" class=\"source-link\" data-source-link=\"primary\" data-source-id=\"s1\" href=\"https://example.com/a\">example.com/a</a>", "corpus": false},
+  {"name": "source_link_reordered_attrs", "line": "      <a class=\"source-link\" data-source-id=\"s1\" data-source-link=\"primary\" href=\"https://example.com/a\">example.com/a</a>", "corpus": false},
+  {"name": "opener_header_extra_class", "line": "    <header class=\"article-opener illustrated\" data-article-id=\"a1\">", "corpus": false},
+  {"name": "opener_header_class_last", "line": "    <header data-article-id=\"a1\" class=\"article-opener\">", "corpus": false},
+  {"name": "piece_article_attr_before_id", "line": "    <article data-variant=\"wide\" id=\"a1\">", "corpus": false},
+  {"name": "piece_article_deeper_indent", "line": "        <article id=\"a1\">", "corpus": false}
+]
