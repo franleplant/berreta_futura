@@ -2,174 +2,136 @@
 
 ## Verdict
 
-REJECTED, narrowly and on the evidence record only. The code fix is correct and
-I proved it independently; two things the rework reported as recorded are not in
-the evidence, and one of them is the same defect class that caused this WP's
-first rejection.
+ACCEPTED for the work package's own content at commit `01975a3` (landed as
+`c084e16`).
+
+BLOCKING REPOSITORY-STATE FINDING, not attributable to WP-5.4: the accepted
+content is NOT in the tree at HEAD. Commit `4f20801` reverted it. The tree must
+be repaired before WP-5.4 can be considered done. See "The clobber" below.
 
 ## History
 
-Commits `5a3fa71` and `78711a5` were rejected at `06d5cf63` for two material
-findings: `art.rs::grey` was unfaithful to `cover.py:495`'s `convert("L")`
-(per-mille against PIL fixed-point, disagreeing on 540 of 3,110,400 pixels and
-passing only because the statistics feed a threshold a 1e-4 shift does not
-flip), and the fill/stroke divergence was misattributed. The rework is
-`e639b32`.
+- `5a3fa71`, `78711a5` rejected at `06d5cf63`: `art.rs::grey` was unfaithful to
+  `cover.py`'s `convert("L")`, and the fill/stroke divergence was misattributed.
+- `e639b32` fixed the code, rejected at `5c1eb65` on the evidence record only:
+  `cover_zone_expected.json` had no recorded provenance and no command producing
+  it, and a replay hazard reported as recorded was absent.
+- `01975a3` (landed `c084e16`) is the evidence fix verified here.
+
+## Scope
+
+Narrow. Evidence-only; no code changed. Carried forward from `5c1eb65` and not
+re-checked: the one-line `metrics.rs` visibility change with `art.rs` importing
+`luma601`; WP-5.3a's expectation blob `39be9e81...` across the prior commits;
+both halves of the discriminating proof; the deleted fill/stroke framing; the
+honesty section's accuracy.
 
 ## Owns
 
-`e639b32` touches six paths: `mag/src/cover/art.rs`, `mag/src/cover/outline.rs`,
-`mag/src/critic/metrics.rs`, `mag/tests/cover_footer_caption.rs`,
-`mag/tests/cover_zone_expected.json`, `meta/verification/evidence/WP-5.4.md`.
-All within WP-5.4's Owns (`mag/src/cover/` except `text.rs`, its tests, its
-evidence) plus the recorded orchestrator grant on `metrics.rs`. No `text.rs`, no
-`mag/src/model/**`, no `*.verify.md`, no `baseline.json`.
+`c084e16` touches exactly one file, `meta/verification/evidence/WP-5.4.md`
+(65 insertions, 16 deletions). No code, no other evidence file, no verify file,
+no `baseline.json`. `mag/src/**` untouched. Clean.
 
-## Claim 1: the fix uses luma601, not a third copy. CONFIRMED
+## Claim 1: zone oracle provenance. VERIFIED, reproduced.
 
-`git diff 78711a5 e639b32 -- mag/src/critic/metrics.rs` is exactly one line:
+The full inline `uv run python -c '...'` is present in `## Commands` at
+`c084e16`. It mirrors `_art_zones` at `src/magazine/cover.py:482` including the
+`int()` truncations and the floor-divided crop offsets, and it reads
+`editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png`,
+which `git ls-files` confirms is TRACKED, so it needs no run directory.
 
-    -fn luma601(pixel: &[u8]) -> u8 {
-    +pub(crate) fn luma601(pixel: &[u8]) -> u8 {
+Run verbatim, it reproduces the committed file byte for byte:
 
-`art.rs` deletes its local `grey` entirely and imports `luma601` from
-`crate::critic::metrics`. There is one implementation, not three.
+    before  303e2e66aedddc073b55b56821ee836d6556dab87ad2eb821d0f2fb6cdfc0990
+    after   303e2e66aedddc073b55b56821ee836d6556dab87ad2eb821d0f2fb6cdfc0990
+    cmp     clean
 
-## Claim 2: WP-5.3a's oracle unmoved, by git blob. CONFIRMED
+The numbers are PIL's own `ImageStat` output rather than Rust output committed
+as an expectation, which is what the rejection required establishing.
 
-    $ for c in 5a3fa71 78711a5 e639b32; do git rev-parse "$c:mag/tests/critic_metrics_expected.json"; done
-    39be9e815b4403a8bcd8b27c07944fe3daa29e31
-    39be9e815b4403a8bcd8b27c07944fe3daa29e31
-    39be9e815b4403a8bcd8b27c07944fe3daa29e31
+ERRATUM, not a defect: the evidence quotes the digest as
+`303e2e66aedddc073b55b56821ee836d6556dab8`, which is the first 40 hex characters
+of the sha256 rather than the whole 64. The prefix is correct.
 
-I checked the rounding oracle too, also constant at
-`9e94ee1055a4264909ce0b2a56e5f5ebe5d33e68`.
+## Claim 2: replay hazard. VERIFIED present at `c084e16`.
 
-The blob-hash method is worth endorsing as method: git is content-addressed, so
-an identical blob hash proves byte-identity, and it proves the file never
-changed at any point in the range rather than only that it produces the same
-result now. It is strictly stronger than re-running, and cheaper.
+Present once, as its own paragraph above the spy command: `compile()` SKIPS
+regeneration when its outputs already exist, so a second run into the same
+destination captures nothing through a spy on `Tree.from_str` and reads as a
+broken method rather than a skipped step; use a fresh destination directory for
+every capture.
 
-## Claim 3: the assertion is real and discriminates. CONFIRMED, both halves
+This is distinct from the pre-existing line at 174 ("the spy on `Tree.from_str`
+is the only reliable way to get the post-rewrite document"), which the previous
+verification correctly identified as a different point.
 
-First I checked the oracle is genuinely PIL's numbers rather than Rust's own
-output committed as expectation. Reconstructing `_art_zones` (`cover.py:482`)
-against the same art, band and page height:
+## Claim 3: the dual generalization. VERIFIED present at `c084e16`, accurate.
 
-    top_mean    109.56689949397071
-    top_stddev  40.23238620807911
-    bottom_mean 128.22243563122925
-    bottom_std  28.66407903976693
+Section "A defect can be invisible to any given oracle level". The old wording
+"same lesson in a second form" is absent at `c084e16`.
 
-Identical to every value in `mag/tests/cover_zone_expected.json`. The oracle is
-Python's.
+The section is accurate rather than merely reworded, and the two directions are
+stated with their evidence:
 
-Then the discrimination, reverting `art.rs` to the per-mille formula in place:
+- The transposed `horizontal_scale`/`stroke_width` pair was invisible to
+  structure and visible to pixels: the markup skeleton diffed clean on every
+  transform, translate and scale, while the raster differed on 10,768 pixels.
+- The zone-statistics luma formula was invisible to pixels and visible only to a
+  direct numeric assertion: it disagreed with `convert("L")` on 540 of 3,110,400
+  pixels and moved the zone means by 1.238e-04 and 5.652e-05, but the thresholds
+  it feeds sit far away (`bottom_mean < 105` against 128.22, `bottom_std > 46`
+  against 28.66), so nothing flipped and the raster hash matched.
 
-    running 3 tests
-    test metrics::exif_tests::orientation_is_read_when_present_and_ignored_otherwise ... ok
-    test footer_caption_raster_matches_the_python_compiler ... ok
-    test zone_statistics_match_the_python_compiler ... FAILED
+The generalization drawn is that a defect can be invisible to any given oracle
+level, and which level blinds you is not predictable from the defect's kind.
+That is stronger than either example and is correctly presented as the argument
+for holding more than one level at once.
 
-    top_mean diverged from PIL: 109.56702330964686 against 109.56689949397072
+## All three edits present
 
-    test result: FAILED. 2 passed; 1 failed
+Confirmed at `c084e16`. The worker's earlier failure (reporting an edit as made
+when it had silently no-op'd) did not recur in this commit.
 
-Both halves in one run, exactly as claimed. The zone assertion fails at the
-stated numbers, and the raster test PASSES alongside it under the same revert.
-That demonstrates the aggregation gap rather than arguing it, and it is why an
-assertion was the right answer over a note. Restored: 3 passed, tree clean.
+## The clobber
 
-The thresholds confirm the gap's size: `dark_bottom = bottom_mean < 105` against
-an observed 128.22, and `bottom_std > 46` against 28.66. Margins of 23.2 and
-17.3 against a shift of 1.238e-04, so no threshold could flip.
+The three fixes are NOT in the tree at HEAD.
 
-## Claim 4: the fill/stroke framing withdrawn. CONFIRMED
+    at c084e16   "cover_zone_expected"        2 occurrences
+                 "same lesson in a second form"  0 occurrences
+    at 4f20801   "cover_zone_expected"        0 occurrences
+                 "same lesson in a second form"  1 occurrence
 
-The evidence records the lineto as COSMETIC with the measurement (SVG 4,234,729
-against 4,233,478 bytes, PNG byte-identical, test green, synthetic probes
-agreeing), and states the earlier claim and the "fill-only probe is not evidence
-about stroked elements" lesson are "both WITHDRAWN as unsupported". It survives
-only as a record of the retraction, never as a live claim, which is the right
-treatment.
+`4f20801` ("docs(plans): typst parity plan revision 29, rule 12 and the WP-5.3b
+re-cut") has `c084e16` as its DIRECT PARENT and reverted
+`meta/verification/evidence/WP-5.4.md` by exactly the inverse diff: 16
+insertions and 65 deletions against `c084e16`'s 65 and 16. The working tree
+matches HEAD, so the reverted content is what is live.
 
-## Claim 5: the second example. CORRECTLY REASONED, and I proved it
+Three observations:
 
-"A wrong luma formula that the raster hash also could not see" is exactly what
-my own revert demonstrated: the raster test passed while the zone assertion
-failed. The section's argument now rests on the transposed constant pair alone
-for the structural direction and on the luma defect for the raster direction.
+1. It is an Owns violation. The plan revision owns
+   `meta/plans/typst-parity-and-rust-migration.md`. It does not own any
+   evidence file. Rule 1 makes a diff touching an evidence file it does not own
+   rejectable before a verifier is spawned.
+2. It is the third instance of the same landing failure, after `aa4bc01` (itself
+   a verify commit) deleted WP-5.2's 39 files. The mechanism is the same: a
+   commit written from a copy of a file read before someone else's change
+   landed, then written back wholesale.
+3. IT DEFEATS THE CURRENT FIX. Revision 25 requires confirming the files you
+   expect are PRESENT in the resulting tree. `WP-5.4.md` IS present. It is
+   present and reverted. Presence is not content. The check has to compare
+   content, or at minimum confirm that the specific change you landed is still
+   in the file, which is what a grep for one's own added text would do.
 
-One note on wording rather than substance: the two examples are dual rather
-than "the same lesson in a second form". The transposed constant is invisible to
-a structural comparison and visible to pixels; the luma defect is invisible to
-pixels and visible only to a direct assertion. What generalises is that a defect
-can be invisible to any given oracle level, which is a stronger and more useful
-statement than either example alone.
+## What this verdict does and does not establish
 
-## Claim 6: the two smaller items. ONE CONFIRMED, ONE NOT
+Establishes: WP-5.4's evidence at `c084e16` records the zone oracle's
+provenance with a command reproducing it byte for byte, carries the replay
+hazard, and states the dual generalization accurately.
 
-`#[allow(dead_code)]` now sits on `.width` alone rather than the `Outlined`
-struct. Confirmed in the diff.
+Does not establish: that the repository currently contains any of it. It does
+not. Restoring `c084e16`'s version of `meta/verification/evidence/WP-5.4.md` is
+required, and is the orchestrator's to sequence since it spans two work
+packages' commits.
 
-The replay hazard is NOT in the evidence. See defect 2.
-
-## Claim 7: the honesty section. ACCURATE
-
-PROVEN lists the front cover raster and the four zone statistics, both against
-Python-produced numbers and both shown to discriminate; I verified both
-independently. NOT PROVEN lists the back cover, the PDF writer, the other layout
-modes and `design.toml` loading, and it draws the right distinction on the back
-cover: its raster was measured identical during the resvg feasibility work, but
-no committed test covers it, so it is not proven. Nothing listed as proven is
-merely asserted, and I found nothing material missing from the not-proven list.
-
-## Defect 1: the zone oracle has no recorded derivation
-
-`mag/tests/cover_zone_expected.json` is not mentioned anywhere in the evidence,
-and `## Commands` contains no invocation that produces it. Its three Python
-blocks compile the covers, capture the SVG and compare the raster; none derives
-the zone statistics.
-
-I verified the oracle is genuinely Python's, but only by reading `cover.py:482`
-and reconstructing `_art_zones` myself. A verifier replaying `## Commands` would
-not reproduce this file, which is the defect class WP-5.1b was rejected for at
-`2f1886a`.
-
-It matters more here than it normally would. This WP's first rejection was for
-claiming the zone statistics were "proven against Python" when nothing asserted
-them. The fix introduces an oracle whose Python provenance is, once again, not
-in the record — the assertion is real this time, but its derivation is as
-unrecorded as the claim it replaced.
-
-Remedy: add the inline `uv run python -c '...'` that regenerates
-`cover_zone_expected.json`, and confirm it reproduces the committed file
-byte-identically.
-
-## Defect 2: the replay hazard is not recorded
-
-The rework reported that `## Commands` carries the hazard that `compile()` skips
-regeneration when outputs already exist, so a spy on `Tree.from_str` captures
-nothing and reads as a broken method. It does not. The only nearby text says the
-spy "is the only reliable way to get the post-rewrite document", which is a
-different point. `grep -n -i "outputs exist\|already exist\|skip\|hazard"` over
-the evidence returns nothing.
-
-Remedy: add it, or drop the claim.
-
-## Baseline
-
-`cargo test --test cover_footer_caption`: 3 passed. `cargo fmt --check`: clean.
-`cargo clippy --all-targets -- -D warnings`: clean.
-
-## Commands
-
-    for c in 5a3fa71 78711a5 e639b32; do git rev-parse "$c:mag/tests/critic_metrics_expected.json"; done
-    git diff 78711a5 e639b32 -- mag/src/critic/metrics.rs
-    uv run python -c "<_art_zones reconstruction, see Claim 3>"
-    cd mag && cargo test --test cover_footer_caption
-    # revert art.rs to per-mille in place, rerun, restore
-
-## Status
-
-rejected
+Not re-checked here, carried from `5c1eb65`: everything listed under Scope.
