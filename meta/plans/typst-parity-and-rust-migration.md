@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 29 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 30 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,59 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 30 changelog
+
+**The QR question is decided by the GATE, not by preference, and checking
+rather than assuming is what decided it.** WP-5.5a found segno's matrices
+irreproducible because segno is wrong: `segno/encoder.py:330` appends eight
+spurious zero bits when the stream already sits on a codeword boundary,
+where ISO/IEC 18004 section 7.4.10 adds none, with segno's own docstring
+quoting the clause above the line that breaks it. In byte mode the stream
+is always congruent to 0 mod 8, so the extra zero byte is always injected,
+displacing a pad codeword and changing every ECC codeword.
+The disposition offered three options and framed it as a web-tree
+question. It is not: `weasyprint_adapter.py` calls segno too
+(`_fitted_source_code` at :1902, `_source_code_matrix` at :1918, whose
+matrix is drawn into the reader), so **the QR modules are inside Tier E's
+compared domain**. A different matrix is different path geometry and the
+gate fails on it. Option (b), keeping payload, version and level but not
+the matrix, is therefore unavailable for print without weakening Tier E,
+which rule 4 forbids; and since print needs matrix equality anyway,
+applying (b) to the web alone would buy nothing while splitting the
+implementation in two. So **(a)**: reproduce segno's non-ISO pad byte as
+one documented deviation with its own test.
+
+**On the "reproduce a hack" objection, upheld four times before now: the
+asymmetry is real.** Those four governed output nobody inspects (pypdf's
+line merging, a crash's traceback, reportlab's subset bytes, pypdf's line
+breaking). This governs a VISIBLE artifact, a pattern of squares on a
+printed page. Reproducing a deviation to keep a visible artifact identical
+is a different act from reproducing one to keep an invisible intermediate
+identical, and the plan now says so where the next person will look.
+
+**The product question is Fran's but does not block.** Whether the magazine
+should ship spec-correct QR codes rather than segno-compatible ones has the
+exact shape of the hyphenation decision: parity reproduces the old
+behaviour, the deliberate improvement is measured afterwards with its own
+before and after. Named as a post-flip item alongside WP-4.3. Nothing waits
+on it, which is why this did not need escalating to unblock WP-5.5a.
+
+**Cited as the reference application of rule 11**, because it is the best
+in this execution: the mechanism was tested rather than asserted, by a
+controlled experiment showing that removing the cause removes the effect (0
+modules differing with no pad codewords, 158 with twelve), and then used to
+PREDICT three fresh cases it was not built from, correct in all three. Rule
+11 exists because two earlier mechanisms were asserted and later falsified;
+this is what discharging it looks like.
+
+**A protocol hazard found by committing it.** `git commit` commits the
+whole INDEX, not the paths you added, so under concurrency another agent's
+staged files land inside your commit under your message. The planner did
+exactly this in revision 29, carrying WP-5.4's evidence into a docs commit.
+Nothing was lost and the content was that agent's own, but the attribution
+is wrong and a mid-edit file could have landed. Commit with an explicit
+pathspec, or check `git diff --cached --name-only` first.
 
 ## Revision 29 changelog
 
@@ -1544,6 +1597,14 @@ before/after comparisons (WP-4.3); out of scope here.
    fast-forwarding only when the main tree is dirty, and expect to retry
    under load: that dance re-races every time the branch moves, and a WP
    has lost three attempts to it. Never `--no-verify`.
+   **`git commit` commits the whole INDEX, not the paths you added.** Under
+   concurrency another agent may have staged its own files, which then land
+   inside your commit under your message. The planner did exactly this in
+   revision 29, carrying `meta/verification/evidence/WP-5.4.md` into a
+   docs commit; nothing was lost, but the attribution is wrong and a
+   partially-staged file could have landed mid-edit. Commit with an
+   explicit pathspec, or check `git diff --cached --name-only` before
+   committing and unstage what is not yours.
    **After landing, confirm THE FILES YOU EXPECT ARE PRESENT in the
    resulting tree, not merely that your commit is an ancestor.** The
    ancestry check alone has a hole and it was exercised: commit `aa4bc01`, a
@@ -3163,31 +3224,63 @@ them or the divergence is a defect:
   manifest, media_schema, publication_document, reader_text) and on
   WP-5.4a (the cover text helpers above).
   - Oracle: byte-identical `web/` tree files for 010.
-  - **The QR codes are the substance of this WP, and they are measured,
-    not feared.** The nine codes were regenerated against the committed
-    render tree and came back 9 of 9 byte-identical, so segno's parameters
-    are fully understood. Two findings decide the shape. Every payload is
-    BYTE mode, because `source_code_payload` strips the scheme from a
-    lowercased URL and alphanumeric mode cannot carry lowercase, so mode
-    segmentation, where QR encoders usually diverge, is not a variable.
-    And **segno BOOSTS the error level**: `error="L"` is requested and the
-    effective level is M on 6 of 9. That is a segno policy, not
-    ISO/IEC 18004, so a spec-correct encoder asked for L emits a different
-    matrix for two thirds of this edition's codes while looking perfectly
-    correct in isolation. Reproduce the boost deliberately and ASSERT the
-    effective level per payload; a silent L would pass every unit test
-    anyone would think to write.
-  - **Two oracles, primary structural**: decode both SVGs to a module
-    matrix and compare matrix, payload, version, mask and effective error
-    level. That is insensitive to how a library serializes an SVG while
-    still catching every way a code can be wrong, and it is the technique
-    the Phase 5 preamble names. Byte-identity of the SVG remains the
-    web-tree bar and is achievable on the evidence; if it turns out to
-    require reproducing a segno formatting choice that is not the spec,
-    the divergence is DECLARED and enumerated, the structural oracle
-    carries the proof, and the web-tree oracle is restated as
-    "byte-identical except the nine QR SVGs, which are structurally
-    equal". Never a silent fallback.
+  - **The QR codes: DECIDED (revision 30), and the gate decides it, not
+    taste.** The feared part is fine: `qrcodegen`'s `boost_ecl` reproduces
+    segno's version AND effective error level on 9 of 9 payloads, with the
+    L to M boost landing on exactly the 6 the plan recorded, and all nine
+    are byte mode with seven carrying no digits, so mode segmentation is
+    not a variable.
+    The MATRICES are not reproducible, because **segno is wrong**:
+    `segno/encoder.py:330` runs `buff.extend([0] * (8 - (length % 8)))`,
+    appending EIGHT spurious zero bits when the stream already sits on a
+    codeword boundary, where ISO/IEC 18004 section 7.4.10 adds none. Its
+    own docstring quotes the clause directly above the line that violates
+    it. In byte mode the post-terminator stream is `16 + n*8` bits, always
+    congruent to 0 mod 8, so segno always injects an extra zero byte unless
+    capacity forces the terminator to truncate; that displaces a pad
+    codeword and changes every ECC codeword. Automatic encoding matches 1
+    of 9, masks differ on 7 of 9, and forcing version, level and mask so
+    only the data layer can vary still leaves 8 of 9 differing by 64 to 144
+    modules.
+    **The decision is (a): reproduce segno's non-ISO pad byte
+    deliberately**, as one documented deviation asserted by its own test.
+    It is FORCED by the gate rather than chosen. `weasyprint_adapter.py`
+    also calls segno (`_fitted_source_code` at :1902 and
+    `_source_code_matrix` at :1918, whose matrix `_source_code_source`
+    draws into the reader), so the QR modules are inside Tier E's compared
+    domain as ordinary marks. A different matrix is different path geometry
+    and Tier E fails on it. So option (b), "same payload, version and
+    effective level but NOT the same matrix", is unavailable for print
+    without weakening Tier E, which rule 4 forbids any WP to do; and since
+    print needs matrix equality regardless, applying (b) to the web tree
+    alone would buy nothing while splitting the QR implementation in two.
+    **On the "reproduce a hack" objection, which this plan has upheld four
+    times: the asymmetry is real and it is why this case differs.** Those
+    four governed output nobody inspects (pypdf's line merging, a crash's
+    traceback, reportlab's subset bytes, pypdf's exact line breaking).
+    This governs a VISIBLE artifact: a different matrix is a visibly
+    different pattern of squares on a printed page, even though it scans to
+    the same URL. Reproducing a deviation to keep a visible artifact
+    identical is not the same act as reproducing one to keep an invisible
+    intermediate identical.
+    **The product question is real but is NOT a parity-phase decision.**
+    Whether the magazine should ship spec-correct QR codes instead of
+    segno-compatible ones is Fran's, and it has the exact shape of the
+    hyphenation decision: parity reproduces the old behaviour, and the
+    deliberate improvement is measured afterwards with its own before and
+    after. It is therefore a named POST-FLIP item alongside WP-4.3, not a
+    blocker here. Nothing waits on it.
+    **Cite this as the reference application of rule 11**, because it is
+    the best in the execution: the mechanism was not asserted but tested by
+    controlled experiment (at forced v4-M a payload needing no pad
+    codewords differs by 0 modules while one needing twelve differs by
+    158, so removing the cause removes the effect), and then used to
+    PREDICT three fresh cases not used to form it: `"a"x62` matched at 0
+    modules, `"a"x61` and `"a"x60` differed at 68 and 82, correct in all
+    three.
+    Worth reporting upstream if Fran wants it filed: segno's pad-bit
+    deviation affects any encoder compared against it and reproduces in
+    three lines.
   - Carries WP-0.0c's unfinished business: `_PRINT_ONLY_LINE`,
     `_SOURCE_LINK_LINE`, `_PIECE_OPENING`, and the repaired opener regex
     that still requires the class to be exactly `article-opener`. All four
