@@ -4,9 +4,9 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 
-#[allow(dead_code)]
 pub struct Outlined {
     pub markup: String,
+    #[allow(dead_code)]
     pub width: f64,
     pub ascent: f64,
     pub descent: f64,

@@ -84,6 +84,31 @@ fn build_svg() -> String {
 }
 
 #[test]
+fn zone_statistics_match_the_python_compiler() {
+    let expected: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/cover_zone_expected.json"),
+        )
+        .expect("the committed zone oracle is readable"),
+    )
+    .expect("the zone oracle is json");
+    let (top, bottom) = art::art_zones(&cover_art(), svg::PAGE_WIDTH - 21.0, svg::PAGE_HEIGHT)
+        .expect("edition 010 cover art has zone statistics");
+    for (label, observed) in [
+        ("top_mean", top.mean),
+        ("top_stddev", top.stddev),
+        ("bottom_mean", bottom.mean),
+        ("bottom_stddev", bottom.stddev),
+    ] {
+        let want = expected[label].as_f64().expect("oracle carries the field");
+        assert!(
+            (observed - want).abs() < 1e-9,
+            "{label} diverged from PIL: {observed} against {want}"
+        );
+    }
+}
+
+#[test]
 fn footer_caption_raster_matches_the_python_compiler() {
     let document = build_svg();
     if let Ok(path) = std::env::var("MAG_COVER_SVG_OUT") {
