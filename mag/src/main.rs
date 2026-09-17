@@ -6,8 +6,6 @@ mod cover;
 #[allow(dead_code)]
 mod critic;
 #[allow(dead_code)]
-mod impose;
-#[allow(dead_code)]
 mod model;
 mod parity;
 mod plan_cmd;
