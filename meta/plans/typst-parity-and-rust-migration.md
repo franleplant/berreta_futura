@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 27 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 28 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,43 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 28 changelog
+
+**A test that passes without testing anything, and nothing forces it to say
+so.** WP-5.2's `imposition_matches_python_on_the_live_edition` is env-gated
+and passes VACUOUSLY under a bare `cargo test`; its verifier put the defect
+exactly right, that a reader seeing "4 passed" would believe the live
+edition was compared. The WP is fine, its real run recorded at 1527
+seconds. What is wrong is that the two modes are indistinguishable in the
+output. Env-gating is the RIGHT mechanism, since the corpus lives outside
+the repository, and the both-or-neither shape from WP-5.1a is the right
+shape; the defect is purely the silence. This is rule 10 one layer down, a
+vacuously passing test being evidence that cannot discriminate, so rule 2b
+now requires an env-gated test to ANNOUNCE which path it took and its
+evidence to record both the gated result and the command producing it.
+Binding on WP-5.5b, WP-5.5c and WP-5.3b, all of which need the same
+untracked run directory and would otherwise reach for the silent shape. Cut
+immediately rather than batched for that reason.
+
+**The deleting commit is named as a VERIFY commit** in the landing-protocol
+text, because the instinctive reading of the incident is that a worker
+clobbered a worker, and the actual lesson is that verifiers land too and
+are subject to every rule in that section.
+
+**The f32 hazard is confirmed at source** and cited in WP-0.2j rather than
+restated: `lopdf::Object::Real(f32)` at `object.rs:42`, with `419.527559`
+parsing to `419.5275573730469` and `419.5276` to `419.527587890625`,
+recomputed here rather than taken on trust, two authored decimals landing
+on f32 values that differ only in the eighth significant figure, which is
+where the derived ratio moves.
+
+**The corpus rule gains its cleanest demonstration**, and it is a
+measurement rather than an argument: WP-5.2's scale-from-CropBox
+perturbation failed both the display list and the raster on its `crop`
+fixture while the live-010 test passed, because 010's CropBox equals its
+MediaBox on every page. The fixture is the only thing that catches it,
+shown on a specific defect.
 
 ## Revision 27 changelog
 
@@ -1390,6 +1427,22 @@ before/after comparisons (WP-4.3); out of scope here.
      already reading the evidence and building exactly this distinction to
      decide accept or reject, so asking costs nothing and catches the
      current cohort.
+2b. **An env-gated test must ANNOUNCE ITS MODE.** The 010 corpus lives
+   outside the repository, so gating a live-edition test on an environment
+   variable is the RIGHT mechanism and the both-or-neither shape WP-5.1a
+   established is the right shape. The defect is that the skipped mode is
+   SILENT: WP-5.2's `imposition_matches_python_on_the_live_edition` passes
+   vacuously under a bare `cargo test`, and as its verifier put it, a
+   reader seeing "4 passed" would believe the live edition was compared.
+   Nothing was wrong with the WP, whose real run is recorded at 1527
+   seconds; what is wrong is that a run's output cannot distinguish the two
+   modes without reading the source. This is rule 10 one layer down, since
+   a vacuously passing test is precisely evidence that cannot discriminate.
+   So: the test PRINTS or asserts which path it took, "compared the live
+   edition" against "skipped, env not set", and its evidence records BOTH
+   the gated result and the command that produces it, as WP-5.2 did.
+   Binding on WP-5.5b, WP-5.5c and WP-5.3b, each of which needs the same
+   untracked run directory and will otherwise reach for the silent shape.
 3. **Verifier acceptance.** The WP agent's green run is a claim. A verifier
    agent, spawned by the orchestrating session (never the WP agent),
    receives the WP's brief + the evidence file + this rule; it checks out a
@@ -1419,8 +1472,9 @@ before/after comparisons (WP-4.3); out of scope here.
    has lost three attempts to it. Never `--no-verify`.
    **After landing, confirm THE FILES YOU EXPECT ARE PRESENT in the
    resulting tree, not merely that your commit is an ancestor.** The
-   ancestry check alone has a hole and it was exercised: commit `aa4bc01`
-   landed from a stale base and DELETED all 39 of WP-5.2's files while
+   ancestry check alone has a hole and it was exercised: commit `aa4bc01`, a
+   VERIFY commit, landed from a stale base and DELETED all 39 of WP-5.2's
+   files while
    WP-5.2's own commit remained an ancestor of `art_directed`, so the
    prescribed post-land check PASSED with the content gone (recovered as
    `ac443b0`). Ancestry proves a commit is in the HISTORY; it proves
@@ -1429,7 +1483,10 @@ before/after comparisons (WP-4.3); out of scope here.
    execution has now been bitten by it twice (here, and by the
    stale-working-copy symptom where the main tree held old content after a
    ref move): **an invariant that holds over HISTORY is not an invariant
-   over STATE.** Check the state you actually depend on.
+   over STATE.** Check the state you actually depend on. And note WHICH
+   kind of commit did it, because the instinctive reading is that a worker
+   clobbered a worker: verifiers land too, and are subject to every rule in
+   this section.
 5. **Repo rules apply**: `cargo fmt`, `cargo clippy -D warnings`,
    `cargo test` (includes `tools/nocomments.py`), `uvx ruff` for touched
    Python, no comments, no U+2014, hooks installed.
@@ -1899,6 +1956,13 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   the authored decimals from the file's raw bytes and refused loudly rather
   than placing a page at reduced precision, but that recovery is per-WP and
   REFUSES on PDFs using object streams.
+- Confirmed at source by WP-5.2's verifier: `lopdf::Object::Real(f32)` at
+  `object.rs:42`. The concrete consequence on 010's own boxes, recomputed
+  here rather than restated: `419.527559` parses to `419.5275573730469` (an
+  error of 1.63e-06) and `419.5276` to `419.527587890625` (1.21e-05), two
+  authored decimals landing on f32 values that differ only in the eighth
+  significant figure, which is where the derived ratio then moves. Cite
+  this rather than re-measuring it.
 - Scope: every coordinate, matrix component and TJ adjustment the tracer
   reads is an f32 before any arithmetic, so this is beneath WP-0.2h,
   WP-0.2i, WP-5.4 and WP-5.5 alike. A SHARED exact path is the right shape;
@@ -2438,6 +2502,12 @@ the corpus cannot reach**, and cover those by fixture. WP-5.1c did this
 well for the manifest's refusal branches and badly for character classes,
 and the character class is what bit. Enumerate by reading the Python for
 branches, not by reading the corpus for cases.
+The cleanest demonstration so far is WP-5.2's, and it is a MEASUREMENT of
+the rule rather than an argument for it: a scale-from-CropBox perturbation
+failed both the display list and the raster on its `crop` fixture while the
+LIVE-010 test passed, because 010's CropBox equals its MediaBox on every
+page. The fixture is the only thing that catches that defect, shown on a
+specific defect rather than asserted in general.
 
 **Pin Unicode-dependent operations to Python's tables while Python is the
 oracle.** Python runs Unicode 15.0.0 and Rust's std is newer, and they
