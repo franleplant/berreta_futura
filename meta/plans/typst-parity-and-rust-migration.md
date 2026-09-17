@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 26 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 27 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,47 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 27 changelog
+
+**Evidence must now state what it does NOT prove.** WP-5.4's rework added a
+`## What is and is not proven` section and gave the reason plainly: the
+false claim came from not having one. Its earlier evidence called zone
+statistics "proven against Python" when the only assertion in the test was
+a final raster hash. Not a lie; a claim nobody had to state precisely, so
+nobody noticed it was empty.
+
+That is the shape of nearly every rejection in this execution. WP-5.3a's
+blanket coverage claim with a branch uncovered. WP-5.1c's "identical
+private copy" that was the pre-fix body. WP-5.1e's search recorded as proof
+of absence. WP-5.4a's per-arm coverage claim. In each case the WP knew what
+it had tested, and the evidence format never forced it to say what it had
+not, so the gap was invisible to its author as much as to anyone else. A
+mandatory section makes the boundary explicit, and it is cheap.
+
+Sharpened beyond the suggestion in three places, each earned by a specific
+failure. PROVEN items must name the committed test AND how it was shown to
+DISCRIMINATE, which is rule 10's requirement moved to where a reader looks.
+NOT PROVEN items must name what would prove them or the WP that owns
+proving them, and **an item with no owner is a finding escalated in
+`## Status`**, because unowned gaps are exactly how `color_space_map`, the
+cover-helper seam and the opener-fit vacuity all reached the plan late. And
+a SEARCH THAT FOUND NOTHING goes under NOT PROVEN, never PROVEN: WP-5.1e
+recorded one as proof of absence, and the luma pair shows why that fails,
+since detection missed it at three levels including the manual grep.
+
+Retroactivity, decided rather than left open: required for every WP briefed
+after this lands, and NOT retroactive as a re-brief for the five already
+running, since mid-flight churn is what rule 1 exists to prevent. Their
+verifiers ask for it at acceptance instead, which costs nothing because a
+verifier is already reading the evidence and constructing this exact
+distinction to decide accept or reject.
+
+Also folded in, as a record-only item under the cadence standard agreed
+this session: batch anything that only records or clarifies, cut
+immediately for anything that changes what an in-flight or about-to-start
+WP would do, and put the reasoning in the changelog either way. This
+revision is the second kind, which is why it did not wait.
 
 ## Revision 26 changelog
 
@@ -1308,8 +1349,47 @@ before/after comparisons (WP-4.3); out of scope here.
    has written `meta/verification/evidence/WP-<id>.md` with sections:
    `## Base` (the commit branched from), `## Commands`, `## Tool versions`,
    `## Metrics`, `## Verdicts` (sha256 + tier summary of every verdict.json;
-   "attach a verdict" means this), `## Residuals`, `## Status` (`done`,
-   `blocked`, `awaiting-fran`).
+   "attach a verdict" means this), `## What is and is not proven`,
+   `## Residuals`, `## Status` (`done`, `blocked`, `awaiting-fran`).
+
+2a. **`## What is and is not proven` is REQUIRED, and has a shape.** Nearly
+   every rejection in this execution has been a claim that outran its
+   evidence: WP-5.3a's blanket "all 010-unreachable branches are covered by
+   fixture" with a branch uncovered, WP-5.1c's "identical private copy"
+   that was the pre-fix body, WP-5.1e's search recorded as proof of
+   absence, WP-5.4a's per-arm coverage claim, and WP-5.4's zone statistics
+   called "proven against Python" when the only assertion in the test was a
+   final raster hash. None of those was a lie. In each the WP knew what it
+   had tested, and the format never forced it to say what it had NOT, so
+   the gap was invisible to everyone including its author. WP-5.4's rework
+   added the section and said so plainly: the false claim came from not
+   having one.
+   - Under PROVEN, each item names the COMMITTED TEST that proves it and
+     states how that test was shown to DISCRIMINATE, which is the negative
+     check: what was perturbed, and what failed when it was. Rule 10
+     already forbids offering an indiscriminate check as evidence; this
+     puts the demonstration where a reader looks for it.
+   - Under NOT PROVEN, each item names either what would prove it or the WP
+     that owns proving it. Without that half the section decays into a
+     disclaimer: "not proven: the back cover" is only useful if it says
+     whether that is WP-5.4b's job or nobody's. **An item with no owner is
+     a finding**, escalated in `## Status` rather than merely listed, since
+     unowned gaps are how `color_space_map`, the cover-helper seam and the
+     opener-fit vacuity each reached the plan late.
+   - A SEARCH THAT FOUND NOTHING belongs under NOT PROVEN, never under
+     PROVEN. WP-5.1e recorded one as proof of absence, and the luma pair is
+     why that fails: detection missed it at three levels including the
+     manual grep, because `299` and `19595` denote the same coefficient and
+     share no substring.
+   - It is not `## Residuals`. Residuals are things discovered along the
+     way that someone else should know; this section is the BOUNDARY of the
+     WP's own claims.
+   - Applies to every WP briefed after it lands. The WPs already running
+     are not re-briefed, since mid-flight churn is what rule 1 exists to
+     prevent, but their VERIFIERS ask for it at acceptance: a verifier is
+     already reading the evidence and building exactly this distinction to
+     decide accept or reject, so asking costs nothing and catches the
+     current cohort.
 3. **Verifier acceptance.** The WP agent's green run is a claim. A verifier
    agent, spawned by the orchestrating session (never the WP agent),
    receives the WP's brief + the evidence file + this rule; it checks out a
