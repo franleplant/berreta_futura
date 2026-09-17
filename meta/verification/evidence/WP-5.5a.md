@@ -39,6 +39,64 @@ the QR modules being inside Tier E's compared domain; highlighted code is
 inspects. So it needs its own disposition and should not inherit the QR
 answer by analogy.
 
+### Sizing the pygments problem, measured rather than estimated
+
+The question is not whether to reproduce a library. It splits cleanly, and
+the two halves have very different costs.
+
+**The FORMATTER is trivial.** `HtmlFormatter(nowrap=True)` emits nothing but
+`<span class="TOKEN">escaped text</span>` concatenated, newlines preserved,
+no wrapper element, no line numbers. Verified structurally over all 106
+corpus blocks: stripping every span leaves only HTML-escaped text, with no
+other markup anywhere. That half is a few lines.
+
+**The LEXERS are the whole problem.** Over the 106 fenced blocks in
+`library/sources/*/article.md`, pygments emits **8,559 spans** drawing on
+**31 distinct token classes**. The class set is small and enumerable, but
+producing the right class per token means reproducing pygments' lexer state
+machines. Per language: ts 19 distinct classes, js 14, rust 10, sh 10, toml
+9, sql 8, yaml 7, json 6, bash 4.
+
+| language | blocks |
+|---|---|
+| ts | 47 |
+| sh | 19 |
+| js | 12 |
+| jsonc | 7 |
+| toml | 6 |
+| rust | 5 |
+| bash | 3 |
+| txt, sql, json | 2 each |
+| yaml | 1 |
+
+Four measurements that bear on the decision:
+
+- **Two languages need no lexer at all.** `jsonc` and `txt` raise
+  `ClassNotFound`, so `_highlight_code` falls through to
+  `escape(folded, quote=False)` and emits plain escaped text with no spans.
+  Nine languages need faithful lexers.
+- **`syntect` is not a shortcut.** It uses Sublime syntax definitions with a
+  different token model and different class names, so it would not match
+  pygments' output. As with segno, there is no off-the-shelf path.
+- **Some tokens are compound**: yaml emits `class="l l-Scalar l-Scalar-Plain"`
+  and `class="p p-Indicator"`, so the formatter writes multi-class strings.
+- **`err` appears 6 times**, meaning pygments' own lexers give up on some
+  corpus input. Byte-identity requires reproducing WHERE each lexer fails,
+  not only where it succeeds.
+
+**This is LIVE, not counterfactual.** WP-5.7 could be re-scoped because
+committed `article.md` files are never re-derived, making byte-identity a
+claim about future captures only. Here the opposite holds: web trees are
+untracked build artifacts, so nothing is frozen, and while edition 010
+happens to carry no fenced code, editions 004 through 008 all do (004 alone
+has 17 manuscripts with fenced blocks). Any future edition with a code block
+hits this path the moment it is rendered to web.
+
+So the disposition is a real choice with a measured price: nine lexers
+reproduced faithfully including their failure points, against changing what
+the web tree's oracle guarantees for highlighted code. Not sized here, and
+deliberately not built.
+
 ## Metrics
 
 ### The error-level boost is reproducible, which was the feared part
@@ -229,6 +287,36 @@ Confirm 010 does not exercise pygments:
     grep -c "<pre" <render>/en/web/*.html
     grep -ho 'class="[a-z]\{1,2\}"' <render>/en/web/*.html | wc -l
 
+Size the pygments surface over every captured source (needs pygments, which
+is not a project dependency, hence `--with`):
+
+    cd <worktree> && uv run --with pygments python -c '
+    import re, glob, collections
+    from pygments import highlight
+    from pygments.formatters import HtmlFormatter
+    from pygments.lexers import get_lexer_by_name
+    from pygments.util import ClassNotFound
+    FENCE = re.compile(r"^```([a-zA-Z0-9_+-]*)\n(.*?)^```", re.M | re.S)
+    blocks = [(l, c) for p in glob.glob("library/sources/*/article.md")
+              for l, c in FENCE.findall(open(p).read()) if l]
+    classes, spans, unknown = collections.Counter(), 0, set()
+    for lang, code in blocks:
+        try:
+            lexer = get_lexer_by_name(lang, stripnl=False, ensurenl=False)
+        except ClassNotFound:
+            unknown.add(lang); continue
+        out = highlight(code, lexer, HtmlFormatter(nowrap=True)).rstrip("\n")
+        found = re.findall(r"<span class=\"([^\"]*)\">", out)
+        spans += len(found); classes.update(found)
+        stripped = re.sub(r"<span class=\"[^\"]*\">|</span>", "", out)
+        assert "<" not in stripped.replace("&lt;", ""), lang
+    print(len(blocks), "blocks;", spans, "spans;", len(classes), "classes;",
+          "no lexer:", sorted(unknown))'
+
+Which editions carry fenced code at all:
+
+    for d in editions/*/; do echo "$d $(grep -rlE '^```[a-zA-Z0-9]+' $d | wc -l)"; done
+
 All Python via `uv run python` (this machine has a second Python 3.9.6 on
 Unicode 13.0.0; a bare `python3` gives different answers).
 
@@ -283,11 +371,24 @@ No parity verdicts produced; this WP wrote no Rust and ran no render.
 ## Residuals
 
 - **What remains of the port**, in dependency order: `html_edition.py`'s
-  `render_html_edition` path (~45 functions) produces the semantic HTML that
-  `web_edition.py`'s pipeline (~30 functions) transforms, so the former comes
-  first. The four matchers are done; the rest of `web_edition.py` is the
-  document pipeline (`_parse_document`, `_cover_lines`, `_colophon_lines`,
-  the page writers) and asset materialisation.
+  `render_html_edition` path (~45 functions, 875 lines) produces the semantic
+  HTML that `web_edition.py`'s pipeline (~30 functions, 755 lines) transforms,
+  so the former comes first. The four matchers are done; the rest of
+  `web_edition.py` is the document pipeline (`_parse_document`,
+  `_cover_lines`, `_colophon_lines`, the page writers) and asset
+  materialisation. That is roughly 1,600 lines of Python to port with a
+  byte-identical bar, and it is a multi-session build rather than a long
+  afternoon: it is the largest remaining port in Phase 5.
+- **Edition 010 exercises a narrow slice of it**, which matters for how the
+  corpus rule applies here: 9 articles, 5 closing plates, 3 figures, content
+  modes `article` and `verbatim`, `cover.layout: footer_caption`, and ZERO
+  editorial, ZERO sections, ZERO extracts, ZERO key_ideas, ZERO fenced code.
+  So `_render_editorial`, `_render_section`, `_render_extract`,
+  `_extracts_by_anchor`, `_render_key_ideas` and `_highlight_code` are all
+  unreachable from the corpus, and the 010 oracle would prove nothing about
+  any of them. Whoever builds this should expect the fixture surface to be
+  larger than the corpus surface, and should inherit the blocked WP-5.5's
+  per-module enumeration (commit 6a9b5cf) rather than re-deriving it.
 - **The QR encoder is specified but not built.** Revision 30 decided to
   reproduce the deviation; the specification is eight spurious zero bits at
   `segno/encoder.py:330` when the post-terminator stream sits on a codeword
