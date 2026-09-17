@@ -2,186 +2,173 @@
 
 ## Verdict
 
-REJECTED, on two material findings. The port's central claim is true and I
-reproduced it independently; both findings are about fidelity of a helper and
-accuracy of the evidence, and one of them has already propagated into the plan.
+REJECTED, narrowly and on the evidence record only. The code fix is correct and
+I proved it independently; two things the rework reported as recorded are not in
+the evidence, and one of them is the same defect class that caused this WP's
+first rejection.
 
-Commits verified: 5a3fa71 (port) and 78711a5 (eXIf guard + held-back test),
-against pre-land HEAD 24de8d9.
+## History
 
-## What is confirmed, independently
+Commits `5a3fa71` and `78711a5` were rejected at `06d5cf63` for two material
+findings: `art.rs::grey` was unfaithful to `cover.py:495`'s `convert("L")`
+(per-mille against PIL fixed-point, disagreeing on 540 of 3,110,400 pixels and
+passing only because the statistics feed a threshold a 1e-4 shift does not
+flip), and the fill/stroke divergence was misattributed. The rework is
+`e639b32`.
 
-**The central raster claim holds.** I regenerated the Python side from scratch
-rather than reusing the worker's artefacts: compiled edition 010's covers with a
-spy on `resvg.usvg.Tree.from_str`, captured the post-rewrite SVG, and rendered
-it through resvg. Against the Rust test's PNG:
+## Owns
 
-    python RGB sha256: be0e32c07330367e0adc9a3e2f09d329bf9f7e4e0d6a64dd4d206dd9b4a1a3d3
-    rust   RGB sha256: be0e32c07330367e0adc9a3e2f09d329bf9f7e4e0d6a64dd4d206dd9b4a1a3d3
-    differing pixels: 0 of 4335040, diff bbox None, both 1748x2480
+`e639b32` touches six paths: `mag/src/cover/art.rs`, `mag/src/cover/outline.rs`,
+`mag/src/critic/metrics.rs`, `mag/tests/cover_footer_caption.rs`,
+`mag/tests/cover_zone_expected.json`, `meta/verification/evidence/WP-5.4.md`.
+All within WP-5.4's Owns (`mag/src/cover/` except `text.rs`, its tests, its
+evidence) plus the recorded orchestrator grant on `metrics.rs`. No `text.rs`, no
+`mag/src/model/**`, no `*.verify.md`, no `baseline.json`.
 
-**WP-5.3a's oracle did not move.** Stronger than a re-run: the git blob for
-`mag/tests/critic_metrics_expected.json` is `39be9e81` at 24de8d9, 5a3fa71 and
-78711a5 alike, so the file is byte-identical across the guard change by
-construction. Its 6 tests pass in my worktree.
+## Claim 1: the fix uses luma601, not a third copy. CONFIRMED
 
-**The eXIf narrowing is correct, including big-endian.** I extracted
-`exif_orientation` into a standalone probe and tested the MM path the committed
-fixtures omit: BE SHORT orientation 6, 1 and 8 all read correctly, BE tag 34665
-returns None, truncated and bad-magic blobs return None.
+`git diff 78711a5 e639b32 -- mag/src/critic/metrics.rs` is exactly one line:
 
-**Divergence 2 is real and exact.** Transposing the white tail's parameters to
-the orange tail's (106.6/0.15 for 105.1/0.30) fails the test and produces
-bbox (428, 221, 967, 326) with 10,768 differing pixels, matching the evidence to
-the pixel.
+    -fn luma601(pixel: &[u8]) -> u8 {
+    +pub(crate) fn luma601(pixel: &[u8]) -> u8 {
 
-**Cargo.lock only gained, and gained nothing**: zero removed, zero gained, zero
-version-changed. `mag/src/cover/text.rs` is untouched by both commits. Full
-suite green, 11 binaries; `fmt --check` and `clippy --all-targets -D warnings`
-clean.
+`art.rs` deletes its local `grey` entirely and imports `luma601` from
+`crate::critic::metrics`. There is one implementation, not three.
 
-## Finding 1, material: `art.rs::grey` is not a faithful port
+## Claim 2: WP-5.3a's oracle unmoved, by git blob. CONFIRMED
 
-`cover.py:495` computes the art-zone statistics as
+    $ for c in 5a3fa71 78711a5 e639b32; do git rev-parse "$c:mag/tests/critic_metrics_expected.json"; done
+    39be9e815b4403a8bcd8b27c07944fe3daa29e31
+    39be9e815b4403a8bcd8b27c07944fe3daa29e31
+    39be9e815b4403a8bcd8b27c07944fe3daa29e31
 
-    grey = image.crop(box).convert("L")
+I checked the rounding oracle too, also constant at
+`9e94ee1055a4264909ce0b2a56e5f5ebe5d33e68`.
 
-which is PIL's fixed-point ITU-R 601, `(r*19595 + g*38470 + b*7471 + 0x8000) >> 16`.
-`mag/src/cover/art.rs:13` computes per-mille instead,
-`(r*299 + g*587 + b*114 + 500) / 1000`, and `zone()` at :33 feeds `grey()` into
-both the mean and the stddev.
+The blob-hash method is worth endorsing as method: git is content-addressed, so
+an identical blob hash proves byte-identity, and it proves the file never
+changed at any point in the range rather than only that it produces the same
+result now. It is strictly stronger than re-running, and cheaper.
 
-The two round differently. Measured on edition 010's actual cover art
-(`cover-wildcard-sign-punched-v3.png`, 1440x2160): **540 of 3,110,400 pixels
-disagree**, 0.0174%. Carried through `cover.py`'s own crop and zone boxes:
+## Claim 3: the assertion is real and discriminates. CONFIRMED, both halves
 
-| zone | PIL mean | per-mille mean | delta |
-|---|---|---|---|
-| top | 109.5668994940 | 109.5670233096 | 1.238e-04 |
-| bottom | 128.2224356312 | 128.2224921558 | 5.652e-05 |
+First I checked the oracle is genuinely PIL's numbers rather than Rust's own
+output committed as expectation. Reconstructing `_art_zones` (`cover.py:482`)
+against the same art, band and page height:
 
-with stddev deltas 8.195e-05 and 1.483e-05.
+    top_mean    109.56689949397071
+    top_stddev  40.23238620807911
+    bottom_mean 128.22243563122925
+    bottom_std  28.66407903976693
 
-The correct implementation already exists in the tree as `metrics.rs::luma601`.
+Identical to every value in `mag/tests/cover_zone_expected.json`. The oracle is
+Python's.
 
-The defect is currently INERT: the zone statistics feed a threshold decision
-about caption treatment, and a 1e-4 shift does not flip it on this art, so the
-final raster still matches. That is a pass by aggregation and threshold margin,
-not by correctness, and it is the pattern rule 10 and the corpus rule exist to
-catch.
+Then the discrimination, reverting `art.rs` to the per-mille formula in place:
 
-**Compounding it, the evidence's compensating claim is not true.** It states the
-zone statistics are "proven against PYTHON rather than against the sibling copy,
-which is the stronger comparison of the two". No test compares zone statistics
-to Python. The only assertion in `mag/tests/cover_footer_caption.rs` is the final
-raster hash against a committed constant (line 104). The zone statistics are
-exercised only indirectly, through a decision that happens not to flip.
+    running 3 tests
+    test metrics::exif_tests::orientation_is_read_when_present_and_ignored_otherwise ... ok
+    test footer_caption_raster_matches_the_python_compiler ... ok
+    test zone_statistics_match_the_python_compiler ... FAILED
 
-Remedy: use the PIL fixed-point formula in `art.rs` (importing `luma601` once
-WP-5.1e exposes it, or replicating it exactly meanwhile), and add a test
-comparing the two zone statistics to Python directly, which is what the evidence
-already claims exists.
+    top_mean diverged from PIL: 109.56702330964686 against 109.56689949397072
 
-## Finding 2, material: divergence 1's causal claim is false, and it is in the plan
+    test result: FAILED. 2 passed; 1 failed
 
-The evidence states that `ttf-parser`'s redundant closing lineto is "identical"
-for filled paths but not for stroked ones, that "the wordmark is the only stroked
-element on the cover, and it was the only thing that differed", and that
-`Builder::close` dropping the trailing lineto is what closed the gap.
+Both halves in one run, exactly as claimed. The zone assertion fails at the
+stated numbers, and the raster test PASSES alongside it under the same revert.
+That demonstrates the aggregation gap rather than arguing it, and it is why an
+assertion was the right answer over a note. Restored: 3 passed, tree clean.
 
-I reverted that pop in my worktree and re-ran the cover test. The generated SVG
-changed (4,234,729 bytes against 4,233,478, consistent with the extra lineto
-commands) and **the PNG was byte-identical**; the test still passed. So the
-redundant closing lineto does not reach the raster at all, under fill or stroke.
+The thresholds confirm the gap's size: `dark_bottom = bottom_mean < 105` against
+an observed 128.22, and `bottom_std > 46` against 28.66. Margins of 23.2 and
+17.3 against a shift of 1.238e-04, so no threshold could flip.
 
-Synthetic probes agree. Rendering `M40 40 L160 40 L160 160 Z` against
-`M40 40 L160 40 L160 160 L40 40 Z` through the same resvg gives identical hashes
-for fill and for stroke, across a miter-sharp triangle, a round-cap/round-join
-variant, and a curve-closed path.
+## Claim 4: the fill/stroke framing withdrawn. CONFIRMED
 
-The `close()` pop is therefore harmless and arguably right (it makes the markup
-match fontTools' formatting), but it is raster-inert, and divergence 2 alone
-accounts for the gap the worker closed.
+The evidence records the lineto as COSMETIC with the measurement (SVG 4,234,729
+against 4,233,478 bytes, PNG byte-identical, test green, synthetic probes
+agreeing), and states the earlier claim and the "fill-only probe is not evidence
+about stroked elements" lesson are "both WITHDRAWN as unsupported". It survives
+only as a record of the retraction, never as a live claim, which is the right
+treatment.
 
-This matters beyond the WP because plan revision 23 records a general method
-lesson on this premise, that "a fill-only outline probe is not evidence about
-stroked elements". The lesson is not supported by this measurement: the fill-only
-834-glyph probe was not insufficient here, because the difference never reached
-any raster. The orchestrator should correct the plan.
+## Claim 5: the second example. CORRECTLY REASONED, and I proved it
 
-Note the claim may still hold for the back cover, which I did not test; the
-evidence's own framing is about the front.
+"A wrong luma formula that the raster hash also could not see" is exactly what
+my own revert demonstrated: the raster test passed while the zone assertion
+failed. The section's argument now rests on the transposed constant pair alone
+for the structural direction and on the luma defect for the raster direction.
 
-## Non-blocking observations
+One note on wording rather than substance: the two examples are dual rather
+than "the same lesson in a second form". The transposed constant is invisible to
+a structural comparison and visible to pixels; the luma defect is invisible to
+pixels and visible only to a direct assertion. What generalises is that a defect
+can be invisible to any given oracle level, which is a stronger and more useful
+statement than either example alone.
 
-- **Three hash bases, one label.** "pixmap sha256 4b4549e9b97ead36..." is the
-  Rust test's own basis (tiny-skia pixmap data). PIL-decoded RGB is `be0e32c0...`
-  and RGBA is `3f853a0a...`. All three are consistent; the evidence should say
-  which basis it quotes.
-- **The committed test is a regression guard, not the Python oracle.** It
-  compares Rust against a constant, so it would pass even if the constant were
-  wrong. Python equality rests on the procedure in ## Commands, which I ran.
-- **"oracle digest c519fdfb764af26a9ff2664545eb846a"** is the first 32 hex of the
-  sha256 (`c519fdfb...eeca57`), not an MD5, which is what its length suggests.
-- **`#[allow(dead_code)]` is on the whole `Outlined` struct**, not on `.width` as
-  the evidence says. Broader than described: it would also mask a genuinely
-  unused field added later. Narrowing it to the field is the smaller hammer.
-- **Structural comparison, stated precisely.** Both SVGs from the transposed
-  probe contain the same stroke-width tokens (7.3143 and 14.6286); only their
-  assignment differs. So the plan's second limit on structural comparison is
-  accurate for a coarse token-set or skeleton check, and a full markup diff would
-  have caught it. Worth the precision, since it is now a plan rule.
-- **A replay hazard worth adding to ## Commands.** `CoverCompiler.compile()`
-  skips regeneration when the output directory already holds `cover.svg`,
-  rewriting only `proof.json`. Replaying the evidence into the worker's own probe
-  directory therefore captures nothing and the spy returns an empty list, which
-  looks like a broken method rather than a cache hit. Use a fresh output
-  directory.
-- **Cargo.lock count.** I count 398 `(name, version)` entries before and after,
-  where the evidence says 397. A counting-method difference, not substance; the
-  only-gained property holds either way.
-- **Big-endian edge, recorded not held against it.** An off-spec LONG-typed
-  orientation misreads in big-endian (high half read, giving 0), but 0 != 1 so it
-  bails. The failure direction is conservative and EXIF mandates SHORT.
+## Claim 6: the two smaller items. ONE CONFIRMED, ONE NOT
 
-## Cross-WP finding
+`#[allow(dead_code)]` now sits on `.width` alone rather than the `Outlined`
+struct. Confirmed in the diff.
 
-WP-5.1e concluded `luma601` needed no action on the strength of
-`grep -rn "luma601\|19595"` matching only `metrics.rs`. That search cannot match
-`art.rs`'s per-mille constants, so the conclusion rested on a query too narrow to
-see the second implementation. Whether or not the two implementations were both
-correct, the reasoning was unsound; as Finding 1 shows, they are not both
-correct. WP-5.1e's verifier should know, and the lift should carry `art.rs` to
-`luma601` rather than allowlisting a divergence.
+The replay hazard is NOT in the evidence. See defect 2.
+
+## Claim 7: the honesty section. ACCURATE
+
+PROVEN lists the front cover raster and the four zone statistics, both against
+Python-produced numbers and both shown to discriminate; I verified both
+independently. NOT PROVEN lists the back cover, the PDF writer, the other layout
+modes and `design.toml` loading, and it draws the right distinction on the back
+cover: its raster was measured identical during the resvg feasibility work, but
+no committed test covers it, so it is not proven. Nothing listed as proven is
+merely asserted, and I found nothing material missing from the not-proven list.
+
+## Defect 1: the zone oracle has no recorded derivation
+
+`mag/tests/cover_zone_expected.json` is not mentioned anywhere in the evidence,
+and `## Commands` contains no invocation that produces it. Its three Python
+blocks compile the covers, capture the SVG and compare the raster; none derives
+the zone statistics.
+
+I verified the oracle is genuinely Python's, but only by reading `cover.py:482`
+and reconstructing `_art_zones` myself. A verifier replaying `## Commands` would
+not reproduce this file, which is the defect class WP-5.1b was rejected for at
+`2f1886a`.
+
+It matters more here than it normally would. This WP's first rejection was for
+claiming the zone statistics were "proven against Python" when nothing asserted
+them. The fix introduces an oracle whose Python provenance is, once again, not
+in the record — the assertion is real this time, but its derivation is as
+unrecorded as the claim it replaced.
+
+Remedy: add the inline `uv run python -c '...'` that regenerates
+`cover_zone_expected.json`, and confirm it reproduces the committed file
+byte-identically.
+
+## Defect 2: the replay hazard is not recorded
+
+The rework reported that `## Commands` carries the hazard that `compile()` skips
+regeneration when outputs already exist, so a spy on `Tree.from_str` captures
+nothing and reads as a broken method. It does not. The only nearby text says the
+spy "is the only reliable way to get the post-rewrite document", which is a
+different point. `grep -n -i "outputs exist\|already exist\|skip\|hazard"` over
+the evidence returns nothing.
+
+Remedy: add it, or drop the claim.
+
+## Baseline
+
+`cargo test --test cover_footer_caption`: 3 passed. `cargo fmt --check`: clean.
+`cargo clippy --all-targets -- -D warnings`: clean.
 
 ## Commands
 
-    git worktree add <wt> 78711a5
-    cp -R <repo>/editions/010/run-2026-09-13T01-34-51 editions/010/
-    mkdir -p editions/010/articles
-    for d in editions/010/run-2026-09-13T01-34-51/articles/*/; do \
-      n=$(basename "$d"); cp "$d/final.md" "editions/010/articles/$n.md"; done
-
-    # Python reference, into a FRESH directory (see the replay hazard above)
-    uv run python -c "... spy on resvg.usvg.Tree.from_str, compile, write raster_N.svg ..."
-    uv run python -c "... render raster_0.svg -> py_0.png ..."
-
-    cd mag && MAG_COVER_SVG_OUT=<p>/rs_cover.svg MAG_COVER_PNG_OUT=<p>/rs_cover.png \
-      cargo test --test cover_footer_caption
-
-    # divergence 1 probe: revert the pop in Builder::close, rerun, compare
-    # divergence 2 probe: set the white tail to 106.6 / 0.15, rerun
-    # luma probe: compare (r*19595+g*38470+b*7471+0x8000)>>16 against
-    #   (r*299+g*587+b*114+500)//1000 over the cover art, then through
-    #   cover.py's crop and zone boxes with ImageStat
-
-    cargo test; cargo fmt --check; cargo clippy --all-targets -- -D warnings
-
-## Tool versions
-
-python 3.12.11 via `uv run python` (the system python3 is 3.9.6 on Unicode
-13.0.0 and must not be used), uv 0.8.17, Pillow via the project venv,
-resvg-py 0.2.0 wrapping resvg/usvg 0.47.0, rustc 1.96.0.
+    for c in 5a3fa71 78711a5 e639b32; do git rev-parse "$c:mag/tests/critic_metrics_expected.json"; done
+    git diff 78711a5 e639b32 -- mag/src/critic/metrics.rs
+    uv run python -c "<_art_zones reconstruction, see Claim 3>"
+    cd mag && cargo test --test cover_footer_caption
+    # revert art.rs to per-mille in place, rerun, restore
 
 ## Status
 
