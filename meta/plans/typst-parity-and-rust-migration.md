@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 30 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 31 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,42 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 31 changelog
+
+**A third form of one failure, and this one was the planner's.** Revision
+29 (`4f20801`) had `c084e16` as its direct parent and REVERTED
+`meta/verification/evidence/WP-5.4.md` by exactly the inverse diff, 16
+insertions against 65 deletions, removing the zone-oracle provenance
+command and the replay hazard that WP-5.4 had been rejected TWICE for
+omitting. Restored verbatim as `c5d35f7`, confirmed here as a zero-byte
+diff against `c084e16`.
+
+**The fix written for the previous form did not catch it, and the reason
+generalises.** Revision 25 required confirming the files you expect are
+PRESENT in the resulting tree. `WP-5.4.md` was present. Present and
+reverted. **Presence is not content.** Three incidents now, each fix aimed
+at the form before it: ancestry passed while 39 files were deleted;
+presence passed while a file was reverted; and in both the landing agent's
+own checks reported success. Each check verified something ADJACENT to what
+mattered, which is why each new form slipped through: ancestry verifies a
+commit's presence in history rather than its content's survival, presence
+verifies a file's existence rather than its content.
+
+**The check that covers the class is stated about the DIFF**: after
+landing, `git show --stat <your sha>` and confirm the file list is EXACTLY
+your Owns, no more and no fewer. A deletion, a revert and a stale rider all
+appear the same way, as a file you do not own inside your own diff. It
+pairs with the pathspec discipline rather than replacing it, since a
+pathspec stops contamination going in while the stat check catches it if it
+does, and a pathspec can be right while the working copy is stale. On
+`4f20801` it would have taken one line and one second.
+
+**And an Owns gap that is the planner's to answer for**: a plan revision
+owns the plan file and NOTHING else, so revision 29's diff was rejectable
+under rule 1 before any verification. The orchestrator diff check was being
+applied to worker and verifier commits but not to plan revisions; rule 1
+now says explicitly that it applies to all three.
 
 ## Revision 30 changelog
 
@@ -1467,7 +1503,13 @@ before/after comparisons (WP-4.3); out of scope here.
    Acceptance includes the verifier running
    `git diff --name-only <base>` against the Owns list. A WP diff touching
    any `evidence/*.verify.md` or `baseline.json` is rejected by the
-   orchestrator before a verifier is spawned, except a WP whose Owns names
+   orchestrator before a verifier is spawned. **A PLAN REVISION owns
+   `meta/plans/typst-parity-and-rust-migration.md` and NOTHING else**, so a
+   revision diff touching any `evidence/*.md` is rejectable on the same
+   rule; revision 29 was such a diff and nobody checked, because the
+   orchestrator diff check was being applied to worker and verifier commits
+   but not to plan revisions. It applies to all three, except a WP whose
+   Owns names
    baseline.json explicitly (WP-0.2a: schema and empty state; WP-5.4g:
    cover-page seed rows); only verifiers write those otherwise.
 1a. **Dependency hygiene, which replaces Cargo-file serialization.** Rule
@@ -1605,8 +1647,33 @@ before/after comparisons (WP-4.3); out of scope here.
    partially-staged file could have landed mid-edit. Commit with an
    explicit pathspec, or check `git diff --cached --name-only` before
    committing and unstage what is not yours.
-   **After landing, confirm THE FILES YOU EXPECT ARE PRESENT in the
-   resulting tree, not merely that your commit is an ancestor.** The
+   **After landing, run `git show --stat <your sha>` and confirm THE FILE
+   LIST IS EXACTLY YOUR OWNS: no more, no fewer.** This is the check that
+   covers the class, and it is stated about the DIFF rather than about the
+   tree or the history. A deletion, a revert and a stale rider all show up
+   the same way, as a file you do not own appearing in your own diff. Pair
+   it with the pathspec discipline below rather than choosing between them:
+   the pathspec stops contamination going IN, the stat check catches it if
+   it does, and a pathspec can be correct while the working copy is stale.
+   Three incidents, each fix aimed at the previous form, each new form
+   passing the previous check:
+   - `aa4bc01`: ancestry passed while 39 files were DELETED.
+   - `4f20801` (a plan revision, the planner's own): presence passed while
+     `WP-5.4.md` was REVERTED by exactly the inverse diff, 16 insertions
+     against 65 deletions, removing the provenance command and replay
+     hazard that WP had been rejected TWICE for omitting. Restored verbatim
+     as `c5d35f7`.
+   - in both, the landing agent's own checks reported success.
+   **The generalization, because it keeps outrunning its fixes: each check
+   verified something ADJACENT to what mattered.** Ancestry verified the
+   commit's presence in history rather than its content's survival.
+   Presence verified the file's existence rather than its content. Presence
+   is not content. The invariant that actually matters is "my landed change
+   is in the tree AND nobody else's was undone by me", and only a statement
+   about the diff expresses it.
+   The superseded form, kept because it is still worth doing and costs
+   nothing: confirm the files you expect are PRESENT in the resulting
+   tree. The
    ancestry check alone has a hole and it was exercised: commit `aa4bc01`, a
    VERIFY commit, landed from a stale base and DELETED all 39 of WP-5.2's
    files while
