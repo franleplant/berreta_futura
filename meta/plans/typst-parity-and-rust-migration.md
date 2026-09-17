@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-16, revision 23 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 24 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,50 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 24 changelog
+
+**A retraction, and the discipline that should have prevented it.**
+Revision 23 promoted "a fill-only outline probe is not evidence about
+stroked elements" to a method lesson, on the mechanism that `ttf-parser`'s
+redundant closing lineto before `Z` renders differently under stroke.
+WP-5.4's verifier measured it (commit 06d5cf63) by reverting the
+lineto-pop: the SVG changed by 1,251 bytes and the PNG came back
+BYTE-IDENTICAL with the test still passing, and synthetic probes agreed
+across miter-sharp, round-cap and curve-close cases. The redundant lineto
+never reaches the raster. The lesson is retracted in both places it
+appeared.
+
+What survives is the half that was measured rather than explained: a
+transposed CONSTANT diffed clean on every transform while differing on
+10,768 pixels in a bbox of 428,221 to 967,326, and it alone accounts for
+the whole difference. That remains the strongest argument in this execution
+for raster equality as the cover oracle, and it is the right anchor for the
+structural-comparison limit revision 19 recorded, which is re-pointed at it.
+The mechanism was misidentified; the limit is real.
+
+**Protocol rule 11**, because this is the second time and the shape was
+identical: a MECHANISM asserted by the WP that found the defect is a
+hypothesis, not a finding. WP-1.2 blamed WP-1.1's advance residual, ruled
+out by WP-1.1's own numbers. WP-5.4 blamed fill-versus-stroke, falsified by
+its verifier. Both times the DEFECT was real and the EXPLANATION was wrong,
+and both times the plan promoted the explanation to a lesson before
+anything independent tested it. Rule 9 already makes a number carry its
+configuration; rule 11 does the same for causal claims, and names the test
+that settles one, which is what both verifiers actually did: remove the
+supposed cause and measure whether the effect goes.
+
+**The luma question is resolved rather than noted.** `art.rs::grey` is not
+a faithful port: `cover.py:495` uses `convert("L")` (PIL fixed-point) while
+`art.rs` uses per-mille, disagreeing on 540 of 3,110,400 pixels of 010's
+art and shifting zone means by 1.238e-04 and 5.652e-05. It passes only
+because those statistics feed a threshold a 1e-4 shift does not flip: a
+pass by AGGREGATION rather than correctness, which is rule 10's family
+(a check that cannot presently discriminate is not evidence that the thing
+under it is right). Three WPs have touched this; the answer is not that
+both implementations are fine, it is that one is wrong and the fix is to
+call `metrics.rs::luma601`, which is exactly what WP-5.1e's lift-and-widen
+exists to prevent recurring.
 
 ## Revision 23 changelog
 
@@ -37,8 +81,14 @@ markup skeleton matches to 8 decimal places. `Cargo.lock` gained nothing:
 usvg and tiny-skia transitively at exactly the versions the Python binding
 embeds.
 
-**Two method findings worth more than the WP they came from.** A
-fill-only outline probe is not evidence about STROKED elements, because
+**Two method findings worth more than the WP they came from.**
+[RETRACTED IN PART BY REVISION 24: the fill/stroke half below was a
+mechanism asserted rather than measured, and WP-5.4's verifier falsified it
+by reverting the lineto-pop and getting a byte-identical PNG. The
+transposed-constant half stands. The entry is left as written because a
+changelog records what a revision claimed; this marker exists so nobody
+carries the retracted half forward out of the archive.]
+A fill-only outline probe is not evidence about STROKED elements, because
 `ttf-parser` emits a redundant closing lineto before `Z` that fontTools
 omits, identical under fill and different under stroke; WP-5.4's earlier
 834-glyph probe saw nothing for exactly that reason, and the wordmark is
@@ -1225,6 +1275,22 @@ before/after comparisons (WP-4.3); out of scope here.
    ends `Status: awaiting-fran` with its recommendation; the decision is
    recorded by Fran (commit authored by Fran or a line Fran types). No
    verification gate is human.
+11. **A MECHANISM asserted by the WP that found the defect is a
+   hypothesis, not a finding.** Rule 9 makes a number carry its
+   configuration; this carries the same discipline to causal claims,
+   because the plan has now recorded two explanations that measurement
+   later falsified. WP-1.2 attributed its break miss to WP-1.1's advance
+   residual, which WP-1.1's own numbers ruled out. WP-5.4 attributed its
+   wordmark defect to a fill-versus-stroke difference in `ttf-parser`'s
+   redundant closing lineto, which its verifier falsified by reverting the
+   lineto-pop and getting a byte-identical PNG. **Both times the DEFECT was
+   real and the EXPLANATION was wrong**, and both times the plan had
+   already promoted the explanation to a lesson before anything
+   independent tested it. So: record the defect as measured and the
+   mechanism as PROPOSED until an independent measurement confirms it, and
+   never generalise a mechanism into a rule on first telling. A WP that
+   wants its mechanism believed should test it the way the verifiers did,
+   by removing the supposed cause and measuring whether the effect goes.
 10. **Evidence that cannot discriminate must say so.** The plan already
    rules that a gate which cannot fail is not a gate, and WP-0.2g makes
    every collection clause report the cardinality it compared. This extends
@@ -2136,8 +2202,8 @@ second, sharper limit, measured by WP-5.4: **a structural comparison cannot
 see a wrong CONSTANT that produces structurally identical output.** A
 transposed parameter pair on the cover wordmark (horizontal_scale 105.1
 with stroke_width 0.30, against the orange tail's 106.6 with 0.15) passed
-every structural check while differing on 10,768 pixels in a band at
-x 428-966, y 221-325. Where an artifact can be rasterized, structure and
+every structural check while differing on 10,768 pixels in a bbox of
+428,221 to 967,326. Where an artifact can be rasterized, structure and
 pixels answer different questions, and the plan asks both.
 
 **A corpus-based oracle proves only what the corpus contains.** This is the
@@ -2612,6 +2678,19 @@ them or the divergence is a defect:
     Python binding embeds; the additions merely promote them to direct
     dependencies. Covers are answered; the plan no longer lists them as a
     risk.
+  - **The luma question is resolved: there are two implementations, they
+    are NOT both correct, and the fix is to use the correct one.** Three
+    WPs have now touched grey-scale conversion. `art.rs::grey` is not a
+    faithful port: `cover.py:495` uses `convert("L")`, PIL's fixed-point
+    path, while `art.rs` computes per-mille, and they disagree on 540 of
+    3,110,400 pixels of 010's actual art, shifting zone means by 1.238e-04
+    and 5.652e-05. It passes today only because those statistics feed a
+    threshold that a 1e-4 shift does not flip, which is **a pass by
+    aggregation rather than by correctness**, the same family rule 10
+    names: a check that cannot presently discriminate is not evidence that
+    the thing under it is right. Fix by calling the existing
+    `metrics.rs::luma601` rather than keeping a second implementation; that
+    is also what WP-5.1e's lift-and-widen exists to prevent.
   - **Owns EXTENSION, granted (precedent: WP-0.0c's extension to
     `web_edition.py`)**: `mag/src/critic/metrics.rs` for the eXIf fix only.
     WP-5.3a's accepted code bails on ANY eXIf chunk and 010's cover art has
@@ -2621,16 +2700,24 @@ them or the divergence is a defect:
     oracle) recording before and after, so an accepted verification is not
     silently invalidated. The general rule this instance produced is in the
     Phase 5 preamble.
-  - **Two method findings, both general, both earned the hard way.**
-    (a) `ttf-parser` emits a redundant closing lineto before `Z` that
-    fontTools omits: IDENTICAL for fills, DIFFERENT for strokes. WP-5.4's
-    own earlier 834-glyph probe saw nothing because it tested fills only,
-    and the wordmark is the cover's ONLY stroked element. **A fill-only
-    outline probe is not evidence about stroked elements.**
-    (b) A transposed parameter pair passed every structural check while
-    differing on 10,768 pixels. Together these are the strongest argument
-    in this execution for raster EQUALITY as the cover oracle, which is
-    what the bullet above requires.
+  - **One method finding, and one retraction** (revision 24).
+    RETRACTED: revision 23 recorded that a fill-only outline probe is not
+    evidence about stroked elements, on the mechanism that `ttf-parser`'s
+    redundant closing lineto before `Z` renders differently under stroke.
+    WP-5.4's verifier MEASURED it (commit 06d5cf63) by reverting
+    `Builder::close`'s lineto-pop: the SVG changed (4,234,729 against
+    4,233,478 bytes) and the PNG was BYTE-IDENTICAL with the test still
+    passing, and synthetic probes agreed across miter-sharp, round-cap and
+    curve-close cases. The redundant lineto never reaches the raster at
+    all. Do not carry the fill/stroke lesson forward; it was a mechanism
+    asserted, not measured.
+    STANDS: a transposed CONSTANT (the white wordmark tail's
+    `horizontal_scale=105.1` with `stroke_width=0.30`, against the orange
+    tail's 106.6 with 0.15) produced output that diffed clean on every
+    transform and differed on 10,768 pixels in a bbox of 428,221 to
+    967,326. That alone accounts for the whole difference, and it remains
+    the strongest argument in this execution for raster EQUALITY as the
+    cover oracle.
   - Note for WP-0.2h, measured here: `/F1` is reportlab's default
     Helvetica, set at the top of the stream and never shown, and by stream
     order it PRECEDES any `3 Tr`. WP-5.3d measured the tracer's failure
