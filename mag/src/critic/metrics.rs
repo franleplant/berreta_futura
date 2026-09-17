@@ -538,7 +538,7 @@ pub fn analyze_print_contrast(source: &Rgb) -> PrintContrastAnalysis {
     }
 }
 
-fn luma601(pixel: &[u8]) -> u8 {
+pub(crate) fn luma601(pixel: &[u8]) -> u8 {
     ((pixel[0] as u32 * 19595 + pixel[1] as u32 * 38470 + pixel[2] as u32 * 7471 + 0x8000) >> 16)
         as u8
 }

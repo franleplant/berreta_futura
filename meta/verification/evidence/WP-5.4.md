@@ -70,12 +70,17 @@ Both were invisible in the markup skeleton and only surfaced when rasters were
 compared, which is worth recording because it is an argument for the oracle
 being raster equality rather than markup equality.
 
-1. **The redundant closing lineto.** `ttf-parser` emits an explicit lineto back
-   to the contour start before `Z`; fontTools relies on `Z` to close. For FILLED
-   paths the two are identical, which is why the 834-glyph probe (fills only)
-   reported no difference. For STROKED paths they are not: the wordmark is the
-   only stroked element on the cover, and it was the only thing that differed.
-   `Builder::close` now drops a trailing lineto that returns to the start.
+1. **The redundant closing lineto: COSMETIC, not a divergence.** `ttf-parser`
+   emits an explicit lineto back to the contour start before `Z`; fontTools
+   relies on `Z` to close. `Builder::close` drops that trailing lineto so the
+   emitted path data reads like fontTools', which keeps the SVG diff small.
+   It does NOT reach the raster. This WP originally claimed it did; WP-5.4's
+   verifier disproved that by reverting the pop and measuring: the SVG changed
+   (4,234,729 against 4,233,478 bytes) while the PNG was BYTE-IDENTICAL and the
+   test still passed, with synthetic probes agreeing that fill and stroke render
+   identically across miter-sharp, round-cap and curve-close cases. The earlier
+   claim, and the "a fill-only probe is not evidence about stroked elements"
+   lesson drawn from it, are both WITHDRAWN as unsupported.
 2. **The white wordmark tail's parameters.** The tail is drawn three times (slug,
    orange, white). The orange uses `horizontal_scale=106.6, stroke_width=0.15`;
    the white uses `horizontal_scale=105.1, stroke_width=0.30`. Carrying the
@@ -84,7 +89,8 @@ being raster equality rather than markup equality.
    10,768 differing pixels in a band 428-966 x 221-325. Both are now read from
    the Python rather than inferred from the sibling call.
 
-After both fixes: zero differing pixels.
+So divergence 2 alone accounts for all 10,768 differing pixels (bbox
+428,221,967,326). After fixing it: zero differing pixels.
 
 ## The eXIf guard, fixed under an orchestrator grant
 
@@ -145,6 +151,9 @@ runs over the same cover art, so the fix unblocks that WP too.
 | WP-5.3a oracle AFTER the guard change | 5 of 5 tests pass, oracle digest c519fdfb764af26a9ff2664545eb846a, unchanged |
 | exif_orientation unit test | orientation 6 read as 6, orientation 1 read as 1, ExifOffset-only blob and non-EXIF bytes both None |
 | full suite after the change | 11 test binaries, all ok |
+| WP-5.3a oracle after the luma601 visibility change | 6 of 6 tests pass; expectation blob 39be9e815b4403a8bcd8b27c07944fe3daa29e31, byte-identical across commits 5a3fa71, 78711a5 and this one |
+| zone statistics against PIL | top_mean 109.566899493971, top_stddev 40.232386208079, bottom_mean 128.222435631229, bottom_stddev 28.664079039767, all within 1e-9 |
+| zone assertion discriminates | reverting to the per-mille formula fails it at top_mean 109.56702330964686 against 109.56689949397072, WHILE THE RASTER TEST STILL PASSES |
 
 WP-5.3a's oracle covers all 14 images at its three levels (decoded pixels by
 SHA256 against PIL's `convert("RGB")`, thumbnails pixel-for-pixel against
@@ -235,6 +244,22 @@ Added, as the last step before landing, per rule 1a: `resvg =0.47.0`,
 `png 0.18` were already present and are reused. The `Cargo.lock` check is in
 ## Verdicts.
 
+## What is and is not proven
+
+PROVEN by committed tests: the front cover raster equals the Python compiler's
+pixel for pixel, and the four zone statistics equal PIL's to within 1e-9. Both
+assertions are against numbers PYTHON produced, and both were shown to
+discriminate by reverting the code under them.
+
+NOT PROVEN, and not claimed: the back cover (its SVG was captured and its raster
+measured identical during the resvg feasibility work, but no committed test
+covers it), the PDF writer, the other layout modes, and `design.toml` loading.
+
+The first submission's evidence said the zone statistics were "proven against
+Python" when the only assertion in the test was the final raster hash against a
+committed constant. That was wrong, it is corrected here, and the missing
+assertion now exists.
+
 ## Verdicts
 
 No `mag parity` verdict: covers are outside the interior compared domain until
@@ -244,21 +269,20 @@ Cargo.lock (name, version) delta: only gained; no entry removed, none changed.
 
 ## Why the oracle had to be raster equality
 
-The two divergences this WP found are the strongest argument in this execution
-for comparing covers by raster rather than by structure, and neither would have
-been caught by any structural check:
+One divergence carries this argument, and it carries it alone: the transposed
+`horizontal_scale`/`stroke_width` pair on the white wordmark tail. The Python
+draws that tail three times, and the white pass uses 105.1/0.30 where the orange
+pass three lines above it uses 106.6/0.15. Carrying the orange values into the
+white produced a document whose markup skeleton diffed CLEAN on every transform,
+translate and scale, and whose raster differed on 10,768 pixels in a band at
+428,221 to 967,326.
 
-- the redundant closing lineto is **identical for fills and different for
-  strokes**. The 834-glyph probe that cleared ttf-parser tested FILLS ONLY, so it
-  reported 834 of 834 identical and would have shipped the wordmark wrong. Only
-  the stroked wordmark exposed it.
-- the transposed `horizontal_scale`/`stroke_width` pair on the white tail
-  (105.1/0.30, against the orange tail's 106.6/0.15 sitting three lines above it
-  in the Python) produced a markup skeleton that diffed clean on every transform
-  and translate, and 10,768 differing pixels in a band at x 428-966, y 221-325.
+A wrong constant producing structurally identical output is exactly what a
+structural comparison cannot see. That is the case for equality being the clause.
 
-Both pass structural comparison and fail a pixel comparison. That is the case for
-equality being the clause.
+The zone-statistics defect below is the same lesson in a second form: a wrong
+luma formula that the raster hash also could not see, because 540 differing
+pixels moved the zone mean by 1.238e-04 and no threshold flipped.
 
 ## Remaining, for WP-5.4b and the PDF step
 
@@ -280,14 +304,16 @@ equality being the clause.
 
 ## Residuals
 
-- `mag/src/critic/metrics.rs` has no public grayscale helper; `luma601` is
-  private, so `art.rs` computes ITU-R 601 luma itself. That is a duplicated
-  helper under the Phase 5 rule. It is deliberately NOT lifted here: **WP-5.1e**
-  owns lifting Python-semantics helpers into a shared module and widening the
-  duplicate audit across `mag/src/`, and `luma601` is on its list. The copy
-  stays, with the compensating discipline recorded: the zone statistics are
-  proven against PYTHON rather than against the sibling copy, which is the
-  stronger comparison of the two.
+- The zone-statistics luma is now `metrics::luma601`, not a local copy. The
+  first submission wrote its own per-mille formula
+  `(r*299 + g*587 + b*114 + 500)/1000`, which is NOT what `convert("L")` does:
+  PIL uses fixed point, `(r*19595 + g*38470 + b*7471 + 0x8000) >> 16`. On 010's
+  cover art the two disagree on 540 of 3,110,400 pixels, shifting the zone means
+  by 1.238e-04 (top) and 5.652e-05 (bottom). It was inert only because no
+  threshold flipped, which is a pass by AGGREGATION rather than by correctness.
+  `luma601` is now `pub(crate)` and imported, so there is one implementation.
+  The visibility change is the only edit to `metrics.rs` beyond the eXIf work,
+  and WP-5.3a's oracle is unmoved (see ## Metrics).
 - `Fonts::load` reads the faces from `src/magazine/assets/fonts/`, the single
   copy the Architecture section sanctions while both engines coexist. WP-6.1
   relocates them.

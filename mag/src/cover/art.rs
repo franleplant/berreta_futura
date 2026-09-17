@@ -2,16 +2,11 @@ use std::path::Path;
 
 use anyhow::Result;
 
-use crate::critic::metrics::{decode_rgb, round_half_even, Rgb};
+use crate::critic::metrics::{decode_rgb, luma601, round_half_even, Rgb};
 
 pub struct Zone {
     pub mean: f64,
     pub stddev: f64,
-}
-
-fn grey(pixel: &[u8]) -> u8 {
-    let value = u32::from(pixel[0]) * 299 + u32::from(pixel[1]) * 587 + u32::from(pixel[2]) * 114;
-    ((value + 500) / 1000).min(255) as u8
 }
 
 fn crop(image: &Rgb, x0: u32, y0: u32, x1: u32, y1: u32) -> Rgb {
@@ -42,7 +37,7 @@ fn zone(image: &Rgb, y0: u32, y1: u32) -> Zone {
     let mut sum = 0u64;
     let mut sum_squares = 0u64;
     for pixel in patch.data.chunks_exact(3) {
-        let value = u64::from(grey(pixel));
+        let value = u64::from(luma601(pixel));
         sum += value;
         sum_squares += value * value;
     }
