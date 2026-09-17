@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 25 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 26 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,39 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 26 changelog
+
+**Pinning a duplicate to its TWIN proves only that they match; pinning it
+to the ORACLE proves it is right.** The duplicated-helper rule offered
+"import it, or add a test asserting the two copies agree" as if those were
+comparable, and they are not: agreement is equally satisfied when both
+copies are wrong. The rule now names a STRONG form (each copy pinned to its
+own Python original by its own oracle) and a WEAK form (copies pinned to
+each other), with the weak form a last resort rather than an equal option.
+
+Three instances from this execution point the same way, which is why this
+is a principle and not an anecdote. `art.rs::grey` was caught by WP-5.4's
+oracle being unfaithful to `cover.py`'s `convert("L")`, and no Rust-to-Rust
+comparison could have caught it. WP-5.4a duplicated helpers it could not
+import but pinned them to PYTHON over the whole plane, which is exactly why
+its duplication was a structural exposure rather than a live defect.
+WP-5.1c's `py_repr` copy was checked only against its sibling and carried
+the pre-fix body with nothing noticing.
+
+Also sharpened, because it is the strongest available argument for the
+conclusion the plan already draws: detection failed at THREE levels on the
+luma pair. The two implementations differ in name, in body, and in
+fixed-point scale and rounding, so neither audit key fires, and a manual
+grep missed it because `299` and `19595` denote the same coefficient and
+share no substring. Widening the audit is still worth doing; it just cannot
+close this class, so the rule is the mitigation rather than the scanner.
+
+Cut as its own small revision rather than held for the next one, against
+the suggestion to fold it in, because it MODIFIES a rule that WP-5.5a,
+WP-5.3b and WP-5.4b will read while choosing how to handle a helper they
+cannot import, and until it landed the weak form read as an equal
+alternative.
 
 ## Revision 25 changelog
 
@@ -2351,9 +2384,26 @@ this run came from one behavior living in two places: WP-5.1c reintroduced,
 by copying, the exact `py_repr` defect WP-5.1b had already been rejected
 for and fixed, into the module with the widest exposure. A port WP may not
 copy a helper out of another model module. Import it, or, where rule 1's
-Owns boundary genuinely forbids that, add a test asserting the two copies
-agree on a shared case list and say in evidence why importing was not
-possible. WP-5.1d then consolidates.
+Owns boundary genuinely forbids that, duplicate ONLY under the strong form
+below and say in evidence why importing was not possible. WP-5.1d then
+consolidates.
+
+**Two ways to defend a duplicate, and they are not equal.** The STRONG form
+pins each copy to ITS OWN Python original by its own oracle. The WEAK form
+pins the copies to EACH OTHER. The weak form is a last resort, never an
+equal alternative, for one reason: **agreement is equally satisfied when
+both copies are wrong.** Three instances in this execution point the same
+way. `art.rs::grey` was caught by WP-5.4's oracle being unfaithful to
+`cover.py`'s `convert("L")`, and no comparison between the two Rust luma
+functions could ever have caught it, since they were never compared and a
+shared error would have passed if they had been. WP-5.4a, unable to import
+the helpers it needed, duplicated them but pinned its copies to PYTHON over
+the whole plane rather than to the sibling Rust copy, which is why its
+duplication was a structural exposure rather than a live defect. And
+WP-5.1c's `py_repr` copy, which WAS only checked against its sibling,
+carried the pre-fix body with no test noticing. So when a duplicate is
+unavoidable, pin it to the oracle; pinning it to its twin proves only that
+they match.
 
 **A port STRICTER than its oracle is a defect too, and a quieter one.**
 The deliberate-divergence rule below licenses a port that reports where
@@ -2469,6 +2519,13 @@ them or the divergence is a defect:
     `parity/`, `impose.rs`, and soon `package/` and `web/`. It keys on
     (name, signature, normalised body), so widening to every module under
     `mag/src/` is mechanical.
+  - **Detection failed at THREE levels on the luma pair, which is the
+    argument for the rule rather than for a better scanner.** The two
+    implementations differ in name, in body, and in fixed-point SCALE and
+    rounding, so neither audit key fires; and a manual grep missed it too,
+    because `299` and `19595` denote the same coefficient and share no
+    substring. The audit is worth widening, but it cannot close this class,
+    and the mitigation is the strong-form rule above.
   - **Remove the 40-character body floor.** The verifier found the audit
     skips short bodies, and a wider scan makes that matter more, because
     short bodies are exactly where trivial Python-semantics helpers live. A
