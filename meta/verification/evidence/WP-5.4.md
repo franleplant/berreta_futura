@@ -171,12 +171,6 @@ Stage the manuscripts the Python loader needs, then capture the reference:
     for d in editions/010/run-2026-09-13T01-34-51/articles/*/; do \
       n=$(basename "$d"); cp "$d/final.md" "editions/010/articles/$n.md"; done
 
-REPLAY HAZARD, worth knowing before the spy below looks broken: `compile()`
-SKIPS regeneration when its outputs already exist, so running it a second time
-into the same destination captures NOTHING through a spy on `Tree.from_str` and
-reads as a broken method rather than a skipped step. Use a fresh destination
-directory for every capture.
-
 Compile the Python covers and capture the exact SVG handed to resvg (the spy on
 `Tree.from_str` is the only reliable way to get the post-rewrite document):
 
@@ -250,38 +244,6 @@ Added, as the last step before landing, per rule 1a: `resvg =0.47.0`,
 `png 0.18` were already present and are reused. The `Cargo.lock` check is in
 ## Verdicts.
 
-Regenerate the committed zone oracle `mag/tests/cover_zone_expected.json`. This
-derivation mirrors `_art_zones` at `src/magazine/cover.py:482` exactly, including
-the `int()` truncations and the floor-divided crop offsets, and it reads the
-tracked cover art so it needs no run directory:
-
-    uv run python -c "
-    import json
-    from PIL import Image, ImageStat
-    PAGE_WIDTH, PAGE_HEIGHT = 419.527559, 595.275591
-    band_x = PAGE_WIDTH - 21.0
-    path = 'editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png'
-    with Image.open(path) as source:
-        image = source.convert('RGB')
-    ratio = max(band_x / image.width, PAGE_HEIGHT / image.height)
-    width, height = int(band_x / ratio), int(PAGE_HEIGHT / ratio)
-    ox, oy = (image.width - width) // 2, (image.height - height) // 2
-    image = image.crop((ox, oy, ox + width, oy + height))
-    def stat(box):
-        values = ImageStat.Stat(image.crop(box).convert('L'))
-        return values.mean[0], values.stddev[0]
-    top = stat((0, 0, image.width, int(image.height * 0.24)))
-    bottom = stat((0, int(image.height * 0.72), image.width, image.height))
-    json.dump({'bottom_mean': bottom[0], 'bottom_stddev': bottom[1],
-               'top_mean': top[0], 'top_stddev': top[1]},
-              open('mag/tests/cover_zone_expected.json', 'w'), indent=2, sort_keys=True)
-    "
-
-Verified to reproduce the committed file byte for byte: sha256
-303e2e66aedddc073b55b56821ee836d6556dab8 before and after regeneration, `cmp`
-clean. The numbers are PIL's own `ImageStat` output, not Rust output committed as
-an expectation.
-
 ## What is and is not proven
 
 PROVEN by committed tests: the front cover raster equals the Python compiler's
@@ -305,33 +267,22 @@ WP-5.4g, and the comparator cannot read cover pages until WP-0.2h.
 
 Cargo.lock (name, version) delta: only gained; no entry removed, none changed.
 
-## A defect can be invisible to any given oracle level
+## Why the oracle had to be raster equality
 
-This WP produced two defects that are DUAL rather than alike, and the pair is a
-stronger argument than either alone.
+One divergence carries this argument, and it carries it alone: the transposed
+`horizontal_scale`/`stroke_width` pair on the white wordmark tail. The Python
+draws that tail three times, and the white pass uses 105.1/0.30 where the orange
+pass three lines above it uses 106.6/0.15. Carrying the orange values into the
+white produced a document whose markup skeleton diffed CLEAN on every transform,
+translate and scale, and whose raster differed on 10,768 pixels in a band at
+428,221 to 967,326.
 
-The transposed `horizontal_scale`/`stroke_width` pair on the white wordmark tail
-was **invisible to structure and visible to pixels**. The Python draws that tail
-three times, and the white pass uses 105.1/0.30 where the orange pass three lines
-above it uses 106.6/0.15. Carrying the orange values into the white produced a
-document whose markup skeleton diffed CLEAN on every transform, translate and
-scale, and whose raster differed on 10,768 pixels at 428,221 to 967,326.
+A wrong constant producing structurally identical output is exactly what a
+structural comparison cannot see. That is the case for equality being the clause.
 
-The zone-statistics luma formula was **invisible to pixels and visible only to a
-direct assertion against Python's numbers**. It disagreed with `convert("L")` on
-540 of 3,110,400 pixels and moved the zone means by 1.238e-04 and 5.652e-05, but
-the thresholds it feeds sit far away (`bottom_mean < 105` against 128.22,
-`bottom_std > 46` against 28.66), so nothing flipped and the raster hash matched.
-It passed by aggregation. Reverting it now fails the zone assertion while the
-raster test still passes, which is that gap made visible.
-
-So the generalisation is not "compare pixels" and not "compare structure". It is
-that **a defect can be invisible to any given oracle level**, and which level
-blinds you is not predictable from the defect's kind: a wrong constant hid from
-structure, a wrong formula hid from pixels. That is the argument for holding more
-than one oracle level at once, which is what this WP now does — raster equality
-for the document, and a direct numeric assertion for the statistics feeding its
-decisions.
+The zone-statistics defect below is the same lesson in a second form: a wrong
+luma formula that the raster hash also could not see, because 540 differing
+pixels moved the zone mean by 1.238e-04 and no threshold flipped.
 
 ## Remaining, for WP-5.4b and the PDF step
 

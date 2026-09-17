@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 28 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 29 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,68 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 29 changelog
+
+**A demonstration whose harness grants a capability production lacks.**
+WP-0.2h built a shared tracer seam for the critic and proved it through a
+`#[path]` test include, which bypasses module privacy entirely. The
+demonstration passed, its verification confirmed the demonstration, and the
+seam was still unusable from the only place it was built for, because
+`mag/src/parity.rs` declares `mod display;` and `mod streams;` privately
+with no `pub use` and the first real consumer gets
+`error[E0603]: module 'streams' is private`. **The mechanism that proved
+the seam was the one mechanism that routes around the defect.**
+That is neither rule 10 (a claim outrunning its evidence) nor rule 11 (a
+mechanism asserted without test): the evidence was accurate about what it
+measured, and what it measured was the wrong path. **Rule 12** therefore
+requires a capability to be demonstrated THROUGH THE PATH ITS CONSUMER WILL
+USE, with a consumer test that imports the ordinary way, and requires a WP
+reaching for `#[path]`, relaxed visibility, a test-only feature flag or an
+altered search path to say in evidence why and what it has therefore NOT
+shown. WP-2.0b holds `parity.rs` and carries both the one-line export and
+the consumer test.
+
+**WP-5.3b is re-cut into -i, -ii and -iii** along the dependency seam,
+because the critic's decisions span 31 issue sites and a partial port
+yields a partial decision set that cannot be compared against Python's full
+one. There is no smaller honest unit meeting the stated oracle, so the
+choice was to split or to weaken, and splitting is free. Only -iii meets
+the decision-level oracle, so WP-5.3c and WP-5.3g depend on it rather than
+on the family.
+
+**What WP-5.3b achieved before blocking improves on what the plan said**,
+and it did it by re-measuring against the CURRENT tracer rather than
+inheriting WP-5.3d's numbers, which is rule 9 working rather than being
+cited: text-emptiness now agrees **56 of 56**, up from 54 of 54, because
+WP-0.2h's standard-14 decode gained the two cover pages, and it reproduces
+pypdf's exact 7-empty / 49-non-empty partition, so it DISCRIMINATES. The
+seven `body_text_lines` differences were CONFIRMED as one cause rather than
+inherited, by reading pypdf's own output and finding two merged two-line
+headlines. And its join rule is labelled under rule 10 as NOT
+discriminating on 010 (184 of 1,263 lines carry multiple shows; empty-string
+and geometric joins give identical emptiness and `body_text_lines`), chosen
+because principled rather than because the corpus can tell. That label is
+the plan's reference example of rule 10 used well.
+
+**The Unicode residual gets an owner rather than a note**: `body_text_lines`
+uses `char::is_lowercase`, unpinned, so a page containing U+1C89 could
+diverge. Unmeasured, revision 22's rule covers it, and
+`mag/src/model/shared.rs` already holds the pinned tables, so WP-5.3b-i
+pins it or demonstrates whole-plane agreement and says which.
+
+**Two batched items fold in here** under the cadence standard. Rule 3a:
+to prove an ACCEPTED oracle did not move, hash the git BLOB across the
+range rather than re-running, since git is content-addressed and a constant
+blob hash proves the file never changed ANYWHERE in the range, where a
+re-run proves only that it produces the same result now. And the dual-defect
+generalization, which is better than what revision 24 recorded: the
+transposed constant was invisible to STRUCTURAL comparison and visible to
+pixels, the luma defect was invisible to PIXELS and visible only to a direct
+assertion against Python's numbers, so what generalises is that **a defect
+can be invisible to any given oracle level**. That is the argument for a
+layered gate, and it changes the oracle designer's question from "structural
+or photometric" to "what is invisible at this level, and what sees it".
 
 ## Revision 28 changelog
 
@@ -1443,6 +1505,18 @@ before/after comparisons (WP-4.3); out of scope here.
    the gated result and the command that produces it, as WP-5.2 did.
    Binding on WP-5.5b, WP-5.5c and WP-5.3b, each of which needs the same
    untracked run directory and will otherwise reach for the silent shape.
+3a. **To prove an ACCEPTED oracle did not move, hash the git BLOB.** The
+   question "did this WP invalidate an earlier WP's accepted oracle" is
+   answered by hashing that oracle's expectation file across every commit
+   in the range, not by re-running it. Git is content-addressed, so a
+   constant blob hash proves the file NEVER CHANGED ANYWHERE IN THE RANGE,
+   where a passing re-run proves only that it produces the same result now:
+   a file could change and change back, or a re-run could pass for a
+   different reason. Strictly stronger and cheaper. WP-5.4's verifier did
+   this across `5a3fa71`, `78711a5` and `e639b32`. Reserve RE-RUNNING for
+   the different question of whether the WP's own code changed in a way
+   that could alter the oracle's OUTPUT rather than its committed
+   expectation; several briefs currently ask for the weaker check.
 3. **Verifier acceptance.** The WP agent's green run is a claim. A verifier
    agent, spawned by the orchestrating session (never the WP agent),
    receives the WP's brief + the evidence file + this rule; it checks out a
@@ -1505,6 +1579,24 @@ before/after comparisons (WP-4.3); out of scope here.
    ends `Status: awaiting-fran` with its recommendation; the decision is
    recorded by Fran (commit authored by Fran or a line Fran types). No
    verification gate is human.
+12. **Demonstrate a capability THROUGH THE PATH ITS CONSUMER WILL USE.** A
+   test harness that bypasses visibility, linkage or configuration proves
+   only that the code RUNS, not that it is REACHABLE. WP-0.2h built a
+   shared tracer seam for the critic and demonstrated it through a
+   `#[path]` test include, which bypasses module privacy entirely; the
+   demonstration worked and its verification confirmed the demonstration,
+   while `mag/src/parity.rs` declares `mod display;` and `mod streams;`
+   privately with no `pub use`, so the first real consumer in
+   `mag/src/critic/` fails with `error[E0603]: module 'streams' is
+   private`. **The mechanism that proved the seam was the one mechanism
+   that routes around the defect.** This is its own failure mode, not rule
+   10's claim outrunning evidence and not rule 11's untested mechanism: the
+   evidence was accurate about what it measured, and what it measured was
+   the wrong path. So a WP that ships something for another module to
+   consume proves it with a CONSUMER TEST that imports the ordinary way,
+   and a WP that reaches for `#[path]`, a relaxed visibility, a test-only
+   feature flag or an altered search path says in evidence why, and what it
+   therefore has NOT shown.
 11. **A MECHANISM asserted by the WP that found the defect is a
    hypothesis, not a finding.** Rule 9 makes a number carry its
    configuration; this carries the same discipline to causal claims,
@@ -2482,6 +2574,22 @@ with stroke_width 0.30, against the orange tail's 106.6 with 0.15) passed
 every structural check while differing on 10,768 pixels in a bbox of
 428,221 to 967,326. Where an artifact can be rasterized, structure and
 pixels answer different questions, and the plan asks both.
+**The deeper generalization, and it is not about pixels.** Revision 24
+recorded the transposed constant as the limit of structural comparison, and
+WP-5.4's evidence then called the luma defect "the same lesson in a second
+form". Its verifier corrected that, and the correction is worth more than
+either example: they are DUAL, not the same. The transposed constant was
+invisible to STRUCTURAL comparison and visible to pixels. The luma defect
+was invisible to PIXELS, the raster hash passing while the zone statistics
+were wrong, and visible only to a DIRECT ASSERTION against Python's
+numbers. What generalises is therefore **a defect can be invisible to any
+given oracle level**, which is the actual argument for a layered gate
+rather than an argument for pixels. It changes the question an oracle
+designer should ask, from "is my comparison structural or photometric" to
+"what class of defect is invisible at THIS level, and what other level sees
+it". The two examples are unusually clean proof because they point in
+opposite directions and came from the same WP.
+
 A THIRD limit, which is really a design parameter: **a structural
 comparison's RESOLUTION is as much a part of its design as its shape.**
 WP-5.2's display-list comparison is otherwise the technique applied well,
@@ -2721,122 +2829,74 @@ them or the divergence is a defect:
   one of four revert probes does not discriminate on this corpus (no
   luminance lands on a .5 histogram boundary), adding a direct rounding
   oracle against Python instead. That is the corpus rule working.
-- **WP-5.3b critic rules** (`render_critic.py`): owns
-  `mag/src/critic/rules.rs`. **Oracle RE-CUT by WP-5.3d (revision 16):
-  the critic's DECISIONS on 010, {result, issue codes, severities,
-  pages}**, each implementation using its own text source, with the Rust
-  side reading the TRACER (not poppler, not pypdf) through WP-0.2h's shared
-  text path. The spread table and the raw page-row metrics leave the
-  oracle, because matching them means reimplementing pypdf's merge
-  threshold and synthetic-space rule; see WP-5.3d for the measurement and
-  the reasoning.
-  Three things the brief must carry so they are not rediscovered:
-  - **The seven `body_text_lines` differences are ONE known cause, not
-    seven findings**: pypdf merges a two-line article headline into one
-    line ("Government Rails Site HitHours After CVE Patch") where the
-    tracer correctly keeps two shows 28.8 pt apart in y. Record it, do not
-    chase it.
-  - **The fault-suite obligation, stated correctly.** Revision 16 narrowed
-    it on a false premise (that `article-stub-last-page` was the only
-    text-derived decision) and revision 17 restores the real enumeration:
-    `body_text_lines < 5` (`STUB_BODY_LINE_MINIMUM`, render_critic.py:62)
-    is the only numeric THRESHOLD, but **five text-derived fields feed ten
-    issue sites**: `text_order_matches` at :152, :176 and :198, `blank` at
-    :291, :452 and :476, `ink_free` at :299, :460 and :484,
-    `standalone_punctuation_lines` at :309, `body_text_lines` at :380.
-    `blank` and `ink_free` are conjunctions including `not text.strip()`,
-    so they are text-derived; `sparse` is ink-ratio only and is correctly
-    excluded. **WP-5.3c must fault all five fields.** What IS bounded is
-    the near-threshold work: only `body_text_lines` has a numeric edge to
-    straddle, and WP-5.3d measured that no page changes side under the
-    tracer's count (page 36 at 4 against 3, both below).
-    The reason path B is safe is therefore NOT that one decision consumes
-    text; it is that the tracer AGREES with pypdf on every field feeding
-    the other nine sites. **Label which agreements discriminate and which
-    are empty-set**, because a table where every row reads "54 of 54" hides
-    the difference:
-    - `text_order_matches`, 27 of 27 traceable sides: DISCRIMINATING, and
-      the hardest of them, since poppler manages only 7 of 28.
-    - text-emptiness, 54 of 54 pages: DISCRIMINATING, and UNDERSOLD by the
-      evidence. pypdf finds 7 empty pages and 47 non-empty (pages 2, 10,
-      30, 35, 45, 54, 55), so agreement means the tracer reproduces that
-      exact partition, not that nothing was there to disagree about.
-    - `standalone_punctuation_lines`, 54 of 54 pages: **EMPTY-SET
-      agreement**. The field is zero on every page, so this is `0 == 0`
-      throughout. It proves the tracer does not INVENT such lines; it
-      proves nothing about whether it would produce the SAME ones if any
-      existed. WP-5.3c's fault coverage for this field is therefore not
-      optional, it is the only evidence there will be.
-  - **Re-measure; do not inherit WP-5.3d's numbers as current.** They carry
-    the configuration "pre-WP-0.2i tracer" (rule 9). WP-5.3d's verifier
-    deliberately did NOT rebuild the probe, because WP-0.2i was
-    concurrently editing the two files the probe `#[path]`-includes, so a
-    probe built then would have measured a different tracer than the one
-    WP-5.3d measured. That restraint was correct; the consequence is that
-    this WP measures against the post-WP-0.2i tracer itself.
-  - **`cover-booklet-page-order` cannot be computed at all** under a
-    tracer-fed critic until WP-0.2h lands: `cover_spread_checks`
-    (render_critic.py:184) runs over `cover_wrap_plan`, the wrap carrying
-    reader pages 1 and 56, which are exactly the pages the tracer cannot
-    read. That makes WP-0.2h a HARD PREREQUISITE of this WP, not a quality
-    improvement.
-  - **The naive join rule is wrong and looks right.** WP-5.3d's first
-    spread-table attempt scored 6 of 27 because it joined shows with the
-    empty string, welding one page's last token to the next page's first.
-    Reconstruct lines with the separator the geometry implies. The
-    CORRECTED rule has a bounded mirror failure worth knowing before it
-    surprises someone: joining with a space gives a word split across two
-    adjacent shows a spurious space that `normalized()` cannot remove.
-    Adjacent shows do occur ("BERRETA FUTURA04"), so it is reachable in
-    principle; it did not fire on 010.
-  `text_characters` and the spread table remain COMPUTED and reported, and
-  differences in them are evidence about the text source rather than gate
-  failures; WP-5.3d is the measured basis for the "not worse" claim the
-  plan previously asked for as an assertion (tracer 27 of 27 traceable
-  spread sides against poppler's 7 of 28, 47 of 54 pages on
-  `body_text_lines` against 16 of 56).
-  **This WP owns `render_critic.py`'s OWN raster helpers**, which WP-5.3a
-  does not cover and which the plan previously left unnamed: PIL grayscale
-  conversion, histograms, `ImageChops.difference`, and a LANCZOS resize.
-  Scope them at the start; a WP that meets unscoped work mid-flight either
-  overruns or quietly skips it.
-  **This is also where `parity.yaml critic_metric_tolerances:` is first
-  actually exercised** (WP-5.3a hit exact equality and consumed none of
-  it), including WP-0.2d's single near-threshold metric,
-  `pages[39].largest_void.height_points` at exactly 96.0 against a 96.0
-  `>=` boundary. That metric gets a near-threshold fixture either way.
-  **BLOCKED, and its oracle is decided by WP-5.3d.** The WP measured the
-  root cause instead of guessing: `_PageTexts.raw()` calls pypdf's
-  `extract_text()`, and that output feeds `body_text_lines`,
-  `text_characters`, `standalone_punctuation_lines`, `blank` and
-  `ink_free` in every page row plus `text_order_matches` in every spread
-  row, all inside the stated oracle. Swapping in poppler moves
-  `body_text_lines` on 40 of 56 pages (page 5: 29 against 25; page 6: 33
-  against 28) and `text_characters` on 47 of 56. Emptiness and standalone
-  punctuation survive on all 56. Worst is the spread table, which compares
-  one extractor against ITSELF and so looked most likely to survive:
-  poppler reads the two-up landscape side in an order that is not the
-  concatenation of its two A5 pages, flipping 21 of 28 committed `true`
-  values and leaving 7 of 28.
-  **WP-5.7's escape does not transfer.** That WP was re-scoped because
-  every committed article.md is never re-derived, making byte-identity a
-  counterfactual about future captures. The critic is the opposite: it is
-  a repeated comparison for as long as both implementations exist, since
-  WP-5.3g puts the Typst leg's critic verdict into Tier S, WP-5.3c
-  requires both critics to emit the same issue codes, and WP-5.6 ships the
-  Rust one. The WP correctly did not re-scope itself; rule 4 reserves that
-  here.
-  Depends on WP-5.2: `render_critic.py` imports `A4_LANDSCAPE_POINTS`,
-  `cover_wrap_plan`, `imposed_reader_page_plan` and `section_reader_pages`
-  from `booklet.py`. They are small and pure, which makes copying them
-  tempting and wrong: the duplicated-helper rule would be violated the
-  moment WP-5.2 lands. Consume the Rust port, do not copy.
-  Scoped but previously unnamed, so WP-5.6 does not inherit them by
-  surprise (the second time this module has hidden work; revision 14 named
-  its raster helpers): `_write_contact_sheets` draws with `ImageDraw.text`
-  in Pillow's default bitmap font, and `_write_review_crops` shells
-  `pdftoppm` at 300 dpi. Both sit outside the oracle, and WP-5.6 makes the
-  Rust critic responsible for both.
+- **WP-5.3b RE-CUT (revision 29) into WP-5.3b-i, -ii, -iii.** It ended
+  `blocked` with evidence only (commit a430663) on two blockers, the second
+  of which is scope: the critic's decisions span 31 issue sites needing
+  three PDFs rasterised at 144 dpi, PIL-exact `_inspect_page`, void
+  geometry, tail bands, opener offset colour detection and crop fidelity.
+  A PARTIAL port yields a partial decision set, which cannot be compared
+  against Python's full one, so there is no smaller honest unit that meets
+  the stated oracle. Splitting along the dependency seam is the only way to
+  make progress without weakening the oracle.
+  Everything the original bullet established still binds the successors:
+  the decision-level oracle from WP-5.3d, the tracer as text source, the
+  five text-derived fields feeding ten issue sites, the `cover_spread_checks`
+  dependency on WP-0.2h, the WP-5.2 import edge, and the unnamed raster
+  helpers (PIL grayscale, histograms, `ImageChops.difference`, LANCZOS
+  resize).
+
+- **WP-5.3b-i the critic's text source**: owns `mag/src/critic/text.rs`.
+  Already BUILT and measured; needs only WP-2.0b's export (blocker 1
+  below). Re-measured against the CURRENT tracer rather than inheriting
+  WP-5.3d's figures, which is rule 9 working: **text-emptiness now agrees
+  56 of 56**, up from 54 of 54, because WP-0.2h's standard-14 decode gained
+  the two cover pages pypdf could read and the tracer could not, and it
+  reproduces pypdf's exact 7-empty / 49-non-empty partition, so it
+  DISCRIMINATES. `body_text_lines` 49 of 56. `text_characters` 16 of 56, up
+  from 9 under the geometric join, and it feeds no issue site.
+  The seven `body_text_lines` differences are CONFIRMED as one cause rather
+  than inherited as folklore: all seven are opener pages where the tracer
+  counts one line more, and reading pypdf's own output on two of them shows
+  `'Government Rails Site HitHours After CVE Patch'` and `'The third era of
+  AI softwaredevelopment'` as merged two-line headlines. The tracer keeping
+  them apart is CORRECT.
+  Its join rule (group shows by device y within 1 pt, order by x, insert a
+  space when the gap exceeds 0.25 of the larger font size, width from
+  WP-0.2i's per-glyph offsets) is labelled under rule 10 as **NOT
+  DISCRIMINATING ON 010**: 184 of 1,263 lines carry multiple shows, and
+  switching between empty-string and geometric joins changes neither
+  emptiness nor `body_text_lines`. It is chosen because it is PRINCIPLED,
+  not because this corpus can tell the difference. That is rule 10 working
+  as intended and is the plan's reference example of the label.
+  **Owns the Unicode residual**: `body_text_lines` uses
+  `char::is_lowercase`, which is NOT pinned to Python's tables, so a page
+  containing U+1C89 could in principle diverge. Unmeasured. Revision 22's
+  rule covers it and `mag/src/model/shared.rs` already holds the pinned
+  tables, so this is a naming problem rather than a research one: pin it or
+  demonstrate whole-plane agreement, and say which.
+
+- **WP-5.3b-ii page inspection**: owns `mag/src/critic/inspect.rs`. The
+  PIL-exact `_inspect_page` and the three 144 dpi rasterisations, plus the
+  raster helpers the original bullet named. Depends on WP-5.3b-i and
+  WP-5.3a.
+
+- **WP-5.3b-iii the checks**: owns `mag/src/critic/rules.rs`. Void
+  geometry, tail bands, opener offset colour detection, crop fidelity, and
+  the 31 issue sites. Depends on WP-5.3b-ii, WP-5.2 and WP-0.2h. This is
+  the WP that meets the decision-level oracle, since only here does a full
+  decision set exist to compare. WP-5.3c and WP-5.3g depend on it rather
+  than on -i or -ii.
+
+- **Blocker 1, and the reason rule 12 exists**: WP-0.2h's seam is
+  UNREACHABLE from the place it was built for. `mag/src/parity.rs:1-6`
+  declares `mod display;` and `mod streams;` privately with no `pub use`,
+  so `display::trace_elements` cannot be imported by `mag/src/critic/` and
+  a consumer fails with `error[E0603]: module 'streams' is private`. The
+  fix is one line and belongs to WP-2.0b, which holds `parity.rs`, together
+  with a CONSUMER TEST that imports the ordinary way. WP-0.2h demonstrated
+  the seam through a `#[path]` test include, which bypasses module privacy
+  entirely, so the demonstration passed and its verification confirmed the
+  demonstration while the seam stayed unusable. See rule 12.
 
 - **WP-5.3d the critic's text source** (spike, evidence only; Phase 1
   preamble's isolation rules bind). Runs BEFORE WP-5.3b and decides its
@@ -3369,7 +3429,7 @@ WP-3.5 + WP-0.2i -> WP-3.0g -> WP-3.7          (the ratchet cannot be
                                                 raised to Tier E before the
                                                 per-glyph bound exists)
 WP-5.2, WP-5.3a, WP-5.7                        (parallel with Phase 2/3)
-WP-5.3a -> WP-5.3b -> WP-5.3c -> WP-5.3g
+WP-5.3a -> WP-5.3b-ii;  WP-5.3b-iii -> WP-5.3c -> WP-5.3g
 WP-5.1c -> WP-5.4;  WP-3.7 + WP-5.4 -> WP-5.4g
 Phase 5 edges below are RECONCILED AGAINST THE PYTHON IMPORT GRAPH
 (revision 19), not against the plan's groupings; three were undeclared
@@ -3383,10 +3443,13 @@ until a WP walked into each one:
                                               reader_text)
   WP-5.2 + WP-5.3a              -> WP-5.5b   (preflight imports booklet,
                                               image_contrast)
-  WP-5.2 + WP-5.3b + WP-5.5b    -> WP-5.5c   (package imports booklet,
+  WP-5.2 + WP-5.3b-iii + WP-5.5b -> WP-5.5c   (package imports booklet,
                                               preflight, render_critic)
-  WP-5.2                        -> WP-5.3b   (render_critic imports booklet,
-                                              concurrency)
+  WP-2.0b (pub use export)      -> WP-5.3b-i -> WP-5.3b-ii -> WP-5.3b-iii
+  WP-5.2 + WP-0.2h              -> WP-5.3b-iii   (render_critic imports
+                                                 booklet, concurrency;
+                                                 cover_spread_checks needs
+                                                 the cover pages)
   WP-0.2h                       -> WP-5.3b, WP-5.4g
 WP-2.3 + WP-3.7 + WP-5.2 + WP-5.3b + WP-5.4 + WP-5.5a + WP-5.5b
        + WP-5.5c -> WP-5.6
