@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 24 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 25 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,53 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 25 changelog
+
+**The landing protocol had a hole and it was exercised.** Commit `aa4bc01`
+landed from a stale base and DELETED all 39 of WP-5.2's files, while
+WP-5.2's own commit stayed an ancestor of `art_directed`, so the prescribed
+post-land check passed with the content gone (recovered as `ac443b0`; the
+tree is confirmed whole). The check was answering the wrong question:
+ancestry proves a commit is in the HISTORY and says nothing about whether a
+later land reverted its CONTENT. The protocol now requires confirming the
+files you expect are actually PRESENT in the resulting tree.
+The principle is worth more than the fix, because this is not really about
+git and it has bitten twice: **an invariant that holds over history is not
+an invariant over state.** The other instance was the stale working copy
+holding old content after a ref move. Check the state you depend on, not a
+proxy for it.
+
+**lopdf parses every PDF real as `f32`, and it has already caused a
+measured defect.** WP-5.2's sheet-3 mystery, display lists and text passing
+while one sheet's raster differed, resolved to exactly this: 010's pages 1
+and 56 carry `MediaBox 419.5276` where pages 2 to 55 carry `419.527559`,
+which an f32 cannot hold, so the computed scale came out exactly 1.0
+against Python's 1.0000000151, shifting edges by about 9e-6 pt and flipping
+381 bytes at max channel delta 4. WP-5.2's own display-list comparison was
+BLIND to it because it formats operands at 6 decimals.
+This sits beneath the comparator itself, since every coordinate, matrix
+component and TJ adjustment the tracer reads is an f32 before arithmetic,
+so **WP-0.2j** takes it as a shared exact path rather than leaving three
+incompatible per-WP raw-byte recoveries to accrete. Object streams must be
+handled or named, never silently reduced in precision.
+The plan records the arithmetic so the pending measurement can be CHECKED
+rather than trusted: f32 ulp is 3.87e-5 pt at 325 pt, which is 5.3% of
+WP-0.2i's per-glyph bound at k=1, comfortably a fraction. But against the
+SHAPE constraint it is about 22% of one expected step (WP-1.6's 0.000173 pt
+per glyph), which is enough to make a monotone sequence look non-monotone
+or to mask a small compensating kern. So the honest prior is that it is not
+obviously negligible where it matters most, and rule 11 applies to whatever
+answer arrives: measured, not asserted.
+
+**The structural-comparison technique earns its keep a third time and
+gains a third limit.** WP-5.2 replaces every resource NAME operand with the
+SHA256 of the object it resolves to, seeing through pypdf's rename scheme
+and both encoders' formatting while still failing on any change to what is
+drawn, in what order, against which font or image. And its blindness to the
+f32 defect is the limit: **a structural comparison's RESOLUTION is as much
+part of its design as its shape**, because formatting operands at 6
+decimals silently defines what counts as identical.
 
 ## Revision 24 changelog
 
@@ -1257,6 +1304,19 @@ before/after comparisons (WP-4.3); out of scope here.
    fast-forwarding only when the main tree is dirty, and expect to retry
    under load: that dance re-races every time the branch moves, and a WP
    has lost three attempts to it. Never `--no-verify`.
+   **After landing, confirm THE FILES YOU EXPECT ARE PRESENT in the
+   resulting tree, not merely that your commit is an ancestor.** The
+   ancestry check alone has a hole and it was exercised: commit `aa4bc01`
+   landed from a stale base and DELETED all 39 of WP-5.2's files while
+   WP-5.2's own commit remained an ancestor of `art_directed`, so the
+   prescribed post-land check PASSED with the content gone (recovered as
+   `ac443b0`). Ancestry proves a commit is in the HISTORY; it proves
+   nothing about whether a later land reverted its CONTENT.
+   The general principle, because this is not really about git and the
+   execution has now been bitten by it twice (here, and by the
+   stale-working-copy symptom where the main tree held old content after a
+   ref move): **an invariant that holds over HISTORY is not an invariant
+   over STATE.** Check the state you actually depend on.
 5. **Repo rules apply**: `cargo fmt`, `cargo clippy -D warnings`,
    `cargo test` (includes `tools/nocomments.py`), `uvx ruff` for touched
    Python, no comments, no U+2014, hooks installed.
@@ -1711,6 +1771,46 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   decode, with page 56's character and line counts recorded; a text
   consumer reads `booklet-a4.pdf` without touching navigation; `cargo test`,
   `fmt`, `clippy -D warnings` green.
+
+### WP-0.2j the exact number path (comparator WP)
+
+- Owns: the number-parsing path shared by the tracer and its consumers,
+  plus `meta/verification/parity.yaml` if a record is needed. Serial with
+  the other `mag/src/parity*` owners (rule 1c).
+- Why: **lopdf parses every PDF real as `f32`**, and that has already
+  produced a measured defect rather than a theoretical one. Edition 010's
+  pages 1 and 56 carry `MediaBox 419.5276` while pages 2 to 55 carry
+  `419.527559`, which an f32 cannot hold, so WP-5.2's computed scale came
+  out exactly 1.0 against Python's 1.0000000151, shifting edges by about
+  9e-6 pt and flipping 381 bytes at max channel delta 4. WP-5.2 recovered
+  the authored decimals from the file's raw bytes and refused loudly rather
+  than placing a page at reduced precision, but that recovery is per-WP and
+  REFUSES on PDFs using object streams.
+- Scope: every coordinate, matrix component and TJ adjustment the tracer
+  reads is an f32 before any arithmetic, so this is beneath WP-0.2h,
+  WP-0.2i, WP-5.4 and WP-5.5 alike. A SHARED exact path is the right shape;
+  per-WP raw-byte recovery is how three incompatible recoveries start.
+  Object streams must be handled, not refused, or the limitation is named
+  and fails loud; silently reduced precision is never acceptable.
+- The arithmetic this has to answer, recorded so the measurement can be
+  checked rather than trusted: f32 ulp is 3.87e-5 pt at a 325 pt magnitude
+  and 4.77e-5 pt at 400 pt. Against WP-0.2i's per-glyph bound of
+  `k x 0.000732 pt` that is 5.3% of the bound at k=1, which is a fraction
+  rather than a multiple. The sharper exposure is the SHAPE constraint: the
+  monotone check compares successive differences whose expected increment
+  is WP-1.6's 0.000173 pt per glyph, and 3.87e-5 pt of jitter is about 22%
+  of one step, which is enough to make a monotone sequence look
+  non-monotone or to mask a small compensating kern. So the honest prior is
+  that this is NOT obviously negligible for the shape check even though it
+  is comfortably inside the magnitude bound.
+- Verify: the 010 MediaBox case reproduces exactly (authored decimals
+  recovered, scale 1.0000000151 rather than 1.0); a PDF using object
+  streams either parses or fails loud by name; WP-0.2i's per-glyph verdicts
+  are byte-identical before and after, or the differences are enumerated
+  with causes. The WP-0.2i verifier's answer on the f32 question lands in
+  this WP's evidence either way: "checked, negligible, here are the
+  numbers" is as valuable as a defect, and rule 11 applies, so the
+  mechanism is measured rather than asserted.
 
 ### WP-0.2i per-glyph positions (comparator WP)
 
@@ -2205,6 +2305,16 @@ with stroke_width 0.30, against the orange tail's 106.6 with 0.15) passed
 every structural check while differing on 10,768 pixels in a bbox of
 428,221 to 967,326. Where an artifact can be rasterized, structure and
 pixels answer different questions, and the plan asks both.
+A THIRD limit, which is really a design parameter: **a structural
+comparison's RESOLUTION is as much a part of its design as its shape.**
+WP-5.2's display-list comparison is otherwise the technique applied well,
+and is its third earning: it replaces every resource NAME operand with the
+SHA256 of the object it resolves to, seeing through pypdf's rename scheme
+and both encoders' formatting while still failing on any change to what is
+drawn, in what order, against which font or image. But it formats operands
+at 6 decimals, and that is exactly what made it BLIND to the f32 defect
+below. Choose the resolution deliberately and record it, or the comparison
+silently defines what counts as identical.
 
 **A corpus-based oracle proves only what the corpus contains.** This is the
 single most repeated lesson of the execution so far. Edition 010 has no
@@ -3030,7 +3140,8 @@ them or the divergence is a defect:
 DONE: WP-0.0 -> WP-0.0b -> WP-0.1 -> WP-0.2a -> WP-0.2b -> WP-0.2c
 DONE: WP-1.1, WP-1.2, WP-1.3, WP-1.4 (spikes; decisions in revision 9)
 DONE: WP-5.1a
-WP-0.2e -> WP-0.2f (blocked, raster withdrawn) -> WP-0.2h -> WP-0.2i
+WP-0.2e -> WP-0.2f (blocked, raster withdrawn) -> WP-0.2h -> WP-0.2j
+       -> WP-0.2i
        -> WP-0.2g -> WP-0.2d matrix re-derivation
 WP-0.2h -> WP-5.3b   (the critic's text source)
 WP-0.2h -> WP-5.4g   (cover pages enter the compared domain there)
