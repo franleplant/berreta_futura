@@ -9,6 +9,8 @@ mod critic;
 mod impose;
 #[allow(dead_code)]
 mod model;
+#[allow(dead_code)]
+mod package;
 mod parity;
 mod plan_cmd;
 mod print_cmd;
