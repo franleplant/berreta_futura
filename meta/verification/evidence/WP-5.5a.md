@@ -578,9 +578,20 @@ locates 154/155):
         print(n, "none" if f is None else "%s v%d" % (f[0], f[1]),
               "%s v%d" % (w.error, w.version))'
 
-Every segno call site (leg 2's enumeration):
+Every segno call site (leg 2's enumeration). The scope must include
+`tools/`, or the command understates its own caption: replaying it after
+`tools/sourcecodes.py` landed returned nothing from `src/ mag/src/` while
+four call sites existed in the generator. That is the recorded command
+drifting from the claim above it, which is the failure rule 12's replay
+clause exists to catch, and it was caught by replaying rather than by
+rereading.
 
-    grep -rn "segno" src/ mag/src/
+    grep -rn "segno" src/ mag/src/ tools/
+
+As of this WP, that returns four hits, all in `tools/sourcecodes.py`
+(`import segno` plus three `segno.make` calls) and none in the renderer.
+The renderer-only form is `grep -rn "segno" src/ mag/src/`, which returns
+nothing and is the claim leg 1 actually makes.
 
 Which editions carry fenced code at all:
 
@@ -628,74 +639,38 @@ version and mask.
 
 ### Leg 1: generating the asset, rendering, comparing
 
-The generator is reproduced in full, because the asset it writes is now
-committed and nothing else in the tree can regenerate it. Run from the repo
-root as `uv run python genasset.py 010`. It walks `edition.yaml`, resolves
-each article's source URL through `source_code_payload`, writes the web SVG
-with segno's exact parameters and records the print fit, choosing the room
-per article and emitting a record for every article with a URL.
-`codes.json` is written with `sort_keys=True` and `indent=2` so it is
-diffable. It is a throwaway probe, not committed to `tools/`; giving it a
-home is a question for whoever owns the asset going forward.
+The generator is committed as `tools/sourcecodes.py`, because the asset it
+writes is now committed and nothing else in the tree could regenerate it: a
+source URL change would otherwise dead-end, and whoever hit that would
+improvise a replacement. It walks `edition.yaml`, resolves each source URL
+through `source_code_payload`, writes the web SVG with segno's exact
+parameters and records the print fit, choosing the room per article and
+emitting a record for every article with a URL. `codes.json` is written with
+`sort_keys=True` and `indent=2` so it is diffable. Paths resolve from
+`Path(__file__).resolve().parent.parent`, so it reads only its own checkout
+and does not depend on the working directory.
 
-    import json, sys, yaml
-    from io import BytesIO
-    from pathlib import Path
-    sys.path.insert(0, "src")
-    import segno
-    from magazine.manifest import source_code_payload
+    uv run tools/sourcecodes.py 010            # regenerate in place
+    uv run tools/sourcecodes.py 010 --check    # compare, touching nothing
 
-    ILLUSTRATED_ROOM, PLAIN_ROOM = 41.0, 55.5
-    LEVELS, QUIET = ("H", "Q", "M", "L"), 4
-    MIN_MODULE, EPS = 0.35 * 72 / 25.4, 1e-9
-    UNSAFE = __import__("re").compile(r"[^A-Za-z0-9._-]")
+**`--check` is verified to reproduce the committed asset byte-for-byte**, not
+merely to run: it regenerates into a temporary directory and compares with
+`filecmp.cmpfiles(..., shallow=False)`, and reports
+`10 files reproduce byte-for-byte` (nine SVGs and `codes.json`). An
+unverified generator would be worse than none, since it invites exactly the
+trust it has not earned.
 
-    edition = sys.argv[1]
-    out = Path("editions/%s/source-codes" % edition)
-    out.mkdir(parents=True, exist_ok=True)
-    ed = yaml.safe_load(open("editions/%s/edition.yaml" % edition))
+It discriminates in both directions, which is the other half of that claim:
 
-    codes, seen = [], set()
-    for a in ed["articles"]:
-        room = ILLUSTRATED_ROOM if a.get("opener_art") is not None else PLAIN_ROOM
-        sid = (a.get("source_ids") or [a["id"]])[0]
-        rec = yaml.safe_load(open("library/sources/%s/record.yaml" % sid))
-        url = rec.get("url")
-        if not url or sid in seen:
-            continue
-        seen.add(sid)
-        payload = source_code_payload(url)
+| committed tree | `--check` |
+|---|---|
+| as committed | exit 0, "10 files reproduce byte-for-byte" |
+| one field of `codes.json` changed (`error` M to H) | exit 1, "content differs: ['codes.json']" |
+| one stray extra file in the directory | exit 1, "file set differs" |
+| directory absent | exit 1, "no committed source codes at ..." |
 
-        buf = BytesIO()
-        segno.make(payload, error="L", micro=False).save(
-            buf, kind="svg", scale=1, border=4, dark="#17191c", light="#ffffff",
-            xmldecl=False, svgns=True, nl=False)
-        name = "source-code-%s.svg" % UNSAFE.sub("-", sid)
-        (out / name).write_bytes(buf.getvalue())
-
-        best = None
-        for level in LEVELS:
-            sym = segno.make(payload, error=level, micro=False)
-            modules = int(sym.symbol_size(border=QUIET)[0])
-            module = room / modules
-            if module < MIN_MODULE:
-                continue
-            if best is None or module > best[2] + EPS:
-                best = (level, modules, module)
-        if best is None:
-            printed = None
-        else:
-            level, modules, _ = best
-            sym = segno.make(payload, error=level, micro=False)
-            matrix = ["".join("1" if c else "0" for c in row) for row in sym.matrix]
-            printed = {"error": level, "modules": modules, "matrix": matrix}
-        codes.append({"payload": payload, "source_id": sid, "svg": name,
-                      "print": printed})
-
-    (out / "codes.json").write_text(
-        json.dumps({"codes": codes}, indent=2, sort_keys=True) + "\n")
-    print("wrote %d codes; print declines on %d"
-          % (len(codes), sum(1 for c in codes if c["print"] is None)))
+Both perturbations were reverted and `--check` was re-run to exit 0 before
+this landed.
 
 The staging row the evidence depends on, added to `mag/src/render.rs` in the
 worktree only, called immediately after `stage_art`:
@@ -798,6 +773,47 @@ below are from `output/parity/010/verdict.json`; `tier E raster` is
 | before vs after (committed asset) | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
 | before vs one flipped module (control) | **fail, 1 page** | pass, 0 violations | **241** |
 | re-run at the landing base | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
+| re-run at `c1253d8`, provenance-checked | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
+
+### The provenance-checked run, and the concurrency hazard
+
+The comparator changed AGAIN after the landing-base run: WP-0.2g touched
+`mag/src/parity.rs`, `display.rs` and `geometry.rs`. By the standing reason
+above that invalidates the measurement, so the pair was rendered a third
+time at `c1253d8`. The "before" leg is `c1253d8` with only this WP's three
+code files reverted to their `a3fb35c` content, which is the true
+counterfactual: the branch as it stands, minus this change alone.
+
+**The numbers are tied to the artifacts that produced them.** The digests
+computed independently with `shasum -a 256` over the two rendered PDFs are
+the same two the comparator recorded in `verdict.json`'s `inputs` block:
+
+| leg | `reader.pdf` sha256 |
+|---|---|
+| A, before (segno) | `0460c081226ea530fcb8431c61f202f18530b7f1d88a865a794502451dd89e83` |
+| B, after (committed asset) | `15d3bd5aef0dfb1f2c989c565686fb992dc9966d517e21414b25db55c0d98200` |
+
+`verdict.json` carries `a_reader_sha256` and `b_reader_sha256` and nothing
+else scalar at top level beyond `edition`, `mode` and `self_comparison`;
+there is no `staged_input_digest` field yet, so that half of the provenance
+claim cannot be quoted from this comparator.
+
+**On the shared-`out_dir` hazard.** `mag parity` refuses to run outside a
+repo root, so an "isolated cwd" cannot be an arbitrary scratch directory: it
+has to be a separate WORKTREE, and the isolation comes from that worktree
+having its own `output/`. Every parity run behind this WP's numbers, the
+three earlier ones included, was executed from `wp55a` or `wp55a-before` and
+never from the main tree, so none of them shared an `out_dir` with the
+agents working there. That is an argument about where the runs happened
+rather than a proof the old `verdict.json` files were never overwritten,
+which is why the run above was redone from scratch with digests rather than
+defended.
+
+**Rule 10a is visibly satisfied by the new comparator**, which is worth
+recording because it converts three of these rows from unfalsifiable to
+checkable: tier S now reports 162 boxes and 54 rotations, 1,733 colour
+entries, and 85 annotations of which 85 links. A clause that says how much
+it compared cannot pass by comparing nothing.
 
 The last row matters because the first three were measured at `ee15768` with
 the baseline taken from `a0714c3` (a plan-markdown-only difference, checked:
@@ -805,6 +821,37 @@ the baseline taken from `a0714c3` (a plan-markdown-only difference, checked:
 `mag/src/parity.rs` and `mag/src/parity/streams.rs` then changed under other
 WPs, so the pair was rendered again at the actual landing base with the
 current comparator, and the web tree is byte-identical there too.
+
+**Re-measure after the comparator moves, and the reason is that the failure
+is silent.** A parity result is a claim about a (code, comparator, corpus)
+triple, and only the code is visible in the diff being reviewed. When the
+comparator changes underneath a measurement, the stale number does not
+become an error or a warning; it stays a passing row in a table, indexed to
+a comparator that no longer exists. Nothing in the tree can detect that, and
+the evidence file will read as complete. So the check is cheap insurance
+against a class of defect that has no other detector: before submitting,
+diff your measurement base against the landing base restricted to the code
+and the comparator, and re-render if it is non-empty. That is the second
+time in this execution this has mattered, which is why it is written here as
+a standing reason rather than as a step that happened to be taken.
+
+**The rule 10 diagnostic edge, applied to the instrument this WP rejected.**
+Labelling the raw-PDF-byte comparison non-discriminating is a claim that
+needs its own opposite-extreme test, or the label is just an excuse. Running
+it across the full range of real inputs:
+
+| input pair | raw-byte verdict |
+|---|---|
+| a file against itself | identical |
+| two renders, no semantic change | differs |
+| two renders, one flipped QR module | differs |
+
+So it does not merely have a high noise floor; it returns "differs" for
+every pair of distinct renders and "identical" only for physical identity.
+The output is a constant over the inputs that matter, carrying zero bits
+about semantic change. The correct reading is that the instrument does
+nothing, rather than that the renderer does nothing, which is the
+distinction the rule asks to be drawn explicitly.
 
 Tier S (page_count 56 vs 56, boxes, text, color, navigation) and tier G
 (max dx and dy 0.000 pt) pass in all three, including the control: a single
@@ -826,10 +873,14 @@ than S, G or V is the leg that discriminates here.
   corpus rule applies here: 9 articles, 5 closing plates, 3 figures, content
   modes `article` and `verbatim`, `cover.layout: footer_caption`, and ZERO
   editorial, ZERO sections, ZERO extracts, ZERO key_ideas, ZERO fenced code.
-  So `_render_editorial`, `_render_section`, `_render_extract`,
-  `_extracts_by_anchor`, `_render_key_ideas` and `_highlight_code` are all
-  unreachable from the corpus, and the 010 oracle would prove nothing about
-  any of them. Whoever builds this should expect the fixture surface to be
+  So `_render_editorial` (1), `_render_section` (2), `_render_extract` (3),
+  `_extracts_by_anchor` (4), `_render_key_ideas` (5) and `_highlight_code`
+  (6) are all unreachable from the corpus: SIX functions, counted off the
+  list rather than asserted beside it. The 010 oracle would prove nothing
+  about any of them. `_render_editorial` is the worst case of the six,
+  because it is dead for editions 010 and later by policy but live for 001
+  through 009, so it is reachable code with zero corpus coverage rather than
+  code that is merely unused. Whoever builds this should expect the fixture surface to be
   larger than the corpus surface, and should inherit the blocked WP-5.5's
   per-module enumeration (commit 6a9b5cf) rather than re-deriving it.
 - **LEG 1 IS PROVEN and the oracle change is landed.** See "Leg 1" above:
@@ -844,8 +895,14 @@ than S, G or V is the leg that discriminates here.
   no-op when the directory is absent, so editions without an asset are
   unaffected. WP-5.6 inherits that shape; note it stages a DIRECTORY by
   enumeration rather than naming files from the manifest, which is unlike
-  every other `stage_*` in that file and is the one thing worth revisiting
-  if the asset ever needs manifest-declared membership.
+  every other `stage_*` in that file. What FORCES the change is a stale or
+  foreign file in `source-codes`: enumeration stages whatever is on disk, so
+  an SVG left behind by a removed article, or one hand-added, silently
+  becomes a declared render input and lands in `edition-manifest.json`'s
+  input list. Manifest-declared membership becomes necessary the first time
+  that input list is used as a provenance claim rather than as a copy
+  instruction. `tools/sourcecodes.py --check` detects exactly this (its
+  file-set branch), so running it in CI would hold the line meanwhile.
 - **The reader PDF is not byte-reproducible across runs**, which is a
   general finding, not specific to this WP. Cairo's image XObject names
   (`/i<hex>`) are per-run and sit inside compressed streams, so two renders
