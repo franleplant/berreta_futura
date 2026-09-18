@@ -2,138 +2,156 @@
 
 ## Base
 
-a0714c3 (plan revision 33). Worktree
-`/Users/franguijarro/.claude/jobs/7d99e27f/tmp/wp53bi`.
+96f1dd1 (plan revision 37). The previous submission recorded a0714c3, which
+was five commits stale and, worse, the gap spanned the commit that changed
+`GLYPH_QUANTUM` from `0.0001` to `GLYPH_DRIFT_PT / 8.0` — the constant
+denominating the operand the defect below turns on. Rule 9 with teeth: the
+configuration moved underneath the number.
 
 ## Status
 
-done.
+done (rework after rejection at 3f45d31).
 
-## What landed
+The rejected code is LIVE on the branch. Commit 26391ab is an ancestor of
+a537a24, so the broken join rule shipped and this rework repairs shipped code
+rather than landing new code. Verified with
+`git merge-base --is-ancestor 26391ab a537a24` and by reading HEAD's copy of
+`mag/src/critic/text.rs`, which carries the unconverted width. Worth stating
+because a rejection does not by itself remove anything from the tree.
 
-`mag/src/critic/text.rs`: the tracer-fed text source for the critic.
+All figures below were re-measured at a537a24 rather than carried from the
+pre-rejection run, because the comparator this WP reads through has been under
+concurrent edit.
 
-- `page_lines` / `page_text` reconstruct lines from `Element::Text` shows:
-  group by quantised device y within `SAME_LINE_TOLERANCE` (100, i.e. 1 pt),
-  order by x, and join adjacent shows on a line with a space when the x gap
-  exceeds `WORD_GAP_FRACTION` (0.25) of the larger font size, else with
-  nothing. Show width is estimated from WP-0.2i's per-glyph offsets as
-  `(last.x - first.x) * n / (n - 1)`.
-- `body_text_lines` ports Python's
-  `sum(1 for line in text.splitlines() if line.strip() and any(c.islower() ...))`
-  using `py_strip` from `model::shared` and the pinned `py_islower` below.
-- `trace_text` is the page-range convenience wrapper WP-5.3b-ii will call.
+## The defect that was rejected, and the fix
 
-`mag/src/parity.rs`: removed the blanket `#[allow(unused_imports)]` from the
-two re-exports this WP consumes (`trace_elements`, and `Element`/`TextFace`),
-narrowing the remaining allow to `Color` alone, which no consumer has yet.
-That was named as part of this landing.
+`separator` subtracted two quantities in DIFFERENT UNITS.
 
-## The Unicode obligation: measured, and it is real
+`Show.x` comes from the text matrix, built as `m: trm.map(qc)` at
+`streams.rs:432`, in hundredths of a point. `Show.width` derived from `offs`,
+built with `qo` at `streams.rs:423`, in `GLYPH_QUANTUM` units of
+9.1552734375e-05 pt. One qc unit is 0.01 pt and one qo unit is
+9.1552734375e-05 pt, so **one qc unit is 109.2267 qo units** and `width`
+entered the subtraction inflated by that factor, driving `gap` far negative
+and suppressing almost every space.
 
-The residual this WP was given said `char::is_lowercase` is not pinned and a
-page containing U+1C89 could in principle diverge, unmeasured. Measured now,
-over all 1,112,064 codepoints excluding surrogates:
+Fixed by converting the span to qc where the width is computed, so
+`Show.width` is in qc throughout:
 
-- Python 3.12.11 (Unicode 15.0.0) `str.islower()`: **2,544** codepoints.
-- Rust `char::is_lowercase` (rustc 1.96.0, newer Unicode): **2,595**.
-- **53 disagree.** One is lowercase to Python but not to Rust (U+0295). Fifty-two
-  are lowercase to Rust but not to Python: U+1C8A, U+A7CD, U+A7CF, U+A7DB,
-  U+A7F1, the Garay block U+10D70-U+10D85, and others.
+    let span = (last[0] - first[0]) * count as i64 / (count as i64 - 1);
+    (span as f64 * GLYPH_QUANTUM * 100.0).round() as i64
 
-So this is the same Unicode version skew already recorded for the case
-MAPPINGS, surfacing in the case PREDICATE. Both languages implement the same
-definition (`Ll` plus `Other_Lowercase`); they disagree because the data
-moved.
+`GLYPH_QUANTUM` is now re-exported from `mag/src/parity.rs` alongside the
+types this WP already consumed.
 
-Revision 22 allows pinning OR demonstrating whole-plane agreement. Agreement
-is disproven, so it is **pinned**: `py_islower` tests membership of Python's
-own 2,544-codepoint set, stored as 671 ranges in a 3,736-byte packed string
-parsed once into a sorted table and binary-searched. That follows WP-5.4a's
-precedent for the case tables.
+Measured over all 56 pages with one counter, so the two are comparable:
 
-The pinned table lives in `mag/src/critic/text.rs` rather than
-`mag/src/model/shared.rs` because shared.rs is not this WP's Owns. It is NOT
-a duplicate (no `islower` existed anywhere), so the duplicated-helper rule is
-not engaged, but by the rule's own logic a helper whose purpose is to match a
-Python builtin belongs in the shared module. Residual below.
-
-## Metrics
-
-Re-measured against the CURRENT tracer at base a0714c3, per rule 9. **These
-figures carry the configuration: post-WP-0.2h standard-14 decode, WP-0.2i's
-per-glyph offsets as they stand at a0714c3, geometric join, pinned
-`py_islower`.** They are not inherited from WP-5.3d and not from this WP's own
-earlier run.
-
-Corpus: `editions/010/render-2026-09-14T01-47-59/en/reader.pdf`, 56 pages.
-
-| field | tracer vs pypdf | label |
+| rule | spaces | empties |
 |---|---|---|
-| text-emptiness | **56 of 56** | DISCRIMINATING. Reproduces pypdf's exact partition: 7 empty (pages 2, 10, 30, 35, 45, 54, 55) against 49 non-empty. |
-| `body_text_lines` | 49 of 56 | 7 differences, one cause. |
-| `text_characters` | 16 of 56 | feeds no issue site. |
+| shipped (broken) | 9 | 231 |
+| fixed | 118 | 122 |
 
-Identical to the figures the plan records for this WP, now confirmed against
-the current tracer rather than the pre-rework one.
+### What the fix changes downstream, re-measured
 
-The seven `body_text_lines` differences are pages 4, 11, 31, 36, 40, 46, 50,
-each with the tracer counting exactly one line MORE. All are article opener
-pages. Confirmed on two by reading pypdf's own output:
-`'Government Rails Site HitHours After CVE Patch'` (page 4) and
-`'The third era of AI softwaredevelopment'` (page 36) are two-line headlines
-that pypdf merges. The tracer keeping them apart is correct. Total body lines
-1117 against pypdf's 1110, and 1117 - 1110 = 7 accounts for all of it.
+Configuration: base 96f1dd1, post-WP-0.2h standard-14 decode, WP-0.2i
+per-glyph offsets at this base, `GLYPH_QUANTUM = GLYPH_DRIFT_PT / 8.0`,
+geometric join with the qc conversion, pinned `py_islower`. Corpus
+`editions/010/render-2026-09-14T01-47-59/en/reader.pdf`, 56 pages.
+
+| field | broken rule | fixed rule | label |
+|---|---|---|---|
+| text-emptiness | 56 of 56 | **56 of 56** | DISCRIMINATING, partition identical |
+| `body_text_lines` | 49 of 56 | **49 of 56** | same seven differences |
+| `text_characters` | 16 of 56 | **43 of 56** | feeds no issue site |
+
+So the fix materially improves the only field the join rule governs, from 16
+to 43 of 56, and leaves both decision-relevant fields untouched. The seven
+`body_text_lines` differences are unchanged: pages 4, 11, 31, 36, 40, 46, 50,
+each with the tracer counting one line more, total 1117 against pypdf's 1110,
+and 1117 − 1110 = 7 accounts for all of it. Confirmed on two pages by reading
+pypdf's own output: `'Government Rails Site HitHours After CVE Patch'` and
+`'The third era of AI softwaredevelopment'` are two-line headlines pypdf
+merges, and the tracer keeping them apart is correct.
+
+### The rule-10 label, restated honestly
+
+The previous evidence said the join rule is non-discriminating on 010 and that
+the rule "is chosen because it is PRINCIPLED, not because this corpus can
+tell". The first half was true; the second was false, because the shipped rule
+was not the principled rule. **The label belonged to the code, not the
+corpus.**
+
+What is true now, with a rule that computes what it claims: the join rule is
+still non-discriminating for the two DECISION-RELEVANT fields on 010 — an
+unconditional space, an unconditional empty, and the corrected geometric rule
+all produce the same emptiness partition and the same `body_text_lines`. It is
+NOT non-discriminating overall: it moves `text_characters` by 27 pages, and
+`text_characters` feeds no issue site, which is why no decision moves.
+
+The defect was found because BOTH EXTREMES PASSED. The previous evidence ran
+the unconditional-space probe and concluded the field was non-discriminating;
+it never ran the unconditional-empty probe, which also passes. Two opposite
+rules both passing is evidence about the TEST, not about the corpus, and the
+lesson is now a committed test rather than a note.
 
 ## What is and is not proven
 
 **Proven.**
 
-- `py_islower` matches Python's `str.islower()` on every codepoint.
-  Test: `islower_matches_python_over_the_whole_plane` in
-  `mag/tests/critic_text.rs`, against the committed oracle
-  `mag/tests/critic_text_islower_expected.txt` (2,544 codepoints, generated by
-  the inline command below). SHOWN TO DISCRIMINATE: probe C deleted one entry
-  (U+0295) from the oracle and the test FAILED; restored, it passes.
-- The pinning is NECESSARY rather than decorative, i.e. std genuinely differs.
-  Test: `islower_differs_from_rust_std_on_the_recorded_codepoints`, which
-  asserts both that `py_islower` gives Python's answer AND, with `assert_ne!`,
-  that `char::is_lowercase` gives the opposite, for U+0295, U+1C8A, U+A7CD and
-  U+10D70. It is self-invalidating by design: if a future rustc ever agreed
-  with Python, this test fails and tells you the pin is no longer needed.
-- Line reconstruction reproduces pypdf's empty/non-empty partition on 010, and
-  the two confirmed headline-merge pages. Test:
-  `reconstructs_edition_010_text`, asserting the exact empty-page list, page 4
-  at 10 body lines, page 36 at 4, and 1117 in total. SHOWN TO DISCRIMINATE:
-  probe D widened `SAME_LINE_TOLERANCE` from 100 to 1200 and the test FAILED
-  (1111 against 1117).
+- The join rule computes a gap in consistent units, and a real word gap yields
+  a space. Test: `a_real_word_gap_yields_a_space` in
+  `mag/tests/critic_text.rs`, on synthetic shows at 23 pt with a 10.7 pt gap
+  against the 5.75 pt threshold. SHOWN TO DISCRIMINATE: restoring the unit bug
+  (dropping the qo-to-qc conversion) makes it FAIL with
+  `left: "GovernmentRails"`; restored, it passes. This is the regression test
+  the rejected submission lacked.
+- An adjoining run does not gain a space. Test:
+  `a_kerned_join_yields_no_space`, asserting `"software"` from two shows whose
+  gap is below threshold. Together the two tests exercise both branches of
+  `separator`, which no corpus assertion did.
+- `py_islower` matches Python's `str.islower()` on every codepoint. Test:
+  `islower_matches_python_over_the_whole_plane` against the committed oracle
+  `mag/tests/critic_text_islower_expected.txt` (2,544 codepoints). SHOWN TO
+  DISCRIMINATE: deleting one entry (U+0295) makes it FAIL.
+- The pinning is necessary rather than decorative. Test:
+  `islower_differs_from_rust_std_on_the_recorded_codepoints`, which asserts
+  Python's answer AND, with `assert_ne!`, that `char::is_lowercase` gives the
+  opposite for U+0295, U+1C8A, U+A7CD and U+10D70. Self-invalidating by
+  design: if a future rustc agrees with Python, it fails and says the pin is
+  no longer needed.
+- Line reconstruction reproduces pypdf's empty/non-empty partition and the two
+  confirmed headline-merge pages. Test: `reconstructs_edition_010_text`,
+  asserting the exact empty-page list, page 4 at 10 body lines, page 36 at 4,
+  and 1117 total. SHOWN TO DISCRIMINATE: widening `SAME_LINE_TOLERANCE` from
+  100 to 1200 makes it FAIL (1111 against 1117).
 
 **Not proven, with what would prove it.**
 
-- **The y-tolerance is only proven in one direction.** Probe E set
-  `SAME_LINE_TOLERANCE` to 0 and the test still PASSED, because shows sharing
-  a line in 010 carry exactly equal y. So the corpus proves the tolerance must
-  not be too LARGE and says nothing about it being too small. A fixture with
-  shows a fraction of a point apart on one line would prove the other
-  direction; WP-5.3b-ii or WP-5.3c owns building it if it matters to them.
-- **The join rule does not discriminate on 010.** Probe F replaced the
-  geometric separator with an unconditional space and the test PASSED. 184 of
-  1,263 reconstructed lines carry more than one show, yet switching between
-  empty-string, always-space and geometric joins changes neither emptiness nor
-  `body_text_lines`; it moves only `text_characters` (9, then 16 of 56), which
-  feeds no issue. Labelled under rule 10. The rule is chosen because it is
-  PRINCIPLED, not because this corpus can tell. Proving it would need a
-  fixture where two shows on one line are separated by a real word gap and the
-  decision changes.
-- **The pinning is not exercised by edition 010.** Probe B swapped
-  `py_islower` for `char::is_lowercase` and the 010 test PASSED, so no page of
-  010 contains any of the 53 divergent codepoints. The pin is proven by the
-  whole-plane sweep, NOT by the corpus. This is exactly the corpus rule: a
-  manuscript containing U+1C89 would diverge silently, months from now, and
-  only the sweep stands between that and a wrong `body_text_lines`.
-- `text_characters` agreement (16 of 56) is not a gate and is not proven
-  equal; it is reported as evidence about the text source, per the WP-5.3d
-  decision. It feeds no issue site.
+- **The corpus test cannot see the join rule at all.** `reconstructs_edition_010_text`
+  passes under the unit bug, under an unconditional space and under an
+  unconditional empty. That is why the defect shipped, and why the two new unit
+  tests exist. Proving the join rule against the corpus would need a page where
+  a decision depends on it; edition 010 has none.
+- **The y-tolerance is proven only in the widening direction.** At
+  `SAME_LINE_TOLERANCE = 0` the corpus test still passes, because shows sharing
+  a line in 010 carry exactly equal y. A fixture with shows a fraction of a
+  point apart on one line would prove the other direction; WP-5.3b-ii or
+  WP-5.3c owns it if it matters to them.
+- **The pinning is not exercised by edition 010.** Swapping `py_islower` for
+  `char::is_lowercase` leaves the corpus test passing, so no page of 010
+  contains any of the 53 divergent codepoints. The pin is proven by the
+  whole-plane sweep, not by the corpus — exactly what the corpus rule warns
+  about.
+- **The width estimate is an estimate.** `offs` gives glyph ORIGINS, so the
+  final glyph's own advance is unknown and is approximated by the mean advance
+  (`span * n / (n - 1)`). For a run ending in a narrow glyph this overshoots
+  and for a wide one it undershoots, by at most one glyph advance. This is why
+  the first fixture attempt was wrong by inspection: a run whose offsets span
+  120 pt ends at roughly 133 pt, not 120. Proving it exactly would need
+  per-glyph advances, which the display list does not carry; WP-0.2j's exact-
+  number path is the place that could supply them.
+- `text_characters` (43 of 56) is reported as evidence about the text source
+  rather than as a gate, per the WP-5.3d decision, and feeds no issue site.
 
 ## Commands
 
@@ -144,7 +162,7 @@ that pypdf merges. The tracer keeping them apart is correct. Total body lines
     print(len(out))
     open('mag/tests/critic_text_islower_expected.txt','w').write('\n'.join(map(str,out)))"
 
-    # the pypdf reference used for the comparison table
+    # the pypdf reference for the comparison table
     uv run python -c "
     import json
     from pypdf import PdfReader
@@ -158,23 +176,41 @@ that pypdf merges. The tracer keeping them apart is correct. Total body lines
                      'empty': not t.strip()})
     print(json.dumps({'rows': rows}))"
 
-    # the committed tests
-    cargo test --manifest-path mag/Cargo.toml --test critic_text
+    # the committed tests, skip mode (announces MODE: skipped)
+    cargo test --manifest-path mag/Cargo.toml --test critic_text -- --nocapture
+
+    # the committed tests, full mode against the untracked render tree.
+    # The render tree is UNTRACKED and exists only in the main working tree, so
+    # run this from there, or copy the tree into a worktree first. Rule 12
+    # caught an earlier $PWD form here that resolved to a worktree and silently
+    # found nothing.
+    MAG_CRITIC_READER_PDF=/Users/franguijarro/code/magazine/editions/010/render-2026-09-14T01-47-59/en/reader.pdf \
+      cargo test --manifest-path mag/Cargo.toml --test critic_text -- --nocapture
+
     cargo fmt --manifest-path mag/Cargo.toml --check
     cargo clippy --manifest-path mag/Cargo.toml --all-targets -- -D warnings
+
+    # the unit ratio the defect turned on
+    uv run python -c "
+    q = 0.000732421875 / 8.0
+    print('GLYPH_QUANTUM pt =', q)
+    print('qo units per qc unit =', 0.01 / q)"
 
     # the headline-merge mechanism
     uv run python -c "
     from pypdf import PdfReader
-    r=PdfReader('editions/010/render-2026-09-14T01-47-59/en/reader.pdf')
-    for pg in (4,36):
-        t=r.pages[pg-1].extract_text() or ''
+    r = PdfReader('editions/010/render-2026-09-14T01-47-59/en/reader.pdf')
+    for pg in (4, 36):
+        t = r.pages[pg-1].extract_text() or ''
         for l in [l.strip() for l in t.splitlines() if l.strip()][:5]:
             print(pg, repr(l[:70]))"
 
-`reconstructs_edition_010_text` needs the untracked render tree and announces
-its mode (`MODE: full` or `SKIPPED: render tree absent`) per rule 2b. The
-other two tests need nothing untracked.
+`reconstructs_edition_010_text` is env-gated on `MAG_CRITIC_READER_PDF` and
+announces its mode per rule 2b: `MODE: skipped, MAG_CRITIC_READER_PDF unset`
+or `MODE: full, tracing <path>`. If the variable is set but the file is
+missing it ASSERTS rather than skipping, so a typo cannot pass silently. The
+previous submission hard-coded an absolute path, which traced the main tree's
+PDF while exercising a worktree's code and would have skipped anywhere else.
 
 ## Tool versions
 
@@ -185,26 +221,26 @@ which yields a DIFFERENT islower set; every command here uses `uv run python`.
 ## Verdicts
 
 No `mag parity` verdicts: the Phase 5 preamble forbids the comparator for
-oracle tests, and this WP produces none.
+oracle tests and this WP produces none.
 
 ## Residuals
 
-- `py_islower` and its 671-range table belong in `mag/src/model/shared.rs`
-  alongside `py_casefold`, `py_upper` and `py_strip`, by the same reasoning
-  that put those there. It is not a duplicate today, so nothing is wrong, but
-  it is a Python-builtin helper outside the shared module and the registry
-  should own its name. Whoever next owns shared.rs should lift it.
-- The y-tolerance and join rule are unexercised in the directions noted above;
-  neither affects a decision on 010.
-- WP-5.3b-ii inherits: `page_text` and `body_text_lines` as its text source,
-  the `trace_text` wrapper, and the fact that `metrics.rs` exposes
-  `decode_rgb`, `thumbnail` (PIL-exact LANCZOS), `round_half_even`,
-  `round_places`, `ordered_map` and `worker_count` but NOT PIL-exact grayscale
-  or `getbbox`, which `_inspect_page` needs and which are `render_critic.py`'s
-  own raster helpers.
-- WP-5.3b-iii inherits the five text-derived fields and their eleven issue
-  sites, and the measured fact that only `body_text_lines` differs from pypdf.
+- `py_islower` and its 671-range table sit in `mag/src/critic/text.rs` rather
+  than `mag/src/model/shared.rs`. The verifier planted a divergent second copy
+  in `shared.rs` and confirmed the duplicate audit FAILS on name plus
+  signature, so the dangerous case has a mechanical backstop; this is tidiness
+  with a residual rather than exposure. Whoever next owns shared.rs may lift
+  it.
+- The width estimate's one-glyph-advance uncertainty is described above and is
+  inherent to what `offs` carries.
+- WP-5.3b-ii inherits `page_text`, `body_text_lines` and `trace_text` as its
+  text source, and the fact that `metrics.rs` exposes `decode_rgb`, PIL-exact
+  `thumbnail`, `round_half_even`, `round_places`, `ordered_map` and
+  `worker_count` but NOT PIL-exact grayscale or `getbbox`, which
+  `_inspect_page` needs and which are `render_critic.py`'s own raster helpers.
+- WP-5.3b-iii inherits the five text-derived fields across their eleven issue
+  sites, with only `body_text_lines` differing from pypdf.
 - WP-5.3c still owes fault coverage on all five text-derived fields. For
   `standalone_punctuation_lines` that coverage is the ONLY evidence there will
-  be, since the field is zero on every page of 010 under both implementations
-  and its agreement is therefore empty-set.
+  be: the field is zero on every page of 010 under both implementations, so
+  its agreement is empty-set.
