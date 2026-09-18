@@ -15,6 +15,7 @@ pub struct Palette {
     pub paper: String,
     pub ink: String,
     pub orange: String,
+    pub violet: String,
 }
 
 pub struct Tab {
@@ -22,6 +23,43 @@ pub struct Tab {
     pub edge_reveal: f64,
     pub issue_top: f64,
     pub identity_top: f64,
+    pub overdraw: f64,
+}
+
+pub struct Headline {
+    pub x: f64,
+    pub top: f64,
+    pub width: f64,
+}
+
+pub struct Art {
+    pub x: f64,
+    pub top: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+pub struct Deck {
+    pub top: f64,
+    pub size: f64,
+    pub wrap_size: f64,
+    pub leading: f64,
+    pub horizontal_scale: f64,
+    pub tracking: f64,
+}
+
+pub struct Footer {
+    pub x: f64,
+    pub bottom: f64,
+    pub size: f64,
+    pub tracking: f64,
+}
+
+pub struct HonoredPlate {
+    pub margin: f64,
+    pub footer: f64,
+    pub wordmark_scale: f64,
+    pub title_size: f64,
 }
 
 pub struct Wordmark {
@@ -43,6 +81,11 @@ pub struct Design {
     pub tab: Tab,
     pub wordmark: Wordmark,
     pub footer_caption: FooterCaption,
+    pub headline: Headline,
+    pub art: Art,
+    pub deck: Deck,
+    pub footer: Footer,
+    pub honored_plate: HonoredPlate,
 }
 
 pub struct CoverText {
@@ -391,6 +434,296 @@ impl Builder<'_> {
             ));
         }
         Ok(out)
+    }
+
+    fn wrap(&mut self, text: &str, bold: bool, size: f64, width: f64) -> Result<Vec<String>> {
+        let mut lines = Vec::new();
+        let mut current = String::new();
+        for word in text.split_whitespace() {
+            let candidate = if current.is_empty() {
+                word.to_string()
+            } else {
+                format!("{current} {word}")
+            };
+            let font = if bold {
+                &mut self.fonts.bold
+            } else {
+                &mut self.fonts.regular
+            };
+            if !current.is_empty() && font.measure(&candidate, size, 0.0, 100.0)? > width {
+                lines.push(std::mem::take(&mut current));
+                current = word.to_string();
+            } else {
+                current = candidate;
+            }
+        }
+        if !current.is_empty() {
+            lines.push(current);
+        }
+        Ok(lines)
+    }
+
+    fn display_wrap(&mut self, text: &str, size: f64, width: f64) -> Result<Vec<String>> {
+        let mut lines = Vec::new();
+        let mut current = String::new();
+        for word in text.split_whitespace() {
+            let candidate = if current.is_empty() {
+                word.to_string()
+            } else {
+                format!("{current} {word}")
+            };
+            if !current.is_empty()
+                && self.fonts.display.measure(&candidate, size, 0.0, 100.0)? > width
+            {
+                lines.push(std::mem::take(&mut current));
+                current = word.to_string();
+            } else {
+                current = candidate;
+            }
+        }
+        if !current.is_empty() {
+            lines.push(current);
+        }
+        Ok(lines)
+    }
+
+    fn headline_layout(&mut self, value: &str, described_as: &str) -> Result<(Vec<String>, f64)> {
+        let width = self.design.headline.width;
+        let words: Vec<&str> = value.split_whitespace().collect();
+        let mut size = 29.0;
+        let mut lines;
+        loop {
+            let mut best: Option<(f64, Vec<String>)> = None;
+            if words.len() >= 2 {
+                for split in 1..words.len() {
+                    let pair = [words[..split].join(" "), words[split..].join(" ")];
+                    let a = self.fonts.display.measure(&pair[0], size, 0.0, 100.0)?;
+                    let b = self.fonts.display.measure(&pair[1], size, 0.0, 100.0)?;
+                    if a.max(b) <= width {
+                        let delta = (a - b).abs();
+                        if best.as_ref().is_none_or(|(d, _)| delta < *d) {
+                            best = Some((delta, pair.to_vec()));
+                        }
+                    }
+                }
+            }
+            lines = match best {
+                Some((_, pair)) => pair,
+                None => self.display_wrap(value, size, width)?,
+            };
+            if lines.len() <= 3 || size < 20.0 {
+                break;
+            }
+            size -= 0.5;
+        }
+        if size < 20.0 {
+            bail!("Cover headline cannot fit: {described_as}");
+        }
+        Ok((lines, size))
+    }
+
+    fn headline(&mut self, text: &str) -> Result<String> {
+        let value = text.to_uppercase();
+        let value = value.trim();
+        let (lines, size) = self.headline_layout(value, text)?;
+        let mut baseline = self.design.headline.top + size;
+        let leading = size * 0.78;
+        let ink = self.design.colors.ink.clone();
+        let violet = self.design.colors.violet.clone();
+        let colors = [ink.clone(), violet, ink];
+        let mut paths = String::new();
+        for (index, line) in lines.iter().enumerate() {
+            let odd = index % 2 == 1;
+            let fill = colors[index].clone();
+            let stroke = if odd {
+                None
+            } else {
+                Some((fill.as_str(), 0.09))
+            };
+            let outlined = self.fonts.display.outline(
+                line,
+                self.design.headline.x + if odd { 23.0 } else { -0.65 },
+                baseline + if odd { 1.0 } else { 0.0 },
+                if odd { 28.0 } else { size },
+                &fill,
+                -1.35,
+                100.0,
+                stroke,
+                "",
+            )?;
+            paths.push_str(&outlined.markup);
+            baseline += leading;
+        }
+        Ok(format!("<g data-slot=\"headline\">{paths}</g>"))
+    }
+
+    fn deck(&mut self, text: &str, x: f64, width: f64) -> Result<String> {
+        if text.is_empty() {
+            return Ok("<g data-slot=\"deck\"/>".to_string());
+        }
+        let lines = self.wrap(text, false, self.design.deck.wrap_size, width)?;
+        if lines.len() > 5 {
+            bail!("Cover deck cannot fit: {text}");
+        }
+        let baseline = self.design.deck.top + self.design.deck.size;
+        let ink = self.design.colors.ink.clone();
+        let mut paths = String::new();
+        for (index, line) in lines.iter().enumerate() {
+            let outlined = self.fonts.regular.outline(
+                line,
+                x - if index == 0 { 0.65 } else { 0.0 },
+                baseline + index as f64 * self.design.deck.leading,
+                self.design.deck.size,
+                &ink,
+                self.design.deck.tracking,
+                self.design.deck.horizontal_scale,
+                None,
+                "",
+            )?;
+            paths.push_str(&outlined.markup);
+        }
+        Ok(format!("<g data-slot=\"deck\">{paths}</g>"))
+    }
+
+    fn full_art(&self, cover_art: &Path, x: f64, y: f64, w: f64, h: f64) -> Result<String> {
+        if !cover_art.is_file() {
+            bail!("Cover art is missing: {}", cover_art.display());
+        }
+        let data = base64::engine::general_purpose::STANDARD.encode(graded_art(cover_art)?);
+        Ok(format!(
+            "<image data-slot=\"art\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" preserveAspectRatio=\"xMidYMid slice\" href=\"data:image/png;base64,{data}\"/>",
+            pyf(x),
+            pyf(y),
+            pyf(w),
+            pyf(h)
+        ))
+    }
+
+    pub fn framed(&mut self, text: &CoverText, cover_art: &Path) -> Result<String> {
+        let (band_x, band_width) = self.tab_band();
+        let overdraw = self.design.tab.overdraw;
+        let paper = self.design.colors.paper.clone();
+        let orange = self.design.colors.orange.clone();
+        let ink = self.design.colors.ink.clone();
+        let mut parts = vec![
+            format!(
+                "<rect data-slot=\"paper\" x=\"0\" y=\"0\" width=\"{PAGE_WIDTH}\" height=\"{PAGE_HEIGHT}\" fill=\"{paper}\"/>"
+            ),
+            format!(
+                "<rect data-slot=\"edge-tab\" x=\"{band_x:.5}\" y=\"{:.5}\" width=\"{band_width:.5}\" height=\"{:.5}\" fill=\"{orange}\"/>",
+                -overdraw,
+                PAGE_HEIGHT + overdraw * 2.0
+            ),
+        ];
+        parts.push(self.wordmark(&text.publication_name)?);
+        parts.push(self.headline(&text.headline)?);
+        let (ax, ay) = (self.design.art.x, self.design.art.top);
+        let (aw, ah) = (self.design.art.width, self.design.art.height);
+        parts.push(self.full_art(cover_art, ax, ay, aw, ah)?);
+        parts.push(format!(
+            "<rect data-slot=\"art-border\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"none\" stroke=\"{ink}\" stroke-width=\".7\"/>",
+            pyf(ax),
+            pyf(ay),
+            pyf(aw),
+            pyf(ah)
+        ));
+        parts.push(self.deck(&text.contributors, ax, aw)?);
+        let outlined = self.fonts.bold.outline(
+            &text.date_line,
+            self.design.footer.x,
+            PAGE_HEIGHT - self.design.footer.bottom,
+            self.design.footer.size,
+            &ink,
+            self.design.footer.tracking,
+            100.0,
+            None,
+            "",
+        )?;
+        parts.push(format!("<g data-slot=\"footer\">{}</g>", outlined.markup));
+        parts.extend(self.tab_labels(text)?);
+        Ok(self.shell(&parts.join("\n    ")))
+    }
+
+    pub fn honored_plate(&mut self, text: &CoverText, cover_art: &Path) -> Result<String> {
+        let margin = self.design.honored_plate.margin;
+        let footer = self.design.honored_plate.footer;
+        let band = self.band_x();
+        let right_edge = band - margin - 8.0;
+        let ink = self.design.colors.ink.clone();
+        let paper = self.design.colors.paper.clone();
+        let orange = self.design.colors.orange.clone();
+        let mut parts = vec![
+            format!(
+                "<rect data-slot=\"paper\" x=\"0\" y=\"0\" width=\"{PAGE_WIDTH}\" height=\"{PAGE_HEIGHT}\" fill=\"{paper}\"/>"
+            ),
+            self.full_art(
+                cover_art,
+                margin,
+                margin,
+                band - 2.0 * margin,
+                PAGE_HEIGHT - 2.0 * margin - footer,
+            )?,
+            format!(
+                "<rect data-slot=\"art-border\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"none\" stroke=\"{ink}\" stroke-width=\".7\"/>",
+                pyf(margin),
+                pyf(margin),
+                pyf(band - 2.0 * margin),
+                pyf(PAGE_HEIGHT - 2.0 * margin - footer)
+            ),
+            self.scaled_wordmark(
+                &text.publication_name,
+                "dark",
+                self.design.honored_plate.wordmark_scale,
+                6.0,
+                PAGE_HEIGHT - footer - 22.0 - 14.0,
+            )?,
+        ];
+        let title = text.headline.to_uppercase();
+        let title = title.trim().to_string();
+        let size = self.fit_display_line(&title, self.design.honored_plate.title_size, 190.0)?;
+        let width = self.fonts.display.measure(&title, size, 0.2, 100.0)?;
+        let outlined = self.fonts.display.outline(
+            &title,
+            right_edge - width,
+            PAGE_HEIGHT - footer + 22.0,
+            size,
+            &ink,
+            0.2,
+            100.0,
+            None,
+            "",
+        )?;
+        parts.push(format!("<g data-slot=\"headline\">{}</g>", outlined.markup));
+        if !text.contributors.is_empty() {
+            let line = self.justified_line(
+                &text.contributors,
+                margin + 8.0,
+                PAGE_HEIGHT - 24.0,
+                4.4,
+                &ink,
+                right_edge - margin - 68.0,
+            )?;
+            parts.push(format!("<g data-slot=\"deck\">{line}</g>"));
+        }
+        parts.push(self.right_line(&text.date_line, right_edge, PAGE_HEIGHT - 13.0, 4.4, &ink)?);
+        parts.push(format!(
+            "<rect data-slot=\"edge-tab\" x=\"{band:.5}\" y=\"-1.5\" width=\"{:.5}\" height=\"{}\" fill=\"{orange}\"/>",
+            PAGE_WIDTH - band - self.design.tab.edge_reveal,
+            pyf(PAGE_HEIGHT + 3.0)
+        ));
+        parts.extend(self.tab_labels(text)?);
+        Ok(self.shell(&parts.join("\n    ")))
+    }
+
+    pub fn materialize(&mut self, layout: &str, text: &CoverText, art: &Path) -> Result<String> {
+        match layout {
+            "footer_caption" => self.footer_caption(text, art),
+            "honored_plate" => self.honored_plate(text, art),
+            "framed" => self.framed(text, art),
+            other => bail!(
+                "Unknown cover layout '{other}': expected framed, footer_caption, or honored_plate"
+            ),
+        }
     }
 
     fn shell(&self, body: &str) -> String {

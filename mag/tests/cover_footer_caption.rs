@@ -11,13 +11,17 @@ mod art;
 mod outline;
 #[path = "../src/cover/raster.rs"]
 mod raster;
+#[allow(dead_code)]
 #[path = "../src/cover/svg.rs"]
 mod svg;
 
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
-use svg::{Builder, CoverText, Design, Fonts, FooterCaption, Palette, Tab, Wordmark};
+use svg::{
+    Art, Builder, CoverText, Deck, Design, Fonts, Footer, FooterCaption, Headline, HonoredPlate,
+    Palette, Tab, Wordmark,
+};
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -33,12 +37,14 @@ fn design() -> Design {
             paper: "#ffffff".into(),
             ink: "#0a0b0d".into(),
             orange: "#f05738".into(),
+            violet: "#4b21c0".into(),
         },
         tab: Tab {
             width: 21.0,
             edge_reveal: 1.4,
             issue_top: 26.5,
             identity_top: 433.5,
+            overdraw: 1.5,
         },
         wordmark: Wordmark {
             x: 38.0,
@@ -50,6 +56,37 @@ fn design() -> Design {
             wordmark_scale: 0.8,
             wordmark_dy: 6.0,
             title_size: 26.0,
+        },
+        headline: Headline {
+            x: 44.0,
+            top: 122.0,
+            width: 302.0,
+        },
+        art: Art {
+            x: 85.25,
+            top: 221.85,
+            width: 249.35,
+            height: 248.65,
+        },
+        deck: Deck {
+            top: 493.0,
+            size: 5.5,
+            wrap_size: 6.7,
+            leading: 8.4,
+            horizontal_scale: 108.0,
+            tracking: 0.35,
+        },
+        footer: Footer {
+            x: 44.0,
+            bottom: 20.0,
+            size: 7.0,
+            tracking: 1.85,
+        },
+        honored_plate: HonoredPlate {
+            margin: 17.0,
+            footer: 64.0,
+            wordmark_scale: 0.5,
+            title_size: 19.0,
         },
     }
 }
