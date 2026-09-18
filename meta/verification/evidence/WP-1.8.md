@@ -56,6 +56,18 @@ Both helper scripts read only the checkout they are pointed at, and both
 harnesses under test are EXTRACTED from the committed evidence files rather
 than transcribed, so what runs is what WP-1.2 and WP-1.7 recorded.
 
+**How this block was exercised, since a looks-hermetic instruction and a
+hermetic one differ only by where you run it.** It was extracted from this
+file programmatically, by slicing the `## Commands` section and concatenating
+its `sh` fences, and then executed by `bash` in a shell built with `env -i`
+(only `HOME`, `PATH` and `TERM` inherited), in a **second worktree created for
+the replay and not the one the measurement was developed in**. Every number in
+`## Metrics` comes back identical from that run, harness file digests included.
+The replay environment was also given a hostile `TYPST_ROOT`, pointing at the
+typst install prefix, to exercise the `unset` below; the first replay attempt,
+before that `unset` existed, failed outright, which is how the collision was
+found.
+
 Environment, announced rather than silent (rule 2b): the edition 010 run
 directory is untracked and lives outside the repository, so `MAG_RUN_DIR` must
 name it. The block prints which mode it took and exits non-zero if the corpus
