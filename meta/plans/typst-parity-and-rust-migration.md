@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 42 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 43 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,60 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 43 changelog
+
+**Rule 12 gains a clause ABOVE its third class, because the defect moved
+rather than being fixed.** WP-5.3b-i fixed its absolute corpus path
+properly, with an env gate that announces its mode and asserts when the
+variable is set but the file is missing. The verifier then replayed the
+evidence's own `## Commands` block and found the hard-coded path had
+MIGRATED OUT OF THE TEST AND INTO THE RECORDED COMMAND. The test was
+hermetic; the replay instructions were not, and the existing clause ("a
+test must read only its own checkout") passed while its purpose failed.
+**Hermeticity is a property of the WHOLE REPLAY PATH, and fixing it in one
+artifact can relocate it into another.** The check is cheap and specific:
+record the `$PWD`-relative form and **replay from a directory that is not
+the one you developed in**, which is the only thing separating a hermetic
+instruction from one that looks hermetic. Not a rejection, correctly: the
+test is hermetic, the evidence warns above the command, and both PDFs are
+sha256-identical so no number moves.
+
+**Owns adjudication: a non-owner asks for an extension, it does not
+self-grant.** WP-5.3b-i's `GLYPH_QUANTUM` re-export touched
+`mag/src/parity.rs`, which rule 1c gives to WP-2.0b. It stays and is clean.
+But the plan had ALREADY answered this for WP-0.2h's seam, where the
+one-line fix "belongs to WP-2.0b, which holds `parity.rs`", so permitting
+it now would contradict a decision already taken. Two reasons it is not an
+exception: "behaviour-free" is a judgment the writer makes about their OWN
+change, the class of self-assessment this execution keeps finding wrong;
+and a `pub use` is exactly a PUBLIC SURFACE change, which is what WP-0.2h's
+seam defect was, in a file another agent had uncommitted work in at the
+time. The cost objection is answered by a mechanism already used five
+times: a scoped Owns extension from the orchestrator, which keeps the audit
+trail without queueing behind the owner.
+
+**Rules 9 to 12 now bind VERIFIERS too.** A verifier recorded counts
+exactly DOUBLED (18/462 and 236/244 against the correct 9/231 and 118/122)
+and caught it itself on a later pass. Its verdict was right while its
+numbers were wrong, and nothing checks a verifier except its own next pass,
+so the discipline it enforces applies to it: re-derive cited counts, label
+non-discriminating checks, hold causal claims as hypotheses, replay through
+the artifact.
+
+**A second example of the dual-defect shape, and the more disorienting
+one**: `text_characters` moved NON-MONOTONICALLY, 34 pages gaining and 7
+losing, and the 7 losers are exactly the 7 `body_text_lines` pages that had
+agreed under the bug only by coincidence, because missing spaces cancelled
+an extra newline. A metric getting WORSE was the tracer getting MORE RIGHT.
+A future reader watching that number fall would diagnose a regression and
+be wrong, which is why it sits beside the generalization rather than in an
+evidence file.
+
+Rule 3b confirmed in practice: `26391ab` was an ancestor, so the branch
+carried the known-broken width computation until `80b7b62`. No downstream
+number is contaminated, since WP-5.3b-ii and -iii had not started, but the
+exposure was real.
 
 ## Revision 42 changelog
 
@@ -2099,7 +2153,26 @@ before/after comparisons (WP-4.3); out of scope here.
    Acceptance includes the verifier running
    `git diff --name-only <base>` against the Owns list. A WP diff touching
    any `evidence/*.verify.md` or `baseline.json` is rejected by the
-   orchestrator before a verifier is spawned. **A PLAN REVISION owns
+   orchestrator before a verifier is spawned.
+   **A non-owner who needs a change in someone else's file asks for an OWNS
+   EXTENSION; it does not self-grant, however small the change.**
+   WP-5.3b-i re-exported `GLYPH_QUANTUM` from `mag/src/parity.rs`, which
+   rule 1c assigns to WP-2.0b as comparator territory, and got a correct
+   result its verifier adjudicated clean twice. It STAYS; this is a rule
+   for next time, not a revert. But the plan had ALREADY answered this
+   exact question for WP-0.2h's seam, where the one-line fix "belongs to
+   WP-2.0b, which holds `parity.rs`", so permitting it now would contradict
+   a decision already taken. Two reasons it is not a sanctioned exception:
+   "behaviour-free" is a judgment the writer makes about their OWN change,
+   which is the class of self-assessment this execution keeps finding
+   wrong; and a `pub use` is precisely a change to a module's PUBLIC
+   SURFACE, which is what WP-0.2h's seam defect was about, in a file where
+   another agent had uncommitted work at the time.
+   The cost objection is already answered by a mechanism this plan has used
+   five times: a scoped Owns EXTENSION granted by the orchestrator, which
+   keeps the audit trail and does not queue behind the owner's schedule.
+   Reach for that rather than self-granting or waiting.
+   **A PLAN REVISION owns
    `meta/plans/typst-parity-and-rust-migration.md` and NOTHING else**, so a
    revision diff touching any `evidence/*.md` is rejectable on the same
    rule; revision 29 was such a diff and nobody checked, because the
@@ -2196,6 +2269,16 @@ before/after comparisons (WP-4.3); out of scope here.
    the gated result and the command that produces it, as WP-5.2 did.
    Binding on WP-5.5b, WP-5.5c and WP-5.3b, each of which needs the same
    untracked run directory and will otherwise reach for the silent shape.
+3c. **Rules 9 to 12 bind VERIFIERS as well as WPs.** Nothing checks a
+   verifier except its own next pass, and that is not hypothetical: one
+   recorded 18/462 and 236/244 against the worker's correct 9/231 and
+   118/122, exactly DOUBLED by its own counter, and caught it itself on a
+   later pass. Its VERDICT was right while its NUMBERS were wrong, a
+   failure mode the protocol had not named. So a verifier re-derives a
+   count where it cites one (rule 9), labels its own non-discriminating
+   checks (rule 10), treats its own causal claims as hypotheses (rule 11),
+   and replays through the artifact rather than through its shell
+   (rule 12). A verifier is not exempt from the discipline it enforces.
 3b. **A REJECTION does not remove anything from the tree.** Nothing in this
    protocol said what happens to rejected code between rejection and
    rework, and the answer is that it SHIPS: WP-5.3b-i's rejected commit
@@ -2378,6 +2461,20 @@ before/after comparisons (WP-4.3); out of scope here.
      reaching for `#[path]`, relaxed visibility, a test-only feature flag
      or an altered search path says in evidence why, and what it has
      therefore NOT shown.
+   - **HERMETICITY IS A PROPERTY OF THE WHOLE REPLAY PATH, and fixing it in
+     one artifact can RELOCATE it into another.** WP-5.3b-i fixed its
+     absolute corpus path properly: the test now takes
+     `MAG_CRITIC_READER_PDF`, announces `MODE: full` or `MODE: skipped` per
+     rule 2b, and ASSERTS when the variable is set but the file is missing,
+     so a typo cannot pass silently. The verifier then ran the evidence's
+     own `## Commands` block verbatim and found the hard-coded path had
+     MIGRATED OUT OF THE TEST AND INTO THE RECORDED COMMAND. The test was
+     hermetic; the replay instructions were not. It passed the rule below
+     while failing that rule's purpose, which is why this sits above it.
+     Concrete check, and it is cheap: record the `$PWD`-relative form, and
+     **replay from a directory that is not the one you developed in**,
+     which is the only thing that separates a hermetic instruction from one
+     that merely looks hermetic.
    - **A test must read only its OWN checkout.** `mag/tests/critic_text.rs:74`
      hard-codes an ABSOLUTE corpus path, the only test in the repo that
      does, so run from an isolated verification worktree it traced the MAIN
@@ -3483,7 +3580,15 @@ either example: they are DUAL, not the same. The transposed constant was
 invisible to STRUCTURAL comparison and visible to pixels. The luma defect
 was invisible to PIXELS, the raster hash passing while the zone statistics
 were wrong, and visible only to a DIRECT ASSERTION against Python's
-numbers. What generalises is therefore **a defect can be invisible to any
+numbers.
+A second example of the same shape, more disorienting because here a
+metric getting WORSE is the port getting MORE RIGHT: WP-5.3b-i's `text_characters`
+moved NON-MONOTONICALLY, 34 pages gaining agreement and 7 losing it, net
++27, and the 7 losers are exactly the 7 `body_text_lines` pages that had
+agreed under the bug only BY COINCIDENCE, because missing spaces cancelled
+an extra newline. A reader watching that number fall would diagnose a
+regression and be wrong.
+What generalises is therefore **a defect can be invisible to any
 given oracle level**, which is the actual argument for a layered gate
 rather than an argument for pixels. It changes the question an oracle
 designer should ask, from "is my comparison structural or photometric" to
