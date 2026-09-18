@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 34 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 35 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,48 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 35 changelog
+
+**Rule 12 generalises, because the same error arrived in a second form.**
+An evidence file's `## Commands` block, extracted verbatim and executed,
+does not run: three rejections now on work that was otherwise CORRECT.
+WP-5.1b's unrecorded oracle provenance, WP-5.4's zone oracle with no
+producing command, and WP-5.4b, whose recorded oracle PANICS because
+`rb"..."` is a raw bytes literal so the escaped quotes insert literally and
+resvg rejects the SVG at char 92 — correcting only the escaping reproduces
+all three digests exactly. The cause is the same every time: an agent runs
+a command, then TRANSCRIBES it, and the two diverge precisely where quoting
+and escaping live, which is exactly where a reader cannot see the
+difference by eye. The transcription is the failure, not the command.
+
+That is the same shape as the `#[path]` seam defect, and the plan takes the
+generalization rather than adding a second rule: **a demonstration must be
+performed through the ARTIFACT THAT WILL BE REPLAYED** — the exported path,
+the recorded command — and not through whatever the author had at hand.
+Both instances are "it worked when I ran it" where the thing that ran was
+not the thing recorded, and in both the evidence was ACCURATE about what it
+measured while measuring the wrong thing. One rule with two named artifact
+classes, because this execution has repeatedly shown that a fix aimed at a
+form lets the next form through, and two rules would invite "that is rule
+12's problem, not mine". The concrete checks stay concrete: a consumer test
+that imports the ordinary way, and extracting each `## Commands` block from
+the file itself and executing it before submitting. The second costs one
+round trip per block and pairs with rule 3, since replaying `## Commands`
+is exactly what the verifier does, so the author simply does it first.
+
+**And a reusable technique from the same verification**: for REFUSAL
+coverage, ask the ORACLE which inputs it refuses rather than reasoning about
+which are reachable. WP-5.4b understated its refusal coverage (six `bail!`
+sites, three tested, one disclosed, two neither) and argued its way out of
+deck-overflow coverage when it had already solved that exact problem for
+the headline by asking Python which strings it rejects. Enumerating
+refusals by reading the Python's raise sites is the same move as
+enumerating branches by reading the Python, and it is cheaper than arguing
+about reachability.
+
+WP-5.4c's siting is independently confirmed: `mag/src/cover/` has no PDF
+module, the `pdf` matches in `svg.rs` being coordinate variables.
 
 ## Revision 34 changelog
 
@@ -1869,24 +1911,40 @@ before/after comparisons (WP-4.3); out of scope here.
    ends `Status: awaiting-fran` with its recommendation; the decision is
    recorded by Fran (commit authored by Fran or a line Fran types). No
    verification gate is human.
-12. **Demonstrate a capability THROUGH THE PATH ITS CONSUMER WILL USE.** A
-   test harness that bypasses visibility, linkage or configuration proves
-   only that the code RUNS, not that it is REACHABLE. WP-0.2h built a
-   shared tracer seam for the critic and demonstrated it through a
-   `#[path]` test include, which bypasses module privacy entirely; the
-   demonstration worked and its verification confirmed the demonstration,
-   while `mag/src/parity.rs` declares `mod display;` and `mod streams;`
-   privately with no `pub use`, so the first real consumer in
-   `mag/src/critic/` fails with `error[E0603]: module 'streams' is
-   private`. **The mechanism that proved the seam was the one mechanism
-   that routes around the defect.** This is its own failure mode, not rule
-   10's claim outrunning evidence and not rule 11's untested mechanism: the
-   evidence was accurate about what it measured, and what it measured was
-   the wrong path. So a WP that ships something for another module to
-   consume proves it with a CONSUMER TEST that imports the ordinary way,
-   and a WP that reaches for `#[path]`, a relaxed visibility, a test-only
-   feature flag or an altered search path says in evidence why, and what it
-   therefore has NOT shown.
+12. **A DEMONSTRATION MUST BE PERFORMED THROUGH THE ARTIFACT THAT WILL BE
+   REPLAYED**, not through whatever the author had at hand. Both known
+   instances are "it worked when I ran it", where the thing that ran was
+   not the thing that was recorded, and the evidence was ACCURATE about
+   what it measured while measuring the wrong thing. That makes this its
+   own failure mode, distinct from rule 10's claim outrunning evidence and
+   rule 11's untested mechanism. Two artifact classes, two concrete checks:
+   - **A capability for another module: prove it with a CONSUMER TEST that
+     imports the ordinary way.** WP-0.2h built a shared tracer seam and
+     demonstrated it through a `#[path]` test include, which bypasses
+     module privacy entirely; the demonstration passed, its verification
+     confirmed the demonstration, and `mag/src/parity.rs` declares
+     `mod display;` and `mod streams;` privately with no `pub use`, so the
+     first real consumer in `mag/src/critic/` fails with
+     `error[E0603]: module 'streams' is private`. The mechanism that proved
+     the seam was the one mechanism that routes around the defect. A WP
+     reaching for `#[path]`, relaxed visibility, a test-only feature flag
+     or an altered search path says in evidence why, and what it has
+     therefore NOT shown.
+   - **A recorded command: EXTRACT EACH `## Commands` BLOCK FROM THE
+     EVIDENCE FILE ITSELF AND EXECUTE IT** before submitting, rather than
+     re-running the version in your shell history. Agents run a command,
+     then TRANSCRIBE it, and the two diverge exactly where quoting and
+     escaping live, which is exactly where a reader cannot see the
+     difference. This has caused three rejections on work that was
+     otherwise sound: WP-5.1b (unrecorded oracle provenance), WP-5.4 (the
+     zone oracle had no producing command) and WP-5.4b, whose recorded
+     oracle PANICS because `rb"\1 fill=\"none\""` is a RAW bytes
+     literal, so the escaped quotes insert literally and resvg rejects the
+     SVG at char 92; correcting only the escaping reproduces all three
+     digests exactly. The transcription is the failure, not the command.
+     It costs one round trip per block, and it pairs with rule 3: replaying
+     `## Commands` is precisely what the verifier does, so the author does
+     it first.
 11. **A MECHANISM asserted by the WP that found the defect is a
    hypothesis, not a finding.** Rule 9 makes a number carry its
    configuration; this carries the same discipline to causal claims,
@@ -2909,6 +2967,15 @@ the corpus cannot reach**, and cover those by fixture. WP-5.1c did this
 well for the manifest's refusal branches and badly for character classes,
 and the character class is what bit. Enumerate by reading the Python for
 branches, not by reading the corpus for cases.
+**For REFUSAL coverage, ask the ORACLE which inputs it refuses** rather
+than reasoning about which are reachable. WP-5.4b understated its own
+refusal coverage (six `bail!` sites in `svg.rs`, three tested, one
+disclosed, two neither) and argued its way out of deck-overflow coverage,
+when it had ALREADY solved that exact problem for the headline by asking
+Python which strings it rejects. Enumerating refusals by reading the
+Python's raise sites is the same move as enumerating branches by reading
+the Python, and it is cheaper than arguing about reachability.
+
 The cleanest demonstration so far is WP-5.2's, and it is a MEASUREMENT of
 the rule rather than an argument for it: a scale-from-CropBox perturbation
 failed both the display list and the raster on its `crop` fixture while the
