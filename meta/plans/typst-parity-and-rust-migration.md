@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 41 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 42 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,69 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 42 changelog
+
+**Three corrections to claims the plan asserts, all from WP-0.2i's third
+verification, and all strengthening rather than weakening the gate.**
+
+**The commensurability law is `ratio = n/(8k)`, not "exact sixteenths"**,
+with n the quanta and k the worst offender's glyph index; sixteenths is
+just k=2. Three counterexamples killed the narrower claim (`advstep` and
+`advmid` at 0.640625 = 41/64, a bump family at 1/80). A law covering every
+observation beats one covering some, so this CONFIRMS commensurability more
+strongly than the claim it replaces. Rule 9 applies to the propagation: any
+argument citing "sixteenths" for the gate's tightness reads against
+`n/(8k)` now.
+
+**"A compensating kern fails at ANY magnitude" is not literally true, and
+rule 10 requires saying so.** A mid-show bump family at seven magnitudes
+found a DETECTION FLOOR between 9.16e-08 and 9.16e-07 pt: 2Q, Q, Q/2, Q/4
+and Q/100 all fail with 40 violations each, Q/1000 and below go invisible.
+Size-independence survives everything that matters, since the floor sits
+about 7,000x below one Pango tick and is unreachable by any real engine
+difference, but the plan has stated the stronger claim since revision 15
+and it is load-bearing, so it now says "every physically reachable
+magnitude, with a measured floor at X". Kept beside it is the MECHANISM,
+because it corrects a natural wrong intuition: one expects a half-quantum
+bump to round away, and it does not, because base offsets spread across the
+quantum grid so among ~68,800 glyphs some always cross a boundary.
+
+**A plan premise is falsified under rule 11**: the plan assumed pypdf
+perturbation cannot produce display-list-equal fixtures, which is why the
+CTM-composing recommendation took its shape. The verifier measured
+`display_list` = PASS on the drift fixtures, so it demonstrably can, and
+the recommendation inherited from revision 39 is substantively DISCHARGED.
+Fourth plan claim retired by remove-the-cause-and-measure.
+
+**A FOURTH cross-spike count disagreement, and a rule that finally sits
+where the failure happens.** The plan says 69,071 glyphs / 1,503 shows, the
+floor measures 68,800 / 1,488. Revision 38 put the duty on an author
+deriving a count from its own enumeration, but all four disagreements were
+found by a READER comparing two documents, never by either author. **So a
+CITED count is re-derived at the point of citation**, which is the moment
+the two numbers meet and the moment nobody checks. A hypothesis is offered
+for this one rather than an answer (rule 11): the gaps are 15 shows and 271
+glyphs, the plan already carries 1,488 independently from WP-0.2b over the
+54-page INTERIOR domain in three places, and the covers carry invisible
+`3 Tr` text on both faces, so the larger figures may simply count all 56
+pages. One measurement settles it.
+
+**Three rejections on WP-0.2i, all on the RECORD rather than the
+mechanism**, and the pattern deserves stating. The gate's logic has now
+survived a quantum defect, an unrepresentative floor fixture, and a
+deliberate seven-magnitude adversarial attack by a verifier trying to break
+it. What keeps failing is the evidence: a floor generator living only at an
+absolute scratch path that `exec`s a second scratch file, a `## Commands`
+section contradicting its own Residuals, a run loop omitting two fixtures
+it claims to cover. Rule 12 was added after two instances and this is more,
+so it is worth stating plainly: **for the gate specifically, the artifact
+IS the evidence**, because the gate is the one thing in this plan nobody
+can re-derive from the code alone.
+
+Noted with satisfaction: revision 41's fourth landing check fired on the
+verifier's own land, confirming it catches real events rather than a
+hypothesised one.
 
 ## Revision 41 changelog
 
@@ -1264,6 +1327,9 @@ MECHANISM (Pango advances in integer 1/1024 px, Typst sums exact font
 units), with a SHAPE constraint doing the harder half of the work: a
 legitimate difference accumulates, so the sequence must be one-signed and
 monotone, and a compensating kern fails on shape whatever its magnitude.
+[REVISION 42: "whatever its magnitude" is corrected in the live Tier E text
+to "every physically reachable magnitude"; a detection floor exists between
+9.16e-08 and 9.16e-07 pt, about 7,000x below one Pango tick.]
 Rasters survive as Tier V meters, where the plan already said they gate
 nothing, so runs stay near 82 seconds instead of the 9 to 15 minutes
 supersampling would have cost.
@@ -1802,8 +1868,22 @@ Used to measure convergence during Phase 3; they gate nothing final.
   - **shape, which does the real work**: a legitimate difference
     ACCUMULATES, so the difference sequence must be one-signed and monotone
     non-decreasing in magnitude. A compensating kern produces a bump that
-    returns toward zero, so it fails on shape whatever its magnitude, and
-    the ceiling stops depending on how large a fault is.
+    returns toward zero, so it fails on shape at **every physically
+    reachable magnitude**, and the ceiling stops depending on how large a
+    fault is. Stated accurately rather than absolutely (revision 42, rule
+    10): there IS a detection floor, measured between 9.16e-08 and
+    9.16e-07 pt by a mid-show bump family (displace at glyph 10, return at
+    glyph 20, all 54 pages) at seven magnitudes: 2Q, Q, Q/2, Q/4 and Q/100
+    all fail with 40 violations each, while Q/1000 and below go invisible.
+    Size-independence survives everything that matters, because that floor
+    is about 7,000x below one Pango tick and therefore unreachable by any
+    real engine difference, but "at any magnitude" was the stronger claim
+    and it is not literally true.
+    **The mechanism, which corrects a natural wrong intuition**: one
+    expects a half-quantum bump to round away. It does not, because base
+    offsets are spread across the quantum grid, so among ~68,800 glyphs
+    some always sit near a boundary and cross it. That is WHY
+    size-independence holds, and it is worth keeping beside the number.
   - **two-sided, as before**: floor from the drift fixture WP-0.2f already
     built and proved display-list equal (69,071 glyphs, 1,503 shows);
     ceiling from compensating-kern fixtures at 0.02 pt and below. Derive
@@ -2378,6 +2458,20 @@ before/after comparisons (WP-4.3); out of scope here.
    own number and WP-1.1's with a methodological difference that does not
    exist. Both were caught by audit rather than by the authoring WP, which
    is why it is a rule and not advice.
+   **A CITED count is RE-DERIVED at the point of citation.** Revision 38
+   put the duty on the author deriving a count from its own enumeration,
+   and four instances now show that is the wrong place: every one of these
+   disagreements was found by a READER comparing two documents, never by
+   the author of either. Citation is the moment two numbers come into
+   contact and the moment nobody currently checks. So a WP that cites
+   another WP's figure re-derives it from the cited WP's own artifact and
+   says so, or records that it could not and why. The four:
+   WP-1.2 against WP-1.1 (populations differing by hyphenation),
+   ten-versus-eleven issue sites (a count beside its own enumeration),
+   WP-1.7's 147/149 against WP-1.2's 148/149 (WP-1.8 reconciling), and
+   the plan's 69,071 glyphs / 1,503 shows against the floor's
+   68,800 / 1,488. A rule per instance stopped working three instances ago;
+   this puts the check where the numbers meet.
    **A COUNT stated beside an enumeration must be DERIVED from it, not
    carried alongside it.** The plan said "ten issue sites" in its prose
    while its own enumeration listed eleven (3 + 3 + 3 + 1 + 1), and the
@@ -2858,6 +2952,33 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   15 minutes supersampled rasterization would have cost.
 - WP-3.0g's obligation to re-derive the floor from the real
   Typst-vs-WeasyPrint pair MOVES to this clause with it.
+- **The commensurability law is `ratio = n/(8k)`, not "exact sixteenths"**
+  (revision 42), with n the number of quanta and k the worst offender's
+  glyph index; sixteenths is only the k=2 case. Three counterexamples
+  killed the narrower claim: `advstep` and `advmid` both at
+  0.640625 = 41/64, and a bump family at 1/80. This STRENGTHENS the
+  commensurability finding rather than retreating from it, since a law
+  covering every observation is worth more than one covering some, and any
+  argument that cited "sixteenths" for the gate's tightness should be
+  re-read against `n/(8k)` (rule 9: a corrected figure propagates).
+- **Plan premise FALSIFIED under rule 11**: the plan assumed pypdf
+  perturbation cannot produce display-list-equal fixtures, which is why the
+  CTM-composing recommendation took the shape it did. The verifier measured
+  `display_list` = PASS on the drift fixtures, so pypdf perturbation
+  demonstrably CAN produce them. The CTM-composing recommendation inherited
+  from revision 39 is therefore substantively DISCHARGED; the rework names
+  it as such. Fourth plan claim retired by remove-the-cause-and-measure.
+- **FOURTH cross-spike count disagreement**: the plan says 69,071 glyphs and
+  1,503 shows, the floor measures 68,800 and 1,488. Reconcile it or report
+  a real divergence with a named cause.
+  **Hypothesis, offered as a hypothesis under rule 11 and not as an
+  answer**: the differences are 15 shows and 271 glyphs, and the plan
+  already carries 1,488 shows independently from WP-0.2b over the 54-page
+  INTERIOR domain, in three separate places. 1,503 and 69,071 may therefore
+  count all 56 pages, covers included, where the floor counts the interior
+  domain. The covers carry invisible `3 Tr` text on both faces (WP-5.4:
+  title, deck and back-cover copy), for which 15 shows and 271 glyphs is a
+  plausible size. One measurement settles it: count the two cover pages.
 
 ### WP-1.1 shaping parity
 
