@@ -261,8 +261,11 @@ fn a_deck_that_cannot_fit_is_refused() {
     );
 }
 
+const HEADLINE_STEM: &str =
+    "Antidisestablishmentarianism Floccinaucinihilipilification Pneumonoultramicroscopic";
+
 #[test]
-fn a_headline_that_cannot_fit_is_refused() {
+fn a_headline_of_three_lines_at_the_size_floor_still_fits() {
     let assets = repository().join("src/magazine/assets");
     let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
     let design = design();
@@ -270,14 +273,18 @@ fn a_headline_that_cannot_fit_is_refused() {
         design: &design,
         fonts: &mut fonts,
     };
-    let headline = "Antidisestablishmentarianismxx Pneumonoultramicroscopic Floccinaucinihilipilification Supercalifragilisticexpialidocious";
     let mut text = edition_010_text();
-    text.headline = headline.into();
-    let error = builder
+    text.headline = format!("{HEADLINE_STEM} Is");
+    builder
         .materialize("framed", &text, &cover_art())
-        .expect_err("an unfittable headline is refused");
+        .expect("a headline reaching three lines at the 20.0 size floor still fits");
+}
+
+#[test]
+fn a_headline_that_cannot_fit_is_refused() {
+    let headline = format!("{HEADLINE_STEM} As");
     assert_eq!(
-        error.to_string(),
+        refusal("framed", |text| text.headline = headline.clone()),
         format!("Cover headline cannot fit: {headline}")
     );
 }
