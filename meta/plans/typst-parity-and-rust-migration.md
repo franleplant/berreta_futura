@@ -19,7 +19,8 @@ does not run: three rejections now on work that was otherwise CORRECT.
 WP-5.1b's unrecorded oracle provenance, WP-5.4's zone oracle with no
 producing command, and WP-5.4b, whose recorded oracle PANICS because
 `rb"..."` is a raw bytes literal so the escaped quotes insert literally and
-resvg rejects the SVG at char 92 — correcting only the escaping reproduces
+resvg rejects the SVG at char 92, and correcting only the escaping
+reproduces
 all three digests exactly. The cause is the same every time: an agent runs
 a command, then TRANSCRIBES it, and the two diverge precisely where quoting
 and escaping live, which is exactly where a reader cannot see the
@@ -27,8 +28,9 @@ difference by eye. The transcription is the failure, not the command.
 
 That is the same shape as the `#[path]` seam defect, and the plan takes the
 generalization rather than adding a second rule: **a demonstration must be
-performed through the ARTIFACT THAT WILL BE REPLAYED** — the exported path,
-the recorded command — and not through whatever the author had at hand.
+performed through the ARTIFACT THAT WILL BE REPLAYED**, meaning the
+exported path or the recorded command, and not through whatever the author
+had at hand.
 Both instances are "it worked when I ran it" where the thing that ran was
 not the thing recorded, and in both the evidence was ACCURATE about what it
 measured while measuring the wrong thing. One rule with two named artifact
