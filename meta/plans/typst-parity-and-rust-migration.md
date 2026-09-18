@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 35 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 36 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,56 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 36 changelog
+
+**A refusal matrix can exercise every raise site and prove no threshold.**
+WP-5.4b applied revision 35's ask-the-oracle method to its deck-overflow
+gap, got a fixture immediately, and then tested the fixture rather than
+trusting it: twelve contributors wrap to ten lines, so moving the refusal
+limit from 5 to 8 STILL REFUSED. The fixture sat so far past the boundary
+that it would have refused under any plausible rule. It measured the wrap
+counts, tightened to seven contributors at exactly six lines, added a
+companion pinning the fitting side at five, and the test now flips when the
+limit moves by ONE. Same perturbation applied to the wordmark floor (25.0
+to 20.0) and title floor (12.0 to 8.0); both fail properly.
+
+The general point is new to this plan and correct: **full-message equality
+is cheap to satisfy and proves less than it looks.** It proves the message
+text and that SOMETHING refused; it does not prove the threshold is right
+unless the fixture sits near the boundary.
+
+**Sharpened from "perturb the threshold" to "the fixture PAIR must straddle
+the boundary"**, one refusing input and one passing input differing by one
+step, because that is what WP-5.4b actually converged on and it is the
+stronger statement: a pair is a property of the FIXTURES needing no code
+mutation, and a tight pair necessarily flips when the threshold moves by
+one, which is how you verify it is tight. Perturbation becomes the check on
+the pair rather than the requirement itself.
+**And scoped, so nobody burns time on it:** evidence classifies each
+refusal as THRESHOLD-DISCRIMINATING or MESSAGE-ONLY, and message-only is
+COMPLETE where there is no number to get wrong. For an unknown enum value,
+a missing key or a type mismatch, message equality is the whole property.
+The rule binds numeric guards only.
+
+**Retroactivity: classification, not re-opening.** Four accepted WPs rest
+on large matrices compared by full-message equality (WP-5.1b's 54 cases
+with 44 refusing, WP-5.1c's 89 of 91 raise sites over 74 fixtures producing
+122 messages, WP-5.5b's eight `_box_invalid` conditions, WP-5.4b's three
+originals). None is WRONG, and a message-only refusal test is weak evidence
+rather than false evidence, so they are not re-opened. But each should
+CLASSIFY its refusals, which is a cheap read of the raise sites and turns
+an unknown weakness into a sized one, which is the whole point of rule 10.
+**WP-5.1c's classification is the one that should actually happen rather
+than being optional**, because `manifest.py`'s raise sites include page
+caps and budgets, which are exactly numeric thresholds and are load-bearing
+for the plan's own seven and ten page rules.
+This disposition is PROVISIONAL in one respect, and the thing that would
+change it is already running: WP-5.4b's verifier is applying threshold
+perturbation to that WP's three PRE-EXISTING refusals. If those also fail
+to discriminate, the weakness is common rather than specific to one
+over-wide fixture, and the four accepted WPs need fixture work rather than
+classification. Naming the trigger now so the answer is read against it.
 
 ## Revision 35 changelog
 
@@ -2969,6 +3019,31 @@ the corpus cannot reach**, and cover those by fixture. WP-5.1c did this
 well for the manifest's refusal branches and badly for character classes,
 and the character class is what bit. Enumerate by reading the Python for
 branches, not by reading the corpus for cases.
+**For a refusal guarding a NUMBER, the fixture pair must STRADDLE the
+boundary.** Full-message equality is cheap to satisfy and proves less than
+it looks: it proves the message text and that SOMETHING refused, not that
+the THRESHOLD is right. WP-5.4b found this on itself. Its first
+deck-overflow fixture used twelve contributors, which wrap to ten lines, so
+raising the refusal limit from 5 to 8 STILL REFUSED: the fixture sat so far
+past the boundary it would have refused under any plausible rule. It
+measured the wrap counts, found seven contributors wrap to exactly six
+lines, and tightened to that, with a companion test pinning the fitting
+side at five. So the requirement is a PAIR at the finest granularity the
+guard can distinguish, one input that refuses and one that passes,
+differing by one step. Stating it as a pair rather than as "perturb the
+threshold" is deliberate: the pair is a property of the FIXTURES and needs
+no code mutation, and a tight pair necessarily flips when the threshold
+moves by one, which is the verification that it is tight. WP-5.4b then
+applied the same perturbation to the wordmark floor (25.0 to 20.0) and the
+title floor (12.0 to 8.0) and both fail properly.
+**And say which refusals are which.** Evidence classifies each refusal as
+THRESHOLD-DISCRIMINATING or MESSAGE-ONLY. Message-only is not a weakness
+where there is no number to get wrong: for an unknown enum value, a missing
+key or a type mismatch, message equality IS the whole property and
+perturbing anything would be busywork. The rule targets numeric guards
+only, and it costs one step per numeric site. This is rule 10 applied to
+refusal tests: a test that cannot presently discriminate must say so.
+
 **For REFUSAL coverage, ask the ORACLE which inputs it refuses** rather
 than reasoning about which are reachable. WP-5.4b understated its own
 refusal coverage (six `bail!` sites in `svg.rs`, three tested, one
