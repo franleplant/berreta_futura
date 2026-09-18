@@ -1,0 +1,13 @@
+.941176 .341176 .219608 rg
+n -1.5 -1.5 422.5276 598.2756 re f*
+q
+419.5276 0 0 595.2756 0 0 cm
+/IMG Do
+Q
+q
+BT 1 0 0 1 0 0 Tm 3 Tr 1 0 0 1 6 505.2756 Tm 100 Tz /FONT 20 Tf 24 TL (LOOP) Tj T* ET
+BT 1 0 0 1 0 0 Tm 3 Tr 1 0 0 1 6 425.2756 Tm 100 Tz /FONT 20 Tf 24 TL (CLOSED) Tj T* ET
+BT 1 0 0 1 0 0 Tm 3 Tr 1 0 0 1 68 295.2756 Tm 100 Tz /FONT 10 Tf 12 TL (An independent anthology of writing worth keeping.) Tj T* ET
+BT 1 0 0 1 0 0 Tm 3 Tr 1 0 0 1 38 26 Tm 100 Tz /FONT 7 Tf 8.4 TL (END / 2026 09 13) Tj T* ET
+BT 1 0 0 1 0 0 Tm 3 Tr 1 0 0 1 38 10 Tm 88 Tz /FONT 5.5 Tf 6.6 TL (BERRETA FUTURA / ISSUE 010 / BUENOS AIRES) Tj T* ET
+Q
