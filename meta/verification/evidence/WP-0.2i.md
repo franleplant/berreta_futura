@@ -5,6 +5,35 @@
 b12a2a3 (`test(model): WP-5.1c cover remaining py_repr escape branches`), plan
 revision 15 (`3892298`). Rebased onto current `art_directed` before landing.
 
+## Rejection and fix
+
+The first submission was REJECTED at verify commit `2f4d443`. The design held;
+one implementation constant did not.
+
+`offs` rounds each leg's ABSOLUTE position before differencing, so the recorded
+difference is `round(x + d) - round(x)`. With the quantum at 0.0001 pt, one
+Pango tick is 0.000732421875 pt = **7.324 quanta, not an integer**, so a
+constant `d` records as a value alternating between `floor(d/q)` and
+`ceil(d/q)` as the fractional part of `x` varies. A FLAT region of the true
+difference therefore recorded as a sawtooth, `|v|` decreased, and `axis_shape`
+rejected it.
+
+That is fatal rather than cosmetic because real drift is mostly flats:
+WeasyPrint advances in whole ticks, so at WP-1.6's measured 0.000173 pt per
+glyph a tick lands every ~4.2 glyphs and **three glyphs in four are flat**. The
+verifier built `stairdrift` as that honest staircase and it FAILED with 40
+shape violations at ratio 0.1785 and zero magnitude excess. The gate would have
+false-failed on a genuine Typst-versus-WeasyPrint comparison, the exact thing it
+exists to pass.
+
+The fix sets the quantum to **one eighth of a tick, 9.1552734375e-05 pt**, so a
+tick is an integer number of quanta and the identity
+`round(x + Nq) = round(x) + N` holds exactly, making a flat record as flat. The
+quantum is FINER than before, so this tightens and loosens nothing. A tolerance
+on the monotonicity test would also have made `stairdrift` pass, but that is a
+loosening under rule 4 and it would dissolve the very property that gives the
+ceiling its size-independence; it was not taken.
+
 ## Commands
 
 Fixtures are scratch PDFs, not committed, built by two inline scripts. Both run
@@ -23,7 +52,16 @@ cp -R editions/010/render-2026-09-14T01-49-02 $T/rB
 ```
 
 `mkfix.py` (control, drift, kern02, kern005, kern001, linmatrix, ocmember,
-annotap) and `mkfix6.py` (glyphsub) are reproduced verbatim in ## Residuals.
+annotap) and `mkfix6.py` (glyphsub) are reproduced verbatim in ## Residuals
+
+**The f32 question is CLOSED and this clause does not depend on WP-0.2j.**
+lopdf parses `Object::Real` as f32, but `num()` converts once via `f64::from`
+and `tx`, `starts` and `qo` are all f64. The f32 terms (font size, `Tm`/`cm`,
+widths) therefore enter as RELATIVE SCALE errors proportional to the value, so
+they add a monotone ramp rather than per-step noise, which is why `drift` and
+`smoothdrift` produce zero violations across 68,800 glyphs. Against the bound
+the effect is about 0.13% at k=1 and 0.08% at k=70. WP-0.2j is not a
+prerequisite for this clause..
 Run them with `uv run python <script>` from the repository root.
 
 ```sh
@@ -56,36 +94,58 @@ the project environment for fixture construction only.
 | A-vs-B, run 2 | 0 | pass | 0.0000 | `6e932ea43678b91a` |
 | control (pypdf rewrite, no edits) | 0 | pass | 0.0000 | `e4e388042c68272c` |
 
-Both digests reproduce byte-identically across consecutive runs, so the verdict
-stays byte-deterministic with the clause added. 010 A-vs-A and A-vs-B remain
-Tier E equal. The corpus carries 68,800 glyphs across 1,488 shows over the 54
-compared interior pages.
+Both digests reproduce byte-identically across consecutive runs and are
+unchanged from the first submission, so the quantum change did not perturb the
+corpus comparison. 68,800 glyphs across 1,488 shows over 54 interior pages.
 
 ### Floor, ceiling and margin
 
 `worst_ratio` is the maximum over all glyphs of (measured device-space offset
-difference) / (k x 0.000732421875 pt). It replaces `worst_excess_pt` as the
-margin metric because the maximum EXCESS always lands at glyph 0, where the
-bound and the difference are both zero, which says nothing about headroom.
+difference) / (k x 0.000732421875 pt), with k reset per show. It is the margin
+metric because the maximum EXCESS always lands at glyph 0, where bound and
+difference are both zero.
 
-| fixture | fault | ratio | violations | result |
-|---|---|---|---|---|
-| drift | every glyph displaced k x 0.000173 pt (WP-1.6's measured rate) | 0.2731 | 0 | **pass, the floor** |
-| kern02 | compensating kern 0.02 pt | 10.2400 | 5 | fail (magnitude) |
-| kern005 | compensating kern 0.005 pt | 2.5941 | 5 | fail (magnitude) |
-| kern001 | compensating kern 0.001 pt | 0.5461 | 1 | **fail (shape alone)** |
-| kern00001 | compensating kern 0.0001 pt | 0.0683 | 1 | **fail (shape alone)** |
+| fixture | what it injects | flats | ratio | viol | result |
+|---|---|---|---|---|---|
+| **stairdrift** | `tick * round(k * 0.000173 / tick)`, the real staircase | yes | 0.2500 | 0 | **pass, the floor** |
+| drift | linear ramp `k * 0.000173` | no | 0.2500 | 0 | pass (control) |
+| smoothdrift | linear ramp `k * 0.0005` | no | 0.6250 | 0 | pass (control) |
+| kern02 | compensating kern 0.02 pt | - | 10.2500 | 5 | fail (magnitude) |
+| kern005 | compensating kern 0.005 pt | - | 2.5625 | 5 | fail (magnitude) |
+| kern001 | compensating kern 0.001 pt | - | 0.5625 | 1 | **fail (shape alone)** |
+| kern00001 | compensating kern 0.0001 pt | - | 0.0625 | 1 | **fail (shape alone)** |
 
-**Margin: 1 / 0.2731 = 3.66x, against the required 2x. Met.** Legitimate drift
-consumes 27.31% of its bound at the worst glyph in the edition.
+**Floor 0.2500 on the representative fixture. Margin 1 / 0.25 = 4.00x against
+the required 2x. Met.**
 
-The two shape-only rows are the result that matters. A compensating kern of
-0.0001 pt is 1% of the coordinate quantum and 200x smaller than the smallest
-ceiling fixture the plan asked for, sits at 6.83% of the magnitude bound, and
-still fails, because the difference sequence rises and returns toward zero
-instead of accumulating. The ceiling therefore does not depend on fault size,
-which is precisely what inverted WP-0.2f's window and what the raster guard
-could not deliver at any resolution.
+Ratios now land on exact sixteenths, which is itself evidence the quantum is
+commensurate with the tick.
+
+**Rule 11 isolation, and the lesson.** `drift` (no flats) passes;
+`smoothdrift` (no flats, HIGHER ratio 0.6250) passes; `stairdrift` (has flats,
+LOWEST ratio) failed before the fix and passes after. Remove the flats and the
+effect goes, at higher magnitude. **Ratio is not the variable; flatness is.**
+The lesson for the record: *a linear ramp is not representative of
+tick-quantised drift*, and using one as the floor is what let an unrepresentative
+fixture certify a broken gate. `stairdrift` is now the floor and `drift` is
+demoted to a control.
+
+**Size-independence, re-confirmed under the new quantum.** The two shape-only
+rows above sit at 6.25% and 56.25% of the magnitude bound and still fail. The
+verifier's five adversarial variants, built to look monotone, were re-run and
+all still fail:
+
+| variant | ratio | viol | caught by |
+|---|---|---|---|
+| advstep | 0.6406 | 1 | shape alone |
+| advmid | 0.6406 | 1 | shape alone |
+| advtail02 | 10.2500 | 9 | magnitude |
+| advtail_small | 0.5625 | 1 | shape alone |
+| advtail_late | 0.6406 | 1 | shape alone |
+
+A compensating kern of 0.0001 pt is 1% of the coordinate quantum and 200x
+smaller than the smallest ceiling fixture the plan asked for, and it is caught.
+The ceiling does not depend on fault size.
 
 ### The five must-fail fixtures
 
@@ -117,9 +177,10 @@ offsets cannot see it. Only the mapping to the shared vendored face does.
 
 Full run 87 s (debug build) against 82 s before this WP, so the per-glyph work
 costs about 5 s, against the 9 to 15 minutes WP-0.2f measured for supersampled
-rasterization. Added dump data is 68,800 glyphs x (two `i64` offsets plus one
-`u32` gid) = about 1.4 MB per leg; peak RSS across the suite ranged 246 MB to
-779 MB. The comparison is O(n) in glyphs.
+rasterization. The finer quantum changes no cost, only the integer magnitudes.
+Added dump data is 68,800 glyphs x (two `i64` offsets plus one `u32` gid) =
+about 1.4 MB per leg; peak RSS across the suite ranged 246 MB to 779 MB. The
+comparison is O(n) in glyphs.
 
 ## Verdicts
 
@@ -132,6 +193,15 @@ fail loud during tracing, which is the required behaviour; their evidence is the
 error text and exit 1.
 
 ## Residuals
+
+**The f32 question is CLOSED and this clause does not depend on WP-0.2j.**
+lopdf parses `Object::Real` as f32, but `num()` converts once via `f64::from`
+and `tx`, `starts` and `qo` are all f64. The f32 terms (font size, `Tm`/`cm`,
+widths) therefore enter as RELATIVE SCALE errors proportional to the value, so
+they add a monotone ramp rather than per-step noise, which is why `drift` and
+`smoothdrift` produce zero violations across 68,800 glyphs. Against the bound
+the effect is about 0.13% at k=1 and 0.08% at k=70. WP-0.2j is not a
+prerequisite for this clause.
 
 **Glyph identity is resolved through the shared vendored face, as the plan
 directs, by outline rather than by code.** Character codes are not comparable

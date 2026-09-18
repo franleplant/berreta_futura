@@ -111,42 +111,76 @@ tiers:
     glyph_positions:
       authored_by: WP-0.2i
       status: derived
-      offset_quantum_pt: 0.0001
+      offset_quantum_pt: 9.1552734375e-05
+      offset_quantum_rule: exactly one eighth of a Pango tick, so a tick is an
+        INTEGER number of quanta. This is required for correctness, not taste.
+        Offsets are rounded per leg before differencing, so the recorded
+        difference is round(x + d) - round(x); when d is constant but not an
+        integer number of quanta that expression alternates between floor(d/q)
+        and ceil(d/q) as the fractional part of x varies, turning a FLAT region
+        of the true difference into a sawtooth and breaking monotonicity. With
+        d an exact multiple of q the identity round(x + Nq) = round(x) + N holds
+        and a flat records as flat. The first submission used 0.0001 pt, in
+        which a tick is 7.324 quanta, and was rejected for exactly this
       drift_bound_pt_per_glyph: 0.000732421875
       bound_rule: the device-space offset of glyph k from its show origin may
         differ between legs by at most k * drift_bound_pt_per_glyph, a function
-        of position in line rather than a flat number
+        of position in line rather than a flat number; k resets per show
       mechanism: WeasyPrint advances by an integer count of 1/1024 px (Pango),
         Typst sums exact font units, so the legitimate difference at glyph k is
-        bounded by k quantisation steps of 1/1024 px = 0.000732421875 pt. Derived
-        from the mechanism, never fitted to an observation
-      shape_rule: a legitimate difference accumulates, so the per-axis difference
-        sequence must be one-signed and monotone non-decreasing in magnitude; a
-        compensating kern produces a bump returning toward zero and fails on
-        shape whatever its magnitude, which is what makes the ceiling independent
-        of fault size and what the raster guard could never achieve
+        bounded by k quantisation steps of 1/1024 px = 0.000732421875 pt.
+        Derived from the mechanism, never fitted to an observation
+      shape_rule: a legitimate difference accumulates, so the per-axis
+        difference sequence must be one-signed and monotone non-decreasing in
+        magnitude; a compensating kern produces a bump returning toward zero and
+        fails on shape whatever its magnitude, which is what makes the ceiling
+        independent of fault size and what the raster guard could never achieve.
+        No tolerance is applied to the monotonicity test, because a tolerance would
+        let the rejected sawtooth pass and would also dissolve the property that
+        gives the ceiling its size-independence
       floor:
-        fixture: every glyph of the interior displaced by k * 0.000173 pt, the
-          rate WP-1.6 measured, injected as TJ kerns so the display list stays
-          equal (string, glyph count, matrix and clip unchanged)
+        fixture: stairdrift
+        representative_of: the real phenomenon. WeasyPrint advances in WHOLE
+          ticks, so at WP-1.6's measured 0.000173 pt per glyph a tick lands
+          every ~4.2 glyphs and roughly three glyphs in four are FLAT. The
+          fixture injects d(k) = tick * round(k * 0.000173 / tick) across all
+          1,488 shows
         glyphs: 68800
         shows: 1488
-        worst_ratio_of_bound: 0.2731
+        worst_ratio_of_bound: 0.25
         result: pass
+      floor_controls:
+        drift: a LINEAR RAMP at the same 0.000173 pt per glyph, no flats, ratio
+          0.25, pass. It was the original floor and it is NOT representative, because a
+          ramp never goes flat, so it cannot exhibit the sawtooth that the
+          quantum defect produced, which is why it passed while the gate was
+          broken
+        smoothdrift: a linear ramp at 0.0005 pt per glyph, no flats, ratio
+          0.625, pass. Higher ratio than stairdrift and still passes, which
+          isolates the variable, which is flatness rather than magnitude
       ceiling:
-        by_magnitude: compensating kern 0.02 pt gives ratio 10.2400; 0.005 pt
-          gives 2.5941; both exceed the bound and fail on magnitude alone
-        by_shape: compensating kern 0.001 pt gives ratio 0.5461 and 0.0001 pt
-          gives 0.0683, both far below the bound, and both FAIL on shape alone.
-          The shape constraint has no lower magnitude limit, so the ceiling does
-          not depend on how large the fault is
+        by_magnitude: compensating kern 0.02 pt gives ratio 10.2500; 0.005 pt
+          gives 2.5625; both exceed the bound and fail on magnitude alone
+        by_shape: compensating kern 0.001 pt gives ratio 0.5625 and 0.0001 pt
+          gives 0.0625, both far below the bound, and both FAIL on shape alone.
+          Five further adversarial variants built by WP-0.2i's verifier to look
+          monotone (advstep, advmid, advtail02, advtail_small, advtail_late) all
+          fail, four of them on shape alone at ratios 0.5625 to 0.6406. The
+          shape constraint has no lower magnitude limit, so the ceiling does not
+          depend on how large the fault is
       margin:
         rule: bound must be at least 2x the realized legitimate drift
-        measured: 1 / 0.2731 = 3.66x
+        measured: 1 / 0.25 = 4.00x
         met: true
-      control: the same pypdf rewrite with no edits is glyph-equal (ratio 0.0000)
-      supersedes: the Tier E raster guard, which WP-0.2f proved impossible at any
-        resolution because every rasterizer snaps text-object origins
+      control: the same pypdf rewrite with no edits is glyph-equal (ratio 0.0)
+      f32_dependency: NONE. lopdf parses Object::Real as f32, but num() converts
+        once via f64::from and tx, starts and qo are all f64, so f32 terms enter
+        as RELATIVE SCALE errors proportional to the value. They add a monotone
+        ramp rather than per-step noise, which is why drift and smoothdrift show
+        zero violations across 68,800 glyphs. Against the bound the effect is
+        ~0.13% at k=1 and ~0.08% at k=70, so WP-0.2j is not a prerequisite
+      supersedes: the Tier E raster guard, which WP-0.2f proved impossible at
+        any resolution because every rasterizer snaps text-object origins
     raster_bound:
       authored_by: WP-0.2d
       status: blocked
