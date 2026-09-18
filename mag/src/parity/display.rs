@@ -402,6 +402,7 @@ fn clipped(s: &str) -> String {
 #[derive(Serialize)]
 pub struct SimpleClause {
     pub status: String,
+    pub entries_compared: usize,
     pub pages_differing: Vec<u32>,
 }
 
@@ -540,6 +541,7 @@ pub fn compare_color(a: &Dump, b: &Dump, first: u32) -> SimpleClause {
         .collect();
     SimpleClause {
         status: status(pages_differing.is_empty()),
+        entries_compared: a.pages.iter().map(|p| color_sequence(p).len()).sum(),
         pages_differing,
     }
 }
@@ -547,6 +549,11 @@ pub fn compare_color(a: &Dump, b: &Dump, first: u32) -> SimpleClause {
 #[derive(Serialize)]
 pub struct NavClause {
     pub status: String,
+    pub annots_compared: usize,
+    pub links_compared: usize,
+    pub outlines_compared: usize,
+    pub title_compared: usize,
+    pub lang_compared: usize,
     pub mismatches: Vec<String>,
 }
 
@@ -565,8 +572,14 @@ pub fn compare_navigation(a: &Dump, b: &Dump, first: u32) -> NavClause {
     if a.nav != b.nav {
         mismatches.push("document title/lang/outlines differ".into());
     }
+    let annots = || a.pages.iter().flat_map(|p| &p.annots);
     NavClause {
         status: status(mismatches.is_empty()),
+        annots_compared: annots().count(),
+        links_compared: annots().filter(|x| x.subtype == "Link").count(),
+        outlines_compared: a.nav.outlines.len(),
+        title_compared: usize::from(a.nav.title.is_some()),
+        lang_compared: usize::from(a.nav.lang.is_some()),
         mismatches,
     }
 }

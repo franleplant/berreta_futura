@@ -89,6 +89,13 @@ normalization:
 tiers:
   s:
     box_tolerance_pt: 0.05
+    rotation_comparison: exact
+    rotation_note: >
+      /Rotate is compared exactly rather than within box_tolerance_pt, because
+      it is an enumerated quarter-turn and not a length. Parsed from the same
+      pdfinfo -box call as the boxes, so it costs no extra invocation. A 180
+      degree difference leaves every box identical, so no other clause would
+      catch it now that rasters are meters (WP-0.2g).
     clauses:
       - page_count
       - boxes
@@ -182,8 +189,24 @@ tiers:
       supersedes: the Tier E raster guard, which WP-0.2f proved impossible at
         any resolution because every rasterizer snaps text-object origins
     raster_bound:
-      authored_by: WP-0.2d
-      status: blocked
+      status: withdrawn
+      gates: nothing
+      authored_by: nobody
+      measurements_recorded_by: WP-0.2d, then WP-0.2f
+      withdrawal: >
+        The Tier E raster guard this key fed was withdrawn in revision 15, and
+        WP-0.2f, which revision 9 made this key's owner, was withdrawn WHOLLY in
+        revision 39. Nobody authors this key now. Everything below is a
+        historical record of what was measured, kept so the measurements are not
+        repeated; it decides nothing. The comparator reports the Tier E raster
+        clause not_evaluated whether this key is present, valueless or absent:
+        WP-0.2g made the absence legal, because requiring a key that nobody owns
+        would fail the run with a misleading "missing" error the moment someone
+        tidied it away. Do not add a `value` here to revive the guard. Rule 4
+        reserves threshold changes to a plan revision, revision 39 superseded
+        the guard with per-glyph positions, and revision 15 recorded that a
+        raster guard is impossible at any resolution because every rasterizer
+        snaps text-object origins to the device grid.
       measured_max_channel_delta: 241
       measurement: the oracle leg re-emitted through pypdf with every coordinate
         operand of m/l/c/v/y/re/cm/Td/TD/Tm perturbed uniformly within half the
