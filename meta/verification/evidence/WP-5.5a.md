@@ -37,7 +37,9 @@ came out of leg 1 that the coordinator needs before this lands:
   render-to-render noise floor, with negative controls on both legs;
 - the asset-reading change **cannot land by itself**. The renderer works from
   a staged copy of declared inputs only, so `mag/src/render.rs` must also
-  declare `editions/<id>/source-codes`. That file is outside this WP's Owns.
+  declare `editions/<id>/source-codes`. Owns was extended to that file for
+  the staging row, and the two Python files and the Rust row landed together
+  for that reason.
 
 **pygments (revision 32).** Decided on its own terms: no ladder clause
 inspects the web tree's spans, and the plan had ALREADY settled the analogous
@@ -795,6 +797,14 @@ below are from `output/parity/010/verdict.json`; `tier E raster` is
 | before vs before (noise floor) | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
 | before vs after (committed asset) | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
 | before vs one flipped module (control) | **fail, 1 page** | pass, 0 violations | **241** |
+| re-run at the landing base | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
+
+The last row matters because the first three were measured at `ee15768` with
+the baseline taken from `a0714c3` (a plan-markdown-only difference, checked:
+`git diff --stat ee15768 a0714c3` touches one file under `meta/plans`).
+`mag/src/parity.rs` and `mag/src/parity/streams.rs` then changed under other
+WPs, so the pair was rendered again at the actual landing base with the
+current comparator, and the web tree is byte-identical there too.
 
 Tier S (page_count 56 vs 56, boxes, text, color, navigation) and tier G
 (max dx and dy 0.000 pt) pass in all three, including the control: a single
@@ -822,18 +832,20 @@ than S, G or V is the leg that discriminates here.
   any of them. Whoever builds this should expect the fixture surface to be
   larger than the corpus surface, and should inherit the blocked WP-5.5's
   per-module enumeration (commit 6a9b5cf) rather than re-deriving it.
-- **LEG 1 IS PROVEN, with one carried dependency.** See "Leg 1" above: the
-  web tree is byte-identical and every parity tier matches the
-  render-to-render noise floor, with negative controls on both legs. The
-  carried dependency is the staging row.
-- **`mag/src/render.rs` needs a `stage_source_codes` row, and this WP does
-  not own that file.** Without it the committed asset is never copied into
-  the stage root and the renderer cannot see it, so the asset-reading change
-  CANNOT be landed alone: doing so breaks every render with "No committed
-  source code". The two must land together. The 15-line function used to
-  produce the leg-1 evidence is reproduced in Commands; it reads
+- **LEG 1 IS PROVEN and the oracle change is landed.** See "Leg 1" above:
+  the web tree is byte-identical and every parity tier matches the
+  render-to-render noise floor, with negative controls on both legs.
+- **`mag/src/render.rs` carries a `stage_source_codes` row**, landed with the
+  Python under an extended Owns. Without it the committed asset is never
+  copied into the stage root and the renderer cannot see it, so the
+  asset-reading change could not land alone: doing so breaks every render
+  with "No committed source code". The function reads
   `editions/<id>/source-codes`, sorts by filename for determinism, and is a
-  no-op when the directory is absent.
+  no-op when the directory is absent, so editions without an asset are
+  unaffected. WP-5.6 inherits that shape; note it stages a DIRECTORY by
+  enumeration rather than naming files from the manifest, which is unlike
+  every other `stage_*` in that file and is the one thing worth revisiting
+  if the asset ever needs manifest-declared membership.
 - **The reader PDF is not byte-reproducible across runs**, which is a
   general finding, not specific to this WP. Cairo's image XObject names
   (`/i<hex>`) are per-run and sit inside compressed streams, so two renders
@@ -842,14 +854,17 @@ than S, G or V is the leg that discriminates here.
   and say so rather than reporting a spurious fail. Worth checking whether
   WP-0.1's determinism proof covered the PDF bytes or only the display list;
   if the former, it needs revisiting.
-- **The two rooms are an oracle asymmetry worth a second look, separately
-  from this port.** `_opener_credit_code` computes the opener field floor
-  from a symbol fitted at 55.5 pt even for illustrated articles, which
-  `_opener_source_codes` then places at 41.0 pt. For 010 this is harmless
-  because the chosen symbol is room-independent (proved above) and both
-  rooms place a symbol, but a payload between 79 and 154 characters would
-  make the measurement path size a code the production path then refuses to
-  place. That is a latent bug in the ORACLE, faithfully preserved here.
+- **A LATENT BUG IN THE PYTHON, recorded and deliberately NOT fixed.**
+  `_opener_credit_code` computes the opener field floor from a symbol fitted
+  at 55.5 pt even for illustrated articles, which `_opener_source_codes` then
+  places at 41.0 pt. For 010 this is harmless because the chosen symbol is
+  room-independent (proved above) and both rooms place a symbol, but a
+  payload between 79 and 154 characters would make the measurement path
+  reserve space for a code the production path then refuses to place, and
+  `_opener_source_codes` raises rather than degrading. This is a bug in the
+  ORIGINAL, not a port question: revision 23's rule is that a port may not be
+  stricter than its original, so the asymmetry is reproduced exactly and the
+  fix belongs to whoever owns the Python renderer.
 - **`_opener_source_codes` iterates every article with a `source_url`**,
   illustrated or not, and fit-checks all of them while appending only the
   illustrated ones. `_materialize_source_codes` (web) skips non-illustrated
