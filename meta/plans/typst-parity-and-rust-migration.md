@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 48 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 49 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,69 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 49 changelog
+
+**A new rule-12 class, and it is genuinely different from the others: the
+CAPTION drifts from the COMMAND.** WP-5.5a's block was captioned "Every
+segno call site" and searched only `src/ mag/src/`, returning nothing,
+while four call sites sat in the generator it had just written. The command
+RAN, the output was ACCURATE, and the caption was the false claim, so where
+the other classes are the recorded artifact diverging from what was
+EXECUTED, this is it diverging from what was CLAIMED about it. The agent's
+own framing is the keeper: **rereading would not have shown it.** The check
+is to read each block's output against its caption's SCOPE WORDS on replay.
+
+**A premise I recorded in revision 44 was falsified, and checking it made
+it more precise rather than simply wrong.** I wrote that every verdict
+records `staged_input_digest`. Verified in the source: the field exists but
+is `skip_serializing_if none` and is populated ONLY in the render mode that
+stages its own inputs, so every `--pre-rendered` verdict, which is how most
+WPs run parity, emits no such key and no `staleness` either. So the claim
+is MODE-DEPENDENT, not absent. The audit's power is narrowed accordingly
+and now states both halves: the two reader hashes DO catch a verdict wholly
+replaced by a run over different artifacts, which is the dangerous case,
+and CANNOT pin the staged inputs those PDFs came from. The audit verifies
+the emitted field list itself rather than trusting any description of it,
+including this one.
+
+**A parity figure is only meaningful against a NAMED COMMIT**, which is
+rule 9 applied to a moving render tree: for a figure measured against a
+tree that changes, the BASE is the configuration. Three glyph figures are
+in circulation and the cardinalities moved with them, explicable by the
+source-codes asset landing between measurements, so the fourth cross-spike
+disagreement may be a BASE mismatch rather than a domain mismatch. That
+would make it a finding about the evidence regime rather than about page
+domains, and would retire the cover-pages hypothesis revision 42 offered.
+Cheap test: measure one figure at each of the other bases and see whether
+they converge.
+
+**A MULTI-STEP perturbation is not evidence of tightness**, only of
+non-inertness, which is the weaker claim such evidence is entitled to make.
+WP-5.4b's two surviving guards read as verified for exactly that reason:
+the wordmark had eight steps of slack and was perturbed by ten, the title
+three and was perturbed by eight, and neither smallest flipping move was
+the move made. A perturbation must be ONE STEP at the guard's own
+granularity. Recorded beside it is what real tightness looks like, from the
+same sweep: an 83-character stem differing in ONE GLYPH, flipping because
+one line's width changes by 6.64 pt, with no tighter pair possible since
+the loop evaluates only multiples of 0.5. And a guard can be HALF-verified:
+the line limit discriminated loosening but not tightening, because no
+fitting fixture existed, and saying which half is the labelling rule 10
+asks for.
+
+**Two environment facts that cost attempts.** `mag parity` refuses to run
+outside a repo root, so the standing "isolated cwd" instruction is
+unsatisfiable as worded and the WORKTREE form is what satisfies it. And a
+pipe MASKS exit status, so `<command> | tail` reports the pipe's success
+and cleanup runs even when the command failed; this cost the planner two
+rebuilt commits when a failed fast-forward was piped to `tail` and the temp
+branch was deleted anyway.
+
+One latent defect recorded, not live: with the headline limit at `<=4` the
+fitting fixture lays out four lines and PANICS at `mag/src/cover/svg.rs:537`
+because the colour cycle has three entries. Unreachable while the limit is
+`<=3`.
 
 ## Revision 48 changelog
 
@@ -222,9 +285,16 @@ COMPLETE, VALID verdict from the WRONG run. That also disposes of the
 option of accepting the numbers on the argument that corruption would look
 obviously broken: the case that matters is precisely the one that looks
 fine.
-No re-runs are needed to start, because **every verdict already records
-`a_reader_sha256`, `b_reader_sha256` and `staged_input_digest`**, so a
-crossed-over verdict carries the wrong artifacts' hashes. Evidence quoting
+No re-runs are needed to start, because **every verdict records
+`a_reader_sha256` and `b_reader_sha256`**, so a crossed-over verdict
+carries the wrong artifacts' hashes.
+[CORRECTED IN REVISION 49: this entry also claimed `staged_input_digest`,
+which is MODE-DEPENDENT rather than universal. Checked in the source: the
+field exists on the struct and is `skip_serializing_if none`, and it is
+populated ONLY in the render mode that stages its own inputs. Every
+`--pre-rendered` verdict, which is how most WPs run parity, sets it to
+None and emits no such key, and carries no `staleness` either. The audit's
+narrower power is stated in the live text.] Evidence quoting
 a verdict digest AND its input hashes is checked by confirming the inputs
 are the artifacts that WP claims to compare; evidence quoting only a digest
 is re-run to confirm it reproduces, which a verifier does anyway; evidence
@@ -2316,9 +2386,22 @@ before/after comparisons (WP-4.3); out of scope here.
   and proves it by running two invocations CONCURRENTLY rather than by
   reading the code, since the hazard was found by observation.
 - **The retrospective audit is a PROVENANCE audit, and it needs no
-  re-runs.** Every verdict already records `a_reader_sha256`,
-  `b_reader_sha256` and `staged_input_digest`, so a crossed-over verdict
-  carries the WRONG artifacts' hashes. That is the check, and it works on
+  re-runs, but its power is NARROWER than revision 44 claimed.** Corrected
+  in revision 49 after checking the source rather than trusting the
+  claim: every verdict records `a_reader_sha256` and `b_reader_sha256`, so
+  a crossed-over verdict carries the WRONG artifacts' hashes. It does NOT
+  universally record `staged_input_digest`: that field is
+  `skip_serializing_if none` and is populated only in the render mode that
+  stages its own inputs, so every `--pre-rendered` verdict, which is how
+  most WPs run parity, emits no such key and no `staleness` either.
+  **What the two reader hashes DO discriminate**: a verdict wholly
+  replaced by a run over DIFFERENT artifacts, which is the dangerous case.
+  **What they CANNOT** (rule 10): pin the staged inputs those PDFs came
+  from, so two runs over the same two PDFs built from different staged
+  inputs are indistinguishable by this check alone. The audit verifies the
+  emitted field list itself rather than trusting any description of it,
+  re-derives its buckets from the fields that exist, and states that
+  limitation. That is the check, and it works on
   evidence already written:
   - evidence recording the verdict digest AND its input hashes: confirm the
     inputs are the artifacts that WP claims to have compared. A foreign
@@ -2375,6 +2458,17 @@ before/after comparisons (WP-4.3); out of scope here.
   `PagedIntrospector` and `Page` live in the former, the main `FileId` needs the
   latter's `RootedPath`/`VirtualRoot`/`VirtualPath`); `comemo` is not needed as a
   direct dependency. MSRV 1.92 against the repo's rustc 1.96.0, no edition bump.
+- **`mag parity` REFUSES to run outside a repo root, so an "isolated cwd"
+  must be a separate WORKTREE.** The instruction to run parity from an
+  isolated cwd, given after the shared-`out_dir` hazard surfaced, is
+  unsatisfiable as literally worded; the worktree form is what satisfies
+  it in substance. Recorded so nobody else burns attempts discovering it.
+- **A pipe MASKS exit status.** `<command> | tail` reports the pipe's
+  success, so `set -e` does not abort and any cleanup runs even when the
+  command failed. This cost the planner two rebuilt commits when a failed
+  `git merge --ff-only` was piped to `tail` and the temp branch was deleted
+  anyway. Use `set -o pipefail`, or gate on the real exit status with an
+  explicit `if`.
 - **Environment trap, found by a rule-12 replay rather than by the
   authoring run**: `TYPST_ROOT` is the typst CLI's PROJECT ROOT, not an
   install prefix. WP-1.8's first replay failed outright with
@@ -2815,6 +2909,20 @@ before/after comparisons (WP-4.3); out of scope here.
      reaching for `#[path]`, relaxed visibility, a test-only feature flag
      or an altered search path says in evidence why, and what it has
      therefore NOT shown.
+   - **THE CAPTION DRIFTS FROM THE COMMAND**, which is a different class
+     from every other here: the command RAN, its output was ACCURATE, and
+     the CAPTION was the false claim. WP-5.5a's block was captioned
+     "**Every** segno call site" and searched only `src/ mag/src/`,
+     returning nothing, while four call sites existed in the generator it
+     had just written. Its own framing is the part to keep: **rereading
+     would not have shown it.** The command looks right and the output
+     looks right; only reading the OUTPUT AGAINST THE CAPTION'S CLAIM
+     exposes the gap. Where the other classes are about the recorded
+     artifact diverging from what was EXECUTED, this is the recorded
+     artifact diverging from what was CLAIMED about it. Check, cheap and
+     specific: on replay, read each block's output against its caption's
+     SCOPE WORDS, "every", "all", "no other", and confirm the command's
+     scope matches the claim's.
    - **HERMETICITY IS A PROPERTY OF THE WHOLE REPLAY PATH, and fixing it in
      one artifact can RELOCATE it into another.** WP-5.3b-i fixed its
      absolute corpus path properly: the test now takes
@@ -2933,6 +3041,20 @@ before/after comparisons (WP-4.3); out of scope here.
    own number and WP-1.1's with a methodological difference that does not
    exist. Both were caught by audit rather than by the authoring WP, which
    is why it is a rule and not advice.
+   **A PARITY FIGURE IS ONLY MEANINGFUL AGAINST A NAMED COMMIT.** Three
+   glyph figures are now in circulation, 69,071/1,503 in the plan,
+   68,800/1,488 from WP-0.2i's floor, and 68,530/1,501 from WP-5.5a at
+   `c1253d8`, and the cardinalities moved with them (1,733 colour entries
+   and 85 annotations against WP-0.2g's 1,720 and 84, explicable by the
+   source-codes asset landing in between). So **the fourth cross-spike
+   disagreement may be a BASE mismatch rather than a domain mismatch**,
+   which would make it a finding about the evidence regime rather than
+   about page domains, and would retire the cover-pages hypothesis
+   revision 42 offered. The cheap test is to measure one figure at each of
+   the other bases and see whether they converge; WP-0.2i's rework owns it.
+   Every parity figure therefore carries the commit it was measured at,
+   exactly as rule 9 makes a number carry its configuration: for a moving
+   render tree, the BASE is the configuration.
    **A CITED count is RE-DERIVED at the point of citation.** Revision 38
    put the duty on the author deriving a count from its own enumeration,
    and four instances now show that is the wrong place: every one of these
@@ -4158,6 +4280,26 @@ no code mutation, and a tight pair necessarily flips when the threshold
 moves by one, which is the verification that it is tight. WP-5.4b then
 applied the same perturbation to the wordmark floor (25.0 to 20.0) and the
 title floor (12.0 to 8.0) and both fail properly.
+**A MULTI-STEP perturbation is not evidence of tightness.** It demonstrates
+only that the guard is NOT INERT, which is a weaker claim and the one such
+evidence is entitled to make. WP-5.4b's two surviving guards read as
+verified for exactly this reason: the wordmark floor is 25.0 and its
+fixture first fits at 21.0, eight steps of slack, perturbed by ten; the
+title floor is 12.0 and fits at 10.5, three steps of slack, perturbed by
+eight. The smallest FLIPPING moves are 25.0 to 21.0 and 12.0 to 10.5, and
+neither was the move made. So a perturbation must be ONE STEP at the
+guard's own granularity, or the evidence says "not inert" and claims no
+more. WP-5.4b-ii owns the fix.
+What tightness looks like when it is real, from the same sweep: the
+headline pair now shares an 83-character stem and differs in ONE GLYPH,
+flipping because only the third line's width changes (300.36 against
+307.00 at size 20.0, `A` being 6.64 pt wider than `I`), and no tighter pair
+can exist because the guard's loop evaluates only multiples of 0.5. The
+line limit meanwhile discriminated LOOSENING but not TIGHTENING, because
+there was no fitting headline fixture at all and 010's own headline wraps
+to two lines: a guard can be half-verified, and saying which half is the
+labelling rule 10 asks for.
+
 **The rule binds on INHERITANCE, not only on authoring.** A WP that adopts
 fixtures it did not write has UNVERIFIED pair-tightness for every numeric
 guard in them until someone moves the threshold, so re-cut and successor
