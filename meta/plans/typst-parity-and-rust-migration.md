@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 32 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 33 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,66 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 33 changelog
+
+**Two corrections to revision 32, both found by measuring instead of
+reasoning by analogy, and the second inverts the conclusion.**
+
+**The QR asset format was underspecified.** Revision 32 said payload and
+level. The print path uses segno TWICE per code, a SEARCH in
+`_fitted_source_code` (:1907) looping H, Q, M, L for the largest module and
+a REDRAW in `_source_code_matrix` (:1920), and every search input is a
+constant, so the asset must record payload, chosen LEVEL, MODULE COUNT and
+matrix: without `modules` the search re-runs, and it feeds layout through
+`module = room / modules` and `side = quiet * module`. The format also
+needs a PRINT-DECLINES state, because the legs agree to 154 characters and
+diverge at 155, where at most 55 modules fit in 55.5 pt against v8's 57 and
+print draws NOTHING; without that a future long URL reads as a missing
+asset rather than a correct outcome (010's longest payload is 67). And the
+9-of-9 agreement is now EXPLAINED rather than observed: the fit maximises
+module size, minimising version, and among ties keeps the earliest of
+H, Q, M, L since no tie exceeds epsilon, which is segno's boost rule. That
+both legs pick the same level AND version was unverified when the decision
+was taken; it now has a mechanism (rule 11). Leg 1 has an Owns extension to
+`web_edition.py` and `weasyprint_adapter.py` for the asset-reading change,
+recorded alongside WP-0.0b, WP-0.0c and WP-1.5, and noted as HEAVIER than
+those since Appendix A deletes the adapter at WP-6.1 and the whole parity
+comparison runs through it.
+
+**Pygments: revision 32 was wrong in both halves, and the correction goes
+the opposite way from where it was heading.** Measurement ruled out
+`syntect`, which revision 32 named as the likely implementation: the
+formatter is trivial, the LEXERS are the whole cost (8,559 spans, 31
+classes, nine languages), and syntect does not match pygments'
+tokenisation. That prompted checking the other half, the print-path
+"precedent" revision 32 leaned on, and it does not say what was assumed.
+`html_edition.py:660` highlights the PRINT path through the same
+`_highlight_code`, the print CSS colours those classes, and Tier S compares
+(text-run, fill colour) sequences, so a different tokenisation produces
+different colours and FAILS THE GATE. The print clause is therefore
+STRICTER than the web question, not a licence for a weaker answer to it,
+and the analogy was backwards.
+What genuinely relaxes the cost is derived from the clause rather than
+conceded: the gate compares COLOURS, not class names, and the print CSS
+collapses 31 classes onto about seven values. So the requirement is to
+reproduce pygments' tokenisation UP TO THE EQUIVALENCE THE COLOUR MAP
+INDUCES, and whoever implements highlighting measures that equivalence
+first, because the cost is set by colour classes and not by token classes.
+The WEB bar is left contingent rather than decided in the abstract: web
+byte-identity needs class NAMES where print needs only colours, so if the
+print-forced implementation reproduces classes exactly the web comes free,
+and if it reaches only colour equivalence the class attributes are a
+declared divergence with the code TEXT byte-identical either way. None of
+it lands now, since 010 carries no fenced code and the cost arrives with
+WP-3.3's fixture edition.
+
+**Sequencing recorded**: WP-5.5a's remainder is the largest single piece
+left in Phase 5, about 1,600 lines at a byte-identical bar, and 010
+exercises a narrow slice, with `_render_editorial`, `_render_section`,
+`_render_extract`, `_extracts_by_anchor`, `_render_key_ideas` and
+`_highlight_code` all corpus-unreachable, so the FIXTURE SURFACE WILL
+EXCEED THE CORPUS SURFACE. Built in landed increments rather than one pass.
 
 ## Revision 32 changelog
 
@@ -1395,7 +1455,7 @@ a waiver.
 | Justification | the design is ragged-right. CONFIRMED (WP-1.2) as a selector fact: the stylesheet's only `text-align` declaration is in the `@bottom-right` folio box and body text inherits `start`. Precisely: the word `justify` does occur four times, every one of them a flexbox `justify-content` or comment prose, none a `text-align` |
 | Text shaping (Pango+HarfBuzz vs rustybuzz) | same vendored TTFs. MEASURED (WP-1.1): 1488/1488 lines with identical glyph sequences, per-glyph advances within 0.00073 pt. Requires `liga`/`clig` off wherever letter-spacing is set (Pango suppresses ligatures under tracking) and tracking applied as exactly `(n-1) x letter_spacing` |
 | Glyph advance quantization (WeasyPrint breaks on `PangoRectangle.width`, an integer count of 1/1024 px; Typst sums exact font units) | RESOLVED as to mechanism by WP-1.6: systematic and one-sided at 0.000173 pt per glyph, mean drift 0.010476 pt, max 0.017432 pt, and 604 of 899 body lines exceed the 0.01 pt quantum. Two distinct consequences, do not conflate them. (a) LINE BREAKING: exactly one line of 899 flips, block 135; fixed by widening the Typst body column to WP-1.7's measured midpoint. (b) INTRA-LINE GLYPH POSITIONS: invisible to the display list at SHOW-level granularity, which is why revision 15 records per-GLYPH positions (WP-0.2i) and derives their bound from this very mechanism; the raster guard that used to carry this was withdrawn when WP-0.2f proved it cannot. do not chain WP-1.1's 0.009897 pt to these figures: it was measured with hyphenation ON over 1402 lines, WP-1.6's over 899 with it OFF, and drift accumulates per glyph, so they describe different line populations rather than different methods (rule 9) |
-| Syntax highlighting (pygments vs syntect) | (text-run, fill color) sequences at the content-stream level (WP-3.3), never raster; 010 carries NO fenced code blocks or extracts, so WP-3.3 gates on a dedicated fixture edition, not vacuously on 010 |
+| Syntax highlighting (pygments vs a Rust highlighter) | (text-run, fill color) sequences at the content-stream level (WP-3.3), never raster; 010 carries NO fenced code blocks or extracts, so WP-3.3 gates on a dedicated fixture edition, not vacuously on 010. Read this clause as STRICT rather than lenient (revision 33): print code is pygments-highlighted via `html_edition.py:660` and coloured by the print CSS, so a different tokenisation gives different colours and FAILS the gate. It is satisfied by reproducing pygments' tokenisation up to the equivalence the CSS colour map induces (about seven colours over 31 classes), not by matching class names. `syntect` is RULED OUT by measurement: it does not match pygments' tokenisation |
 | Font names (WeasyPrint embeds aliases: Magazine-Serif, Magazine-Sans, ...; Typst embeds the faces' real names) | `parity.yaml font_name_map`, authored in WP-0.2b, each mapping pair validated by identical font-file digests |
 | pypdf rewrite noise on inner pages | measured by WP-0.2c's merge calibration; found noise becomes an explicit normalization rule before it can be mistaken for an engine diff |
 | PDF metadata, subset names, object order, compression | normalized away or never compared |
@@ -3471,12 +3531,44 @@ them or the divergence is a defect:
     encoder. Two facts this rests on are verified: the payload is a pure
     function of `source_url` (`manifest.py:1261`, scheme and `www.`
     stripped), and the PRINT error level is chosen by a fitting loop over
-    available room (`weasyprint_adapter.py:1907`), so the asset must record
-    the chosen LEVEL and not merely the payload. Two are NOT verified and
-    the WP proves them before committing to this: that both legs can be
-    pointed at the asset (a sanctioned oracle change on the WP-0.0b
-    pattern, which must render byte-identical since the asset is exactly
-    what segno produces today), and that no other path regenerates a code.
+    available room (`weasyprint_adapter.py:1907`).
+    **ASSET FORMAT, corrected by measurement (revision 33).** Revision 32
+    said payload and level; that is not enough. There are exactly three
+    segno call sites and the print path uses segno TWICE per code for
+    different purposes: a SEARCH in `_fitted_source_code` (:1907) looping
+    H, Q, M, L to pick the largest module, and a REDRAW in
+    `_source_code_matrix` (:1920). Every search input is a constant (room
+    55.5, quiet 4, min module 0.35 mm, epsilon 1e-9), so the fit is a pure
+    function of the payload, and the asset must therefore record the
+    payload, the chosen LEVEL, the MODULE COUNT and the matrix. Without
+    `modules` the search has to re-run, and it feeds layout directly
+    through `module = room / modules` and `side = quiet * module`.
+    **The format also needs a PRINT-DECLINES state.** The legs agree up to
+    154 characters and diverge at 155, where the print path declines to
+    place a code at all, because at most 55 modules fit in 55.5 pt and v8
+    needs 57. Above that the legs do not disagree about which code to draw;
+    print draws NONE. Unless the format can say so, a future long URL will
+    read as a missing asset rather than a correct outcome. 010's longest
+    payload is 67 characters, comfortably inside.
+    **And the 9-of-9 agreement is now EXPLAINED rather than observed**,
+    which is what makes the decision safe rather than lucky: the fit
+    maximises module size, which minimises version, and among ties keeps
+    the earliest of H, Q, M, L because no tie exceeds epsilon. That is
+    "smallest version, strongest level at that version", which is exactly
+    segno's boost rule. When the decision was taken it had NOT been
+    verified that both legs pick the same level AND version; it now is,
+    with a mechanism (rule 11).
+    Leg 1 remains: that both legs can be pointed at the asset. **Owns
+    EXTENSION granted** for `src/magazine/web_edition.py` and
+    `src/magazine/weasyprint_adapter.py`, the asset-reading change ONLY, as
+    a sanctioned oracle change alongside WP-0.0b, WP-0.0c and WP-1.5, with
+    the usual obligation: render 010 before and after and compare
+    byte-for-byte across BOTH the web tree and the reader PDF.
+    `weasyprint_adapter.py` is a heavier target than those precedents,
+    since Appendix A deletes it at WP-6.1 and the whole parity comparison
+    runs through it, so the edit stays minimal and leaves the DRAWING path
+    alone: `_source_code_source` draws from `code.module` and `code.side`
+    as well as from the matrix.
     If either fails, fall back to (a) with the encoder scoped as its OWN
     WP, the segno deviation as a named requirement, and `qrcodegen`'s
     `boost_ecl` retained as an independent check on version and effective
@@ -3492,36 +3584,56 @@ them or the divergence is a defect:
     that turned on the QR modules being inside Tier E's COMPARED DOMAIN,
     and highlighted code is `<span class="...">` in the WEB TREE ONLY,
     which no ladder clause inspects. No gate forces reproduction here.
-    **Decision: compare highlighted code STRUCTURALLY, not byte for byte.**
-    Same token boundaries and same class names, so the CSS colours it
-    identically; the library's markup formatting is not reproduced. The
-    plan already settled the analogous question for the PRINT path, where
-    the divergence table compares pygments against syntect at the
-    (text-run, fill colour) level and never at the markup level, so this is
-    consistency rather than a new concession, and `syntect` is the likely
-    implementation since WP-3.3 already contemplates it. The web-tree
-    oracle is therefore restated as **byte-identical EXCEPT highlighted-code
-    spans, which are structurally equal**, declared and enumerated in
-    evidence rather than absorbed, with a fixture edition exercising the
-    branch 010 cannot reach.
-  - **The increment that landed validates revision 26's strong form**, and
-    is worth recording because it caught the author's own errors. The four
-    brittle matchers are ported STRUCTURALLY and pinned to PYTHON: over 10
-    lines carrying an added attribute or class, Python fails to recognise 8
-    while the port recognises 10, which closes the WP-0.0c defect class.
-    Pinning to the oracle rather than to the author's reading then caught
-    TWO of its own bugs: `source_link()` must EXCLUDE an already-installed
-    `opener-source-link`, since its job is finding links that still need a
-    QR, and `is_print_only()` must drop `source-link` only when
-    `opener-source-link` is ABSENT. Exactly 18 `class="source-link
-    opener-source-link"` survive into 010's shipped web tree, so a naive
-    structural rewrite would have DELETED the QR links: the very defect
-    this work exists to fix, inverted. That is what revision 26 means by
-    pinning to the oracle rather than to a sibling or to one's own
-    understanding.
-    One detail worth keeping: the REORDERED-ATTRIBUTE case is WORSE than
-    the unrecognised one, because Python classifies it as print-only and
-    DELETES the link entirely rather than merely failing to upgrade it.
+    **RE-DECIDED (revision 33), and the previous reasoning was wrong in
+    both halves.** Revision 32 settled this by consistency with the print
+    path and named `syntect` as the likely implementation. Measurement
+    killed the second half: the FORMATTER is trivial,
+    `<span class="...">escaped</span>` and nothing else, verified over all
+    106 corpus blocks, while the LEXERS are the entire cost, 8,559 spans
+    across 31 classes and nine languages including where they emit `err`,
+    and **syntect would NOT have matched**. Checking rather than assuming
+    then killed the first half too.
+    **The print path is NOT a precedent for a weaker bar; it is a STRICTER
+    requirement, and it is gate-forced.** `html_edition.py:660` emits
+    `<pre><code>` through the same `_highlight_code`, so PRINT code blocks
+    are pygments-highlighted as well, and `weasyprint-a5.css` colours those
+    classes. Tier S's colour clause compares per-page (text-run, fill
+    colour) sequences, so a different tokenisation yields different colours
+    and **the gate fails**. Reproducing pygments' tokenisation is therefore
+    forced for print in exactly the way the QR matrices were forced, and
+    the analogy revision 32 drew to justify a weaker web bar had it
+    backwards.
+    **But the gate compares COLOURS, not class names, and that is a real
+    relaxation rather than a concession.** The print CSS collapses the 31
+    classes onto about seven distinct values, `inherit` among them. So the
+    requirement is to reproduce pygments' tokenisation **up to the
+    equivalence induced by the CSS colour map**, which is derived from what
+    the clause actually says and may be far cheaper than 31-class
+    fidelity. Whoever implements highlighting measures that equivalence
+    first: the cost is set by the number of colour classes, not by the
+    number of token classes.
+    **The WEB bar is contingent and is not decided in the abstract.**
+    Byte-identical web HTML needs the class NAMES, where print needs only
+    the colours, so web is strictly harder. If the print-forced
+    implementation reproduces classes exactly, web byte-identity comes free
+    and nothing is declared. If it reaches only colour equivalence, the
+    class attributes inside highlighted spans are a DECLARED and enumerated
+    divergence, with the code TEXT byte-identical either way, since the
+    text is the magazine's verbatim obligation and the colouring is
+    presentation. Decide it when the implementation is measured, and record
+    which way it went.
+    None of this lands now: 010 carries no fenced code, so the cost arrives
+    with WP-3.3's fixture edition, which the plan already requires.
+
+  - **Sequencing: this is now the largest single piece left in Phase 5**,
+    roughly 1,600 lines at a byte-identical bar (`render_html_edition`, ~45
+    functions, then `web_edition.py`'s pipeline, ~30), and 010 exercises a
+    narrow slice of it. Zero editorial, sections, extracts, key_ideas and
+    fenced code, so `_render_editorial`, `_render_section`,
+    `_render_extract`, `_extracts_by_anchor`, `_render_key_ideas` and
+    `_highlight_code` are ALL corpus-unreachable and **the fixture surface
+    will exceed the corpus surface**, which is the corpus rule at its most
+    demanding. Build in landed increments rather than one pass.
   - Carries WP-0.0c's unfinished business: `_PRINT_ONLY_LINE`,
     `_SOURCE_LINK_LINE`, `_PIECE_OPENING`, and the repaired opener regex
     that still requires the class to be exactly `article-opener`. All four
