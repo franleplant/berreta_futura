@@ -616,6 +616,7 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
         content_run.as_deref(),
     );
     stage_art(&mut staging, &edition_yaml, &edition_dir);
+    stage_source_codes(&mut staging, &edition_dir, &repo_root);
     let design_toml = PathBuf::from(DESIGN_TOML_PATH);
     if repo_root.join(&design_toml).exists() {
         staging.add(&design_toml);
@@ -798,6 +799,22 @@ fn articles_of(edition_yaml: &serde_yaml::Value) -> impl Iterator<Item = &serde_
         .and_then(|v| v.as_sequence())
         .into_iter()
         .flatten()
+}
+
+fn stage_source_codes(staging: &mut Staging, edition_dir: &Path, repo_root: &Path) {
+    let rel = edition_dir.join("source-codes");
+    let Ok(entries) = fs::read_dir(repo_root.join(&rel)) else {
+        return;
+    };
+    let mut names: Vec<_> = entries
+        .flatten()
+        .filter(|e| e.path().is_file())
+        .map(|e| e.file_name())
+        .collect();
+    names.sort();
+    for name in names {
+        staging.add(&rel.join(name));
+    }
 }
 
 fn stage_art(staging: &mut Staging, edition_yaml: &serde_yaml::Value, edition_dir: &Path) {

@@ -529,6 +529,7 @@ class SourceCode:
     url: str
     left: float = 0.0
     top: float = 0.0
+    anchor: Path | None = None
 
     @property
     def side(self) -> float:
@@ -1359,7 +1360,7 @@ def _opener_credit_code(article: Any) -> SourceCode | None:
     url = str(getattr(article, "source_url", "") or "").strip()
     if not url:
         return None
-    return _fitted_source_code(str(article.id), url, _CODE_OPENER_SIDE_POINTS)
+    return _fitted_source_code(str(article.id), url, _CODE_OPENER_SIDE_POINTS, article.manuscript)
 
 
 def _opener_byline_baseline(size: float, lines: int) -> float:
@@ -1898,31 +1899,44 @@ def _fit_credit_measure(article: Element, header: Element, code: SourceCode) -> 
             )
 
 
-def _fitted_source_code(article_id: str, url: str, room: float) -> SourceCode | None:
-    import segno
+def _fitted_source_code(
+    article_id: str, url: str, room: float, anchor: Path | None = None
+) -> SourceCode | None:
+    from .web_edition import committed_source_codes, source_code_directory
 
     payload = source_code_payload(url)
-    best: SourceCode | None = None
-    for level in _CODE_ERROR_LEVELS:
-        symbol = segno.make(payload, error=level, micro=False)
-        modules = int(symbol.symbol_size(border=_CODE_QUIET_MODULES)[0])
-        module = room / modules
-        if module < _CODE_MIN_MODULE_POINTS:
-            continue
-        if best is None or module > best.module + _MODULE_EPSILON:
-            best = SourceCode(article_id, "opener", level, modules, module, payload)
-    return best
+    directory = None if anchor is None else source_code_directory(anchor)
+    asset = None if directory is None else committed_source_codes(directory).get(payload)
+    if asset is None:
+        raise ValidationError(
+            f"No committed source code for article {article_id}; "
+            "regenerate editions/<id>/source-codes"
+        )
+    if asset.error is None:
+        return None
+    return SourceCode(
+        article_id,
+        "opener",
+        asset.error,
+        asset.modules,
+        room / asset.modules,
+        payload,
+        anchor=anchor,
+    )
 
 
-def _source_code_matrix(code: SourceCode) -> list[list[bool]]:
-    import segno
+def _source_code_matrix(code: SourceCode, anchor: Path | None = None) -> list[list[bool]]:
+    from .web_edition import committed_source_codes, source_code_directory
 
-    symbol = segno.make(code.url, error=code.error, micro=False)
-    return [[bool(cell) for cell in row] for row in symbol.matrix]
+    directory = None if anchor is None else source_code_directory(anchor)
+    asset = None if directory is None else committed_source_codes(directory).get(code.url)
+    if asset is None:
+        raise ValidationError(f"No committed source code matrix for payload {code.url!r}")
+    return [[cell == "1" for cell in row] for row in asset.matrix]
 
 
 def _source_code_source(code: SourceCode) -> str:
-    matrix = _source_code_matrix(code)
+    matrix = _source_code_matrix(code, code.anchor)
     size = len(matrix)
     unit = code.module
     side = code.side
@@ -2033,7 +2047,7 @@ def _opener_source_codes(edition: Edition, document: Any) -> tuple[SourceCode, .
             continue
         illustrated = _is_illustrated_article(article)
         room = _ILLUSTRATED_OPENER_CODE_SIDE_POINTS if illustrated else _CODE_OPENER_SIDE_POINTS
-        code = _fitted_source_code(str(article.id), url, room)
+        code = _fitted_source_code(str(article.id), url, room, article.manuscript)
         if code is None:
             raise ValidationError(
                 f"Article {article.id} cannot carry a scannable source code for {url}: "

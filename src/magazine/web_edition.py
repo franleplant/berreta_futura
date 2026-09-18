@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import shutil
-from io import BytesIO
 from collections.abc import Mapping
 from dataclasses import dataclass
 from html import escape
@@ -208,6 +207,49 @@ def _sanitize(value: str) -> str:
     return _UNSAFE_NAME_CHARACTERS.sub("-", value)
 
 
+@dataclass(frozen=True, slots=True)
+class CommittedSourceCode:
+    directory: Path
+    payload: str
+    svg: str
+    error: str | None
+    modules: int | None
+    matrix: tuple[str, ...]
+
+
+def source_code_directory(anchor: Path) -> Path | None:
+    for parent in [anchor, *anchor.parents]:
+        if (parent / "edition.yaml").is_file():
+            return parent / "source-codes"
+    return None
+
+
+def committed_source_codes(directory: Path) -> dict[str, CommittedSourceCode]:
+    index = directory / "codes.json"
+    if not index.is_file():
+        return {}
+    import json
+
+    rows = json.loads(index.read_text())["codes"]
+    loaded: dict[str, CommittedSourceCode] = {}
+    for row in rows:
+        printed = row.get("print")
+        loaded[row["payload"]] = CommittedSourceCode(
+            directory=directory,
+            payload=row["payload"],
+            svg=row["svg"],
+            error=None if printed is None else printed["error"],
+            modules=None if printed is None else printed["modules"],
+            matrix=() if printed is None else tuple(printed["matrix"]),
+        )
+    return loaded
+
+
+def committed_source_code(anchor: Path, payload: str) -> CommittedSourceCode | None:
+    directory = source_code_directory(anchor)
+    return None if directory is None else committed_source_codes(directory).get(payload)
+
+
 def _materialize_source_codes(
     edition: Edition,
     destination: Path,
@@ -229,26 +271,13 @@ def _materialize_source_codes(
         if name.casefold() in claimed:
             raise ValidationError(f"web source-code filename collision at assets/{name}")
         claimed.add(name.casefold())
-        payload = BytesIO()
-        try:
-            import segno
-
-            segno.make(source_code_payload(article.source_url), error="L", micro=False).save(
-                payload,
-                kind="svg",
-                scale=1,
-                border=4,
-                dark="#17191c",
-                light="#ffffff",
-                xmldecl=False,
-                svgns=True,
-                nl=False,
-            )
-        except Exception as exc:
+        asset = committed_source_code(article.manuscript, source_code_payload(article.source_url))
+        if asset is None:
             raise ValidationError(
-                f"Could not generate web source code for article {article.id}: {exc}"
-            ) from exc
-        (directory / name).write_bytes(payload.getvalue())
+                f"No committed source code for article {article.id}; "
+                "regenerate editions/<id>/source-codes"
+            )
+        (directory / name).write_bytes((asset.directory / asset.svg).read_bytes())
         result[source_id] = f"assets/{name}"
     return result
 
