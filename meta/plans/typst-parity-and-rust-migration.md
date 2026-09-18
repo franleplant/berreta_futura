@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 39 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 40 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,63 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 40 changelog
+
+**The content-final gate is removed, and NOT for the reason it was
+questioned.** The proposal was that the digest guard already discharges it
+mechanically. Verifying rather than trusting that premise, as the question
+itself asked, showed the guard does not currently do what the argument
+requires:
+
+- `baseline.json` holds **zero page entries and a null
+  `staged_input_digest`**, so `staleness()` returns `"unseeded"` on every
+  run today and guards nothing.
+- The refusal is **conditional on `--set`**. A bare `mag parity 010` on a
+  moved corpus records the staleness and CONTINUES; only page-set scoring
+  is skipped.
+- **No per-page ratchet comparison exists** anywhere in
+  `mag/src/parity.rs`. The bail message promising that "ratchet comparison
+  [is] refused" describes something never built.
+
+So "corpus stability is already enforced in code" was false as implemented.
+The mechanism was specified and never completed, and the human gate had
+been standing in front of that absence.
+
+**The gate still goes, because it fails the plan's OWN test.** Rule 7 says
+a Fran gate exists only where the plan must change or something is
+irreversible. Freezing a corpus so a ratchet means something is neither. On
+the two readings of "content-final": the plan means STABILITY, which is
+mechanisable, not a PROMISE about future editorial intent, which no digest
+can supply and which no human can truthfully give either. A promise would
+reduce the probability of rework, not prevent it, and every path to
+invalidation is loud once the digest is seeded. That is not worth routing a
+plan's critical path through a person.
+
+**It is replaced by a mechanical precondition rather than deleted**, since
+deleting it would leave Phase 3 gated on nothing while its stated
+verification remains inexecutable. **WP-0.2k** seeds the digest, makes the
+refusal unconditional, and implements the per-page ratchet that the Phase 3
+preamble and WP-3.0g both assume. The finding worth carrying beyond this
+decision: **Phase 3's verification was not executable today for reasons
+that had nothing to do with Fran**, and the human gate concealed that,
+because a phase blocked on a person is not examined for whether it is also
+blocked on code.
+
+**Nothing is being asked of Fran, and one thing is worth telling him.** Not
+a gate, purely informational, one sentence: *if you intend to revise
+edition 010's text, saying so before Phase 3 scores pages saves redoing
+that scoring, because every per-page attribution is tied to the exact
+staged inputs it was measured from.*
+
+**WP-1.8 moved out from behind the gate.** WP-3.1 was carrying the
+unreconciled 147/149 versus 148/149 count, which is a measurement someone
+can do TODAY and which was scheduled behind a human gate for no reason.
+Third instance of this class, and rule 9 exists because of the first two.
+Its standing hypothesis, held as a hypothesis under rule 11 rather than
+recorded as an answer, is that WP-1.7's harness lacks the styled-run
+preservation that took WP-1.2 from 147/149 to 148/149. WP-3.1 keeps
+WP-1.2's break miss, which genuinely needs the engine.
 
 ## Revision 39 changelog
 
@@ -2107,7 +2164,9 @@ before/after comparisons (WP-4.3); out of scope here.
    irreversible happens. Revision 9 resolves the Phase 1 gates (1.1's
    residual, 1.2's match rate, 1.3's mechanism) as plan decisions, so what
    remains is: a discovered repo anomaly or failed spike (0.1, 5.7), 010
-   content-final before PHASE 3 (revision 12 moved it there from Phase 2),
+   [content-final before Phase 3 was REMOVED in revision 40: it failed this
+   rule's own test, being neither plan-changing nor irreversible, and is
+   replaced by WP-0.2k's mechanical precondition],
    the post-flip typography change (4.3),
    tools disposition and rollback deletion (6.1), and any new `blocked`
    finding that needs the plan changed (as WP-0.2d's raster bound did).
@@ -2624,6 +2683,37 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   numbers" is as valuable as a defect, and rule 11 applies, so the
   mechanism is measured rather than asserted.
 
+### WP-0.2k seed the baseline and make the ratchet operative (comparator WP)
+
+- Owns: `mag/src/parity.rs`, `meta/verification/baseline.json` (seeding and
+  the per-page entries, the second WP besides WP-0.2a licensed to write it
+  under rule 1). Serial with the other `mag/src/parity*` owners (rule 1c).
+- Why: Phase 3's verification is "`mag parity 010` green against
+  `baseline.json` (no page regresses)", and none of that exists. Measured
+  rather than assumed (revision 40): `baseline.json` carries zero page
+  entries and a null `staged_input_digest`, so `staleness()` returns
+  `"unseeded"` for every run and guards nothing; the refusal fires only
+  under `--set`, so a bare run on a moved corpus records staleness and
+  CONTINUES; and no per-page comparison against a recorded tier exists in
+  the comparator at all. The plan has been describing a ratchet it never
+  built, and the human content-final gate was standing in front of that
+  absence rather than in front of a risk only Fran could retire.
+- Target 1: SEED `staged_input_digest` from a fresh oracle run, so
+  `staleness()` can return `fresh` or `stale` rather than `unseeded`.
+- Target 2: make the refusal UNCONDITIONAL. A stale digest refuses the run,
+  not merely page-set scoring under `--set`. A comparator that continues on
+  a corpus it cannot vouch for is the vacuity class rule 10 names.
+- Target 3: implement the per-page ratchet the Phase 3 preamble and WP-3.0g
+  assume: record per page the best tier achieved and which Tier S clauses
+  pass, refuse to run when a working-tree entry is LOWER than the committed
+  one (the rule-1 check `git show <base>:...` already specifies), and let
+  only a verifier raise.
+- Verify: with the digest seeded, a deliberately altered staged input makes
+  a bare `mag parity 010` FAIL rather than report; an unaltered run passes
+  and writes a byte-deterministic verdict; a hand-lowered baseline entry is
+  refused; a raise applied by a verifier is accepted. `cargo test`, `fmt`,
+  `clippy -D warnings` green.
+
 ### WP-0.2i per-glyph positions (comparator WP)
 
 - Owns: `mag/src/parity/streams.rs`, `mag/src/parity/display.rs`,
@@ -2893,6 +2983,29 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   improving 147/149 to 148/149 once styled runs were preserved, which is
   the likely difference.
 
+### WP-1.8 reconcile the third cross-spike line count
+
+- Owns: evidence only (Phase 1 preamble binds). Runnable NOW; depends on
+  nothing and blocks nothing, which is why revision 40 moved it out of
+  WP-3.1.
+- Why: WP-1.7's harness reports 147/149 paragraphs and 962/968 lines at the
+  unwidened measure where WP-1.2 reports 148/149 and 963/968, for what both
+  describe as the same 149-block, 968-line population. One extra divergent
+  block and one extra differing line, neither named nor explained. This is
+  the THIRD cross-spike count disagreement in this execution, after
+  WP-1.2-versus-WP-1.1 and the ten-versus-eleven issue sites, and rule 9
+  now exists because of the first two.
+- Target: name the cause with a measurement. The standing hypothesis, which
+  rule 11 makes a HYPOTHESIS until tested rather than an answer: WP-1.7's
+  harness may lack the styled-run preservation that took WP-1.2 from
+  147/149 to 148/149, which WP-1.2 records having added. Test it by
+  re-running one harness with the other's treatment and seeing whether the
+  count moves; if it does not, the populations differ some other way and
+  the difference is real.
+- Verify: the two counts reconcile with a stated cause, or the residual
+  difference is reported as a genuine divergence with its page and block
+  named. Either outcome carries its configuration (rule 9).
+
 ### WP-1.5 apply the hyphenation decision (sanctioned oracle change)
 
 - Owns: `src/magazine/assets/weasyprint-a5.css`,
@@ -3038,10 +3151,28 @@ is WP-3.4); verdict digest recorded.
 
 ## Phase 3: convergence
 
-Preamble (binds per rule 8): **Phase 3 does not start until Fran has
-recorded 010 content-final** (revision 12 moved that gate here from
-WP-2.0a: this is where claims start accumulating across runs, and a moving
-corpus makes a per-page ratchet meaningless). Strictly serial, this order.
+Preamble (binds per rule 8): **Phase 3 starts when WP-0.2k has SEEDED the
+baseline digest and made the ratchet operative, not when a human declares
+anything** (revision 40 replaced the content-final gate; see its changelog
+for the argument and the measurements). The gate's own stated reason was
+that a moving corpus makes a per-page ratchet meaningless, which is a claim
+about corpus STABILITY rather than editorial quality, and stability is
+mechanisable. By the plan's own rule 7 a Fran gate exists only where the
+plan must change or something is irreversible, and freezing a corpus is
+neither, so the gate failed the plan's own test for being one.
+It is replaced by a MECHANICAL precondition rather than simply deleted,
+because verification found the mechanism was specified but never completed:
+`baseline.json` holds zero page entries and a null `staged_input_digest`,
+so `staleness()` returns `"unseeded"` on every run today and guards
+nothing; the refusal fires only when `--set` is passed, so a bare
+`mag parity 010` on a moved corpus records staleness and CONTINUES; and no
+per-page ratchet comparison exists anywhere in `mag/src/parity.rs`, so the
+refusal message's promise that "ratchet comparison [is] refused" is
+aspirational. **Phase 3's stated verification, "`mag parity 010` green
+against `baseline.json` (no page regresses)", is therefore not executable
+today for reasons that have nothing to do with Fran.** WP-0.2k makes it
+executable; until then Phase 3 is blocked on code, which someone can write
+now. Strictly serial, this order.
 Every Phase 3 WP except WP-3.0g owns `mag/src/typeset/**` plus its evidence
 file and NOTHING else; comparator territory is out of bounds (rule 4). Each
 WP is scored on its named `page_sets:` entry. Verification, identical for
@@ -3050,9 +3181,10 @@ raises are the
 verifier's), and the named page set at the named standard.
 
 - **WP-3.1 body text** (`page_sets.body`): Tier S text+color + G2. Also
-  carries WP-1.2's single break miss and WP-1.7's unreconciled 147/149
-  versus 148/149 count: both must be resolved here or reported as real
-  divergences, not inherited as folklore.
+  carries WP-1.2's single break miss, which needs the engine and so belongs
+  here. The 147/149 versus 148/149 count does NOT: see WP-1.8, moved out in
+  revision 40 because it is a measurement someone can perform today and was
+  sitting behind a gate for no reason.
 - **WP-3.2 headings, openers, TOC** (`page_sets.openers`): Tier S + G2;
   opener-fit booleans exact.
 - **WP-3.3 code blocks and extracts**: 010 carries neither, so this WP
@@ -4297,6 +4429,8 @@ WP-2.0a -> WP-2.0b
 WP-5.1a -> WP-5.1b -> WP-5.1c
 WP-5.1c + WP-2.0b -> WP-2.1 -> WP-2.2a -> WP-2.2b -> WP-2.2c -> WP-2.3
 WP-1.6 (done) -> WP-1.7 (evidence only) -> WP-2.2a (cites its interval)
+WP-1.8 (evidence only, runnable now, blocks nothing)
+WP-0.2k -> WP-3.1   (the ratchet must exist before Phase 3 can be verified)
 WP-2.3 + WP-1.7 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5
 WP-3.5 + WP-0.2i -> WP-3.0g -> WP-3.7          (the ratchet cannot be
                                                 raised to Tier E before the
