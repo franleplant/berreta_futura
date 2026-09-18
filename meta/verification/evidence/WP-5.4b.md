@@ -22,7 +22,7 @@ committed hash `4b4549e9b97ead363014cb94eb8ff3e6af4491c7f865bd0bba3fd665988190b2
 byte for byte, which is the accepted oracle for a mode this WP did not port.
 
 ```
-uv run python -c '
+uv run python - <<'PY'
 import sys, re, hashlib, io
 sys.path.insert(0, "src")
 from pathlib import Path
@@ -46,10 +46,13 @@ def edition(layout):
     )
 
 def raster_prepare(svg, dpi):
-    w = round(PAGE_WIDTH / 72 * dpi); h = round(PAGE_HEIGHT / 72 * dpi)
-    out = re.sub(rb"width=\"[^\"]+\" height=\"[^\"]+\"", f"width=\"{w}\" height=\"{h}\"".encode(), svg, count=1)
+    w = round(PAGE_WIDTH / 72 * dpi)
+    h = round(PAGE_HEIGHT / 72 * dpi)
+    out = re.sub(rb'width="[^"]+" height="[^"]+"',
+                 'width="{}" height="{}"'.format(w, h).encode(), svg, count=1)
     for slot in (b"paper", b"edge-tab", b"field"):
-        out = re.sub(rb"(<rect data-slot=\"" + slot + rb"\"[^>]*?) fill=\"[^\"]+\"", rb"\1 fill=\"none\"", out, count=1)
+        out = re.sub(rb'(<rect data-slot="' + slot + rb'"[^>]*?) fill="[^"]+"',
+                     rb'\1 fill="none"', out, count=1)
     return out.decode("utf-8")
 
 c = CoverCompiler(Path("."))
@@ -60,31 +63,69 @@ for layout in ["framed", "honored_plate", "footer_caption"]:
     im = Image.open(io.BytesIO(png)).convert("RGBA")
     px = bytearray(im.tobytes())
     for i in range(0, len(px), 4):
-        a = px[i+3]
+        a = px[i + 3]
         if a != 255:
-            px[i] = (px[i]*a + 127)//255; px[i+1] = (px[i+1]*a + 127)//255; px[i+2] = (px[i+2]*a + 127)//255
+            px[i] = (px[i] * a + 127) // 255
+            px[i + 1] = (px[i + 1] * a + 127) // 255
+            px[i + 2] = (px[i + 2] * a + 127) // 255
     print(layout, im.size, hashlib.sha256(bytes(px)).hexdigest())
-'
+PY
 ```
 
-The refusal fixture's headline was chosen by asking Python which strings it
-refuses, rather than by guessing:
+A HEREDOC rather than `python -c '...'`, deliberately. The first submission of
+this evidence recorded the oracle as a single-quoted `-c` string, which forced
+the regex replacements to be escaped and produced `rb"\1 fill=\"none\""` in a
+RAW bytes literal, so the escaped quotes were inserted literally and resvg
+rejected the SVG at char 92. The command was right in the shell and wrong on the
+page. A quoted heredoc needs no escaping at all, so what is recorded is what
+runs.
+
+Every command block below was extracted from THIS FILE and executed before
+submission, rather than re-run from shell history. Those two diverge exactly
+when quoting is involved, which is exactly when it matters.
+
+Every refusal fixture's input was found by ASKING PYTHON WHICH INPUTS IT
+REFUSES, not by guessing. The first candidate for the headline fit at three
+lines; the first deck candidate refused at every plausible threshold and so
+proved nothing, and was replaced by one that wraps to exactly six lines, one
+over the limit.
 
 ```
-uv run python -c '
-import sys; sys.path.insert(0,"src")
+uv run python - <<'PY'
+import sys
+sys.path.insert(0, "src")
 from pathlib import Path
+from types import SimpleNamespace
 from magazine.cover import CoverCompiler, CoverOverflowError
+
+ART = Path("editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png")
+AUTHORS = ["FRANK RIETTA","ANTHROPIC","DARIO AMODEI","SANTI RUIZ","MICHAEL TRUELL",
+           "WILSON LIN","DEEPSEEK-AI","JON LEE, CHAOMIN YU, BEN RIES"]
+LONGDECK = ["CONTRIBUTOR NAME NUMBER {} WITH EXTRA WORDS".format(i) for i in range(7)]
+FITDECK = ["CONTRIBUTOR NAME NUMBER {} WITH EXTRA WORDS".format(i) for i in range(6)]
+
+def ed(layout, name="Berreta Futura", headline="The Speed Limit", authors=AUTHORS):
+    return SimpleNamespace(
+        identifier="010", language="en", issue_number=10, place="Buenos Aires",
+        publication_name=name, publication_date="2026-09-13", title=headline,
+        cover={"layout": layout, "headline": headline}, cover_art=ART,
+        articles=[SimpleNamespace(author=a) for a in authors])
+
 c = CoverCompiler(Path("."))
-for t in ["Extraordinarily Unfittable Supercalifragilistic Headline",
-          "Pneumonoultramicroscopicsilicovolcanoconiosis",
-          "Antidisestablishmentarianismxx Pneumonoultramicroscopic Floccinaucinihilipilification Supercalifragilisticexpialidocious"]:
+cases = [
+    ("wordmark", ed("framed", name="Antidisestablishmentarianism Floccinaucinihilipilification")),
+    ("title", ed("honored_plate", headline="The Speed Limit And Its Discontents")),
+    ("deck refuses at 6 wrapped lines", ed("framed", authors=LONGDECK)),
+    ("deck fits at 5 wrapped lines", ed("framed", authors=FITDECK)),
+    ("headline", ed("framed", headline="Antidisestablishmentarianismxx Pneumonoultramicroscopic Floccinaucinihilipilification Supercalifragilisticexpialidocious")),
+]
+for label, edition in cases:
     try:
-        lines, size = c._headline_layout(t.upper().strip(), described_as=t)
-        print("FITS", len(lines), size)
+        c._materialize_svg(edition)
+        print(label + ": FITS")
     except CoverOverflowError as e:
-        print("REFUSE", e)
-'
+        print(label + ": " + str(e))
+PY
 ```
 
 Tests: `cargo test --test cover_modes`, `cargo test`, `cargo fmt --check`,
@@ -149,20 +190,56 @@ FAILS at `top_mean diverged from PIL: 109.56702330964686 against
 109.56689949397072` while `footer_caption_raster_matches_the_python_compiler`
 PASSES in the same run. Both halves reproduce exactly as WP-5.4 recorded them.
 
+### Refusal coverage: every `bail!` in `mag/src/cover/svg.rs`
+
+Six sites, all six now exercised. The first submission tested three, disclosed
+one, and left TWO neither tested nor disclosed, which is the gap this table
+exists to close: WP-6.1 depends on this WP's coverage, so an unexercised,
+unrecorded refusal is a capability that could be deleted without anyone
+noticing.
+
+| site | message | fixture |
+|---|---|---|
+| `:193` | Publication wordmark cannot fit | `a_publication_wordmark_that_cannot_fit_is_refused` |
+| `:352` | Cover title cannot fit on one line | `a_title_that_cannot_fit_on_one_line_is_refused` |
+| `:520` | Cover headline cannot fit | `a_headline_that_cannot_fit_is_refused` |
+| `:566` | Cover deck cannot fit | `a_deck_that_cannot_fit_is_refused` |
+| `:590` | Cover art is missing | `missing_cover_art_is_refused_by_every_mode_that_places_it` |
+| `:723` | Unknown cover layout | `an_unknown_layout_is_refused_as_python_refuses_it` |
+
+Each asserts FULL-MESSAGE equality against the string Python emits through
+`_materialize_svg`, captured by the probe above rather than transcribed from the
+Python source.
+
+Each new refusal was then perturbed at its THRESHOLD, not just its message,
+because a fixture that refuses at every plausible threshold proves only that
+some refusal exists:
+
+| perturbation | result |
+|---|---|
+| wordmark floor 25.0 to 20.0 | `a_publication_wordmark...` FAILS |
+| title floor 12.0 to 8.0 | `a_title_that_cannot_fit...` FAILS |
+| deck limit 5 to 6 | `a_deck_that_cannot_fit...` FAILS |
+
+The deck fixture was TIGHTENED after its first form failed to discriminate.
+Twelve contributors wrap to ten lines, so raising the limit from 5 to 8 still
+refused and the perturbation passed. Seven contributors wrap to exactly six,
+one over the limit, so the fixture now fails the moment the limit moves by one.
+A companion test pins the other side: six contributors wrap to exactly five and
+must still FIT.
+
 ### Branches edition 010 cannot reach
 
-Inherited from WP-5.4's enumeration rather than re-derived. Covered here:
+Inherited from WP-5.4's enumeration rather than re-derived. 010 ships
+`footer_caption` with art present, a headline that fits, a publication name that
+fits, and a deck of four wrapped lines, so it reaches none of the following:
 
 | branch | fixture |
 |---|---|
 | `framed` layout (the default when `cover.layout` is unset) | `framed_raster_matches_the_python_compiler` |
 | `honored_plate` layout | `honored_plate_raster_matches_the_python_compiler` |
-| unknown-layout refusal (`cover.py:401`) | `an_unknown_layout_is_refused_as_python_refuses_it` |
-| missing cover art (`cover.py:424` framed, `:505` via `_full_art`) | `missing_cover_art_is_refused_by_every_mode_that_places_it` |
-| headline overflow (`cover.py:968`) | `a_headline_that_cannot_fit_is_refused` |
-
-010 reaches none of these: it ships `footer_caption` with art present and a
-headline that fits.
+| all six refusal sites | the table above |
+| a deck at the five-line boundary | `a_deck_of_five_wrapped_lines_still_fits` |
 
 ## Verdicts
 
@@ -172,14 +249,15 @@ headline that fits.
 
 ## Residuals
 
-**The PDF writer does not exist, so this WP's guard could not apply.** The brief
-said to add coverage rather than a second writer, because the writer was
-required to be general. WP-5.4's own `## What is and is not proven` lists "the
-PDF writer" as NOT built, and `mag/src/cover/` contains no PDF module. So there
-is no writer to be narrow, and the modes are proven at the SVG-and-raster level
-only, which is the same level at which WP-5.4 proved `footer_caption`. Whoever
-writes it inherits three modes rather than one, and the invisible `3 Tr` layer
-comparison (content and placement, never subset bytes) applies to all three.
+**The PDF writer did not exist while this WP ran, so its guard could not apply.**
+The brief said to add coverage rather than a second writer, because the writer
+was required to be general. WP-5.4's own `## What is and is not proven` lists
+"the PDF writer" as NOT built, and `mag/src/cover/` contained no PDF module. So
+there was no writer to be narrow, and the modes are proven at the SVG-and-raster
+level only, which is the same level at which WP-5.4 proved `footer_caption`.
+WP-5.4c is now building `mag/src/cover/pdf.rs`; it inherits three modes rather
+than one, and the invisible `3 Tr` layer comparison (content and placement,
+never subset bytes) applies to all three.
 
 `design.toml` loading is still unported; both this WP and WP-5.4 construct
 `Design` in test code. The values here are transcribed from
@@ -189,27 +267,31 @@ is relied on outside the test suite.
 
 The back cover remains unported and unproven, unchanged by this WP.
 
-Deck overflow (`cover.py:1004`, more than five wrapped lines) and the
-contributor-less deck path are NOT covered: both need contributor text the
-stand-in would have to invent, and the refusal message includes the full text,
-so a fixture would pin a string of no significance. Recorded as uncovered rather
-than papered over.
+Deck overflow IS now covered; the first submission declined it on the ground
+that a fixture "would pin a string of no significance", which was the weaker
+argument. The same method that solved the headline case — asking Python which
+inputs it refuses — solved it directly, and the resulting fixture is tighter
+than the headline one because it also pins the fitting side of the boundary.
+The contributor-less deck path remains uncovered: it is reachable only from an
+edition with no authors and no `cover.deck`, which the stand-in cannot express
+without inventing an edition shape 010 has no analogue for.
 
 ## What is and is not proven
 
-PROVEN by committed tests, each against a number Python produced, each shown to
+PROVEN by committed tests, each against a value Python produced, each shown to
 discriminate by a perturbation reverted in place: the `framed` front cover
-raster, the `honored_plate` front cover raster, the unknown-layout refusal
-message, the missing-cover-art refusal message in both modes that place art, and
-the headline-overflow refusal message. The `footer_caption` hash is asserted
-here too, which proves the layout DISPATCH reaches it unchanged; WP-5.4 owns the
-mode itself.
+raster, the `honored_plate` front cover raster, and all SIX refusal messages in
+`svg.rs` with three of them additionally perturbed at their threshold rather
+than only their text. The `footer_caption` hash is asserted here too, which
+proves the layout DISPATCH reaches it unchanged; WP-5.4 owns the mode itself.
 
-NOT PROVEN and not claimed: the PDF writer for any mode (it does not exist), the
-back cover in any mode, `design.toml` loading, deck overflow, the contributor-less
-deck path, and the invisible text layer for the two new modes (no PDF, so no
-layer). None of the three modes is proven end to end to a PDF; all three are
-proven to a raster.
+NOT PROVEN and not claimed: the PDF writer for any mode (WP-5.4c is building it;
+it did not exist while this WP ran), the back cover in any mode, `design.toml`
+loading, the contributor-less deck path (`text.is_empty()`, which yields an
+empty `<g data-slot="deck"/>` and is reachable only from an edition with no
+authors and no deck), and the invisible text layer for the two new modes, since
+there is no PDF to carry it. None of the three modes is proven end to end to a
+PDF; all three are proven to a raster.
 
 No row in this WP compares an empty set against an empty set or a constant
 against itself.

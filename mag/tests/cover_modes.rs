@@ -194,6 +194,73 @@ fn missing_cover_art_is_refused_by_every_mode_that_places_it() {
     }
 }
 
+fn refusal(layout: &str, mutate: impl FnOnce(&mut CoverText)) -> String {
+    let assets = repository().join("src/magazine/assets");
+    let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
+    let design = design();
+    let mut builder = Builder {
+        design: &design,
+        fonts: &mut fonts,
+    };
+    let mut text = edition_010_text();
+    mutate(&mut text);
+    builder
+        .materialize(layout, &text, &cover_art())
+        .expect_err("the input is refused")
+        .to_string()
+}
+
+#[test]
+fn a_publication_wordmark_that_cannot_fit_is_refused() {
+    let name = "Antidisestablishmentarianism Floccinaucinihilipilification";
+    assert_eq!(
+        refusal("framed", |text| text.publication_name = name.into()),
+        format!("Publication wordmark cannot fit: {name}")
+    );
+}
+
+#[test]
+fn a_title_that_cannot_fit_on_one_line_is_refused() {
+    assert_eq!(
+        refusal("honored_plate", |text| {
+            text.headline = "The Speed Limit And Its Discontents".into()
+        }),
+        "Cover title cannot fit on one line: THE SPEED LIMIT AND ITS DISCONTENTS"
+    );
+}
+
+#[test]
+fn a_deck_of_five_wrapped_lines_still_fits() {
+    let contributors: Vec<String> = (0..6)
+        .map(|i| format!("CONTRIBUTOR NAME NUMBER {i} WITH EXTRA WORDS"))
+        .collect();
+    let joined = contributors.join(" / ");
+    let assets = repository().join("src/magazine/assets");
+    let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
+    let design = design();
+    let mut builder = Builder {
+        design: &design,
+        fonts: &mut fonts,
+    };
+    let mut text = edition_010_text();
+    text.contributors = joined;
+    builder
+        .materialize("framed", &text, &cover_art())
+        .expect("a deck wrapping to exactly the five-line limit still fits");
+}
+
+#[test]
+fn a_deck_that_cannot_fit_is_refused() {
+    let contributors: Vec<String> = (0..7)
+        .map(|i| format!("CONTRIBUTOR NAME NUMBER {i} WITH EXTRA WORDS"))
+        .collect();
+    let joined = contributors.join(" / ");
+    assert_eq!(
+        refusal("framed", |text| text.contributors = joined.clone()),
+        format!("Cover deck cannot fit: {joined}")
+    );
+}
+
 #[test]
 fn a_headline_that_cannot_fit_is_refused() {
     let assets = repository().join("src/magazine/assets");
