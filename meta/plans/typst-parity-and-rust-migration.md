@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 33 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 34 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,44 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 34 changelog
+
+**The cover PDF writer does not exist, and the honesty section is how we
+know.** WP-5.4's `## What is and is not proven` listed it as not built,
+WP-5.4b confirmed `mag/src/cover/` holds no PDF module, and all three
+layouts are therefore proven at SVG-and-raster level only. That section
+became mandatory in revision 27 precisely because claims kept outrunning
+evidence; this is its first real test and it moved a discovery from
+integration time to planning time. Revision 21's guard, that the writer be
+written GENERALLY so WP-5.4b would add coverage rather than a second
+writer, could not be applied by WP-5.4b, because there was nothing to be
+general.
+
+**It becomes WP-5.4c rather than a re-opened WP-5.4 or a fold into
+WP-5.6.** Not WP-5.4b's, whose remit was the corpus-unreachable MODES and
+which delivered them. Not a re-opened WP-5.4, which is accepted and whose
+evidence was accurate. And explicitly not folded into WP-5.6: that WP's job
+is integration, and a WP that both writes new code and integrates five
+others is how blocked-on-everything WPs are made, which this execution has
+already demonstrated with the original WP-5.5. **WP-5.6 now depends on
+WP-5.4c rather than WP-5.4**, which is the edge that would otherwise have
+failed at integration with no cover at all.
+
+The gap is small and precisely sized: raster, outlines, zone statistics and
+the invisible layer are all proven, and only the assembly step is missing,
+with its shape already described in WP-5.4's evidence. Revision 21's
+"generally, not per-mode" guard re-attaches to WP-5.4c, which writes for
+all three modes at once using WP-5.4b's fixtures as coverage.
+
+**Its oracle is the RENDERED RESULT, never the embedded stream bytes**, for
+the reason WP-5.4b already established when it declined to compare SVGs:
+Rust and Python encode the graded-art PNG differently, base64 diverging at
+char 448 while the rasters hash equal. Tier E already behaves correctly
+here, since the display list hashes DECODED RGBA rather than encoded bytes,
+so a different PNG encoding passes while a different picture fails. That is
+the same structural principle the plan applies elsewhere, arriving at the
+same answer from the image side.
 
 ## Revision 33 changelog
 
@@ -3413,6 +3451,36 @@ them or the divergence is a defect:
 - **WP-5.4g comparator switch (comparator WP)**: owns `mag/src/parity.rs`
   + `parity.yaml` + `baseline.json` cover-page seed rows: the compared
   artifact becomes `reader.pdf` end to end. Gated on WP-3.7 + WP-5.4.
+- **WP-5.4c cover PDF assembly**: owns `mag/src/cover/pdf.rs`. Depends on
+  WP-5.4 and WP-5.4b. **This WP exists because the cover PDF WRITER DOES
+  NOT EXIST**, which WP-5.4's own `## What is and is not proven` recorded
+  and WP-5.4b confirmed: `mag/src/cover/` contains no PDF module, so all
+  three layouts are proven at SVG-AND-RASTER level only. Revision 21's
+  guard, that the writer be written GENERALLY in WP-5.4 so WP-5.4b would
+  add coverage rather than a second writer, could not be applied by
+  WP-5.4b, because there was nothing to be general.
+  The gap is precisely sized rather than alarming. PROVEN already: the
+  resvg raster matches Python exactly in all three modes (`footer_caption`
+  `4b4549e9...`, `framed` `ece03e91...`, `honored_plate` `c46b2db4...`),
+  the outlines match across all 834 glyphs, the zone statistics match
+  PIL's numbers, and the invisible text layer's content and placement are
+  specified. MISSING is only the step that assembles those into a PDF, and
+  WP-5.4's evidence already describes its shape: two path fills, one
+  full-page Form XObject holding the raster, and the `3 Tr` layer.
+  - Written for ALL THREE MODES at once, which is where revision 21's
+    "generally, not per-mode" guard now attaches, using WP-5.4b's fixtures
+    as its coverage.
+  - **Oracle: the RENDERED RESULT, never the embedded stream bytes.**
+    WP-5.4b deliberately does not compare SVGs between implementations
+    because Rust and Python encode the graded-art PNG differently, the
+    base64 diverging at char 448 while the rasters hash equal. The same
+    reasoning governs the PDF: compare display lists and rasters, not the
+    embedded streams. Tier E already does the right thing here, since the
+    display list hashes DECODED RGBA pixels rather than the encoded bytes,
+    so a different PNG encoding passes while a different picture fails.
+  - Verify: display-list equality and raster EQUALITY (revision 21's bar)
+    against Python's cover PDFs for all three modes.
+
 - **WP-5.5 RE-CUT (revision 19) into WP-5.4a, WP-5.5a, WP-5.5b, WP-5.5c.**
   The original WP ended `blocked` with no code written (evidence
   `meta/verification/evidence/WP-5.5.md`) on four measured dependencies,
@@ -3890,7 +3958,7 @@ WP-5.1c -> WP-5.4;  WP-3.7 + WP-5.4 -> WP-5.4g
 Phase 5 edges below are RECONCILED AGAINST THE PYTHON IMPORT GRAPH
 (revision 19), not against the plan's groupings; three were undeclared
 until a WP walked into each one:
-  WP-5.1c                       -> WP-5.4a -> WP-5.4 -> WP-5.4b
+  WP-5.1c                       -> WP-5.4a -> WP-5.4 -> WP-5.4b -> WP-5.4c
   WP-5.1d + WP-5.4a             -> WP-5.1e   (lift helpers, widen audit)
   WP-5.4a                       -> WP-5.5a
   WP-5.1a + WP-5.1b + WP-5.1c   -> WP-5.5a   (html_edition imports manifest,
@@ -3907,7 +3975,7 @@ until a WP walked into each one:
                                                  cover_spread_checks needs
                                                  the cover pages)
   WP-0.2h                       -> WP-5.3b, WP-5.4g
-WP-2.3 + WP-3.7 + WP-5.2 + WP-5.3b + WP-5.4 + WP-5.5a + WP-5.5b
+WP-2.3 + WP-3.7 + WP-5.2 + WP-5.3b + WP-5.4c + WP-5.5a + WP-5.5b
        + WP-5.5c -> WP-5.6
 WP-3.7 + WP-5.3g + WP-5.4g -> WP-4.1 -> WP-4.2
 WP-3.7 -> WP-4.0g -> WP-4.2
