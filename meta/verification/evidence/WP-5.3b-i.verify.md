@@ -1,266 +1,425 @@
-# WP-5.3b-i verification
+# WP-5.3b-i verification (second pass, rework)
 
 ## Verdict
 
-**REJECTED.** One code defect, one rule 9 defect, one hermeticity defect.
+**ACCEPTED.** The rejection's defect is gone, measured rather than described.
 
-The Unicode work in this WP is the strongest oracle evidence the plan has
-received and none of it is in question. The rejection is on the OTHER half of
-the WP, the line reconstruction, where the shipped join rule is not the rule
-the evidence describes: it subtracts two quantities denominated in different
-units. The evidence records the join as non-discriminating and attributes that
-to the corpus. Measured, the corpus is not the reason. The rule is nearly inert
-by construction, and its first decision on edition 010 is demonstrably wrong.
+Commit under verification: `80b7b62`, the rework of `26391ab`, which this
+verifier's first pass rejected at `3f45d31`. Verified from a fresh worktree at
+`/Users/franguijarro/.claude/jobs/7d99e27f/tmp/vwp53bi3`, created with
+`git worktree add ... 80b7b62`. Every figure below was produced in that
+worktree against a byte-identical copy of the corpus placed inside it, not
+against the main tree.
 
-Commit under verification: `26391ab`. Verified from a fresh worktree at
-`/Users/franguijarro/.claude/jobs/7d99e27f/tmp/verify-53bi`.
+Five findings are recorded under `## Findings`, none of them a rejection
+ground, and one of them is a correction to my own first pass.
 
-## Owns check
+## What was replayed, and how
 
-`git show --stat 26391ab` lists exactly the six files the WP claims and nothing
-else: `mag/src/critic.rs`, `mag/src/critic/text.rs`, `mag/src/parity.rs`,
-`mag/tests/critic_text.rs`, `mag/tests/critic_text_islower_expected.txt`,
-`meta/verification/evidence/WP-5.3b-i.md`. Clean.
+Rule 12's third class says a demonstration must run through the artifact that
+will be replayed. The `## Commands` blocks were extracted from
+`meta/verification/evidence/WP-5.3b-i.md` PROGRAMMATICALLY and written to
+`/tmp/vcmd/block{1..7}.sh`, then executed with `bash`. Nothing was retyped.
 
-## Defect 1: the join rule subtracts qc units from qo units
+    uv run python - <<'PY'
+    import re, pathlib, os
+    src = pathlib.Path('meta/verification/evidence/WP-5.3b-i.md').read_text()
+    sec = src.split('## Commands',1)[1].split('\n## ',1)[0]
+    lines = sec.split('\n')
+    blocks, cur = [], []
+    for l in lines:
+        if l.startswith('    '):
+            cur.append(l[4:])
+        else:
+            if cur: blocks.append('\n'.join(cur)); cur=[]
+    if cur: blocks.append('\n'.join(cur))
+    os.makedirs('/tmp/vcmd', exist_ok=True)
+    for i,b in enumerate(blocks,1):
+        p = f'/tmp/vcmd/block{i}.sh'
+        pathlib.Path(p).write_text(b+'\n')
+        print(f'=== BLOCK {i} -> {p}')
+        print(b)
+    PY
 
-`mag/src/critic/text.rs:85`:
+Seven blocks. Six run in my worktree and reproduce; block 4 is finding 1.
 
-    fn separator(previous: &Show, next: &Show) -> &'static str {
-        let gap = next.x - (previous.x + previous.width);
+The corpus was placed inside the worktree so the relative-path blocks resolve
+against my own checkout:
 
-`Show.x` and `Show.y` are `m[4]` and `m[5]`, and `mag/src/parity/streams.rs:432`
-builds that matrix as `m: trm.map(qc)`, so they are in `qc` units of 0.01 pt.
-`Show.size` is `qc(size_eff)`, same unit, so `threshold` is correct.
+    mkdir -p editions/010/render-2026-09-14T01-47-59/en
+    cp /Users/franguijarro/code/magazine/editions/010/render-2026-09-14T01-47-59/en/reader.pdf \
+       editions/010/render-2026-09-14T01-47-59/en/reader.pdf
+    shasum -a 256 editions/010/render-2026-09-14T01-47-59/en/reader.pdf \
+      /Users/franguijarro/code/magazine/editions/010/render-2026-09-14T01-47-59/en/reader.pdf
 
-`Show.width` is derived in `shows()` from `offs`, and
-`mag/src/parity/streams.rs:423` builds those with `qo`, which is
-`v / GLYPH_QUANTUM` where `GLYPH_QUANTUM = GLYPH_DRIFT_PT / 8.0 =
-9.1552734375e-05`. One qc unit is 109.2267 qo units, so `width` enters the
-subtraction inflated by that factor.
+Both `7b39d11271e335e4928d403a5bfcf6eeca27b6757d5d26a0822f0121527f9156`, so the
+main tree and my worktree are reading the same bytes and the cross-tree hazard
+of finding 1 changes no number here.
 
-**Measured, not asserted.** Instrumenting `separator` to print its operands and
-tally its branches over all 56 pages of 010:
+## Claim 1: the fix, and the re-export
 
-| | spaces | empties | total |
+Confirmed by reading the diff, not the prose. `git show 80b7b62 -- mag/src/critic/text.rs mag/src/parity.rs`:
+
+    -                    (last[0] - first[0]) * count as i64 / (count as i64 - 1)
+    +                    let span = (last[0] - first[0]) * count as i64 / (count as i64 - 1);
+    +                    (span as f64 * GLYPH_QUANTUM * 100.0).round() as i64
+
+    -pub(crate) use streams::{Element, Face as TextFace};
+    +pub(crate) use streams::{Element, Face as TextFace, GLYPH_QUANTUM};
+
+The conversion is at the point the width is BUILT, in `shows()`, not at the
+subtraction, so `Show.width` is qc everywhere it is read and `separator` is
+left with one unit in the expression. `GLYPH_QUANTUM` is pt per qo unit and
+`* 100.0` is qc per pt, so `qo -> pt -> qc` is the right composition. Block 6,
+run as recorded:
+
+    GLYPH_QUANTUM pt = 9.1552734375e-05
+    qo units per qc unit = 109.22666666666667
+
+`streams.rs:34` `qc`, `:40` `GLYPH_QUANTUM = GLYPH_DRIFT_PT / 8.0`, `:42` `qo`,
+`:432` `m: trm.map(qc)` all read as the evidence describes.
+
+## Claim 2: the counter, both rules
+
+Reproduced EXACTLY, with my own instrumentation rather than the worker's. I
+added two `AtomicUsize` counters to `separator` in `mag/src/critic/text.rs` and
+a scratch integration test `mag/tests/vscratch.rs` that traces all 56 pages
+once and prints the tallies and the per-page fields. Both were removed
+afterwards (`git show HEAD:mag/src/critic/text.rs > mag/src/critic/text.rs`,
+`mv mag/tests/vscratch.rs /tmp/vcmd/`), and `git status --porcelain` is empty.
+
+| rule | spaces | empties | total |
 |---|---|---|---|
-| shipped | **18** | 462 | 480 |
-| width converted to qc | **236** | 244 | 480 |
+| broken (conversion dropped) | **9** | **231** | 240 |
+| fixed (as committed) | **118** | **122** | 240 |
 
-The shipped rule fires 13 times less often than the rule the evidence
-describes. The very first decision, read back in real points:
+Identical denominator, so the two rows are comparable, which is what the
+evidence claims and it holds. The fix moves 109 of 240 joins from empty to
+space.
 
-    prev.x 44.00 pt, next.x 91.00 pt, size 23.00 pt, threshold 5.75 pt
-    prev.width  = 331606 qo = 30.3594 pt
-    TRUE gap    = 91.00 - (44.00 + 30.3594) = 16.6406 pt  >  5.75 pt  -> SPACE
-    shipped gap = (9100 - (4400 + 331606)) / 100 = -3269.06 pt         -> EMPTY
+## Claim 3: the three fields, re-measured against pypdf
 
-A 16.64 pt word gap against a 5.75 pt threshold is not a marginal call, and the
-code returns the wrong answer. With the units reconciled the 010 test still
-passes, which is exactly why nothing caught this.
+Block 2 run as recorded, from my worktree, against my worktree's copy:
 
-**This also falsifies an attribution in the evidence.** Under "Not proven" the
-WP writes that the join "does not discriminate on 010" and that "the rule is
-chosen because it is PRINCIPLED, not because this corpus can tell." The first
-clause is true and the second is not: the shipped rule is not the principled
-rule. Recording a rule as principled-but-unexercised, when it is in fact
-misimplemented and nearly inert, is the failure rule 10 exists to prevent. The
-label was applied to the corpus when it belonged to the code.
+    pages 56
+    empty pages [2, 10, 30, 35, 45, 54, 55]
+    total body 1110
+    page4 body 9   page36 body 3
 
-Note the defect predates the quantum rework rather than being introduced by it.
-At `a0714c3` the factor was exactly 100 rather than 109.2267. It was wrong then
-too. This matters for defect 2.
+Tracer against that reference, each row derived by comparing 56 pairs:
 
-## Defect 2: rule 9, the recorded base is five commits stale
+| field | broken rule | fixed rule |
+|---|---|---|
+| text-emptiness | 56 of 56 | **56 of 56** |
+| `body_text_lines` | 49 of 56 | **49 of 56** |
+| `text_characters` | 16 of 56 | **43 of 56** |
 
-`## Base` records `a0714c3 (plan revision 33)` and the metrics section states
-the figures carry "WP-0.2i's per-glyph offsets as they stand at a0714c3."
+Every one of the six cells matches the evidence. The emptiness partition is
+identical on both sides, `[2, 10, 30, 35, 45, 54, 55]`, so the 56 of 56 is a
+reproduction of a non-trivial 7/49 partition and not a constant, which is the
+rule 10 distinction.
 
-    git log -1 --format=%h 26391ab^   ->  be6ec61
-    git rev-list --count a0714c3..26391ab^  ->  5
+**Rule 9, count derived from the enumeration rather than carried beside it.**
+The seven differing `body_text_lines` pages are exactly
+`[4, 11, 31, 36, 40, 46, 50]`, and the delta on each is `+1`, so
+`7 x (+1) = +7` and `1117 - 1110 = 7` accounts for all of it with nothing left
+over. I added the list up rather than accepting the total. Same seven pages
+under the broken rule, so the fix genuinely leaves this field untouched.
 
-`a0714c3` is an ancestor, so nothing was clobbered, but it is not the base the
-figures were measured against. The five intervening commits include the one
-that reworked the quantum:
+The headline-merge mechanism, block 7 as recorded:
 
-    a0714c3:  GLYPH_QUANTUM = 0.0001
-    26391ab:  GLYPH_QUANTUM = GLYPH_DRIFT_PT / 8.0  = 9.1552734375e-05
+    4 'Government Rails Site HitHours After CVE Patch'
+    36 'The third era of AI softwaredevelopment'
 
-This is not a cosmetic sha slip. `GLYPH_QUANTUM` denominates `offs`, `offs`
-denominates `width`, and `width` is the operand defect 1 turns on. The recorded
-configuration names the one constant whose value the evidence gets wrong, and
-names it at the wrong value. Rule 9 asks that a number carry its configuration
-precisely so a reader can tell which arithmetic produced it.
+and the tracer's own lines on the same two pages, from my scratch dump:
 
-## Defect 3: the test is not hermetic and did not test this tree
+    RS 4 "Government Rails Site Hit"
+    RS 4 "Hours After CVE Patch"
+    RS 36 "The third era of AI software"
+    RS 36 "development"
 
-`mag/tests/critic_text.rs:74`:
+The tracer splits what pypdf merges, and every word inside each tracer line is
+correctly spaced. This is the qualitative check the numbers cannot give: the
+fixed rule produces RIGHT spacing, not merely DIFFERENT spacing.
 
-    fn reader_pdf() -> PathBuf {
-        PathBuf::from(
-            "/Users/franguijarro/code/magazine/editions/010/render-2026-09-14T01-47-59/en/reader.pdf",
-        )
-    }
+## Claim 4: the two new unit tests
 
-Run from an isolated worktree, the test printed
-`MODE: full, tracing /Users/franguijarro/code/magazine/...`, so it traced the
-MAIN tree's PDF while exercising the worktree's code. The corpus is therefore
-not part of the tree under verification, and on any other machine or checkout
-path the test takes the `SKIPPED` branch and proves nothing.
+`a_real_word_gap_yields_a_space` fails with exactly the string claimed when the
+unit bug is restored:
 
-This is the only test in the repository that hard-codes an absolute path. All
-six siblings take their input from an environment variable
-(`MAG_MODEL_ARTICLES`, `MAG_IMPOSE_READER`, `MAG_MANIFEST_ROOT`,
-`MAG_PREFLIGHT_SPEC`, `MAG_COVER_SVG_OUT`). The rule 2b mode announcement is
-present and correct, and it is what made this visible, but announcing the mode
-does not make the path portable.
+    thread 'a_real_word_gap_yields_a_space' panicked at tests/critic_text.rs:177:5:
+    assertion `left == right` failed: a 10.7 pt gap against a 5.75 pt threshold must yield a space
+      left: "GovernmentRails"
+     right: "Government Rails"
 
-## What verified clean
+Arithmetic checked by hand: first show at x = 91 pt, 10 glyphs spanning 120 pt,
+so `span = 120 * 10 / 9 = 133.33 pt`, right edge 224.33 pt; second show at
+235 pt; gap 10.67 pt against `23 * 0.25 = 5.75 pt`. The fixture's numbers are
+what the test's message says they are.
 
-Everything below reproduced exactly. The oracle half of this WP is solid.
+`a_kerned_join_yields_no_space` exercises the other branch: `soft` at 91 pt
+spanning 40 pt over 4 glyphs gives `span = 53.33 pt` and a right edge of
+144.33 pt against a next show at 137.5 pt, so the gap is -6.83 pt and the else
+branch is taken. It FAILS under the unconditional-space mutation and PASSES
+under the unit bug, so it discriminates against one extreme but is not a
+regression test for the defect; only the first test is. The evidence claims
+exactly that and no more.
 
-**The recorded command runs as recorded.** Extracted block 1 from
-`## Commands` verbatim, without retyping, and ran it. It regenerates
-`mag/tests/critic_text_islower_expected.txt` byte-identically to the committed
-file. Python prints 2544 and the file holds 2543 newline-separated entries,
-consistent with no trailing newline. This is the class that rejected three
-earlier WPs, and it is closed here.
+## Claim 5: the central claim, all three mutations performed
 
-**The Unicode figures are exact.** Independently, not through the WP's own
-code: `uv run python` reports 3.12.11 on Unicode 15.0.0 and 2,544 lowercase
-codepoints; a standalone rustc 1.96.0 probe reports 2,595. The set difference is
-1 Python-only (U+0295) and 52 Rust-only, 53 disagreeing. All five named
-Rust-only codepoints confirmed, and all 22 of U+10D70 to U+10D85 are in the
-Rust-only set. Every figure in the evidence matches.
+This is the claim the WP's argument rests on, so I made all three mutations and
+ran the committed corpus test under each.
 
-**The self-invalidating test is sound.** All four codepoints it lists genuinely
-have `char::is_lowercase` disagreeing with Python, confirmed against my own
-independently computed set, so the `assert_ne!` guard passes today and will fire
-if a future rustc ever agrees. It does what it claims.
+| mutation | `reconstructs_edition_010_text` | the two unit tests |
+|---|---|---|
+| unit bug restored (conversion dropped) | **ok** | `a_real_word_gap` FAILED |
+| `separator` returns `" "` unconditionally | **ok** | `a_kerned_join` FAILED |
+| `separator` returns `""` unconditionally | **ok** | `a_real_word_gap` FAILED |
 
-**Every discrimination probe reproduced.**
+**The claim is TRUE.** The corpus test passes under the bug, under an
+unconditional space and under an unconditional empty. It cannot see the join
+rule at all, exactly as the evidence says, and the two unit tests between them
+catch all three mutations. This is the strongest thing in the WP and it
+survives independent reproduction.
 
-| probe | change | claimed | observed |
-|---|---|---|---|
-| C | delete U+0295 from the oracle | FAIL | FAIL, `critic_text.rs:51` lowercase codepoint count |
-| D | `SAME_LINE_TOLERANCE` 100 to 1200 | FAIL 1111 vs 1117 | FAIL, exactly those numbers |
-| E | `SAME_LINE_TOLERANCE` to 0 | PASS | PASS, tolerance proven one-directionally only |
-| B | `py_islower` to `char::is_lowercase` | PASS | PASS, pin unexercised by 010 |
-| F | unconditional space join | PASS | PASS |
-| F' | unconditional empty join (mine) | not run | PASS |
+**Rule 10's second half, applied.** Both extremes pass, so the question is
+whether the code under test does anything at all. Measured answer: it does.
+109 of 240 joins flip between the extremes, and `text_characters` changes on 47
+of 56 pages. The code is not inert; the CORPUS is insensitive on the two
+decision-relevant fields. That distinction is the whole content of the
+restatement and it is measured, not asserted.
 
-Probe F' is additional. Both extremes pass, so the rule 10 label is correct on
-both sides rather than one, and the field is more thoroughly non-discriminating
-than claimed. It is also the first hint of defect 1.
+**Rule 11, applied.** The WP asserts a mechanism: a 109.2267x inflation of
+`width` suppresses spaces. I tested it by removing the supposed cause and
+measuring whether the effect goes. It goes: 9 spaces with the conversion
+dropped, 118 with it restored, and the first decision flips from empty to
+space. Unusually for this plan's rule-11 history, the defect was real AND the
+explanation was right.
 
-`SAME_LINE_TOLERANCE = 100` is genuinely 1 pt, since `y` is a `qc` value. The
-evidence's parenthetical is right. The unit error is confined to `width`.
+## Claim 6: the env gate and the assert
 
-**The figures hold at current HEAD.** `git diff 26391ab 6a53a12` over all six
-owned files is empty, and no commit since touches `mag/src/parity`,
-`mag/src/critic` or `mag/tests/critic_text.rs`. The measurements are current.
+The hard-coded absolute path at `mag/tests/critic_text.rs:74` is gone,
+replaced by `MAG_CRITIC_READER_PDF`. All three modes exercised in my worktree:
 
-**The inheritance lists are accurate.** WP-5.3b-ii: `page_text`,
-`body_text_lines` and `trace_text` all exist as `pub(crate)`, and `metrics.rs`
-exposes exactly `decode_rgb`, `thumbnail`, `round_half_even`, `round_places`,
-`ordered_map` and `worker_count`, with no `getbbox`. One caution for the
-successor: `luma601` does exist at `metrics.rs:541` as `pub(crate)`, so a
-reader skimming for grayscale will find something. The evidence is right that
-it is not the PIL-exact helper `_inspect_page` needs, and the open luma
-discrepancy between `art.rs` and `metrics.rs` is still unresolved elsewhere.
+    # skipped
+    $ bash /tmp/vcmd/block3.sh
+    MODE: skipped, MAG_CRITIC_READER_PDF unset
+    test result: ok. 5 passed
 
-WP-5.3b-iii: the five text-derived fields and their issue sites check out
-against `render_critic.py`, all eleven cited lines being real sites.
-"Only `body_text_lines` differs from pypdf" is correct, because
-`text_characters` is not one of the five gating fields. Provenance caution:
-this WP measured emptiness, `body_text_lines` and `text_characters` itself, but
-`text_order_matches` and `standalone_punctuation_lines` are inherited from
-WP-5.3d, and the residual reads as though all five were measured here.
+    # full, against MY checkout
+    $ MAG_CRITIC_READER_PDF=$PWD/editions/010/render-2026-09-14T01-47-59/en/reader.pdf \
+        cargo test --manifest-path mag/Cargo.toml --test critic_text -- --nocapture
+    MODE: full, tracing /Users/franguijarro/.claude/jobs/7d99e27f/tmp/vwp53bi3/editions/...
+    test result: ok. 5 passed
 
-## A plan correction this verification turned up
+    # set but missing: ASSERTS rather than skipping
+    $ MAG_CRITIC_READER_PDF=/tmp/definitely-not-here/reader.pdf \
+        cargo test --manifest-path mag/Cargo.toml --test critic_text reconstructs -- --nocapture
+    MAG_CRITIC_READER_PDF set but missing: /tmp/definitely-not-here/reader.pdf
+    test result: FAILED. 0 passed; 1 failed
 
-The plan says "ten issue sites" in three places (lines 906, 3318, 3449) while
-its own enumeration at line 906 lists eleven line references:
-`text_order_matches` :152 :176 :198, `blank` :291 :452 :476, `ink_free` :299
-:460 :484, `standalone_punctuation_lines` :309, `body_text_lines` :380. That is
-3 + 3 + 3 + 1 + 1 = 11. I read all eleven lines in `render_critic.py` and every
-one is a genuine site. **The evidence's "eleven" is right and the plan's "ten"
-is an arithmetic slip.** WP-5.3c is briefed off this count and should get the
-corrected one.
+The assert fires. A typo cannot pass silently. Rule 12's third class, which
+this WP's own test was the repo's only instance of, is closed IN THE TEST.
 
-## Critique: `py_islower` placement
+## The ancestry correction: the worker is right, and the branch was broken
 
-The evidence puts `py_islower` and its 671-range table in
-`mag/src/critic/text.rs` rather than `mag/src/model/shared.rs`, reasoning that
-shared.rs is not this WP's Owns, and records lifting it as a residual. **That
-judgment is correct and I would not hold the WP for it**, but the evidence
-understates its own safety, so here is the measured position.
+    $ git merge-base --is-ancestor 26391ab a537a24 && echo YES
+    YES
 
-shared.rs owns nine `py_*` helpers plus `is_python_space`. `py_islower` is the
-only one living outside it, so the placement is a real ownership inconsistency.
+`26391ab` IS an ancestor of `a537a24`. My first pass did not check this and
+implied the rejection put the code out of reach; it did not. **The branch
+carried a width computation known to be wrong from `26391ab` until `80b7b62`
+landed**, and in that window every consumer of `mag/src/critic/text.rs` would
+have been building on a join rule that suppressed 109 of 120 spaces it should
+have inserted. Nothing consumed it in that window (WP-5.3b-ii and -iii are not
+started), so no downstream number is contaminated, but the exposure was real
+and stating it plainly is the point. Plan revision 41 (`74c8aae`) has already
+folded this into the protocol as rule 3b, requiring a rejection to say whether
+its defect is LIVE ON THE BRANCH. That rule exists because of this WP.
 
-The mechanism, though, does cover the dangerous case. `mag/tests/rust_helpers.rs`
-is an exemption list keyed on (module, name) with duplicates detected by
-(name, signature) and by identical body. I tested it rather than reading it:
-adding a rival `py_islower` to shared.rs with a DIFFERENT body but the same
-signature fails `no_helper_is_defined_in_two_modules` with
+## Findings
 
-    same name and signature: ["py_islower in [("critic/text.rs", "py_islower"),
-     ("model/shared.rs", "py_islower")]"]
+**1. The recorded full-mode command still reads the MAIN tree.** Block 4, as
+recorded, is
 
-So two divergent copies of this helper cannot land silently, which is the
-failure mode the duplicated-helper rule exists for. What the audit does not do
-is assert that a Python-builtin helper belongs in shared.rs at all; it is
-reactive to duplication, not to misplacement. A future copy under a different
-name and a different body would still escape both tests, which is a known
-general weakness of the audit and not specific to this WP.
+    MAG_CRITIC_READER_PDF=/Users/franguijarro/code/magazine/editions/010/render-2026-09-14T01-47-59/en/reader.pdf \
+      cargo test --manifest-path mag/Cargo.toml --test critic_text -- --nocapture
 
-Net: leave it where it is, keep the residual, and let whoever next owns
-shared.rs lift it. It is tidiness with a mechanical backstop, not exposure.
+Run verbatim from my worktree it printed
+`MODE: full, tracing /Users/franguijarro/code/magazine/...`, so it exercised my
+checkout's CODE against the main tree's CORPUS. That is the same cross-tree
+shape as the rejected hard-coded path, moved from the test source into the
+recorded command. Three things keep it off the rejection list: the TEST is now
+hermetic and takes whatever path it is given, which is what rule 12's third
+class actually requires; the evidence puts an explicit comment directly above
+the command naming the hazard and instructing the reader to copy the tree into
+a worktree first; and the corpus is untracked, so no in-checkout path exists to
+record. The corrected form runs in MY worktree and produces identical results,
+confirmed above and used for every number in this file. **Recommendation for
+the next WP in this family: record the `$PWD`-relative form plus the copy step,
+so the recorded command is the one that is safe to replay anywhere.**
 
-## Required to accept
+**2. My own first pass's counter was doubled, and the worker's figures are the
+correct ones.** `3f45d31` reported 18 spaces / 462 empties shipped and 236 /
+244 converted, over a total of 480. Mine, from a single trace of 56 pages,
+gives 9 / 231 and 118 / 122 over 240, exactly half in all four cells. My first
+pass accumulated across two invocations of the trace. The RATIO, the direction
+and every conclusion drawn from it are unchanged, but the worker's numbers are
+right and mine were not. Recorded here because the evidence file carries the
+worker's figures and a reader comparing the two verify files would otherwise
+see an unexplained contradiction.
 
-1. Fix the unit mismatch in `separator`. Convert `width` into `qc` units at the
-   point it is built in `shows()`, or carry both in `qo` and convert `x` and
-   `size`. Either way, one unit in the expression.
-2. Re-measure the join with the fix in place and re-label it. It may well
-   remain non-discriminating on 010 for emptiness and `body_text_lines`, as
-   probes F and F' show, but then that is a measured statement about a rule
-   that does what it says, and `text_characters` will move.
-3. Correct `## Base` to `be6ec61` and restate the `GLYPH_QUANTUM` value the
-   figures were taken under.
-4. Give the corpus path an environment variable like every sibling test, so the
-   test exercises the tree it is run from.
-5. Re-confirm the 010 figures after 1, since the join feeds `page_text`.
+**3. `text_characters` does not move monotonically, and the evidence does not
+say so.** "16 to 43 of 56" reproduces exactly, and "moves `text_characters` by
+27 pages" is a correct NET figure, but derived from the enumeration it is 34
+pages GAINING agreement and 7 LOSING it, with 47 of 56 pages changing their
+character count at all. The seven that lose agreement are
+precisely the seven `body_text_lines` pages, `[4, 11, 31, 36, 40, 46, 50]`,
+and on each the tracer is now 2 to 3 characters ABOVE pypdf. Diagnosed: those
+pages agreed under the BUG only by coincidence, the missing spaces cancelling
+the extra newline from the headline the tracer correctly keeps on two lines. So
+the "loss" is the tracer becoming more right, not less. The disclosure gap is
+real but the direction is favourable and `text_characters` feeds no issue site;
+confirmed by grep that `render_critic.py` WRITES `text_characters` at :1007 and
+never reads it in a decision, while the five gating fields are read at :152,
+:176, :198, :309, :380.
 
-The oracle work in sections "The Unicode obligation" and the whole-plane sweep
-needs no rework and should be carried forward unchanged.
+**4. The rule-10 restatement's headline sentence overstates; the paragraph
+below it is exactly right.** "The label belonged to the code, not the corpus"
+reads, alone, as though the non-discrimination was caused by the defect. It was
+not: with the CORRECT rule in place, the unconditional space and the
+unconditional empty still both pass, so the corpus genuinely cannot discriminate
+the join rule on emptiness or `body_text_lines`, and that half of the original
+label was true of the corpus all along. What was false was the other half, the
+word "principled". The very next paragraph of the evidence says precisely this
+and every leg of it reproduced, and the sentence is a verbatim echo of the
+plan's own revision-40 wording, so this is a compression rather than an error.
+
+**5. `mag/src/parity.rs` is comparator territory the plan assigns elsewhere.**
+`80b7b62` touches four files: `mag/src/critic/text.rs`, `mag/src/parity.rs`,
+`mag/tests/critic_text.rs` and its own evidence file. Plan line 3526 says the
+one-line export "belongs to WP-2.0b, which holds `parity.rs`", and WP-2.0b
+landed at `e5e741a` without `GLYPH_QUANTUM` in it. Not a rejection ground: my
+first pass ran the Owns check over `26391ab`, which touched the same file, and
+recorded it clean; the change is a single `pub(crate) use` addition with no
+behaviour; and it survives. `git show art_directed:mag/src/parity.rs` still
+carries it at line 20, alongside WP-0.2g's uncommitted 43 insertions in the
+main tree, so nothing was clobbered in either direction. Flagged for the
+orchestrator rather than held against the WP.
+
+## Residuals, assessed
+
+- **`py_islower` in `critic/text.rs` rather than `shared.rs`.** Honestly
+  scoped, and I re-tested the backstop rather than taking my own first pass's
+  word for it: appending a divergent `py_islower` to `mag/src/model/shared.rs`
+  fails `no_helper_is_defined_in_two_modules` with
+  `same name and signature: ["py_islower in [("critic/text.rs", "py_islower"),
+  ("model/shared.rs", "py_islower")]"]`. The dangerous case has a mechanical
+  backstop. Tidiness with a residual, as claimed.
+- **One glyph advance of uncertainty in the width.** Honest and inherent:
+  `offs` carries origins, so the last advance is estimated by the mean. Visible
+  in the kerned fixture, whose gap is -6.83 pt rather than a small positive
+  number. Nothing in this WP's numbers depends on the estimate being tight,
+  since the only threshold crossing it must get right is a 10.67 pt gap against
+  5.75 pt.
+- **The y-tolerance is proven only in the widening direction.** Reproduced
+  both directions: `SAME_LINE_TOLERANCE = 1200` FAILS with `left: 1111
+  right: 1117`, exactly as claimed; `SAME_LINE_TOLERANCE = 0` PASSES. The
+  residual is stated correctly.
+- **The Unicode pinning is proven by sweep, not by 010.** Reproduced both
+  legs: deleting `661` (U+0295) from the oracle FAILS with `left: 2544
+  right: 2543`; replacing `py_islower`'s body with `char::is_lowercase` leaves
+  `reconstructs_edition_010_text` PASSING. The corpus contains none of the 53
+  divergent codepoints and the evidence says so.
+- Block 1 regenerates `mag/tests/critic_text_islower_expected.txt`
+  BYTE-IDENTICALLY: sha256 `e6b31f9b0c2f67f2af0ea546a11493d9e1b275d4b094e35fe05af61947e9ee70`
+  before and after, Python printing 2544. Rule 12's recorded-command class,
+  which rejected three earlier WPs, is closed here for the second time.
+
+## Context the WP could not have recorded
+
+`521ab79` rejected WP-0.2i's rework AFTER `80b7b62` was written, and WP-0.2i
+supplies both `offs` and the `GLYPH_QUANTUM` value this WP's arithmetic turns
+on. That rejection is **on the record, not the mechanism**. Its own words are
+"The quantum fix is correct, and I could not break it. Do not redo the fix." So
+this WP's configuration is not expected to move under it. Stated because rule 9
+makes a number carry its configuration, and this configuration is under
+concurrent verification.
+
+## What this verification CANNOT discriminate
+
+- **Whether the fixed rule is the CORRECT rule, in an absolute sense.** The
+  corpus is insensitive on both decision-relevant fields, and I have no
+  independent oracle for intra-line spacing. What I have is circumstantial and
+  strong: 43 of 56 pages now match pypdf's character count EXACTLY, up from 16,
+  and the two pages I read by eye are correctly spaced word by word. Thirteen
+  pages still disagree, by +9, +3, +2, +1, +2, +2, +1, +2, +3, +2, +2, -1, +2
+  characters; I did not diagnose the nine that are not the headline pages.
+- **`WORD_GAP_FRACTION = 0.25`.** Never perturbed, by the WP or by me. The
+  corpus cannot tell, so no value of it is proven over any other.
+- **The one-glyph-advance width error.** Unmeasurable without per-glyph
+  advances, which the display list does not carry. WP-0.2j owns the path that
+  could supply them.
+- **Anything outside edition 010 English, 56 pages.** The Spanish edition, any
+  other edition, and any other page geometry are untested here.
+- **Whether `text_characters`' nine undiagnosed disagreements hide a residual
+  spacing defect.** They are small and the field gates nothing, but they are
+  not explained.
 
 ## Commands
 
-    cargo test --manifest-path mag/Cargo.toml --test critic_text
+    git worktree add /Users/franguijarro/.claude/jobs/7d99e27f/tmp/vwp53bi3 80b7b62
+
+    git merge-base --is-ancestor 26391ab a537a24 && echo "ANCESTOR: YES"
+
+    # blocks extracted programmatically, then executed
+    bash /tmp/vcmd/block1.sh   # islower oracle, byte-identical
+    bash /tmp/vcmd/block2.sh > /tmp/vcmd/pypdf.json
+    bash /tmp/vcmd/block3.sh   # MODE: skipped
+    bash /tmp/vcmd/block4.sh   # MODE: full, but traces the MAIN tree (finding 1)
+    bash /tmp/vcmd/block5.sh   # fmt --check, clippy -D warnings, both exit 0
+    bash /tmp/vcmd/block6.sh   # 109.22666666666667
+    bash /tmp/vcmd/block7.sh   # the two merged headlines
+
+    # the corrected full-mode form, which is what every number here used
+    MAG_CRITIC_READER_PDF=$PWD/editions/010/render-2026-09-14T01-47-59/en/reader.pdf \
+      cargo test --manifest-path mag/Cargo.toml --test critic_text -- --nocapture
+
+    # the assert fires when the variable is set but the file is missing
+    MAG_CRITIC_READER_PDF=/tmp/definitely-not-here/reader.pdf \
+      cargo test --manifest-path mag/Cargo.toml --test critic_text reconstructs -- --nocapture
+
+    # the three mutations of claim 5, each applied with a python replace on
+    # mag/src/critic/text.rs and reverted with
+    #   git show HEAD:mag/src/critic/text.rs > mag/src/critic/text.rs
+    # (a) drop the qo-to-qc conversion; (b) separator returns " "; (c) returns ""
+    cargo test --manifest-path mag/Cargo.toml --test critic_text -- --nocapture
+
+    # the residual probes, same apply-and-revert shape
+    # SAME_LINE_TOLERANCE 100 -> 1200 (FAILS 1111 vs 1117), -> 0 (PASSES)
+    # oracle minus 661 (FAILS 2544 vs 2543)
+    # py_islower body -> char::is_lowercase (corpus PASSES)
+    # divergent py_islower appended to mag/src/model/shared.rs
     cargo test --manifest-path mag/Cargo.toml --test rust_helpers
 
-    # unit inspection, the operands of the join
-    grep -n "m: trm.map(qc)\|qo(v \* base" mag/src/parity/streams.rs
-    sed -n '85,93p' mag/src/critic/text.rs
+    cargo test --manifest-path mag/Cargo.toml
 
-    # base and quantum at the claimed base versus the actual parent
-    git log -1 --format=%h 26391ab^
-    git show a0714c3:mag/src/parity/streams.rs | grep -n GLYPH_QUANTUM
-    git show 26391ab:mag/src/parity/streams.rs | grep -n GLYPH_QUANTUM
+    git status --porcelain   # empty after every probe was reverted
 
-    # the figures still hold at HEAD
-    git diff --stat 26391ab 6a53a12 -- mag/src/critic.rs mag/src/critic/text.rs \
-      mag/src/parity.rs mag/tests/critic_text.rs \
-      mag/tests/critic_text_islower_expected.txt \
-      meta/verification/evidence/WP-5.3b-i.md
+The branch tallies and the per-page table came from two temporary
+`AtomicUsize` counters in `separator` plus a scratch integration test
+`mag/tests/vscratch.rs` mirroring `critic_text.rs`'s `#[path]` includes. Both
+removed; the worktree is clean against `80b7b62` and the full `cargo test` is
+green.
 
-The branch tallies in defect 1 came from a temporary atomic counter in
-`separator`, and the corrected-unit row from scaling `span` by
-`GLYPH_QUANTUM * 100.0` in `shows()`. Both were reverted; the worktree is clean
-against `26391ab` and all five tests pass.
+## Owns check
+
+`git show --stat 80b7b62` lists exactly four files: `mag/src/critic/text.rs`,
+`mag/src/parity.rs`, `mag/tests/critic_text.rs` and
+`meta/verification/evidence/WP-5.3b-i.md`. No verify file, no `baseline.json`.
+`mag/src/parity.rs` is finding 5.
 
 ## Tool versions
 
-rustc 1.96.0, lopdf 0.45.0, `uv run python` 3.12.11 on Unicode 15.0.0.
+rustc 1.96.0, lopdf 0.45.0, `uv run python` 3.12.11 on Unicode 15.0.0, pypdf
+6.14.2. System python3 3.9.6 on Unicode 13.0.0 was never invoked.
