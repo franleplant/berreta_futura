@@ -1,0 +1,560 @@
+{
+ "cases": [
+  {
+   "name": "pure_white_no_text",
+   "page": 1,
+   "png": "pure_white.png",
+   "row": {
+    "blank": true,
+    "body_text_lines": 0,
+    "ink_bbox": null,
+    "ink_free": true,
+    "ink_ratio": 0.0,
+    "largest_void": null,
+    "page": 1,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": null,
+    "presence_ratio": 0.0,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  },
+  {
+   "name": "pure_white_with_text",
+   "page": 2,
+   "png": "pure_white.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 1,
+    "ink_bbox": null,
+    "ink_free": false,
+    "ink_ratio": 0.0,
+    "largest_void": null,
+    "page": 2,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": null,
+    "presence_ratio": 0.0,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 9,
+    "voids": []
+   },
+   "text": "Something"
+  },
+  {
+   "name": "paper_tint_no_text",
+   "page": 3,
+   "png": "paper_tint.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": null,
+    "ink_free": true,
+    "ink_ratio": 0.0,
+    "largest_void": null,
+    "page": 3,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     128,
+     128
+    ],
+    "presence_ratio": 1.0,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  },
+  {
+   "name": "paper_tint_with_text",
+   "page": 4,
+   "png": "paper_tint.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 1,
+    "ink_bbox": null,
+    "ink_free": false,
+    "ink_ratio": 0.0,
+    "largest_void": null,
+    "page": 4,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     128,
+     128
+    ],
+    "presence_ratio": 1.0,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 1,
+    "voids": []
+   },
+   "text": "  x  "
+  },
+  {
+   "name": "sparse",
+   "page": 5,
+   "png": "sparse.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     0,
+     0,
+     32,
+     1
+    ],
+    "ink_free": false,
+    "ink_ratio": 0.001953,
+    "largest_void": null,
+    "page": 5,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     32,
+     1
+    ],
+    "presence_ratio": 0.001953,
+    "sparse": true,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  },
+  {
+   "name": "tie_down",
+   "page": 6,
+   "png": "tie_down.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 1,
+    "ink_bbox": [
+     0,
+     0,
+     128,
+     1
+    ],
+    "ink_free": false,
+    "ink_ratio": 0.007812,
+    "largest_void": null,
+    "page": 6,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     128,
+     1
+    ],
+    "presence_ratio": 0.007812,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 14,
+    "voids": []
+   },
+   "text": "lowercase line"
+  },
+  {
+   "name": "tie_up",
+   "page": 7,
+   "png": "tie_up.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     0,
+     0,
+     128,
+     3
+    ],
+    "ink_free": false,
+    "ink_ratio": 0.023438,
+    "largest_void": null,
+    "page": 7,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     128,
+     3
+    ],
+    "presence_ratio": 0.023438,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 10,
+    "voids": []
+   },
+   "text": "UPPER ONLY"
+  },
+  {
+   "name": "corner_ink",
+   "page": 8,
+   "png": "corner_ink.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "ink_free": false,
+    "ink_ratio": 6.1e-05,
+    "largest_void": null,
+    "page": 8,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "presence_ratio": 6.1e-05,
+    "sparse": true,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  },
+  {
+   "name": "corner_edges",
+   "page": 9,
+   "png": "corner_edges.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     0,
+     0,
+     128,
+     128
+    ],
+    "ink_free": false,
+    "ink_ratio": 0.000122,
+    "largest_void": null,
+    "page": 9,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     128,
+     128
+    ],
+    "presence_ratio": 0.000122,
+    "sparse": true,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  },
+  {
+   "name": "threshold_bands",
+   "page": 10,
+   "png": "threshold_bands.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     0,
+     0,
+     1,
+     2
+    ],
+    "ink_free": false,
+    "ink_ratio": 0.25,
+    "largest_void": null,
+    "page": 10,
+    "pixel_dimensions": [
+     4,
+     2
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     3,
+     2
+    ],
+    "presence_ratio": 0.75,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  },
+  {
+   "name": "punctuation",
+   "page": 11,
+   "png": "corner_ink.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 3,
+    "ink_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "ink_free": false,
+    "ink_ratio": 6.1e-05,
+    "largest_void": null,
+    "page": 11,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "presence_ratio": 6.1e-05,
+    "sparse": true,
+    "standalone_punctuation_lines": [
+     ",",
+     "…",
+     "?!",
+     "...",
+     ":;"
+    ],
+    "tail_band": null,
+    "text_characters": 34,
+    "voids": []
+   },
+   "text": "Intro\n,\n  …  \n?!\na.\n-\n\n...\n:;\nTail"
+  },
+  {
+   "name": "whitespace_only_text",
+   "page": 12,
+   "png": "corner_ink.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "ink_free": false,
+    "ink_ratio": 6.1e-05,
+    "largest_void": null,
+    "page": 12,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "presence_ratio": 6.1e-05,
+    "sparse": true,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": "  \n\t\n "
+  },
+  {
+   "name": "astral_text",
+   "page": 13,
+   "png": "corner_ink.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 1,
+    "ink_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "ink_free": false,
+    "ink_ratio": 6.1e-05,
+    "largest_void": null,
+    "page": 13,
+    "pixel_dimensions": [
+     128,
+     128
+    ],
+    "presence_bbox": [
+     5,
+     7,
+     6,
+     8
+    ],
+    "presence_ratio": 6.1e-05,
+    "sparse": true,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 7,
+    "voids": []
+   },
+   "text": "𝐚😀 tail"
+  },
+  {
+   "name": "luma_pins",
+   "page": 14,
+   "png": "luma_pins.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     0,
+     0,
+     64,
+     64
+    ],
+    "ink_free": false,
+    "ink_ratio": 1.0,
+    "largest_void": null,
+    "page": 14,
+    "pixel_dimensions": [
+     64,
+     64
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     64,
+     64
+    ],
+    "presence_ratio": 1.0,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  },
+  {
+   "name": "luma_edges",
+   "page": 15,
+   "png": "luma_edges.png",
+   "row": {
+    "blank": false,
+    "body_text_lines": 0,
+    "ink_bbox": [
+     0,
+     0,
+     8,
+     8
+    ],
+    "ink_free": false,
+    "ink_ratio": 1.0,
+    "largest_void": null,
+    "page": 15,
+    "pixel_dimensions": [
+     8,
+     8
+    ],
+    "presence_bbox": [
+     0,
+     0,
+     8,
+     8
+    ],
+    "presence_ratio": 1.0,
+    "sparse": false,
+    "standalone_punctuation_lines": [],
+    "tail_band": null,
+    "text_characters": 0,
+    "voids": []
+   },
+   "text": ""
+  }
+ ],
+ "difference": [
+  {
+   "channel_values": 12288,
+   "first": "luma_pins.png",
+   "histogram_sha256": "2266cc36ff035fb1f9a0797064dfdbc9adb976c6b26969ed95a94e706a98bf6c",
+   "histogram_total": 1200722,
+   "rgb_mae": "97.71500651041667",
+   "second": "luma_shifted.png"
+  },
+  {
+   "channel_values": 12288,
+   "first": "luma_pins.png",
+   "histogram_sha256": "64c44e54ed4b431b1240fe7d34b8375852e2d8a0dc3beb142e13c521eb4c7926",
+   "histogram_total": 0,
+   "rgb_mae": "0.0",
+   "second": "luma_pins.png"
+  }
+ ],
+ "grayscale": [
+  {
+   "histogram_sha256": "28d1fcff4f6198b7850a792ed0e9877527f994aedb6e5dbba595836abcb43957",
+   "png": "luma_pins.png",
+   "sha256": "126a380e81f33dbfad12f3108d8a03c813f2e708f0e1e07539b47a0d28dd1d43"
+  },
+  {
+   "histogram_sha256": "2699313a00be6690b2f6ff84e801984000c9e183d9db7aa681dc545b47f64b3a",
+   "png": "luma_edges.png",
+   "sha256": "e3f4298d3367f05995657017e74828f0c417ad1891ede61d52859029f985c5f9"
+  },
+  {
+   "histogram_sha256": "85ce4a9c7d4a150372448f419f5a1e8ea9cf9b6cf55c452593a53413263631ce",
+   "png": "threshold_bands.png",
+   "sha256": "46881fcbdb1843de6e2f5a011894a074350b95b16c3d33f0f7d8fa99e01eba3d"
+  },
+  {
+   "histogram_sha256": "4aba3ab3e6e8602621cb4803916f3fe6cc34ef4f00d3e6329247e112b704d5b6",
+   "png": "paper_tint.png",
+   "sha256": "bb3f8552fda1929605af83bb4a62b5eb6a8eb55b9227fa712572cce7ce2002df"
+  }
+ ]
+}
