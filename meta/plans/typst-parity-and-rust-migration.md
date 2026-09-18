@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 45 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 46 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,59 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 46 changelog
+
+**Both corrections applied, the hold released by verification `c1253d8`.**
+WP-1.7's delta table mixes two normalizations and the error is **FORCED,
+not plausible**: no single normalization reproduces all six recorded rows,
+three matching collapse and three removal, so there is no reading under
+which the table is internally consistent. WP-1.2's headline is the
+ARTIFACT-CORRECTED count, and its own file says so twice, since its
+`## Verdicts` calls the misses file "the two recorded misses" while the
+headline says "misses: 1", and 149-1=148 with 968-5=963 is exactly the
+hand-discount of block 4.
+
+**The +0.025000 pt recommendation survives, demonstrated rather than
+assumed.** The interval comes from `measure()` in WP-1.7's section 2, not
+from the harness, and block 4 is a miss at ALL SIX deltas under collapse
+and at NONE under removal, so it can move neither bound; the measured-safe
+set is unchanged and the separate "698/698 unstyled lines" claim is
+untouched because block 4 is `styled=True`. That is the difference between
+"probably harmless" and harmless.
+
+**Rule 3d, for the gap you identified and could not close: a correct
+VERDICT immunises a wrong ARGUMENT.** Nothing ever checks a verifier's
+reasoning, only its verdict, and once the verdict is right nobody looks
+again. Twice in one day, and both caught by a later WP tripping over the
+same ground BY ACCIDENT, which is luck rather than a mechanism.
+The mechanism I can offer is about WHERE a claim lives. **A verify file is
+a TERMINAL document, written once and never re-read; the plan is a LIVING
+one, re-read continuously.** This execution has corrected many plan claims
+and, until today, no verify-file claim, and that asymmetry is the evidence
+rather than a coincidence. So an acceptance resting on a REASON rather than
+on reproduction alone restates that reason in the PLAN or the WP's
+evidence, where later work collides with it, and a REWORK's verifier
+re-reads the ORIGINAL verification rather than only the new evidence.
+Neither catches everything; together they replace luck with two cheap
+habits, and the first addresses the case that actually bit, where the WP
+was never reworked and a DIFFERENT WP collided with it.
+
+**WP-1.9 commissioned, for the one non-discrimination worth closing.**
+Whitespace removal is now the sanctioned comparison, adopted because it
+reproduces WP-1.2's headline and still fails blocks 135 and 137, and nobody
+has shown what it can HIDE. That is the straddle rule applied to a
+NORMALIZATION rather than a threshold: a treatment adopted because it
+discriminates on the cases at hand is not thereby shown to discriminate on
+the cases it was designed to ignore. Three outcomes are legitimate,
+including that the question cannot be settled without the engine.
+
+**And a sweep rather than a rule, because the FILE is the common factor.**
+The fourth count-beside-enumeration slip is `WP-1.2.md` recording its six
+excluded span blocks as "34 lines" where the enumeration carries 8. It
+changes no compared population, so it is an erratum, but THREE of the four
+instances of this class live in that one file, which says read it once in
+full rather than correct it a slip at a time.
 
 ## Revision 45 changelog
 
@@ -2429,6 +2482,32 @@ before/after comparisons (WP-4.3); out of scope here.
    checks (rule 10), treats its own causal claims as hypotheses (rule 11),
    and replays through the artifact rather than through its shell
    (rule 12). A verifier is not exempt from the discipline it enforces.
+3d. **A correct VERDICT immunises a wrong ARGUMENT, so a load-bearing
+   reason must live where it will be re-read.** Nothing ever checks a
+   verifier's reasoning, only its verdict, and once the verdict is right
+   nobody looks again. Twice in one day: a verifier recorded counts exactly
+   DOUBLED and caught it only on a later pass, and
+   `WP-1.7.verify.md` section 4 justified ACCEPTANCE with "at the
+   recommended constant the harness reports 149/149, so the widening fixes
+   it too", **which is false as measured, since widening never fixes block
+   4**. Both verdicts were right. Both arguments were wrong. Both were
+   caught by a later WP tripping over the same ground BY ACCIDENT, which is
+   luck, not a mechanism.
+   The mechanism is about WHERE a claim lives. **A verify file is a
+   TERMINAL document, written once and never re-read; the plan is a LIVING
+   one, re-read continuously.** This execution has corrected many plan
+   claims and, until now, no verify-file claim, which is that asymmetry
+   showing rather than a coincidence. So:
+   - when an acceptance rests on a REASON rather than on reproduction
+     alone, that reason is restated in the PLAN or in the WP's own
+     evidence, where later work collides with it. Reproduction-only
+     acceptances need nothing, which keeps the cost near zero.
+   - a REWORK's verifier re-reads the ORIGINAL verification, not only the
+     new evidence, since a rework is the one moment the earlier reasoning
+     is certain to still matter.
+   Neither catches everything. Together they replace luck with two cheap
+   habits, and the first addresses the case that actually bit, where the
+   WP was never reworked and a different WP collided with it.
 3b. **A REJECTION does not remove anything from the tree.** Nothing in this
    protocol said what happens to rejected code between rejection and
    rework, and the answer is that it SHIPS: WP-5.3b-i's rejected commit
@@ -3519,6 +3598,13 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
 - Verify: the two counts reconcile with a stated cause, or the residual
   difference is reported as a genuine divergence with its page and block
   named. Either outcome carries its configuration (rule 9).
+- **A single sweep of `WP-1.2.md` is owed, because the FILE is the common
+  factor rather than the rule.** Three of the four count-beside-enumeration
+  slips in this execution live in that one file, the newest being its 6
+  excluded span blocks recorded as "34 lines" where the enumeration carries
+  **8**. That one changes no compared population, so it is an erratum
+  rather than a defect, but a file with three instances should be read once
+  in full rather than corrected a slip at a time.
 - RESULT (done, `fc1b954` + `da83e2b`), and the HYPOTHESIS IS DEAD TWICE
   OVER. The plan supposed WP-1.7's harness lacked WP-1.2's styled-run
   preservation. In fact **the two harnesses are the SAME PROGRAM**:
@@ -3549,15 +3635,50 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   five displaced lines, WP-1.2's known 325.01-against-325 pt miss. And the
   discrimination check passes, so whitespace removal is not a blanket pass:
   it still fails block 135 at +0.000 and block 137 (page 48) at +0.045.
-- PENDING, not yet applied: WP-1.7's delta table MIXES both normalizations,
-  its three in-interval rows being whitespace-removed numbers and its three
-  out-of-interval rows collapse numbers, so its "968/968 at the midpoint"
-  holds only whitespace-insensitively and is 967/968 under its own recorded
-  harness. **Its interval and the +0.025000 pt recommendation are
-  UNAFFECTED**, because block 4 is a constant one-line offset at every
-  delta measured and so can move neither bound. The amendment to WP-1.7
-  waits on an independent verification of WP-1.8, since it corrects two
-  accepted WPs and one agent's word is not enough to amend the plan.
+- APPLIED (verification `c1253d8` ACCEPTED, hold released). **WP-1.7's
+  delta table mixes both normalizations, and the error is FORCED rather
+  than plausible: no single normalization reproduces all six recorded
+  rows**, three matching collapse and not removal, three the reverse. There
+  is no reading under which that table is internally consistent. Its
+  "968/968 at the midpoint" therefore holds only whitespace-insensitively
+  and is 967/968 under its own recorded harness.
+  **The +0.025000 pt recommendation SURVIVES, and the argument is
+  demonstrated rather than asserted**: the interval comes from `measure()`
+  in WP-1.7's section 2, not from the harness at all. Under BOTH
+  normalizations block 135 fails at +0.000 and +0.005 only and block 137 at
+  +0.045 only, while block 4 is a miss at ALL SIX deltas under collapse and
+  at NONE under removal, so it can move neither bound. The measured-safe
+  set `{+0.010, +0.025, +0.039}` is unchanged, and WP-1.7's separate
+  "698/698 unstyled lines" claim is untouched because block 4 is
+  `styled=True`.
+- **WP-1.2's headline is the artifact-corrected count, and its own file
+  says so twice.** Its `## Verdicts` section calls the misses file "the two
+  recorded misses" while its headline table says "misses: 1", and
+  149-1=148 with 968-5=963 is exactly the hand-discount of block 4. The
+  recorded harness never produced 148/149.
+
+### WP-1.9 show what whitespace removal can MASK
+
+- Owns: evidence only (Phase 1 preamble binds). Runnable now.
+- Why: whitespace removal (`"".join(s.split())`) is now the SANCTIONED
+  comparison for line-break work, adopted because it reproduces WP-1.2's
+  headline and because it still fails blocks 135 and 137, which shows it is
+  not a blanket pass. Nobody has shown what it CAN hide. WP-1.8's
+  verification listed this as its one non-discrimination worth
+  commissioning, and it is the straddle rule applied to a NORMALIZATION
+  rather than to a threshold: a treatment adopted because it discriminates
+  on the cases at hand is not thereby shown to discriminate on the cases it
+  was designed to ignore.
+- Target: build a fixture in which whitespace removal MASKS a genuine
+  divergence, or demonstrate that it cannot. A genuine divergence here
+  means one that changes what a reader sees: a real inter-word space
+  gained or lost, as against the `pdftotext -bbox-layout` word split at a
+  font change that motivated the treatment.
+- Verify: either the masking fixture exists and is named, with the
+  consequence stated for WP-3.1's scoring, or the argument that no such
+  fixture can exist is given in terms of what the treatment removes. A
+  third outcome is legitimate and must be said plainly: that the question
+  cannot be settled without the engine, in which case it moves to WP-3.1.
 
 ### WP-1.5 apply the hyphenation decision (sanctioned oracle change)
 
