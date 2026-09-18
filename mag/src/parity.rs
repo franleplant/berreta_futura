@@ -14,10 +14,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use streams::Face;
 
-#[allow(unused_imports)]
 pub(crate) use display::trace_elements;
 #[allow(unused_imports)]
-pub(crate) use streams::{Color, Element, Face as TextFace};
+pub(crate) use streams::Color;
+pub(crate) use streams::{Element, Face as TextFace};
 
 #[allow(dead_code)]
 pub(crate) fn text_font_map() -> Result<BTreeMap<String, Face>> {
