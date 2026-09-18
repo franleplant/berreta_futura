@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 40 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 41 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,57 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 41 changelog
+
+**The mechanism behind both index contaminations is systemic, so the
+landing protocol as written could not have prevented them.** Agents commit
+from a private worktree and move the branch with `git update-ref`, which
+moves the ref and nothing else. The main tree's index still holds the
+PRE-LAND content of every file the landing commit touched, so **the index
+is left staging a precise reversion of the commit that just landed**, and
+any bare `git commit` from the main tree by any of eight agents would
+silently undo the whole WP. Syncing the working tree with
+`git show HEAD:<path> > <path>`, which the protocol already instructs,
+updates the working tree and leaves the index untouched, so following the
+protocol exactly still left the trap armed.
+
+**Fourth landing check, owed by the agent that LANDS**: after moving the
+branch, `git diff --cached --name-only` must return nothing, cleared with a
+PATH-SCOPED reset if not. The constraint is stated beside it because it
+nearly bit: paths only, never a bare hard reset and never a path-scoped
+checkout, since other agents have uncommitted work in that tree (WP-0.2g
+had 43 insertions in `mag/src/parity.rs` plus three more files sitting
+there as this was written). A path-scoped checkout and `rm` are denied by
+policy here; a hard reset is not, so the rule forbids it.
+
+**The generalization: the landing checks verify what you WROTE, not what
+you LEFT BEHIND.** All three earlier checks examine the landed commit,
+while this hazard lives in the shared tree's index and only becomes a
+defect on the NEXT agent's commit. It also re-explains both earlier
+clobbers better than agent error did, since `aa4bc01` and `4f20801` are
+each a stale index carrying old content forward, and it moves the burden
+from the innocent committer back to the agent that armed the trap.
+
+**A third tool carries the same trap, found by the planner walking into
+it.** `git stash push -- <pathspec>` looks narrow and is not: the stash's
+INDEX commit snapshots the whole staged state, so a stale index rides in
+and is dropped with the stash. The diagnostics differ as well,
+`git show <stash> --name-only` showing only the worktree half while
+`<stash>^2` holds the index half. Nothing was lost in that instance,
+because what rode along WAS the reversion already cleared, and that was
+VERIFIED by comparing the stashed content against the pre-land state rather
+than assumed. Recorded because the shape generalises: a narrow-looking
+operation on a shared tree is wider than it reads.
+
+**And a gap nobody had decided: a REJECTION does not remove anything from
+the tree.** WP-5.3b-i's rejected commit `26391ab` is an ancestor of
+`a537a24`, so the defect was live on `art_directed` and the rework repaired
+SHIPPED code. That is fine for an evidence-only rejection where the code is
+sound and only its record is not; it is not fine silently for a code-defect
+rejection, because other WPs build on the branch. Rule 3b now requires a
+rejection to state whether the defect is LIVE ON THE BRANCH and, if so, to
+name the consumers who must not build on it until the rework lands.
 
 ## Revision 40 changelog
 
@@ -2065,6 +2116,19 @@ before/after comparisons (WP-4.3); out of scope here.
    the gated result and the command that produces it, as WP-5.2 did.
    Binding on WP-5.5b, WP-5.5c and WP-5.3b, each of which needs the same
    untracked run directory and will otherwise reach for the silent shape.
+3b. **A REJECTION does not remove anything from the tree.** Nothing in this
+   protocol said what happens to rejected code between rejection and
+   rework, and the answer is that it SHIPS: WP-5.3b-i's rejected commit
+   `26391ab` is an ancestor of `a537a24`, so its join-rule defect was live
+   on `art_directed` and the rework repaired SHIPPED code rather than
+   landing new code. Acceptable for an EVIDENCE-only rejection (unrecorded
+   provenance, a non-running command, an unlabelled non-discrimination),
+   where the code is sound and only its record is not. NOT acceptable
+   silently for a CODE-DEFECT rejection, because other WPs build on the
+   branch. So a rejection states explicitly **whether the defect is LIVE ON
+   THE BRANCH**, and if it is, names the consumers who must not build on
+   the affected code until the rework lands. The verifier writes that line;
+   the orchestrator schedules the rework ahead of new work in that area.
 3a. **To prove an ACCEPTED oracle did not move, hash the git BLOB.** The
    question "did this WP invalidate an earlier WP's accepted oracle" is
    answered by hashing that oracle's expectation file across every commit
@@ -2104,6 +2168,47 @@ before/after comparisons (WP-4.3); out of scope here.
    fast-forwarding only when the main tree is dirty, and expect to retry
    under load: that dance re-races every time the branch moves, and a WP
    has lost three attempts to it. Never `--no-verify`.
+   **FOURTH LANDING CHECK, owed by the agent that LANDS: leave the shared
+   index EMPTY.** Agents commit from a private worktree and move the branch
+   with `git update-ref`, which moves the ref and NOTHING else: the main
+   tree's index still holds the PRE-LAND content of every file the landing
+   commit touched, so git reports them as staged, and what it would commit
+   is the OLD content. **The index is left staging a precise reversion of
+   the commit that just landed.** Syncing the working tree with
+   `git show HEAD:<path> > <path>`, which the protocol already instructs,
+   updates the WORKING TREE and leaves the index untouched, so following
+   the protocol exactly still leaves the trap armed. After moving the
+   branch, confirm `git diff --cached --name-only` returns NOTHING, and
+   clear it with **`git reset -- <paths>`** if not.
+   **Path-scoped reset ONLY. Never a bare hard reset, never a path-scoped
+   checkout**, because other agents have uncommitted work in that tree: at
+   the time this was written WP-0.2g had 43 insertions in
+   `mag/src/parity.rs` plus changes in three more files sitting there. A
+   path-scoped checkout and `rm` are already denied by policy here; a hard
+   reset is not, so this rule forbids it.
+   **The generalization: the landing checks verify what you WROTE, not what
+   you LEFT BEHIND.** All three earlier checks examine the landed commit,
+   its ancestry, the pre-land HEAD's ancestry and its diff, while this
+   hazard lives in a different repository entirely, in the shared tree's
+   index, and only becomes a defect on the NEXT agent's commit.
+   It re-explains both earlier clobbers better than agent error did:
+   `aa4bc01` deleted 39 files while ancestry passed and `4f20801` reverted
+   `WP-5.4.md` while presence passed, and both are a stale index carrying
+   old content into a new commit. The diff check catches them at the moment
+   of committing, but only if the committing agent looks, which puts the
+   burden on the innocent party rather than on the one who armed the trap.
+   This check moves it back.
+   **A third tool carries the same trap, found by the planner walking into
+   it:** `git stash push -- <pathspec>` is NOT as narrow as it looks. It
+   takes the pathspec from the working tree, but the stash's INDEX commit
+   snapshots the whole staged state, so a stale index rides into the stash
+   and is dropped with it. The diagnostics differ too:
+   `git show <stash> --name-only` shows only the worktree half, while
+   `<stash>^2` holds the index half. Nothing was lost in that instance
+   because what rode along WAS the reversion, verified by comparing the
+   stashed content against the pre-land state rather than assumed. The
+   shape generalises: a narrow-looking operation on a shared tree is wider
+   than it reads.
    **`git commit` commits the whole INDEX, not the paths you added.** Under
    concurrency another agent may have staged its own files, which then land
    inside your commit under your message. The planner did exactly this in
