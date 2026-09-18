@@ -35,9 +35,9 @@ pub fn qc(v: f64) -> i64 {
     (v * 100.0).round() as i64
 }
 
-pub const GLYPH_QUANTUM: f64 = 0.0001;
-
 pub const GLYPH_DRIFT_PT: f64 = 0.000_732_421_875;
+
+pub const GLYPH_QUANTUM: f64 = GLYPH_DRIFT_PT / 8.0;
 
 pub fn qo(v: f64) -> i64 {
     (v / GLYPH_QUANTUM).round() as i64
