@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 37 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 38 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,46 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 38 changelog
+
+**A count that never matched its own enumeration, and it would have cost a
+fault.** The plan said "ten issue sites" in prose while the enumeration
+beside it listed ELEVEN (`text_order_matches` 3, `blank` 3, `ink_free` 3,
+`standalone_punctuation_lines` 1, `body_text_lines` 1). Counted
+independently here against `render_critic.py` before correcting, since the
+last thing this needs is a third number: eleven is right. WP-5.3c is
+briefed off that count and owes fault coverage per site, so at ten it would
+have left one unfaulted. The derived figure "the other nine sites" was
+wrong for the same reason and is now ten.
+The history is the instructive part: the enumeration was corrected in an
+earlier revision and the count next to it was not. So **rule 9 gains a
+clause: a COUNT stated beside an enumeration must be DERIVED from it, not
+carried alongside it.** When correcting an enumeration, grep for its count;
+when quoting a count, add up the list.
+
+**Rule 12 gains a third artifact class: a test must read only its OWN
+checkout.** `mag/tests/critic_text.rs:74` hard-codes an absolute corpus
+path, the only test in the repo that does, so from an isolated
+verification worktree it traced the MAIN tree's PDF while exercising the
+WORKTREE's code, and anywhere else it would silently skip. Both outcomes
+measure something other than the artifact under test, which is rule 12's
+family exactly, and since EVERY verification here runs from an isolated
+worktree, one absolute path silently invalidates a verification. Paths stay
+relative to the checkout, or the corpus arrives through rule 2b's env-gate,
+which announces its mode.
+
+**Rule 10 gains its sharpest instance, and it found a CODE defect rather
+than an evidence one.** WP-5.3b-i honestly labelled its join rule
+non-discriminating on 010. Its verifier ran the OTHER extreme, an
+unconditional empty join that the evidence never ran, and that passed too.
+Both extremes passing meant the field was less discriminating than even the
+honest label claimed, and that pointed at the cause: the rule subtracts
+`Show.width`, in GLYPH_QUANTUM units of 9.1552734375e-05 pt, from `Show.x`,
+in hundredths of a point, inflating width by 109.2267x. So the rule-10
+label was true of the CODE, not of the corpus. The guidance added: **when a
+fixture is labelled non-discriminating, run the opposite extreme too, and
+if both pass, ask whether the code under test does anything at all.**
 
 ## Revision 37 changelog
 
@@ -828,6 +868,8 @@ result.
 **The vacuity pattern turned up inside an argument the plan now relies on**,
 which is why this is a revision rather than a footnote. Path B's safety
 rests on the tracer AGREEING with pypdf on the fields behind ten of eleven
+[REVISION 38: "ten of eleven" is right here; elsewhere the plan said the
+total was ten while enumerating eleven. Corrected in the live text.]
 issue sites, and WP-5.3d's verifier (accept commit 513a970, decision
 upheld) graded those agreements: they are not equally strong.
 `text_order_matches` at 27 of 27 traceable sides discriminates, and so does
@@ -972,7 +1014,8 @@ is the one field with a numeric edge to straddle.
 The decision itself is unchanged and the argument for it is stronger than
 what it replaced: path B is safe not because only one decision consumes
 text, but because the tracer AGREES with pypdf on every field behind the
-other nine sites, measured at 0 of 56 divergences on
+other TEN sites (revision 38 corrected this from nine; the total is
+eleven, not ten), measured at 0 of 56 divergences on
 `standalone_punctuation_lines` and text-emptiness and 27 of 27 traceable
 sides on `text_order_matches`. Absence was the wrong argument; agreement is
 the right one, and it was in the measurements all along.
@@ -2036,6 +2079,16 @@ before/after comparisons (WP-4.3); out of scope here.
      reaching for `#[path]`, relaxed visibility, a test-only feature flag
      or an altered search path says in evidence why, and what it has
      therefore NOT shown.
+   - **A test must read only its OWN checkout.** `mag/tests/critic_text.rs:74`
+     hard-codes an ABSOLUTE corpus path, the only test in the repo that
+     does, so run from an isolated verification worktree it traced the MAIN
+     tree's PDF while exercising the WORKTREE's code, and anywhere else it
+     would silently SKIP. Both outcomes measure something other than the
+     artifact under test, and since EVERY verification in this execution
+     runs from an isolated worktree, a single absolute path silently
+     invalidates a verification, which is the worst possible place for one.
+     Paths are relative to the checkout, or the corpus arrives by the
+     env-gate of rule 2b, which announces its mode.
    - **A recorded command: EXTRACT EACH `## Commands` BLOCK FROM THE
      EVIDENCE FILE ITSELF AND EXECUTE IT** before submitting, rather than
      re-running the version in your shell history. Agents run a command,
@@ -2067,7 +2120,20 @@ before/after comparisons (WP-4.3); out of scope here.
    never generalise a mechanism into a rule on first telling. A WP that
    wants its mechanism believed should test it the way the verifiers did,
    by removing the supposed cause and measuring whether the effect goes.
-10. **Evidence that cannot discriminate must say so.** The plan already
+10. **Evidence that cannot discriminate must say so**, and **when a fixture
+   is labelled non-discriminating, RUN THE OPPOSITE EXTREME too: if both
+   extremes pass, the question is whether the code under test does anything
+   at all.** That second half is not hypothetical and it found a CODE
+   defect rather than an evidence one. WP-5.3b-i honestly labelled its join
+   rule non-discriminating on 010, "chosen because it is principled, not
+   because this corpus can tell"; its verifier then ran the unconditional
+   EMPTY join, which the evidence never ran, and that passed too. Both
+   extremes passing meant the field was less discriminating than even the
+   label claimed, which pointed straight at the cause: the shipped rule
+   subtracts `Show.width`, in GLYPH_QUANTUM units of 9.1552734375e-05 pt,
+   from `Show.x`, in hundredths of a point, inflating width by 109.2267x.
+   The rule-10 label was true of the CODE, not of the corpus, and running
+   one extreme rather than both is what would have hidden it. The plan already
    rules that a gate which cannot fail is not a gate, and WP-0.2g makes
    every collection clause report the cardinality it compared. This extends
    the same discipline to EVIDENCE, which is where it slipped through: an
@@ -2093,6 +2159,14 @@ before/after comparisons (WP-4.3); out of scope here.
    own number and WP-1.1's with a methodological difference that does not
    exist. Both were caught by audit rather than by the authoring WP, which
    is why it is a rule and not advice.
+   **A COUNT stated beside an enumeration must be DERIVED from it, not
+   carried alongside it.** The plan said "ten issue sites" in its prose
+   while its own enumeration listed eleven (3 + 3 + 3 + 1 + 1), and the
+   slip survived several revisions because the enumeration was corrected
+   and the count next to it was not. Anything briefed off the count would
+   have left a site unfaulted, which is exactly what WP-5.3c is briefed
+   off. When correcting an enumeration, grep for its count; when quoting a
+   count, add up the list.
    The same applies to the CORPUS: a pass condition may not hard-code a
    number that edition 010 happens to have today (56 pages, nine articles,
    84 link annotations). Derive it from the oracle leg of the same run.
@@ -3369,7 +3443,8 @@ them or the divergence is a defect:
   make progress without weakening the oracle.
   Everything the original bullet established still binds the successors:
   the decision-level oracle from WP-5.3d, the tracer as text source, the
-  five text-derived fields feeding ten issue sites, the `cover_spread_checks`
+  five text-derived fields feeding ELEVEN issue sites, the
+  `cover_spread_checks`
   dependency on WP-0.2h, the WP-5.2 import edge, and the unnamed raster
   helpers (PIL grayscale, histograms, `ImageChops.difference`, LANCZOS
   resize).
@@ -3501,7 +3576,9 @@ them or the divergence is a defect:
     argued it.** Its claim that `article-stub-last-page` is the only
     text-derived decision is false and got the WP rejected (verify commit
     6c24379) while UPHOLDING the decision: five text-derived fields feed
-    ten issue sites, and `body_text_lines < 5` is merely the only numeric
+    ELEVEN issue sites (3 + 3 + 3 + 1 + 1, counted from the enumeration
+    above and confirmed against `render_critic.py`), and
+    `body_text_lines < 5` is merely the only numeric
     threshold. The surviving and stronger argument is agreement rather than
     absence: the tracer matches pypdf on every field behind the other nine
     sites. Its verifier (accept commit 513a970) graded those agreements,
