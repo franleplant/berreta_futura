@@ -10,7 +10,10 @@ const BOX_NAMES: [&str; 3] = ["MediaBox", "CropBox", "TrimBox"];
 pub struct BoxClause {
     pub status: String,
     pub tolerance_pt: f64,
+    pub boxes_compared: usize,
+    pub rotations_compared: usize,
     pub mismatches: Vec<BoxMismatch>,
+    pub rotation_mismatches: Vec<RotationMismatch>,
 }
 
 #[derive(Serialize)]
@@ -19,6 +22,13 @@ pub struct BoxMismatch {
     pub name: String,
     pub a: [f64; 4],
     pub b: [f64; 4],
+}
+
+#[derive(Serialize)]
+pub struct RotationMismatch {
+    pub page: u32,
+    pub a: i64,
+    pub b: i64,
 }
 
 #[derive(Serialize)]
@@ -70,18 +80,33 @@ pub fn page_count(pdf: &Path) -> Result<u32> {
 }
 
 type BoxMap = BTreeMap<(u32, String), [f64; 4]>;
+type RotationMap = BTreeMap<u32, i64>;
 
-pub fn boxes(pdf: &Path, first: u32, last: u32) -> Result<BoxMap> {
+pub struct Geometry {
+    boxes: BoxMap,
+    rotations: RotationMap,
+}
+
+pub fn boxes(pdf: &Path, first: u32, last: u32) -> Result<Geometry> {
     let info = pdfinfo(
         pdf,
         &["-f", &first.to_string(), "-l", &last.to_string(), "-box"],
     )?;
-    let mut map = BoxMap::new();
+    let mut geom = Geometry {
+        boxes: BoxMap::new(),
+        rotations: RotationMap::new(),
+    };
     for line in info.lines() {
         let Some(rest) = line.strip_prefix("Page ") else {
             continue;
         };
         let fields: Vec<&str> = rest.split_whitespace().collect();
+        if fields.len() == 3 && fields[1] == "rot:" {
+            let page: u32 = fields[0].parse().context("pdfinfo page number")?;
+            let rot: i64 = fields[2].parse().context("pdfinfo page rotation")?;
+            geom.rotations.insert(page, rot);
+            continue;
+        }
         if fields.len() != 6 || !BOX_NAMES.contains(&fields[1].trim_end_matches(':')) {
             continue;
         }
@@ -91,15 +116,21 @@ pub fn boxes(pdf: &Path, first: u32, last: u32) -> Result<BoxMap> {
         for (slot, raw) in coords.iter_mut().zip(&fields[2..]) {
             *slot = raw.parse().context("pdfinfo box coordinate")?;
         }
-        map.insert((page, name), coords);
+        geom.boxes.insert((page, name), coords);
     }
-    Ok(map)
+    anyhow::ensure!(
+        geom.rotations.len() as u32 == last - first + 1,
+        "pdfinfo reported {} rotations for pages {first}..{last} of {}",
+        geom.rotations.len(),
+        pdf.display()
+    );
+    Ok(geom)
 }
 
-pub fn compare_boxes(a: &BoxMap, b: &BoxMap, tolerance_pt: f64) -> BoxClause {
+pub fn compare_boxes(a: &Geometry, b: &Geometry, tolerance_pt: f64) -> BoxClause {
     let mut mismatches = Vec::new();
-    for (key, ca) in a {
-        let cb = b.get(key).copied().unwrap_or([f64::NAN; 4]);
+    for (key, ca) in &a.boxes {
+        let cb = b.boxes.get(key).copied().unwrap_or([f64::NAN; 4]);
         let off = ca.iter().zip(&cb).any(|(x, y)| {
             let d = (x - y).abs();
             d.is_nan() || d > tolerance_pt
@@ -113,14 +144,28 @@ pub fn compare_boxes(a: &BoxMap, b: &BoxMap, tolerance_pt: f64) -> BoxClause {
             });
         }
     }
+    let mut rotation_mismatches = Vec::new();
+    for (page, ra) in &a.rotations {
+        let rb = b.rotations.get(page).copied();
+        if rb != Some(*ra) {
+            rotation_mismatches.push(RotationMismatch {
+                page: *page,
+                a: *ra,
+                b: rb.unwrap_or(-1),
+            });
+        }
+    }
     BoxClause {
-        status: if mismatches.is_empty() {
+        status: if mismatches.is_empty() && rotation_mismatches.is_empty() {
             "pass".into()
         } else {
             "fail".into()
         },
         tolerance_pt,
+        boxes_compared: a.boxes.len(),
+        rotations_compared: a.rotations.len(),
         mismatches,
+        rotation_mismatches,
     }
 }
 

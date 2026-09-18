@@ -39,7 +39,10 @@ struct Verdict {
     #[serde(skip_serializing_if = "Option::is_none")]
     page_sets: Option<BTreeMap<String, Vec<u32>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    page_sets_refused: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     scored_set: Option<ScoredSet>,
+    self_comparison: bool,
     inputs: BTreeMap<String, String>,
     domain: Domain,
     tier_s: TierS,
@@ -630,6 +633,9 @@ pub fn run(edition: &str, opts: Options) -> Result<i32> {
             anyhow::bail!(
                 "staged inputs differ from the baseline digest: page-set scoring and ratchet comparison are refused until a verifier rebases baseline.json from a fresh run"
             );
+        } else {
+            verdict.page_sets_refused =
+                Some("staged inputs differ from the baseline digest; page sets not derived".into());
         }
     }
     write_verdict(&out_dir, &verdict)?;
@@ -669,7 +675,9 @@ fn build_verdict(
         staleness: None,
         typst_leg: None,
         page_sets: None,
+        page_sets_refused: None,
         scored_set: None,
+        self_comparison: inputs.get("a_reader_sha256") == inputs.get("b_reader_sha256"),
         inputs,
         domain: Domain {
             description: "interior: reader.pdf pages 2..n-1, n required equal".into(),
@@ -739,11 +747,13 @@ fn build_verdict(
 }
 
 fn raster_bound(spec: &serde_yaml::Value) -> Result<Option<u8>> {
-    let node = spec
+    let Some(node) = spec
         .get("tiers")
         .and_then(|t| t.get("e"))
         .and_then(|e| e.get("raster_bound"))
-        .context("parity.yaml tiers.e.raster_bound missing")?;
+    else {
+        return Ok(None);
+    };
     match node.get("value") {
         None => Ok(None),
         Some(v) => Ok(Some(
@@ -786,7 +796,16 @@ fn write_verdict(dir: &Path, verdict: &Verdict) -> Result<()> {
     Ok(())
 }
 
-fn summarize(v: &Verdict) {
+fn summarize_run(v: &Verdict) {
+    println!("mode: {}", v.mode);
+    if v.self_comparison {
+        let note = if v.mode == "oracle_only" {
+            "deliberate for this mode"
+        } else {
+            "WARNING: both sides are the same bytes, so no engine comparison happened"
+        };
+        println!("self-comparison: both legs hash identically ({note})");
+    }
     if let Some(s) = &v.staleness {
         println!("staged inputs: {} ({})", s.status, s.current);
     }
@@ -797,6 +816,9 @@ fn summarize(v: &Verdict) {
             .collect();
         println!("page sets: {}", counts.join(", "));
     }
+    if let Some(reason) = &v.page_sets_refused {
+        println!("page sets: refused ({reason})");
+    }
     if let Some(scored) = &v.scored_set {
         println!(
             "scored set {}: {} pages, {} clauses differing",
@@ -805,15 +827,22 @@ fn summarize(v: &Verdict) {
             scored.clauses_differing.len()
         );
     }
+}
+
+fn summarize(v: &Verdict) {
+    summarize_run(v);
     println!(
         "tier S page_count: {} ({} vs {})",
         v.tier_s.page_count.status, v.tier_s.page_count.a, v.tier_s.page_count.b
     );
     if let Some(b) = &v.tier_s.boxes {
         println!(
-            "tier S boxes: {} ({} mismatches)",
+            "tier S boxes: {} ({} boxes, {} rotations compared; {} box, {} rotation mismatches)",
             b.status,
-            b.mismatches.len()
+            b.boxes_compared,
+            b.rotations_compared,
+            b.mismatches.len(),
+            b.rotation_mismatches.len()
         );
     }
     if let Some(t) = &v.tier_s.text {
@@ -832,15 +861,21 @@ fn summarize(v: &Verdict) {
     }
     if let Some(c) = &v.tier_s.color {
         println!(
-            "tier S color: {} ({} pages differ)",
+            "tier S color: {} ({} entries compared, {} pages differ)",
             c.status,
+            c.entries_compared,
             c.pages_differing.len()
         );
     }
     if let Some(n) = &v.tier_s.navigation {
         println!(
-            "tier S navigation: {} ({} mismatches)",
+            "tier S navigation: {} ({} annotations of which {} links, {} outlines, {} title, {} lang compared; {} mismatches)",
             n.status,
+            n.annots_compared,
+            n.links_compared,
+            n.outlines_compared,
+            n.title_compared,
+            n.lang_compared,
             n.mismatches.len()
         );
     }
