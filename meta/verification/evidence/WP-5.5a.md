@@ -6,7 +6,7 @@
 
 ## Status
 
-blocked, with one landed increment
+blocked on the port itself; both committed-asset legs proven
 
 The four brittle matchers from WP-0.0c are PORTED, tested and landed as
 `mag/src/web/markup.rs`. The rest of the WP is not: `html_edition.py`'s web
@@ -24,8 +24,20 @@ different path geometry. Revision 32 then changed route once the real cost
 was known (no padding hook in `qrcodegen`, so reproducing the deviation means
 owning bitstream, ECC, mask selection and layout): COMMITTED ASSETS for the
 compared edition, a spec-correct encoder for new work. Both legs read the
-same asset, so Tier E is satisfied without reproducing a bug. Leg 2 of that
-decision is proven below; leg 1 is not, and is what this WP owes next.
+same asset, so Tier E is satisfied without reproducing a bug.
+
+**Both legs are now proven.** Leg 2 is below, with a correction: it first
+traced a measurement call site and so measured the fit at the wrong room.
+Leg 1 follows, with the asset-reading oracle change in place. Two findings
+came out of leg 1 that the coordinator needs before this lands:
+
+- the reader PDF is NOT byte-reproducible run to run (cairo XObject names),
+  so "compare byte-for-byte on the PDF" is unsatisfiable by any change; the
+  comparison was done with `mag parity --pre-rendered`, against a
+  render-to-render noise floor, with negative controls on both legs;
+- the asset-reading change **cannot land by itself**. The renderer works from
+  a staged copy of declared inputs only, so `mag/src/render.rs` must also
+  declare `editions/<id>/source-codes`. That file is outside this WP's Owns.
 
 **pygments (revision 32).** Decided on its own terms: no ladder clause
 inspects the web tree's spans, and the plan had ALREADY settled the analogous
@@ -116,7 +128,13 @@ deliberately not built.
 ### Leg 2 of the committed-asset decision: what regenerates a code
 
 Revision 32 asks this WP to prove two legs before any asset is committed.
-Leg 2 is answered here; leg 1 is not (see Residuals).
+Leg 2 is answered here; leg 1 is answered further below.
+
+> **CORRECTION, after leg 1.** This section as first landed traced the wrong
+> call site and therefore measured the fit at the wrong room. The numbers
+> below that depend on `room = 55.5` are corrected in "The room correction"
+> immediately after this section; the 9-of-9 agreement survives, the 154/155
+> boundary does not. Read the two sections together.
 
 **Exactly three segno call sites exist**, and the print path uses segno
 TWICE per code, for two different purposes:
@@ -131,9 +149,9 @@ The search is the part an asset must satisfy, not just the output. It loops
 `_CODE_ERROR_LEVELS = ("H","Q","M","L")`, takes each symbol's module count
 via `symbol_size(border=4)`, computes `module = room / modules`, skips any
 level below `_CODE_MIN_MODULE_POINTS` (0.35 mm = 0.9921 pt) and keeps the
-level with the LARGEST module. Every input is a constant
-(`room = _CODE_OPENER_SIDE_POINTS = 55.5`, `_MODULE_EPSILON = 1e-9`), so the
-fit is a pure function of the payload and its result is recordable.
+level with the LARGEST module. `_MODULE_EPSILON` is 1e-9. The room is NOT a
+constant (corrected below), but the fit result is a pure function of the
+payload regardless, and so is recordable.
 
 **So an asset must record more than the payload and the chosen level.** It
 needs the payload, the chosen level, the MODULE COUNT and the matrix:
@@ -141,7 +159,7 @@ needs the payload, the chosen level, the MODULE COUNT and the matrix:
 `side = quiet * module`), so recording the fit RESULT bypasses the search
 entirely, and the matrix is what `_source_code_source` draws.
 
-**Print and web choose the SAME code, 9 of 9 on edition 010** — same error
+**Print and web choose the SAME code, 9 of 9 on edition 010**: same error
 level and same version for every article, so ONE asset serves both legs
 rather than one per leg. That was not previously verified.
 
@@ -149,7 +167,7 @@ It is not coincidence. The fit maximises module size, which minimises module
 count, which minimises version; among levels tying at that version the loop
 keeps the earliest in `H,Q,M,L` order, since a tie never exceeds by
 `_MODULE_EPSILON`. That is "smallest version, strongest level at that
-version" — which is exactly segno's boost rule applied to `error="L"`. The
+version", which is exactly segno's boost rule applied to `error="L"`. The
 two arrive at the same answer by construction.
 
 **Tested per rule 11, including where it should break.** Sweeping payload
@@ -178,8 +196,148 @@ compared edition (010's longest payload is 67 characters):
 - one asset per article serves both legs, and it should record the fit
   result rather than the inputs to a search;
 - the format must be able to represent "print declines", which is a legitimate
-  state rather than an error, or a future edition with a URL over ~154
-  characters will look like a missing asset.
+  state rather than an error, or a future edition with a URL over the limit
+  will look like a missing asset. The limit is 78 characters for an
+  illustrated opener and 154 for a plain one (corrected below).
+
+One further consequence, found while building leg 1: "print declines" is
+not uniformly benign. `_opener_source_codes` RAISES on a decline ("cannot
+carry a scannable source code ... Shorten the canonical URL"), while
+`_opener_credit_code` returns `None` and the field floor becomes 0.0. The
+asset must therefore distinguish "declines" from "absent" precisely so the
+declining case still raises the ORIGINAL error rather than a
+"regenerate source-codes" error. It does: a record whose `print` is null
+makes `_fitted_source_code` return `None`, and each caller then behaves as
+it did before.
+
+### The room correction, and why the fit does not depend on the room
+
+Building leg 1 falsified a premise of leg 2. The render failed, and the
+probe showed the caller I had traced was never reached.
+
+**There are two production rooms, not one.** `_opener_credit_code`
+(adapter:1360) is a MEASUREMENT path that always passes
+`_CODE_OPENER_SIDE_POINTS = 55.5`. The path that actually places the code is
+`_opener_source_codes` (adapter:2047), which chooses per article:
+
+```
+room = _ILLUSTRATED_OPENER_CODE_SIDE_POINTS if illustrated else _CODE_OPENER_SIDE_POINTS
+```
+
+`_ILLUSTRATED_OPENER_CODE_SIDE_POINTS` is 41.0. `_is_illustrated_article`
+is `opener_art is not None`, and all nine of 010's articles have opener art,
+so **every code in the compared edition is fitted at 41.0 pt, not 55.5**.
+The asymmetry is pre-existing in the oracle (both constants are on
+`art_directed` at lines 73 and 227, used at 1362 and 2035); it is not
+introduced here, and it is preserved exactly.
+
+That is a rule 11 failure of my own asserted mechanism, caught by running
+the thing rather than by reading it.
+
+**What breaks: the boundary.** At 55.5 pt at most 55 modules fit and the
+longest payload that can be placed is 154 characters. At 41.0 pt at most 41
+modules fit and the longest is **78 characters**. For 010, which is entirely
+illustrated, 78 is the number that matters, so the "~154" figure carried
+into the plan should read 78 for illustrated openers and 154 for plain ones.
+
+**What survives, and is now stronger than "9 of 9".** The chosen level and
+module count do not depend on the room at all. The loop keeps the candidate
+maximising `room / modules`, which for a fixed payload is the candidate
+minimising `modules`; the room appears only in the floor test, which
+discards the LARGEST candidates first. The smallest-module candidate is
+therefore never the one discarded unless every candidate is discarded. Ties
+break on `H,Q,M,L` order, which is also room-free. So:
+
+> the room decides only WHETHER a symbol is placed, never WHICH symbol.
+
+Measured, not just argued: 499 payloads (lengths 1-199 plus 300 random
+URL-shaped strings) against six rooms spanning 20-120 pt. All 499 placed a
+symbol at one or more rooms; **0 had a (level, modules) that differed
+between rooms**. Negative control, replacing `>` with `<` so the fit prefers
+the largest symbol that fits and becomes genuinely room-dependent: **387 of
+499 differ**. The test discriminates.
+
+This is why one asset record serves both rooms and both legs, and why
+`codes.json` needs no room key. Regenerating 010's asset with the real
+per-article room produced a tree byte-identical to the one generated at
+55.5, as room-independence predicts.
+
+### Leg 1: both legs on the committed asset render the same
+
+Leg 1 asks that both legs, reading the committed asset, render identically
+to the segno-generating code they replace.
+
+**The specified comparison does not work, and the control says why.**
+"Byte-for-byte on the reader PDF" cannot be met by ANY change, including no
+change at all. Rendering the unchanged `art_directed` tree TWICE gives two
+`reader.pdf` files differing in **420,296 bytes**, both diverging at the
+same offset (6670476), where cairo writes its image XObject names:
+
+```
+BEFORE  /i6006c69ab0976b6591f1c6bc628bf9830 17 0 R
+AFTER   /i89ba5982725d5e12cd03192cf18883570 17 0 R
+```
+
+Those names are per-run, they appear inside Flate-compressed content
+streams, and every later byte shifts. Raw PDF bytes are not a determinism-
+stable oracle and no threshold rescues them. The before/after difference
+(421,945 bytes, same offset) is indistinguishable from this floor, so it is
+reported as "the instrument cannot discriminate here" rather than as a pass
+or a fail (rule 10).
+
+**The comparison that does work** is the one the plan already built:
+`mag parity --pre-rendered`, which decodes content streams. Same two
+unchanged renders, compared that way:
+
+| tier | before vs before |
+|---|---|
+| S page_count / boxes / text / color / navigation | pass, 0 mismatches |
+| G | max dx 0.000 pt, max dy 0.000 pt |
+| E glyph positions | pass, 68530 glyphs, 0 violations |
+| E display list | pass, 0 pages differ |
+| V | max channel delta 0 |
+
+**Result.** Against that floor, before (segno) vs after (committed asset):
+
+- `en/web` recursive byte diff: **identical**, every file;
+- every parity tier: **identical to the noise floor**, including 68,530
+  glyph positions at 0.000000 pt worst excess, display list 0 pages differ,
+  and Tier V max channel delta 0.
+
+**Two negative controls, because a pass here could be vacuous.**
+
+1. *Print leg.* Flip ONE module in one committed matrix
+   (`government-rails...`, row 16, column 16, `0` to `1`) and re-render:
+   **tier E display list fails, 1 page differs**, Tier V max channel delta
+   goes 0 to 241. So the comparison does see a single-module change in the
+   printed code. Note Tier V still reports "pass" at worst page fraction
+   0.000006, so the display list is the leg that discriminates, not V.
+2. *Web leg.* The web SVG passing byte-identical proves nothing on its own,
+   because the committed SVG was generated BY segno and would match even if
+   `web_edition` had ignored the asset and kept generating. So: perturb the
+   committed SVG (`#17191c` to `#ff0000` in one file) and re-render. Exactly
+   one file in the web tree changes, the corresponding asset. The web leg
+   does read the asset.
+
+Both perturbations were reverted, and the restored asset tree was checked
+equal to a fresh generation before the final render.
+
+### Leg 1 is blocked on a file this WP does not own
+
+The renderer never sees the repository. `engine_render_bridge.py:158`
+`shutil.copyfile`s each declared input into a stage root and calls
+`load_edition(stage_root, ...)`. Edition 010's request declares 47 inputs
+(24 art, 9 manuscripts, records, `edition.yaml`) and `source-codes` is not
+among them, so a committed asset is INVISIBLE to the renderer no matter what
+the Python does.
+
+Closing that needs a staging row in `mag/src/render.rs`, which is outside
+this WP's Owns. The evidence above was produced with a 15-line
+`stage_source_codes` added in the worktree to prove the mechanism; **it is
+not part of this WP's landed change** and is listed as a residual. Whoever
+owns `render.rs` should add it, and adding it is arguably correct on its own
+terms: it makes the QR asset a declared, reproducible render input exactly
+as art already is.
 
 ### The error-level boost is reproducible, which was the feared part
 
@@ -320,7 +478,7 @@ Three dispositions, none of which a WP may choose alone:
 2. Restate the oracle as the plan's own fallback already anticipates:
    "byte-identical except the nine QR SVGs, which are structurally equal",
    where structurally equal means SAME PAYLOAD, VERSION AND EFFECTIVE ERROR
-   LEVEL — but explicitly NOT the same module matrix, since mask and data
+   LEVEL, but explicitly NOT the same module matrix, since mask and data
    layer both differ. Note this is weaker than the fallback the plan wrote,
    which assumed matrix equality would hold.
 3. Keep calling segno. This defeats WP-6.1's target of no Python anywhere and
@@ -466,6 +624,159 @@ Controlled padding experiment: same probe against `segno.make("a"*62,
 error="M")` and `segno.make("a"*50, error="M")`, forcing each one's own
 version and mask.
 
+### Leg 1: generating the asset, rendering, comparing
+
+The generator is reproduced in full, because the asset it writes is now
+committed and nothing else in the tree can regenerate it. Run from the repo
+root as `uv run python genasset.py 010`. It walks `edition.yaml`, resolves
+each article's source URL through `source_code_payload`, writes the web SVG
+with segno's exact parameters and records the print fit, choosing the room
+per article and emitting a record for every article with a URL.
+`codes.json` is written with `sort_keys=True` and `indent=2` so it is
+diffable. It is a throwaway probe, not committed to `tools/`; giving it a
+home is a question for whoever owns the asset going forward.
+
+    import json, sys, yaml
+    from io import BytesIO
+    from pathlib import Path
+    sys.path.insert(0, "src")
+    import segno
+    from magazine.manifest import source_code_payload
+
+    ILLUSTRATED_ROOM, PLAIN_ROOM = 41.0, 55.5
+    LEVELS, QUIET = ("H", "Q", "M", "L"), 4
+    MIN_MODULE, EPS = 0.35 * 72 / 25.4, 1e-9
+    UNSAFE = __import__("re").compile(r"[^A-Za-z0-9._-]")
+
+    edition = sys.argv[1]
+    out = Path("editions/%s/source-codes" % edition)
+    out.mkdir(parents=True, exist_ok=True)
+    ed = yaml.safe_load(open("editions/%s/edition.yaml" % edition))
+
+    codes, seen = [], set()
+    for a in ed["articles"]:
+        room = ILLUSTRATED_ROOM if a.get("opener_art") is not None else PLAIN_ROOM
+        sid = (a.get("source_ids") or [a["id"]])[0]
+        rec = yaml.safe_load(open("library/sources/%s/record.yaml" % sid))
+        url = rec.get("url")
+        if not url or sid in seen:
+            continue
+        seen.add(sid)
+        payload = source_code_payload(url)
+
+        buf = BytesIO()
+        segno.make(payload, error="L", micro=False).save(
+            buf, kind="svg", scale=1, border=4, dark="#17191c", light="#ffffff",
+            xmldecl=False, svgns=True, nl=False)
+        name = "source-code-%s.svg" % UNSAFE.sub("-", sid)
+        (out / name).write_bytes(buf.getvalue())
+
+        best = None
+        for level in LEVELS:
+            sym = segno.make(payload, error=level, micro=False)
+            modules = int(sym.symbol_size(border=QUIET)[0])
+            module = room / modules
+            if module < MIN_MODULE:
+                continue
+            if best is None or module > best[2] + EPS:
+                best = (level, modules, module)
+        if best is None:
+            printed = None
+        else:
+            level, modules, _ = best
+            sym = segno.make(payload, error=level, micro=False)
+            matrix = ["".join("1" if c else "0" for c in row) for row in sym.matrix]
+            printed = {"error": level, "modules": modules, "matrix": matrix}
+        codes.append({"payload": payload, "source_id": sid, "svg": name,
+                      "print": printed})
+
+    (out / "codes.json").write_text(
+        json.dumps({"codes": codes}, indent=2, sort_keys=True) + "\n")
+    print("wrote %d codes; print declines on %d"
+          % (len(codes), sum(1 for c in codes if c["print"] is None)))
+
+The staging row the evidence depends on, added to `mag/src/render.rs` in the
+worktree only, called immediately after `stage_art`:
+
+    fn stage_source_codes(staging: &mut Staging, edition_dir: &Path, repo_root: &Path) {
+        let rel = edition_dir.join("source-codes");
+        let Ok(entries) = fs::read_dir(repo_root.join(&rel)) else { return };
+        let mut names: Vec<_> = entries.flatten()
+            .filter(|e| e.path().is_file()).map(|e| e.file_name()).collect();
+        names.sort();
+        for name in names { staging.add(&rel.join(name)); }
+    }
+
+The held-back Python, so it does not have to be re-derived. In
+`web_edition.py`, three new module-level names and one replaced block:
+
+    @dataclass(frozen=True, slots=True)
+    class CommittedSourceCode:
+        directory: Path
+        payload: str
+        svg: str
+        error: str | None
+        modules: int | None
+        matrix: tuple[str, ...]
+
+    def source_code_directory(anchor: Path) -> Path | None:
+        for parent in [anchor, *anchor.parents]:
+            if (parent / "edition.yaml").is_file():
+                return parent / "source-codes"
+        return None
+
+    def committed_source_codes(directory: Path) -> dict[str, CommittedSourceCode]:
+        reads codes.json, keyed by payload, {} when the file is absent
+
+    def committed_source_code(anchor: Path, payload: str) -> CommittedSourceCode | None:
+        directory = source_code_directory(anchor)
+        return None if directory is None else committed_source_codes(directory).get(payload)
+
+`_materialize_source_codes` then replaces its `segno.make(...).save(...)`
+block with a lookup on `article.manuscript` and a `write_bytes` of the
+committed SVG, raising when the asset is missing.
+
+In `weasyprint_adapter.py`: `SourceCode` gains `anchor: Path | None = None`;
+`_fitted_source_code` gains an `anchor` parameter, reads the asset instead
+of looping over segno, RAISES when the asset is absent and returns `None`
+when `asset.error is None` (so each caller keeps its original behaviour on a
+decline); `_source_code_matrix` reads `asset.matrix` and
+`_source_code_source` passes `code.anchor`. Both call sites pass
+`article.manuscript` as the anchor, including `_opener_source_codes` at
+:2047, which is the one the first pass missed. `import segno` disappears
+from the adapter entirely.
+
+`article.manuscript` is the anchor rather than `article.opener_art.path`
+because it is total: every article has a manuscript, only illustrated ones
+have opener art, and print needs an asset for articles web skips.
+
+Baseline, from a pristine worktree at `a0714c3` so no in-progress edit can
+contaminate it, rendered twice to establish the noise floor:
+
+    git worktree add <before> a0714c3
+    cd <before> && ./mag/target/debug/mag render 010     # twice
+    ./mag/target/debug/mag parity 010 --pre-rendered <run1> <run2>
+
+After, and the comparison:
+
+    cd <after> && uv run python genasset.py 010
+    ./mag/target/debug/mag render 010
+    diff -rq <before>/…/en/web <after>/…/en/web
+    ./mag/target/debug/mag parity 010 --pre-rendered <before-run> <after-run>
+
+Negative controls: flip one character of one `matrix` row in `codes.json`,
+re-render, expect `tier E display list: fail (1 pages differ)`; and replace
+`#17191c` with `#ff0000` in one committed SVG, re-render, expect exactly one
+differing file in the web tree. Revert both and check the restored tree
+equals a fresh `genasset.py` run before the final render.
+
+Room-independence sweep: for each of 499 payloads (`"h"*n` for n in 1..199,
+plus 300 random strings of length 1..200 over
+`[A-Za-z0-9:/.\-_?=&]`, seed 11) run the `_fitted_source_code` loop at rooms
+20, 30, 41, 55.5, 80 and 120, and compare the resulting `(level, modules)`
+across rooms. Negative control: flip the comparison to `<` so the loop
+prefers the largest fitting symbol.
+
 ## Tool versions
 
 - segno 1.6.6
@@ -475,7 +786,20 @@ version and mask.
 
 ## Verdicts
 
-No parity verdicts produced; this WP wrote no Rust and ran no render.
+Leg 1 produced three `mag parity` runs on edition 010. All tiers reported
+below are from `output/parity/010/verdict.json`; `tier E raster` is
+`not_evaluated` in every run, pending WP-0.2d's `raster_bound` derivation.
+
+| comparison | display list | glyph positions | tier V max channel delta |
+|---|---|---|---|
+| before vs before (noise floor) | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
+| before vs after (committed asset) | pass, 0 pages | pass, 68530 glyphs, 0 violations | 0 |
+| before vs one flipped module (control) | **fail, 1 page** | pass, 0 violations | **241** |
+
+Tier S (page_count 56 vs 56, boxes, text, color, navigation) and tier G
+(max dx and dy 0.000 pt) pass in all three, including the control: a single
+QR module moves no text and no box, which is why the display list rather
+than S, G or V is the leg that discriminates here.
 
 ## Residuals
 
@@ -498,17 +822,41 @@ No parity verdicts produced; this WP wrote no Rust and ran no render.
   any of them. Whoever builds this should expect the fixture surface to be
   larger than the corpus surface, and should inherit the blocked WP-5.5's
   per-module enumeration (commit 6a9b5cf) rather than re-deriving it.
-- **LEG 1 IS NOT PROVEN and is the next thing this WP owes.** Revision 32's
-  decision needs both legs pointed at the committed asset to render
-  BYTE-IDENTICAL. Leg 2 is done above; leg 1 needs a sanctioned oracle change
-  to `web_edition.py` and `weasyprint_adapter.py` (reading the asset instead
-  of calling segno) plus a before/after render of 010 compared byte-for-byte
-  across the web tree AND the reader PDF. Note the web half already has
-  strong supporting evidence: the blocked WP-5.5 regenerated all nine web
-  SVGs byte-identically from segno's own parameters, so serialisation is
-  understood. The print half is the unproven one, and `_source_code_source`
-  draws from `code.module` and `code.side` as well as the matrix, so the
-  asset must reproduce the fit result exactly or the drawn geometry moves.
+- **LEG 1 IS PROVEN, with one carried dependency.** See "Leg 1" above: the
+  web tree is byte-identical and every parity tier matches the
+  render-to-render noise floor, with negative controls on both legs. The
+  carried dependency is the staging row.
+- **`mag/src/render.rs` needs a `stage_source_codes` row, and this WP does
+  not own that file.** Without it the committed asset is never copied into
+  the stage root and the renderer cannot see it, so the asset-reading change
+  CANNOT be landed alone: doing so breaks every render with "No committed
+  source code". The two must land together. The 15-line function used to
+  produce the leg-1 evidence is reproduced in Commands; it reads
+  `editions/<id>/source-codes`, sorts by filename for determinism, and is a
+  no-op when the directory is absent.
+- **The reader PDF is not byte-reproducible across runs**, which is a
+  general finding, not specific to this WP. Cairo's image XObject names
+  (`/i<hex>`) are per-run and sit inside compressed streams, so two renders
+  of identical inputs differ in ~420 KB. Any future WP told to compare
+  "byte-for-byte on the PDF" should use `mag parity --pre-rendered` instead
+  and say so rather than reporting a spurious fail. Worth checking whether
+  WP-0.1's determinism proof covered the PDF bytes or only the display list;
+  if the former, it needs revisiting.
+- **The two rooms are an oracle asymmetry worth a second look, separately
+  from this port.** `_opener_credit_code` computes the opener field floor
+  from a symbol fitted at 55.5 pt even for illustrated articles, which
+  `_opener_source_codes` then places at 41.0 pt. For 010 this is harmless
+  because the chosen symbol is room-independent (proved above) and both
+  rooms place a symbol, but a payload between 79 and 154 characters would
+  make the measurement path size a code the production path then refuses to
+  place. That is a latent bug in the ORACLE, faithfully preserved here.
+- **`_opener_source_codes` iterates every article with a `source_url`**,
+  illustrated or not, and fit-checks all of them while appending only the
+  illustrated ones. `_materialize_source_codes` (web) skips non-illustrated
+  articles entirely. So print's asset requirement is a SUPERSET of web's;
+  they coincide on 010 only because all nine articles are illustrated. The
+  generator writes a record for every article with a URL, not just the
+  illustrated ones, for that reason.
 - **The QR encoder is no longer the plan's route**, but if the fallback is
   ever taken: Revision 30 decided to
   reproduce the deviation; the specification is eight spurious zero bits at
