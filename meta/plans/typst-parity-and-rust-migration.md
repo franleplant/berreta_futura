@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 47 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 48 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,50 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 48 changelog
+
+**The fourth landing check had a flaw, and the flaw is structural rather
+than incidental.** `git status` on a shared tree under concurrency is a
+SAMPLE, not a state. A reading taken while another agent is
+mid-`update-ref`-and-sync shows that agent's land as a mass deletion, which
+is EXACTLY the signature check 4 hunts for, so **the false positive is the
+check's own success condition arriving from the wrong cause** rather than a
+rare coincidence. It has already fired once: a verifier reported a 31-file
+reversion of WP-2.1 and retracted it on its own next pass, with the index
+empty, the tree clean and all 31 files present.
+
+What makes it worth fixing rather than noting is that the prescribed remedy
+is a WRITE. Unstaging another agent's in-flight land is bounded harm, since
+a path-scoped reset touches only the index and the landing agent restages,
+but it stops being bounded the moment someone reaches for a HARD reset
+because the path-scoped form "did not work". So the rule now requires a
+re-read after a pause before acting, action only if the reading PERSISTS,
+and inspection of the staged CONTENT before resetting, since both real
+incidents were identifiable by content: one staged the removal of a
+`GLYPH_QUANTUM` export that HEAD had, the other a verify file that existed
+in HEAD and on disk. The general form, quoted because it applies past this
+check: **any index check on the shared tree is re-read before it is acted
+on OR REPORTED.**
+
+**Rule 3c is working, and its limit is precisely rule 3d's gap.** Two
+verifier self-corrections in one day, both caught the same way, by the
+verifier's own next pass: the doubled counter and this retracted index
+reading. So a verifier's re-reading does catch its transient OBSERVATIONS.
+What it cannot catch is a wrong ARGUMENT that produced a correct verdict,
+because nothing prompts a second look at reasoning that reached the right
+answer. Both are true and not in tension, and the contrast is the useful
+part: it is why rule 3d is about WHERE a reason is recorded rather than
+about re-reading harder.
+
+**WP-2.1 has landed** (`f00e4c7`, 31 files, all additions), so Phase 2's
+content pipeline is in and the chain that opens Phase 3 is
+WP-2.1 to WP-2.2 to WP-2.3, with WP-0.2k the only other thing in front of
+it now that the content-final gate is withdrawn.
+
+The gitignored-path residual needs nothing further: revision 47 already
+wrote it as standing guidance after the third instance, and WP-0.2g's
+`$PWD/editions/010/render-*` is that instance.
 
 ## Revision 47 changelog
 
@@ -2532,6 +2576,15 @@ before/after comparisons (WP-4.3); out of scope here.
    checks (rule 10), treats its own causal claims as hypotheses (rule 11),
    and replays through the artifact rather than through its shell
    (rule 12). A verifier is not exempt from the discipline it enforces.
+   **This rule works, and its limit is exactly rule 3d's gap.** Two
+   self-corrections in one day, both caught by the verifier's OWN NEXT
+   PASS: the doubled counter, and the retracted 31-file index reading. So
+   a verifier's re-reading does catch its transient OBSERVATIONS. What it
+   does not catch is a wrong ARGUMENT that produced a correct verdict,
+   because nothing prompts a second look at reasoning that reached the
+   right answer. Both halves are true and they are not in tension; the
+   contrast is the useful part, and it is why rule 3d is about where a
+   REASON is recorded rather than about re-reading.
 3d. **A correct VERDICT immunises a wrong ARGUMENT, so a load-bearing
    reason must live where it will be re-read.** Nothing ever checks a
    verifier's reasoning, only its verdict, and once the verdict is right
@@ -2622,6 +2675,28 @@ before/after comparisons (WP-4.3); out of scope here.
    the protocol exactly still leaves the trap armed. After moving the
    branch, confirm `git diff --cached --name-only` returns NOTHING, and
    clear it with **`git reset -- <paths>`** if not.
+   **But RE-READ BEFORE ACTING, and certainly before resetting: `git status`
+   on a shared tree under concurrency is a SAMPLE, not a state.** A reading
+   taken while another agent is mid-`update-ref`-and-sync shows that agent's
+   land as a mass deletion, which is EXACTLY the signature this check hunts
+   for, so the false positive is not a rare coincidence: **it is the check's
+   own success condition arriving from the wrong cause.** It has already
+   happened once, a verifier reporting a 31-file reversion of WP-2.1 and
+   retracting it on its own next pass, when the index was empty, the tree
+   clean, and all 31 files present.
+   The danger is that the prescribed remedy is a WRITE. Unstaging another
+   agent's in-flight land is bounded harm, since a path-scoped reset touches
+   only the index and the landing agent restages, but it stops being
+   bounded the moment someone reaches for a HARD reset because the
+   path-scoped form "did not work". So:
+   - a non-empty index is a reason to RE-READ after a pause, not a reason to
+     act; act only if it PERSISTS;
+   - when it does persist, INSPECT THE STAGED CONTENT before resetting. Both
+     real incidents were identifiable by content: one staged the removal of
+     a `GLYPH_QUANTUM` export that HEAD had, the other a verify file that
+     existed in HEAD and on disk;
+   - the general form, which applies past this check: **any index check on
+     the shared tree is re-read before it is acted on OR REPORTED.**
    **Path-scoped reset ONLY. Never a bare hard reset, never a path-scoped
    checkout**, because other agents have uncommitted work in that tree: at
    the time this was written WP-0.2g had 43 insertions in
