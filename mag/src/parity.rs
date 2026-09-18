@@ -17,7 +17,7 @@ use streams::Face;
 pub(crate) use display::trace_elements;
 #[allow(unused_imports)]
 pub(crate) use streams::Color;
-pub(crate) use streams::{Element, Face as TextFace};
+pub(crate) use streams::{Element, Face as TextFace, GLYPH_QUANTUM};
 
 #[allow(dead_code)]
 pub(crate) fn text_font_map() -> Result<BTreeMap<String, Face>> {

@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::OnceLock;
 
 use crate::model::shared::py_strip;
-use crate::parity::{trace_elements, Element, TextFace};
+use crate::parity::{trace_elements, Element, TextFace, GLYPH_QUANTUM};
 
 const SAME_LINE_TOLERANCE: i64 = 100;
 const WORD_GAP_FRACTION: f64 = 0.25;
@@ -65,7 +65,8 @@ fn shows(elements: &[Element]) -> Vec<Show> {
             }
             let width = match (offs.first(), offs.last(), offs.len()) {
                 (Some(first), Some(last), count) if count > 1 => {
-                    (last[0] - first[0]) * count as i64 / (count as i64 - 1)
+                    let span = (last[0] - first[0]) * count as i64 / (count as i64 - 1);
+                    (span as f64 * GLYPH_QUANTUM * 100.0).round() as i64
                 }
                 _ => 0,
             };
