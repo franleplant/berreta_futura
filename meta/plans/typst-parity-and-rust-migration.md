@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 38 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 39 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,55 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 39 changelog
+
+**Rule 9's propagation failure, in a second medium: the argument was
+revised and the SPECIFICATION beside it was not.** The plan's prose has
+said since revision 15 that the raster guard is withdrawn and Tier E is
+wholly geometric, and revision 21 even rebuked WP-5.4 for citing
+"WP-0.2f's derived bound" as an artifact that never existed. But
+`### WP-0.2f` itself still said: own `tiers.e.raster_bound`, select a
+rasterizer, derive the bound under the two-sided constraint. An agent finds
+its own WP section and executes THAT, not the changelog, so the executable
+instruction contradicted the argument for three revisions. Nobody re-reads
+a section they have already decided about.
+
+**Decided: WHOLLY withdrawn, selection included**, which revision 15 left
+implicit. The guard is gone, rasters survive only as Tier V meters, meters
+GATE NOTHING, and `pdftoppm -r 300` is already implemented by WP-0.2c and
+pinned by WP-0.1, so there is no requirement a different rasterizer would
+satisfy and nothing left to select. The section is kept rather than deleted
+because its measurements must not be repeated and because a deleted WP
+leaves a dangling id in eleven places, but it now opens with **do not
+execute this section** and points at WP-0.2i.
+Every dangling consequence is closed: `tiers.e.raster_bound` is authored by
+NOBODY and holds only WP-0.2d's blocked record; `mupdf` 1.26.4 is installed
+but deliberately NOT pinned, so nobody adds it to the toolchain; the floor
+and ceiling fixtures are superseded by WP-0.2i, which inherits the `drift`
+fixture and the CTM-composing recommendation. The Tier V bullet no longer
+promises a pending selection, WP-0.2d's pointer says the destination was
+withdrawn, and revision 13's now-void conditional carries a marker. The
+discipline generalises: **when a decision withdraws work, grep for the WP
+id and check every hit**, exactly as correcting an enumeration means
+grepping for its count.
+
+**The straddle rule binds on INHERITANCE, not only on authoring.** Third
+instance of the finding and the first in inherited rather than authored
+code: WP-5.4b fixed its own deck fixture, and its verifier then found the
+same weakness in the HEADLINE refusal it had inherited, which guards two
+numbers and discriminates on one (line limit `<= 3` to `<= 6` fails the
+test; size floor 20.0 to 15.0 leaves all eleven passing, because the string
+sits far enough past the boundary to refuse under a 25% looser floor). A
+rule binding only at authoring time exempts every inherited fixture, and
+inheritance is common now that WPs re-cut, so successor WPs SWEEP what they
+adopt. **WP-5.4b-i** owns the fix, `mag/tests/cover_*` only; the id is
+adopted as dispatched.
+Recorded because it is the distinction that kept this from being a
+rejection: WP-5.4b's evidence claimed only that three of six refusals were
+perturbed at their threshold and never asserted the others discriminate, so
+rule 10's labelling duty was met. The remaining two are categorical with no
+number to move, which the message-only classification covers correctly.
 
 ## Revision 38 changelog
 
@@ -1181,6 +1230,11 @@ Three consequences, all recorded:
   depends on it: up to `(half quantum / font size) x measure`, which is
   0.0945 pt measured at 12 pt and 0.1625 pt derived for 010's body text,
   16x the coordinate quantum and 0.68 px at 300 dpi.
+- [REVISION 39: the conditional below is VOID. Revision 15 withdrew the
+  raster guard and revision 39 withdrew WP-0.2f entirely, so there is no
+  window to collapse and no bound to derive. WP-0.2i's per-glyph floor
+  carries the third fixture's role. Kept as the record of what revision 13
+  decided.]
 - WP-0.2f's floor gains a THIRD fixture for it, and it is the largest of
   the three on paper, so it may be what decides whether the 2x window is
   open. **But the better answer is to remove the term rather than
@@ -1529,8 +1583,9 @@ Used to measure convergence during Phase 3; they gate nothing final.
 - G, from `pdftotext -bbox-layout` (pinned poppler): same line count per
   prose block; per-line first-word x and line y within tolerance; G1 =
   2.0 pt, G2 = 0.5 pt (G3 = 0.1 pt is subsumed by Tier E's quantum)
-- V, from the same pinned rasterizer configuration the Tier E guard uses
-  (WP-0.2f selects it; `pdftoppm -r 300` until then), hard fail on raster
+- V, from the pinned `pdftoppm -r 300` (WP-0.2c's implementation, poppler
+  pinned by WP-0.1; revision 39 withdrew WP-0.2f, so no selection is
+  pending and the meters are the only raster consumer), hard fail on raster
   dimension mismatch: pixel differs when any channel delta exceeds 24/255;
   V1 = below 1.0% of the page differing, V2 = below 0.1%. One rasterizer
   for both, so the meters, the report and the gate never disagree about
@@ -2321,7 +2376,9 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
 **WP-0.2d fault suite and calibration**
 - Owns: `mag/tests/parity_faults*`, `meta/verification/parity.yaml`
   (expected-detections matrix and `critic_metric_tolerances:` keys only;
-  `raster_bound` moved to WP-0.2f in revision 9).
+  `raster_bound` moved to WP-0.2f in revision 9, and WP-0.2f was WITHDRAWN
+  in revision 39, so the key is authored by nobody and carries only this
+  WP's blocked measurement).
 - Target: seeded faults built by rendering scratch copies of staged
   inputs/CSS (tracked files untouched): swapped words, a line moved
   0.05 pt and 0.3 pt, a figure shifted one page, a 30 px recolor, body ink
@@ -2375,100 +2432,49 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   origin, same total advance, different glyph sequence). `cargo test`,
   `fmt`, `clippy -D warnings` green.
 
-### WP-0.2f rasterizer selection and the raster bound (comparator WP)
+### WP-0.2f rasterizer selection and the raster bound (WITHDRAWN)
 
-- Owns: `mag/src/parity/raster.rs`, `meta/verification/parity.yaml`
-  (`tiers.e.raster_bound` and the rasterizer entry under `tools:`).
-- Target: select a rasterizer configuration and derive
-  `tiers.e.raster_bound.value` under the two-sided constraint stated in
-  Tier E, recording every measurement:
-  - the **reachability floor**: the max per-channel delta over TWO
-    fixtures, because the display list is blind to two different things
-    and the floor has to cover both:
-    (i) **coordinate quantization**, as Tier E defines it: coordinates
-    moved to the EXTREMES of their own buckets in both directions (two
-    deterministic runs, no seed), display-list equality asserted on both.
-    WP-0.2d's `perturb.py` is the starting point and is replayable (at
-    amplitude 0 it is provably inert), but it perturbs randomly within half
-    a quantum and must be corrected to the bucket-extreme rule before its
-    number means anything: its 241 is a floor on the floor.
-    (iii) **transform-amplified displacement** (Tier E blind spot 5): a
-    text run whose TRM LINEAR components differ by just under half a
-    quantum over a full-measure line, display lists asserted equal. This
-    term is the largest of the three on paper (0.1625 pt derived at body
-    measure against 0.017432 pt for (ii)), so it may be what decides
-    whether the 2x window is open. If it collapses the window that is
-    `Status: blocked` and another revision, not a wider bound; the
-    intended answer in that case is WP-0.2g's finer linear quantum, which
-    removes the term rather than accommodating it, after which this
-    fixture and the floor are re-derived.
-    (ii) **intra-line glyph drift**, which revision 9 did not model at all:
-    glyphs displaced progressively within each line up to the 0.017432 pt
-    WP-1.6 measured between Pango's integer 1/1024 px line widths and
-    Typst's exact font-unit sums. This is systematic and engine-intrinsic,
-    not noise, and the display list cannot see it, so a floor derived
-    without it would leave WP-0.2f discovering it later as an unexplained
-    failure and blocking.
-    Both fixtures are synthesized on the oracle leg, so WP-0.2f can run
-    before a Typst render exists.
-  - **re-derivation on the real pair**: the floor above is synthetic. Once
-    a Typst leg exists, WP-3.0g re-derives it from the actual
-    Typst-vs-WeasyPrint pair before raising the ratchet to Tier E, and
-    fails loud if the real floor exceeds the synthetic one, which would
-    mean a divergence nobody has enumerated. A synthetic floor is what lets
-    Phase 0 finish; it is not what the gate finally rests on.
-  - the **meaningfulness ceiling**: the smallest per-fixture MAX
-    per-channel delta across the blind-spot fault fixtures, which after
-    WP-0.2e are the items Tier E enumerates as raster-only: a TJ array
-    whose kern numbers change but whose total advance is preserved (a
-    non-compensating change is visible by other means, so it would not
-    measure the blind spot), and an equal-count equal-advance glyph
-    substitution if one can be built from the vendored faces. Measure the
-    kern fixture at more than one magnitude: intra-show positioning is the
-    guard's sole responsibility (Tier E item 1), so the interesting number
-    is the SMALLEST kern shift the guard still catches, not the largest.
-  - `value` = the floor, and the WP fails loud unless ceiling >= 2x floor.
-  Candidates, in the order worth trying: MuPDF `mutool draw` (does not
-  grid-fit; needs installing and pinning); `pdftoppm` supersampled and
-  box-downsampled to 300 dpi, which bounds a grid-fit flip to a fraction of
-  an output pixel and needs no new tool but costs time and disk; anything
-  else that measures well. Record the wall-clock of a full parity run under
-  the winner: a gate nobody can afford to run is not a gate.
-- Verify: the floor and ceiling measurements are in evidence with the
-  winning configuration named and pinned; 010 A-vs-A raster-equal and
-  A-vs-B raster-equal under the derived bound; the Tier E raster clause
-  stops reporting `not_evaluated`; the fixtures that define the ceiling all
-  fail. If no candidate reaches the 2x margin, `Status: blocked` with every
-  measurement recorded, and the plan is revised again rather than the bound
-  widened.
-- The fallback, written down now so a blocked WP-0.2f is a decision rather
-  than a scramble: close the remaining display-list blind spots so the
-  raster guard stops being load-bearing, then demote raster to meters. That
-  means encoding intra-show glyph positions in the display list (Tier E
-  item 1) alongside the glyph count already added. The catch that keeps
-  this a fallback rather than the primary design: per-glyph positions at
-  the 0.01 pt quantum would false-fail on letter-spaced headlines, where
-  WP-1.1 measured 0.0174 pt of Pango rounding drift, so the encoding needs
-  thought first. A per-show advance CHECKSUM at a coarser quantum, or
-  positions quantized per-show relative to the show origin, are the two
-  shapes worth costing before adopting either.
-
-- OUTCOME: `blocked`, and the fallback above is what revision 15 adopts.
-  Evidence `meta/verification/evidence/WP-0.2f.md` (commit 932f90e). The
-  measurements are sound and must be CITED, never repeated: controls
-  (kern_identity, drift_identity, trm_zero) all 0.000, every fixture's
-  display-list equality checked with `mag parity` rather than assumed,
-  winner `mutool draw` 1.26.4 at 8x supersampling, floor 30.125 against
-  ceiling 30.125 (ratio 1.00), kern ceilings 30.125 / 60.250 / 90.375 /
-  151.641 at 0.02 / 0.05 / 0.1 / 0.2 pt, and the linear-matrix term
-  bracketing at 151.641 above every ceiling. The WP widened nothing,
-  dropped no fixture, wrote no `value`, and left `raster.rs` untouched.
-  Two limitations it recorded rather than hid: the bucket and TRM fixtures
-  could not be built display-list-EQUAL through operand perturbation, and
-  the conclusion does not depend on them, since they can only RAISE the
-  floor. `mupdf 1.26.4` is installed on this machine but NOT pinned,
-  because no configuration was selected.
-
+- **WITHDRAWN AND SUPERSEDED (revision 39). Do not execute this section.**
+  It is kept rather than deleted because its MEASUREMENTS are valuable and
+  must not be repeated, and because a deleted WP leaves a dangling id in
+  eleven other places. The replacement is the per-glyph clause in Tier E
+  and **WP-0.2i**; read those instead.
+- Why the whole section goes, selection included. Revision 15 withdrew the
+  Tier E raster guard after this WP measured that no rasterizer can carry
+  it: `mutool draw` 1.26.4 at 8x supersampling does not FreeType-grid-fit
+  outlines, which was the hope, but it ROUNDS TEXT-OBJECT ORIGINS to the
+  device grid, so it is as sensitive to a sub-pixel origin shift (242) as
+  poppler (241); floor 30.125 against ceiling 30.125 is a ratio of 1.00;
+  the linear-matrix term brackets at 151.641 above every ceiling; and
+  perturbing origins within 0.001 pt still reaches 122, so no finer
+  quantum rescues it. Full record:
+  `meta/verification/evidence/WP-0.2f.md`, commit 932f90e.
+  With the guard gone, the SELECTION half dies too, which revision 15 left
+  implicit and this revision states: rasters survive only as Tier V
+  meters, meters GATE NOTHING, and `pdftoppm -r 300` is already
+  implemented (WP-0.2c) and pinned (WP-0.1). There is no requirement a
+  different rasterizer would satisfy, so there is nothing left to select.
+- Consequences, so nothing dangles:
+  - `tiers.e.raster_bound` is NOT authored by anyone. It carries no
+    `value`, and the key exists in `parity.yaml` only as WP-0.2d's blocked
+    measurement record.
+  - `mupdf` 1.26.4 is installed on the development machine and
+    deliberately NOT pinned in `tools:`. Nothing in the pipeline depends
+    on it; do not add it.
+  - The reachability-floor and ceiling fixtures specified here are
+    superseded by WP-0.2i's per-glyph floor, which inherits this WP's
+    `drift` fixture (69,071 glyphs, 1,503 shows, display-list equal) and
+    its recommendation that the re-derivation use a CTM-COMPOSING
+    perturbation through the Rust tracer rather than operand perturbation
+    through pypdf.
+- **Why this section survived three revisions of prose that contradicted
+  it**, recorded because it is rule 9's propagation failure in a second
+  medium: revision 15 rewrote the ARGUMENT and left the SPECIFICATION
+  beside it, because nobody re-reads a section they have already decided
+  about. An agent finds its own WP section and executes that, not the
+  changelog, so a withdrawn WP must say so IN ITS OWN SECTION. When a
+  decision withdraws work, grep for the WP id and check every hit, exactly
+  as when correcting an enumeration you grep for its count.
 ### WP-0.2g compared cardinality and page rotation (comparator WP)
 
 - Owns: `mag/src/parity/geometry.rs`, `mag/src/parity/display.rs`,
@@ -3164,6 +3170,27 @@ no code mutation, and a tight pair necessarily flips when the threshold
 moves by one, which is the verification that it is tight. WP-5.4b then
 applied the same perturbation to the wordmark floor (25.0 to 20.0) and the
 title floor (12.0 to 8.0) and both fail properly.
+**The rule binds on INHERITANCE, not only on authoring.** A WP that adopts
+fixtures it did not write has UNVERIFIED pair-tightness for every numeric
+guard in them until someone moves the threshold, so re-cut and successor
+WPs sweep what they inherit rather than assuming the previous author did
+it. This is now the THIRD instance of the finding and the FIRST in
+inherited rather than authored code: WP-5.4b fixed its own deck fixture and
+then its verifier found the same weakness in the HEADLINE refusal it had
+inherited, which guards two numbers and discriminates on only one (moving
+the line limit from `<= 3` to `<= 6` fails its test, but dropping the size
+floor from 20.0 to 15.0 leaves all eleven tests passing, because the
+headline string sits far enough past the boundary to refuse under a 25%
+looser floor). A rule that binds only at authoring time exempts every
+inherited fixture, and inheritance is common now that WPs re-cut.
+**WP-5.4b-i** owns that fix, `mag/tests/cover_*` only.
+Note what was NOT a rejection: WP-5.4b's evidence claimed only that three
+of six refusals were perturbed at their threshold and never asserted the
+other three discriminate, so rule 10's labelling duty was met and the
+verifier was right to accept. The remaining two, missing cover art and
+unknown layout, are categorical with no number to move, so the
+message-only classification covers them correctly.
+
 **And say which refusals are which.** Evidence classifies each refusal as
 THRESHOLD-DISCRIMINATING or MESSAGE-ONLY. Message-only is not a weakness
 where there is no number to get wrong: for an unknown enum value, a missing
