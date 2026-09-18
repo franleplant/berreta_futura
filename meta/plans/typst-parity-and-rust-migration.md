@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 44 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 45 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,58 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 45 changelog
+
+**WP-1.8 is the cleanest rule-11 result of the execution: the hypothesis
+died twice over, and the real cause was one line neither spike suspected.**
+The plan supposed WP-1.7's harness lacked WP-1.2's styled-run preservation.
+Measured: **the two harnesses are the same program**, and run on a
+byte-identical input dump they give identical numbers with neither
+producing 148/149. The disagreement was never between the spikes, but
+between WP-1.2's recorded harness and WP-1.2's own headline table. The
+removal test then showed styled-run preservation cannot move that count in
+either direction, though it is not inert. Both extremes were run per
+rule 10, and both giving 147 was reported as the RESULT rather than read as
+agreement, which is revision 38's diagnostic working as designed.
+
+**The finding that outranks the reconciliation: AN AGGREGATE IS NOT A
+POPULATION.** WP-1.2's fix repairs block 39 and simultaneously introduces
+block 4, so **the 147 before and the 147 after are two different 147s**. A
+total that does not move can conceal two compensating changes underneath,
+and that is precisely where the plan's false hypothesis came from: an
+unchanged aggregate was read as an unchanged population, and the plan
+carried it for revisions. The check is to compare member SETS rather than
+totals, which is what named block 4. It sits beside revision 43's
+non-monotonic `text_characters` case, and together they make one point from
+two directions: a total can move while the population gets healthier, and a
+total can sit still while the population changes underneath.
+
+**The cause, named by measurement**: the comparison's whitespace
+normalization, shared by both harnesses, collapses RUNS of whitespace but
+cannot remove an INSERTED space. Removing whitespace entirely moves both
+harnesses to 148/149 and 963/968, WP-1.2's headline exactly, appearing when
+added and returning when removed. The extra member is block 4, reader page
+6, line index 5: a `pdftotext -bbox-layout` word split at a font change,
+first differing character at index 13, exactly the run boundary. Not an
+engine divergence. The genuine residual is untouched (block 135, page 47,
+WP-1.2's 325.01-against-325 pt miss), and the treatment discriminates
+rather than blanket-passing, still failing blocks 135 and 137.
+
+**A correction to WP-1.7 is PENDING rather than applied.** Its delta table
+mixes both normalizations, so its "968/968 at the midpoint" holds only
+whitespace-insensitively. Its interval and +0.025000 pt recommendation are
+UNAFFECTED, since block 4 is a constant one-line offset at every delta and
+can move neither bound. The amendment waits on an independent verification
+of WP-1.8, because it corrects two accepted WPs and one agent's word should
+not amend the plan. Recorded now so the finding is not lost while the
+verification runs.
+
+**And an environment trap worth its line**: `TYPST_ROOT` is the typst CLI's
+PROJECT ROOT, not an install prefix, and a replay failed outright on it.
+Found BY the rule-12 replay rather than by the authoring run, which is rule
+12 earning its cost again, and the guard is proven by replaying under a
+deliberately hostile value rather than merely unsetting it.
 
 ## Revision 44 changelog
 
@@ -2176,6 +2228,15 @@ before/after comparisons (WP-4.3); out of scope here.
   `PagedIntrospector` and `Page` live in the former, the main `FileId` needs the
   latter's `RootedPath`/`VirtualRoot`/`VirtualPath`); `comemo` is not needed as a
   direct dependency. MSRV 1.92 against the repo's rustc 1.96.0, no edition bump.
+- **Environment trap, found by a rule-12 replay rather than by the
+  authoring run**: `TYPST_ROOT` is the typst CLI's PROJECT ROOT, not an
+  install prefix. WP-1.8's first replay failed outright with
+  `source file must be contained in project root` because the name had been
+  used for an install prefix. Command blocks unset it, and the guard is
+  proven by running the second replay under a deliberately HOSTILE
+  `TYPST_ROOT`, which is the straddle rule's spirit applied to an
+  environment variable: do not merely unset it, show that the unset works
+  against a value that would break it.
 - Measurement uses both Typst APIs, for different questions (WP-1.4): the
   **frame walk** (`pages()` -> `Page::frame` -> `Frame::items()`, recursing
   into `Group` while composing `Transform`) is primary and yields one
@@ -3458,6 +3519,45 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
 - Verify: the two counts reconcile with a stated cause, or the residual
   difference is reported as a genuine divergence with its page and block
   named. Either outcome carries its configuration (rule 9).
+- RESULT (done, `fc1b954` + `da83e2b`), and the HYPOTHESIS IS DEAD TWICE
+  OVER. The plan supposed WP-1.7's harness lacked WP-1.2's styled-run
+  preservation. In fact **the two harnesses are the SAME PROGRAM**:
+  extracted from both evidence files and run on a byte-identical input dump
+  (sha256 `e4ab672c...`, the digest both spikes record), they produce
+  identical numbers, 147/149 paragraphs and 962/968 lines with misses
+  {block 4, block 135}, and **neither produces 148/149**. The disagreement
+  was never between the spikes; it is between WP-1.2's RECORDED HARNESS and
+  WP-1.2's OWN HEADLINE TABLE. Then the removal test: stripping styled-run
+  preservation leaves the paragraph count at 147/149, unmoved. It is not
+  inert (lines 962 to 960, misses {4,135} to {39,135}); it simply cannot
+  move that count either way. Both extremes were run per rule 10 and both
+  giving 147 was reported as the RESULT rather than read as agreement,
+  which is revision 38's diagnostic used exactly as intended.
+- CAUSE, named by measurement: the comparison's whitespace normalization,
+  one line BOTH harnesses share.
+  `" ".join(s.replace("\xa0", " ").split())` collapses RUNS of whitespace
+  but cannot remove an INSERTED space. Changing it to `"".join(s.split())`
+  and nothing else moves both harnesses to **148/149 and 963/968**, which
+  is WP-1.2's headline exactly; the effect appears when the treatment is
+  added and returns when removed, on both harnesses.
+  The extra member is named: block **4**, reader page **6**, 325.0000 pt
+  measure, line index **5**, a `pdftotext -bbox-layout` word split at a
+  font change (`verification)` in Geist Mono 8.2 pt followed by Source
+  Serif 10 pt, first differing character index 13, exactly the run
+  boundary, equal once whitespace is removed). Not an engine divergence.
+  The genuine residual is unchanged: block **135**, reader page **47**,
+  five displaced lines, WP-1.2's known 325.01-against-325 pt miss. And the
+  discrimination check passes, so whitespace removal is not a blanket pass:
+  it still fails block 135 at +0.000 and block 137 (page 48) at +0.045.
+- PENDING, not yet applied: WP-1.7's delta table MIXES both normalizations,
+  its three in-interval rows being whitespace-removed numbers and its three
+  out-of-interval rows collapse numbers, so its "968/968 at the midpoint"
+  holds only whitespace-insensitively and is 967/968 under its own recorded
+  harness. **Its interval and the +0.025000 pt recommendation are
+  UNAFFECTED**, because block 4 is a constant one-line offset at every
+  delta measured and so can move neither bound. The amendment to WP-1.7
+  waits on an independent verification of WP-1.8, since it corrects two
+  accepted WPs and one agent's word is not enough to amend the plan.
 
 ### WP-1.5 apply the hyphenation decision (sanctioned oracle change)
 
@@ -3711,6 +3811,19 @@ invisible to STRUCTURAL comparison and visible to pixels. The luma defect
 was invisible to PIXELS, the raster hash passing while the zone statistics
 were wrong, and visible only to a DIRECT ASSERTION against Python's
 numbers.
+**AN AGGREGATE IS NOT A POPULATION, and a count that stays put is not
+evidence that nothing moved.** WP-1.2 records its styled-run fix as
+"147/149 to 148/149". Measured by WP-1.8, the fix repairs block 39 and
+SIMULTANEOUSLY INTRODUCES block 4, so **the 147 before and the 147 after
+are two different 147s**. That is where the plan's false hypothesis about
+WP-1.7's harness came from: someone read an unchanged aggregate as an
+unchanged population, and the plan then carried it for several revisions.
+The check is to compare the member SETS, not the totals, which is exactly
+what named block 4. Sibling of the case below, and together they say the
+same thing from two directions: a total can move while the population is
+healthier, and a total can sit still while the population changes
+underneath.
+
 A second example of the same shape, more disorienting because here a
 metric getting WORSE is the port getting MORE RIGHT: WP-5.3b-i's `text_characters`
 moved NON-MONOTONICALLY, 34 pages gaining agreement and 7 losing it, net
