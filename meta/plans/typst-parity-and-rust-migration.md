@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-17, revision 36 (Phase 0 built and
+Status: **in execution**, 2026-09-17, revision 37 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,57 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 37 changelog
+
+**A wrong number, an instrument that cannot discriminate, and both were
+the plan's rather than the WP's.**
+
+**The QR decline boundary is 78 characters, not 154.** WP-5.5a falsified
+its own landed finding: 154 traced `_opener_credit_code`, a MEASUREMENT
+path fixed at 55.5 pt, while PRODUCTION is `_opener_source_codes` at
+41.0 pt for illustrated openers, and all nine of 010's articles are
+illustrated. 010's longest payload is 67 characters, so the compared
+edition is still inside, but the margin is ELEVEN characters rather than
+eighty-seven, which is close enough that a new source URL could cross it.
+The historical changelog entry is marked rather than rewritten.
+**The 9-of-9 agreement survives and is stronger than when the decision was
+taken**: the chosen level and module count are now proven ROOM-INDEPENDENT,
+499 payloads at six rooms with zero disagreements against 387 for a
+deliberately room-dependent control, so the asset decision rests on a
+property of the fit rather than a fact about 010.
+
+**I specified an instrument that cannot discriminate.** Sanctioned oracle
+changes were required to compare "byte-for-byte across BOTH the web tree
+and the reader PDF", and the reader-PDF half is unsatisfiable by ANY change
+including no change at all: rendering the unchanged tree twice yields PDFs
+differing in 420,296 bytes, because cairo writes per-run image XObject
+names inside compressed streams. The reader-PDF leg is now verified with
+`mag parity --pre-rendered`; the web tree genuinely is byte-comparable and
+that half stands. WP-5.5a reported it as a BROKEN INSTRUMENT rather than
+reporting a pass, which is rule 10 applied to a tool rather than to
+evidence, and is exactly the behaviour the plan wants from a WP that finds
+its own check useless.
+**Checked rather than assumed, since the same defect would hide anywhere
+else it appeared: no other clause rests on PDF-byte stability.** The ladder
+opens by stating two engines never produce byte-identical PDFs, WP-0.0
+recorded that byte-determinism is not assumed, WP-0.1's whitelist already
+treats render-critic.json's PDF hashes as run-to-run noise, and WP-5.5c's
+SHA256SUMS oracle digests the SAME files from both implementations rather
+than comparing across renders. The plan was consistent; one requirement of
+mine was not.
+
+**Two records.** A second Owns extension for WP-5.5a, to `mag/src/render.rs`
+for a roughly 15-line `stage_source_codes` row, because the renderer stages
+only DECLARED inputs and `source-codes` is not among 010's 47, so the
+committed asset would be invisible; flagged because `render.rs` is rule
+1b-serialised and WP-5.6 inherits it. And a latent Python bug the port must
+NOT fix: `_opener_credit_code` sizes the field floor from a symbol fitted
+at 55.5 pt that production places at 41.0, so a payload between 79 and 154
+characters exposes the inconsistency. Revision 23 forbids a port stricter
+than its oracle, so it is reproduced, and it is recorded so nobody later
+reads it as a port defect. One for Fran's product list beside
+`studio.ready`.
 
 ## Revision 36 changelog
 
@@ -156,6 +207,9 @@ constant, so the asset must record payload, chosen LEVEL, MODULE COUNT and
 matrix: without `modules` the search re-runs, and it feeds layout through
 `module = room / modules` and `side = quiet * module`. The format also
 needs a PRINT-DECLINES state, because the legs agree to 154 characters and
+[CORRECTED IN REVISION 37: the boundary is 78, not 154; the 154 figure
+traced a measurement path rather than production. The entry is left as
+written because a changelog records what a revision claimed.]
 diverge at 155, where at most 55 modules fit in 55.5 pt against v8's 57 and
 print draws NOTHING; without that a future long URL reads as a missing
 asset rather than a correct outcome (010's longest payload is 67). And the
@@ -3755,13 +3809,24 @@ them or the divergence is a defect:
     payload, the chosen LEVEL, the MODULE COUNT and the matrix. Without
     `modules` the search has to re-run, and it feeds layout directly
     through `module = room / modules` and `side = quiet * module`.
-    **The format also needs a PRINT-DECLINES state.** The legs agree up to
-    154 characters and diverge at 155, where the print path declines to
-    place a code at all, because at most 55 modules fit in 55.5 pt and v8
-    needs 57. Above that the legs do not disagree about which code to draw;
-    print draws NONE. Unless the format can say so, a future long URL will
-    read as a missing asset rather than a correct outcome. 010's longest
-    payload is 67 characters, comfortably inside.
+    **The format also needs a PRINT-DECLINES state, and the boundary is 78
+    characters, NOT 154** (corrected revision 37). The 154 figure traced
+    `_opener_credit_code`, a MEASUREMENT path fixed at 55.5 pt; PRODUCTION
+    is `_opener_source_codes` at 41.0 pt for illustrated openers, and all
+    nine of 010's articles are illustrated. Above 78 the legs do not
+    disagree about which code to draw: print draws NONE. Unless the format
+    can say so, a future long URL reads as a missing asset rather than a
+    correct outcome. 010's longest payload is 67 characters, so the
+    compared edition is still safely inside, but the margin is ELEVEN
+    characters rather than eighty-seven, which is close enough that a new
+    source URL could cross it.
+    **The 9-of-9 agreement survives and is now stronger than when the
+    decision was taken.** The chosen error level and module count are
+    proven ROOM-INDEPENDENT rather than merely observed on this corpus:
+    499 payloads at six rooms, zero disagreements, against 387
+    disagreements for a deliberately room-dependent control. So the asset
+    decision rests on a property of the FIT rather than on a fact about
+    edition 010, which is what makes it safe to carry forward.
     **And the 9-of-9 agreement is now EXPLAINED rather than observed**,
     which is what makes the decision safe rather than lucky: the fit
     maximises module size, which minimises version, and among ties keeps
@@ -3774,8 +3839,44 @@ them or the divergence is a defect:
     EXTENSION granted** for `src/magazine/web_edition.py` and
     `src/magazine/weasyprint_adapter.py`, the asset-reading change ONLY, as
     a sanctioned oracle change alongside WP-0.0b, WP-0.0c and WP-1.5, with
-    the usual obligation: render 010 before and after and compare
-    byte-for-byte across BOTH the web tree and the reader PDF.
+    the usual obligation, with the reader-PDF half CORRECTED (revision 37,
+    and the error was the plan's): render 010 before and after, compare the
+    WEB TREE byte-for-byte, and compare the reader PDF with
+    `mag parity --pre-rendered`. **Byte-comparing reader PDFs is an
+    instrument that cannot discriminate**, so the requirement as written
+    was unsatisfiable by ANY change including no change at all: rendering
+    the unchanged tree twice yields PDFs differing in 420,296 bytes,
+    because cairo writes per-run image XObject names inside compressed
+    streams. WP-5.5a reported that as a BROKEN INSTRUMENT rather than
+    reporting a pass, which is rule 10 applied to a tool instead of to
+    evidence, and is the behaviour the plan wants. Under the corrected
+    instrument its change is identical everywhere: web tree byte-for-byte,
+    68,530 glyph positions at 0.000000 pt, display list 0 pages differing,
+    Tier V delta 0.
+    Checked while fixing this, since the same defect would hide anywhere
+    else it appeared: **no other clause in this plan rests on PDF-byte
+    stability.** The parity ladder opens by stating that two engines never
+    produce byte-identical PDFs, WP-0.0's verification recorded that PDF
+    byte-determinism is not assumed, WP-0.1's whitelist already treats the
+    PDF-byte hashes in render-critic.json as run-to-run noise, and
+    WP-5.5c's SHA256SUMS oracle digests the SAME files from both
+    implementations rather than comparing across renders. The plan was
+    consistent; this one requirement was not.
+  - **Owns EXTENSION, second**: `mag/src/render.rs` for a roughly 15-line
+    `stage_source_codes` row. The renderer stages only DECLARED inputs
+    (`engine_render_bridge.py:158`) and `source-codes` is not among 010's
+    47 declared inputs, so the committed asset is INVISIBLE to the render
+    without it. Recorded alongside the other sanctioned oracle changes, and
+    flagged because `render.rs` is serialised by rule 1b and WP-5.6
+    inherits it.
+  - **A latent Python bug the port must NOT fix**: `_opener_credit_code`
+    sizes the opener field floor from a symbol fitted at 55.5 pt which
+    production then places at 41.0, so a payload between 79 and 154
+    characters would expose the inconsistency. Revision 23's rule forbids a
+    port stricter than its oracle, so this is REPRODUCED rather than
+    corrected, and it is recorded here so nobody later reads it as a port
+    defect. Fran may want it as a product matter, alongside the
+    `studio.ready` field that can never report ready.
     `weasyprint_adapter.py` is a heavier target than those precedents,
     since Appendix A deletes it at WP-6.1 and the whole parity comparison
     runs through it, so the edit stays minimal and leaves the DRAWING path
