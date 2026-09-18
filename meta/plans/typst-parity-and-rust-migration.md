@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 43 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 44 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,59 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 44 changelog
+
+**The retrospective audit is a PROVENANCE audit, and it is cheaper than all
+three options offered.** `out_dir` is hard-coded to
+`output/parity/<edition>` with no override, and WP-0.2g OBSERVED two
+agents' runs writing the same `verdict.json` concurrently. The dangerous
+outcome is not interleaved bytes, which produce invalid JSON and fail
+loudly; it is one write wholly replacing another, so a reader gets a
+COMPLETE, VALID verdict from the WRONG run. That also disposes of the
+option of accepting the numbers on the argument that corruption would look
+obviously broken: the case that matters is precisely the one that looks
+fine.
+No re-runs are needed to start, because **every verdict already records
+`a_reader_sha256`, `b_reader_sha256` and `staged_input_digest`**, so a
+crossed-over verdict carries the wrong artifacts' hashes. Evidence quoting
+a verdict digest AND its input hashes is checked by confirming the inputs
+are the artifacts that WP claims to compare; evidence quoting only a digest
+is re-run to confirm it reproduces, which a verifier does anyway; evidence
+quoting neither is re-measured. A check rather than a belief, working on
+records already written.
+**And recorded as configuration per rule 9's spirit**: every parity number
+taken before WP-0.2k lands was measured while six to nine agents shared one
+output path, and that belongs with the number as much as hyphenation state
+does. The window closes when WP-0.2k lands; the affected class is
+parity-derived figures only.
+
+**Rule 10a: a clause that reports HOW MUCH it compared cannot hide a
+vacuous pass.** Promoted from one WP's good idea to a rule because it found
+something nobody suspected: the navigation clause reports 84 annotations of
+which 84 are links, and 0 outlines, 0 Title, 0 Lang, so TWO OF ITS THREE
+LEGS had been passing on empty-versus-empty since it was written, invisible
+until the clause was made to state its cardinality. Every Tier S clause
+comparing a COLLECTION now reports its count, and the plan enumerates them
+so none is missed by being the one nobody reached.
+
+**Revision 15's rotation claim was too broad, and the narrower one is what
+makes the clause matter.** "Nothing else would catch it" is false: on a
+BODY-TEXT page, `text` and Tier G catch a `/Rotate 180` too, since
+pdftotext reports rotated coordinates. The clause is the only one that
+fails on the BLANK inside front cover, page 2 with 0 text characters and 0
+images, where text, colour, navigation, glyph positions, display list and
+both raster meters all pass at zero delta. So it is the sole guard on pages
+that contain nothing to compare, which is a better reason to keep it than
+the one originally given. Another rule 11 result: asserted, then tested by
+constructing the case.
+
+**WP-0.2k now carries four targets** (seed the digest, unconditional
+refusal, the ratchet, and this revision's `out_dir` fix plus the
+cardinality sweep plus the stale `raster.rs:106` pointer). Bundled because
+rule 1c serialises `mag/src/parity.rs` owners so a separate WP would queue
+behind it and gain nothing, and explicitly told to build in LANDED
+INCREMENTS so a late blocker in one target does not strand the other three.
 
 ## Revision 43 changelog
 
@@ -1784,6 +1837,9 @@ Over the compared domain of edition 010 (en):
 - per-page MediaBox, CropBox, TrimBox equal within 0.05 pt, and `/Rotate`
   equal exactly (WP-0.2g adds the rotation; it is print-visible, and a 180
   degree difference keeps dimensions equal so nothing else would catch it)
+[REVISION 44: "nothing else" is too broad; on a body-text page `text` and
+Tier G catch it too. The clause is the only guard on a BLANK page, which is
+the narrower and true claim.]
 - per-page extracted text identical after normalization
 - **code blocks**, in two halves because a PDF has no bytes: at the input
   level, the fenced runs in each engine's staged input byte-equal the
@@ -2049,6 +2105,39 @@ before/after comparisons (WP-4.3); out of scope here.
   legitimately differ between runs (timestamp-shaped, scratch paths) go in
   `normalization.strip_pdf_keys`; any other difference is `awaiting-fran`
   as a repo bug, never normalized away by the agent.
+- **CONCURRENT PARITY RUNS SHARE ONE OUTPUT PATH, and did so for days.**
+  `out_dir` is hard-coded to `output/parity/<edition>` with no override,
+  and WP-0.2g OBSERVED two agents' runs writing the same `verdict.json`
+  concurrently. The dangerous outcome is not interleaved bytes, which
+  produce invalid JSON and fail loudly; it is one process's write
+  completely replacing the other's, so a reader gets a COMPLETE, VALID
+  verdict from the WRONG run: a plausible wrong number with no error. Every
+  parity-derived figure measured while another agent ran parity is in the
+  affected class, including ones already accepted. WP-0.2k carries the fix
+  and proves it by running two invocations CONCURRENTLY rather than by
+  reading the code, since the hazard was found by observation.
+- **The retrospective audit is a PROVENANCE audit, and it needs no
+  re-runs.** Every verdict already records `a_reader_sha256`,
+  `b_reader_sha256` and `staged_input_digest`, so a crossed-over verdict
+  carries the WRONG artifacts' hashes. That is the check, and it works on
+  evidence already written:
+  - evidence recording the verdict digest AND its input hashes: confirm the
+    inputs are the artifacts that WP claims to have compared. A foreign
+    hash is a crossed verdict. No re-run.
+  - evidence recording only a verdict digest: re-run to confirm the digest
+    reproduces, which a verifier does anyway.
+  - evidence recording neither: re-measure.
+  Cheaper than re-running what matters, and unlike accepting them on the
+  argument that corruption would look obviously broken, it is a check
+  rather than a belief. The argument for acceptance is in fact WRONG for
+  the case that matters, since a wholesale replacement is exactly the
+  outcome that looks fine.
+- **Recorded as configuration, per rule 9's spirit**: every parity number
+  taken before WP-0.2k lands was measured under a known-unsafe condition,
+  with six to nine agents sharing one output path, and that belongs in the
+  number's configuration as much as hyphenation state does. The affected
+  window opens where concurrent parity runs began and closes when WP-0.2k
+  lands; the affected class is parity-derived figures only.
 - Tool versions (python, uv, weasyprint, poppler, mutool if used, typst
   crates, rustc) are recorded in `parity.yaml tools:` and asserted by
   `mag parity` at startup.
@@ -2516,6 +2605,22 @@ before/after comparisons (WP-4.3); out of scope here.
    never generalise a mechanism into a rule on first telling. A WP that
    wants its mechanism believed should test it the way the verifiers did,
    by removing the supposed cause and measuring whether the effect goes.
+10a. **A clause that reports HOW MUCH it compared cannot hide a vacuous
+   pass.** This is rule 10 moved from evidence into the artifact, and it
+   earned promotion from one WP's good idea to a rule by finding something
+   nobody suspected: the navigation clause reports 84 annotations of which
+   84 are links, and **0 outlines, 0 Title, 0 Lang**, so TWO OF ITS THREE
+   LEGS were passing on empty-versus-empty and had been since it was
+   written. It was invisible until the clause was made to state its
+   cardinality. So **every Tier S clause that compares a COLLECTION reports
+   the count it compared**, and the plan enumerates them here so none is
+   missed by being the one nobody reached: navigation (annotations, links,
+   outlines, Title, Lang), code blocks, figures and extracts. Navigation
+   reports since WP-0.2g; the rest are WP-0.2k's fourth target. A clause
+   comparing zero items reports `pass (0 compared)` and never a bare
+   `pass`, which changes no pass/fail semantics, since empty against empty
+   is still equal, and makes the vacuity visible to a reader instead of
+   only to whoever goes looking.
 10. **Evidence that cannot discriminate must say so**, and **when a fixture
    is labelled non-discriminating, RUN THE OPPOSITE EXTREME too: if both
    extremes pass, the question is whether the code under test does anything
@@ -2849,8 +2954,16 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   pass/fail semantics: an empty collection on both sides is still equal.
   Additionally, compare `/Rotate` per page alongside MediaBox, CropBox and
   TrimBox: it is print-visible and one key wide, and a 180 degree
-  difference leaves page dimensions equal, so nothing else would catch it
-  now that rasters are meters.
+  difference leaves page dimensions equal. **Narrowed by measurement
+  (revision 44, rule 11): "nothing else would catch it" was too broad.**
+  WP-0.2g built the `/Rotate 180` fixture and found that on a BODY-TEXT
+  page the `text` clause and Tier G catch the turn too, because pdftotext
+  reports rotated coordinates. The clause is the ONLY one that fails on the
+  BLANK inside front cover (page 2: 0 text characters, 0 images), where
+  text, colour, navigation, glyph positions, display list and both raster
+  meters all pass at zero delta. The narrower claim is the true one, and it
+  is what makes the clause load-bearing rather than decorative: it is the
+  sole guard on pages that contain nothing to compare.
 - SUPERSEDED TARGET (revision 15): revision 13 asked this WP to quantize
   the text matrix's LINEAR components finely enough to stop their amplified
   positional effect, on the premise that both engines emit clean values so
@@ -3004,6 +3117,23 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   pass, refuse to run when a working-tree entry is LOWER than the committed
   one (the rule-1 check `git show <base>:...` already specifies), and let
   only a verifier raise.
+- Target 4 (revision 44): the shared-`out_dir` hazard and the cardinality
+  sweep. `out_dir` is hard-coded to `output/parity/<edition>` with no
+  override, and WP-0.2g OBSERVED two agents' runs writing the same
+  `verdict.json` concurrently; prove the fix by running two invocations
+  CONCURRENTLY, not by reading the code, since the hazard was found by
+  observation. Extend cardinality reporting to every Tier S collection
+  clause per rule 10a. And fix `mag/src/parity/raster.rs:106`, which still
+  reads `not_evaluated (WP-0.2d raster_bound derivation)`, naming a
+  derivation that will never happen now the guard is withdrawn: the same
+  class as the WP-0.2f section revision 39 corrected, living in code this
+  time rather than in the plan.
+- **Scope note, because this WP has now accreted four targets** (seed the
+  digest, unconditional refusal, the ratchet, and the above): they are
+  bundled because rule 1c serialises `mag/src/parity.rs` owners, so a
+  separate WP would queue behind this one and gain nothing. Build in LANDED
+  INCREMENTS rather than one pass, as WP-5.5a was told, so a late blocker
+  in one target does not strand the other three.
 - Verify: with the digest seeded, a deliberately altered staged input makes
   a bare `mag parity 010` FAIL rather than report; an unaltered run passes
   and writes a byte-deterministic verdict; a hand-lowered baseline entry is
