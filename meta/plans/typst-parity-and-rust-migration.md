@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 46 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 47 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,56 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 47 changelog
+
+**Rule 10a amended before the pattern sets, which is why this could not
+wait.** Cardinality is derived from LEG A only. Rule 9 sanctions that and
+it is harmless on a PASSING clause, where the populations agree by
+definition. On a FAILING clause it misleads: an A-vs-stripped run prints
+`fail (84 annotations...)` while leg B holds 57, so it "reads like an
+agreed population and isn't one". Since revision 44 made this reporting
+mandatory across every Tier S collection clause precisely so that close
+reading is possible, and since reporting is read most closely exactly when
+a clause FAILS, the single-leg form points the reader wrong at the only
+moment they are looking hard. **Report one number only when the legs agree,
+and both when they differ.** Cheap now, awkward once a dozen clauses have
+adopted the single-leg form, and WP-0.2k is implementing the sweep as this
+lands.
+
+**The vacuity rule 10a targets is now demonstrated rather than argued**:
+emptying every `/Annots` on both legs yields `0 annotations of which 0
+links` and THE CLAUSE STILL PASSES. Emptying only page 3's yields
+57 = 84 - 27 against an independent pypdf census.
+
+**Rotation confirmed on all three legs, including the hard one.** Body-text
+page 3 fails boxes, text, Tier G and both raster meters; blank page 2 has
+`boxes` as the ONLY failing clause with everything else at literally zero
+delta. Revision 44's narrowing was right, and it is now measured rather
+than reasoned.
+
+**Two observations worth more than the WP they came from.** A meter that
+gates nothing can still be load-bearing as a PRECONDITION check: a max
+channel delta of 0 is itself the proof that page 2 is genuinely blank, so
+the Tier V meter earns its keep even though it gates no verdict. And a
+residual disclosed as UNMEASURABLE was later DISCHARGED once the mechanism
+existed, which is the `## What is and is not proven` regime paying off
+exactly as intended: `page_sets_refused` was measured by seeding
+`baseline.json` to 64 zeros, and `raster_bound` turned out stronger than
+claimed, byte-identical rather than merely equivalent.
+
+**Rule 12's relocation clause gains its standing form, after three
+instances in one day: a `$PWD`-relative path is NOT hermetic if what it
+points at is GITIGNORED.** Three WPs each believed they had complied; the
+form looks portable and resolves only in the tree where the work was done,
+because the corpus and render directories exist nowhere else. The fix is a
+one-token default.
+
+**And the caveat that bounds all of it, recorded because it is easy to
+over-read: BOTH LEGS ARE WEASYPRINT**, so nothing WP-0.2g proved says the
+engines agree. 90 and 270 degree rotations are untested, the
+fixture-inertness argument is cardinality-level only, and the digest
+comparison covers passing-clause serialization only.
 
 ## Revision 46 changelog
 
@@ -2704,6 +2754,14 @@ before/after comparisons (WP-4.3); out of scope here.
      **replay from a directory that is not the one you developed in**,
      which is the only thing that separates a hermetic instruction from one
      that merely looks hermetic.
+     **And a `$PWD`-relative path is NOT hermetic if what it points at is
+     GITIGNORED.** THREE WPs have now hit this, each believing it had
+     complied: the form looks portable and resolves only in the tree where
+     the work was done, because the corpus and render directories are
+     gitignored and exist nowhere else. WP-0.2g's block 1 fails on its
+     first command from a fresh worktree for exactly that reason, and the
+     fix is a one-token default (`A=${A:-...}`). Stated as standing
+     guidance rather than rediscovered a fourth time.
    - **A test must read only its OWN checkout.** `mag/tests/critic_text.rs:74`
      hard-codes an ABSOLUTE corpus path, the only test in the repo that
      does, so run from an isolated verification worktree it traced the MAIN
@@ -3123,6 +3181,34 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   and its link count derived from the run (rule 9: do not hard-code 84); a
   fixture with `/Rotate 180` on one side FAILS the boxes clause; verdict
   stays byte-deterministic.
+- ACCEPTED (`be64415`), verified by PERTURBATION rather than code reading
+  for every derivation claim. Rotation confirmed on all three legs: control
+  inert; body-text page 3 fails boxes AND text AND Tier G (325.839 /
+  551.325) and both raster meters at delta 241, which is why revision 15's
+  "nothing else would catch it" was too broad; and on BLANK page 2 `boxes`
+  is the ONLY failing clause, with `rotation_mismatches:
+  [{page:2,a:0,b:180}]` and everything else passing at literally zero
+  delta.
+- **An observation worth keeping: a meter that gates nothing can still be
+  load-bearing as a PRECONDITION check.** A max channel delta of 0 is
+  itself the proof that page 2 is genuinely blank, so the Tier V meter
+  earns its keep proving the fixture is what it claims even though it gates
+  no verdict. The preconditions were re-measured on the fixtures themselves
+  (0 characters, 0 images, identical MediaBox) rather than assumed.
+- **A disclosed-unmeasurable residual was DISCHARGED once the mechanism
+  arrived**, which is the `## What is and is not proven` regime paying off:
+  `page_sets_refused` was flagged honestly as unmeasurable at the time, and
+  the verifier measured it by copying `meta/` and seeding `baseline.json`
+  to 64 zeros, whereupon `--oracle-only` prints `page sets: refused (...)`.
+  It also found `raster_bound` stronger than claimed: the key-absent run's
+  `verdict.json` is not merely equivalent but BYTE-IDENTICAL
+  (`468eac3c32c8a4e2`) to the key-present one.
+- **Scope caveat that bounds everything above, recorded because it is easy
+  to over-read**: BOTH LEGS ARE WEASYPRINT, so none of this says the
+  engines agree. Also unmeasured: 90 and 270 degree rotations; the
+  fixture-inertness argument is cardinality-level only; and since A-vs-B is
+  a second all-green pair, the digest comparison covers passing-clause
+  serialization only.
 
 ### WP-0.2h the shared tracer text path (comparator WP)
 
