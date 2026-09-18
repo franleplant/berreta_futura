@@ -1,0 +1,74 @@
+id: '900'
+issue_number: 900
+title: Fixture Edition
+subtitle: A fixture subtitle for the edition header.
+publication_date: '2026-09-01'
+status: draft
+cover:
+  layout: footer_caption
+  headline: Fixture Edition
+  deck: A fixture deck.
+  back_text: A fixture back cover paragraph.
+  art_path: editions/900/art/cover.png
+editorial: editions/900/editorial.md
+articles:
+- id: plain-opener-article
+  title: A Plain Opener Article
+  short_title: Plain Opener
+  display_emphasis: Plain
+  opener_variant: stepped_title
+  author: Ana Uno, Bea Dos, Cid Tres, Dea Cuatro, Eli Cinco, Fay Seis
+  author_note: A fixture author note.
+  content_mode: article
+  source_ids:
+  - fixture-source-a
+  manuscript: editions/900/articles/plain-opener-article.md
+  key_ideas:
+  - The first key idea.
+  - The second key idea.
+  figures:
+  - id: budget-diagram
+    source_id: fixture-source-a
+    path: media/diagram.png
+    caption: A fixture figure caption.
+    credit: Fixture credit.
+    alt_text: A fixture diagram.
+    anchor: Budgets
+    layout: evidence_band
+  extracts:
+  - id: budget-code
+    source_id: fixture-source-a
+    begin: BEGIN-CODE
+    end: END-CODE
+    style: code
+    caption: The captured budget helper.
+    anchor: Budgets
+  - id: budget-quote
+    source_id: fixture-source-a
+    begin: The quoted run starts here.
+    end: verbatim.
+    style: quote
+    caption: The captured argument.
+    anchor: __opener__
+- id: second-fixture-article
+  title: A Second Fixture Article
+  short_title: Second Fixture
+  display_emphasis: Second
+  opener_variant: split_axis
+  author: Ana Uno, Bea Dos, Cid Tres, Dea Cuatro, Eli Cinco, Fay
+  content_mode: in_a_nutshell
+  source_ids:
+  - fixture-source-b
+  manuscript: editions/900/articles/second-fixture-article.md
+  tail_art_path: editions/900/art/tail.png
+sections:
+- kind: production_note
+  title: How This Fixture Was Set
+  path: editions/900/sections/production-note.md
+closing_plates:
+- title: The first fixture plate.
+  art_path: editions/900/art/closing-plate-1.png
+- title: The second fixture plate.
+  art_path: editions/900/art/closing-plate-2.png
+- title: The third fixture plate.
+  art_path: editions/900/art/closing-plate-3.png
