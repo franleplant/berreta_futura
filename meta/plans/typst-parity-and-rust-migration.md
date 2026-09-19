@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 57 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 58 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,106 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 58 changelog
+
+**WP-5.4c landed (`a911ff1`) and produced THE FIRST CASE OF THE TIER E
+INSTRUMENT CATCHING A REAL DEFECT IN PRODUCTION CODE.** Every argument for
+the gate until now has been constructive: it was built, calibrated,
+attacked adversarially and shown to discriminate on synthetic fixtures.
+This is the first time it found something nobody was looking for, in code
+written to pass it.
+The margin is what makes it evidence. The `/Widths` were written at f32
+rather than `fp_str` precision, **`287.5977` against `287.59766`**, the
+same number to eleven significant figures: invisible to the raster oracle,
+invisible to the structural oracle, invisible to any renderer, and it
+**broke the per-glyph shape constraint on 36 of 95 widths**. After the fix,
+display-list equality 8 against 8, exact per-glyph geometry over 166 glyphs
+at worst difference 0.000000 pt, colour equality on 7 entries.
+The instrument also REFUSED the PDF outright on first contact (`font
+Inter-Regular lacks ToUnicode and is not a standard-14 text face`), and
+fixing that exposed a third defect, literals emitted as UTF-8 under a
+declared `/WinAnsiEncoding`. **Three defects, all class A, all found by
+RUNNING the plan's stated verification rather than by review**, which is
+the sentence the plan has been waiting for: running the tracer is what
+turned the WP from "looks right" into "is right".
+
+**A third cleanly-measured oracle blindness, pointing in a third
+direction.** The rendered page is **blind to the invisible text layer**:
+deleting the entire `3 Tr` layer leaves all three page hashes matching
+Python EXACTLY. Measured, not assumed. So a writer shipped on a raster
+oracle alone proves nothing whatsoever about the selectable text. Set
+beside the other two, the set now covers three distinct directions: the
+transposed constant (invisible to structure, visible to pixels), the luma
+defect (invisible to pixels, visible to a direct assertion), and this one
+(invisible to pixels, visible only to the tracer). **No single oracle level
+is the safe one**, which is the argument for the ladder rather than for any
+rung of it.
+
+**RATIFIED: refusing an oracle is the correct response to
+NON-COMPARABILITY, and it is distinct from divergence.** Spanish covers are
+not byte-comparable BY CONSTRUCTION: reportlab remaps non-ASCII into its
+own subset codes (`antología` written `(Una antolog\001a ...)`, `NÚMERO` as
+`(N\002MERO)`) while this writer emits WinAnsi, so `í` is the single byte
+`0xED`. **Both are correct PDFs that select and copy identically; their
+content streams simply cannot be equal.** The agent committed NO Spanish
+fixture, because one would have pinned a false equality, and instead named
+the level where equality IS available: the tracer, which decodes each side
+through its own ToUnicode CMap.
+This is the plan's first encounter with **"not comparable" as distinct from
+"divergent"**, and the two demand opposite responses. A divergence is a
+defect and is driven to the gate. A non-comparability is a property of the
+two encodings, and the answer is to name the level where equality holds,
+never to lower a bar or manufacture a fixture. Recorded as a rule because
+the instinct under schedule pressure is to write the fixture that passes.
+**And note the shape of the refusal: it is the INVERSE of this execution's
+usual failure.** The recurring fault has been recording agreement that
+could be manufactured; here an agent declined to record agreement it could
+have manufactured, and said at which level agreement is real instead.
+
+**A CLASS-C CASE ARRIVING THROUGH A FIXTURE, and it connects to the hole
+revision 57 just closed in rule 6a.** The back cover's five text lines are
+TRANSCRIBED FROM PYTHON'S OUTPUT, so the WP inherits Python's correctness
+there and **cannot see a copy defect**: if `_back_cover_copy` is wrong, the
+fixture is wrong the same way and both oracles agree. Revision 57 required
+fixtures to be HAND-AUTHORED rather than generated, on the ground that a
+generator makes Python the definition through the back door. **Hand
+transcription has exactly the same defect**, so the rule's real distinction
+is sharper than the one I wrote: **authored from the SPEC, versus
+transcribed from the OUTPUT.** By hand or by script is not the axis; where
+the value came FROM is. Amended in place.
+
+**Its own widths test was VACUOUS and only running the perturbation found
+it.** The test re-rounded on the read side, so perturbation E passed
+against it; it now slices the serialized bytes out of the PDF and fails on
+36 rows. Rule 10's diagnostic applied by an author to a test they had just
+written, which is the hardest place to apply it and the place it is most
+often skipped, because reasoning about a test you just wrote feels
+sufficient. It is not: the perturbation was run, and that is why it was
+caught.
+
+**A FOURTH instance of the private-sibling wall, one day after the rule
+said it was structural rather than bad luck**: `Builder::wrap` is private
+(`mag/src/cover/svg.rs:439`, verified) and the deck's line wrapping needs
+it. Four data points now, and the prediction the rule made held.
+
+**Bounds on the acceptance, stated by the agent rather than extracted from
+it**: only `footer_caption` was traced, so `framed` and `honored_plate` are
+proven at the RENDERED level and not the TRACER level, the text layer being
+identical across layouts while the raster is not. WP-5.6 inherits four
+named items: the back cover's rendered page (needs a back SVG), the back
+copy derivation including the whole Spanish branch, the deck wrapping, and
+the `[back]` section missing from the Rust `Design` struct.
+
+**A citation disagreement I am recording rather than resolving silently,
+since the plan now requires the domain to be named.** The coordinator
+reports `cover_modes` at 12 tests against the 7 recorded at WP-5.4b. I
+enumerate **11** at `a911ff1`, by name, domain = `#[test]` functions in
+`mag/tests/cover_modes.rs`; WP-5.4c did not touch that file (last change
+`25184fb`). Three numbers for one thing is the glyph dispute in miniature,
+and the remedy is the one revision 56 landed: state what was counted and
+over what. The plan carries 11 with its domain until someone names a
+different domain that yields 12.
 
 ## Revision 57 changelog
 
@@ -3727,6 +3827,26 @@ before/after comparisons (WP-4.3); out of scope here.
 6. **Fail loud.** A WP that cannot meet its target writes the measured gap
    with `Status: blocked` and stops; it never weakens a check, narrows a
    page set, adds a normalization rule, or works around.
+6c. **"NOT COMPARABLE" IS NOT "DIVERGENT", and the two demand opposite
+   responses.** A divergence is a defect and rule 6 drives it to the gate.
+   A NON-COMPARABILITY is a property of the two encodings, where both
+   outputs are correct and equality at that level is unavailable by
+   construction. Spanish covers are the first instance: reportlab remaps
+   non-ASCII into its own subset codes (`antología` as
+   `(Una antolog\001a ...)`, `NÚMERO` as `(N\002MERO)`) while the Rust
+   writer emits WinAnsi, so `í` is the single byte `0xED`. Both PDFs select
+   and copy identically; their content streams cannot be equal.
+   **The response is to NAME THE LEVEL WHERE EQUALITY HOLDS**, here the
+   tracer, which decodes each side through its own ToUnicode CMap, and to
+   commit NO fixture at the level where it does not. WP-5.4c committed no
+   Spanish fixture precisely because one would have pinned a FALSE
+   EQUALITY. Never lower a bar and never manufacture the fixture that
+   passes; the instinct to do both is strongest exactly here, because the
+   work looks finished and one small file would make it look verified.
+   Note the shape, because it is the INVERSE of this execution's recurring
+   fault: the usual failure is recording agreement that could be
+   manufactured, and this is an agent declining to record agreement it
+   could have manufactured, saying instead where agreement is real.
 6a. **CLASSIFY every defect found, because the plan's machinery answers
    only one of the three kinds.** The axis is not severity; it is what the
    fix is pinned to and whether the item survives WP-6.1.
@@ -3749,12 +3869,22 @@ before/after comparisons (WP-4.3); out of scope here.
      which is the half this rule was missing until WP-5.1g implemented it:
      a generated fixture silently follows Python if Python changes, making
      Python the definition again through the back door, and the file looks
-     hand-pinned either way. So the fixture is **HAND-AUTHORED**, every
-     case carries a `why` in PRODUCT terms, and a load-time assertion
-     refuses any case with an empty `why`. Python's agreement is then
-     measured SEPARATELY as corroboration, in the one Commands block that
-     retires at WP-6.1. Corroboration and definition are different jobs;
-     one artifact doing both ends up doing only the first.
+     hand-pinned either way. So every case carries a `why` in PRODUCT
+     terms, and a load-time assertion refuses any case with an empty `why`.
+     Python's agreement is then measured SEPARATELY as corroboration, in
+     the one Commands block that retires at WP-6.1. Corroboration and
+     definition are different jobs; one artifact doing both ends up doing
+     only the first.
+     **The axis is AUTHORED FROM THE SPEC versus TRANSCRIBED FROM THE
+     OUTPUT, not hand versus generated**, which is sharper than revision 57
+     put it. WP-5.4c's back-cover fixture is hand-transcribed from Python's
+     OUTPUT, and inherits Python's correctness exactly as a generated one
+     would: if `_back_cover_copy` is wrong, the fixture is wrong the same
+     way and both oracles agree. By hand or by script is not the
+     difference; **where the value came from is.** A fixture transcribed
+     from output says so in its `why` and names what it therefore cannot
+     see, which is a class-C blind spot arriving through a fixture rather
+     than through code.
    - **C, both engines wrong.** Parity is blind by construction: the legs
      agree, every tier passes, the output is wrong. Not hypothetical.
      `content_label` has one beside its class-B defect: `label: false`
@@ -5447,6 +5577,28 @@ designer should ask, from "is my comparison structural or photometric" to
 "what class of defect is invisible at THIS level, and what other level sees
 it". The two examples are unusually clean proof because they point in
 opposite directions and came from the same WP.
+**A THIRD example, measured by WP-5.4c, pointing in a third direction: the
+RENDERED PAGE IS BLIND TO THE INVISIBLE TEXT LAYER.** Deleting the entire
+`3 Tr` layer from the cover leaves all three page hashes matching Python
+EXACTLY, so a writer shipped on a raster oracle alone proves nothing
+whatsoever about the selectable text. Set beside the other two, the set
+covers three distinct directions: the transposed constant (invisible to
+structure, visible to pixels), the luma defect (invisible to pixels,
+visible to a direct assertion), and this one (invisible to pixels, visible
+only to the tracer). **No single level is the safe one**, which is the
+argument for the ladder rather than for any rung of it.
+**And the instrument has now caught a real defect in PRODUCTION code**,
+which every earlier argument for the gate could not claim. WP-5.4c's
+`/Widths` were written at f32 rather than `fp_str` precision,
+`287.5977` against `287.59766`, the same number to eleven significant
+figures: invisible to the raster oracle, invisible to the structural
+oracle, invisible to any renderer, and it broke the per-glyph shape
+constraint on **36 of 95 widths**. The tracer also refused the PDF outright
+for a missing ToUnicode, and fixing that exposed a third defect, literals
+emitted as UTF-8 under a declared `/WinAnsiEncoding`. Three defects, all
+found by RUNNING the stated verification rather than by review. Cite this
+when the gate's cost is questioned: it is the first destructive evidence
+for it, all the rest being constructive.
 
 A THIRD limit, which is really a design parameter: **a structural
 comparison's RESOLUTION is as much a part of its design as its shape.**
