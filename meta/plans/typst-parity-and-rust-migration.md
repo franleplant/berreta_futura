@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 52 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 53 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,71 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 53 changelog
+
+**Cut now for one operational rule and one correction to my own steer; the
+count reconciliation and the retirement of 69,071 are HELD until WP-0.2i's
+verification lands**, per the cadence standard: cut immediately for what
+changes an in-flight agent's behaviour, batch what only records.
+
+**CLEARING THE INDEX LEAVES THE WORKING TREE STALE, and the protocol says
+how to fix the first while being silent on what the fix leaves behind.**
+Check 4's path-scoped reset touches the INDEX only, correctly, since the
+rule forbids a path checkout while other agents hold uncommitted work in
+that tree. But the working copy then still holds the pre-land content, so
+**the next agent to read that tree sees a landed file as DELETED or stale**.
+The remedy is the one the protocol already knows for the ref-move case:
+refresh with `git show HEAD:<path> > <path>`, which writes the working tree
+and touches no index. Now stated as the second half of check 4 rather than
+left to be rediscovered; it was caught in the field by the landing agent
+flagging it, not by the protocol.
+
+**The base-mismatch hypothesis is DEAD, and it was mine.** Revision 49 said
+the fourth cross-spike disagreement MAY be a base mismatch rather than a
+domain mismatch, and offered that as the cheap test. It is not, on ground I
+verified independently: **WP-0.2f's own `## Commands` block names
+`editions/010/render-2026-09-14T01-47-59/en/reader.pdf`** (`WP-0.2f.md:36`),
+the same file the rework measured, so no commit difference can sit between
+the two numbers at all. The rework tested it anyway across seven distinct
+render trees, comparing POPULATIONS rather than totals, and the per-page
+`(shows, glyphs)` vector is elementwise identical in all seven. So **the
+named-commit rule stands as a rule and does not explain these numbers**,
+and the plan must not imply it does. Revision 49's hypothesis is struck
+here rather than left hedged, because a hedged wrong steer still steers:
+the coordinator pushed it to two agents on my wording.
+
+**What replaces it is revision 42's hypothesis, CONFIRMED by enumeration
+rather than by subtraction.** 1,503 = 1,488 + 15, and the 15 are
+identified by member: 5 shows on page 1 and 10 on page 56, all `Tj` not
+`TJ`, all font `F1`, all at render mode `3 Tr`. The covers carry invisible
+text and the larger figure counts all 56 pages while 1,488 covers the
+54-page interior. **That is "an aggregate is not a population" used as a
+METHOD rather than quoted as a caution**, and it is the difference between
+a reconciliation and a coincidence that two numbers differ by 15.
+
+**Two protocol confirmations from the field, both on the same landing.**
+The CAS **REFUSED** on the first attempt because the branch had moved, and
+refused correctly, the agent having swapped against its rebase base rather
+than a re-read tip: revision 50's guard doing exactly what it exists to do,
+two days after it was written, and the first evidence that the rule works
+in the failing direction rather than only in the passing one. And check 4
+fired as a **TRUE POSITIVE**, confirmed persistent across two reads with
+contents verified as the reversion before clearing, which is revision 48's
+re-read-before-acting discipline reaching its intended outcome.
+
+**Held for WP-0.2i's verification, recorded here so it is not lost**: the
+recommendation to carry 68,800/1,488 with its domain named, write 1,503
+only with "whole document", and **RETIRE 69,071 rather than correct it**.
+The covers carry 537 string bytes giving 69,337 document-wide, and 69,071
+is not that, not 450 non-space, and not either cover alone. The reasoning
+for deletion over adjustment is the part to keep: **nobody has shown what
+69,071 was ever counting, and a number whose provenance is unrecoverable
+should go rather than be adjusted into plausibility.** It appears at nine
+sites in this plan, which is the other reason to do it once, after
+verification, rather than twice. WP-5.5a's 68,530/1,501 stays named as a
+THIRD population and is deliberately not folded in, since folding it would
+manufacture agreement between different domains.
 
 ## Revision 52 changelog
 
@@ -3096,6 +3161,17 @@ before/after comparisons (WP-4.3); out of scope here.
      existed in HEAD and on disk;
    - the general form, which applies past this check: **any index check on
      the shared tree is re-read before it is acted on OR REPORTED.**
+   **AND THE RESET LEAVES THE WORKING TREE STALE, so finish the job.** A
+   path-scoped reset touches the INDEX only, which is correct and is why
+   the rule forbids the checkout that would fix both. The working copy is
+   then still holding pre-land content, so **the next agent to read that
+   tree sees a landed file as DELETED or stale**, which is the same
+   stale-working-copy symptom the ref move already produces. Refresh with
+   **`git show HEAD:<path> > <path>`** for each path you reset: it writes
+   the working tree, touches no index, and is already the protocol's
+   remedy for the ref-move case. Found in the field by the landing agent
+   noticing, not by this protocol, which said how to fix the index and
+   nothing about what that fix leaves behind.
    **Path-scoped reset ONLY. Never a bare hard reset, never a path-scoped
    checkout**, because other agents have uncommitted work in that tree: at
    the time this was written WP-0.2g had 43 insertions in
@@ -3432,12 +3508,19 @@ before/after comparisons (WP-4.3); out of scope here.
    68,800/1,488 from WP-0.2i's floor, and 68,530/1,501 from WP-5.5a at
    `c1253d8`, and the cardinalities moved with them (1,733 colour entries
    and 85 annotations against WP-0.2g's 1,720 and 84, explicable by the
-   source-codes asset landing in between). So **the fourth cross-spike
-   disagreement may be a BASE mismatch rather than a domain mismatch**,
-   which would make it a finding about the evidence regime rather than
-   about page domains, and would retire the cover-pages hypothesis
-   revision 42 offered. The cheap test is to measure one figure at each of
-   the other bases and see whether they converge; WP-0.2i's rework owns it.
+   source-codes asset landing in between).
+   **STRUCK IN REVISION 53: this rule does NOT explain the fourth
+   cross-spike disagreement, and revision 49 was wrong to offer it as the
+   likely cause.** WP-0.2f's own `## Commands` block names the same
+   `reader.pdf` the rework measured (`WP-0.2f.md:36`), so no commit
+   difference can sit between those two numbers; measured across seven
+   render trees, the per-page `(shows, glyphs)` vector is elementwise
+   identical in all seven. The cause is the DOMAIN, exactly as revision 42
+   proposed: 1,503 = 1,488 + 15, the 15 enumerated as 5 shows on page 1 and
+   10 on page 56, all `Tj`, font `F1`, render mode `3 Tr`, which is
+   invisible cover text. The rule below stands on its own evidence; it
+   simply is not what was happening here, and a hedged wrong steer still
+   steers, since this one was passed to two agents.
    Every parity figure therefore carries the commit it was measured at,
    exactly as rule 9 makes a number carry its configuration: for a moving
    render tree, the BASE is the configuration.
