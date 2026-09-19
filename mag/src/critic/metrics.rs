@@ -408,7 +408,7 @@ fn reduce(source: &Rgb, factor: (u32, u32)) -> Rgb {
     }
 }
 
-fn resize(source: &Rgb, size: (u32, u32), box_rect: (f64, f64, f64, f64)) -> Rgb {
+pub(crate) fn resize(source: &Rgb, size: (u32, u32), box_rect: (f64, f64, f64, f64)) -> Rgb {
     let (width, height) = size;
     let horizontal = precompute_coeffs(source.width, box_rect.0, box_rect.2, width);
     let mut vertical = precompute_coeffs(source.height, box_rect.1, box_rect.3, height);
