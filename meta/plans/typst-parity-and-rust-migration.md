@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 63 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 64 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,89 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 64 changelog
+
+**A FOURTH COST OF `#[path]`, and it SUPPRESSES A LINT.** Pulling a whole
+module in to use two functions turns every unused item into an error under
+`-D warnings`, so the include needs a blanket `#[allow(dead_code)]`.
+Measured at `f9781a7`, larger than reported: **30 of 54 `#[path]` includes
+carry one, across 13 of the test files** (31 such lines in total, 30 of
+them immediately following a `#[path]`). In a repo whose standing state is
+zero warnings, that is a real signal switched off for a mechanical reason,
+and **nobody can tell which of the 30 suppressions are load-bearing** and
+which are hiding genuinely dead code. So the pattern's costs are now four:
+it hides module properties, inflates test counts invisibly from either
+file, breaks `crate::` paths in included test modules, and suppresses
+dead-code lint wholesale. (51 includes at revision 62, 54 now; the figure
+moves with the tree, per rule 9.)
+
+**THE SPEC-VERSUS-OUTPUT AXIS USED IN ITS STRONGER FORM, for the first
+time, and it belongs in the plan as the worked example.** Revision 58
+established that the axis is AUTHORED FROM THE SPEC versus TRANSCRIBED FROM
+THE OUTPUT. For `html.escape`, whose contract is short and documented,
+WP-5.5a **wrote the ten rows from the spec BEFORE running Python**, then
+checked: 20 of 20 agree. Its reasoning states the rule's point better than
+the rule did: **because the rows were authored rather than transcribed, a
+disagreement would have indicted either the port or the reading of the
+spec, instead of quietly inheriting CPython's behaviour.**
+And where authoring was genuinely impossible, `educate_reader_quotes`'s
+quote-direction algorithm being too intricate to predict by hand, it
+transcribed, said so in the file's provenance block, and **named what those
+rows cannot see: a case where Python itself is wrong.** Both directions of
+the axis exercised inside one WP, with the choice made per helper rather
+than per file, which is how the rule was meant to be read.
+
+**A GUARD THAT COMMITS ITS OWN FAILING CASE, with the discriminator
+named.** The row `ampersand_first` requires `&lt;` to become `&amp;lt;`,
+which holds **only if `&` is replaced before `<` and `>`**, and a port that
+replaces `<` first **passes every other row in the file**. It carries a
+committed test asserting the wrong answer is NOT produced, which is rule
+10c's requirement met at the level of an ordering property rather than a
+value. Backed by a **mutation sweep: 7 injected defects, 7 caught, 0
+survived**, covering replacement order, `&apos;` versus `&#x27;`, both
+directions of ignoring the quote flag, a dropped quote education, a wrong
+flag per helper, and an unescaped `>`.
+Rule 10c applied throughout: four rows whose expected value EQUALS THE
+INPUT are each marked as proving only that escaping added nothing, and each
+quote row is paired with its quoted form. Two fixtures make the helpers
+**non-interchangeable** rather than merely correct: `he said "no" today`
+gives curly quotes through `text` and straight through `verbatim`, and
+`a 中 b` folds to `a ? b` while `café` survives, so the settable filter is
+shown DISCRIMINATING rather than passing everything.
+
+**CHECK 4 IS RESTATED AS CERTAIN FOR YOUR OWN PATHS, not conditional.**
+Revision 60 established that every `update-ref` land arms the main tree's
+index; the evidence since is unanimous, with three armed indexes cleared by
+the planner in two revisions and an agent reporting it fires so
+consistently it would now treat it as guaranteed. So the wording changes
+from "confirm the index is empty, clear it if not" to **"your land HAS
+armed the index for your paths: clear them, then confirm"**, which removes
+a judgment call that was always resolved the same way.
+**The conditional half survives exactly where it is needed**: paths that
+are NOT yours still get revision 48's re-read-and-inspect discipline before
+anything is touched, because that is the case where a reset can destroy
+another agent's legitimate staging. Certain for your own, cautious for
+everyone else's, which is the distinction the single conditional rule was
+blurring.
+
+**My own hand-off line was FALSE, and it is recorded as an instance rather
+than passed over.** Landing revision 63, I printed "index clean at tip
+`f9781a7`" from an unconditional `echo` that ran immediately beneath a list
+of seven staged files contradicting it. Rule 12's caption class in its
+purest form: the command ran, its output was accurate, and the caption
+asserted the opposite. That it happened **while landing a revision about
+reporting discipline** is the strongest available argument that **a report
+must be EMITTED BY the check rather than written beside it**: a line
+printed unconditionally is not a report, it is a hope. The underlying
+finding was real, a pure 410-deletion reversion of WP-5.5a across all seven
+files including its 1,080-line evidence file, cleared path-scoped.
+
+**Two confirmations**: WP-5.5a added `pub mod text;` to `mag/src/web.rs`
+because it created the module, which is revision 61's rule followed without
+being asked; and it hit the concurrent `index.lock` during check 4 and
+**waited about 20 seconds rather than removing it**, which is now the
+second agent to make that call correctly.
 
 ## Revision 63 changelog
 
@@ -3961,6 +4044,20 @@ before/after comparisons (WP-4.3); out of scope here.
      `#[path]`-included `metrics.rs`. So "tests in this file" and "tests
      this binary runs" are different domains by construction, which is the
      general shape behind the 17/18 collision as well.
+     **And it SUPPRESSES A LINT.** Pulling a whole module in to use two of
+     its functions makes every unused item an error under `-D warnings`, so
+     the include carries a blanket `#[allow(dead_code)]`: **30 of the 54
+     includes do, across 13 test files** (measured at `f9781a7`). In a repo
+     whose standing state is zero warnings that is a real signal switched
+     off for a mechanical reason, and **nobody can tell which of the 30 are
+     load-bearing** and which hide genuinely dead code. A WP adding a new
+     include says which items it actually uses, so the suppression's scope
+     is recorded even though the lint cannot enforce it.
+     **Four costs, then**: hides module properties, inflates test counts
+     invisibly from either file, breaks `crate::` in included test modules,
+     and suppresses dead-code lint wholesale. None is a reason to migrate
+     the existing includes; all are reasons a module-tree claim goes
+     in-crate.
    - **`#[path]` integration tests keep the file-level algorithm work**,
      and the existing 51 are NOT migrated: they are genuine algorithm tests
      and rewriting them buys churn, not verification. Where a `#[path]`
@@ -4246,6 +4343,25 @@ before/after comparisons (WP-4.3); out of scope here.
    the protocol exactly still leaves the trap armed. After moving the
    branch, confirm `git diff --cached --name-only` returns NOTHING, and
    clear it with **`git reset -- <paths>`** if not.
+   **YOUR LAND HAS ARMED IT. This is CERTAIN for your own paths, not
+   conditional, so clear them and then confirm.** Every `update-ref` land
+   arms the main tree's index for the paths it touched, and the evidence is
+   now unanimous: three armed indexes cleared by the planner inside two
+   revisions, and an agent reporting it fires so consistently it would
+   treat it as guaranteed. Phrasing it as "check, and clear if needed" put
+   a judgment call in front of a step that is always taken.
+   **The conditional half survives where it is actually needed: paths that
+   are NOT yours.** Those still get the re-read-and-inspect discipline
+   below before anything is touched, because that is the only case where a
+   reset can destroy another agent's legitimate staging. Certain for your
+   own, cautious for everyone else's.
+   **And the report must be EMITTED BY the check, not written beside it.**
+   The planner landed revision 63 printing "index clean at tip `f9781a7`"
+   from an unconditional `echo` sitting immediately beneath a list of seven
+   staged files that contradicted it, while landing a revision about
+   reporting discipline. **A line printed unconditionally is not a report,
+   it is a hope**: emit the status from a conditional on the actual
+   reading, so a non-empty index cannot produce a clean line.
    **THIS CHECK IS AN INSTANTANEOUS PROPERTY, NOT A DURABLE ONE, so REPORT
    IT WITH THE TIP: "index clean at tip `<sha>`".** The main worktree is
    checked out on `art_directed`, so **every `update-ref` land by any agent
@@ -4450,6 +4566,19 @@ before/after comparisons (WP-4.3); out of scope here.
      from output says so in its `why` and names what it therefore cannot
      see, which is a class-C blind spot arriving through a fixture rather
      than through code.
+     **WORKED EXAMPLE, WP-5.5a, exercising BOTH directions in one WP and
+     choosing PER HELPER rather than per file.** For `html.escape`, whose
+     contract is short and documented, it wrote the ten rows FROM THE SPEC
+     BEFORE RUNNING PYTHON, then checked: 20 of 20 agree. Its reasoning is
+     the rule stated better than the rule states itself: **because the rows
+     were authored rather than transcribed, a disagreement would have
+     indicted either the port or the reading of the spec, instead of
+     quietly inheriting CPython's behaviour.** Where authoring was
+     genuinely impossible, `educate_reader_quotes`'s quote-direction
+     algorithm being too intricate to predict by hand, it transcribed, said
+     so in the provenance block, and named what those rows cannot see: **a
+     case where Python itself is wrong.** Authoring is the default and
+     transcription is the disclosed exception, per helper.
    - **C, both engines wrong.** Parity is blind by construction: the legs
      agree, every tier passes, the output is wrong. Not hypothetical.
      `content_label` has one beside its class-B defect: `label: false`
