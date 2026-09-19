@@ -194,7 +194,7 @@ fn missing_cover_art_is_refused_by_every_mode_that_places_it() {
     }
 }
 
-fn refusal(layout: &str, mutate: impl FnOnce(&mut CoverText)) -> String {
+fn compile(layout: &str, mutate: impl FnOnce(&mut CoverText)) -> Result<String, String> {
     let assets = repository().join("src/magazine/assets");
     let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
     let design = design();
@@ -206,55 +206,68 @@ fn refusal(layout: &str, mutate: impl FnOnce(&mut CoverText)) -> String {
     mutate(&mut text);
     builder
         .materialize(layout, &text, &cover_art())
-        .expect_err("the input is refused")
-        .to_string()
+        .map_err(|error| error.to_string())
+}
+
+fn refusal(layout: &str, mutate: impl FnOnce(&mut CoverText)) -> String {
+    compile(layout, mutate).expect_err("the input is refused")
+}
+
+fn accepted(layout: &str, mutate: impl FnOnce(&mut CoverText)) {
+    compile(layout, mutate).expect("the input fits");
+}
+
+const WORDMARK_STEM: &str = "Berreta Incomprehensibilitie";
+
+#[test]
+fn a_publication_wordmark_at_the_size_floor_still_fits() {
+    let name = format!("{WORDMARK_STEM}l");
+    accepted("framed", |text| text.publication_name = name);
 }
 
 #[test]
 fn a_publication_wordmark_that_cannot_fit_is_refused() {
-    let name = "Antidisestablishmentarianism Floccinaucinihilipilification";
+    let name = format!("{WORDMARK_STEM}s");
     assert_eq!(
-        refusal("framed", |text| text.publication_name = name.into()),
+        refusal("framed", |text| text.publication_name = name.clone()),
         format!("Publication wordmark cannot fit: {name}")
     );
+}
+
+const TITLE_STEM: &str = "The Speed Limit And Its Apostle";
+
+#[test]
+fn a_title_of_one_line_at_the_size_floor_still_fits() {
+    let title = format!("{TITLE_STEM}l");
+    accepted("honored_plate", |text| text.headline = title);
 }
 
 #[test]
 fn a_title_that_cannot_fit_on_one_line_is_refused() {
     assert_eq!(
         refusal("honored_plate", |text| {
-            text.headline = "The Speed Limit And Its Discontents".into()
+            text.headline = format!("{TITLE_STEM}s")
         }),
-        "Cover title cannot fit on one line: THE SPEED LIMIT AND ITS DISCONTENTS"
+        "Cover title cannot fit on one line: THE SPEED LIMIT AND ITS APOSTLES"
     );
+}
+
+fn deck_of(count: usize) -> String {
+    (0..count)
+        .map(|i| format!("CONTRIBUTOR NAME NUMBER {i} WITH EXTRA WORDS"))
+        .collect::<Vec<String>>()
+        .join(" / ")
 }
 
 #[test]
 fn a_deck_of_five_wrapped_lines_still_fits() {
-    let contributors: Vec<String> = (0..6)
-        .map(|i| format!("CONTRIBUTOR NAME NUMBER {i} WITH EXTRA WORDS"))
-        .collect();
-    let joined = contributors.join(" / ");
-    let assets = repository().join("src/magazine/assets");
-    let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
-    let design = design();
-    let mut builder = Builder {
-        design: &design,
-        fonts: &mut fonts,
-    };
-    let mut text = edition_010_text();
-    text.contributors = joined;
-    builder
-        .materialize("framed", &text, &cover_art())
-        .expect("a deck wrapping to exactly the five-line limit still fits");
+    let joined = deck_of(6);
+    accepted("framed", |text| text.contributors = joined);
 }
 
 #[test]
 fn a_deck_that_cannot_fit_is_refused() {
-    let contributors: Vec<String> = (0..7)
-        .map(|i| format!("CONTRIBUTOR NAME NUMBER {i} WITH EXTRA WORDS"))
-        .collect();
-    let joined = contributors.join(" / ");
+    let joined = deck_of(7);
     assert_eq!(
         refusal("framed", |text| text.contributors = joined.clone()),
         format!("Cover deck cannot fit: {joined}")
@@ -266,18 +279,8 @@ const HEADLINE_STEM: &str =
 
 #[test]
 fn a_headline_of_three_lines_at_the_size_floor_still_fits() {
-    let assets = repository().join("src/magazine/assets");
-    let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
-    let design = design();
-    let mut builder = Builder {
-        design: &design,
-        fonts: &mut fonts,
-    };
-    let mut text = edition_010_text();
-    text.headline = format!("{HEADLINE_STEM} Is");
-    builder
-        .materialize("framed", &text, &cover_art())
-        .expect("a headline reaching three lines at the 20.0 size floor still fits");
+    let headline = format!("{HEADLINE_STEM} Is");
+    accepted("framed", |text| text.headline = headline);
 }
 
 #[test]
