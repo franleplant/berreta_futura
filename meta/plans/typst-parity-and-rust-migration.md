@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 50 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 51 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,87 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 51 changelog
+
+**WP-2.1 is ACCEPTED (`9acc797`) and WP-2.2a keeps building on it, but two
+findings BOUND what its headline proves, and the plan leaned on the
+unbounded reading.**
+
+**The compared boundary was misnamed, and the correction cuts BOTH ways,
+which is what makes it credible.** WP-2.1 called its compared text "the
+reader-visible text before any layout exists". Measured against
+`weasyprint-a5.css` it INCLUDES 835 of 68,758 characters (1.21%) that are
+never printed, `display:none` on `.edition-header` (314) and nine
+`.source-link` URLs (521), and EXCLUDES text that IS printed, the CSS
+`::before` figure and extract labels, which are generated content rather
+than layout. The accurate name, and the right seam for a content pipeline:
+**the text content of the pre-layout HTML document.**
+The method is the part worth keeping. **The verifier TESTED the "boundary
+drawn to make the comparison succeed" hypothesis rather than arguing it,
+and it failed**: the included-but-unprinted runs make the comparison
+HARDER, 835 extra characters both legs must match, and everything
+excluded-but-printed reduces to one emitted value, `word:`, whose two
+possible strings were checked against Python entry by entry across both
+`ui` tables. That is rule 11 applied to a DEFINITIONAL choice rather than
+to a mechanism, which this execution had not done before, so it is now
+written as a rule: **when a WP defines the boundary of its own comparison,
+the test is whether the definition makes the comparison EASIER or HARDER.**
+
+**The oracle is BLIND TO BLOCK STRUCTURE, measured rather than inferred**:
+two `#doc-paragraph` calls and the same text merged into one project
+BYTE-IDENTICALLY. So WP-2.1 proves *same text in same order* and nothing
+about structure. "Byte for byte across all of edition 010" reads far
+stronger than it is, and paragraph-level claims are exactly what a reader
+would assume it covers, so the two oracles are now named separately
+wherever the plan leans on this: **the content oracle proves text and
+order; Tier S page boxes and WP-2.2b/2.2c's targets prove structure.**
+
+**Three of the four normalization clauses are vacuous on the whole compared
+corpus**: 0 soft hyphens, 0 U+2010, NFC a no-op; only whitespace collapse
+does work, on 2,134 of 70,892 characters. Rule 10a's family, unlabelled.
+Not a defect, but it is the disclosure rule 10 exists to get.
+
+**A pinning claim in the coordinator's brief was overstated, and the
+evidence was more careful than the brief.** `content.rs`'s
+`normalize_reader_text` IS Python-pinned and is NOT pinned to its sibling,
+which holds. But **`mag/src/parity/text.rs:43 normalize` is pinned to no
+Python oracle at all, because none exists** (verified: it normalizes
+PDF-extracted text and is used only to compare two PDF extractions against
+each other, at `text.rs:79`). WP-2.1's evidence said "the PDF text path",
+not "Python", and was accurate. This matters because the duplicate-helper
+rule's whole force is that each copy answers to Python, and here one copy
+answers to nothing, so the conclusion is sharper than "record the gap":
+**these two must NOT be merged.** They are not one function in two places;
+they normalize different things for different oracles, and lifting them
+into a shared module would silently pin the Python-pinned copy to the
+unpinned one, which is the exact failure the rule forbids.
+
+**Rule 9's citation clause now binds BRIEFS and COORDINATION MESSAGES, not
+only evidence files.** Two counts in the coordinator's brief were wrong and
+neither came from the evidence (47 template functions, not 46; 17 `cargo
+test` suites, not 18, which I confirmed). Third wrong count at the point of
+citation this week and the first where the citer was the coordinator rather
+than a WP, which is the argument for widening the clause: a brief is where
+a number enters a WP's reasoning, so it is a citation like any other.
+
+**One real defect in WP-2.1's evidence, not its code**: the rule-2b line at
+`mag/src/typeset/content.rs:1170` prints `projection.text.len()`, which is
+BYTES, labelled "characters", so `69097 characters` should be 68,758. The
+Metrics table is right and the Verdicts section quotes the mislabel.
+One-line fix, `.chars().count()`, owned by whoever next holds
+`content.rs`; `:1162` carries the same mislabel in its threshold message.
+
+Two more, both good practice worth naming. The guard fires on **12 markup
+leaf kinds** beyond the committed heading case, all refusing with
+`unprojectable markup`, and rule 11 was applied to what it PROTECTS:
+neutering `escape_markup` failed five tests loudly. And the verifier
+recorded a **rule-11 result against ITSELF**, hypothesising a Python/Rust
+whitespace-split divergence on NBSP and refuting it exhaustively over all
+0x110000 codepoints (they differ on exactly U+001C-U+001F, none present,
+and that direction fails loud anyway). A verifier disproving its own
+hypothesis and recording the refutation is what rule 3c is trying to
+produce.
 
 ## Revision 50 changelog
 
@@ -187,7 +268,9 @@ about re-reading harder.
 **WP-2.1 has landed** (`f00e4c7`, 31 files, all additions), so Phase 2's
 content pipeline is in and the chain that opens Phase 3 is
 WP-2.1 to WP-2.2 to WP-2.3, with WP-0.2k the only other thing in front of
-it now that the content-final gate is withdrawn.
+it now that the content-final gate is withdrawn. (Accepted at `9acc797`;
+revision 51 renames the compared boundary and BOUNDS the result to text and
+order, since the oracle is blind to block structure. Cite it accordingly.)
 
 The gitignored-path residual needs nothing further: revision 47 already
 wrote it as standing guidance after the third instance, and WP-0.2g's
@@ -2656,6 +2739,18 @@ before/after comparisons (WP-4.3); out of scope here.
    ONE item and the ONE word (`pub(crate)`); it does not duplicate, and it
    does not self-grant.** A port that duplicates anyway states in evidence
    what it has therefore pinned the copy TO.
+   **And the converse case exists, so the audit must NOT treat every
+   same-named pair as a duplicate to be merged.** `normalize_reader_text`
+   in `mag/src/typeset/content.rs` is Python-pinned;
+   `mag/src/parity/text.rs:43 normalize` is pinned to NO Python oracle,
+   because none exists, and normalizes PDF-extracted text purely to compare
+   two extractions against each other (`text.rs:79`). They are not one
+   function in two places. **Merging them would pin the Python-pinned copy
+   to an UNPINNED one**, which is the precise failure this rule forbids,
+   arriving through the remedy rather than through the defect. So the audit
+   asks WHAT EACH COPY ANSWERS TO before it asks whether the two bodies
+   match, and a pair answering to different oracles is recorded as
+   deliberately separate rather than queued for consolidation.
    **A PLAN REVISION owns
    `meta/plans/typst-parity-and-rust-migration.md` and NOTHING else**, so a
    revision diff touching any `evidence/*.md` is rejectable on the same
@@ -3100,6 +3195,19 @@ before/after comparisons (WP-4.3); out of scope here.
    never generalise a mechanism into a rule on first telling. A WP that
    wants its mechanism believed should test it the way the verifiers did,
    by removing the supposed cause and measuring whether the effect goes.
+   **The same discipline applies to a DEFINITION, not only to a mechanism,
+   and the test has a specific form: when a WP defines the BOUNDARY of its
+   own comparison, ask whether the definition makes the comparison EASIER
+   or HARDER.** A boundary drawn to make a comparison succeed is the
+   natural suspicion about any self-defined seam, and it is answerable by
+   measurement rather than by argument. WP-2.1's verifier did exactly that
+   and the hypothesis FAILED: the compared text includes 835 characters
+   that are never printed, which both legs must match anyway, and
+   everything it excludes reduces to a single emitted value that was then
+   checked against Python entry by entry. A seam that costs the author
+   extra agreement is not a seam drawn for convenience. Where the answer
+   comes out the other way, the WP says so and names what the boundary
+   excuses it from proving.
 10a. **A clause that reports HOW MUCH it compared cannot hide a vacuous
    pass.** This is rule 10 moved from evidence into the artifact, and it
    earned promotion from one WP's good idea to a rule by finding something
@@ -3169,6 +3277,14 @@ before/after comparisons (WP-4.3); out of scope here.
    Every parity figure therefore carries the commit it was measured at,
    exactly as rule 9 makes a number carry its configuration: for a moving
    render tree, the BASE is the configuration.
+   **This clause binds BRIEFS and COORDINATION MESSAGES, not only evidence
+   files.** A brief is where a number ENTERS a WP's reasoning, so it is a
+   citation like any other, and the coordinator's own brief for WP-2.1's
+   verifier carried two wrong counts (46 template functions for 47, 18
+   `cargo test` suites for 17) neither of which came from the evidence.
+   Third wrong count at the point of citation in a week, and the first
+   where the citer was the coordinator rather than a WP, which is precisely
+   why the duty cannot sit only on the artifacts.
    **A CITED count is RE-DERIVED at the point of citation.** Revision 38
    put the duty on the author deriving a count from its own enumeration,
    and four instances now show that is the wrong place: every one of these
@@ -4181,6 +4297,33 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   byte-exactness; the refusal matrix re-exercised (ambiguous marker, marker
   not found, run already verbatim in manuscript, unknown source id, figure
   path escaping the source dir).
+- RESULT (done, accepted, commit `9acc797`), with the compared boundary
+  RENAMED and the claim BOUNDED. Both corrections come from the verifier
+  and both narrow what the headline proves:
+  - The seam is **the text content of the pre-layout HTML document**, not
+    "the reader-visible text before any layout exists". It includes 835 of
+    68,758 characters that are never printed (`display:none` on
+    `.edition-header`, nine `.source-link` URLs) and excludes the CSS
+    `::before` figure and extract labels, which ARE printed. The verifier
+    tested rather than argued the obvious suspicion, and the boundary makes
+    the comparison HARDER, not easier: 835 extra characters both legs must
+    match, and everything excluded reduces to one emitted value checked
+    against Python entry by entry.
+  - **The oracle is BLIND TO BLOCK STRUCTURE**: two `#doc-paragraph` calls
+    and the same text merged into one project byte-identically. WP-2.1
+    proves SAME TEXT IN SAME ORDER and nothing about structure. Do not cite
+    it for a paragraph-level claim; structure is Tier S page boxes and
+    WP-2.2b/2.2c.
+  - Three of four normalization clauses are VACUOUS on this corpus (0 soft
+    hyphens, 0 U+2010, NFC a no-op); only whitespace collapse acts, on
+    2,134 of 70,892 characters. Rule 10a's disclosure, recorded here since
+    the clause set is inherited by everything downstream.
+  - The guard refuses 12 markup leaf kinds beyond the committed heading
+    case; neutering `escape_markup` fails five tests loudly (rule 11
+    applied to what the guard protects, not only to the guard).
+  - Evidence defect, not a code defect: `content.rs:1170` labels
+    `text.len()` BYTES as "characters" (69,097 should be 68,758), and
+    `:1162` repeats it. One-line fix for the next holder of the file.
 
 ### WP-2.2 the reader template (three serial slices)
 
@@ -4190,6 +4333,13 @@ serial; each extends its evidence mapping table: every transcribed value
 cites its origin (`weasyprint-a5.css` selector or `weasyprint_adapter.py`
 constant). Anything found-but-not-transcribed is listed as pending, never
 dropped silently.
+
+**The CSS `::before` figure and extract labels are PRINTED and are NOT in
+WP-2.1's content oracle**, so nothing upstream catches them and they are
+WP-2.2a's to get right. They go in the mapping table with their selectors
+like any other transcribed value. This is the general shape of the seam
+WP-2.1's rename exposes: generated content is printed text that no
+text-level oracle sees, so the template is its only check.
 
 Template requirements the Phase 1 spikes already established, binding on
 WP-2.2a unless a later measurement overrides them:
