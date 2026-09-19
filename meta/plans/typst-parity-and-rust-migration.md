@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 62 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 63 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,85 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 63 changelog
+
+**WP-5.4b-ii landed (`73ed7e0`) with both pairs tight, and the
+`cover_modes` count dispute is SETTLED WITH `#[path]` AS ITS CAUSE.** At
+`a911ff1`: **11 `#[test]` functions in the file, 12 tests the binary runs**,
+the gap being a single `#[test]` inside `mag/src/critic/metrics.rs` which
+the test file `#[path]`-includes. Both numbers were right. Fifth count
+dispute resolved by naming the domain rather than re-deriving the number,
+and **the first where the domain gap is itself a consequence of
+`#[path]`**: a file-include drags the included file's in-crate tests into
+the including binary, so "tests in this file" and "tests this binary runs"
+diverge by however many `#[test]`s live in whatever it pulls in. The 51
+includes therefore **do not only hide module properties, they inflate test
+counts invisibly from either file**, and that is the general shape behind
+the 17/18 collision too.
+
+**AND IT EXPOSES A HAZARD IN THE DECISION I LANDED ONE REVISION AGO, which
+I checked rather than assumed.** Rule 1d requires a module-tree claim to be
+asserted by an in-crate `#[cfg(test)]` module, and rule 12's consumer test
+is specifically one that does `use crate::parity::display;`. But an
+in-crate test in a `#[path]`-included file is compiled INTO THE INCLUDING
+BINARY, where `crate::` means that test binary's root and not `mag`, so
+such a test would break the include. Measured: **zero `use crate::` inside
+the test modules of `#[path]`-included files today** (`metrics.rs`'s
+`exif_tests` uses `use super::exif_orientation;`), so nothing is broken
+now. But `mag/src/critic/metrics.rs` IS included by
+`cover_footer_caption.rs`, and `mag/src/critic/` is exactly where blocker
+1's consumer test belongs. So rule 1d gains its missing constraint: **the
+consumer test goes in a file that NO `#[path]` includes, checked by one
+grep before writing it**, and an in-crate test in an included file uses
+`super::`, never `crate::`. Cheap to check, confusing to debug.
+
+**An Owns-specification defect, and the fix is one word.**
+`mag/tests/cover_*` acquired **two owners**: WP-5.4c added `cover_pdf.rs`
+and three expectation files into WP-5.4b-ii's Owns glob. No collision
+occurred, but WP-5.4c's own numeric guards are consequently **not swept**
+by WP-5.4b-ii, which is a real coverage gap rather than a hypothetical.
+**Brief a WP with FILE NAMES, not a GLOB.** A glob is evaluated at read
+time by each party and grows silently under whoever holds it, so two WPs
+can hold the same Owns entry and mean different sets. First time two WPs
+have landed inside one glob, and the second party did nothing wrong. Rule 8
+amended.
+
+**A NOT PROVEN gap named with a recipe, an owner and a reason for
+deferring, which is the disclosure regime working as designed.** Rule 10c
+was applied to all four pairs, two authored and two inherited: both sides
+`Ok` against a bail-site-unique `Err`, neither guard carrying a fallback
+arm, boundary recorded. What it does NOT close: **`Ok` pins that the guard
+did not refuse, not WHICH SIZE it chose.** Closing that needs a size-pin
+test; the three knobs were verified clean (`wordmark.right_reserve` read
+only at `svg.rs:189`, `headline.width` only at `:491`,
+`honored_plate.title_size` only as `max_size`) and it declined because **a
+size-pin changes what every floor perturbation disturbs and would
+invalidate the measured table.** That is a reason to defer, not an excuse,
+and it is labelled as one.
+
+**The looseness and the fix are demonstrated on the SAME AXIS, which is
+what makes this a measurement rather than a claim**: against the INHERITED
+fixtures the four one-step moves fail NOTHING, while WP-5.4b-i's four
+headline moves flip at both. Both new pairs differ in **one glyph** (`l`
+against `s`), the wordmark separation being exactly the 2.3478 pt by which
+`S` exceeds `L` at size 25.0, and **the tail leg binds for both**, the same
+leg the inherited fixture bound, so **coverage moved nowhere while
+tightness improved**, which is the distinction rule 10g asks for. Neither
+can be pinned tighter: both loops evaluate only the 0.5 grid.
+
+**`svg.rs:537` is confirmed real and not live** (under `<=3` to `<=4` the
+fitting headline lays out four lines and indexes a three-entry colour
+cycle), and it **reproduced the message rather than quoting it**, which is
+rule 12's demonstration requirement applied to a panic.
+
+**The CAS was refused TWICE and worked as designed both times**, each
+refusal answered by rebasing onto the new tip rather than re-reading, and
+**the gate re-run when the new commits warranted it** (183 to 217 to 223
+passing). `svg.rs` ends byte-identical to `36df6e8`, verified first on each
+of two rate-limit kills and again at submission. Check 4 fired as a true
+positive with the staged blob equal to the pre-land blob, and reported
+"index clean at tip `73ed7e0`".
 
 ## Revision 62 changelog
 
@@ -3862,6 +3941,26 @@ before/after comparisons (WP-4.3); out of scope here.
      consumer did, which is the test blocker 1 needed and could not
      express. It also reaches private siblings directly, so a module's own
      test can exercise a private helper with NO visibility change.
+   - **BUT THE CONSUMER TEST MUST LIVE IN A FILE NO `#[path]` INCLUDES**,
+     and this constraint is not optional. An in-crate `#[cfg(test)]` module
+     inside an included file is compiled INTO THE INCLUDING BINARY, where
+     `crate::` resolves to that binary's root rather than to `mag`, so a
+     `use crate::...` consumer test breaks the include. Measured: today
+     **zero `use crate::` appears inside the test modules of
+     `#[path]`-included files** (`metrics.rs`'s `exif_tests` uses
+     `use super::exif_orientation;`), so nothing is broken; but
+     `mag/src/critic/metrics.rs` IS included by `cover_footer_caption.rs`,
+     and `mag/src/critic/` is exactly where blocker 1's consumer test
+     belongs. So: **grep `mag/tests/` for a `#[path]` include of the file
+     before adding a `crate::`-using test to it**, and in an included file
+     use `super::`, never `crate::`. One grep to check, an afternoon to
+     debug.
+     **The same mechanism INFLATES TEST COUNTS**, which is how the
+     `cover_modes` dispute resolved: 11 `#[test]` functions in the file, 12
+     tests the binary runs, the difference being one `#[test]` inside the
+     `#[path]`-included `metrics.rs`. So "tests in this file" and "tests
+     this binary runs" are different domains by construction, which is the
+     general shape behind the 17/18 collision as well.
    - **`#[path]` integration tests keep the file-level algorithm work**,
      and the existing 51 are NOT migrated: they are genuine algorithm tests
      and rewriting them buys churn, not verification. Where a `#[path]`
@@ -4846,6 +4945,18 @@ before/after comparisons (WP-4.3); out of scope here.
    the plan text; every file in the worktree at `## Base` (completed WPs'
    evidence included) is readable. Phase-preamble Owns and commands bind as
    if written in the WP section.
+   **BRIEF A WP WITH FILE NAMES, NOT A GLOB.** A glob is evaluated at READ
+   TIME by each party, so two WPs holding `mag/tests/cover_*` hold
+   different sets and neither can tell. It has already happened: WP-5.4c
+   added `cover_pdf.rs` plus three expectation files INTO WP-5.4b-ii's Owns
+   glob, and though no collision occurred, **WP-5.4c's own numeric guards
+   are consequently not swept by WP-5.4b-ii** (a real coverage gap, not a
+   hypothetical). The second party did nothing wrong; the specification
+   did. So an Owns entry naming a pattern is expanded to the file list at
+   brief time, and a WP that creates a file inside another WP's pattern
+   says so in evidence. Where a glob is genuinely open-ended (a WP creating
+   an unknown number of fixtures), it names the PREFIX IT OWNS and states
+   that files arriving from elsewhere are outside its sweep.
 
 ## Phase 0: instrument (no engine work)
 
