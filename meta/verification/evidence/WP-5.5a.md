@@ -858,6 +858,68 @@ Tier S (page_count 56 vs 56, boxes, text, color, navigation) and tier G
 QR module moves no text and no box, which is why the display list rather
 than S, G or V is the leg that discriminates here.
 
+### The WP-2.1 collision, and what the lift found
+
+WP-2.1 landed `mag/src/typeset/content.rs`, which ports the same
+`render_html_edition` this WP is built on, so `ui`, `clamp_roster`,
+`is_name_roster` and `content_label` already existed in Rust. Under a scoped
+Owns extension they are now lifted into `mag/src/model/shared.rs` and
+`content.rs` imports them.
+
+**Why lifting rather than importing from `crate::typeset::content`.**
+`content.rs` emits Typst markup; this WP's target is HTML that must be
+byte-identical to `html_edition`. Importing would make the web oracle depend
+on the typesetting emitter, so a change made for Typst's benefit could break
+a byte-identity claim in a path that has nothing to do with typesetting, and
+nobody would notice until it failed. The four helpers emit neither format:
+two are string rules, one is a translation table, and `content_label` picks
+a declared label or falls back to `ui`. The direction already existed
+(`content.rs` imported from `crate::model::shared`, and `content_label`
+already called `py_str`), and WP-5.1d and WP-5.1e set the precedent. It also
+dissolves the duplicated-helper pinning problem rather than managing it: one
+copy pinned to its own Python oracle beats two that can agree while both are
+wrong.
+
+The lift is behaviour-neutral, which WP-2.1's own committed projection
+oracle checks: all 17 test binaries pass unchanged, including the
+`content.rs` tree oracle and its `clamp_roster` straddle test. One signature
+changed, because it had to: `content_label` took `&Document`, which would
+have made `shared.rs` import `model::doc` while `doc.rs` already imports
+`shared`. It now takes `&Mapping`, the only field it ever used.
+
+**A LATENT DIVERGENCE found while lifting, NOT fixed here.**
+`is_name_roster` uses `str::trim` and `split_whitespace()` where Python uses
+`.strip()` and `.split()`. Those disagree: sweeping all 1,114,112
+codepoints, Python's `str.isspace()` holds for 29 and Rust's
+`char::is_whitespace()` for 25, and the difference is exactly
+**U+001C, U+001D, U+001E, U+001F**, one-directional (Python calls them
+space, Rust does not). `shared.rs` already carries `is_python_space` for
+precisely this, so the pinned form exists and is simply not used here.
+
+It changes the ANSWER, not just the internals. With U+001E written `<RS>`:
+
+| input | Python | Rust |
+|---|---|---|
+| `a b c d e f<RS>g • C D • E F` | `False` | `true` |
+| `<RS> • C D • E F` | `False` | `true` |
+| `A<RS>B • C D • E F` | `True` | `true` |
+
+The first crosses the six-word limit (Python splits into seven words, Rust
+into six); the second strips to empty for Python but not for Rust. The third
+agrees, and is kept as the control showing the fixture shape itself is not
+what produces the disagreement.
+
+Per rule 3b: **the defect is LIVE on the branch**, now in
+`mag/src/model/shared.rs` and previously in `mag/src/typeset/content.rs`.
+Consumers who must not build on the current behaviour are WP-2.1's
+contents-entry author rendering, WP-2.2a (building on `content.rs` now), and
+this WP's own web port. It is unreachable from the corpus: scanning all 833
+YAML and Markdown files under `editions/` and `library/sources/` finds ZERO
+occurrences of those four codepoints, so it cannot fire on edition 010 and
+is latent rather than active. It is left unfixed because repairing it is a
+behaviour change outside the lift's granted scope, and a lift that silently
+alters behaviour is the thing the narrow grant existed to prevent.
+
 ## Residuals
 
 - **What remains of the port**, in dependency order: `html_edition.py`'s

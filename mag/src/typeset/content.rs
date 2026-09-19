@@ -6,18 +6,16 @@ use crate::model::manifest::{
     load_edition, Article, Edition, Editorial, LoadOptions, Records, Section,
 };
 use crate::model::records::{load_records, Extract, Figure};
-use crate::model::shared::{py_casefold, py_repr, py_str, py_upper, Result, ValidationError};
-use serde_yaml::Value;
+use crate::model::shared::{
+    clamp_roster, content_label, is_name_roster, py_casefold, py_repr, py_str, ui, Result,
+    ValidationError,
+};
 use std::collections::BTreeSet;
 use std::path::Path;
 use typst_syntax::{SyntaxKind, SyntaxNode};
 use unicode_normalization::UnicodeNormalization;
 
 pub const CONTENTS_TITLE_LIMIT: usize = 62;
-pub const ROSTER_CLAMP_LIMIT: usize = 54;
-pub const ROSTER_CLAMP_HEAD: usize = 47;
-pub const ROSTER_MIN_NAMES: usize = 3;
-pub const ROSTER_MAX_NAME_WORDS: usize = 6;
 pub const CONTENTS_TIGHT_ABOVE: usize = 8;
 const ILLUSTRATED: &str = "illustrated_paper_spots_v1";
 const OPENER_ANCHOR: &str = "__opener__";
@@ -106,79 +104,6 @@ fn anchor_key(value: &str) -> String {
 
 fn is_reference_heading(text: &str) -> bool {
     REFERENCE_HEADINGS.contains(&anchor_key(text).as_str())
-}
-
-pub fn is_name_roster(text: &str) -> bool {
-    let names: Vec<&str> = text.split('\u{2022}').map(str::trim).collect();
-    names.len() >= ROSTER_MIN_NAMES
-        && names.iter().all(|name| {
-            !name.is_empty() && name.split_whitespace().count() <= ROSTER_MAX_NAME_WORDS
-        })
-}
-
-pub fn clamp_roster(author: &str) -> String {
-    if author.chars().count() <= ROSTER_CLAMP_LIMIT {
-        return author.to_string();
-    }
-    let head: String = author.chars().take(ROSTER_CLAMP_HEAD).collect();
-    let kept = match head.rfind(", ") {
-        Some(cut) if cut > 0 => head[..cut].to_string(),
-        _ => head,
-    };
-    format!("{kept} et al.")
-}
-
-pub fn ui(language: &str, key: &str) -> String {
-    const ENGLISH: [(&str, &str); 20] = [
-        ("issue", "Issue"),
-        ("contents", "Contents"),
-        ("sources", "Sources"),
-        ("editorial", "Editorial"),
-        ("feature", "Feature"),
-        ("figure", "Figure"),
-        ("end", "End"),
-        ("by", "By"),
-        ("original_argument", "An original argument"),
-        ("article", "ARTICLE"),
-        ("in_a_nutshell", "IN A NUTSHELL"),
-        ("original_editorial", "ORIGINAL EDITORIAL"),
-        ("source_introduction", "THE SOURCE"),
-        ("source_record", "SOURCE RECORD"),
-        ("production_note", "PRODUCTION NOTE"),
-        ("glossary", "GLOSSARY"),
-        ("try_it", "TRY IT"),
-        ("cheat_sheet", "CHEAT SHEET"),
-        ("key_ideas", "KEY IDEAS"),
-        ("verbatim", "VERBATIM"),
-    ];
-    const SPANISH: [(&str, &str); 20] = [
-        ("issue", "Número"),
-        ("contents", "Índice"),
-        ("sources", "Fuentes"),
-        ("editorial", "Editorial"),
-        ("feature", "Artículo"),
-        ("figure", "Figura"),
-        ("end", "Fin"),
-        ("by", "Por"),
-        ("original_argument", "Un argumento original"),
-        ("article", "ARTÍCULO"),
-        ("in_a_nutshell", "EN POCAS PALABRAS"),
-        ("original_editorial", "EDITORIAL ORIGINAL"),
-        ("source_introduction", "LA FUENTE"),
-        ("source_record", "REGISTRO DE FUENTE"),
-        ("production_note", "NOTA DE PRODUCCIÓN"),
-        ("glossary", "GLOSARIO"),
-        ("try_it", "PRUÉBALO"),
-        ("cheat_sheet", "HOJA DE REFERENCIA"),
-        ("key_ideas", "IDEAS CLAVE"),
-        ("verbatim", "TEXTUAL"),
-    ];
-    let table = if language == "es" { SPANISH } else { ENGLISH };
-    table
-        .iter()
-        .find(|(name, _)| *name == key)
-        .map(|(_, value)| (*value).to_string())
-        .unwrap_or_else(|| py_upper(&key.replace(['_', '-'], " ")))
 }
 
 struct Writer<'a> {
@@ -439,7 +364,7 @@ impl Writer<'_> {
             "#label-secondary{}",
             self.said(&content_label(
                 &self.edition.language,
-                document,
+                &document.metadata,
                 &article.content_mode
             ))
         ));
@@ -686,20 +611,6 @@ fn include_piece(files: &mut Vec<File>, path: String, source: String) -> String 
     let line = format!("#include \"/{path}\"\n");
     files.push(File { path, source });
     line
-}
-
-fn content_label(language: &str, document: &Document, content_mode: &str) -> String {
-    let declared = document
-        .metadata
-        .get(Value::String("label".to_string()))
-        .map(py_str)
-        .map(|value| value.trim().to_string())
-        .unwrap_or_default();
-    if declared.is_empty() {
-        ui(language, content_mode)
-    } else {
-        declared
-    }
 }
 
 fn figure_layouts(article: &Article) -> Vec<String> {
@@ -968,6 +879,7 @@ fn rejoin_hyphenated_words(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::shared::ROSTER_CLAMP_LIMIT;
     use std::path::PathBuf;
 
     const PUBLICATION: &str = "Fixture Press";
