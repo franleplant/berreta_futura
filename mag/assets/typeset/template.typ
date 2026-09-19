@@ -38,6 +38,89 @@
 #let REFERENCE-HANG = 12.9744pt
 #let QUOTE-RULE = 1.5pt
 #let QUOTE-PAD = 4mm
+#let HEADING-CLEARANCE = 25pt
+#let ZERO-LEADING-SANS = 2.47375pt
+#let RUNNING-BASELINE = 20pt
+#let RUNNING-RULE = 0.55pt
+#let RUNNING-RULE-TOP = 27.725pt
+#let RUNNING-TICK-WIDTH = 14pt
+#let RUNNING-TICK = 1.15pt
+#let RUNNING-TICK-TOP = 27.425pt
+#let ARTICLE-PAGE-CAP = 7
+#let VERBATIM-PAGE-CAP = 10
+
+#let CONTENTS-KICKER-TOP = -13.46915pt
+#let CONTENTS-TITLE-TOP = 32.54098pt
+#let CONTENTS-TITLE-SIZE = 27pt
+#let CONTENTS-BAND-TOP = 74.2802pt
+#let CONTENTS-BAND = 393pt
+#let CONTENTS-ROW-MAX = 65.5pt
+#let CONTENTS-ROWS-MIN = 6
+#let CONTENTS-RULE = 0.7pt
+#let CONTENTS-ENTRY-LEFT = 47pt
+#let CONTENTS-STANDARD = (label: 8.6pt, folio: 17.7pt, title: 17.5pt, author: 32.2pt)
+#let CONTENTS-TIGHT = (label: 6.8pt, folio: 15.9pt, title: 15.8pt, author: 30.5pt)
+
+#let ILLUSTRATED = "illustrated_paper_spots_v1"
+#let PAPER-INK = rgb(23, 25, 28)
+#let PAPER-BLUE = rgb(49, 93, 140)
+#let PAPER-RULE = rgb(200, 192, 179)
+#let PAPER-GRAY = rgb(93, 96, 96)
+#let OPENER-ESCAPE = 11.5pt
+#let OPENER-RAIL = 348pt
+#let OPENER-ART-HEIGHT = 207.1pt
+#let OPENER-ART-LIFT = 12.0004pt
+#let OPENER-ART-FLOW = 195.1pt
+#let OPENER-META-MEASURE = 293pt
+#let OPENER-PANGO-RESERVE = 13.2pt
+#let CONTENT-HEIGHT = PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM
+#let OPENER-FRAME-HEIGHT = 203pt
+#let OPENER-OFFSET = 4.1pt
+#let OPENER-BORDER = 2.4pt
+#let OPENER-QR = 41pt
+#let OPENER-GAP = 14pt
+#let OPENER-TICK-WIDTH = 14.5pt
+#let OPENER-TICK = 2.4pt
+#let OPENER-META-RULE = 1pt
+#let OPENER-LABEL-SIZE = 6.5pt
+#let OPENER-LABEL-LEADING = 7.15pt
+#let OPENER-LABEL-TRACKING = 0.16
+#let OPENER-TITLE-LEADING-RATIO = 0.96
+#let OPENER-TITLE-TRACKING = -0.045
+#let OPENER-TITLE-MAX = 32.5pt
+#let OPENER-COMPACT-TITLE-MAX = 30pt
+#let OPENER-TITLE-MIN = 22pt
+#let OPENER-TITLE-STEP = 0.5pt
+#let OPENER-TITLE-BOX = 64pt
+#let OPENER-TITLE-MAX-LINES = 2
+#let OPENER-BYLINE-SIZE = 7.4pt
+#let OPENER-BYLINE-LEADING = 8.5pt
+#let OPENER-BYLINE-TRACKING = 0.04
+#let OPENER-PREFIX-SIZE = 6.2pt
+#let OPENER-PREFIX-TRACKING = 0.15
+#let OPENER-PREFIX-GAP = 0.35
+#let OPENER-NOTE-LEADING = 9.4pt
+#let OPENER-NOTE-ABOVE = 3.2pt
+#let OPENER-DROP-SIZE = 18.7pt
+#let OPENER-DROP-GAP = 1pt
+#let OPENER-STANDARD = (
+  label: 24pt,
+  title-gap: 8pt,
+  tick: 25pt,
+  meta-pad: 9pt,
+  standfirst-gap: 32.5pt,
+  standfirst-size: 10.2pt,
+  standfirst-leading: 14.4pt,
+)
+#let OPENER-COMPACT = (
+  label: 20pt,
+  title-gap: 6pt,
+  tick: 18pt,
+  meta-pad: 7pt,
+  standfirst-gap: 22pt,
+  standfirst-size: 9.6pt,
+  standfirst-leading: 13.2pt,
+)
 
 #let edges(size, leading, half) = (
   top-edge: leading / 2 + half * size,
@@ -52,6 +135,8 @@
 
 #let publication = state("publication", [])
 
+#let leading-zero(index) = if index < 10 { "0" + str(index) } else { str(index) }
+
 #let folio-text(body) = text(
   font: SANS,
   size: CAPTION-SIZE,
@@ -61,8 +146,7 @@
   upper(body),
 )
 
-#let folio() = context {
-  let index = counter(page).at(here()).first()
+#let folio(index) = {
   place(
     top + left,
     dx: MARGIN-OUTER,
@@ -73,8 +157,35 @@
     top + right,
     dx: -MARGIN-OUTER,
     dy: PAGE-HEIGHT - FOLIO-BASELINE,
-    folio-text(numbering("01", index)),
+    folio-text(leading-zero(index)),
   )
+}
+
+#let running-head(index) = {
+  let marks = query(<mag-piece>).filter(m => m.location().page() <= index)
+  if marks.len() == 0 or marks.last().location().page() == index { return }
+  let inner = if calc.odd(index) { MARGIN-INNER } else { MARGIN-OUTER }
+  let outer = if calc.odd(index) { MARGIN-OUTER } else { MARGIN-INNER }
+  place(top + left, dx: inner, dy: RUNNING-BASELINE, folio-text(publication.final()))
+  place(top + right, dx: -outer, dy: RUNNING-BASELINE, folio-text(marks.last().value.head))
+  place(
+    top + left,
+    dx: inner,
+    dy: RUNNING-RULE-TOP,
+    rect(width: LIVE-WIDTH, height: RUNNING-RULE, fill: COOL-GRAY, stroke: none),
+  )
+  place(
+    top + left,
+    dx: inner,
+    dy: RUNNING-TICK-TOP,
+    rect(width: RUNNING-TICK-WIDTH, height: RUNNING-TICK, fill: SIGNAL-ORANGE, stroke: none),
+  )
+}
+
+#let furniture() = context {
+  let index = counter(page).at(here()).first()
+  folio(index)
+  running-head(index)
 }
 
 #let plain-page() = page(margin: 0pt, background: none, [])
@@ -92,7 +203,7 @@
       outside: MARGIN-OUTER,
     ),
     binding: left,
-    background: folio(),
+    background: furniture(),
   )
   set text(
     font: SERIF,
@@ -123,56 +234,338 @@
 #let edition-subtitle(body) = none
 #let edition-date(body) = none
 
-#let contents-kicker(body) = none
-#let contents-label(body) = none
-#let entry-label(body) = block(
-  text(font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(0.45pt), upper(body)),
-  spacing: 8.6pt,
+#let tag(name, body) = metadata((tag: name, body: body))
+
+#let parts(body) = {
+  let items = if body.has("children") { body.children } else { (body,) }
+  items.filter(i => i.func() == metadata).map(i => i.value)
+}
+
+#let part(rows, name) = {
+  let found = rows.filter(r => r.tag == name)
+  if found.len() == 0 { none } else { found.first().body }
+}
+
+#let contents-kicker(body) = tag("kicker", body)
+#let contents-label(body) = tag("label", body)
+#let entry-label(body) = tag("entry-label", body)
+#let entry-title(body) = tag("entry-title", body)
+#let entry-author(body) = tag("entry-author", body)
+#let contents-entry(destination: none, body) = metadata((
+  tag: "entry",
+  body: body,
+  destination: destination,
+))
+
+#let contents-caption(body) = text(
+  font: SANS,
+  size: CAPTION-SIZE,
+  weight: 500,
+  ..flat,
+  ..tracked(0.45pt),
+  upper(body),
 )
-#let entry-title(body) = block(
-  text(font: DISPLAY, size: 9.8pt, weight: 600, ..edges(9.8pt, 10.2pt, HALF-SERIF), body),
-  spacing: 2.7pt,
-)
-#let entry-author(body) = block(
-  text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: SLATE, ..flat, upper(body)),
-  spacing: 0pt,
-)
-#let contents-entry(destination: none, body) = block(body, spacing: 0pt)
+
+#let contents-row(row, offsets, destination, rows) = {
+  let label = part(rows, "entry-label")
+  let title = part(rows, "entry-title")
+  let author = part(rows, "entry-author")
+  if label != none {
+    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.label + ZERO-LEADING-SANS, {
+      contents-caption(label)
+    })
+  }
+  place(top + left, dy: row + offsets.folio + 23pt * HALF-SANS, {
+    let page-number = counter(page).at(query(<mag-piece>)
+      .find(m => m.value.id == destination)
+      .location()).first()
+    text(
+      font: SANS,
+      size: 23pt,
+      weight: 600,
+      fill: VIOLET,
+      ..flat,
+      leading-zero(page-number),
+    )
+  })
+  if title != none {
+    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.title, {
+      box(
+        width: LIVE-WIDTH - CONTENTS-ENTRY-LEFT,
+        text(font: DISPLAY, size: 9.8pt, weight: 600, ..edges(9.8pt, 10.2pt, HALF-SERIF), title),
+      )
+    })
+  }
+  if author != none {
+    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.author + ZERO-LEADING-SANS, {
+      text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: SLATE, ..flat, upper(author))
+    })
+  }
+}
 
 #let contents(tight: false, body) = {
   pagebreak(weak: true)
-  block(height: PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM, width: 100%, column(body))
+  let rows = parts(body)
+  let entries = rows.filter(r => r.tag == "entry")
+  let offsets = if tight { CONTENTS-TIGHT } else { CONTENTS-STANDARD }
+  let height = calc.min(CONTENTS-BAND / calc.max(CONTENTS-ROWS-MIN, entries.len()), CONTENTS-ROW-MAX)
+  block(height: PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM, width: 100%, context {
+    let kicker = part(rows, "kicker")
+    let label = part(rows, "label")
+    if kicker != none {
+      place(top + left, dy: CONTENTS-KICKER-TOP + ZERO-LEADING-SANS, contents-caption(kicker))
+    }
+    if label != none {
+      place(top + left, dy: CONTENTS-TITLE-TOP + CONTENTS-TITLE-SIZE * HALF-SERIF, {
+        text(font: DISPLAY, size: CONTENTS-TITLE-SIZE, weight: 600, ..flat, label)
+      })
+    }
+    for (index, entry) in entries.enumerate() {
+      let row = CONTENTS-BAND-TOP + index * height
+      contents-row(row, offsets, entry.destination, parts(entry.body))
+      if index + 1 < entries.len() {
+        place(top + left, dy: row + height - CONTENTS-RULE / 2, {
+          rect(width: LIVE-WIDTH, height: CONTENTS-RULE, fill: COOL-GRAY, stroke: none)
+        })
+      }
+    }
+  })
   pagebreak(weak: true)
 }
 
-#let content-label(body) = block(
-  text(font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(0.45pt), upper(body)),
-  spacing: 7.53085pt,
+#let opener-parts = state("opener-parts", none)
+
+#let escaped(body) = pad(left: -OPENER-ESCAPE, right: -OPENER-ESCAPE, body)
+
+#let collect(name, body) = opener-parts.update(p => if p == none {
+  p
+} else {
+  p + ((tag: name, body: body),)
+})
+
+#let opener-art() = block(
+  width: 100%,
+  height: OPENER-ART-HEIGHT - OPENER-ART-LIFT,
+  above: 0pt,
+  below: 0pt,
+  place(top + left, dx: -OPENER-ESCAPE, dy: -OPENER-ART-LIFT, {
+    place(top + left, dx: OPENER-OFFSET, dy: OPENER-OFFSET, {
+      rect(width: OPENER-RAIL, height: OPENER-FRAME-HEIGHT, fill: SIGNAL-ORANGE, stroke: none)
+    })
+    place(top + left, dx: OPENER-BORDER / 2, dy: OPENER-BORDER / 2, {
+      rect(
+        width: OPENER-RAIL - OPENER-BORDER,
+        height: OPENER-FRAME-HEIGHT - OPENER-BORDER,
+        fill: white,
+        stroke: OPENER-BORDER + PAPER-INK,
+      )
+    })
+  }),
 )
-#let label-primary(body) = text(fill: VIOLET, body)
+
+#let content-label(body) = context if opener-parts.get() == none {
+  block(
+    text(font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(0.45pt), upper(body)),
+    spacing: 7.53085pt,
+  )
+} else {
+  collect("label", body)
+}
+#let label-primary(body) = context if opener-parts.get() == none {
+  text(fill: VIOLET, body)
+} else {
+  body
+}
 #let label-secondary(body) = text(body)
 #let label-separator(body) = text(body)
-#let label-date(body) = text(fill: rgb(93, 96, 96), weight: 600, body)
+#let label-date(body) = context if opener-parts.get() == none {
+  text(fill: PAPER-GRAY, weight: 600, body)
+} else {
+  text(weight: 600, body)
+}
 
-#let piece-title(body) = block(
-  text(font: DISPLAY, size: 24pt, weight: 600, ..edges(24pt, 24pt * 1.08, HALF-SERIF), body),
-  spacing: 8pt,
+#let opener-title-text(size, body) = text(
+  font: DISPLAY,
+  size: size,
+  weight: 600,
+  fill: PAPER-INK,
+  hyphenate: false,
+  ..edges(size, size * OPENER-TITLE-LEADING-RATIO, HALF-SERIF),
+  body,
 )
 
-#let byline-prefix(body) = text(size: 6.2pt, fill: VIOLET, body)
+#let wrapped(width, body) = block(width: width, {
+  set par(leading: 0pt, spacing: 0pt, linebreaks: "simple", justify: false)
+  body
+})
+
+#let fitted-title(body, maximum) = {
+  let size = maximum
+  while size > OPENER-TITLE-MIN {
+    let leading = size * OPENER-TITLE-LEADING-RATIO
+    let rows = calc.round(
+      measure(wrapped(OPENER-RAIL, opener-title-text(size, body))).height / leading,
+    )
+    if rows <= OPENER-TITLE-MAX-LINES and size + (rows - 1) * leading <= OPENER-TITLE-BOX {
+      return (size: size, lines: rows)
+    }
+    size -= OPENER-TITLE-STEP
+  }
+  (size: size, lines: OPENER-TITLE-MAX-LINES)
+}
+
+#let piece-title(body) = context if opener-parts.get() == none {
+  block(
+    text(font: DISPLAY, size: 24pt, weight: 600, ..edges(24pt, 24pt * 1.08, HALF-SERIF), body),
+    spacing: 8pt,
+  )
+} else {
+  collect("title", body)
+}
+
+#let byline-prefix(body) = context if opener-parts.get() == none {
+  text(size: OPENER-PREFIX-SIZE, fill: VIOLET, body)
+} else {
+  text(
+    size: OPENER-PREFIX-SIZE,
+    fill: PAPER-BLUE,
+    ..tracked(OPENER-PREFIX-TRACKING * OPENER-PREFIX-SIZE),
+    body,
+  )
+  h(OPENER-PREFIX-GAP * OPENER-PREFIX-SIZE)
+}
 #let byline-name(body) = text(body)
-#let byline(body) = block(
-  text(font: SANS, size: 7.4pt, weight: 600, ..flat, upper(body)),
-  above: 12pt,
-  below: 0pt,
-)
-#let author-note(body) = block(
-  text(font: SANS, size: CAPTION-SIZE, weight: 400, fill: SLATE, ..edges(CAPTION-SIZE, 9.45pt, HALF-SANS), body),
-  above: 7.49326pt,
-  below: 0pt,
-)
+#let byline(body) = context if opener-parts.get() == none {
+  block(
+    text(font: SANS, size: OPENER-BYLINE-SIZE, weight: 600, ..flat, upper(body)),
+    above: 12pt,
+    below: 0pt,
+  )
+} else {
+  collect("byline", body)
+}
+#let author-note(body) = context if opener-parts.get() == none {
+  block(
+    text(
+      font: SANS,
+      size: CAPTION-SIZE,
+      weight: 400,
+      fill: SLATE,
+      ..edges(CAPTION-SIZE, 9.45pt, HALF-SANS),
+      body,
+    ),
+    above: 7.49326pt,
+    below: 0pt,
+  )
+} else {
+  collect("note", body)
+}
 #let provenance(body) = none
 #let source-link(destination: none, source-id: none, body) = none
+
+#let opener-part(rows, name) = {
+  let found = rows.filter(r => r.tag == name)
+  if found.len() == 0 { none } else { found.first().body }
+}
+
+#let credit-column(rows) = {
+  let note = opener-part(rows, "note")
+  block(above: 0pt, below: 0pt, text(
+    font: SANS,
+    size: OPENER-BYLINE-SIZE,
+    weight: 700,
+    fill: PAPER-INK,
+    ..edges(OPENER-BYLINE-SIZE, OPENER-BYLINE-LEADING, HALF-SANS),
+    ..tracked(OPENER-BYLINE-TRACKING * OPENER-BYLINE-SIZE),
+    upper(opener-part(rows, "byline")),
+  ))
+  if note != none {
+    block(above: OPENER-NOTE-ABOVE, below: 0pt, text(
+      font: SANS,
+      size: CAPTION-SIZE,
+      weight: 400,
+      fill: PAPER-GRAY,
+      ..edges(CAPTION-SIZE, OPENER-NOTE-LEADING, HALF-SANS),
+      note,
+    ))
+  }
+}
+
+#let standfirst-text(density, body) = text(
+  size: density.standfirst-size,
+  ..edges(density.standfirst-size, density.standfirst-leading, HALF-SERIF),
+  body,
+)
+
+#let opener-stack(density, title, rows, body) = {
+  let credit = measure(wrapped(OPENER-META-MEASURE, credit-column(rows))).height
+  let standfirst = measure(wrapped(OPENER-RAIL, standfirst-text(density, body))).height
+  (
+    OPENER-ART-FLOW
+      + density.label
+      + OPENER-LABEL-LEADING
+      + density.title-gap
+      + title.lines * title.size * OPENER-TITLE-LEADING-RATIO
+      + density.tick
+      + OPENER-TICK
+      + calc.max(OPENER-QR, credit)
+      + 2 * density.meta-pad
+      + OPENER-META-RULE
+      + density.standfirst-gap
+      + standfirst
+  )
+}
+
+#let opener-page(rows, body) = {
+  let title = opener-part(rows, "title")
+  let fit = fitted-title(title, OPENER-TITLE-MAX)
+  let density = OPENER-STANDARD
+  if opener-stack(density, fit, rows, body) + OPENER-PANGO-RESERVE > CONTENT-HEIGHT {
+    density = OPENER-COMPACT
+    fit = fitted-title(title, OPENER-COMPACT-TITLE-MAX)
+  }
+  block(breakable: false, above: 0pt, below: 0pt, {
+    opener-art()
+    block(above: density.label, below: 0pt, escaped(text(
+      font: SANS,
+      size: OPENER-LABEL-SIZE,
+      weight: 600,
+      fill: PAPER-BLUE,
+      ..edges(OPENER-LABEL-SIZE, OPENER-LABEL-LEADING, HALF-SANS),
+      ..tracked(OPENER-LABEL-TRACKING * OPENER-LABEL-SIZE),
+      upper(opener-part(rows, "label")),
+    )))
+    block(above: density.title-gap, below: 0pt, escaped({
+      set par(leading: 0pt, spacing: 0pt)
+      opener-title-text(fit.size, title)
+    }))
+    block(
+      above: density.tick,
+      below: 0pt,
+      escaped(block(width: OPENER-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, spacing: 0pt)),
+    )
+    v(density.meta-pad)
+    escaped(grid(
+      columns: (1fr, OPENER-QR),
+      column-gutter: OPENER-GAP,
+      align: horizon,
+      credit-column(rows),
+      rect(width: OPENER-QR, height: OPENER-QR, fill: none, stroke: none),
+    ))
+    v(density.meta-pad)
+    escaped(block(width: 100%, height: OPENER-META-RULE, fill: PAPER-RULE, spacing: 0pt))
+    block(above: density.standfirst-gap, below: 0pt, escaped({
+      set par(leading: 0pt, spacing: 0pt)
+      standfirst-text(density, body)
+    }))
+  })
+}
+
+#let opener-standfirst(rows, body) = {
+  opener-page(rows, body)
+  opener-parts.update(_ => none)
+  context v(PAGE-HEIGHT - MARGIN-BOTTOM - here().position().y)
+}
 
 #let doc-link(destination: none, title: none, body) = link(destination, body)
 
@@ -193,10 +586,14 @@
 
 #let doc-paragraph(standfirst: false, roster: false, body) = {
   if standfirst {
-    block(
-      text(size: 12pt, ..pinned(16.4pt), body),
-      below: 13pt,
-    )
+    context {
+      let rows = opener-parts.get()
+      if rows == none {
+        block(text(size: 12pt, ..pinned(16.4pt), body), below: 13pt)
+      } else {
+        opener-standfirst(rows, body)
+      }
+    }
   } else {
     par(body)
   }
@@ -210,7 +607,7 @@
 
 #let doc-heading(level: 1, body) = {
   let spec = HEADINGS.at(calc.min(level, 3) - 1)
-  block(
+  block(above: spec.above, below: 0pt, breakable: false, {
     text(
       font: spec.font,
       size: spec.size,
@@ -218,21 +615,27 @@
       fill: spec.fill,
       ..pinned(spec.leading),
       if spec.caps { upper(body) } else { body },
-    ),
-    above: spec.above,
-    below: spec.below,
-  )
+    )
+    v(spec.below)
+    block(height: HEADING-CLEARANCE, width: 100%, spacing: 0pt, [])
+  })
+  v(-HEADING-CLEARANCE)
 }
+
+#let ruled(pad-left, pad-rest, fill-color, body) = pad(left: QUOTE-RULE / 2, block(
+  stroke: (left: QUOTE-RULE + VIOLET),
+  fill: fill-color,
+  inset: (left: pad-left + QUOTE-RULE / 2, rest: pad-rest),
+  width: 100%,
+  above: 0pt,
+  below: 0pt,
+  body,
+))
 
 #let doc-quote(body) = block(
   {
     set par(spacing: 0pt)
-    grid(
-      columns: (QUOTE-RULE, QUOTE-PAD, 1fr),
-      rect(width: QUOTE-RULE, height: 100%, fill: VIOLET, stroke: none),
-      [],
-      body,
-    )
+    ruled(QUOTE-PAD, 0pt, none, body)
   },
   above: 4mm,
   below: 4mm,
@@ -249,11 +652,7 @@
       hyphenate: false,
       ..edges(7.5pt, 7.5pt * 1.3, HALF-MONO),
     )
-    grid(
-      columns: (QUOTE-RULE, 1fr),
-      rect(width: QUOTE-RULE, height: 100%, fill: VIOLET, stroke: none),
-      block(fill: PALE-VIOLET, width: 100%, inset: 3mm, body),
-    )
+    ruled(3mm, 3mm, PALE-VIOLET, body)
   },
   above: PARAGRAPH-AFTER,
   below: PARAGRAPH-AFTER,
@@ -384,6 +783,17 @@
 #let tail-art() = none
 #let closing-plate(index: 1, alt: none) = page(background: none, [])
 
+#let page-cap(id, kind) = context {
+  let head = query(<mag-piece>).find(m => m.value.id == id)
+  let foot = query(<mag-piece-end>).find(m => m.value == id)
+  let span = foot.location().page() - head.location().page() + 1
+  assert(
+    kind == "verbatim" or span <= ARTICLE-PAGE-CAP,
+    message: id + " spans " + str(span) + " reader pages; the hard cap is "
+      + str(ARTICLE-PAGE-CAP) + ". Condense it as a faithful_synthesis before building.",
+  )
+}
+
 #let piece(
   id: none,
   kind: none,
@@ -404,5 +814,13 @@
   }
   set par(spacing: after)
   set text(..edges(BODY-SIZE, PLATE-LEADING, HALF-SERIF)) if plate
-  column(body)
+  column({
+    [#metadata((id: id, head: short-title))<mag-piece>]
+    if opener == ILLUSTRATED {
+      opener-parts.update(_ => ())
+    }
+    body
+    [#metadata(id)<mag-piece-end>]
+  })
+  page-cap(id, kind)
 }
