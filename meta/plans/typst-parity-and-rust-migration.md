@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 49 (Phase 0 built and
+Status: **in execution**, 2026-09-18, revision 50 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,81 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 50 changelog
+
+**A real defect in the landing protocol itself, and it INVERTS a guard into
+the thing it exists to prevent.** Every agent has been told to move the
+branch with a compare-and-swap `git update-ref` and never told WHICH value
+to swap against, so WP-5.3b-ii rebased onto `883a095`, re-read
+`art_directed` at update time as `0fafae1` (revision 49 having landed in
+between) and passed THAT as the expected-old. The CAS succeeded, and its
+commit's parent was the older `883a095`, dropping revision 49.
+The generalization is the agent's own and it is the alarming part: **read
+that way, the CAS succeeds precisely in the case it exists to refuse.** A
+stale base is exactly the situation where the tip has moved, and re-reading
+the tip at update time makes the guard agree with whatever it finds. So the
+rule is now stated in the protocol: **the expected-old value is the commit
+you REBASED ONTO, captured before the rebase and never re-read.**
+Caught within seconds by landing check 2, which is that check working as
+designed and the best evidence yet that the three-check discipline earns
+its cost; re-landed as `20adcfb`, and I confirmed independently that
+`0fafae1` is `20adcfb`'s parent, is an ancestor of `art_directed`, and that
+revision 49's changelog is present in the file.
+
+**Check 4 fired for real on the same landing and was handled exactly as
+revision 48 specifies**: 1 modify + 17 deletions staged, the reading
+PERSISTED across a re-read, the staged content was verified as deletions of
+files present in HEAD, and it was cleared path-scoped. That is the
+re-read-before-acting rule separating a true positive from the false one a
+verifier hit the day before, one day after it was written.
+
+**THREE ports have now been blocked by a PRIVATE SIBLING HELPER, so the
+pattern gets a general statement rather than a third ad-hoc fix.**
+WP-0.2h's tracer seam (blocker 1), WP-5.4a's `is_python_space` and `py_str`,
+and now WP-5.3b-iii's `mag/src/critic/metrics.rs:411 fn resize`, which is
+verified private and is the PIL `Image.resize` WP-5.3a already proved.
+The two earlier responses went opposite ways: WP-5.4a duplicated and the
+plan needed WP-5.1e to lift the copies back out, while WP-5.3b-ii refused
+to duplicate **because two copies would be pinned to EACH OTHER rather than
+each to Python**, which is the duplicate-helper rule applied with judgment
+instead of by rote and is the right call. Routing through the owner with a
+scoped Owns extension is the plan's answer, as it was for blocker 1.
+
+**A stale figure in the plan's own prose, found by rule 9 re-derivation.**
+`text_characters` 16 of 56 is the PRE-rework number measured under the
+`Show.width` unit defect that `80b7b62` fixed; both WP-5.3b-i's evidence
+and WP-5.3b-ii's independent measurement give **43 of 56**, and
+`body_text_lines` 49 of 56 reproduces exactly. Corrected in place. (The
+site is line 4616, not the 3843 reported; I located it by content rather
+than by the cited line, which is the habit rule 9 is asking for.)
+The two measurements were taken on DIFFERENT renders of the same edition,
+with different `reader.pdf` sha256, and produced identical counts, which
+cuts usefully against revision 49's named-commit rule: the base matters for
+some figures and demonstrably not for these. The rule is about knowing
+WHICH, not about assuming every figure moves.
+
+**`serde_json`'s default float parser is NOT round-trip exact, verified
+here rather than taken on report.** `97.71500651041667` gives
+`0x40586dc2aaaaaaab` through `str::parse` and `0x40586dc2aaaaaaac` through
+`Value::as_f64`, one bit apart. `mag/tests/critic_metrics.rs:30` reads
+WP-5.3a's metrics through `as_f64()`, so its "exact equality" is exact only
+up to that parser. No measured disagreement exists and this is NOT a
+defect; what is wrong is the WORD, which claims more than the mechanism can
+carry. WP-5.3b-ii handled it properly in its own oracle by carrying
+`rgb_mae` as TEXT and committing a test that asserts every float in both
+oracles survives the round trip **and that the known-bad literal still
+diverges**. That last clause is worth naming: it is rule 10 applied to a
+GUARD rather than to evidence, and it is what stops the guard going vacuous
+if the parser is ever fixed underneath it.
+
+**WP-5.3b-ii accepted**: 85 of 85 rasters byte-identical to Python's output
+and 85 of 85 `_inspect_page` rows identical, 15 fixture rows, 17
+discrimination probes every one of which fails under mutation, both
+extremes of the punctuation filter failing per rule 10's diagnostic, and
+`render_pages` proven shard-invariant across 1, 3, 5, 12 and default
+shards. That last is what makes a committed sha oracle machine-independent,
+since Python uses `os.cpu_count()` and Rust `available_parallelism()`.
 
 ## Revision 49 changelog
 
@@ -2563,6 +2638,24 @@ before/after comparisons (WP-4.3); out of scope here.
    five times: a scoped Owns EXTENSION granted by the orchestrator, which
    keeps the audit trail and does not queue behind the owner's schedule.
    Reach for that rather than self-granting or waiting.
+   **A PORT BLOCKED BY A PRIVATE SIBLING HELPER IS NOW THE PLAN'S MOST
+   REPEATED WALL, hit three times, so treat it as expected rather than as
+   an incident.** WP-0.2h's tracer seam (blocker 1), WP-5.4a's
+   `is_python_space` and `py_str`, and WP-5.3b-iii's
+   `mag/src/critic/metrics.rs:411 fn resize`. The cause is structural: this
+   plan ports a Python module tree into a Rust module tree, Python's
+   default is that a sibling can reach a `_helper` and Rust's default is
+   that it cannot, so **every port that needed a private helper in Python
+   needs a visibility decision in Rust**, and the decision falls on an
+   agent who does not own the file. Two responses are possible and only one
+   is right. WP-5.4a duplicated, and the plan then needed WP-5.1e to lift
+   the copies back out. WP-5.3b-ii refused to duplicate **because two
+   copies would be pinned to EACH OTHER rather than each to Python**, which
+   is the reason the duplicate-helper rule exists and is the right reading
+   of it. So: **a blocked port asks for a scoped Owns extension naming the
+   ONE item and the ONE word (`pub(crate)`); it does not duplicate, and it
+   does not self-grant.** A port that duplicates anyway states in evidence
+   what it has therefore pinned the copy TO.
    **A PLAN REVISION owns
    `meta/plans/typst-parity-and-rust-migration.md` and NOTHING else**, so a
    revision diff touching any `evidence/*.md` is rejectable on the same
@@ -2757,6 +2850,27 @@ before/after comparisons (WP-4.3); out of scope here.
    fast-forwarding only when the main tree is dirty, and expect to retry
    under load: that dance re-races every time the branch moves, and a WP
    has lost three attempts to it. Never `--no-verify`.
+   **THE COMPARE-AND-SWAP EXPECTED-OLD VALUE IS THE COMMIT YOU REBASED
+   ONTO. Capture it BEFORE the rebase, and never re-read the branch tip at
+   update time.** This protocol has told every agent to move the branch
+   with a compare-and-swap `git update-ref` without ever saying which value
+   to swap against, and the natural reading is the wrong one: WP-5.3b-ii
+   rebased onto `883a095`, read `art_directed` at update time as `0fafae1`
+   because revision 49 had landed in between, and passed that as
+   expected-old. The CAS SUCCEEDED with its commit's parent at `883a095`,
+   dropping revision 49.
+   **Read that way, the CAS succeeds precisely in the case it exists to
+   refuse.** A stale base is by definition the situation where the tip has
+   moved, so re-reading the tip at update time makes the guard agree with
+   whatever it finds and the protection inverts into a silent overwrite.
+   Concretely: `B=$(git rev-parse art_directed)` before rebasing, rebase
+   onto `$B`, then `git update-ref refs/heads/art_directed <new> $B`. If it
+   is refused, the branch moved under you and the answer is to rebase again
+   onto the new tip, never to re-read and retry.
+   Landing check 2 catches this within seconds
+   (`git merge-base --is-ancestor <pre-land tip> art_directed` returns
+   false), which is why that check stays even though it looks redundant
+   beside a CAS: it is the check that catches the CAS being MISUSED.
    **FOURTH LANDING CHECK, owed by the agent that LANDS: leave the shared
    index EMPTY.** Agents commit from a private worktree and move the branch
    with `git update-ref`, which moves the ref and NOTHING else: the main
@@ -3506,6 +3620,25 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   reachable error is orders below any threshold they meet, needs no exact
   path. Record the enumeration; do not assume the hazard applies
   everywhere, and do not assume it applies nowhere.
+- **A SECOND parser loses bits the same way, and it sits under the oracle
+  comparisons rather than under the PDF reads.** `serde_json`'s default
+  float parser is not round-trip exact: `97.71500651041667` gives
+  `0x40586dc2aaaaaaab` through `str::parse` and `0x40586dc2aaaaaaac`
+  through `Value::as_f64`, one ulp apart, verified by the planner rather
+  than taken on report. `mag/tests/critic_metrics.rs:30` reads WP-5.3a's
+  metrics through `as_f64()`, so that test's "exact equality" is exact only
+  up to that parser. No measured disagreement exists, so this is NOT a
+  defect and needs no fix: what needs fixing is the WORD, since "exact" is
+  claiming more than the mechanism delivers. Any WP whose oracle is a JSON
+  float says which of the two it means.
+  **WP-5.3b-ii's handling is the pattern to copy**: it carries `rgb_mae` as
+  TEXT, and commits a test asserting that every float in both oracles
+  survives the round trip AND **that the known-bad literal still diverges**.
+  The second clause is rule 10 applied to a GUARD instead of to evidence,
+  and it is what keeps the guard from going vacuous if the parser is ever
+  fixed underneath it. A guard that can only pass is worth naming as a
+  general requirement: **a guard states what would make it fail, and
+  commits a case that does.**
 - Verify: the 010 MediaBox case reproduces exactly (authored decimals
   recovered, scale 1.0000000151 rather than 1.0); a PDF using object
   streams either parses or fails loud by name; WP-0.2i's per-glyph verdicts
@@ -4613,8 +4746,13 @@ them or the divergence is a defect:
   56 of 56**, up from 54 of 54, because WP-0.2h's standard-14 decode gained
   the two cover pages pypdf could read and the tracer could not, and it
   reproduces pypdf's exact 7-empty / 49-non-empty partition, so it
-  DISCRIMINATES. `body_text_lines` 49 of 56. `text_characters` 16 of 56, up
-  from 9 under the geometric join, and it feeds no issue site.
+  DISCRIMINATES. `body_text_lines` 49 of 56. `text_characters` **43 of
+  56**, and it feeds no issue site. (Read 16 of 56 until revision 50: that
+  was the PRE-rework figure measured under the `Show.width` unit defect
+  `80b7b62` fixed. WP-5.3b-i's evidence and WP-5.3b-ii's independent
+  measurement both give 43, on different renders with different
+  `reader.pdf` sha256, so this figure is base-invariant even though
+  revision 49's named-commit rule warns that some are not.)
   The seven `body_text_lines` differences are CONFIRMED as one cause rather
   than inherited as folklore: all seven are opener pages where the tracer
   counts one line more, and reading pypdf's own output on two of them shows
@@ -4640,6 +4778,15 @@ them or the divergence is a defect:
   PIL-exact `_inspect_page` and the three 144 dpi rasterisations, plus the
   raster helpers the original bullet named. Depends on WP-5.3b-i and
   WP-5.3a.
+  RESULT (done, accepted, commit `20adcfb`): 85 of 85 rasters
+  byte-identical to Python's output, 85 of 85 `_inspect_page` rows
+  identical, 15 fixture rows, 17 discrimination probes every one of which
+  fails under mutation, and both extremes of the punctuation filter failing
+  per rule 10's diagnostic. `render_pages` is proven SHARD-INVARIANT across
+  1, 3, 5, 12 and default shards, which is what makes a committed sha
+  oracle machine-independent given Python uses `os.cpu_count()` and Rust
+  `available_parallelism()`; a sharded oracle without that proof is
+  machine-specific and nobody would notice until it ran elsewhere.
 
 - **WP-5.3b-iii the checks**: owns `mag/src/critic/rules.rs`. Void
   geometry, tail bands, opener offset colour detection, crop fidelity, and
@@ -4647,6 +4794,14 @@ them or the divergence is a defect:
   the WP that meets the decision-level oracle, since only here does a full
   decision set exist to compare. WP-5.3c and WP-5.3g depend on it rather
   than on -i or -ii.
+  **BLOCKED on one word**: `_inspect_opener_crop_fidelity` needs
+  `mag/src/critic/metrics.rs:411 fn resize`, which is private (verified)
+  and is already PIL's `Image.resize` proven by WP-5.3a. WP-5.3b-ii
+  correctly did NOT take the `pub(crate)` itself, since `metrics.rs` is not
+  its path, and correctly did not write a second LANCZOS, since two copies
+  would be pinned to each other rather than each to Python. This is the
+  third instance of the private-sibling wall; see rule 1's general
+  statement. Resolved by a scoped Owns extension from the orchestrator.
 
 - **Blocker 1, and the reason rule 12 exists**: WP-0.2h's seam is
   UNREACHABLE from the place it was built for. `mag/src/parity.rs:1-6`
