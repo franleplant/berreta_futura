@@ -1072,7 +1072,7 @@ mod tests {
         assert!(
             want.len() > 10_000,
             "the live oracle carries {} characters, too few to be edition {edition_id}",
-            want.len()
+            want.chars().count()
         );
         assert_eq!(
             projection.text, want,
@@ -1080,7 +1080,7 @@ mod tests {
         );
         println!(
             "compared the live edition: {} characters of reader text, {} verbatim runs",
-            projection.text.len(),
+            projection.text.chars().count(),
             projection.verbatim.len()
         );
     }
