@@ -6,7 +6,7 @@ mod streams;
 mod text;
 
 use anyhow::{Context, Result};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fs;
@@ -32,16 +32,14 @@ struct Verdict {
     mode: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     staged_input_digest: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    staleness: Option<Staleness>,
+    staleness: Staleness,
     #[serde(skip_serializing_if = "Option::is_none")]
     typst_leg: Option<LegFailure>,
     #[serde(skip_serializing_if = "Option::is_none")]
     page_sets: Option<BTreeMap<String, Vec<u32>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    page_sets_refused: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     scored_set: Option<ScoredSet>,
+    ratchet: Ratchet,
     self_comparison: bool,
     inputs: BTreeMap<String, String>,
     domain: Domain,
@@ -92,8 +90,16 @@ struct NotEvaluated {
 #[derive(Serialize)]
 struct Staleness {
     status: String,
-    current: String,
+    current: Option<String>,
     baseline: Option<String>,
+}
+
+fn not_staged() -> Staleness {
+    Staleness {
+        status: "not_staged".into(),
+        current: None,
+        baseline: None,
+    }
 }
 
 #[derive(Serialize)]
@@ -108,6 +114,155 @@ struct ScoredSet {
     name: String,
     pages: Vec<u32>,
     clauses_differing: BTreeMap<String, Vec<u32>>,
+}
+
+#[derive(Serialize)]
+struct Ratchet {
+    status: String,
+    committed_check: String,
+    pages_committed: usize,
+    pages_recorded: usize,
+    pages_measured: usize,
+    regressions: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
+struct PageEntry {
+    tier: String,
+    s_clauses_passing: Vec<String>,
+}
+
+const BASELINE_PATH: &str = "meta/verification/baseline.json";
+const TIER_LADDER: [&str; 6] = ["none", "G1", "G2", "V1", "V2", "E"];
+const S_CLAUSES: [&str; 7] = [
+    "page_count",
+    "boxes",
+    "text",
+    "code_blocks",
+    "color",
+    "navigation",
+    "critic",
+];
+
+fn baseline_path() -> PathBuf {
+    std::env::var_os("MAG_PARITY_BASELINE")
+        .map_or_else(|| PathBuf::from(BASELINE_PATH), PathBuf::from)
+}
+
+fn tier_rank(tier: &str) -> Result<usize> {
+    TIER_LADDER
+        .iter()
+        .position(|t| *t == tier)
+        .with_context(|| format!("unknown baseline tier '{tier}': expected one of {TIER_LADDER:?}"))
+}
+
+fn parse_entries(raw: &str, origin: &str) -> Result<BTreeMap<u32, PageEntry>> {
+    let doc: serde_json::Value =
+        serde_json::from_str(raw).with_context(|| format!("parsing {origin}"))?;
+    let pages = doc
+        .get("pages")
+        .and_then(|p| p.as_object())
+        .with_context(|| format!("{origin} has no pages object"))?;
+    let mut out = BTreeMap::new();
+    for (key, value) in pages {
+        let page: u32 = key
+            .parse()
+            .with_context(|| format!("{origin} page key '{key}' is not a page number"))?;
+        let entry: PageEntry = serde_json::from_value(value.clone())
+            .with_context(|| format!("{origin} page {page} does not match page_entry_shape"))?;
+        tier_rank(&entry.tier).with_context(|| format!("{origin} page {page}"))?;
+        for clause in &entry.s_clauses_passing {
+            anyhow::ensure!(
+                S_CLAUSES.contains(&clause.as_str()),
+                "{origin} page {page} names unknown Tier S clause '{clause}': expected one of {S_CLAUSES:?}"
+            );
+        }
+        out.insert(page, entry);
+    }
+    Ok(out)
+}
+
+fn read_entries(path: &Path) -> Result<BTreeMap<u32, PageEntry>> {
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let raw = fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    parse_entries(&raw, &path.display().to_string())
+}
+
+fn committed_entries() -> (Option<BTreeMap<u32, PageEntry>>, String) {
+    let out = Command::new("git")
+        .args(["show", &format!("HEAD:{BASELINE_PATH}")])
+        .output();
+    match out {
+        Ok(o) if o.status.success() => {
+            match parse_entries(&String::from_utf8_lossy(&o.stdout), "HEAD:baseline.json") {
+                Ok(entries) => (Some(entries), "checked".into()),
+                Err(e) => (None, format!("unavailable: {e}")),
+            }
+        }
+        _ => (
+            None,
+            "unavailable: git show HEAD:baseline.json failed".into(),
+        ),
+    }
+}
+
+fn regressions(
+    have: &BTreeMap<u32, PageEntry>,
+    want: &BTreeMap<u32, PageEntry>,
+) -> Result<Vec<String>> {
+    let mut out = Vec::new();
+    for (page, wanted) in want {
+        let Some(held) = have.get(page) else {
+            out.push(format!("page {page}: entry removed (was {})", wanted.tier));
+            continue;
+        };
+        if tier_rank(&held.tier)? < tier_rank(&wanted.tier)? {
+            out.push(format!(
+                "page {page}: tier lowered from {} to {}",
+                wanted.tier, held.tier
+            ));
+        }
+        let lost: Vec<&str> = wanted
+            .s_clauses_passing
+            .iter()
+            .filter(|c| !held.s_clauses_passing.contains(c))
+            .map(String::as_str)
+            .collect();
+        if !lost.is_empty() {
+            out.push(format!(
+                "page {page}: Tier S clauses dropped: {}",
+                lost.join(", ")
+            ));
+        }
+    }
+    Ok(out)
+}
+
+fn raised(
+    have: &BTreeMap<u32, PageEntry>,
+    want: &BTreeMap<u32, PageEntry>,
+) -> BTreeMap<u32, PageEntry> {
+    let mut merged = want.clone();
+    for (page, held) in have {
+        let entry = merged.entry(*page).or_insert_with(|| held.clone());
+        if tier_rank(&held.tier).unwrap_or(0) > tier_rank(&entry.tier).unwrap_or(0) {
+            entry.tier.clone_from(&held.tier);
+        }
+        for clause in &held.s_clauses_passing {
+            if !entry.s_clauses_passing.contains(clause) {
+                entry.s_clauses_passing.push(clause.clone());
+            }
+        }
+        entry.s_clauses_passing.sort_by_key(|c| {
+            S_CLAUSES
+                .iter()
+                .position(|s| s == c)
+                .unwrap_or(S_CLAUSES.len())
+        });
+    }
+    merged
 }
 
 fn not_evaluated(owner: &str) -> NotEvaluated {
@@ -414,11 +569,11 @@ fn page_sets(
 }
 
 fn baseline_digest() -> Result<Option<String>> {
-    let path = Path::new("meta/verification/baseline.json");
+    let path = baseline_path();
     if !path.exists() {
         return Ok(None);
     }
-    let raw = fs::read_to_string(path)?;
+    let raw = fs::read_to_string(&path)?;
     let doc: serde_json::Value = serde_json::from_str(&raw)?;
     Ok(doc
         .get("staged_input_digest")
@@ -435,9 +590,131 @@ fn staleness(current: &str) -> Result<Staleness> {
     };
     Ok(Staleness {
         status: status.into(),
-        current: current.to_string(),
+        current: Some(current.to_string()),
         baseline,
     })
+}
+
+fn page_clauses(v: &Verdict, page: u32) -> Vec<String> {
+    let mut out = vec!["page_count".to_string()];
+    let boxes = v.tier_s.boxes.as_ref().is_some_and(|c| {
+        !c.mismatches.iter().any(|m| m.page == page)
+            && !c.rotation_mismatches.iter().any(|m| m.page == page)
+    });
+    let text = v
+        .tier_s
+        .text
+        .as_ref()
+        .is_some_and(|c| !c.pages_differing.contains(&page));
+    let color = v
+        .tier_s
+        .color
+        .as_ref()
+        .is_some_and(|c| !c.pages_differing.contains(&page));
+    let nav = v
+        .tier_s
+        .navigation
+        .as_ref()
+        .is_some_and(|c| c.status == "pass");
+    for (name, pass) in [
+        ("boxes", boxes),
+        ("text", text),
+        ("color", color),
+        ("navigation", nav),
+    ] {
+        if pass {
+            out.push(name.to_string());
+        }
+    }
+    out.sort_by_key(|c| {
+        S_CLAUSES
+            .iter()
+            .position(|s| s == c)
+            .unwrap_or(S_CLAUSES.len())
+    });
+    out
+}
+
+fn page_tier(v: &Verdict, page: u32, g1: f64, g2: f64, v1: f64, v2: f64) -> &'static str {
+    let geom = v.tier_g.as_ref().and_then(|t| t.pages.get(&page));
+    let within = |limit: f64| {
+        geom.is_some_and(|g| {
+            g.blocks_a == g.blocks_b
+                && g.line_count_mismatches == 0
+                && g.max_dx_pt <= limit
+                && g.max_dy_pt <= limit
+        })
+    };
+    let raster = v.tier_v.as_ref().and_then(|t| t.pages.get(&page));
+    let under = |limit: f64| raster.is_some_and(|r| r.differing_fraction < limit);
+    let exact = v
+        .tier_e
+        .display_list
+        .as_ref()
+        .is_some_and(|c| !c.pages_differing.iter().any(|d| d.page == page))
+        && v.tier_e
+            .glyph_positions
+            .as_ref()
+            .is_some_and(|c| c.status == "pass");
+    ladder([within(g1), within(g2), under(v1), under(v2), exact])
+}
+
+fn ladder(rungs: [bool; 5]) -> &'static str {
+    TIER_LADDER[rungs.iter().take_while(|r| **r).count()]
+}
+
+fn measure_pages(
+    v: &Verdict,
+    spec: &serde_yaml::Value,
+) -> Result<Option<BTreeMap<u32, PageEntry>>> {
+    if v.self_comparison
+        || v.tier_s.page_count.status != "pass"
+        || v.tier_g.is_none()
+        || v.tier_v.is_none()
+    {
+        return Ok(None);
+    }
+    let (g1, g2) = (
+        spec_f64(spec, &["tiers", "g", "g1_pt"])?,
+        spec_f64(spec, &["tiers", "g", "g2_pt"])?,
+    );
+    let (v1, v2) = (
+        spec_f64(spec, &["tiers", "v", "v1_page_fraction"])?,
+        spec_f64(spec, &["tiers", "v", "v2_page_fraction"])?,
+    );
+    let entries = (v.domain.first_page..=v.domain.last_page)
+        .map(|page| {
+            (
+                page,
+                PageEntry {
+                    tier: page_tier(v, page, g1, g2, v1, v2).to_string(),
+                    s_clauses_passing: page_clauses(v, page),
+                },
+            )
+        })
+        .collect();
+    Ok(Some(entries))
+}
+
+fn write_proposal(
+    out_dir: &Path,
+    entries: &BTreeMap<u32, PageEntry>,
+    digest: &str,
+) -> Result<PathBuf> {
+    let path = out_dir.join("baseline-proposed.json");
+    let mut doc: serde_json::Value = match fs::read_to_string(baseline_path()) {
+        Ok(raw) => serde_json::from_str(&raw)?,
+        Err(_) => serde_json::json!({}),
+    };
+    let pages: serde_json::Map<String, serde_json::Value> = entries
+        .iter()
+        .map(|(page, entry)| Ok((page.to_string(), serde_json::to_value(entry)?)))
+        .collect::<Result<_>>()?;
+    doc["staged_input_digest"] = serde_json::Value::String(digest.to_string());
+    doc["pages"] = serde_json::Value::Object(pages);
+    fs::write(&path, serde_json::to_string_pretty(&doc)? + "\n")
+        .with_context(|| format!("writing {}", path.display()))?;
+    Ok(path)
 }
 
 fn clause_pages(v: &Verdict) -> BTreeMap<String, Vec<u32>> {
@@ -500,6 +777,29 @@ struct Legs {
     mode: &'static str,
     digest: Option<String>,
     typst_leg: Option<LegFailure>,
+}
+
+fn out_dir(edition: &str) -> PathBuf {
+    std::env::var_os("MAG_PARITY_OUT_DIR").map_or_else(
+        || PathBuf::from("output/parity").join(edition),
+        PathBuf::from,
+    )
+}
+
+fn hold(out_dir: &Path) -> Result<PathBuf> {
+    let path = out_dir.join("run.lock");
+    match fs::OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(&path)
+    {
+        Ok(_) => Ok(path),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => anyhow::bail!(
+            "another mag parity run holds {}; concurrent runs sharing one output directory overwrite each other's verdict.json. Give this run its own directory with MAG_PARITY_OUT_DIR, or delete the lock file if no such run is alive",
+            path.display()
+        ),
+        Err(e) => Err(e).with_context(|| format!("creating {}", path.display())),
+    }
 }
 
 fn oracle_cache_path(out_dir: &Path) -> PathBuf {
@@ -588,13 +888,64 @@ fn stage_legs(edition: &str, opts: &Options, out_dir: &Path) -> Result<Legs> {
     }
 }
 
+fn guard_baseline() -> Result<(BTreeMap<u32, PageEntry>, Ratchet)> {
+    let working = read_entries(&baseline_path())?;
+    let (committed, committed_check) = committed_entries();
+    let pages_committed = committed.as_ref().map_or(0, BTreeMap::len);
+    if let Some(committed) = &committed {
+        let lowered = regressions(&working, committed)?;
+        anyhow::ensure!(
+            lowered.is_empty(),
+            "{} lowers {} committed baseline entries, which only a verifier may change:\n  {}",
+            baseline_path().display(),
+            lowered.len(),
+            lowered.join("\n  ")
+        );
+    }
+    Ok((
+        working.clone(),
+        Ratchet {
+            status: "not_evaluated".into(),
+            committed_check,
+            pages_committed,
+            pages_recorded: working.len(),
+            pages_measured: 0,
+            regressions: vec![],
+        },
+    ))
+}
+
 pub fn run(edition: &str, opts: Options) -> Result<i32> {
     let spec = spec()?;
     assert_poppler(&spec)?;
     assert_tracer(&spec)?;
-    let out_dir = PathBuf::from("output/parity").join(edition);
+    let (recorded, ratchet) = guard_baseline()?;
+    let out_dir = out_dir(edition);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
-    let legs = stage_legs(edition, &opts, &out_dir)?;
+    let lock = hold(&out_dir)?;
+    let outcome = compare(edition, &opts, &spec, &out_dir, &recorded, ratchet);
+    fs::remove_file(&lock).with_context(|| format!("releasing {}", lock.display()))?;
+    outcome
+}
+
+fn compare(
+    edition: &str,
+    opts: &Options,
+    spec: &serde_yaml::Value,
+    out_dir: &Path,
+    recorded: &BTreeMap<u32, PageEntry>,
+    ratchet: Ratchet,
+) -> Result<i32> {
+    let legs = stage_legs(edition, opts, out_dir)?;
+    if let Some(digest) = &legs.digest {
+        let guard = staleness(digest)?;
+        anyhow::ensure!(
+            guard.status != "stale",
+            "staged inputs differ from the baseline digest (run {}, baseline {}): the comparator refuses to run on a corpus the baseline cannot vouch for. A verifier rebases baseline.json from a fresh run",
+            guard.current.unwrap_or_default(),
+            guard.baseline.unwrap_or_default()
+        );
+    }
     let (dir_a, dir_b) = (legs.dir_a, legs.dir_b);
     let (pdf_a, pdf_b) = (dir_a.join("en/reader.pdf"), dir_b.join("en/reader.pdf"));
     if let Some(failure) = &legs.typst_leg {
@@ -603,51 +954,57 @@ pub fn run(edition: &str, opts: Options) -> Result<i32> {
     let mut inputs = BTreeMap::new();
     inputs.insert("a_reader_sha256".into(), sha256_file(&pdf_a)?);
     inputs.insert("b_reader_sha256".into(), sha256_file(&pdf_b)?);
-    let mut verdict = build_verdict(&spec, edition, inputs, &pdf_a, &pdf_b, &out_dir)?;
+    let mut verdict = build_verdict(spec, edition, inputs, &pdf_a, &pdf_b, out_dir)?;
     verdict.mode = legs.mode.into();
     verdict.typst_leg = legs.typst_leg;
+    verdict.ratchet = ratchet;
     if let Some(digest) = legs.digest {
         let guard = staleness(&digest)?;
-        let fresh = guard.status != "stale";
-        verdict.staged_input_digest = Some(digest);
-        verdict.staleness = Some(guard);
-        if fresh {
-            let manifest = dir_a.join("en/edition-manifest.json");
-            let texts =
-                text::page_texts(&pdf_a, verdict.domain.first_page, verdict.domain.last_page)?;
-            let code = code_pages(
-                &dir_a.join("request.json"),
-                &texts,
-                verdict.domain.first_page,
-            )?;
-            verdict.page_sets = Some(page_sets(
-                &manifest,
-                verdict.domain.first_page,
-                verdict.domain.last_page,
-                code,
-            )?);
-            if let Some(name) = &opts.set {
-                verdict.scored_set = Some(score_set(&verdict, name)?);
-            }
-        } else if opts.set.is_some() {
-            anyhow::bail!(
-                "staged inputs differ from the baseline digest: page-set scoring and ratchet comparison are refused until a verifier rebases baseline.json from a fresh run"
-            );
-        } else {
-            verdict.page_sets_refused =
-                Some("staged inputs differ from the baseline digest; page sets not derived".into());
+        let unseeded = guard.status == "unseeded";
+        verdict.staged_input_digest = Some(digest.clone());
+        verdict.staleness = guard;
+        let manifest = dir_a.join("en/edition-manifest.json");
+        let texts = text::page_texts(&pdf_a, verdict.domain.first_page, verdict.domain.last_page)?;
+        let code = code_pages(
+            &dir_a.join("request.json"),
+            &texts,
+            verdict.domain.first_page,
+        )?;
+        verdict.page_sets = Some(page_sets(
+            &manifest,
+            verdict.domain.first_page,
+            verdict.domain.last_page,
+            code,
+        )?);
+        if let Some(name) = &opts.set {
+            verdict.scored_set = Some(score_set(&verdict, name)?);
         }
+        let measured = measure_pages(&verdict, spec)?;
+        if let Some(measured) = &measured {
+            verdict.ratchet.pages_measured = measured.len();
+            verdict.ratchet.regressions = regressions(measured, recorded)?;
+            let proposal = write_proposal(out_dir, &raised(measured, recorded), &digest)?;
+            println!("proposed baseline: {}", proposal.display());
+        }
+        verdict.ratchet.status = match (&measured, unseeded) {
+            (_, true) => "unseeded",
+            (None, _) if verdict.self_comparison => "self_comparison",
+            (None, _) => "not_measured",
+            (Some(_), _) if verdict.ratchet.regressions.is_empty() => "pass",
+            (Some(_), _) => "fail",
+        }
+        .into();
     }
-    write_verdict(&out_dir, &verdict)?;
+    write_verdict(out_dir, &verdict)?;
     summarize(&verdict);
     let value = serde_json::to_value(&verdict)?;
     let domain = verdict
         .tier_g
         .is_some()
         .then_some((verdict.domain.first_page, verdict.domain.last_page));
-    let g2 = spec_f64(&spec, &["tiers", "g", "g2_pt"])?;
+    let g2 = spec_f64(spec, &["tiers", "g", "g2_pt"])?;
     let report = report::write(
-        &out_dir,
+        out_dir,
         &value,
         domain.map(|_| (&*pdf_a, &*pdf_b)),
         domain,
@@ -672,11 +1029,18 @@ fn build_verdict(
         edition: edition.into(),
         mode: "pre_rendered".into(),
         staged_input_digest: None,
-        staleness: None,
+        staleness: not_staged(),
         typst_leg: None,
         page_sets: None,
-        page_sets_refused: None,
         scored_set: None,
+        ratchet: Ratchet {
+            status: "not_evaluated".into(),
+            committed_check: "not_evaluated".into(),
+            pages_committed: 0,
+            pages_recorded: 0,
+            pages_measured: 0,
+            regressions: vec![],
+        },
         self_comparison: inputs.get("a_reader_sha256") == inputs.get("b_reader_sha256"),
         inputs,
         domain: Domain {
@@ -764,7 +1128,10 @@ fn raster_bound(spec: &serde_yaml::Value) -> Result<Option<u8>> {
 }
 
 fn all_evaluated_pass(v: &Verdict) -> bool {
-    v.typst_leg.is_none()
+    matches!(
+        v.ratchet.status.as_str(),
+        "pass" | "not_evaluated" | "self_comparison"
+    ) && v.typst_leg.is_none()
         && v.tier_s.page_count.status == "pass"
         && v.tier_s.boxes.as_ref().is_some_and(|c| c.status == "pass")
         && v.tier_s.text.as_ref().is_some_and(|c| c.status == "pass")
@@ -806,9 +1173,13 @@ fn summarize_run(v: &Verdict) {
         };
         println!("self-comparison: both legs hash identically ({note})");
     }
-    if let Some(s) = &v.staleness {
-        println!("staged inputs: {} ({})", s.status, s.current);
-    }
+    println!(
+        "staged inputs: {} ({})",
+        v.staleness.status,
+        v.staleness.current.as_deref().unwrap_or(
+            "the comparator did not stage these inputs, so no digest exists and the baseline vouches for nothing"
+        )
+    );
     if let Some(sets) = &v.page_sets {
         let counts: Vec<String> = sets
             .iter()
@@ -816,8 +1187,18 @@ fn summarize_run(v: &Verdict) {
             .collect();
         println!("page sets: {}", counts.join(", "));
     }
-    if let Some(reason) = &v.page_sets_refused {
-        println!("page sets: refused ({reason})");
+    let r = &v.ratchet;
+    println!(
+        "ratchet: {} ({} committed entries {}, {} recorded, {} measured, {} regressions)",
+        r.status,
+        r.pages_committed,
+        r.committed_check,
+        r.pages_recorded,
+        r.pages_measured,
+        r.regressions.len()
+    );
+    for line in &r.regressions {
+        println!("  regression: {line}");
     }
     if let Some(scored) = &v.scored_set {
         println!(
@@ -921,5 +1302,361 @@ fn summarize(v: &Verdict) {
             println!("tier E raster: not_evaluated ({owner})");
         }
         None => {}
+    }
+}
+
+#[cfg(test)]
+mod measured_pages {
+    use super::*;
+
+    fn thresholds() -> serde_yaml::Value {
+        serde_yaml::from_str(
+            "tiers:\n  g:\n    g1_pt: 2.0\n    g2_pt: 0.5\n  v:\n    v1_page_fraction: 0.01\n    v2_page_fraction: 0.001\n",
+        )
+        .expect("thresholds")
+    }
+
+    fn tier_s() -> TierS {
+        TierS {
+            page_count: PageCount {
+                status: "pass".into(),
+                a: 4,
+                b: 4,
+            },
+            boxes: Some(geometry::BoxClause {
+                status: "pass".into(),
+                tolerance_pt: 0.05,
+                boxes_compared: 6,
+                rotations_compared: 2,
+                mismatches: vec![],
+                rotation_mismatches: vec![],
+            }),
+            text: Some(text::TextClause {
+                status: "pass".into(),
+                pages_differing: vec![],
+            }),
+            code_blocks: not_evaluated("test"),
+            color: Some(display::SimpleClause {
+                status: "pass".into(),
+                entries_compared: 10,
+                pages_differing: vec![],
+            }),
+            navigation: Some(display::NavClause {
+                status: "pass".into(),
+                annots_compared: 0,
+                links_compared: 0,
+                outlines_compared: 0,
+                title_compared: 0,
+                lang_compared: 0,
+                mismatches: vec![],
+            }),
+            critic: not_evaluated("test"),
+        }
+    }
+
+    fn meters() -> (geometry::GeomTier, raster::RasterTier) {
+        let mut pages = BTreeMap::new();
+        let mut rasters = BTreeMap::new();
+        for page in 2..=3 {
+            pages.insert(
+                page,
+                geometry::PageGeom {
+                    blocks_a: 4,
+                    blocks_b: 4,
+                    line_count_mismatches: 0,
+                    max_dx_pt: 0.0,
+                    max_dy_pt: 0.0,
+                },
+            );
+            rasters.insert(
+                page,
+                raster::PageRaster {
+                    differing_fraction: 0.0,
+                    max_channel_delta: 0,
+                },
+            );
+        }
+        (
+            geometry::GeomTier {
+                g1_pt: 2.0,
+                g2_pt: 0.5,
+                pages,
+                max_dx_pt: 0.0,
+                max_dy_pt: 0.0,
+                lines_beyond_g1: 0,
+                lines_beyond_g2: 0,
+                block_or_line_count_mismatches: 0,
+            },
+            raster::RasterTier {
+                status: "pass".into(),
+                dpi: 300,
+                channel_delta: 24,
+                v1: "pass".into(),
+                v2: "pass".into(),
+                worst_page_fraction: 0.0,
+                max_channel_delta: 0,
+                dimension_mismatches: vec![],
+                pages: rasters,
+            },
+        )
+    }
+
+    fn verdict() -> Verdict {
+        let (tier_g, tier_v) = meters();
+        Verdict {
+            edition: "010".into(),
+            mode: "render".into(),
+            staged_input_digest: None,
+            staleness: not_staged(),
+            typst_leg: None,
+            page_sets: None,
+            scored_set: None,
+            ratchet: Ratchet {
+                status: "not_evaluated".into(),
+                committed_check: "not_evaluated".into(),
+                pages_committed: 0,
+                pages_recorded: 0,
+                pages_measured: 0,
+                regressions: vec![],
+            },
+            self_comparison: false,
+            inputs: BTreeMap::new(),
+            domain: Domain {
+                description: "test".into(),
+                first_page: 2,
+                last_page: 3,
+            },
+            tier_s: tier_s(),
+            tier_g: Some(tier_g),
+            tier_v: Some(tier_v),
+            tier_e: TierE {
+                display_list: Some(display::DisplayClause {
+                    status: "pass".into(),
+                    elements_a: 10,
+                    elements_b: 10,
+                    pages_differing: vec![],
+                }),
+                glyph_positions: Some(display::GlyphClause {
+                    status: "pass".into(),
+                    glyphs: 100,
+                    shows: 4,
+                    worst_excess_pt: 0.0,
+                    worst_ratio: 0.0,
+                    worst: None,
+                    violations: vec![],
+                }),
+                raster: None,
+            },
+        }
+    }
+
+    fn measured(v: &Verdict) -> BTreeMap<u32, PageEntry> {
+        measure_pages(v, &thresholds())
+            .expect("thresholds")
+            .expect("measurable")
+    }
+
+    #[test]
+    fn an_equal_pair_records_every_page_at_tier_e_with_every_evaluated_clause() {
+        let entries = measured(&verdict());
+        assert_eq!(entries.len(), 2);
+        for page in [2, 3] {
+            assert_eq!(entries[&page].tier, "E");
+            assert_eq!(
+                entries[&page].s_clauses_passing,
+                vec![
+                    "page_count".to_string(),
+                    "boxes".into(),
+                    "text".into(),
+                    "color".into(),
+                    "navigation".into()
+                ]
+            );
+        }
+    }
+
+    #[test]
+    fn each_perturbation_lands_on_the_page_it_touches_and_lowers_only_what_it_should() {
+        let mut v = verdict();
+        v.tier_e
+            .display_list
+            .as_mut()
+            .expect("clause")
+            .pages_differing = vec![display::PageDiff {
+            page: 3,
+            detail: "seeded".into(),
+        }];
+        let entries = measured(&v);
+        assert_eq!(
+            (entries[&2].tier.as_str(), entries[&3].tier.as_str()),
+            ("E", "V2")
+        );
+
+        let mut v = verdict();
+        v.tier_s.text.as_mut().expect("clause").pages_differing = vec![3];
+        let entries = measured(&v);
+        assert!(entries[&2].s_clauses_passing.contains(&"text".to_string()));
+        assert!(!entries[&3].s_clauses_passing.contains(&"text".to_string()));
+        assert_eq!(entries[&3].tier, "E");
+
+        let mut v = verdict();
+        v.tier_v
+            .as_mut()
+            .expect("tier")
+            .pages
+            .get_mut(&3)
+            .expect("page")
+            .differing_fraction = 0.005;
+        let entries = measured(&v);
+        assert_eq!(
+            (entries[&2].tier.as_str(), entries[&3].tier.as_str()),
+            ("E", "V1")
+        );
+
+        let mut v = verdict();
+        v.tier_g
+            .as_mut()
+            .expect("tier")
+            .pages
+            .get_mut(&3)
+            .expect("page")
+            .max_dy_pt = 1.0;
+        let entries = measured(&v);
+        assert_eq!(
+            (entries[&2].tier.as_str(), entries[&3].tier.as_str()),
+            ("E", "G1")
+        );
+
+        let mut v = verdict();
+        v.tier_g
+            .as_mut()
+            .expect("tier")
+            .pages
+            .get_mut(&3)
+            .expect("page")
+            .line_count_mismatches = 1;
+        let entries = measured(&v);
+        assert_eq!(
+            (entries[&2].tier.as_str(), entries[&3].tier.as_str()),
+            ("E", "none")
+        );
+
+        let mut v = verdict();
+        v.tier_s.navigation.as_mut().expect("clause").status = "fail".into();
+        let entries = measured(&v);
+        for page in [2, 3] {
+            assert!(!entries[&page]
+                .s_clauses_passing
+                .contains(&"navigation".to_string()));
+        }
+
+        let mut v = verdict();
+        v.tier_e.glyph_positions.as_mut().expect("clause").status = "fail".into();
+        let entries = measured(&v);
+        for page in [2, 3] {
+            assert_eq!(entries[&page].tier, "V2");
+        }
+    }
+
+    #[test]
+    fn a_self_comparison_measures_nothing_so_no_baseline_can_be_seeded_from_one() {
+        let mut v = verdict();
+        v.self_comparison = true;
+        assert!(measure_pages(&v, &thresholds())
+            .expect("thresholds")
+            .is_none());
+        v.self_comparison = false;
+        v.tier_s.page_count.status = "fail".into();
+        assert!(measure_pages(&v, &thresholds())
+            .expect("thresholds")
+            .is_none());
+    }
+}
+
+#[cfg(test)]
+mod ratchet_rules {
+    use super::*;
+
+    fn entry(tier: &str, clauses: &[&str]) -> PageEntry {
+        PageEntry {
+            tier: tier.into(),
+            s_clauses_passing: clauses.iter().map(|c| (*c).to_string()).collect(),
+        }
+    }
+
+    fn entries(rows: &[(u32, &str, &[&str])]) -> BTreeMap<u32, PageEntry> {
+        rows.iter().map(|(p, t, c)| (*p, entry(t, c))).collect()
+    }
+
+    #[test]
+    fn the_ladder_is_cumulative_so_a_skipped_rung_caps_the_tier() {
+        assert_eq!(ladder([false, false, false, false, false]), "none");
+        assert_eq!(ladder([true, false, false, false, false]), "G1");
+        assert_eq!(ladder([true, true, false, false, false]), "G2");
+        assert_eq!(ladder([true, true, true, false, false]), "V1");
+        assert_eq!(ladder([true, true, true, true, false]), "V2");
+        assert_eq!(ladder([true, true, true, true, true]), "E");
+        assert_eq!(ladder([true, true, false, true, true]), "G2");
+        assert_eq!(ladder([false, true, true, true, true]), "none");
+    }
+
+    #[test]
+    fn an_unknown_tier_or_clause_name_fails_loud() {
+        assert!(tier_rank("G3").is_err());
+        assert!(tier_rank("E").is_ok());
+        let bad_tier = r#"{"pages":{"2":{"tier":"G3","s_clauses_passing":[]}}}"#;
+        assert!(parse_entries(bad_tier, "t").is_err());
+        let bad_clause = r#"{"pages":{"2":{"tier":"E","s_clauses_passing":["glyphs"]}}}"#;
+        let err = format!(
+            "{:#}",
+            parse_entries(bad_clause, "t").expect_err("must fail")
+        );
+        assert!(err.contains("unknown Tier S clause 'glyphs'"), "{err}");
+        let bad_page = r#"{"pages":{"cover":{"tier":"E","s_clauses_passing":[]}}}"#;
+        assert!(parse_entries(bad_page, "t").is_err());
+        assert!(parse_entries(r#"{"staged_input_digest":null}"#, "t").is_err());
+    }
+
+    #[test]
+    fn a_lower_tier_or_a_dropped_clause_is_a_regression_and_a_raise_is_not() {
+        let committed = entries(&[(2, "E", &["page_count", "text"]), (3, "G2", &["text"])]);
+        assert!(regressions(&committed, &committed)
+            .expect("ranks")
+            .is_empty());
+        let raise = entries(&[
+            (2, "E", &["page_count", "text", "color"]),
+            (3, "V2", &["text"]),
+        ]);
+        assert!(regressions(&raise, &committed).expect("ranks").is_empty());
+        let lower = entries(&[(2, "V2", &["page_count", "text"]), (3, "G2", &["text"])]);
+        assert_eq!(
+            regressions(&lower, &committed).expect("ranks"),
+            vec!["page 2: tier lowered from E to V2".to_string()]
+        );
+        let dropped = entries(&[(2, "E", &["page_count"]), (3, "G2", &["text"])]);
+        assert_eq!(
+            regressions(&dropped, &committed).expect("ranks"),
+            vec!["page 2: Tier S clauses dropped: text".to_string()]
+        );
+        let removed = entries(&[(3, "G2", &["text"])]);
+        assert_eq!(
+            regressions(&removed, &committed).expect("ranks"),
+            vec!["page 2: entry removed (was E)".to_string()]
+        );
+    }
+
+    #[test]
+    fn a_proposal_merges_upward_only_and_keeps_pages_neither_side_has_alone() {
+        let committed = entries(&[(2, "E", &["page_count", "text"]), (3, "G2", &["text"])]);
+        let measured = entries(&[(2, "G1", &["color"]), (4, "V1", &["boxes"])]);
+        let merged = raised(&measured, &committed);
+        assert_eq!(merged[&2].tier, "E");
+        assert_eq!(
+            merged[&2].s_clauses_passing,
+            vec!["page_count".to_string(), "text".into(), "color".into()]
+        );
+        assert_eq!(merged[&3].tier, "G2");
+        assert_eq!(merged[&4].tier, "V1");
+        assert!(regressions(&merged, &committed).expect("ranks").is_empty());
     }
 }
