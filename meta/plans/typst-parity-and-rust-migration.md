@@ -4362,6 +4362,20 @@ before/after comparisons (WP-4.3); out of scope here.
    reporting discipline. **A line printed unconditionally is not a report,
    it is a hope**: emit the status from a conditional on the actual
    reading, so a non-empty index cannot produce a clean line.
+   **AND AN EMPTY RESULT IS NOT PROOF OF AN EMPTY INDEX: CHECK THAT THE
+   COMMAND RAN.** The planner then produced the SAME false line a second
+   time, one revision later, by a different route: a `git -C <dir>` stored
+   in a shell variable, which zsh does not word-split (the trap recorded in
+   the environment notes), so every git call failed with
+   `no such file or directory`, the captured output was empty, and the
+   conditional dutifully printed "index clean at tip" with an EMPTY sha.
+   **A failed command and a clean index produce the same empty string**, so
+   the conditional fix is necessary and not sufficient. Gate on the
+   command's exit status first and report "status unknown" if it did not
+   run, and print the tip INSIDE the clean branch so a missing sha cannot
+   accompany a clean claim. Two instances in two revisions, both by the
+   planner, both while writing the rule against them, which is the argument
+   for making the check a script rather than a habit.
    **THIS CHECK IS AN INSTANTANEOUS PROPERTY, NOT A DURABLE ONE, so REPORT
    IT WITH THE TIP: "index clean at tip `<sha>`".** The main worktree is
    checked out on `art_directed`, so **every `update-ref` land by any agent
