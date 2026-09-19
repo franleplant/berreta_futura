@@ -2,38 +2,107 @@
  "cases": [
   {
    "content_mode": "article",
-   "frontmatter": "label: \"\\u001E\"",
-   "known_divergence": "",
-   "name": "a label that is whitespace only under Python",
-   "python": "ARTICLE"
-  },
-  {
-   "content_mode": "article",
-   "frontmatter": "label: \"\\u001EARTICLE\\u001E\"",
-   "known_divergence": "",
-   "name": "a label padded with U+001E",
-   "python": "ARTICLE"
-  },
-  {
-   "content_mode": "article",
-   "frontmatter": "label: Dispatch",
-   "known_divergence": "",
-   "name": "control: an ordinary label",
-   "python": "Dispatch"
-  },
-  {
-   "content_mode": "article",
-   "frontmatter": "label: \"  Dispatch  \"",
-   "known_divergence": "",
-   "name": "control: an ASCII-space-padded label",
-   "python": "Dispatch"
-  },
-  {
-   "content_mode": "article",
+   "expected": "ARTICLE",
    "frontmatter": "label:",
-   "known_divergence": "the value-is-not-None guard, not whitespace; see WP-5.1f residuals",
-   "name": "a null label, a divergence this WP did not own",
-   "python": "ARTICLE"
+   "name": "a bare null label",
+   "status": "correct",
+   "why": "a null label declares nothing, so the section takes the UI label for its content mode"
+  },
+  {
+   "content_mode": "article",
+   "expected": "ARTICLE",
+   "frontmatter": "label: ~",
+   "name": "a tilde null label",
+   "status": "correct",
+   "why": "YAML spells null four ways and all of them declare nothing"
+  },
+  {
+   "content_mode": "article",
+   "expected": "ARTICLE",
+   "frontmatter": "label: null",
+   "name": "a spelled null label",
+   "status": "correct",
+   "why": "YAML spells null four ways and all of them declare nothing"
+  },
+  {
+   "content_mode": "article",
+   "expected": "ARTICLE",
+   "frontmatter": "label: NULL",
+   "name": "a shouted null label",
+   "status": "correct",
+   "why": "YAML spells null four ways and all of them declare nothing"
+  },
+  {
+   "content_mode": "article",
+   "expected": "None",
+   "frontmatter": "label: None",
+   "name": "the straddle partner: an unquoted None, a string in YAML",
+   "status": "correct",
+   "why": "YAML has no None literal, so this is the four-letter string, and a declared label is printed as written"
+  },
+  {
+   "content_mode": "article",
+   "expected": "None",
+   "frontmatter": "label: \"None\"",
+   "name": "the straddle partner, quoted",
+   "status": "correct",
+   "why": "quoting changes nothing: the declared label is the string None and is printed as written"
+  },
+  {
+   "content_mode": "article",
+   "expected": "ARTICLE",
+   "frontmatter": "label: \"\\u001E\"",
+   "name": "a label of U+001E only, whitespace under Python",
+   "status": "correct",
+   "why": "U+001E is whitespace to Python, so the declared label is blank and declares nothing"
+  },
+  {
+   "content_mode": "article",
+   "expected": "ARTICLE",
+   "frontmatter": "label: \"\\u001EARTICLE\\u001E\"",
+   "name": "a label padded with U+001E, WP-5.1f's case",
+   "status": "correct",
+   "why": "padding is stripped and ARTICLE remains; kept from WP-5.1f, but its value collides with the fallback so it cannot tell the two branches apart on its own"
+  },
+  {
+   "content_mode": "article",
+   "expected": "Dispatch",
+   "frontmatter": "label: \"\\u001EDispatch\\u001E\"",
+   "name": "a label padded with U+001E, distinguishable from the fallback",
+   "status": "correct",
+   "why": "padding is stripped and Dispatch remains; unlike the case above, this value is not the fallback, so it proves the declared branch was taken"
+  },
+  {
+   "content_mode": "article",
+   "expected": "Dispatch",
+   "frontmatter": "label: Dispatch",
+   "name": "control: an ordinary label",
+   "status": "correct",
+   "why": "a declared label is printed as written"
+  },
+  {
+   "content_mode": "article",
+   "expected": "Dispatch",
+   "frontmatter": "label: \"  Dispatch  \"",
+   "name": "control: an ASCII-space-padded label",
+   "status": "correct",
+   "why": "ASCII space is whitespace to both languages, so this agreed before any fix and still does"
+  },
+  {
+   "content_mode": "article",
+   "expected": "ARTICLE",
+   "frontmatter": "label: \"\"",
+   "name": "control: an empty string, which is not null",
+   "status": "correct",
+   "why": "an empty declared label declares nothing, by the same rule as a blank one, and reaches the fallback without needing the null guard"
+  },
+  {
+   "content_mode": "article",
+   "expected": "False",
+   "frontmatter": "label: false",
+   "name": "class C: a boolean scalar prints False in both engines",
+   "status": "agreed_but_suspect",
+   "why": "pinned as the behaviour both engines have, NOT as a correct value: Python guards on value is not None and False is not None, so it stringifies. Parity cannot see this, because the two engines agree on it. Changing it would change the Python oracle, which is a plan-level decision and not this WP's."
   }
  ],
  "language": "en"

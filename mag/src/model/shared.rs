@@ -327,6 +327,7 @@ pub fn ui(language: &str, key: &str) -> String {
 pub fn content_label(language: &str, metadata: &Mapping, content_mode: &str) -> String {
     let declared = metadata
         .get(Value::String("label".to_string()))
+        .filter(|value| !value.is_null())
         .map(py_str)
         .map(|value| py_strip(&value).to_string())
         .unwrap_or_default();
