@@ -328,7 +328,7 @@ pub fn content_label(language: &str, metadata: &Mapping, content_mode: &str) -> 
     let declared = metadata
         .get(Value::String("label".to_string()))
         .map(py_str)
-        .map(|value| value.trim().to_string())
+        .map(|value| py_strip(&value).to_string())
         .unwrap_or_default();
     if declared.is_empty() {
         ui(language, content_mode)
