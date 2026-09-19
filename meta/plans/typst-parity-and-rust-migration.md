@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 55 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 56 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,121 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 56 changelog
+
+**WP-2.2a HAS LANDED (`03db604`). Typst emits a `reader.pdf`: 52 pages
+against WeasyPrint's 56**, `Status: blocked` on one target clause, and the
+first real cross-engine comparison found a plan defect the same day.
+
+**PLAN DEFECT, fixed here: the page-count target sits TWO SLICES in front
+of the work it needs.** The comparator evaluates nothing past `page_count`
+unless counts match, and three of the four missing pages are the three
+figures WP-2.2c places, articles 3, 6 and 7 each losing exactly one page
+and each carrying exactly one figure. WP-2.2a's target ("a verdict with
+every tier evaluated") and WP-2.2b's ("Tier S page count on 010") both
+depend on figures and **neither slice owns figures**, so both were
+unreachable by construction. The agent recording `blocked` rather than
+contorting the template to reach a count belonging to a later slice is
+exactly right. Targets moved below.
+The general form, and this is its second instance: **a target that depends
+on a later slice's deliverable is not a target, it is a DEPENDENCY.** The
+first was Phase 3's verification standing behind a human gate while also
+blocked on unwritten code (revision 40). Both were invisible while nobody
+tried to satisfy them, which is the tell: **an unreachable target looks
+exactly like an unattempted one.**
+
+**AND THE TWO FINDINGS COMPETE, which neither report noticed.** The figure
+attribution is a correlation over THREE items, and finding 3's
+orphan/widow gap can produce the same pattern by itself. So under rule 11
+**the figure explanation is a HYPOTHESIS, not a cause**, until
+orphans/widows is controlled for, and the plan must not adopt one
+explanation while the other is unowned. The discriminator is cheap:
+disable orphans/widows in the ORACLE and re-measure. If the gap stays at
+four pages across the same three articles, figures are confirmed. Note
+that **the fourth missing page is unexplained under either account**, and
+an explanation covering three of four is the kind that invites itself to
+be accepted whole.
+
+**DECISION on orphan/widow control, in the shape the hyphenation decision
+took.** `weasyprint-a5.css:549` sets `p { orphans: 2; widows: 2 }` with a
+comment at `:527` recording it as a deliberate editorial choice, and Typst
+0.15.1 has no mechanism for it (measured by WP-2.2a). It **cannot stay
+unowned and it cannot be a declared residual divergence**, because it moves
+PAGE COUNT, and page count gates every other clause: a residual in the
+gating clause is not a residual, it is a blocker wearing the wrong label.
+So, assigned to **WP-2.2c** with the two steps in order: first measure
+whether any Typst construction reproduces the constraint; if none does,
+the plan SANCTIONS an oracle change setting `orphans: 1; widows: 1` in both
+engines for parity, restored post-flip under WP-4.3 exactly as WP-1.5's
+hyphenation switch is. Turning it off is a real visual change to the
+magazine, not a no-op, which is precisely why it is a sanctioned oracle
+change with a restoration owner rather than a quiet edit.
+
+**The oracle leg is NOT BYTE-REPRODUCIBLE and the typst leg IS**, which is
+stronger than the qualification revision 55 landed and better stated as a
+property of the two engines than as a caveat on a habit. Measured: three
+WeasyPrint renders in ONE worktree from identical staged inputs gave three
+different hashes, with the path-difference cause removed and measured out
+per rule 11; the typst leg gave ONE hash across six renders in two
+worktrees. So **`a_reader_sha256` cannot be matched by a replay at all**,
+and of the provenance triple only `b_reader_sha256` and
+`staged_input_digest` reproduce. It also strengthens Phase 1's finding that
+Typst PDF export is byte-reproducible, by contrast rather than by
+assertion. A normalized oracle hash in the verdict would fix it; owner is
+WP-0.2l as the live comparator WP.
+
+**"17 versus 18 test suites" was a NAMING COLLISION, not an error: both
+numbers were right.** `mag/tests/` holds 17 `.rs` files; `cargo test` runs
+18 binaries, the eighteenth being the `mag` binary target's in-crate
+`#[cfg(test)]` modules. Revision 51 records 17 and is counting files.
+This is the failure mode rule 9's citation clause does NOT catch, so it is
+recorded beside it: **re-deriving a number faithfully does not help if the
+two numbers were never measuring the same population.** Four instances of
+the glyph dispute and this one all reduce to the same remedy: **name the
+DOMAIN, not just the base.** It was also reported twice as an error, once
+by the coordinator against itself, before anyone asked what each number
+counted, which is the characteristic cost of the class.
+
+**The fourth body measure is DERIVED, not measured, and belongs with the
+unreachable branches.** 312.0256 pt is `325 - 12.9744`, from
+`ul[data-reference-list] li`'s `padding-left`/`text-indent` pair at
+`weasyprint-a5.css:843-848` (verified). Edition 010 emits
+`references: false` on all 8 lists, so nothing on the live corpus exercises
+it in either engine and no spike has bounded its widening interval. **But
+the branch is content-reachable, not config-gated**: `references` is
+computed by `_is_reference_heading` (`html_edition.py:792`), a casefolded
+heading-text test, so any manuscript with a "References" heading trips it.
+One manuscript away, not one config change away.
+**Folded into WP-3.3 rather than given its own spike**, since settling it
+needs a corpus carrying a bibliography and that is the same fixture edition
+WP-3.3 is already scoped to build. The hesitation about WP-3.3 not being a
+measurement WP is answered by a boundary rather than by a new WP: WP-1.7
+needed a whole WP because it was deriving a safe INTERVAL to set a value
+the template would use, and WP-3.3 needs only to exercise the branch. **If
+the bibliography row reveals a divergence that needs an interval derived,
+that is `Status: blocked` and a plan revision, not WP-3.3 quietly deriving
+one.**
+
+**What went right, and one piece of it is a first.** With the box clause
+suppressed by the page-count gate, the agent measured directly at the
+comparator's own 0.05 pt tolerance over the shared domain: **150 boxes, 50
+rotations, zero mismatches, worst delta 0.000000 pt**, column rail and
+folio name x identical on both legs and both parities, every distinct left
+edge resolving to a derived constant. And its census **independently
+reproduces WP-1.7's 154 lines at the 311 pt measure and its single
+312.1614 pt block**. That is an accepted WP confirmed from a different
+direction by a different agent, **the first time that has happened in this
+execution**, and it is worth more than any single verification because
+nothing was inherited: the numbers were re-derived from the artifact by
+someone who did not produce them.
+
+**Two implementation facts for whoever touches the World**: Typst's
+`include` does NOT inherit the importer's scope, so the emitted tree cannot
+compile as-is and the World prepends one import per file, leaving the
+`Tree` and WP-2.1's projection untouched; and `#import` cannot carry `set`
+rules, so main is a three-line `root.typ` applying the template as a show
+rule.
 
 ## Revision 55 changelog
 
@@ -3038,14 +3153,23 @@ before/after comparisons (WP-4.3); out of scope here.
   the same trap then bit that agent's landing `git reset`. Build an
   argument ARRAY, or quote deliberately. Found by a rule-12 replay, the
   fourth find that rereading could not have produced.
-- **An oracle-mode verdict sha is replayable only against a FIXED RENDER
-  DIRECTORY.** Two WeasyPrint renders of identical staged inputs differ in
-  BYTES while comparing equal at every level (Tier E display list, Tier S,
-  Tier V at delta 0). So naming the base is necessary and NOT sufficient
-  for that mode's digest, which qualifies the `inputs`-block habit without
-  retiring it: the habit still places a figure in the checkable bucket, it
-  simply cannot promise digest reproducibility here. Stated so the first
-  failed reproduction is not mistaken for corruption.
+- **THE ORACLE LEG IS NOT BYTE-REPRODUCIBLE AND THE TYPST LEG IS.** Two
+  WeasyPrint renders of identical staged inputs differ in BYTES while
+  comparing equal at every level (Tier E display list, Tier S, Tier V at
+  delta 0); measured further by WP-2.2a, THREE WeasyPrint renders in ONE
+  worktree gave three different hashes, with the path-difference cause
+  removed and measured out per rule 11, while the typst leg gave ONE hash
+  across six renders in two worktrees. So **`a_reader_sha256` cannot be
+  matched by a replay at all**, and of the provenance triple only
+  `b_reader_sha256` and `staged_input_digest` reproduce. This is a property
+  of the two engines rather than a caveat on the `inputs`-block habit: the
+  habit still places a figure in the checkable bucket, it simply cannot
+  promise digest reproducibility for the oracle leg, and naming the base is
+  necessary but not sufficient there. Stated so the first failed
+  reproduction is not mistaken for corruption. It also strengthens Phase
+  1's byte-reproducibility finding for Typst export BY CONTRAST, which is
+  better evidence than the original assertion. A normalized oracle hash in
+  the verdict would close it; WP-0.2l owns the comparator now.
 - **Environment trap, found by a rule-12 replay rather than by the
   authoring run**: `TYPST_ROOT` is the typst CLI's PROJECT ROOT, not an
   install prefix. WP-1.8's first replay failed outright with
@@ -3814,6 +3938,18 @@ before/after comparisons (WP-4.3); out of scope here.
    Every parity figure therefore carries the commit it was measured at,
    exactly as rule 9 makes a number carry its configuration: for a moving
    render tree, the BASE is the configuration.
+   **AND RE-DERIVING FAITHFULLY DOES NOT HELP IF THE TWO NUMBERS WERE
+   NEVER MEASURING THE SAME POPULATION**, which is the failure mode this
+   clause does NOT catch. "17 versus 18 test suites" was a NAMING
+   COLLISION, not an error: `mag/tests/` holds 17 `.rs` files and
+   `cargo test` runs 18 binaries, the eighteenth being the `mag` binary
+   target's in-crate `#[cfg(test)]` modules. Both counts were right. It was
+   reported twice as an error, once by the coordinator against itself,
+   before anyone asked what each number COUNTED, and a faithful re-derivation
+   would have confirmed each and settled nothing. Four instances of the
+   glyph dispute reduce to the same thing. The remedy is one line of
+   discipline: **name the DOMAIN, not just the base.** A count travels with
+   what it counted over, or it will be compared against something else's.
    **This clause binds BRIEFS and COORDINATION MESSAGES, not only evidence
    files.** A brief is where a number ENTERS a WP's reasoning, so it is a
    citation like any other, and the coordinator's own brief for WP-2.1's
@@ -4927,6 +5063,11 @@ WP-2.2a unless a later measurement overrides them:
   `(n-1) x letter_spacing`.
 - `par(linebreaks: "simple")`, and hyphenation off for `en` to match
   WP-1.5's scoped switch.
+- THREE body measures on 010, and a FOURTH the CSS implies that 010 never
+  reaches: 312.0256 pt on the reference-list branch, derived rather than
+  measured, bounded by WP-3.3's bibliography row. WP-2.2b transcribes
+  against the three below and records the fourth as unexercised rather than
+  omitting it.
 - THREE body measures, not one: 325 pt, 311 pt (24 blocks), 312.1614 pt
   (one block). A template assuming a single measure diverges on 25
   paragraphs. The 325 pt figure is confirmed exact (WeasyPrint's content
@@ -4937,19 +5078,51 @@ WP-2.2a unless a later measurement overrides them:
 - Per-run SIZE as well as per-run family: the inline-code paragraphs set
   8.2 pt against 10 pt body.
 
+**TARGETS RE-ASSIGNED IN REVISION 56, because two of the three slices
+could not pass by construction.** The comparator evaluates NOTHING past
+`page_count` unless the counts match, and page count depends on figures,
+which only WP-2.2c places. So no slice before 2.2c can hold a target that
+requires the comparator to proceed, and the first two slices are scored on
+DIRECT MEASUREMENT over the shared domain instead. That is not a weakened
+bar: WP-2.2a met its box target at the comparator's own 0.05 pt tolerance
+with the clause suppressed, 150 boxes and 50 rotations at worst delta
+0.000000 pt, which is the same check the clause would have run.
+
 **WP-2.2a geometry and body**: A5 geometry, margins, body/quote/code
 styles, folios, placeholder outer pages. Target: `mag render 010 --engine
-typst` emits an interior.pdf; `mag parity 010` produces a verdict with
-every tier evaluated and nonzero exit on failure (digest in evidence);
-page boxes pass Tier S.
+typst` emits an interior.pdf; `mag parity 010` produces a verdict and exits
+nonzero on failure (digest in evidence); **page boxes measured directly at
+`parity.yaml`'s own box tolerance over the shared domain**, reporting the
+cardinality compared per rule 10a. DONE, landed `03db604`.
 
 **WP-2.2b architecture**: article openers, headings, TOC, page caps.
-Target: Tier S page count on 010; verdict digest recorded as the running
-baseline.
+Target: **opener, heading and TOC geometry measured directly over the
+shared domain**, same standard and same tolerance as 2.2a; verdict digest
+recorded as the running baseline. **Not page count**, which moved to 2.2c.
 
 **WP-2.2c placement**: figures, extracts, plates, tail ornaments, anchors.
 Target: every 010 figure/extract present on some page (same-page equality
-is WP-3.4); verdict digest recorded.
+is WP-3.4); **Tier S page count on 010, and a verdict with every tier
+EVALUATED** (both moved here from 2.2a and 2.2b, which cannot reach them);
+verdict digest recorded.
+**Also owns ORPHAN AND WIDOW CONTROL**, which nothing owned until revision
+56 and which can move page count by itself. `weasyprint-a5.css:549` sets
+`p { orphans: 2; widows: 2 }` as a deliberate editorial choice (comment at
+`:527`); Typst 0.15.1 has no mechanism for it. Two steps, in order:
+  - measure whether any Typst construction reproduces the constraint;
+  - if none does, apply the SANCTIONED oracle change `orphans: 1;
+    widows: 1` in both engines for parity, restored post-flip under WP-4.3
+    exactly as WP-1.5's hyphenation switch is. This is a real visual change
+    to the magazine, not a no-op, which is why it is sanctioned with a
+    named restoration owner rather than edited quietly.
+  **And it must run BEFORE the figure attribution is believed.** Three of
+  the four missing pages correlate with the three figures, over three
+  items, and orphan/widow divergence can produce the same pattern, so per
+  rule 11 the figure explanation is a hypothesis until this is controlled
+  for. Disable orphans/widows in the oracle, re-measure: if the gap holds
+  at four pages across the same three articles, figures are confirmed.
+  **The fourth missing page is unexplained under either account** and is
+  named here so a three-of-four explanation is not accepted whole.
 
 ### WP-2.3 layout result and measure operations
 
@@ -5021,6 +5194,22 @@ verifier's), and the named page set at the named standard.
   input-level byte-exactness green; (text-run, fill color) sequences
   identical inside code boxes; G2 boxes. `page_sets.code` stays as the
   rule for future editions that do carry them.
+  **Plus a BIBLIOGRAPHY row, folded in by revision 56 rather than given its
+  own spike.** A FOURTH body measure exists that no spike has bounded:
+  312.0256 pt, which is `325 - 12.9744` from `ul[data-reference-list] li`'s
+  `padding-left`/`text-indent` pair (`weasyprint-a5.css:843-848`). It is
+  DERIVED from the CSS, not measured on a render, because 010 emits
+  `references: false` on all 8 lists and so exercises it in neither engine.
+  **It is content-reachable, not config-gated**: `references` comes from
+  `_is_reference_heading` (`html_edition.py:792`), a casefolded heading-text
+  test, so any manuscript with a "References" heading trips it, which is
+  one manuscript away rather than one config change away.
+  It lands here because settling it needs a corpus carrying a bibliography
+  and this WP already builds one. **Boundary, since this is a parity WP and
+  not a measurement WP**: exercising the branch is in scope; if it reveals a
+  divergence needing a safe interval DERIVED the way WP-1.7 derived three,
+  that is `Status: blocked` and a plan revision, never this WP quietly
+  deriving one.
 - **WP-3.4 figures, plates, ornaments** (`page_sets.placement`): Tier S
   same-page; G2 boxes; effective_ppi equal within 0.5.
 - **WP-3.5 furniture and navigation** (`page_sets.furniture`): G2
