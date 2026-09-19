@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 60 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 61 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,87 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 61 changelog
+
+**WP-5.3b-ii is ACCEPTED (`6d18c77`), and the `mod`-line question is
+retired after being reasoned out three times identically.**
+
+**THE NECESSITY ARGUMENT THREE WPs HAVE GIVEN IS FALSE, and refuting it
+produced a better rule than accepting it would have.** The argument was "a
+module no `mod` declares is not compiled, so the WP cannot land without the
+line". The verifier tested it instead of accepting it: with
+`+pub mod inspect;` removed, `build`, `clippy -D warnings` and all 9 tests
+stay **GREEN**, because the `#[path]` includes in `mag/tests/` route around
+the crate's module tree entirely, leaving the module as dead code.
+So the line is load-bearing **not for compilation but for VERIFIABILITY**:
+without it, the module is not the thing the gate checks. That argues FOR
+the rule more strongly than the false version did, and it is now written
+down (rule 1) so a fourth instance does not re-derive it.
+
+**AND `#[path]` HAS NOW MADE SOMETHING LOOK VERIFIED TWICE, which is worth
+generalising.** Rule 12's first instance was WP-0.2h demonstrating a shared
+seam through a `#[path]` test include, which bypassed module privacy and so
+passed while the seam stayed unusable. This is the same mechanism from the
+other side: `#[path]` bypasses the module DECLARATION, so a module nothing
+declares still compiles and tests clean. The general form: **a `#[path]`
+include proves something about the FILE, not about the MODULE.** Anything
+that depends on the crate's module tree, privacy, declaration, reachability
+from `lib.rs`, is exactly what such a test cannot see.
+
+**A NOT-TIGHTLY-STRADDLED CONSTANT, unlabelled, and the surrounding shape
+is the hazard.** `SPARSE_INK_RATIO` is not tightly straddled: 0.004 moved
+to 0.003 AND to 0.006 both leave all 9 tests green, so the fixtures show
+NOT-INERT only. The value is exactly Python's, and its siblings
+`WHITE_THRESHOLD` and `PAPER_WHITE` **are** tight at plus or minus one gray
+level. **One loose constant among tight siblings is the shape that reads as
+verified**, because the siblings lend it their credibility and nobody
+re-checks the one in the middle of a tight row. Third WP where a multi-step
+perturbation stood in for tightness, after the wordmark and title floors.
+
+**A METHOD WORTH NAMING: prove the PARAMETER IS HONOURED, not that the
+OUTPUTS AGREE.** For shard invariance the verifier put a COUNTING SHIM on
+`pdftoppm` and proved 27 invocations across five distinct patterns, every
+window set matching Python's `cuts` arithmetic recomputed by hand. The
+distinction is rule 10's family and it is sharp: **identical outputs across
+a varied parameter are equally consistent with invariance and with the
+parameter being IGNORED**, and only an observation of the parameter's
+effect separates them. Then it widened the sweep to every count from 1 to
+13, **including counts 2 and 4, which a 2- or 4-core host would pick and
+which the committed set omits.** That is revision 60's agreeing-region rule
+applied PROSPECTIVELY rather than learned from a failure, one hour after it
+landed: the committed sample could have sat entirely inside an agreeing
+region, so it went and checked the values a real machine would choose.
+
+**The right way to resolve a row that LOOKS coincident: probe the
+separating field.** `whitespace_only_text`'s expected row is byte-identical
+to the empty-input row and rests on one field; the verifier probed
+`py_strip` to a no-op and the case FAILS, so it genuinely discriminates.
+Probing beats reasoning here for the same reason it does everywhere in this
+plan, and rule 10c's sweep otherwise came back clean, with
+`largest_void`/`voids`/`tail_band` coincident everywhere, correctly
+disclosed and owned by WP-5.3b-iii.
+
+**Three smaller findings, none a code defect.** Branch re-derivation by
+`ast`-parsing the Python rather than reading it found 22 branch sites, all
+accounted for, with two lacking their own row while covered both ways.
+Eight branch-table line citations are wrong, three landing on the adjacent
+field, against a `render_critic.py` proven byte-identical at base and
+commit; a corrected table is supplied. And the lopdf-versus-pypdf
+page-count difference is undeclared, though neutralised by shard
+invariance.
+
+**Rule 3a discharged cleanly**: `py_strip`, `is_python_space` and
+`py_islower` are byte-identical at `20adcfb` and the tip despite
+`shared.rs` gaining 98 lines, so nothing was owed re-verification, and the
+two oracles plus both source files carry **exactly one blob hash across the
+whole range**. That is the blob-hash check doing precisely what revision
+31 added it for.
+
+**Check 4 was reported in revision 60's new form** ("index clean at tip
+`6d18c77`", re-read immediately before hand-off) within an hour of the rule
+landing. And the 17/18 collision is restated as binaries versus files, both
+right.
 
 ## Revision 60 changelog
 
@@ -3669,6 +3750,32 @@ before/after comparisons (WP-4.3); out of scope here.
    five times: a scoped Owns EXTENSION granted by the orchestrator, which
    keeps the audit trail and does not queue behind the owner's schedule.
    Reach for that rather than self-granting or waiting.
+   **THE `mod` LINE BELONGS TO WHOEVER CREATES THE MODULE. Declare it and
+   land it; do not ask.** Raised identically three times, so it is settled
+   here rather than reasoned out a fourth. A WP adding
+   `mag/src/<dir>/<new>.rs` under a directory it does not own also adds the
+   one-line `pub mod <new>;` to the parent, records it as a scoped
+   extension in evidence, and proceeds. This APPROXIMATES rather than meets
+   the ask-first rule above, and stands on the same footing as rule 1's
+   `GLYPH_QUANTUM` precedent: a one-line addition that adds a name and
+   changes no existing behaviour.
+   **The justification usually given for it is FALSE, and the true one is
+   better.** Three WPs argued "a module no `mod` declares is not compiled,
+   so the WP cannot land without it". Tested by removal: with
+   `pub mod inspect;` deleted, `build`, `clippy -D warnings` and all 9
+   tests stay GREEN, because the `#[path]` includes in `mag/tests/` route
+   around the crate's module tree and leave the module as dead code. The
+   line is load-bearing **for VERIFIABILITY, not for compilation**: without
+   it the module is not the thing the gate checks, and a green suite proves
+   only that a FILE compiles somewhere. That is a stronger reason to keep
+   the rule than the one it replaces.
+   **And note the second instance of a wider trap: a `#[path]` include
+   proves something about the FILE, not about the MODULE.** Rule 12's first
+   instance was WP-0.2h demonstrating a shared seam through a `#[path]`
+   test include, bypassing module privacy so the demonstration passed while
+   the seam stayed unusable; this bypasses the module DECLARATION. Anything
+   depending on the crate's module tree, privacy, declaration, reachability
+   from the crate root, is exactly what a `#[path]` test cannot see.
    **A PORT BLOCKED BY A PRIVATE SIBLING HELPER IS NOW THE PLAN'S MOST
    REPEATED WALL, hit three times, so treat it as expected rather than as
    an incident.** WP-0.2h's tracer seam (blocker 1), WP-5.4a's
@@ -4354,6 +4461,32 @@ before/after comparisons (WP-4.3); out of scope here.
    third instance of revision 56's class: **an obligation attached to a
    clause cannot be discharged before the clause can evaluate**, so it
    travels with the clause and is never scheduled against a phase.
+10f. **PROVE THE PARAMETER IS HONOURED, NOT THAT THE OUTPUTS AGREE.**
+   Identical outputs across a varied parameter are equally consistent with
+   INVARIANCE and with the parameter being IGNORED, and only an observation
+   of its effect separates the two. WP-5.3b-ii's verifier proved shard
+   invariance by putting a COUNTING SHIM on `pdftoppm`: 27 invocations
+   across five distinct patterns, every window set matching Python's `cuts`
+   arithmetic recomputed by hand. Any claim of the form "X does not affect
+   Y" carries this obligation, because the vacuous reading is always
+   available and always passes.
+   It then applied rule 10d PROSPECTIVELY, widening the sweep to every
+   count from 1 to 13 **including 2 and 4, which a 2- or 4-core host would
+   pick and which the committed set omits**. The committed sample could
+   have sat entirely inside an agreeing region; it checked the values a
+   real machine would actually choose rather than the ones convenient to
+   enumerate.
+10g. **ONE LOOSE CONSTANT AMONG TIGHT SIBLINGS is the shape that reads as
+   verified**, and it is now the third instance. `SPARSE_INK_RATIO` is NOT
+   tightly straddled, 0.004 moving to 0.003 AND to 0.006 with all 9 tests
+   green, so its fixtures show not-inert only; its siblings
+   `WHITE_THRESHOLD` and `PAPER_WHITE` ARE tight at plus or minus one gray
+   level. The siblings lend it their credibility, and a reader scanning a
+   tight row does not stop at the one in the middle. So **a constant's
+   tightness is stated per constant, never per group**, and a group claim
+   is read as the weakest member's. After the wordmark and title floors,
+   this is the third WP where a multi-step perturbation stood in for
+   tightness.
 10d. **CHECK THE DISAGREEING CASES, NOT A SAMPLE**, and the corollary:
    **agreement on a sample is evidence only if you know the sample CAN
    disagree.** WP-2.2a verified the folio against the oracle on pages 4 and
@@ -4407,6 +4540,13 @@ before/after comparisons (WP-4.3); out of scope here.
    with its limitation written into its `why` and added `label: "Dispatch"`
    expecting `Dispatch`, asserting in the test that the value differs from
    the fallback, so the new case cannot decay into the old one.
+   **When a row LOOKS coincident, PROBE THE SEPARATING FIELD rather than
+   reason about it.** WP-5.3b-ii's `whitespace_only_text` row is
+   byte-identical to its empty-input row and rests on a single field; its
+   verifier probed `py_strip` to a no-op and the case FAILED, which settles
+   in one command what an argument about the two rows could not. A row that
+   survives that probe genuinely discriminates; one that does not is a
+   10c case wearing a second row as cover.
    **THE STRADDLE RULE HAS THE SAME BLIND SPOT**, so it is amended here
    rather than found wanting later: a pair can straddle a boundary
    correctly and still be satisfied by a wrong branch when BOTH branches
