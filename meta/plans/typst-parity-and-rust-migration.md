@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 56 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 57 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,87 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 57 changelog
+
+**WP-5.1g landed (`3b9cbcb`), one `filter` before the `map`, and found a
+NEW DISCRIMINATION-FAILURE CLASS in a fixture it inherited from an ACCEPTED
+WP.**
+
+**An expected value that EQUALS THE FALLBACK proves only that one of the
+two branches ran.** WP-5.1f's padded case expected `ARTICLE`, and
+`ui("en", "article")` IS `"ARTICLE"` (`shared.rs:285`, verified), so the
+test passed whether the code stripped the padding and returned the declared
+label or threw the label away and fell back. It could not tell the branches
+apart, and it was the ONLY padded case, so the entire padded-input claim
+rested on a test that discriminated nothing.
+This belongs with the short-circuit findings as the same family, **the test
+looks like it discriminates and does not**, but the mechanism is distinct
+and worse: there is no truncation to notice and no aborting layer to blame.
+**The expected value is simply a value the WRONG branch also produces**, so
+every part of the test is correct and the test is still empty.
+The fix is the shape to copy: keep the case with its limitation written
+into its `why`, and add one whose expected value DIFFERS from the fallback,
+with the test asserting that difference so the new case cannot degrade into
+the old one.
+
+**AND THE STRADDLE RULE HAS THE SAME BLIND SPOT, which is the coordinator's
+own observation about a rule I landed.** A pair can straddle a boundary
+correctly and still be satisfied by a wrong branch, if both branches yield
+the boundary value. So the straddle rule is amended rather than left to be
+found wanting later: **a straddle pair asserts that its two expected values
+DIFFER FROM EACH OTHER, and that neither coincides with what the refusal or
+fallback path produces.** A straddle whose two sides could both be produced
+by the same wrong branch is decoration.
+
+**A HOLE IN MY OWN RULE 6a, found by the WP implementing it.** I wrote that
+a class-B regression test pins the CORRECT STRING rather than "equals
+Python", so it still says something after WP-6.1. WP-5.1g's correction:
+**pinning the correct value means nothing if the values are GENERATED from
+the oracle**, because the file would silently follow Python if Python
+changed, making Python the definition again through the back door. So the
+rule gains its missing half: **the fixture is HAND-AUTHORED, not
+generated**, every case carries a `why` in PRODUCT terms, and a load-time
+assertion refuses any case with an empty `why`. Python's agreement is then
+measured SEPARATELY as corroboration (13 cases, 0 disagreements) in the one
+Commands block that retires at WP-6.1. Corroboration and definition are
+different jobs and the file should only do one of them.
+
+**Rule 6b gains a TAXONOMY-AWARE form.** The class-C case is committed with
+`status: "agreed_but_suspect"` rather than `"correct"`, its `why` recording
+that it is pinned as behaviour both engines have and NOT as a correct
+value, and its tripwire reads "not endorsed; if this changed, the
+plan-level decision was taken and this case needs rewriting". **The same
+test forces every case to declare one of the two statuses, so a future case
+cannot be added without choosing**, which is the part that makes it hold.
+A string rather than a boolean because the two flags mean different things:
+WP-5.1f's was class B awaiting an OWNER, this is class C awaiting a PLAN
+DECISION. And the pattern retired itself correctly on its first outing,
+the flag cleared, the test deleted, replaced by a straddle that is
+unusually sharp because the bug made a null IMPERSONATE ONE SPECIFIC LEGAL
+VALUE: `label:` and `label: None` rendered identically before the guard and
+now differ, each pinned to its own value with its own reason.
+
+**A total is a MEASUREMENT WITH A TIMESTAMP, and the timestamp is the
+COMMIT.** WP-5.1g's test total moved 190 to 192 to 202 to 207 as WP-0.2k
+and WP-2.2a landed underneath it; it recorded all three rather than the
+last. This is revision 49's named-commit rule arriving from a direction
+with nothing to do with parity figures, which is the best evidence yet that
+the rule is about **any figure measured against a moving tree** rather than
+about the comparator. Generalised in place.
+
+**Two protocol confirmations.** Its first CAS was REFUSED, `art_directed`
+having moved between capture and swap, which is the second field
+confirmation in two days. Note what it did next: it rebased onto the new
+tip and **RE-RAN THE FULL GATE rather than re-reading and retrying**,
+because WP-2.2a touches `typeset`, the only consumer of `content_label`, so
+the re-run mattered rather than being ceremony. Worth recording beside the
+CAS rule: **a rebase can change what you must RE-VERIFY, not only where
+your commit sits.** And check 4 fired for the eleventh time, this time with
+an unstaged modification to this plan file present that was not its own; it
+confirmed nothing of it was staged, reset only its four paths, and left it
+alone. That was revision 56 mid-edit, and the explicit-pathspec discipline
+is what kept it.
 
 ## Revision 56 changelog
 
@@ -3505,6 +3586,13 @@ before/after comparisons (WP-4.3); out of scope here.
    onto `$B`, then `git update-ref refs/heads/art_directed <new> $B`. If it
    is refused, the branch moved under you and the answer is to rebase again
    onto the new tip, never to re-read and retry.
+   **And a rebase can change what you must RE-VERIFY, not only where your
+   commit sits.** WP-5.1g's first CAS was refused; it rebased and then
+   RE-RAN THE FULL GATE rather than resubmitting, because the commit that
+   had landed under it touched `typeset`, the only consumer of the function
+   it was fixing. Ask what arrived in the new base before deciding the
+   re-run is ceremony; usually it is, and the one time it is not is the
+   whole reason to ask.
    Landing check 2 catches this within seconds
    (`git merge-base --is-ancestor <pre-land tip> art_directed` returns
    false), which is why that check stays even though it looks redundant
@@ -3657,6 +3745,16 @@ before/after comparisons (WP-4.3); out of scope here.
      directly, never "equals Python", because after WP-6.1 a
      matches-Python assertion documents nothing and no reader can recover
      why the value was right.
+     **And pinning is EMPTY if the values are GENERATED from the oracle**,
+     which is the half this rule was missing until WP-5.1g implemented it:
+     a generated fixture silently follows Python if Python changes, making
+     Python the definition again through the back door, and the file looks
+     hand-pinned either way. So the fixture is **HAND-AUTHORED**, every
+     case carries a `why` in PRODUCT terms, and a load-time assertion
+     refuses any case with an empty `why`. Python's agreement is then
+     measured SEPARATELY as corroboration, in the one Commands block that
+     retires at WP-6.1. Corroboration and definition are different jobs;
+     one artifact doing both ends up doing only the first.
    - **C, both engines wrong.** Parity is blind by construction: the legs
      agree, every tier passes, the output is wrong. Not hypothetical.
      `content_label` has one beside its class-B defect: `label: false`
@@ -3687,6 +3785,19 @@ before/after comparisons (WP-4.3); out of scope here.
    problem this plan keeps paying for. The tripwire also makes the
    divergence self-retiring, since the only way to make the test stop
    failing is to do the thing the message asks.
+   **TAXONOMY-AWARE form, from WP-5.1g and binding from here**: the flag is
+   a STRING, not a boolean, because the two cases mean different things. A
+   class-B divergence is flagged awaiting an OWNER; a class-C one, where
+   both engines agree and both are wrong, is flagged `agreed_but_suspect`
+   awaiting a PLAN DECISION, its `why` recording that it is pinned as
+   behaviour both engines have and NOT as a correct value, and its tripwire
+   reading "not endorsed; if this changed, the plan-level decision was
+   taken and this case needs rewriting". **The test forces every case to
+   declare one of the two statuses**, which is what makes it hold: a future
+   case cannot be added without choosing, so the taxonomy cannot quietly
+   drift back into "expected value" for everything.
+   The pattern retired itself correctly on its first outing, the flag
+   cleared, the test deleted, and replaced by a straddle.
    **A defect's LATENCY is a statement about the corpus, never a
    guarantee.** `content_label`'s is latent only because 010's 548 `label:`
    keys over 20 distinct values happen to include no bare one, which is the
@@ -3846,6 +3957,33 @@ before/after comparisons (WP-4.3); out of scope here.
    `pass`, which changes no pass/fail semantics, since empty against empty
    is still equal, and makes the vacuity visible to a reader instead of
    only to whoever goes looking.
+10c. **AN EXPECTED VALUE THAT EQUALS THE FALLBACK proves only that ONE OF
+   THE TWO BRANCHES RAN.** WP-5.1f's padded case expected `ARTICLE`, and
+   `ui("en", "article")` IS `"ARTICLE"` (`mag/src/model/shared.rs:285`), so
+   it passed whether the code stripped the padding and returned the
+   declared label or discarded the label and fell back. It was the ONLY
+   padded case, so the whole padded-input claim rested on a test that told
+   the branches apart not at all. Found by the NEXT WP, in a fixture
+   inherited from an ACCEPTED one.
+   Same family as the short-circuit findings, **the test looks like it
+   discriminates and does not**, but the mechanism is distinct and more
+   insidious: there is no truncation to notice and no aborting layer to
+   blame, because every part of the test is correct. **The expected value
+   is simply one the WRONG branch also produces.**
+   The check is cheap and mechanical: **for any case whose expected value
+   could also be produced by a fallback, a refusal, a default or an empty
+   result, either choose an expected value that CANNOT be, or add a case
+   that cannot be and assert the two differ.** WP-5.1g kept the original
+   with its limitation written into its `why` and added `label: "Dispatch"`
+   expecting `Dispatch`, asserting in the test that the value differs from
+   the fallback, so the new case cannot decay into the old one.
+   **THE STRADDLE RULE HAS THE SAME BLIND SPOT**, so it is amended here
+   rather than found wanting later: a pair can straddle a boundary
+   correctly and still be satisfied by a wrong branch when BOTH branches
+   yield the boundary value. **A straddle pair asserts that its two
+   expected values differ FROM EACH OTHER, and that neither coincides with
+   what the refusal or fallback path produces.** A straddle whose two sides
+   could both come from one wrong branch is decoration.
 10b. **A BASELINE SEEDED FROM A SELF-COMPARISON records the instrument's
    agreement with ITSELF, not the property being measured.** WP-0.2k's
    first implementation proposed `tier: E` for all 54 pages, which is what
@@ -3938,6 +4076,14 @@ before/after comparisons (WP-4.3); out of scope here.
    Every parity figure therefore carries the commit it was measured at,
    exactly as rule 9 makes a number carry its configuration: for a moving
    render tree, the BASE is the configuration.
+   **AND THIS IS NOT A PARITY RULE. A TOTAL IS A MEASUREMENT WITH A
+   TIMESTAMP, AND THE TIMESTAMP IS THE COMMIT.** WP-5.1g's test total moved
+   190 to 192 to 202 to 207 as WP-0.2k and WP-2.2a landed underneath it,
+   and it recorded all three rather than the last. Nothing about that
+   involves the comparator, which is the evidence that the rule is about
+   ANY figure measured against a moving tree. Under concurrency, a count of
+   anything shared is stale by the time it is written down, so it travels
+   with the commit or it will be read as disagreeing with a later one.
    **AND RE-DERIVING FAITHFULLY DOES NOT HELP IF THE TWO NUMBERS WERE
    NEVER MEASURING THE SAME POPULATION**, which is the failure mode this
    clause does NOT catch. "17 versus 18 test suites" was a NAMING
