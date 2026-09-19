@@ -1,10 +1,235 @@
 {
-  "schema_note": "per interior page of edition 010 (en) reader.pdf: the best parity tier achieved and the passing Tier S clauses, each entry bound to the staged-input digest it was computed from; mag parity refuses ratchet comparison when the current digest differs; raises are written only by verifiers (protocol rule 3)",
+  "schema_note": "per interior page of edition 010 (en) reader.pdf: the best parity tier the ENGINE PAIR has achieved and the Tier S clauses passing on that page, bound to the staged-input digest they were measured from. mag parity refuses to run at all when the current staged-input digest differs from this one, and refuses to run when the working tree lowers any entry committed at HEAD; raises are written only by verifiers (protocol rule 3) from the baseline-proposed.json a run writes beside its verdict. The tier ladder is CUMULATIVE: a page holds a tier only when every lower rung also holds. Seeded by WP-0.2k at `seeded_at_commit`, which every later ratchet comparison inherits as its base, at tier none for all 54 interior pages, because no typst leg exists yet and a WeasyPrint-versus-itself run measures nothing about the pair; mag parity therefore proposes no entries from a self-comparison.",
   "page_entry_shape": {
     "tier": "none | G1 | G2 | V1 | V2 | E",
-    "s_clauses_passing": ["page_count", "boxes", "text", "code_blocks", "color", "navigation", "critic"],
-    "staged_input_digest": "sha256"
+    "s_clauses_passing": [
+      "page_count",
+      "boxes",
+      "text",
+      "code_blocks",
+      "color",
+      "navigation",
+      "critic"
+    ]
   },
-  "staged_input_digest": null,
-  "pages": {}
+  "seeded_at_commit": "20adcfb81cc866cd26870c5cac0623868c75c324",
+  "staged_input_digest": "e48eb5c638a0f25bfdfbb5e26bc989d56c1ecbac3ef85f103e90ed1ac8aac5fa",
+  "pages": {
+    "2": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "3": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "4": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "5": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "6": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "7": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "8": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "9": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "10": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "11": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "12": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "13": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "14": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "15": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "16": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "17": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "18": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "19": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "20": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "21": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "22": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "23": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "24": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "25": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "26": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "27": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "28": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "29": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "30": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "31": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "32": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "33": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "34": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "35": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "36": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "37": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "38": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "39": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "40": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "41": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "42": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "43": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "44": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "45": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "46": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "47": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "48": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "49": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "50": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "51": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "52": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "53": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "54": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
+    "55": {
+      "tier": "none",
+      "s_clauses_passing": []
+    }
+  }
 }
