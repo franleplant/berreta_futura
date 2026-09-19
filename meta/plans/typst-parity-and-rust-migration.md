@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 58 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 59 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,88 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 59 changelog
+
+**WP-0.2k is ACCEPTED (`096e163`) and Phase 3's precondition is met.** The
+verification is the most thorough of this execution and it produced one
+decision the plan has to take.
+
+**DECISION: Residual 3's recommendation is GATED, because the
+recommendation and the hazard are the same change seen from two sides.**
+Revision 55 recorded that the self-comparison refusal rests on
+`--pre-rendered` carrying no digest, since `self_comparison` is a HASH test
+rather than a mode test. The verifier then measured it: its real
+`--pre-rendered OLD NEW` verdict over two genuine WeasyPrint renders reads
+`self_comparison: false` and **would score all 54 pages at E**, and it
+constructed a bypass that made `--oracle-only` write a
+`baseline-proposed.json` holding 54 pages at tier E with five clauses and
+`ratchet: pass`. It correctly declined to reject over the construction,
+which requires mutating the comparator's own input mid-run and so defeats
+every guarantee equally.
+But **Residual 3 recommends giving `--pre-rendered` a digest, which opens
+that route for real.** So the ordering is now binding and recorded AT the
+residual rather than only near the guard: **the MODE TEST is a
+PREREQUISITE, not a companion.** A future agent reading Residual 3 in
+isolation would otherwise implement precisely the change that breaks rule
+10b. The principle underneath, worth stating once: **a guard must name what
+it MEANS, not a proxy for it, before the proxy's failure case is made
+reachable.** Hash equality is a proxy for self-comparison that happens to
+be exact only while one directory is shared.
+
+**Residual 1 is CONFIRMED AND WORSE THAN STATED, which settles WP-0.2l's
+priority.** A stylesheet edit moved the **page count from 56 to 60** while
+the digest still read `fresh`. That is not a subtle staleness gap: it is
+THE GATING CLAUSE moving by four pages with the guard asserting the corpus
+is unchanged. Since page count gates every other clause, and since this
+guard is what revision 40 put in place of the withdrawn human gate,
+**WP-0.2l moves AHEAD of the remaining Phase 2 slices in priority**, and
+its scope widens from the stylesheet to **the fonts as well**.
+
+**A THIRD instance of revision 56's class, and the fix this time is
+structural rather than a reassignment.** Target 4's cardinality sweep was
+unmeetable as scoped: the enumerated clauses are `not_evaluated` or do not
+exist, and the fields live in files OUTSIDE WP-0.2k's Owns. Reassigning it
+to another WP would reproduce the defect, because the real obstacle is not
+ownership: **a clause cannot report the cardinality it compared until it
+can EVALUATE**, and code blocks and extracts do not evaluate until WP-3.3's
+fixture edition exists. So the obligation is restated as travelling with
+the clause: **whichever WP first makes a clause evaluate owes that clause
+its cardinality**, and WP-0.2l takes the part that is doable now, which is
+every clause that evaluates today plus making a `not_evaluated` clause
+print its REASON rather than a bare status. The general form: **an
+obligation attached to a clause cannot be discharged before the clause can
+evaluate, so it is scheduled with the clause and not with a phase.**
+
+**What reproduced, recorded because the strength of the checking is itself
+the finding.** The digest reproduced THREE ways, including a
+`shasum`/`sort`/`awk` route using neither Python nor the comparator, and
+the perturbation digest matched character-for-character. Stale corpus exits
+1 with no verdict in all three staged modes while `be5258d` on the same
+perturbation exits 0 and writes one. The concurrency hazard is now a THIRD
+independent measurement (`fail,fail,fail`), which confirms the invariant
+rather than the column, exactly as the non-determinism finding requires.
+The comparator provably cannot write `baseline.json`, checked by write-site
+enumeration AND by an empirical run with
+`MAG_PARITY_OUT_DIR=meta/verification` leaving the file byte-identical. And
+the verifier **closed two of the WP's own unproven items** by building a
+scratch repo whose HEAD carries a raised entry, exercising tier-lowering
+and dropped-clause refusals end to end, which is a verifier adding evidence
+rather than only judging it.
+
+**An environment fact that has already cost a run**: the host hit 100% disk
+mid-replay and a render died with `[Errno 28] No space left on device`.
+**A long-running worktree's `target` is about 4 GB**, there are 43 of them,
+and `cargo clean` on landed worktrees is the reclamation (15 GiB free to 54
+GiB after eleven). Recorded because of how the failure PRESENTS: a render
+dying mid-measurement reads like a defect in the thing being measured, and
+the next agent to hit it will debug the renderer.
+
+**Phase 3 is formally open and practically still gated.** Page counts
+differ (52 against 56) and the comparator evaluates nothing past
+`page_count`, so WP-3.1 waits on WP-2.2c closing that gap. The preamble's
+warning stands: WP-3.1 is the first thing to exercise the ratchet end to
+end.
 
 ## Revision 58 changelog
 
@@ -3328,6 +3410,15 @@ before/after comparisons (WP-4.3); out of scope here.
   success condition. Remedy: `|| true` on any pipeline whose empty result
   is the expected one. The pair is the real guidance, since either note
   alone produces the other's failure.
+- **DISK PRESSURE IS A REAL FAILURE MODE HERE, and it presents as a
+  defect.** The host hit 100% disk mid-replay and a render died with
+  `[Errno 28] No space left on device`. **A long-running worktree's
+  `target` is about 4 GB and there are 43 worktrees**; `cargo clean` on
+  LANDED worktrees is the reclamation, and eleven of them took the machine
+  from 15 GiB free to 54 GiB. Recorded for how it PRESENTS rather than for
+  what it is: a render dying mid-measurement reads like a defect in the
+  thing being measured, so the next agent to hit it will debug the
+  renderer.
 - **zsh does NOT word-split an unquoted `$mode`.** A loop passing
   `--oracle-only --set body` through one variable reached clap as a SINGLE
   argument and exited 2, while the block's caption promised three refusals;
@@ -4087,6 +4178,21 @@ before/after comparisons (WP-4.3); out of scope here.
    `pass`, which changes no pass/fail semantics, since empty against empty
    is still equal, and makes the vacuity visible to a reader instead of
    only to whoever goes looking.
+   **THE SWEEP IS SCHEDULED WITH THE CLAUSE, NOT WITH A PHASE**, because
+   assigning it to a WP failed twice for the same reason. WP-0.2k's target
+   4 was unmeetable as scoped: the enumerated clauses are `not_evaluated`
+   or do not exist, and the fields live outside its Owns, so reassigning it
+   to another WP reproduces the defect. The obstacle is not ownership.
+   **A clause cannot report the cardinality it compared until it can
+   EVALUATE**, and code blocks and extracts do not evaluate until WP-3.3's
+   fixture edition exists. So: **whichever WP first makes a clause evaluate
+   owes that clause its cardinality**, WP-0.2l takes every clause that
+   evaluates today, and a clause that cannot evaluate prints
+   `not_evaluated` WITH ITS REASON, since a bare `not_evaluated` hides the
+   same vacuity a bare `pass` does. The general form, which is this plan's
+   third instance of revision 56's class: **an obligation attached to a
+   clause cannot be discharged before the clause can evaluate**, so it
+   travels with the clause and is never scheduled against a phase.
 10c. **AN EXPECTED VALUE THAT EQUALS THE FALLBACK proves only that ONE OF
    THE TWO BRANCHES RAN.** WP-5.1f's padded case expected `ARTICLE`, and
    `ui("en", "article")` IS `"ARTICLE"` (`mag/src/model/shared.rs:285`), so
@@ -4146,6 +4252,25 @@ before/after comparisons (WP-4.3); out of scope here.
    both legs (`parity.rs:853`). **Anything that gives `--pre-rendered` a
    digest re-opens the trap**, so a mode test beside the hash test is the
    change that would make the guard say what it means.
+   **MEASURED, and WP-0.2k's own Residual 3 RECOMMENDS the dangerous
+   change**, which is why this needs an ordering rather than a note. The
+   verifier enumerated the whole CLI surface and found no flag, env var,
+   config key or crafted cache that gives a two-directory mode a digest, so
+   the refusal holds against every ordinary route; but its real
+   `--pre-rendered OLD NEW` verdict over two genuine WeasyPrint renders
+   reads `self_comparison: false` and **would score all 54 pages at E**,
+   and a constructed bypass made `--oracle-only` write a
+   `baseline-proposed.json` of 54 pages at tier E with five clauses and
+   `ratchet: pass`. The construction mutates the comparator's input mid-run
+   and so defeats every guarantee equally, which is why it is correctly not
+   a rejection.
+   **BINDING ORDER: the mode test is a PREREQUISITE of Residual 3, not a
+   companion to it.** Recorded here AND at the residual, because a future
+   agent reading the recommendation alone would implement precisely the
+   change that breaks rule 10b. The principle: **a guard must name what it
+   MEANS, not a proxy for it, before the proxy's failure case is made
+   reachable.** Hash equality proxies self-comparison exactly, and only for
+   as long as one directory is shared.
 10. **Evidence that cannot discriminate must say so**, and **when a fixture
    is labelled non-discriminating, RUN THE OPPOSITE EXTREME too: if both
    extremes pass, the question is whether the code under test does anything
@@ -4777,6 +4902,13 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
 
 ### WP-0.2l the digest does not cover the RENDERER (comparator WP)
 
+**PRIORITY: ahead of the remaining Phase 2 slices** (revision 59). WP-0.2k's
+verifier confirmed Residual 1 by measurement and it is worse than stated: a
+stylesheet edit moved the **page count from 56 to 60 while the digest still
+read `fresh`.** Page count gates every other clause, so the guard is
+asserting an unchanged corpus at the exact moment the corpus has moved the
+one number everything else depends on.
+
 - Owns: the staging path in `mag/src/render.rs` that computes the
   staged-input digest, and the baseline's digest field. Serial with the
   other `mag/src/parity*` owners (rule 1c).
@@ -4796,10 +4928,19 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   outside the staged set and say what is included and what is deliberately
   not, per rule 10a's spirit; a digest that silently covers a subset is the
   same vacuity in a different costume.
+- **Also takes the doable half of rule 10a's cardinality sweep**, which
+  WP-0.2k could not meet as scoped (see below). Every clause that CAN
+  evaluate today reports the count it compared, and a clause that cannot
+  prints `not_evaluated` WITH ITS REASON rather than a bare status, since a
+  bare `not_evaluated` is the same vacuity rule 10a exists to expose. The
+  clauses that do not evaluate at all yet (code blocks, extracts) are not
+  this WP's, per the travelling-obligation rule below.
 - Verify: editing `weasyprint-a5.css` by one byte makes a bare
-  `mag parity 010` FAIL as stale rather than report fresh; a font
-  substitution does the same; the unaltered tree still passes and the
-  seeded digest is rebased once, by a verifier, from a fresh run.
+  `mag parity 010` FAIL as stale rather than report fresh; **a font
+  substitution does the same** (the fonts are in scope, not only the
+  stylesheet); the page-count-60 perturbation that WP-0.2k's verifier built
+  is refused rather than reported fresh; the unaltered tree still passes
+  and the seeded digest is rebased once, by a verifier, from a fresh run.
 
 ### WP-0.2i per-glyph positions (comparator WP)
 
