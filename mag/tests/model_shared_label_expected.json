@@ -1,0 +1,40 @@
+{
+ "cases": [
+  {
+   "content_mode": "article",
+   "frontmatter": "label: \"\\u001E\"",
+   "known_divergence": "",
+   "name": "a label that is whitespace only under Python",
+   "python": "ARTICLE"
+  },
+  {
+   "content_mode": "article",
+   "frontmatter": "label: \"\\u001EARTICLE\\u001E\"",
+   "known_divergence": "",
+   "name": "a label padded with U+001E",
+   "python": "ARTICLE"
+  },
+  {
+   "content_mode": "article",
+   "frontmatter": "label: Dispatch",
+   "known_divergence": "",
+   "name": "control: an ordinary label",
+   "python": "Dispatch"
+  },
+  {
+   "content_mode": "article",
+   "frontmatter": "label: \"  Dispatch  \"",
+   "known_divergence": "",
+   "name": "control: an ASCII-space-padded label",
+   "python": "Dispatch"
+  },
+  {
+   "content_mode": "article",
+   "frontmatter": "label:",
+   "known_divergence": "the value-is-not-None guard, not whitespace; see WP-5.1f residuals",
+   "name": "a null label, a divergence this WP did not own",
+   "python": "ARTICLE"
+  }
+ ],
+ "language": "en"
+}
