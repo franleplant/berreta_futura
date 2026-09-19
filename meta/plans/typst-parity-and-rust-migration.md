@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 54 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 55 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,107 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 55 changelog
+
+**WP-0.2k HAS LANDED (`b271911`). The sole blocker of Phases 3, 4 and 6 is
+gone.** Verified in the artifact rather than taken on report:
+`baseline.json` carries 54 page entries, every one at `tier: none`, and its
+`schema_note` records why.
+
+**THE NEAR-MISS IS THE IMPORTANT PART, and it earns a rule.** The first
+implementation proposed `tier: E` for all 54 pages, which is what the
+seeding run always yields, because the seeding run is `--oracle-only`,
+WeasyPrint against itself. That would have written **the plan's terminal
+claim into the baseline as an assumption**, before a typst leg exists, and
+every later ratchet comparison would have been measured against a bar
+nobody had earned. The gate would have read green while proving nothing.
+The rule, general: **a baseline seeded from a SELF-COMPARISON records the
+instrument's agreement with itself, not the property being measured.** The
+trap is that a self-comparison produces the BEST POSSIBLE reading of every
+clause, so seeding from one silently sets the bar at the ceiling, where an
+ordinary bad measurement would set it somewhere arguable. Same shape as the
+navigation clause passing on empty-versus-empty, but arriving through a
+RECORDED ARTIFACT rather than a live check, which makes it durable instead
+of transient: the empty clause misleads whoever reads that run, a seeded
+ceiling misleads everyone downstream forever.
+The fix is structural, not procedural, which is the right kind: the
+comparator refuses to measure page entries from a self-comparison at all.
+
+**I attacked the refusal on the route the verifier is being asked to
+construct, and found it closed by something that does not look like the
+guard.** `self_comparison` is computed at `parity.rs:1044` as
+`a_reader_sha256 == b_reader_sha256`, a HASH-EQUALITY test, not a mode
+test. Finding 3 below says two WeasyPrint renders of identical staged
+inputs differ in BYTES while being equal at every compared level, so
+WeasyPrint-vs-WeasyPrint across two render directories would hash
+DIFFERENTLY, set `self_comparison` false, and be measured as Tier E on
+every page: the same trap through another door. That route is closed, but
+not by the hash test. It is closed because the whole measure-and-propose
+block sits inside `if let Some(digest) = legs.digest`, and `--pre-rendered`
+sets `digest: None` (`parity.rs:831`), while `--oracle-only` shares ONE
+directory for both legs (`oracle.clone()`, `parity.rs:853`) so its hashes
+are identical by construction.
+**So the refusal is load-bearing in a place that does not look like the
+guard**, and the plan records the dependency: if anything ever gives
+`--pre-rendered` a digest, the hash-equality test becomes the only
+protection and it fails for exactly the case finding 3 proves exists. A
+mode test beside the hash test would make the guard say what it means.
+
+**DECISION on the two residuals. The renderer hole is a WP, not a
+residual.** The 57 staged inputs are EDITION CONTENT only, so
+`weasyprint-a5.css` and the fonts, read directly by the adapter, are
+outside the digest and **editing the stylesheet leaves it `fresh`**. Three
+reasons this is not theoretical. The staleness guard is what revision 40
+put in place of the withdrawn human content-final gate, so a hole in it is
+a hole in the plan's answer to Fran. WP-1.5 has already changed that
+stylesheet once as a sanctioned oracle change, so the class of event is
+demonstrated rather than imagined. And WP-2.2a is transcribing constants
+out of that exact file right now. A guard with a hole in the file another
+WP is actively citing is a defect, not a note. **WP-0.2l**, owned by the
+staging path in `render.rs`.
+The second residual is a Phase 3 preamble line: **the run-against-baseline
+half has never compared real 010 pages**, since it needs two differing legs
+and the typst leg bails, so every staged run so far is a self-comparison.
+Unit-tested with per-perturbation discrimination; **WP-3.1 is the first
+thing to exercise it end to end**, and should expect to be debugging the
+mechanism as well as the result.
+
+**A qualification to the habit I made standing guidance one revision ago.**
+Two WeasyPrint renders of identical staged inputs differ in bytes while
+being equal at every compared level (Tier E display list, Tier S, Tier V at
+delta 0). So **an ORACLE-MODE verdict sha is replayable only against a
+FIXED RENDER DIRECTORY**: naming the base is necessary and not sufficient,
+because two renders at one commit produce different bytes. The
+`inputs`-block habit still earns its place, it simply cannot promise digest
+reproducibility in that mode, and saying so now is cheaper than the first
+person to fail a reproduction concluding they have found corruption.
+
+**Stale corpus now FAILS** (exit 1, no verdict written) in all three staged
+modes where `be5258d` merely REPORTED (exit 0, verdict written), and
+`page_sets_refused` is reachable and measured, discharging WP-0.2g's
+Residual 1. Note what that discharge actually says: **its code was correct;
+the defect was the run CONTINUING.** Per rule 3b the old behaviour is live
+for anyone on a pre-`b271911` binary.
+
+**The concurrency fix was proven by RUNNING it, and the measurement makes
+the hazard worse than the plan described.** Two concurrent runs of one
+edition whose correct answers differ, on the old binary: one
+`verdict.json`, and in every round exactly one agent would have digested
+the other's verdict. **Which one is not stable** (`fail,pass,fail` in one
+run, `fail,fail,fail` in the replay). So the wrong number is not merely
+plausible, it is **not deterministically wrong**, and two people
+investigating the same corruption would reach different answers and
+reasonably conclude the other had erred. Fixed with `MAG_PARITY_OUT_DIR`
+plus an exclusive `run.lock`, both cases committed as
+`mag/tests/parity_concurrent.rs`.
+
+**Fourth replay catch, and a shell trap for the environment notes**: **zsh
+does not word-split an unquoted `$mode`**, so `--oracle-only --set body`
+reached clap as ONE argument and exited 2 while the caption promised three
+refusals. The same trap then bit the worker's landing `git reset`. Quote
+deliberately or build argument arrays; and note this is the fourth find
+that no amount of rereading would have produced.
 
 ## Revision 54 changelog
 
@@ -2931,6 +3032,20 @@ before/after comparisons (WP-4.3); out of scope here.
   success condition. Remedy: `|| true` on any pipeline whose empty result
   is the expected one. The pair is the real guidance, since either note
   alone produces the other's failure.
+- **zsh does NOT word-split an unquoted `$mode`.** A loop passing
+  `--oracle-only --set body` through one variable reached clap as a SINGLE
+  argument and exited 2, while the block's caption promised three refusals;
+  the same trap then bit that agent's landing `git reset`. Build an
+  argument ARRAY, or quote deliberately. Found by a rule-12 replay, the
+  fourth find that rereading could not have produced.
+- **An oracle-mode verdict sha is replayable only against a FIXED RENDER
+  DIRECTORY.** Two WeasyPrint renders of identical staged inputs differ in
+  BYTES while comparing equal at every level (Tier E display list, Tier S,
+  Tier V at delta 0). So naming the base is necessary and NOT sufficient
+  for that mode's digest, which qualifies the `inputs`-block habit without
+  retiring it: the habit still places a figure in the checkable bucket, it
+  simply cannot promise digest reproducibility here. Stated so the first
+  failed reproduction is not mistaken for corruption.
 - **Environment trap, found by a rule-12 replay rather than by the
   authoring run**: `TYPST_ROOT` is the typst CLI's PROJECT ROOT, not an
   install prefix. WP-1.8's first replay failed outright with
@@ -3607,6 +3722,38 @@ before/after comparisons (WP-4.3); out of scope here.
    `pass`, which changes no pass/fail semantics, since empty against empty
    is still equal, and makes the vacuity visible to a reader instead of
    only to whoever goes looking.
+10b. **A BASELINE SEEDED FROM A SELF-COMPARISON records the instrument's
+   agreement with ITSELF, not the property being measured.** WP-0.2k's
+   first implementation proposed `tier: E` for all 54 pages, which is what
+   the seeding run always yields because the seeding run is
+   `--oracle-only`, WeasyPrint against itself. That would have written this
+   plan's TERMINAL CLAIM into the baseline as an assumption before a typst
+   leg existed, and every later ratchet comparison would have been measured
+   against a bar nobody had earned. **The specific danger is that a
+   self-comparison produces the BEST POSSIBLE reading of every clause**, so
+   seeding from one sets the bar at the ceiling, where an ordinary bad
+   measurement sets it somewhere arguable and visibly wrong.
+   This is rule 10a's family reaching a RECORDED ARTIFACT rather than a
+   live check, and that is what makes it worse: an empty clause misleads
+   whoever reads that one run, a seeded ceiling misleads everyone
+   downstream indefinitely. So **the comparator REFUSES to propose page
+   entries from a self-comparison**, structurally, rather than any agent
+   being asked to remember; the 54 entries are seeded at `none`, and
+   `baseline.json`'s `schema_note` records why so the next reader does not
+   mistake the zeros for an unfinished job.
+   **And the refusal's safety currently rests somewhere that does not look
+   like the guard.** `self_comparison` is `a_reader_sha256 ==
+   b_reader_sha256` (`parity.rs:1044`), a hash test rather than a mode
+   test, and two WeasyPrint renders of identical staged inputs DIFFER IN
+   BYTES while comparing equal at every level. WeasyPrint-vs-WeasyPrint
+   across two directories would therefore read as a non-self-comparison and
+   measure Tier E everywhere. That route is closed only because the
+   measure-and-propose block sits inside `if let Some(digest) =
+   legs.digest` while `--pre-rendered` sets `digest: None`
+   (`parity.rs:831`), and because `--oracle-only` shares one directory for
+   both legs (`parity.rs:853`). **Anything that gives `--pre-rendered` a
+   digest re-opens the trap**, so a mode test beside the hash test is the
+   change that would make the guard say what it means.
 10. **Evidence that cannot discriminate must say so**, and **when a fixture
    is labelled non-discriminating, RUN THE OPPOSITE EXTREME too: if both
    extremes pass, the question is whether the code under test does anything
@@ -4201,6 +4348,46 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   and writes a byte-deterministic verdict; a hand-lowered baseline entry is
   refused; a raise applied by a verifier is accepted. `cargo test`, `fmt`,
   `clippy -D warnings` green.
+- RESULT (done, landed `b271911`, verification dispatched). All four
+  targets met; stale corpus now FAILS (exit 1, no verdict) in all three
+  staged modes where `be5258d` merely reported; `page_sets_refused` is
+  reachable and measured, discharging WP-0.2g's Residual 1 with the note
+  that **its code was correct and the defect was the run CONTINUING**. The
+  concurrency fix was proven by RUNNING it under real concurrency, not by
+  reading: on the old binary, two runs of one edition with differing
+  correct answers left one `verdict.json` and, in every round, exactly one
+  agent would have digested the other's. **Which one is not stable**
+  (`fail,pass,fail` then `fail,fail,fail` on replay), so the corrupted
+  number is not deterministically wrong and two investigators would reach
+  different answers. `MAG_PARITY_OUT_DIR` plus an exclusive `run.lock`;
+  both cases committed as `mag/tests/parity_concurrent.rs`.
+  Its near-miss is rule 10b.
+
+### WP-0.2l the digest does not cover the RENDERER (comparator WP)
+
+- Owns: the staging path in `mag/src/render.rs` that computes the
+  staged-input digest, and the baseline's digest field. Serial with the
+  other `mag/src/parity*` owners (rule 1c).
+- Why: the 57 staged inputs are **edition content only**, so
+  `weasyprint-a5.css` and the fonts, which the adapter reads directly, sit
+  OUTSIDE the digest and **editing the stylesheet leaves the guard
+  reporting `fresh`**. Ruled a WP rather than a residual for three reasons:
+  this guard is what revision 40 put in place of the WITHDRAWN human
+  content-final gate, so a hole in it is a hole in the plan's answer to
+  Fran; WP-1.5 has already changed that stylesheet once as a sanctioned
+  oracle change, so the class of event is demonstrated rather than
+  imagined; and WP-2.2a is transcribing constants out of that exact file as
+  this is written. A guard with a hole in the file another WP is actively
+  citing is a defect.
+- Scope: the digest covers every input the OUTPUT depends on, which is the
+  property it was always meant to have. Enumerate what the adapter reads
+  outside the staged set and say what is included and what is deliberately
+  not, per rule 10a's spirit; a digest that silently covers a subset is the
+  same vacuity in a different costume.
+- Verify: editing `weasyprint-a5.css` by one byte makes a bare
+  `mag parity 010` FAIL as stale rather than report fresh; a font
+  substitution does the same; the unaltered tree still passes and the
+  seeded digest is rebased once, by a verifier, from a fresh run.
 
 ### WP-0.2i per-glyph positions (comparator WP)
 
@@ -4802,7 +4989,17 @@ aspirational. **Phase 3's stated verification, "`mag parity 010` green
 against `baseline.json` (no page regresses)", is therefore not executable
 today for reasons that have nothing to do with Fran.** WP-0.2k makes it
 executable; until then Phase 3 is blocked on code, which someone can write
-now. Strictly serial, this order.
+now. **WP-0.2k HAS LANDED (`b271911`), so this precondition is met and
+Phase 3 is open.** Strictly serial, this order.
+**But the run-against-baseline half has NEVER COMPARED REAL 010 PAGES.** It
+needs two differing legs, the typst leg still bails, and so every staged
+run to date is a self-comparison, which rule 10b makes the comparator
+refuse to measure. The half is unit-tested with per-perturbation
+discrimination, and that is all. **WP-3.1 is the first thing to exercise
+the mechanism end to end**, so it should expect to be debugging the ratchet
+as well as its own body-text result, and should say in evidence which of
+the two any failure belongs to. The baseline's 54 entries are seeded at
+`none` for the same reason; they are not an unfinished job.
 Every Phase 3 WP except WP-3.0g owns `mag/src/typeset/**` plus its evidence
 file and NOTHING else; comparator territory is out of bounds (rule 4). Each
 WP is scored on its named `page_sets:` entry. Verification, identical for
@@ -6157,6 +6354,7 @@ WP-5.1c + WP-2.0b -> WP-2.1 -> WP-2.2a -> WP-2.2b -> WP-2.2c -> WP-2.3
 WP-1.6 (done) -> WP-1.7 (evidence only) -> WP-2.2a (cites its interval)
 WP-1.8 (evidence only, runnable now, blocks nothing)
 WP-0.2k -> WP-3.1   (the ratchet must exist before Phase 3 can be verified)
+WP-0.2k -> WP-0.2l  (the digest exists before its coverage hole is closed)
 WP-2.3 + WP-1.7 -> WP-3.1 -> WP-3.2 -> WP-3.3 -> WP-3.4 -> WP-3.5
 WP-3.5 + WP-0.2i -> WP-3.0g -> WP-3.7          (the ratchet cannot be
                                                 raised to Tier E before the
