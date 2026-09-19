@@ -1,0 +1,52 @@
+{
+  "apostrophe_start": {
+    "attr": "&#x27;tis",
+    "text": "‘tis",
+    "verbatim": "'tis"
+  },
+  "leading_quote": {
+    "attr": "&quot;opening",
+    "text": "“opening",
+    "verbatim": "\"opening"
+  },
+  "markup_characters": {
+    "attr": "a &lt; b &amp; c &gt; d",
+    "text": "a &lt; b &amp; c &gt; d",
+    "verbatim": "a &lt; b &amp; c &gt; d"
+  },
+  "non_breaking_space": {
+    "attr": "a b",
+    "text": "a b",
+    "verbatim": "a b"
+  },
+  "plain": {
+    "attr": "plain text",
+    "text": "plain text",
+    "verbatim": "plain text"
+  },
+  "quotes_and_markup": {
+    "attr": "&lt;em&gt;&quot;it&#x27;s&quot;&lt;/em&gt; &amp; more",
+    "text": "&lt;em&gt;”it’s”&lt;/em&gt; &amp; more",
+    "verbatim": "&lt;em&gt;\"it's\"&lt;/em&gt; &amp; more"
+  },
+  "settable_accent": {
+    "attr": "café crème",
+    "text": "café crème",
+    "verbatim": "café crème"
+  },
+  "straight_double_quotes": {
+    "attr": "he said &quot;no&quot; today",
+    "text": "he said “no” today",
+    "verbatim": "he said \"no\" today"
+  },
+  "straight_single_quotes": {
+    "attr": "it&#x27;s Ada&#x27;s",
+    "text": "it’s Ada’s",
+    "verbatim": "it's Ada's"
+  },
+  "unsettable_codepoint": {
+    "attr": "a ? b",
+    "text": "a ? b",
+    "verbatim": "a ? b"
+  }
+}

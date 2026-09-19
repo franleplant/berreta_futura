@@ -858,6 +858,63 @@ Tier S (page_count 56 vs 56, boxes, text, color, navigation) and tier G
 QR module moves no text and no box, which is why the display list rather
 than S, G or V is the leg that discriminates here.
 
+### Port increment 1: the three text helpers
+
+`mag/src/web/text.rs` ports `html_edition.py`'s `_text`, `_verbatim` and
+`_attr`, the leaves every HTML string in the web tree passes through, plus
+the `html.escape` they share. `fold_reader_characters` and
+`educate_reader_quotes` already existed in `model::doc` and are reused;
+Python computes the settable set internally while Rust takes it as a
+parameter, which is WP-5.1a's dependency injection rather than a divergence.
+
+**The fixtures split on the AUTHORED versus TRANSCRIBED axis, and the file
+says which is which.** `html.escape`'s contract is short and documented, so
+its ten rows were written from the spec, BEFORE running Python, and then
+checked against CPython: 20 of 20 expectations agree. Because they were
+authored, a disagreement would have indicted either the port or my reading
+of the spec, rather than silently inheriting whatever CPython does.
+
+The ten `text`/`verbatim`/`attr` rows are TRANSCRIBED from CPython and the
+provenance block says so, along with what they therefore cannot see: they
+cannot detect a case where Python itself is wrong, because
+`educate_reader_quotes`'s quote-direction algorithm is too intricate to
+author by hand. What they do pin is the composition order and the quote flag
+per helper, which is where a port actually goes wrong.
+
+**Rule 10c is applied and annotated.** Four rows have an expected value
+equal to the input (`double_quote_splits_on_flag` and
+`single_quote_splits_on_flag` unquoted, `empty`, `no_special_characters`).
+Each is marked in the file as proving only that escaping added nothing, and
+each quote row is PAIRED with its quoted form, which differs. The rows
+carrying the evidence are the ones where output differs from input.
+
+**The discriminating row is `ampersand_first`.** Input `&lt;` must become
+`&amp;lt;`, which holds only if `&` is replaced before `<` and `>`. A port
+that replaces `<` first passes every other row in the file. It has its own
+committed test with an `assert_ne!` against the wrong answer, so the guard
+states what would make it fail and commits a case that does.
+
+**Mutation sweep: 7 injected defects, 7 caught, 0 survived.**
+
+| mutation | caught |
+|---|---|
+| escape `<` before `&` | yes |
+| `&apos;` instead of `&#x27;` | yes |
+| quote flag ignored, always quote | yes |
+| quote flag ignored, never quote | yes |
+| `text` drops the quote education | yes |
+| `attr` uses `quote=false` | yes |
+| `>` not escaped | yes |
+
+Two rows earn their place by making the helpers non-interchangeable:
+`he said "no" today` gives `he said “no” today` through `text` but keeps
+straight quotes through `verbatim`, and `a 中 b` folds to `a ? b` while
+`café` survives, so the settable filter is shown discriminating rather than
+passing everything.
+
+The oracle regenerator is `tools/webtextoracle.py`, which fails loudly if a
+spec-authored row disagrees with CPython instead of overwriting it.
+
 ### The WP-2.1 collision, and what the lift found
 
 WP-2.1 landed `mag/src/typeset/content.rs`, which ports the same
