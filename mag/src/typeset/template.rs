@@ -64,10 +64,14 @@ pub fn compile(world: &Sources) -> Result<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeset::content::{pipeline, Inputs};
+    use crate::typeset::content::{pipeline, File, Inputs};
     use lopdf::{Document, Object};
     use std::collections::BTreeSet;
     use std::path::PathBuf;
+
+    const OLD_QUOTE_RULE: &str = "grid(\n      columns: (QUOTE-RULE, QUOTE-PAD, 1fr),\n      \
+        rect(width: QUOTE-RULE, height: 100%, fill: VIOLET, stroke: none),\n      [],\n      \
+        body,\n    )";
 
     const A5: [f64; 4] = [0.0, 0.0, 419.527_559_055_118_1, 595.275_590_551_181_1];
     const BOX_TOLERANCE_PT: f64 = 0.05;
@@ -140,6 +144,42 @@ mod tests {
                     .any(|(a, b)| (a - b).abs() > tolerance)
             })
             .count()
+    }
+
+    fn synthetic(main: String) -> Tree {
+        Tree {
+            files: vec![File {
+                path: "main.typ".to_string(),
+                source: main,
+            }],
+        }
+    }
+
+    fn pages_of(tree: &Tree, template: &str) -> Result<usize> {
+        let (_, font_dir) = roots();
+        let world = Sources::new(tree, template, ROOT_TYP, font_dir)?;
+        Ok(media_boxes(&compile(&world)?).len())
+    }
+
+    fn prose(lines: usize) -> String {
+        (0..lines)
+            .map(|n| format!("#doc-paragraph(standfirst: false, roster: false)[Line {n}.]\n"))
+            .collect()
+    }
+
+    fn heading_run(paragraphs: usize) -> Tree {
+        synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+             {}#doc-heading(level: 2)[A heading]\n]\n",
+            prose(paragraphs)
+        ))
+    }
+
+    fn zeroed_clearance() -> String {
+        TEMPLATE_TYP.replace(
+            "#let HEADING-CLEARANCE = 25pt",
+            "#let HEADING-CLEARANCE = 0pt",
+        )
     }
 
     fn declared(name: &str) -> f64 {
@@ -255,6 +295,155 @@ mod tests {
         assert!(
             measure + 0.05 >= MEASURE_CEILING_PT,
             "a 0.05pt widening must fail"
+        );
+    }
+
+    #[test]
+    fn the_heading_clearance_reserves_twenty_five_points_below_a_heading() {
+        let moved: Vec<usize> = (24..40)
+            .filter(|paragraphs| {
+                let tree = heading_run(*paragraphs);
+                pages_of(&tree, TEMPLATE_TYP).expect("the reserved run compiles")
+                    > pages_of(&tree, &zeroed_clearance()).expect("the zeroed run compiles")
+            })
+            .collect();
+        assert!(
+            !moved.is_empty(),
+            "no paragraph count put a heading inside the 25pt reservation"
+        );
+        assert_eq!(
+            declared("HEADING-CLEARANCE"),
+            25.0,
+            "the reservation drifted from weasyprint-a5.css:522"
+        );
+    }
+
+    #[test]
+    fn a_short_quote_does_not_swallow_the_rest_of_its_page() {
+        let tree = synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+             #doc-quote[#doc-paragraph(standfirst: false, roster: false)[Quoted.]]\n{}]\n",
+            prose(10)
+        ));
+        assert_eq!(
+            pages_of(&tree, TEMPLATE_TYP).expect("the ruled quote compiles"),
+            5,
+            "a two-line quote and ten short lines must fit the four blank outer pages plus one"
+        );
+        let swallowing = TEMPLATE_TYP.replace("ruled(QUOTE-PAD, 0pt, none, body)", OLD_QUOTE_RULE);
+        assert_ne!(swallowing, TEMPLATE_TYP, "the quote call site moved");
+        assert!(
+            pages_of(&tree, &swallowing).expect("the swallowing quote compiles") > 5,
+            "the 100% rule must fail this test, or it does not discriminate"
+        );
+    }
+
+    #[test]
+    fn the_page_cap_refuses_an_article_past_seven_reader_pages() {
+        let (_, font_dir) = roots();
+        let tree = fixture_tree("901");
+        let capped = TEMPLATE_TYP.replace("#let ARTICLE-PAGE-CAP = 7", "#let ARTICLE-PAGE-CAP = 1");
+        assert_ne!(capped, TEMPLATE_TYP, "the cap constant moved");
+        let world = Sources::new(&tree, &capped, ROOT_TYP, font_dir).expect("the world builds");
+        let error = compile(&world).expect_err("a one-page cap must refuse the fixture");
+        assert!(
+            error.to_string().contains("the hard cap is 1"),
+            "the refusal names something else: {error}"
+        );
+        assert_eq!(declared("ARTICLE-PAGE-CAP"), 7.0);
+        assert_eq!(declared("VERBATIM-PAGE-CAP"), 10.0);
+    }
+
+    #[test]
+    fn a_verbatim_piece_is_not_refused_by_the_article_cap() {
+        let (_, font_dir) = roots();
+        let tree = synthetic(format!(
+            "#piece(id: \"p\", kind: \"verbatim\", short-title: \"P\", opener: \"plain\")[\n{}]\n",
+            prose(400)
+        ));
+        let capped = TEMPLATE_TYP.replace("#let ARTICLE-PAGE-CAP = 7", "#let ARTICLE-PAGE-CAP = 1");
+        let world = Sources::new(&tree, &capped, ROOT_TYP, font_dir).expect("the world builds");
+        assert!(
+            compile(&world).is_ok(),
+            "a verbatim overrun is a warning in render.py:2085-2091, never a refusal"
+        );
+        let article = synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n{}]\n",
+            prose(400)
+        ));
+        let world = Sources::new(&article, &capped, ROOT_TYP, font_dir).expect("the world builds");
+        assert!(
+            compile(&world).is_err(),
+            "the same run under kind article must be refused, or the branch is vacuous"
+        );
+    }
+
+    #[test]
+    fn the_illustrated_opener_owns_its_own_page() {
+        let (_, font_dir) = roots();
+        let tree = fixture_tree("901");
+        let plain = TEMPLATE_TYP.replace(
+            "#let ILLUSTRATED = \"illustrated_paper_spots_v1\"",
+            "#let ILLUSTRATED = \"never-matched-opener\"",
+        );
+        assert_ne!(plain, TEMPLATE_TYP, "the opener name moved");
+        let illustrated = pages_of(&tree, TEMPLATE_TYP).expect("the illustrated run compiles");
+        let flowed = Sources::new(&tree, &plain, ROOT_TYP, font_dir)
+            .and_then(|world| compile(&world))
+            .map(|pdf| media_boxes(&pdf).len())
+            .expect("the flowed run compiles");
+        assert!(
+            illustrated > flowed,
+            "break-after: page on the opener header must cost a page ({illustrated} vs {flowed})"
+        );
+    }
+
+    #[test]
+    fn the_architecture_constants_are_the_stylesheet_s_own() {
+        for (name, value) in [
+            ("RUNNING-BASELINE", 20.0),
+            ("RUNNING-RULE", 0.55),
+            ("RUNNING-RULE-TOP", 27.725),
+            ("RUNNING-TICK", 1.15),
+            ("RUNNING-TICK-TOP", 27.425),
+            ("RUNNING-TICK-WIDTH", 14.0),
+            ("CONTENTS-KICKER-TOP", -13.46915),
+            ("CONTENTS-TITLE-TOP", 32.54098),
+            ("CONTENTS-BAND-TOP", 74.2802),
+            ("CONTENTS-BAND", 393.0),
+            ("CONTENTS-ROW-MAX", 65.5),
+            ("CONTENTS-RULE", 0.7),
+            ("CONTENTS-ENTRY-LEFT", 47.0),
+            ("OPENER-RAIL", 348.0),
+            ("OPENER-ESCAPE", 11.5),
+            ("OPENER-ART-HEIGHT", 207.1),
+            ("OPENER-ART-LIFT", 12.0004),
+            ("OPENER-FRAME-HEIGHT", 203.0),
+            ("OPENER-OFFSET", 4.1),
+            ("OPENER-BORDER", 2.4),
+            ("OPENER-QR", 41.0),
+            ("OPENER-META-MEASURE", 293.0),
+        ] {
+            assert_eq!(
+                declared(name),
+                value,
+                "{name} drifted from weasyprint-a5.css"
+            );
+        }
+        let band = declared("CONTENTS-BAND-TOP") + declared("CONTENTS-BAND");
+        assert!(
+            (band - 467.2802).abs() < 1e-9,
+            "the contents band ends at {band}, not the stylesheet's 467.2802pt ol height"
+        );
+        let measure = declared("OPENER-RAIL") - declared("OPENER-QR") - declared("OPENER-GAP");
+        assert!(
+            (measure - declared("OPENER-META-MEASURE")).abs() < 1e-9,
+            "the credit column measures {measure}, not the adapter's 293pt"
+        );
+        let escape = declared("MEASURE") + 2.0 * declared("OPENER-ESCAPE");
+        assert!(
+            (escape - declared("OPENER-RAIL")).abs() < 1e-9,
+            "the 325pt measure escaped by 11.5pt a side is {escape}, not 348pt"
         );
     }
 
