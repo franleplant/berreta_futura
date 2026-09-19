@@ -1,0 +1,6743 @@
+{
+ "abuts": [
+  {
+   "abuts": true,
+   "band": {
+    "height_points": 60.0,
+    "y_points": 152.0
+   },
+   "name": "bottom_touches_top",
+   "void": {
+    "height_points": 50.0,
+    "y_points": 100.0
+   }
+  },
+  {
+   "abuts": true,
+   "band": {
+    "height_points": 64.0,
+    "y_points": 140.0
+   },
+   "name": "top_touches_bottom",
+   "void": {
+    "height_points": 50.0,
+    "y_points": 210.0
+   }
+  },
+  {
+   "abuts": false,
+   "band": {
+    "height_points": 60.0,
+    "y_points": 400.0
+   },
+   "name": "far_apart",
+   "void": {
+    "height_points": 20.0,
+    "y_points": 100.0
+   }
+  },
+  {
+   "abuts": true,
+   "band": {
+    "height_points": 60.0,
+    "y_points": 158.0
+   },
+   "name": "edge_of_tolerance",
+   "void": {
+    "height_points": 50.0,
+    "y_points": 100.0
+   }
+  },
+  {
+   "abuts": false,
+   "band": {
+    "height_points": 60.0,
+    "y_points": 158.1
+   },
+   "name": "just_past_tolerance",
+   "void": {
+    "height_points": 50.0,
+    "y_points": 100.0
+   }
+  }
+ ],
+ "booklet_sides": [
+  {
+   "booklet_rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "cover_booklet_rows": [],
+   "cover_inside_sides": [],
+   "cover_spreads": [],
+   "inside_cover_pages": [
+    2,
+    7
+   ],
+   "issues": [
+    {
+     "code": "inside-cover-booklet-not-blank",
+     "message": "The imposed side containing both inside covers must be completely blank (a pure-white raster with no extractable text).",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "name": "inside_side_not_blank",
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": 2,
+     "right_reader_page": 7,
+     "sheet": 1,
+     "side": 1,
+     "text_order_matches": true
+    }
+   ]
+  },
+  {
+   "booklet_rows": [
+    {
+     "blank": true,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "cover_booklet_rows": [],
+   "cover_inside_sides": [],
+   "cover_spreads": [],
+   "inside_cover_pages": [
+    2,
+    7
+   ],
+   "issues": [],
+   "name": "inside_side_blank",
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": 2,
+     "right_reader_page": 7,
+     "sheet": 1,
+     "side": 1,
+     "text_order_matches": true
+    }
+   ]
+  },
+  {
+   "booklet_rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": true,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "cover_booklet_rows": [],
+   "cover_inside_sides": [],
+   "cover_spreads": [],
+   "inside_cover_pages": [
+    2,
+    7
+   ],
+   "issues": [
+    {
+     "code": "blank-booklet-side",
+     "message": "Rendered home-booklet side is completely blank.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "name": "blank_booklet_side",
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": 3,
+     "right_reader_page": 6,
+     "sheet": 1,
+     "side": 1,
+     "text_order_matches": true
+    }
+   ]
+  },
+  {
+   "booklet_rows": [],
+   "cover_booklet_rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "cover_inside_sides": [
+    "i1"
+   ],
+   "cover_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": 2,
+     "right_reader_page": 7,
+     "sheet": 1,
+     "side": 1,
+     "text_order_matches": true
+    }
+   ],
+   "inside_cover_pages": [
+    2,
+    7
+   ],
+   "issues": [
+    {
+     "code": "cover-booklet-inside-not-blank",
+     "message": "The cover booklet's inside side must be completely blank (a pure-white raster with no extractable text).",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "name": "cover_inside_not_blank",
+   "spreads": []
+  },
+  {
+   "booklet_rows": [],
+   "cover_booklet_rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": true,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "cover_inside_sides": [],
+   "cover_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": 8,
+     "right_reader_page": 1,
+     "sheet": 1,
+     "side": 1,
+     "text_order_matches": true
+    }
+   ],
+   "inside_cover_pages": [
+    2,
+    7
+   ],
+   "issues": [
+    {
+     "code": "blank-cover-booklet-side",
+     "message": "The cover booklet's outer side carries no ink; it must print the back cover beside the front cover.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "name": "blank_cover_outside",
+   "spreads": []
+  },
+  {
+   "booklet_rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "cover_booklet_rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "cover_inside_sides": [],
+   "cover_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": 8,
+     "right_reader_page": 1,
+     "sheet": 1,
+     "side": 1,
+     "text_order_matches": true
+    }
+   ],
+   "inside_cover_pages": [
+    2,
+    7
+   ],
+   "issues": [],
+   "name": "all_quiet",
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": 3,
+     "right_reader_page": 6,
+     "sheet": 1,
+     "side": 1,
+     "text_order_matches": true
+    }
+   ]
+  }
+ ],
+ "contents": [
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {
+    "a": 2
+   },
+   "cover_text": "BERRETA FUTURA",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "clean",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "The title ...",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "cover-placeholder-copy",
+     "message": "Cover typography contains placeholder or ellipsis copy.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "placeholder_ellipsis",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "TODO write this",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "cover-placeholder-copy",
+     "message": "Cover typography contains placeholder or ellipsis copy.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "placeholder_todo",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "[insert deck]",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "cover-placeholder-copy",
+     "message": "Cover typography contains placeholder or ellipsis copy.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "placeholder_insert",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "tbd",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "cover-placeholder-copy",
+     "message": "Cover typography contains placeholder or ellipsis copy.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "placeholder_case",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "TODOS are fine",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "placeholder_word_boundary",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "no_pages",
+   "page_count": 0,
+   "toc": {}
+  },
+  {
+   "actual_contents_pages": 0,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "contents-pagination",
+     "message": "Contents uses 0 pages; between 1 and 1 are expected for 1 entries.",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "pagination_zero",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 3,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "contents-pagination",
+     "message": "Contents uses 3 pages; between 1 and 2 are expected for 1 entries.",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 2,
+   "name": "pagination_over",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "contents-folio-range",
+     "message": "A contents folio points outside the body page range.",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "folio_low",
+   "page_count": 8,
+   "toc": {
+    "a": 3
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "contents-folio-range",
+     "message": "A contents folio points outside the body page range.",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "folio_high",
+   "page_count": 8,
+   "toc": {
+    "a": 9
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {
+    "a": 9
+   },
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "article-page-cap",
+     "message": "Article a exceeds its reader page cap.",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "cap_error",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {
+    "a": 9
+   },
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "article-page-cap",
+     "message": "Article a exceeds its reader page cap (verbatim: warning only).",
+     "severity": "review"
+    }
+   ],
+   "layout": {
+    "article_content_modes": {
+     "a": "verbatim"
+    }
+   },
+   "maximum_contents_pages": 1,
+   "name": "cap_review",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {
+    "a": 9
+   },
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [],
+   "layout": {
+    "article_page_caps": {
+     "a": 10
+    }
+   },
+   "maximum_contents_pages": 1,
+   "name": "cap_declared",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {
+    "a": 7
+   },
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "cap_boundary",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {
+    "a": 8
+   },
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": null,
+   "issues": [
+    {
+     "code": "article-page-cap",
+     "message": "Article a exceeds its reader page cap.",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "cap_just_over",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": 3,
+   "issues": [
+    {
+     "code": "editorial-page-cap",
+     "message": "The opening editorial occupies 3 reader pages; this edition allows 2.",
+     "severity": "error"
+    }
+   ],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "editorial_over",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i2",
+   "editorial_pages": 2,
+   "issues": [],
+   "layout": {},
+   "maximum_contents_pages": 1,
+   "name": "editorial_at_cap",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  },
+  {
+   "actual_contents_pages": 1,
+   "article_pages": {},
+   "cover_text": "",
+   "editorial_page_cap": "i1",
+   "editorial_pages": 2,
+   "issues": [
+    {
+     "code": "editorial-page-cap",
+     "message": "The opening editorial occupies 2 reader pages; this edition allows 1.",
+     "severity": "error"
+    }
+   ],
+   "layout": {
+    "maximum_editorial_pages": 1
+   },
+   "maximum_contents_pages": 1,
+   "name": "editorial_over_declared_one",
+   "page_count": 8,
+   "toc": {
+    "a": 4
+   }
+  }
+ ],
+ "crop_fidelity": [
+  {
+   "crop": "fidelity_crop_scaled.png",
+   "name": "scaled_match",
+   "reference": "fidelity_reference.png",
+   "row": {
+    "frame_edge_delta_inches": "f0000000000000000",
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 0.58/255; frame edge delta 0.0000in.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": true,
+    "rgb_mae": "f3fe276c8b4395810"
+   }
+  },
+  {
+   "crop": "fidelity_crop_shifted.png",
+   "name": "frame_delta",
+   "reference": "fidelity_reference.png",
+   "row": {
+    "frame_edge_delta_inches": "f3f8c779a6b50b0f2",
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 5.50/255; frame edge delta 0.0139in.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": false,
+    "rgb_mae": "f401600b780346dc6"
+   }
+  },
+  {
+   "crop": "fidelity_plain_crop.png",
+   "name": "no_frames",
+   "reference": "fidelity_plain_reference.png",
+   "row": {
+    "frame_edge_delta_inches": null,
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 0.00/255; no illustration frame detected in either raster.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": true,
+    "rgb_mae": "f0000000000000000"
+   }
+  },
+  {
+   "crop": "fidelity_loud_crop.png",
+   "name": "one_frame",
+   "reference": "fidelity_reference.png",
+   "row": {
+    "frame_edge_delta_inches": null,
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 131.21/255; illustration frame detected in only one raster.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": false,
+    "rgb_mae": "f406066b439581062"
+   }
+  },
+  {
+   "crop": "fidelity_crop_scaled.png",
+   "name": "crop_frame_only",
+   "reference": "fidelity_plain_reference.png",
+   "row": {
+    "frame_edge_delta_inches": null,
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 81.91/255; illustration frame detected in only one raster.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": false,
+    "rgb_mae": "f40547a0aa64c2f83"
+   }
+  },
+  {
+   "crop": "fidelity_noisy_crop.png",
+   "name": "mae_over_budget",
+   "reference": "fidelity_reference.png",
+   "row": {
+    "frame_edge_delta_inches": "f0000000000000000",
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 22.82/255; frame edge delta 0.0000in.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": false,
+    "rgb_mae": "f4036d2f1a9fbe76d"
+   }
+  },
+  {
+   "crop": "fidelity_flat_at_budget.png",
+   "name": "mae_at_budget",
+   "reference": "fidelity_flat_reference.png",
+   "row": {
+    "frame_edge_delta_inches": null,
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 8.00/255; no illustration frame detected in either raster.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": true,
+    "rgb_mae": "f4020000000000000"
+   }
+  },
+  {
+   "crop": "fidelity_flat_over_budget.png",
+   "name": "mae_one_over_budget",
+   "reference": "fidelity_flat_reference.png",
+   "row": {
+    "frame_edge_delta_inches": null,
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 9.00/255; no illustration frame detected in either raster.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": false,
+    "rgb_mae": "f4022000000000000"
+   }
+  },
+  {
+   "crop": "fidelity_shift_one.png",
+   "name": "frame_delta_one_pixel",
+   "reference": "fidelity_reference.png",
+   "row": {
+    "frame_edge_delta_inches": "f3f7c432ca57a786c",
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 2.62/255; frame edge delta 0.0069in.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": true,
+    "rgb_mae": "f4004ff972474538f"
+   }
+  },
+  {
+   "crop": "fidelity_shift_two.png",
+   "name": "frame_delta_two_pixels",
+   "reference": "fidelity_reference.png",
+   "row": {
+    "frame_edge_delta_inches": "f3f8c779a6b50b0f2",
+    "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+    "maximum_rgb_mae": "f4020000000000000",
+    "message": "RGB MAE 5.25/255; frame edge delta 0.0139in.",
+    "normalized_pixels": [
+     "i100",
+     "i140"
+    ],
+    "pass": false,
+    "rgb_mae": "f4014ff7ced916873"
+   }
+  }
+ ],
+ "crop_plan": [
+  {
+   "flag_crops": [],
+   "layout": {},
+   "media": [
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ]
+   ],
+   "name": "openers",
+   "printed_tail_bands": {},
+   "rows": [
+    {
+     "page": 1,
+     "tail_band": null
+    },
+    {
+     "page": 2,
+     "tail_band": null
+    },
+    {
+     "page": 3,
+     "tail_band": null
+    },
+    {
+     "page": 4,
+     "tail_band": null
+    },
+    {
+     "page": 5,
+     "tail_band": null
+    },
+    {
+     "page": 6,
+     "tail_band": null
+    }
+   ],
+   "specs": [
+    {
+     "kind": "opener",
+     "page": "i4",
+     "region": [
+      "f0000000000000000",
+      "f0000000000000000",
+      "f407a38710cb295ea",
+      "f40829a346dc5d639"
+     ],
+     "subject": "a, b"
+    },
+    {
+     "kind": "opener",
+     "page": "i5",
+     "region": [
+      "f0000000000000000",
+      "f0000000000000000",
+      "f407a38710cb295ea",
+      "f40829a346dc5d639"
+     ],
+     "subject": "c"
+    }
+   ],
+   "toc": {
+    "a": 4,
+    "b": 4,
+    "c": 5
+   }
+  },
+  {
+   "flag_crops": [],
+   "layout": {},
+   "media": [
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ]
+   ],
+   "name": "opener_out_of_range",
+   "printed_tail_bands": {},
+   "rows": [
+    {
+     "page": 1,
+     "tail_band": null
+    },
+    {
+     "page": 2,
+     "tail_band": null
+    },
+    {
+     "page": 3,
+     "tail_band": null
+    },
+    {
+     "page": 4,
+     "tail_band": null
+    },
+    {
+     "page": 5,
+     "tail_band": null
+    },
+    {
+     "page": 6,
+     "tail_band": null
+    }
+   ],
+   "specs": [],
+   "toc": {
+    "a": 9
+   }
+  },
+  {
+   "flag_crops": [],
+   "layout": {
+    "figures": [
+     {
+      "box_points": [
+       64.454,
+       248.276,
+       289.14,
+       205.0
+      ],
+      "id": "one",
+      "page": 2
+     },
+     {
+      "box_points": [
+       10,
+       20,
+       30,
+       40
+      ],
+      "figure_id": "two",
+      "page": 2
+     },
+     {
+      "box_points": [
+       10,
+       20,
+       30,
+       40
+      ],
+      "page": 2
+     },
+     {
+      "box_points": [
+       10,
+       20,
+       30,
+       40
+      ],
+      "id": "off",
+      "page": 99
+     },
+     {
+      "box_points": [
+       10,
+       20,
+       30,
+       40
+      ],
+      "id": "bad",
+      "page": "x"
+     },
+     {
+      "box_points": [
+       10,
+       20,
+       30
+      ],
+      "id": "short",
+      "page": 2
+     },
+     {
+      "id": "nobox",
+      "page": 2
+     },
+     "not a dict"
+    ]
+   },
+   "media": [
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ]
+   ],
+   "name": "figures",
+   "printed_tail_bands": {},
+   "rows": [
+    {
+     "page": 1,
+     "tail_band": null
+    },
+    {
+     "page": 2,
+     "tail_band": null
+    },
+    {
+     "page": 3,
+     "tail_band": null
+    },
+    {
+     "page": 4,
+     "tail_band": null
+    },
+    {
+     "page": 5,
+     "tail_band": null
+    },
+    {
+     "page": 6,
+     "tail_band": null
+    }
+   ],
+   "specs": [
+    {
+     "kind": "figure",
+     "page": "i2",
+     "region": [
+      "f40443a1cac083126",
+      "f405d7ff97247453c",
+      "f407799810624dd2f",
+      "f407a2ffe5c91d14f"
+     ],
+     "subject": "one"
+    },
+    {
+     "kind": "figure",
+     "page": "i2",
+     "region": [
+      "f0000000000000000",
+      "f407ff468db8bac72",
+      "f4050000000000000",
+      "f40829a346dc5d639"
+     ],
+     "subject": "two"
+    },
+    {
+     "kind": "figure",
+     "page": "i2",
+     "region": [
+      "f0000000000000000",
+      "f407ff468db8bac72",
+      "f4050000000000000",
+      "f40829a346dc5d639"
+     ],
+     "subject": ""
+    }
+   ],
+   "toc": {}
+  },
+  {
+   "flag_crops": [],
+   "layout": {},
+   "media": [
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ]
+   ],
+   "name": "tails",
+   "printed_tail_bands": {
+    "3": 108.3333,
+    "4": 108.3333,
+    "9": 108.3333
+   },
+   "rows": [
+    {
+     "page": 1,
+     "tail_band": null
+    },
+    {
+     "page": 2,
+     "tail_band": null
+    },
+    {
+     "page": 3,
+     "tail_band": {
+      "centered": true,
+      "declared_height_points": 108.3333,
+      "gap_above_points": 24.0,
+      "gap_below_points": 16.0,
+      "height_points": 112.0,
+      "y_points": 438.5
+     }
+    },
+    {
+     "page": 4,
+     "tail_band": null
+    },
+    {
+     "page": 5,
+     "tail_band": null
+    },
+    {
+     "page": 6,
+     "tail_band": null
+    }
+   ],
+   "specs": [
+    {
+     "kind": "tail",
+     "page": "i3",
+     "region": [
+      "f0000000000000000",
+      "f4079e80000000000",
+      "f407a38710cb295ea",
+      "f4081f40000000000"
+     ],
+     "subject": null
+    },
+    {
+     "kind": "tail",
+     "page": "i4",
+     "region": [
+      "f0000000000000000",
+      "f40727468db8bac72",
+      "f407a38710cb295ea",
+      "f40829a346dc5d639"
+     ],
+     "subject": null
+    }
+   ],
+   "toc": {}
+  },
+  {
+   "flag_crops": [
+    {
+     "kind": "sparse",
+     "page": 2,
+     "span": null
+    },
+    {
+     "kind": "void",
+     "page": 3,
+     "span": [
+      100.0,
+      300.0
+     ]
+    },
+    {
+     "kind": "stub",
+     "page": 4,
+     "span": [
+      0.0,
+      220.0
+     ]
+    },
+    {
+     "kind": "void",
+     "page": 99,
+     "span": [
+      0.0,
+      10.0
+     ]
+    }
+   ],
+   "layout": {},
+   "media": [
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ]
+   ],
+   "name": "flags",
+   "printed_tail_bands": {},
+   "rows": [
+    {
+     "page": 1,
+     "tail_band": null
+    },
+    {
+     "page": 2,
+     "tail_band": null
+    },
+    {
+     "page": 3,
+     "tail_band": null
+    },
+    {
+     "page": 4,
+     "tail_band": null
+    },
+    {
+     "page": 5,
+     "tail_band": null
+    },
+    {
+     "page": 6,
+     "tail_band": null
+    }
+   ],
+   "specs": [
+    {
+     "kind": "sparse",
+     "page": "i2",
+     "region": [
+      "f0000000000000000",
+      "f0000000000000000",
+      "f407a38710cb295ea",
+      "f40829a346dc5d639"
+     ],
+     "subject": null
+    },
+    {
+     "kind": "void",
+     "page": "i3",
+     "region": [
+      "f0000000000000000",
+      "f4059000000000000",
+      "f407a38710cb295ea",
+      "f4072c00000000000"
+     ],
+     "subject": null
+    },
+    {
+     "kind": "stub",
+     "page": "i4",
+     "region": [
+      "f0000000000000000",
+      "f0000000000000000",
+      "f407a38710cb295ea",
+      "f406b800000000000"
+     ],
+     "subject": null
+    }
+   ],
+   "toc": {}
+  },
+  {
+   "flag_crops": [],
+   "layout": {
+    "figures": [
+     {
+      "box_points": [
+       -500.0,
+       -500.0,
+       5000.0,
+       5000.0
+      ],
+      "id": "wide",
+      "page": 1
+     }
+    ]
+   },
+   "media": [
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ]
+   ],
+   "name": "clamping",
+   "printed_tail_bands": {},
+   "rows": [
+    {
+     "page": 1,
+     "tail_band": null
+    },
+    {
+     "page": 2,
+     "tail_band": null
+    },
+    {
+     "page": 3,
+     "tail_band": null
+    },
+    {
+     "page": 4,
+     "tail_band": null
+    },
+    {
+     "page": 5,
+     "tail_band": null
+    },
+    {
+     "page": 6,
+     "tail_band": null
+    }
+   ],
+   "specs": [
+    {
+     "kind": "figure",
+     "page": "i1",
+     "region": [
+      "f0000000000000000",
+      "f0000000000000000",
+      "f407a38710cb295ea",
+      "f40829a346dc5d639"
+     ],
+     "subject": "wide"
+    }
+   ],
+   "toc": {}
+  },
+  {
+   "flag_crops": [],
+   "layout": {},
+   "media": [
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ],
+    [
+     419.5276,
+     595.2756
+    ]
+   ],
+   "name": "empty",
+   "printed_tail_bands": {},
+   "rows": [
+    {
+     "page": 1,
+     "tail_band": null
+    },
+    {
+     "page": 2,
+     "tail_band": null
+    },
+    {
+     "page": 3,
+     "tail_band": null
+    },
+    {
+     "page": 4,
+     "tail_band": null
+    },
+    {
+     "page": 5,
+     "tail_band": null
+    },
+    {
+     "page": 6,
+     "tail_band": null
+    }
+   ],
+   "specs": [],
+   "toc": {}
+  }
+ ],
+ "crop_writing": [
+  {
+   "left_over": [
+    "crop-p03-opener-2.png",
+    "crop-p03-opener.png",
+    "crop-p05-void.png"
+   ],
+   "name": "dedup_and_degenerate",
+   "pixels": {
+    "crop-p03-opener-2.png": "fd2ce5e7349d69bca43d752747d5319eb1c5e89a6e6dd66e5afe1f4b12696995",
+    "crop-p03-opener.png": "06049a07e8cfaae672f215f0f183f2f4da7cf47723caf6ba6b4535127d099d50",
+    "crop-p05-void.png": "cae248068f141b9c46885e51d235483361bd46d3787f2bfa25487763beb5211c"
+   },
+   "rows": [
+    {
+     "kind": "opener",
+     "page": "i3",
+     "path": "crops/crop-p03-opener.png",
+     "ppi": "i300",
+     "region_points": [
+      "f0000000000000000",
+      "f0000000000000000",
+      "f407a380000000000",
+      "f40829a6666666666"
+     ],
+     "subject": "a"
+    },
+    {
+     "kind": "opener",
+     "page": "i3",
+     "path": "crops/crop-p03-opener-2.png",
+     "ppi": "i300",
+     "region_points": [
+      "f0000000000000000",
+      "f0000000000000000",
+      "f4069000000000000",
+      "f4072c00000000000"
+     ],
+     "subject": "b"
+    },
+    {
+     "kind": "void",
+     "page": "i5",
+     "path": "crops/crop-p05-void.png",
+     "ppi": "i300",
+     "region_points": [
+      "f0000000000000000",
+      "f4044000000000000",
+      "f407a380000000000",
+      "f4070400000000000"
+     ],
+     "subject": null
+    }
+   ],
+   "specs": [
+    {
+     "kind": "opener",
+     "page": 3,
+     "region": [
+      0.0,
+      0.0,
+      419.5276,
+      595.2756
+     ],
+     "subject": "a"
+    },
+    {
+     "kind": "opener",
+     "page": 3,
+     "region": [
+      0.0,
+      0.0,
+      200.0,
+      300.0
+     ],
+     "subject": "b"
+    },
+    {
+     "kind": "opener",
+     "page": 3,
+     "region": [
+      0.0,
+      0.0,
+      0.0,
+      300.0
+     ],
+     "subject": "c"
+    },
+    {
+     "kind": "opener",
+     "page": 3,
+     "region": [
+      0.0,
+      0.0,
+      419.5276,
+      0.0
+     ],
+     "subject": "d"
+    },
+    {
+     "kind": "void",
+     "page": 5,
+     "region": [
+      0.0,
+      40.0,
+      419.5276,
+      260.0
+     ],
+     "subject": null
+    }
+   ]
+  },
+  {
+   "left_over": [
+    "crop-p01-tail.png"
+   ],
+   "name": "single",
+   "pixels": {
+    "crop-p01-tail.png": "c89141532a3baa1489c066cc6c8d45fe2c61541917b2909b7bea86f736a6b7ad"
+   },
+   "rows": [
+    {
+     "kind": "tail",
+     "page": "i1",
+     "path": "crops/crop-p01-tail.png",
+     "ppi": "i300",
+     "region_points": [
+      "f0000000000000000",
+      "f407274cccccccccd",
+      "f407a380000000000",
+      "f40829a6666666666"
+     ],
+     "subject": null
+    }
+   ],
+   "specs": [
+    {
+     "kind": "tail",
+     "page": 1,
+     "region": [
+      0.0,
+      295.2756,
+      419.5276,
+      595.2756
+     ],
+     "subject": null
+    }
+   ]
+  }
+ ],
+ "editorial_caps": [
+  {
+   "cap": "i2",
+   "layout": {},
+   "name": "missing"
+  },
+  {
+   "cap": "i2",
+   "layout": {
+    "maximum_editorial_pages": null
+   },
+   "name": "null"
+  },
+  {
+   "cap": "i1",
+   "layout": {
+    "maximum_editorial_pages": 1
+   },
+   "name": "one"
+  },
+  {
+   "cap": "i2",
+   "layout": {
+    "maximum_editorial_pages": 2
+   },
+   "name": "two"
+  },
+  {
+   "cap": "i2",
+   "layout": {
+    "maximum_editorial_pages": 9
+   },
+   "name": "many"
+  },
+  {
+   "cap": "i2",
+   "layout": {
+    "maximum_editorial_pages": 0
+   },
+   "name": "zero"
+  },
+  {
+   "cap": "i2",
+   "layout": {
+    "maximum_editorial_pages": -3
+   },
+   "name": "negative"
+  },
+  {
+   "cap": "i2",
+   "layout": {
+    "maximum_editorial_pages": 2.0
+   },
+   "name": "float"
+  },
+  {
+   "cap": "i2",
+   "layout": {
+    "maximum_editorial_pages": "2"
+   },
+   "name": "text"
+  }
+ ],
+ "frame_bbox": [
+  {
+   "bbox": [
+    "i20",
+    "i30",
+    "i170",
+    "i100"
+   ],
+   "name": "opener_pass.png@0",
+   "png": "opener_pass.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": [
+    "i20",
+    "i30",
+    "i170",
+    "i100"
+   ],
+   "name": "opener_pass.png@24",
+   "png": "opener_pass.png",
+   "tolerance": 24
+  },
+  {
+   "bbox": null,
+   "name": "opener_no_frame.png@0",
+   "png": "opener_no_frame.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": null,
+   "name": "opener_no_frame.png@24",
+   "png": "opener_no_frame.png",
+   "tolerance": 24
+  },
+  {
+   "bbox": null,
+   "name": "opener_tolerant.png@0",
+   "png": "opener_tolerant.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": [
+    "i20",
+    "i30",
+    "i170",
+    "i100"
+   ],
+   "name": "opener_tolerant.png@24",
+   "png": "opener_tolerant.png",
+   "tolerance": 24
+  },
+  {
+   "bbox": null,
+   "name": "opener_short_run.png@0",
+   "png": "opener_short_run.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": null,
+   "name": "opener_short_run.png@24",
+   "png": "opener_short_run.png",
+   "tolerance": 24
+  },
+  {
+   "bbox": [
+    "i20",
+    "i30",
+    "i170",
+    "i100"
+   ],
+   "name": "opener_narrow.png@0",
+   "png": "opener_narrow.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": [
+    "i20",
+    "i30",
+    "i170",
+    "i100"
+   ],
+   "name": "opener_narrow.png@24",
+   "png": "opener_narrow.png",
+   "tolerance": 24
+  },
+  {
+   "bbox": [
+    "i10",
+    "i20",
+    "i90",
+    "i60"
+   ],
+   "name": "fidelity_reference.png@0",
+   "png": "fidelity_reference.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": [
+    "i10",
+    "i20",
+    "i90",
+    "i60"
+   ],
+   "name": "fidelity_reference.png@24",
+   "png": "fidelity_reference.png",
+   "tolerance": 24
+  },
+  {
+   "bbox": [
+    "i20",
+    "i30",
+    "i150",
+    "i100"
+   ],
+   "name": "opener_run_130.png@0",
+   "png": "opener_run_130.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": [
+    "i20",
+    "i30",
+    "i150",
+    "i100"
+   ],
+   "name": "opener_run_130.png@24",
+   "png": "opener_run_130.png",
+   "tolerance": 24
+  },
+  {
+   "bbox": null,
+   "name": "opener_run_129.png@0",
+   "png": "opener_run_129.png",
+   "tolerance": 0
+  },
+  {
+   "bbox": null,
+   "name": "opener_run_129.png@24",
+   "png": "opener_run_129.png",
+   "tolerance": 24
+  }
+ ],
+ "imposition": [
+  {
+   "booklet": {
+    "media": [
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 8 words page 1 words",
+     "page 2 words page 7 words",
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ],
+    "raw": [
+     "page 8 words page 1 words",
+     "page 2 words page 7 words",
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ]
+   },
+   "cover": {
+    "media": [
+     [
+      841.8898,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 8 words page 1 words"
+    ],
+    "raw": [
+     "page 8 words page 1 words"
+    ]
+   },
+   "cover_pages": [
+    "i1",
+    "i2",
+    "i7",
+    "i8"
+   ],
+   "cover_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": "i8",
+     "right_reader_page": "i1",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": true
+    }
+   ],
+   "interior": {
+    "media": [
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ],
+    "raw": [
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ]
+   },
+   "interior_pages": [
+    "i3",
+    "i4",
+    "i5",
+    "i6"
+   ],
+   "interior_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": "i6",
+     "right_reader_page": "i3",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": true
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i4",
+     "right_reader_page": "i5",
+     "sheet": "i1",
+     "side": "i2",
+     "text_order_matches": true
+    }
+   ],
+   "issues": [],
+   "name": "clean",
+   "reader": {
+    "media": [
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 1 words",
+     "page 2 words",
+     "page 3 words",
+     "page 4 words",
+     "page 5 words",
+     "page 6 words",
+     "page 7 words",
+     "page 8 words"
+    ],
+    "raw": [
+     "page 1 words",
+     "page 2 words",
+     "page 3 words",
+     "page 4 words",
+     "page 5 words",
+     "page 6 words",
+     "page 7 words",
+     "page 8 words"
+    ]
+   },
+   "rendered": [
+    8,
+    4,
+    1
+   ],
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": "i8",
+     "right_reader_page": "i1",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": true
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i2",
+     "right_reader_page": "i7",
+     "sheet": "i1",
+     "side": "i2",
+     "text_order_matches": true
+    },
+    {
+     "face": "outside",
+     "left_reader_page": "i6",
+     "right_reader_page": "i3",
+     "sheet": "i2",
+     "side": "i3",
+     "text_order_matches": true
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i4",
+     "right_reader_page": "i5",
+     "sheet": "i2",
+     "side": "i4",
+     "text_order_matches": true
+    }
+   ]
+  },
+  {
+   "booklet": {
+    "media": [
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "wrong order here",
+     "wrong order here",
+     "wrong order here",
+     "wrong order here"
+    ],
+    "raw": [
+     "wrong order here",
+     "wrong order here",
+     "wrong order here",
+     "wrong order here"
+    ]
+   },
+   "cover": {
+    "media": [
+     [
+      419.0,
+      595.0
+     ],
+     [
+      419.0,
+      595.0
+     ]
+    ],
+    "normalized": [
+     "nope",
+     "extra"
+    ],
+    "raw": [
+     "nope",
+     "extra"
+    ]
+   },
+   "cover_pages": [
+    "i1",
+    "i2",
+    "i5",
+    "i6"
+   ],
+   "cover_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": "i6",
+     "right_reader_page": "i1",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": false
+    }
+   ],
+   "interior": {
+    "media": [
+     [
+      419.0,
+      595.0
+     ]
+    ],
+    "normalized": [
+     "nope"
+    ],
+    "raw": [
+     "nope"
+    ]
+   },
+   "interior_pages": [
+    "i3",
+    "i4"
+   ],
+   "interior_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": null,
+     "right_reader_page": "i3",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": false
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i4",
+     "right_reader_page": null,
+     "sheet": "i1",
+     "side": "i2",
+     "text_order_matches": false
+    }
+   ],
+   "issues": [
+    {
+     "code": "raster-page-count",
+     "message": "Rasterizer produced 1 pages for a 6-page PDF.",
+     "severity": "error"
+    },
+    {
+     "code": "booklet-raster-page-count",
+     "message": "Rasterizer produced 2 sides for a 4-side booklet.",
+     "severity": "error"
+    },
+    {
+     "code": "booklet-page-order",
+     "message": "One or more booklet sides do not contain the expected left/right reader page pair.",
+     "severity": "error"
+    },
+    {
+     "code": "interior-booklet-side-count",
+     "message": "Interior booklet has 1 sides; 2 are expected for reader pages 3-4.",
+     "severity": "error"
+    },
+    {
+     "code": "interior-booklet-geometry",
+     "message": "Every interior booklet side must be landscape A4.",
+     "severity": "error"
+    },
+    {
+     "code": "interior-booklet-page-order",
+     "message": "One or more interior booklet sides do not contain the expected left/right reader page pair.",
+     "severity": "error"
+    },
+    {
+     "code": "cover-booklet-side-count",
+     "message": "Cover booklet has 2 sides; 1 are expected for the single-sided wrap.",
+     "severity": "error"
+    },
+    {
+     "code": "cover-booklet-geometry",
+     "message": "Every cover booklet side must be landscape A4.",
+     "severity": "error"
+    },
+    {
+     "code": "cover-booklet-page-order",
+     "message": "The cover booklet must impose the back cover beside the front cover on its single outside side.",
+     "severity": "error"
+    },
+    {
+     "code": "cover-booklet-raster-side-count",
+     "message": "Rasterizer produced 0 sides for a 2-side cover booklet.",
+     "severity": "error"
+    },
+    {
+     "code": "signature-page-count",
+     "message": "Reader page count 6 is not a multiple of four.",
+     "severity": "error"
+    }
+   ],
+   "name": "every_fault",
+   "reader": {
+    "media": [
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x"
+    ],
+    "raw": [
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x"
+    ]
+   },
+   "rendered": [
+    1,
+    2,
+    0
+   ],
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": null,
+     "right_reader_page": "i1",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": false
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i2",
+     "right_reader_page": null,
+     "sheet": "i1",
+     "side": "i2",
+     "text_order_matches": false
+    },
+    {
+     "face": "outside",
+     "left_reader_page": "i6",
+     "right_reader_page": "i3",
+     "sheet": "i2",
+     "side": "i3",
+     "text_order_matches": false
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i4",
+     "right_reader_page": "i5",
+     "sheet": "i2",
+     "side": "i4",
+     "text_order_matches": false
+    }
+   ]
+  },
+  {
+   "booklet": {
+    "media": [
+     [
+      841.8898,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "a"
+    ],
+    "raw": [
+     "a"
+    ]
+   },
+   "cover": {
+    "media": [],
+    "normalized": [],
+    "raw": []
+   },
+   "cover_pages": [],
+   "cover_spreads": [],
+   "interior": {
+    "media": [],
+    "normalized": [],
+    "raw": []
+   },
+   "interior_pages": [],
+   "interior_spreads": [],
+   "issues": [
+    {
+     "code": "booklet-page-order",
+     "message": "One or more booklet sides do not contain the expected left/right reader page pair.",
+     "severity": "error"
+    },
+    {
+     "code": "interior-booklet-geometry",
+     "message": "Every interior booklet side must be landscape A4.",
+     "severity": "error"
+    },
+    {
+     "code": "cover-booklet-geometry",
+     "message": "Every cover booklet side must be landscape A4.",
+     "severity": "error"
+    },
+    {
+     "code": "signature-page-count",
+     "message": "Reader page count 2 is not a multiple of four.",
+     "severity": "error"
+    }
+   ],
+   "name": "too_small",
+   "reader": {
+    "media": [
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "x",
+     "x"
+    ],
+    "raw": [
+     "x",
+     "x"
+    ]
+   },
+   "rendered": [
+    2,
+    1,
+    0
+   ],
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": null,
+     "right_reader_page": "i1",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": false
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i2",
+     "right_reader_page": null,
+     "sheet": "i1",
+     "side": "i2",
+     "text_order_matches": false
+    }
+   ]
+  },
+  {
+   "booklet": {
+    "media": [
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ],
+     [
+      841.8898,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 8 words page 1 words",
+     "page 2 words page 7 words",
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ],
+    "raw": [
+     "page 8 words page 1 words",
+     "page 2 words page 7 words",
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ]
+   },
+   "cover": {
+    "media": [
+     [
+      842.6498,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 8 words page 1 words"
+    ],
+    "raw": [
+     "page 8 words page 1 words"
+    ]
+   },
+   "cover_pages": [
+    "i1",
+    "i2",
+    "i7",
+    "i8"
+   ],
+   "cover_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": "i8",
+     "right_reader_page": "i1",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": true
+    }
+   ],
+   "interior": {
+    "media": [
+     [
+      842.6298,
+      595.2756
+     ],
+     [
+      842.6298,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ],
+    "raw": [
+     "page 6 words page 3 words",
+     "page 4 words page 5 words"
+    ]
+   },
+   "interior_pages": [
+    "i3",
+    "i4",
+    "i5",
+    "i6"
+   ],
+   "interior_spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": "i6",
+     "right_reader_page": "i3",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": true
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i4",
+     "right_reader_page": "i5",
+     "sheet": "i1",
+     "side": "i2",
+     "text_order_matches": true
+    }
+   ],
+   "issues": [
+    {
+     "code": "cover-booklet-geometry",
+     "message": "Every cover booklet side must be landscape A4.",
+     "severity": "error"
+    }
+   ],
+   "name": "geometry_tolerance",
+   "reader": {
+    "media": [
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ],
+     [
+      419.5276,
+      595.2756
+     ]
+    ],
+    "normalized": [
+     "page 1 words",
+     "page 2 words",
+     "page 3 words",
+     "page 4 words",
+     "page 5 words",
+     "page 6 words",
+     "page 7 words",
+     "page 8 words"
+    ],
+    "raw": [
+     "page 1 words",
+     "page 2 words",
+     "page 3 words",
+     "page 4 words",
+     "page 5 words",
+     "page 6 words",
+     "page 7 words",
+     "page 8 words"
+    ]
+   },
+   "rendered": [
+    8,
+    4,
+    1
+   ],
+   "spreads": [
+    {
+     "face": "outside",
+     "left_reader_page": "i8",
+     "right_reader_page": "i1",
+     "sheet": "i1",
+     "side": "i1",
+     "text_order_matches": true
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i2",
+     "right_reader_page": "i7",
+     "sheet": "i1",
+     "side": "i2",
+     "text_order_matches": true
+    },
+    {
+     "face": "outside",
+     "left_reader_page": "i6",
+     "right_reader_page": "i3",
+     "sheet": "i2",
+     "side": "i3",
+     "text_order_matches": true
+    },
+    {
+     "face": "inside",
+     "left_reader_page": "i4",
+     "right_reader_page": "i5",
+     "sheet": "i2",
+     "side": "i4",
+     "text_order_matches": true
+    }
+   ]
+  }
+ ],
+ "issue_sites": [
+  {
+   "code": "raster-page-count",
+   "line": 139
+  },
+  {
+   "code": "booklet-raster-page-count",
+   "line": 145
+  },
+  {
+   "code": "booklet-page-order",
+   "line": 153
+  },
+  {
+   "code": "interior-booklet-side-count",
+   "line": 164
+  },
+  {
+   "code": "interior-booklet-geometry",
+   "line": 171
+  },
+  {
+   "code": "interior-booklet-page-order",
+   "line": 177
+  },
+  {
+   "code": "cover-booklet-side-count",
+   "line": 186
+  },
+  {
+   "code": "cover-booklet-geometry",
+   "line": 193
+  },
+  {
+   "code": "cover-booklet-page-order",
+   "line": 199
+  },
+  {
+   "code": "cover-booklet-raster-side-count",
+   "line": 206
+  },
+  {
+   "code": "signature-page-count",
+   "line": 213
+  },
+  {
+   "code": "article-opener-offset-shadow",
+   "line": 245
+  },
+  {
+   "code": "article-opener-offset-shadow",
+   "line": 260
+  },
+  {
+   "code": "inside-cover-reader-not-blank",
+   "line": 292
+  },
+  {
+   "code": "blank-page",
+   "line": 300
+  },
+  {
+   "code": "sparse-page",
+   "line": 302
+  },
+  {
+   "code": "orphan-punctuation",
+   "line": 310
+  },
+  {
+   "code": "article-tail-gap",
+   "line": 330
+  },
+  {
+   "code": "whitespace-void",
+   "line": 353
+  },
+  {
+   "code": "article-stub-last-page",
+   "line": 382
+  },
+  {
+   "code": "tail-art-dropped",
+   "line": 399
+  },
+  {
+   "code": "article-opener-crop-fidelity",
+   "line": 430
+  },
+  {
+   "code": "inside-cover-booklet-not-blank",
+   "line": 453
+  },
+  {
+   "code": "blank-booklet-side",
+   "line": 461
+  },
+  {
+   "code": "cover-booklet-inside-not-blank",
+   "line": 477
+  },
+  {
+   "code": "blank-cover-booklet-side",
+   "line": 485
+  },
+  {
+   "code": "cover-placeholder-copy",
+   "line": 509
+  },
+  {
+   "code": "contents-pagination",
+   "line": 517
+  },
+  {
+   "code": "contents-folio-range",
+   "line": 524
+  },
+  {
+   "code": "article-page-cap",
+   "line": 533
+  },
+  {
+   "code": "editorial-page-cap",
+   "line": 541
+  }
+ ],
+ "masks": [
+  {
+   "box": [
+    0,
+    0,
+    64,
+    48
+   ],
+   "bytes": [
+    8,
+    8,
+    8,
+    8,
+    8,
+    8,
+    8,
+    8,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "name": "mask_grid.png",
+   "png": "mask_grid.png",
+   "sha256": "eb20ea183b7eb0e1a8e82b6ceab447a2a5368653bbcb971b394f48caa3eea8d9",
+   "size": [
+    "i8",
+    "i6"
+   ]
+  },
+  {
+   "box": [
+    0,
+    0,
+    37,
+    29
+   ],
+   "bytes": [
+    32,
+    0,
+    0,
+    12,
+    32,
+    0,
+    32,
+    0,
+    0,
+    0,
+    0,
+    0,
+    32,
+    0,
+    0,
+    0,
+    0,
+    0,
+    32,
+    0
+   ],
+   "name": "mask_ragged.png",
+   "png": "mask_ragged.png",
+   "sha256": "f09c4e146e29933ae866ac6aede6cb619045152d82348c52ef47265f1dc49b4f",
+   "size": [
+    "i5",
+    "i4"
+   ]
+  },
+  {
+   "box": [
+    5,
+    7,
+    61,
+    45
+   ],
+   "bytes": [
+    24,
+    64,
+    64,
+    64,
+    64,
+    40,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    12,
+    32,
+    32,
+    32,
+    32,
+    20,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "name": "mask_offset_box.png",
+   "png": "mask_offset_box.png",
+   "sha256": "e2e930ec2fd03ddfdfc564e7cc4be1911e2983c162634180bd293cd90f9d150e",
+   "size": [
+    "i7",
+    "i5"
+   ]
+  },
+  {
+   "box": [
+    0,
+    0,
+    48,
+    40
+   ],
+   "bytes": [
+    32,
+    32,
+    32,
+    32,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "name": "mask_outside_box.png",
+   "png": "mask_outside_box.png",
+   "sha256": "2873e3685d78f71d9df09333699a7f5e2b971383ef4d5271cbe6a2255e5cf289",
+   "size": [
+    "i6",
+    "i5"
+   ]
+  },
+  {
+   "box": [
+    0,
+    0,
+    32,
+    24
+   ],
+   "bytes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "name": "mask_empty.png",
+   "png": "mask_empty.png",
+   "sha256": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+   "size": [
+    "i4",
+    "i3"
+   ]
+  }
+ ],
+ "normalized": [
+  {
+   "name": "plain",
+   "normalized": "one two three",
+   "raw": "one two three"
+  },
+  {
+   "name": "double_space",
+   "normalized": "one two",
+   "raw": "one  two"
+  },
+  {
+   "name": "leading_and_trailing",
+   "normalized": "one two",
+   "raw": "  one two  "
+  },
+  {
+   "name": "tabs_and_newlines",
+   "normalized": "one two three four",
+   "raw": "one\ttwo\nthree\r\nfour"
+  },
+  {
+   "name": "only_whitespace",
+   "normalized": "",
+   "raw": " \t\n "
+  },
+  {
+   "name": "empty",
+   "normalized": "",
+   "raw": ""
+  },
+  {
+   "name": "vertical_tab_and_formfeed",
+   "normalized": "one two three",
+   "raw": "one\u000btwo\fthree"
+  },
+  {
+   "name": "file_and_group_separators",
+   "normalized": "one two three four five",
+   "raw": "one\u001ctwo\u001dthree\u001efour\u001ffive"
+  },
+  {
+   "name": "next_line_and_nbsp",
+   "normalized": "one two three",
+   "raw": "onetwo three"
+  },
+  {
+   "name": "unicode_spaces",
+   "normalized": "one two three four",
+   "raw": "one two three　four"
+  },
+  {
+   "name": "joined_shows",
+   "normalized": "BERRETA FUTURA LOOP CLOSED",
+   "raw": "BERRETA FUTURA  LOOP CLOSED"
+  },
+  {
+   "name": "empty_show_between",
+   "normalized": "one three",
+   "raw": "one  three"
+  }
+ ],
+ "opener_crop_fidelity_checks": [
+  {
+   "checks": [],
+   "crops": [
+    {
+     "kind": "figure",
+     "page": 1,
+     "path": "fidelity_crop_scaled.png",
+     "region_points": [
+      0.0,
+      0.0,
+      50.0,
+      70.0
+     ]
+    }
+   ],
+   "issues": [],
+   "name": "not_an_opener",
+   "rendered": [
+    "fidelity_reference.png"
+   ]
+  },
+  {
+   "checks": [],
+   "crops": [
+    {
+     "kind": "opener",
+     "page": 4,
+     "path": "fidelity_crop_scaled.png",
+     "region_points": [
+      0.0,
+      0.0,
+      50.0,
+      70.0
+     ]
+    }
+   ],
+   "issues": [],
+   "name": "page_out_of_range",
+   "rendered": [
+    "fidelity_reference.png"
+   ]
+  },
+  {
+   "checks": [],
+   "crops": [
+    {
+     "kind": "opener",
+     "page": 1,
+     "path": "fidelity_crop_scaled.png",
+     "region_points": [
+      0.0,
+      0.0,
+      419.5,
+      595.3
+     ]
+    }
+   ],
+   "issues": [],
+   "name": "size_mismatch",
+   "rendered": [
+    "fidelity_reference.png"
+   ]
+  },
+  {
+   "checks": [
+    {
+     "frame_edge_delta_inches": "f0000000000000000",
+     "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+     "maximum_rgb_mae": "f4020000000000000",
+     "message": "RGB MAE 0.58/255; frame edge delta 0.0000in.",
+     "normalized_pixels": [
+      "i100",
+      "i140"
+     ],
+     "page": "i1",
+     "pass": true,
+     "path": "fidelity_crop_scaled.png",
+     "rgb_mae": "f3fe276c8b4395810"
+    }
+   ],
+   "crops": [
+    {
+     "kind": "opener",
+     "page": 1,
+     "path": "fidelity_crop_scaled.png",
+     "region_points": [
+      0.0,
+      0.0,
+      50.0,
+      70.0
+     ]
+    }
+   ],
+   "issues": [],
+   "name": "passes",
+   "rendered": [
+    "fidelity_reference.png"
+   ]
+  },
+  {
+   "checks": [
+    {
+     "frame_edge_delta_inches": "f0000000000000000",
+     "maximum_frame_edge_delta_inches": "f3f847ae147ae147b",
+     "maximum_rgb_mae": "f4020000000000000",
+     "message": "RGB MAE 22.82/255; frame edge delta 0.0000in.",
+     "normalized_pixels": [
+      "i100",
+      "i140"
+     ],
+     "page": "i1",
+     "pass": false,
+     "path": "fidelity_noisy_crop.png",
+     "rgb_mae": "f4036d2f1a9fbe76d"
+    }
+   ],
+   "crops": [
+    {
+     "kind": "opener",
+     "page": 1,
+     "path": "fidelity_noisy_crop.png",
+     "region_points": [
+      0.0,
+      0.0,
+      50.0,
+      70.0
+     ]
+    }
+   ],
+   "issues": [
+    {
+     "code": "article-opener-crop-fidelity",
+     "message": "Full-page opener crop for reader page 1 does not match the final-PDF page raster. RGB MAE 22.82/255; frame edge delta 0.0000in.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "name": "fails",
+   "rendered": [
+    "fidelity_reference.png"
+   ]
+  }
+ ],
+ "opener_offset": [
+  {
+   "name": "pass",
+   "png": "opener_pass.png",
+   "row": {
+    "expected_offset_pixels": "f4020666666666666",
+    "extension_pixels": [
+     "i8",
+     "i8"
+    ],
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i170",
+     "i100"
+    ],
+    "message": "Measured orange start 8px right and 8px down, with 8px right and 8px bottom extension; expected 8.2px on every edge.",
+    "offset_pixels": [
+     "i8",
+     "i8"
+    ],
+    "pass": true,
+    "tolerance_pixels": "f4000000000000000"
+   }
+  },
+  {
+   "name": "fail_far",
+   "png": "opener_far.png",
+   "row": {
+    "expected_offset_pixels": "f4020666666666666",
+    "extension_pixels": [
+     "i20",
+     "i20"
+    ],
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i170",
+     "i100"
+    ],
+    "message": "Measured orange start 20px right and 20px down, with 20px right and 20px bottom extension; expected 8.2px on every edge.",
+    "offset_pixels": [
+     "i20",
+     "i20"
+    ],
+    "pass": false,
+    "tolerance_pixels": "f4000000000000000"
+   }
+  },
+  {
+   "name": "offset_inside_tolerance",
+   "png": "opener_offset_7.png",
+   "row": {
+    "expected_offset_pixels": "f4020666666666666",
+    "extension_pixels": [
+     "i7",
+     "i7"
+    ],
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i170",
+     "i100"
+    ],
+    "message": "Measured orange start 7px right and 7px down, with 7px right and 7px bottom extension; expected 8.2px on every edge.",
+    "offset_pixels": [
+     "i7",
+     "i7"
+    ],
+    "pass": true,
+    "tolerance_pixels": "f4000000000000000"
+   }
+  },
+  {
+   "name": "offset_outside_tolerance",
+   "png": "opener_offset_6.png",
+   "row": {
+    "expected_offset_pixels": "f4020666666666666",
+    "extension_pixels": [
+     "i6",
+     "i6"
+    ],
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i170",
+     "i100"
+    ],
+    "message": "Measured orange start 6px right and 6px down, with 6px right and 6px bottom extension; expected 8.2px on every edge.",
+    "offset_pixels": [
+     "i6",
+     "i6"
+    ],
+    "pass": false,
+    "tolerance_pixels": "f4000000000000000"
+   }
+  },
+  {
+   "name": "run_at_minimum",
+   "png": "opener_run_130.png",
+   "row": {
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i150",
+     "i100"
+    ],
+    "message": "The critic could not locate orange beyond both the frame's right and bottom edges.",
+    "pass": false
+   }
+  },
+  {
+   "name": "run_below_minimum",
+   "png": "opener_run_129.png",
+   "row": {
+    "message": "The critic could not locate the long near-black illustration frame.",
+    "pass": false
+   }
+  },
+  {
+   "name": "no_frame",
+   "png": "opener_no_frame.png",
+   "row": {
+    "message": "The critic could not locate the long near-black illustration frame.",
+    "pass": false
+   }
+  },
+  {
+   "name": "no_orange",
+   "png": "opener_no_orange.png",
+   "row": {
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i170",
+     "i100"
+    ],
+    "message": "The critic could not locate orange beyond both the frame's right and bottom edges.",
+    "pass": false
+   }
+  },
+  {
+   "name": "right_only",
+   "png": "opener_right_only.png",
+   "row": {
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i170",
+     "i100"
+    ],
+    "message": "The critic could not locate orange beyond both the frame's right and bottom edges.",
+    "pass": false
+   }
+  },
+  {
+   "name": "short_run",
+   "png": "opener_short_run.png",
+   "row": {
+    "message": "The critic could not locate the long near-black illustration frame.",
+    "pass": false
+   }
+  },
+  {
+   "name": "tolerant_frame",
+   "png": "opener_tolerant.png",
+   "row": {
+    "message": "The critic could not locate the long near-black illustration frame.",
+    "pass": false
+   }
+  },
+  {
+   "name": "narrow_rows",
+   "png": "opener_narrow.png",
+   "row": {
+    "expected_offset_pixels": "f4020666666666666",
+    "extension_pixels": [
+     "i8",
+     "i8"
+    ],
+    "frame_bbox_pixels": [
+     "i20",
+     "i30",
+     "i170",
+     "i100"
+    ],
+    "message": "Measured orange start 8px right and 8px down, with 8px right and 8px bottom extension; expected 8.2px on every edge.",
+    "offset_pixels": [
+     "i8",
+     "i8"
+    ],
+    "pass": true,
+    "tolerance_pixels": "f4000000000000000"
+   }
+  }
+ ],
+ "opener_offset_checks": [
+  {
+   "checks": [
+    {
+     "article": "a",
+     "message": "The packaged opener declaration has no valid article start page in the contents map.",
+     "page": null,
+     "pass": false
+    }
+   ],
+   "illustrated": [
+    "a"
+   ],
+   "issues": [
+    {
+     "code": "article-opener-offset-shadow",
+     "message": "Article 'a' declares opener art but has no valid reader page on which to verify its offset.",
+     "severity": "error"
+    }
+   ],
+   "name": "missing_from_toc",
+   "rendered": [
+    "opener_pass.png"
+   ],
+   "toc": {}
+  },
+  {
+   "checks": [
+    {
+     "article": "a",
+     "message": "The packaged opener declaration has no valid article start page in the contents map.",
+     "page": "i9",
+     "pass": false
+    }
+   ],
+   "illustrated": [
+    "a"
+   ],
+   "issues": [
+    {
+     "code": "article-opener-offset-shadow",
+     "message": "Article 'a' declares opener art but has no valid reader page on which to verify its offset.",
+     "page": "i9",
+     "severity": "error"
+    }
+   ],
+   "name": "page_out_of_range",
+   "rendered": [
+    "opener_pass.png"
+   ],
+   "toc": {
+    "a": 9
+   }
+  },
+  {
+   "checks": [
+    {
+     "article": "a",
+     "message": "The packaged opener declaration has no valid article start page in the contents map.",
+     "page": "i0",
+     "pass": false
+    }
+   ],
+   "illustrated": [
+    "a"
+   ],
+   "issues": [
+    {
+     "code": "article-opener-offset-shadow",
+     "message": "Article 'a' declares opener art but has no valid reader page on which to verify its offset.",
+     "page": "i0",
+     "severity": "error"
+    }
+   ],
+   "name": "page_zero",
+   "rendered": [
+    "opener_pass.png"
+   ],
+   "toc": {
+    "a": 0
+   }
+  },
+  {
+   "checks": [
+    {
+     "article": "a",
+     "expected_offset_pixels": "f4020666666666666",
+     "extension_pixels": [
+      "i8",
+      "i8"
+     ],
+     "frame_bbox_pixels": [
+      "i20",
+      "i30",
+      "i170",
+      "i100"
+     ],
+     "message": "Measured orange start 8px right and 8px down, with 8px right and 8px bottom extension; expected 8.2px on every edge.",
+     "offset_pixels": [
+      "i8",
+      "i8"
+     ],
+     "page": "i1",
+     "pass": true,
+     "tolerance_pixels": "f4000000000000000"
+    }
+   ],
+   "illustrated": [
+    "a"
+   ],
+   "issues": [],
+   "name": "passes",
+   "rendered": [
+    "opener_pass.png"
+   ],
+   "toc": {
+    "a": 1
+   }
+  },
+  {
+   "checks": [
+    {
+     "article": "a",
+     "expected_offset_pixels": "f4020666666666666",
+     "extension_pixels": [
+      "i20",
+      "i20"
+     ],
+     "frame_bbox_pixels": [
+      "i20",
+      "i30",
+      "i170",
+      "i100"
+     ],
+     "message": "Measured orange start 20px right and 20px down, with 20px right and 20px bottom extension; expected 8.2px on every edge.",
+     "offset_pixels": [
+      "i20",
+      "i20"
+     ],
+     "page": "i1",
+     "pass": false,
+     "tolerance_pixels": "f4000000000000000"
+    }
+   ],
+   "illustrated": [
+    "a"
+   ],
+   "issues": [
+    {
+     "code": "article-opener-offset-shadow",
+     "message": "Article 'a' does not have a true 4.1pt down-right orange illustration offset. Measured orange start 20px right and 20px down, with 20px right and 20px bottom extension; expected 8.2px on every edge.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "name": "fails",
+   "rendered": [
+    "opener_far.png"
+   ],
+   "toc": {
+    "a": 1
+   }
+  },
+  {
+   "checks": [
+    {
+     "article": "a",
+     "message": "The critic could not locate the long near-black illustration frame.",
+     "page": "i1",
+     "pass": false
+    }
+   ],
+   "illustrated": [
+    "a"
+   ],
+   "issues": [
+    {
+     "code": "article-opener-offset-shadow",
+     "message": "Article 'a' does not have a true 4.1pt down-right orange illustration offset. The critic could not locate the long near-black illustration frame.",
+     "page": "i1",
+     "severity": "error"
+    }
+   ],
+   "name": "no_frame",
+   "rendered": [
+    "opener_no_frame.png"
+   ],
+   "toc": {
+    "a": 1
+   }
+  },
+  {
+   "checks": [
+    {
+     "article": "a",
+     "expected_offset_pixels": "f4020666666666666",
+     "extension_pixels": [
+      "i8",
+      "i8"
+     ],
+     "frame_bbox_pixels": [
+      "i20",
+      "i30",
+      "i170",
+      "i100"
+     ],
+     "message": "Measured orange start 8px right and 8px down, with 8px right and 8px bottom extension; expected 8.2px on every edge.",
+     "offset_pixels": [
+      "i8",
+      "i8"
+     ],
+     "page": "i1",
+     "pass": true,
+     "tolerance_pixels": "f4000000000000000"
+    },
+    {
+     "article": "b",
+     "expected_offset_pixels": "f4020666666666666",
+     "extension_pixels": [
+      "i20",
+      "i20"
+     ],
+     "frame_bbox_pixels": [
+      "i20",
+      "i30",
+      "i170",
+      "i100"
+     ],
+     "message": "Measured orange start 20px right and 20px down, with 20px right and 20px bottom extension; expected 8.2px on every edge.",
+     "offset_pixels": [
+      "i20",
+      "i20"
+     ],
+     "page": "i2",
+     "pass": false,
+     "tolerance_pixels": "f4000000000000000"
+    }
+   ],
+   "illustrated": [
+    "a",
+    "b"
+   ],
+   "issues": [
+    {
+     "code": "article-opener-offset-shadow",
+     "message": "Article 'b' does not have a true 4.1pt down-right orange illustration offset. Measured orange start 20px right and 20px down, with 20px right and 20px bottom extension; expected 8.2px on every edge.",
+     "page": "i2",
+     "severity": "error"
+    }
+   ],
+   "name": "two_articles",
+   "rendered": [
+    "opener_pass.png",
+    "opener_far.png"
+   ],
+   "toc": {
+    "a": 1,
+    "b": 2
+   }
+  },
+  {
+   "checks": [],
+   "illustrated": [],
+   "issues": [],
+   "name": "none_declared",
+   "rendered": [
+    "opener_pass.png"
+   ],
+   "toc": {
+    "a": 1
+   }
+  }
+ ],
+ "page_rows": [
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "inside_cover_pages": [
+    2
+   ],
+   "issues": [
+    {
+     "code": "inside-cover-reader-not-blank",
+     "message": "Inside front and inside back covers must be completely blank (a pure-white raster with no extractable text).",
+     "page": "i2",
+     "severity": "error"
+    }
+   ],
+   "last_page_numbers": [],
+   "live_area_points": null,
+   "name": "inside_cover_not_blank",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 2,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "inside_cover_pages": [
+    2
+   ],
+   "issues": [],
+   "last_page_numbers": [],
+   "live_area_points": null,
+   "name": "inside_cover_blank",
+   "rows": [
+    {
+     "blank": true,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 2,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "blank-page",
+     "message": "Rendered page is completely blank.",
+     "page": "i5",
+     "severity": "error"
+    }
+   ],
+   "last_page_numbers": [],
+   "live_area_points": null,
+   "name": "blank_page",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": true,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [
+    {
+     "kind": "sparse",
+     "page": "i5",
+     "span": null
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "sparse-page",
+     "message": "Ink coverage is only 0.0012; confirm that the whitespace is intentional.",
+     "page": "i5",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [],
+   "live_area_points": null,
+   "name": "sparse_page",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.00123456,
+     "page": 5,
+     "sparse": true,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "orphan-punctuation",
+     "message": "A line contains only punctuation, which usually indicates a broken display title.",
+     "page": "i5",
+     "severity": "error"
+    }
+   ],
+   "last_page_numbers": [],
+   "live_area_points": null,
+   "name": "orphan_punctuation",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [
+      ",",
+      "..."
+     ],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [
+    {
+     "kind": "void",
+     "page": "i5",
+     "span": [
+      "f405fa00000000000",
+      "f407ce80000000000"
+     ]
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "whitespace-void",
+     "message": "A 354x288 pt white void starts 150 pt down the live area; confirm the whitespace is doing design work.",
+     "page": "i5",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "whitespace_void",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 288.0,
+       "trailing": false,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 150.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [],
+   "last_page_numbers": [],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "void_abuts_band_above",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": {
+      "centered": true,
+      "declared_height_points": 108.3333,
+      "gap_above_points": 24.0,
+      "gap_below_points": 16.0,
+      "height_points": 112.0,
+      "y_points": 438.5
+     },
+     "voids": [
+      {
+       "height_points": 288.0,
+       "trailing": false,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 150.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [],
+   "last_page_numbers": [],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "void_abuts_band_below",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": {
+      "centered": true,
+      "declared_height_points": 108.3333,
+      "gap_above_points": 24.0,
+      "gap_below_points": 16.0,
+      "height_points": 112.0,
+      "y_points": 438.5
+     },
+     "voids": [
+      {
+       "height_points": 20.0,
+       "trailing": false,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 550.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [
+    {
+     "kind": "void",
+     "page": "i5",
+     "span": [
+      "f4053000000000000",
+      "f406c000000000000"
+     ]
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "whitespace-void",
+     "message": "A 354x100 pt white void starts 100 pt down the live area; confirm the whitespace is doing design work.",
+     "page": "i5",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "void_near_band_but_not_abutting",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": {
+      "centered": true,
+      "declared_height_points": 108.3333,
+      "gap_above_points": 24.0,
+      "gap_below_points": 16.0,
+      "height_points": 112.0,
+      "y_points": 438.5
+     },
+     "voids": [
+      {
+       "height_points": 100.0,
+       "trailing": false,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 100.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 9
+   },
+   "flag_crops": [
+    {
+     "kind": "void",
+     "page": "i9",
+     "span": [
+      "f4071400000000000",
+      "f4081a00000000000"
+     ]
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "article-tail-gap",
+     "message": "'an-article' ends leaving a 240 pt trailing blank (43% of the live area) with no tail art printed; consider approving tail art for this article.",
+     "page": "i9",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "tail_gap",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 9,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 240.0,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 300.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "other": 4
+   },
+   "flag_crops": [
+    {
+     "kind": "void",
+     "page": "i9",
+     "span": [
+      "f4071400000000000",
+      "f4081a00000000000"
+     ]
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "article-tail-gap",
+     "message": "'unknown article' ends leaving a 240 pt trailing blank (43% of the live area) with no tail art printed; consider approving tail art for this article.",
+     "page": "i9",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "tail_gap_unknown_slug",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 9,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 240.0,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 300.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 9
+   },
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "tail_gap_too_small",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 9,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 100.0,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 300.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 9
+   },
+   "flag_crops": [
+    {
+     "kind": "void",
+     "page": "i9",
+     "span": [
+      "f4071400000000000",
+      "f4080443333333333"
+     ]
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "article-tail-gap",
+     "message": "'an-article' ends leaving a 197 pt trailing blank (35% of the live area) with no tail art printed; consider approving tail art for this article.",
+     "page": "i9",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "tail_gap_at_threshold",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 9,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 196.525,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 300.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 9
+   },
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "tail_gap_below_threshold",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 9,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 196.5,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 300.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 9
+   },
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "tail_gap_with_band",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 9,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": {
+      "centered": true,
+      "declared_height_points": 108.3333,
+      "gap_above_points": 24.0,
+      "gap_below_points": 16.0,
+      "height_points": 112.0,
+      "y_points": 438.5
+     },
+     "voids": [
+      {
+       "height_points": 240.0,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 300.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 9
+   },
+   "flag_crops": [],
+   "inside_cover_pages": [],
+   "issues": [],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": null,
+   "name": "tail_gap_without_live_area",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 9,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 240.0,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 300.0
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [
+    {
+     "kind": "void",
+     "page": "i5",
+     "span": [
+      "f407a280000000000",
+      "f4082940000000000"
+     ]
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "whitespace-void",
+     "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+     "page": "i5",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [
+    9
+   ],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "trailing_void_not_last_page",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 128.0,
+       "trailing": true,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 442.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [
+    {
+     "kind": "void",
+     "page": "i5",
+     "span": [
+      "f4053000000000000",
+      "f406c000000000000"
+     ]
+    },
+    {
+     "kind": "void",
+     "page": "i5",
+     "span": [
+      "f406c400000000000",
+      "f4077200000000000"
+     ]
+    },
+    {
+     "kind": "void",
+     "page": "i5",
+     "span": [
+      "f4077800000000000",
+      "f4081000000000000"
+     ]
+    }
+   ],
+   "inside_cover_pages": [],
+   "issues": [
+    {
+     "code": "whitespace-void",
+     "message": "A 354x100 pt white void starts 100 pt down the live area; confirm the whitespace is doing design work.",
+     "page": "i5",
+     "severity": "review"
+    },
+    {
+     "code": "whitespace-void",
+     "message": "A 354x96 pt white void starts 250 pt down the live area; confirm the whitespace is doing design work.",
+     "page": "i5",
+     "severity": "review"
+    },
+    {
+     "code": "whitespace-void",
+     "message": "A 354x120 pt white void starts 400 pt down the live area; confirm the whitespace is doing design work.",
+     "page": "i5",
+     "severity": "review"
+    }
+   ],
+   "last_page_numbers": [],
+   "live_area_points": [
+    35.0,
+    14.5,
+    388.5,
+    576.0
+   ],
+   "name": "three_voids",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 5,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": 100.0,
+       "trailing": false,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 100.0
+      },
+      {
+       "height_points": 96.0,
+       "trailing": false,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 250.0
+      },
+      {
+       "height_points": 120.0,
+       "trailing": false,
+       "width_fraction": 1.0,
+       "width_points": 353.5,
+       "x_points": 35.0,
+       "y_points": 400.0
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "printed_tail_bands": [
+  {
+   "article_last_pages": {
+    "a": 9
+   },
+   "bands": {
+    "9": "f405b1554c985f06f"
+   },
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "height_points": 108.3333,
+      "printed": true
+     }
+    ]
+   },
+   "name": "plain"
+  },
+  {
+   "article_last_pages": {
+    "a": 9
+   },
+   "bands": {},
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "height_points": null,
+      "printed": false
+     }
+    ]
+   },
+   "name": "dropped"
+  },
+  {
+   "article_last_pages": {
+    "a": 9
+   },
+   "bands": {},
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "height_points": null,
+      "printed": true
+     }
+    ]
+   },
+   "name": "no_height"
+  },
+  {
+   "article_last_pages": {
+    "a": 9
+   },
+   "bands": {},
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "z",
+      "height_points": 12.0,
+      "printed": true
+     }
+    ]
+   },
+   "name": "unknown_article"
+  },
+  {
+   "article_last_pages": {
+    "None": 4
+   },
+   "bands": {
+    "4": "f4028000000000000"
+   },
+   "layout": {
+    "tail_arts": [
+     {
+      "article": null,
+      "height_points": 12.0,
+      "printed": true
+     }
+    ]
+   },
+   "name": "null_article"
+  },
+  {
+   "article_last_pages": {
+    "a": 9
+   },
+   "bands": {
+    "9": "f4014000000000000"
+   },
+   "layout": {
+    "tail_arts": [
+     "nope",
+     {
+      "article": "a",
+      "height_points": 5,
+      "printed": true
+     }
+    ]
+   },
+   "name": "not_a_dict"
+  },
+  {
+   "article_last_pages": {
+    "a": 9
+   },
+   "bands": {},
+   "layout": {},
+   "name": "missing_key"
+  },
+  {
+   "article_last_pages": {
+    "a": 9
+   },
+   "bands": {},
+   "layout": {
+    "tail_arts": null
+   },
+   "name": "null_key"
+  },
+  {
+   "article_last_pages": {
+    "a": 9,
+    "b": 9
+   },
+   "bands": {
+    "9": "f4000000000000000"
+   },
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "height_points": 1.0,
+      "printed": true
+     },
+     {
+      "article": "b",
+      "height_points": 2.0,
+      "printed": true
+     }
+    ]
+   },
+   "name": "two_for_one_page"
+  }
+ ],
+ "rectangles": [
+  {
+   "best": [
+    "i24",
+    "i6",
+    "i4",
+    "i0",
+    "i0"
+   ],
+   "columns": 6,
+   "data": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "name": "empty",
+   "rows": 4
+  },
+  {
+   "best": [
+    "i0",
+    "i0",
+    "i0",
+    "i0",
+    "i0"
+   ],
+   "columns": 6,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255
+   ],
+   "name": "full",
+   "rows": 4
+  },
+  {
+   "best": [
+    "i12",
+    "i6",
+    "i2",
+    "i0",
+    "i2"
+   ],
+   "columns": 6,
+   "data": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "name": "band",
+   "rows": 4
+  },
+  {
+   "best": [
+    "i8",
+    "i4",
+    "i2",
+    "i2",
+    "i0"
+   ],
+   "columns": 6,
+   "data": [
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255
+   ],
+   "name": "stairs",
+   "rows": 4
+  },
+  {
+   "best": [
+    "i1",
+    "i1",
+    "i1",
+    "i1",
+    "i1"
+   ],
+   "columns": 3,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    0,
+    255,
+    255,
+    255,
+    255
+   ],
+   "name": "single",
+   "rows": 3
+  },
+  {
+   "best": [
+    "i6",
+    "i2",
+    "i3",
+    "i0",
+    "i0"
+   ],
+   "columns": 5,
+   "data": [
+    0,
+    0,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    0,
+    0
+   ],
+   "name": "tie",
+   "rows": 3
+  }
+ ],
+ "stub_and_tail": [
+  {
+   "article_last_pages": {
+    "an-article": 2
+   },
+   "flag_crops": [
+    {
+     "kind": "stub",
+     "page": "i2",
+     "span": [
+      "f0000000000000000",
+      "f406b800000000000"
+     ]
+    }
+   ],
+   "issues": [
+    {
+     "code": "article-stub-last-page",
+     "message": "The final page of 'an-article' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+     "page": "i2",
+     "severity": "review"
+    }
+   ],
+   "layout": {},
+   "name": "stub",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    },
+    {
+     "blank": false,
+     "body_text_lines": 4,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 2,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 2
+   },
+   "flag_crops": [],
+   "issues": [],
+   "layout": {},
+   "name": "no_stub",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    },
+    {
+     "blank": false,
+     "body_text_lines": 5,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 2,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 9
+   },
+   "flag_crops": [],
+   "issues": [],
+   "layout": {},
+   "name": "out_of_range",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "an-article": 1
+   },
+   "flag_crops": [
+    {
+     "kind": "stub",
+     "page": "i1",
+     "span": [
+      "f0000000000000000",
+      "f406b800000000000"
+     ]
+    }
+   ],
+   "issues": [
+    {
+     "code": "article-stub-last-page",
+     "message": "The final page of 'an-article' carries only 0 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+     "page": "i1",
+     "severity": "review"
+    }
+   ],
+   "layout": {},
+   "name": "zero_lines",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 0,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "issues": [
+    {
+     "code": "tail-art-dropped",
+     "message": "Tail art declared for 'a' was not printed (too tight); confirm the drop is intentional.",
+     "severity": "review"
+    }
+   ],
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "declared": true,
+      "drop_reason": "too tight",
+      "printed": false
+     }
+    ]
+   },
+   "name": "dropped_tail",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "issues": [
+    {
+     "code": "tail-art-dropped",
+     "message": "Tail art declared for 'unknown article' was not printed (no drop reason recorded); confirm the drop is intentional.",
+     "severity": "review"
+    }
+   ],
+   "layout": {
+    "tail_arts": [
+     {
+      "declared": true,
+      "printed": false
+     }
+    ]
+   },
+   "name": "dropped_tail_bare",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "issues": [],
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "declared": true,
+      "printed": true
+     }
+    ]
+   },
+   "name": "declared_and_printed",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "issues": [],
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "printed": false
+     }
+    ]
+   },
+   "name": "not_declared",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "issues": [],
+   "layout": {
+    "tail_arts": [
+     {
+      "article": "a",
+      "declared": 0,
+      "printed": false
+     }
+    ]
+   },
+   "name": "declared_zero",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {},
+   "flag_crops": [],
+   "issues": [],
+   "layout": {
+    "tail_arts": [
+     "x"
+    ]
+   },
+   "name": "not_a_dict",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 30,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  },
+  {
+   "article_last_pages": {
+    "a": 1,
+    "b": 2
+   },
+   "flag_crops": [
+    {
+     "kind": "stub",
+     "page": "i1",
+     "span": [
+      "f0000000000000000",
+      "f406b800000000000"
+     ]
+    },
+    {
+     "kind": "stub",
+     "page": "i2",
+     "span": [
+      "f0000000000000000",
+      "f406b800000000000"
+     ]
+    }
+   ],
+   "issues": [
+    {
+     "code": "article-stub-last-page",
+     "message": "The final page of 'a' carries only 1 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+     "page": "i1",
+     "severity": "review"
+    },
+    {
+     "code": "article-stub-last-page",
+     "message": "The final page of 'b' carries only 2 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+     "page": "i2",
+     "severity": "review"
+    }
+   ],
+   "layout": {},
+   "name": "two_stubs",
+   "rows": [
+    {
+     "blank": false,
+     "body_text_lines": 1,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 1,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    },
+    {
+     "blank": false,
+     "body_text_lines": 2,
+     "ink_free": false,
+     "ink_ratio": 0.5,
+     "page": 2,
+     "sparse": false,
+     "standalone_punctuation_lines": [],
+     "tail_band": null,
+     "voids": []
+    }
+   ]
+  }
+ ],
+ "tail_bands": [
+  {
+   "band": null,
+   "columns": 4,
+   "data": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "declared_height": 112.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "no_run",
+   "rows": 6,
+   "scale": 0.5
+  },
+  {
+   "band": null,
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "declared_height": 112.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "no_match",
+   "rows": 4,
+   "scale": 0.5
+  },
+  {
+   "band": {
+    "centered": true,
+    "declared_height_points": "f4030000000000000",
+    "gap_above_points": "f4010000000000000",
+    "gap_below_points": "f0000000000000000",
+    "height_points": "f4010000000000000",
+    "y_points": "f4040000000000000"
+   },
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 16.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "first_run",
+   "rows": 6,
+   "scale": 0.5
+  },
+  {
+   "band": {
+    "centered": true,
+    "declared_height_points": "f4030000000000000",
+    "gap_above_points": "f4010000000000000",
+    "gap_below_points": "f0000000000000000",
+    "height_points": "f4030000000000000",
+    "y_points": "f4038000000000000"
+   },
+   "columns": 4,
+   "data": [
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 16.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "last_run_trailing",
+   "rows": 7,
+   "scale": 0.5
+  },
+  {
+   "band": {
+    "centered": true,
+    "declared_height_points": "f4030000000000000",
+    "gap_above_points": "f4010000000000000",
+    "gap_below_points": "f0000000000000000",
+    "height_points": "f4010000000000000",
+    "y_points": "f4044000000000000"
+   },
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 16.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "middle_run",
+   "rows": 8,
+   "scale": 0.5
+  },
+  {
+   "band": {
+    "centered": true,
+    "declared_height_points": "f4030000000000000",
+    "gap_above_points": "f4010000000000000",
+    "gap_below_points": "f0000000000000000",
+    "height_points": "f4030000000000000",
+    "y_points": "f4040000000000000"
+   },
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 16.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "last_match_wins",
+   "rows": 9,
+   "scale": 0.5
+  },
+  {
+   "band": {
+    "centered": true,
+    "declared_height_points": "f403c000000000000",
+    "gap_above_points": "f4042000000000000",
+    "gap_below_points": "f4010000000000000",
+    "height_points": "f4030000000000000",
+    "y_points": "f404a000000000000"
+   },
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 28.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "symmetry_at_tolerance",
+   "rows": 16,
+   "scale": 0.5
+  },
+  {
+   "band": {
+    "centered": false,
+    "declared_height_points": "f403c000000000000",
+    "gap_above_points": "f4044000000000000",
+    "gap_below_points": "f4010000000000000",
+    "height_points": "f4030000000000000",
+    "y_points": "f404c000000000000"
+   },
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 28.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "symmetry_past_tolerance",
+   "rows": 17,
+   "scale": 0.5
+  },
+  {
+   "band": {
+    "centered": true,
+    "declared_height_points": "f403c000000000000",
+    "gap_above_points": "f4042000000000000",
+    "gap_below_points": "f4010000000000000",
+    "height_points": "f4030000000000000",
+    "y_points": "f404a000000000000"
+   },
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 28.0,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "height_at_tolerance",
+   "rows": 16,
+   "scale": 0.5
+  },
+  {
+   "band": null,
+   "columns": 4,
+   "data": [
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    255,
+    0,
+    0,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255
+   ],
+   "declared_height": 28.1,
+   "live": [
+    40,
+    24,
+    400,
+    560
+   ],
+   "name": "height_past_tolerance",
+   "rows": 16,
+   "scale": 0.5
+  }
+ ],
+ "void_geometry": [
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4058000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f4058000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f4010000000000000"
+      }
+     ]
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "height_at_threshold",
+   "rasters": [
+    "void_band_192.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4057000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "height_below_threshold",
+   "rasters": [
+    "void_band_184.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4058000000000000",
+      "trailing": false,
+      "width_fraction": "f3feccccccccccccd",
+      "width_points": "f4052000000000000",
+      "x_points": "f4020000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f4058000000000000",
+       "trailing": false,
+       "width_fraction": "f3feccccccccccccd",
+       "width_points": "f4052000000000000",
+       "x_points": "f4020000000000000",
+       "y_points": "f4010000000000000"
+      }
+     ]
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "width_at_threshold",
+   "rasters": [
+    "void_narrow_18.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4058000000000000",
+      "trailing": false,
+      "width_fraction": "f3feb333333333333",
+      "width_points": "f4051000000000000",
+      "x_points": "f4028000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "width_below_threshold",
+   "rasters": [
+    "void_narrow_17.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4059000000000000",
+      "trailing": true,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f4059000000000000",
+       "trailing": true,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f4010000000000000"
+      }
+     ]
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "trailing_at_tolerance",
+   "rasters": [
+    "void_trailing_32.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4058000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f4058000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f4010000000000000"
+      }
+     ]
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "trailing_past_tolerance",
+   "rasters": [
+    "void_trailing_40.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f405b000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f405b000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f4010000000000000"
+      },
+      {
+       "height_points": "f405a000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f405d000000000000"
+      },
+      {
+       "height_points": "f4059000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f406c000000000000"
+      }
+     ]
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f407ac00000000000"
+   ],
+   "name": "three_voids",
+   "rasters": [
+    "void_three.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      856
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": null,
+     "page": "i1",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "fully_inked",
+   "rasters": [
+    "void_full.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f405e000000000000",
+      "trailing": true,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f0000000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f405e000000000000",
+       "trailing": true,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f0000000000000000"
+      }
+     ]
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "all_blank",
+   "rasters": [
+    "void_blank.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4048000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f404a000000000000"
+     },
+     "page": "i1",
+     "tail_band": {
+      "centered": true,
+      "declared_height_points": "f4010000000000000",
+      "gap_above_points": "f4028000000000000",
+      "gap_below_points": "f0000000000000000",
+      "height_points": "f4010000000000000",
+      "y_points": "f405d000000000000"
+     },
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "with_tail_band",
+   "rasters": [
+    "void_band_and_tail.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {
+    "1": 4.0
+   }
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4048000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f404a000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "tail_band_not_found",
+   "rasters": [
+    "void_band_and_tail.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {
+    "1": 400.0
+   }
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": null,
+     "page": "i1",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [],
+   "live_area_points": null,
+   "name": "no_body_boxes",
+   "rasters": [
+    "void_band_192.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": null,
+     "page": "i1",
+     "tail_band": null,
+     "voids": []
+    },
+    {
+     "largest_void": null,
+     "page": "i2",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1,
+    2
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "no_presence_bbox",
+   "rasters": [
+    "void_band_192.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": null
+    },
+    {
+     "page": 2,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": null,
+     "page": "i1",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4000000000000000",
+    "f4000000000000000"
+   ],
+   "name": "tiny_live_area",
+   "rasters": [
+    "void_band_192.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      4,
+      4
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4058000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f4058000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f4010000000000000"
+      }
+     ]
+    },
+    {
+     "largest_void": null,
+     "page": "i2",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1,
+    2
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "page_beyond_rasters",
+   "rasters": [
+    "void_band_192.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    },
+    {
+     "page": 2,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4058000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f4058000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4054000000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f4010000000000000"
+      }
+     ]
+    },
+    {
+     "largest_void": {
+      "height_points": "f4057000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4054000000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i2",
+     "tail_band": null,
+     "voids": []
+    }
+   ],
+   "body_pages": [
+    1,
+    2
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4054000000000000",
+    "f405e000000000000"
+   ],
+   "name": "two_pages_widen_live",
+   "rasters": [
+    "void_band_192.png",
+    "void_band_184.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      10,
+      20,
+      100,
+      200
+     ]
+    },
+    {
+     "page": 2,
+     "presence_bbox": [
+      0,
+      0,
+      160,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  },
+  {
+   "annotated": [
+    {
+     "largest_void": {
+      "height_points": "f4058000000000000",
+      "trailing": false,
+      "width_fraction": "f3ff0000000000000",
+      "width_points": "f4053c00000000000",
+      "x_points": "f0000000000000000",
+      "y_points": "f4010000000000000"
+     },
+     "page": "i1",
+     "tail_band": null,
+     "voids": [
+      {
+       "height_points": "f4058000000000000",
+       "trailing": false,
+       "width_fraction": "f3ff0000000000000",
+       "width_points": "f4053c00000000000",
+       "x_points": "f0000000000000000",
+       "y_points": "f4010000000000000"
+      }
+     ]
+    }
+   ],
+   "body_pages": [
+    1
+   ],
+   "live_area_points": [
+    "f0000000000000000",
+    "f0000000000000000",
+    "f4053c00000000000",
+    "f405e000000000000"
+   ],
+   "name": "live_width_not_a_cell_multiple",
+   "rasters": [
+    "void_band_192.png"
+   ],
+   "rows": [
+    {
+     "page": 1,
+     "presence_bbox": [
+      0,
+      0,
+      158,
+      240
+     ]
+    }
+   ],
+   "tail_bands": {}
+  }
+ ]
+}
