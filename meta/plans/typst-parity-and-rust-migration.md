@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 61 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 62 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,75 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 62 changelog
+
+**DECISION: in-crate `#[cfg(test)]` is the required style for any claim
+about the MODULE TREE; `#[path]` stays for file-level algorithm tests. No
+`[lib]` target.** The sweep found the `#[path]` trap is not two instances
+but **51, across 16 of `mag/tests/`'s 22 files**, and that it is FORCED:
+`mag/Cargo.toml` declares `[package]` and `[[bin]]` with no `[lib]`, and
+`mag/src/lib.rs` does not exist (all verified). A binary-only crate gives
+integration tests no library target to link, so `use mag::...` is
+impossible and `#[path]` is the only mechanism those files have. Revision
+61's rule was right and, unamended, condemned a pattern nobody could avoid.
+
+**Why not the `[lib]` target, which is the option that looks like the real
+fix.** A `[lib]` exposes only `pub` items to integration tests, and **every
+case this plan actually has is a NON-`pub` item**: blocker 1 is
+`mod streams` private, and all four private-sibling instances are private
+or `pub(crate)` helpers. So a `[lib]` would not make one of them testable.
+Worse, it would create pressure to widen the public surface **to satisfy
+tests**, which inverts the plan's own discipline, rule 1 already holding
+that a `pub use` is precisely a public-surface change and not a
+"behaviour-free" one. The wall would move rather than fall, exactly as the
+coordinator suspected, and it would move in the wrong direction.
+
+**Why in-crate is not merely the cheapest but the only option that makes
+rule 12 EXECUTABLE.** Rule 12 requires a capability for another module to
+be proven by a CONSUMER TEST that imports the ordinary way. In a
+binary-only crate the ordinary way is `use crate::...` from inside the
+crate, so a `#[cfg(test)]` module in `mag/src/critic/` doing
+`use crate::parity::display;` fails with `E0603` exactly as the real
+consumer did. **That is the test blocker 1 needed and could not express**,
+and a `[lib]` would not have provided it. In-crate tests also reach private
+siblings directly, so `metrics.rs`'s own `#[cfg(test)]` module can exercise
+`fn resize` with no visibility change at all.
+Cost is low and the practice already exists: **13 source files carry
+in-crate `#[cfg(test)]` modules today**, and WP-2.2a chose that style
+deliberately.
+
+**No migration of the existing 51.** They are genuine file-level algorithm
+tests and rewriting them buys no verification, only churn and risk. The
+rule is prospective and narrow: **a property of the MODULE TREE is asserted
+in-crate; a property of an ALGORITHM may be asserted through `#[path]`.**
+Where a `#[path]` test is the only coverage of something module-level, the
+WP says so rather than migrating the file.
+
+**What would reverse this**, stated so the decision is revisitable rather
+than permanent: something OUTSIDE the crate needing to link `mag` as a
+library, a second binary, a benchmark harness, or an external consumer.
+Nothing does today, `mag` being a CLI, so `[lib]` would be added for the
+tests' convenience alone, which is the tail wagging the dog. If WP-5.6's
+native render path turns out to want a library boundary for its own
+reasons, that is a genuine trigger and a plan revision, not a workaround.
+
+**The `cover_modes` count resolves, and the named-commit rule is what made
+it resolvable.** Revision 58 recorded 11 with its domain and its commit
+against a reported 12. Re-derived across commits: **11 at `25184fb`, 11 at
+`a911ff1`, 11 at `aa8bdac`, 13 at HEAD** once WP-5.4b-ii landed its two
+fixtures. So the revision 58 figure was right and is STILL right at the
+commit it names, and 13 is right now. Two numbers, both correct, differing
+only by base, which is precisely what rule 9's named-commit clause predicts
+and precisely what an undated count cannot express.
+
+**And the general lesson is about the rule, not the crate.** Two instances
+predicted a third; the sweep found fifty-one. **Writing the general form
+rather than the incident is what made the sweep thinkable at all**, since
+nobody sweeps for a habit, only for a rule. That is the second time in two
+days a generalisation has immediately paid: the agreeing-region rule was
+applied prospectively an hour after landing, and this one turned a
+suspicion into a structural fact about the crate.
 
 ## Revision 61 changelog
 
@@ -3776,6 +3845,37 @@ before/after comparisons (WP-4.3); out of scope here.
    the seam stayed unusable; this bypasses the module DECLARATION. Anything
    depending on the crate's module tree, privacy, declaration, reachability
    from the crate root, is exactly what a `#[path]` test cannot see.
+1d. **TEST STYLE, decided in revision 62 because the trap above is FORCED
+   and not a habit. A property of the MODULE TREE is asserted IN-CRATE; a
+   property of an ALGORITHM may be asserted through `#[path]`.**
+   The sweep: **51 `#[path]` includes across 16 of `mag/tests/`'s 22
+   files**, and `mag/Cargo.toml` has `[package]` and `[[bin]]` with **no
+   `[lib]`**, `mag/src/lib.rs` absent. A binary-only crate gives an
+   integration test no library target to link, so `use mag::...` is
+   impossible and `#[path]` is the only mechanism those files have. The
+   rule above is true of them and is nobody's error.
+   - **Module-tree claims go in a `#[cfg(test)]` module inside the crate**,
+     where `use crate::...` is the ordinary import and privacy, declaration
+     and reachability all apply. This is what makes rule 12's CONSUMER TEST
+     executable here: a `#[cfg(test)]` module in `mag/src/critic/` doing
+     `use crate::parity::display;` fails with `E0603` exactly as the real
+     consumer did, which is the test blocker 1 needed and could not
+     express. It also reaches private siblings directly, so a module's own
+     test can exercise a private helper with NO visibility change.
+   - **`#[path]` integration tests keep the file-level algorithm work**,
+     and the existing 51 are NOT migrated: they are genuine algorithm tests
+     and rewriting them buys churn, not verification. Where a `#[path]`
+     test is the only coverage of something module-level, say so in
+     evidence instead of migrating the file.
+   - **No `[lib]` target**, because it would not fix a single case the plan
+     has: blocker 1 is a private `mod`, and all four private-sibling
+     instances are private or `pub(crate)`, none of which a `[lib]` exposes.
+     It would instead pressure the public surface to widen FOR THE TESTS,
+     which rule 1 above already refuses. Reversal condition, so this stays
+     revisitable: something outside the crate needing to link `mag` as a
+     library. Nothing does today.
+   Already the majority practice on the source side, with 13 files carrying
+   in-crate `#[cfg(test)]` modules, so this codifies rather than imposes.
    **A PORT BLOCKED BY A PRIVATE SIBLING HELPER IS NOW THE PLAN'S MOST
    REPEATED WALL, hit three times, so treat it as expected rather than as
    an incident.** WP-0.2h's tracer seam (blocker 1), WP-5.4a's
@@ -3794,6 +3894,13 @@ before/after comparisons (WP-4.3); out of scope here.
    ONE item and the ONE word (`pub(crate)`); it does not duplicate, and it
    does not self-grant.** A port that duplicates anyway states in evidence
    what it has therefore pinned the copy TO.
+   **The wall is about CONSUMERS, not about tests (revision 62).** All four
+   instances are private or `pub(crate)` items, so no `[lib]` target would
+   expose them and adding one would only push the public surface wider to
+   satisfy tests. A module's OWN in-crate `#[cfg(test)]` module reaches its
+   private helpers with no visibility change at all, which means **testing
+   a private helper is never a reason to widen it**; only a real consumer
+   in another module is, and that is what the Owns extension is for.
    **And the converse case exists, so the audit must NOT treat every
    same-named pair as a duplicate to be merged.** `normalize_reader_text`
    in `mag/src/typeset/content.rs` is Python-pinned;
@@ -6572,7 +6679,12 @@ them or the divergence is a defect:
   so `display::trace_elements` cannot be imported by `mag/src/critic/` and
   a consumer fails with `error[E0603]: module 'streams' is private`. The
   fix is one line and belongs to WP-2.0b, which holds `parity.rs`, together
-  with a CONSUMER TEST that imports the ordinary way. WP-0.2h demonstrated
+  with a CONSUMER TEST that imports the ordinary way. **Revision 62 makes
+  that test expressible**: in a binary-only crate the ordinary way is
+  `use crate::...` from an in-crate `#[cfg(test)]` module, so a test in
+  `mag/src/critic/` fails with `E0603` exactly as the real consumer does.
+  A `[lib]` target would NOT have provided it, since `mod streams` is
+  private and a library exposes only `pub` items (rule 1d). WP-0.2h demonstrated
   the seam through a `#[path]` test include, which bypasses module privacy
   entirely, so the demonstration passed and its verification confirmed the
   demonstration while the seam stayed unusable. See rule 12.
