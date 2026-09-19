@@ -247,10 +247,15 @@ pub const ROSTER_MIN_NAMES: usize = 3;
 pub const ROSTER_MAX_NAME_WORDS: usize = 6;
 
 pub fn is_name_roster(text: &str) -> bool {
-    let names: Vec<&str> = text.split('\u{2022}').map(str::trim).collect();
+    let names: Vec<&str> = text.split('\u{2022}').map(py_strip).collect();
     names.len() >= ROSTER_MIN_NAMES
         && names.iter().all(|name| {
-            !name.is_empty() && name.split_whitespace().count() <= ROSTER_MAX_NAME_WORDS
+            !name.is_empty()
+                && name
+                    .split(is_python_space)
+                    .filter(|word| !word.is_empty())
+                    .count()
+                    <= ROSTER_MAX_NAME_WORDS
         })
 }
 

@@ -1,0 +1,20 @@
+{
+ "cases": [
+  {
+   "name": "seven words, but only when U+001E splits",
+   "python": false,
+   "text": "a b c d e f\u001eg \u2022 C D \u2022 E F"
+  },
+  {
+   "name": "a segment that is empty only after a Python strip",
+   "python": false,
+   "text": "\u001e \u2022 C D \u2022 E F"
+  },
+  {
+   "name": "control: U+001E inside a segment, both agree",
+   "python": true,
+   "text": "A\u001eB \u2022 C D \u2022 E F"
+  }
+ ],
+ "separator": "U+2022"
+}
