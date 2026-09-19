@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 65 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 66 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,80 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 66 changelog
+
+**WP-2.2c REFUTED BOTH PREMISES OF THE ORPHAN/WIDOW QUESTION AND REACHED
+56 AGAINST 56 IN A PROBE. Two plan claims are falsified, one of them a
+decision I took.**
+
+**TYPST 0.15.1 HAS ORPHAN AND WIDOW CONTROL, and it is ON BY DEFAULT.**
+Verified in the vendored source rather than taken on report:
+`text.costs.widow` and `text.costs.orphan` at
+`typst-library-0.15.1/src/text/mod.rs:576-595`, the documentation stating
+that text layout prevents widows and orphans BY DEFAULT, with `0%` allowing
+them and anything else including the default preventing a single line;
+`widow()` and `orphan()` at `:1526-1532` return `Ratio::one()` when unset.
+**That is `orphans: 2; widows: 2`**, and the typst leg has been honouring
+the constraint all along with no template code.
+So **the unowned parity risk never existed**, and revision 60's decision is
+WITHDRAWN: WP-2.2c does not own orphan/widow control, no sanctioned oracle
+change is needed, and **WP-4.3 inherits nothing here.** I assigned that
+work in WP-1.5's shape on a reported measurement, and the check that would
+have caught it was one grep of a vendored crate.
+
+**AND THIS IS THE SECOND TIME THIS WEEK A "THE LIBRARY HAS NO MECHANISM
+FOR THIS" PREMISE WAS REFUTED BY READING THE SOURCE**, after pypdf
+perturbation turning out to produce display-list-equal fixtures. Both were
+stated confidently, neither had been checked against the code, and both
+cost a plan revision. **A claim that a library LACKS a mechanism is an
+ABSENCE CLAIM**, so rule 10h already governs it: it is checked by a search
+that is shown to work, not by reputation or recall. Recorded there rather
+than as a new rule, because the rule set gets stronger by covering more
+with less.
+
+**THE ABLATION IS CONCLUSIVE BECAUSE THE OPPOSITE EXTREME WAS RUN, and it
+yields the distinction this plan keeps needing: INERT IS NOT ABSENT.**
+Ablating WeasyPrint to `orphans: 1; widows: 1` is exactly page-count
+neutral on 010, 56 pages with all nine article starts and spans identical,
+and so are 4/4 and 7/7. It **first binds at 8/8** (dario 13 to 14 pages),
+and **at 99/99 pagination moves again**. So the mechanism is live in
+WeasyPrint 69.0 and live on 010; the shipped value simply has five lines of
+slack, 010's tightest paragraph split leaving seven lines, which makes the
+interval 1..7 inert. **A less careful measurement would have concluded the
+setting does nothing**, which is rule 10's opposite-extreme requirement
+earning its place on a corpus property rather than on a fixture.
+
+**THE FIGURE ACCOUNT SURVIVES, MEASURED, AND THE COMPETING-ACCOUNTS
+QUESTION FROM REVISION 56 IS CLOSED ON BOTH SIDES.** With figure flow
+reserved: `the-third-era` stays 4 and `towards-self-driving` stays 5, so
+**placing their figures IS page-neutral**, which is precisely the
+obligation revision 60 imposed rather than let the account assume; and
+`an-alignment-assessment` goes 5 to 6. Article pages 45 to 46, **every
+article start matching the oracle** (4, 7, 11, 17, 31, 36, 40, 46, 50),
+all five plates on the oracle's own pages (10, 30, 35, 45, 54), **total 56
+against 56**. Figures explain the residual, orphans and widows explain
+nothing, and both were settled by measurement rather than argument.
+
+**A PLAN-ORDERING DEFECT, AND THE AGENT REFUSED TO SHIP AROUND IT WITH A
+PASSING RESULT IN HAND.** A curated figure's flow height needs the image's
+NATURAL PIXEL SIZE, reachable from nothing WP-2.2c owns: `figure-block`
+carries no path or dimensions, `world.rs::file()` returns source text only,
+and `template::world()` never receives the staged root. It probed with
+three heights transcribed from the oracle's output, got the result, and
+**declined to ship them** because corpus-pinned constants keyed by 010's
+figure ids are what rule 6 forbids. That is rule 6 obeyed at its most
+expensive moment, when obeying it costs a green run.
+**Ratified: the narrowest fix, one named argument in `Writer::figure`
+carrying the natural pixel size, with the fit staying in the template so
+WP-3.4 can later swap in a real `image()` without moving the arithmetic.**
+The condition attached is the right one and is binding: **re-run WP-2.1's
+projection oracle and show the byte-for-byte result survives, recording
+before-and-after digests.** Phase 2 rests on that result, the boundary
+between markup content and code-mode arguments is a discipline rather than
+a guard, and WP-2.1's own first draft crossed it in the other direction.
+The alternative, declaring page count WP-3.4's, would move the gating
+clause for all of Phase 3 and is worse than a one-argument extension.
 
 ## Revision 65 changelog
 
@@ -4904,6 +4978,21 @@ before/after comparisons (WP-4.3); out of scope here.
      make it fail and commit a case that does, applied to searches rather
      than to tests, and it costs one command. WP-5.5a's `ampersand_first`
      row is the model.
+   - **"THIS LIBRARY HAS NO MECHANISM FOR X" IS AN ABSENCE CLAIM, so it is
+     checked against the SOURCE, never against reputation or recall.**
+     Twice this week a confident one was refuted by reading vendored code.
+     **Typst 0.15.1 was said to have no orphan/widow control**; it has
+     `text.costs.widow` and `text.costs.orphan` at
+     `typst-library-0.15.1/src/text/mod.rs:576-595`, prevention ON BY
+     DEFAULT (`Ratio::one()` when unset, `:1526`), so the constraint was
+     being honoured with no template code and an unowned parity risk was
+     invented for work nobody needed to do. And **pypdf perturbation was
+     said to be unable to produce display-list-equal fixtures**; it can,
+     because a TJ kern changes no field the display list records. Both cost
+     a plan revision; both were one grep of a vendored crate away.
+     The positive control here is easy and should be demanded: find a
+     mechanism in that same source that you KNOW exists, with the same
+     search, before reporting that another one does not.
    WP-0.3 makes this mechanical rather than remembered; until it lands,
    every negative finding in evidence carries its positive control.
 10f. **PROVE THE PARAMETER IS HONOURED, NOT THAT THE OUTPUTS AGREE.**
@@ -6370,16 +6459,24 @@ Target: every 010 figure/extract present on some page (same-page equality
 is WP-3.4); **Tier S page count on 010, and a verdict with every tier
 EVALUATED** (both moved here from 2.2a and 2.2b, which cannot reach them);
 verdict digest recorded.
-**Also owns ORPHAN AND WIDOW CONTROL**, which nothing owned until revision
-56 and which can move page count by itself. `weasyprint-a5.css:549` sets
-`p { orphans: 2; widows: 2 }` as a deliberate editorial choice (comment at
-`:527`); Typst 0.15.1 has no mechanism for it. Two steps, in order:
-  - measure whether any Typst construction reproduces the constraint;
-  - if none does, apply the SANCTIONED oracle change `orphans: 1;
-    widows: 1` in both engines for parity, restored post-flip under WP-4.3
-    exactly as WP-1.5's hyphenation switch is. This is a real visual change
-    to the magazine, not a no-op, which is why it is sanctioned with a
-    named restoration owner rather than edited quietly.
+**ORPHAN AND WIDOW CONTROL: WITHDRAWN IN REVISION 66. This WP does not own
+it, and there is nothing to own.** Revision 56 flagged it as an unowned
+parity risk and revision 60 assigned it here in WP-1.5's shape, both on the
+premise that Typst 0.15.1 has no mechanism. **The premise is false**, found
+in the vendored source: `text.costs.widow` and `text.costs.orphan` at
+`typst-library-0.15.1/src/text/mod.rs:576-595`, prevention ON BY DEFAULT
+with `widow()`/`orphan()` returning `Ratio::one()` when unset (`:1526`),
+which is `orphans: 2; widows: 2`. The typst leg has been honouring it all
+along with no template code. **No sanctioned oracle change; WP-4.3 inherits
+nothing.**
+Measured on the oracle side too, and the measurement is worth keeping
+because it establishes that **INERT IS NOT ABSENT**: ablating WeasyPrint to
+`orphans: 1; widows: 1` is exactly page-count neutral on 010 (56 pages, all
+nine article starts and spans identical), as are 4/4 and 7/7; it first
+BINDS at 8/8 (dario 13 to 14), and at 99/99 pagination moves again. The
+mechanism is live in WeasyPrint 69.0 and on 010; the shipped value just has
+five lines of slack, 010's tightest paragraph split leaving seven. Running
+only the low end would have concluded the setting does nothing.
   **And it must run BEFORE the figure attribution is believed.** Three of
   the four missing pages correlate with the three figures, over three
   items, and orphan/widow divergence can produce the same pattern, so per
