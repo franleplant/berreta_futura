@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 64 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 65 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,68 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 65 changelog
+
+**THE RULE IS ABOUT CLAIMS OF ABSENCE, NOT ABOUT HAND-OFF LINES, and a
+fourth instance nearly inverted a finding that produced four revisions.**
+The coordinator's first `#[path]` sweep was
+`grep -rn '#\[path' mag/ --include=*.rs`; zsh expanded `--include=*.rs` as
+a glob, matched no file, and **aborted the whole command**. The count
+printed `0`. Trusted, it would have reported **zero `#[path]` includes in
+the repository** against the 54 that exist, and revisions 61 through 64a
+would never have been written. It was caught only because zsh's error text
+happened to be visible in the same block.
+Four instances in two days by four different routes: `set -o pipefail`
+aborting on an expected-empty `grep`; an unquoted `$mode` reaching clap as
+one argument; `git -C <dir>` in a shell variable failing every call; and a
+quoting error aborting a recursive grep. **Two were the planner's, one a
+worker's, one the coordinator's, and all four of us knew the rule at the
+time.**
+
+**The common structure is not a caption diverging from a command. It is
+that A COMMAND THAT DID NOT RUN AND A COMMAND THAT FOUND NOTHING PRODUCE
+THE SAME OUTPUT.** Absence is the one result that cannot distinguish itself
+from failure. **And this protocol is MADE OF absence checks**: index clean,
+no staged reversion, no `#[path]` in this file, no `use crate::` in
+included files, no U+2014 in the plan, `git status --porcelain` empty, no
+remaining call sites, a branch unreachable on 010. Every one reports
+success by finding nothing, which is exactly what a broken command
+produces. So the rule generalises past the four landing checks to **every
+negative finding in this plan** (rule 10h).
+
+**A PRECISION THE RULE NEEDS, verified here, because "gate on exit status"
+is ambiguous for the tool this is mostly about.** `grep` exits **0 when it
+finds something, 1 when it finds nothing, and 2 on error**, so its
+not-found exit IS nonzero and a naive status gate would read a correct
+absence as a failure. The distinction is THREE-WAY: 0 present, 1 absent,
+2 or more unknown. And the zsh case is worse than a bad exit status: the
+shell aborted before grep ran at all, so the subshell died and the
+reporting statement never executed, which no check on grep's status could
+have caught. A wrapper that runs the command and inspects its own status
+is the only construction that sees both.
+
+**DECISION: commissioned as WP-0.3, a tools-side WP.** Four instances in
+two days, by four routes, with every party knowing the rule, is the
+evidence that a habit will not hold; and the plan already recorded that
+both planner instances happened WHILE WRITING THE RULE AGAINST THEM. It
+touches `tools/` only, so rule 4's comparator separation is unaffected and
+it can run beside anything.
+**Its design carries the corollary MECHANICALLY rather than by
+instruction**, which is the part worth insisting on: the helper **requires
+a positive control** and refuses to report ABSENT without one. That is
+WP-5.5a's `ampersand_first` generalised from tests to searches: **a grep
+that finds nothing proves something only if you have watched the same grep
+find something.** Costing one extra command, and making the guard rule
+(state what would make it fail, commit a case that does) apply to sweeps.
+
+**Two acknowledgements.** The `#[allow(dead_code)]` figure is **30 of 54
+includes across 13 test files**, worse than first reported, and it sharpens
+rather than softens the point: nobody can tell which of the 30 are
+load-bearing. And the spec-versus-output choice being made **per helper,
+not per file** is the part of that rule that had been stated loosely:
+authoring is the default, transcription the disclosed exception, decided at
+each helper.
 
 ## Revision 64 changelog
 
@@ -4810,6 +4872,40 @@ before/after comparisons (WP-4.3); out of scope here.
    third instance of revision 56's class: **an obligation attached to a
    clause cannot be discharged before the clause can evaluate**, so it
    travels with the clause and is never scheduled against a phase.
+10h. **A CLAIM OF ABSENCE GATES ON WHETHER THE COMMAND RAN, and says
+   UNKNOWN when it did not.** The structure, which is why this is a rule
+   and not a shell tip: **a command that did not run and a command that
+   found nothing produce the same output.** Absence is the one result that
+   cannot distinguish itself from failure, and **this protocol is made of
+   absence checks**: index clean, no staged reversion, no `#[path]` in this
+   file, no `use crate::` in an included file, no U+2014 in the plan,
+   `git status --porcelain` empty, no remaining call sites, a branch 010
+   cannot reach. Every one reports success by finding nothing.
+   Four instances in two days, by four routes, with every party knowing the
+   rule: `set -o pipefail` aborting on an expected-empty `grep`; an
+   unquoted `$mode` reaching clap as one argument; `git -C <dir>` stored in
+   a shell variable so every call failed and an empty capture printed
+   "index clean at tip" with an empty sha; and
+   `grep -rn ... --include=*.rs` aborted by zsh glob expansion, printing
+   `0` for a population of 54. **The last would have reported that this
+   repository contains no `#[path]` includes at all**, inverting the
+   finding behind four revisions.
+   - **Three-way, not two**, because `grep`'s not-found exit IS nonzero:
+     **0 present, 1 absent, 2 or more UNKNOWN** (verified). A naive status
+     gate reads a correct absence as a failure and is abandoned on the
+     first true negative, which is worse than no gate.
+   - **A shell abort beats any status check**, since zsh's glob failure
+     killed the subshell before grep ran and the reporting statement never
+     executed. Only a wrapper that runs the command and inspects its own
+     result sees both this and the case above.
+   - **DEMONSTRATE THE SEARCH AGAINST A CASE WHERE THE THING IS PRESENT.**
+     A grep that finds nothing proves something only if you have watched
+     the SAME grep find something. This is the guard rule, state what would
+     make it fail and commit a case that does, applied to searches rather
+     than to tests, and it costs one command. WP-5.5a's `ampersand_first`
+     row is the model.
+   WP-0.3 makes this mechanical rather than remembered; until it lands,
+   every negative finding in evidence carries its positive control.
 10f. **PROVE THE PARAMETER IS HONOURED, NOT THAT THE OUTPUTS AGREE.**
    Identical outputs across a varied parameter are equally consistent with
    INVARIANCE and with the parameter being IGNORED, and only an observation
@@ -5606,6 +5702,41 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
   different answers. `MAG_PARITY_OUT_DIR` plus an exclusive `run.lock`;
   both cases committed as `mag/tests/parity_concurrent.rs`.
   Its near-miss is rule 10b.
+
+### WP-0.3 the absence-check helper (tools WP)
+
+- Owns: one new file under `tools/`, and nothing else. Touches no
+  `mag/src/parity*`, so rule 4 does not apply and it runs beside anything.
+- Why: rule 10h, and the evidence that a habit will not hold. **Four
+  instances in two days by four different routes, from all four parties,
+  every one of whom knew the rule**, including two by the planner WHILE
+  WRITING THE RULE AGAINST THEM, and one that would have reported this
+  repository contains zero `#[path]` includes against a true population of
+  54. Absence checks are most of this protocol's verification surface.
+- Work: a helper that runs a search or status command and reports
+  **PRESENT / ABSENT / UNKNOWN**, never conflating the last two.
+  - Three-way on the real exit codes: `grep` gives 0 present, 1 absent, 2
+    or more error. Anything that is not a clean 0 or 1, including a signal
+    or a command that never ran, is UNKNOWN.
+  - Survives a SHELL-LEVEL abort: zsh's failed glob killed the subshell
+    before the tool ran, so the helper must invoke the command itself
+    rather than be handed its output, and must print UNKNOWN if it cannot
+    tell that the command executed.
+  - **REQUIRES A POSITIVE CONTROL and refuses to report ABSENT without
+    one**, which is the corollary made mechanical instead of instructed:
+    a pattern, or an input, that the SAME search is known to find. This is
+    WP-5.5a's `ampersand_first` generalised from tests to searches, and it
+    is the whole reason the helper is worth building rather than writing a
+    careful shell line each time.
+  - Usable for the four landing checks and for evidence sweeps alike; the
+    landing checks are the obvious consumer but the sweeps are where the
+    inverted finding came from.
+- Verify: the helper reports UNKNOWN for a misquoted glob, for a
+  nonexistent path, and for a command killed by a signal; ABSENT only when
+  its positive control was found; PRESENT with the matches. Each of the
+  four recorded instances is replayed through it and lands in the right
+  bucket, which is the straddle discipline applied to the tool itself.
+  `uvx ruff` green if Python, `cargo test` unaffected, no comments.
 
 ### WP-0.2l the digest does not cover the RENDERER (comparator WP)
 
