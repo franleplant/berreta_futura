@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 53 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 54 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,89 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 54 changelog
+
+**THE PROVENANCE AUDIT IS LANDED (`8a03c1a`) AND CLEAN: no mismatches.**
+Five digests and one reader-hash pair check to the byte, so **the `out_dir`
+concurrency hazard has not corrupted any recorded number that can be
+checked**. 139 parity run citations at `ba9c3ea`, 64 digest-bearing across
+19 files (47 distinct, derived programmatically and re-derived by the
+replay) and 75 digest-less, both totals re-derivable from the document's
+own tables. **139 is a FLOOR, not a total**, since seven of the eleven
+digest-less rows are second-hand. That caveat is the rule-10 disclosure
+evidence almost never volunteers, and it is the reason the clean result can
+be believed.
+
+**`staged_input_digest` IS RETIRED AS A PROVENANCE INSTRUMENT, which is
+further than either the coordinator or I had got.** Revision 49 corrected
+my claim that every verdict carries it, and revision 51 left the plan
+implying it WOULD pin staged inputs if only it were emitted. Measured:
+where the field does exist, **it is IDENTICAL across seven render
+directories of edition 010**, so it has ZERO discriminating power even in
+the staging modes. Not mode-limited, useless. The emitted shapes were
+verified from source and from two real verdicts before either of my
+corrections reached the audit: `--pre-rendered` emits 8 keys at `521ab79`
+(9 at `ba9c3ea`) with no `staged_input_digest` and no `staleness`;
+`--oracle-only` emits 12, a strict superset.
+
+**The partition is MEASURED: corpus figures do not move with the render.**
+Five renders of 010, five distinct `reader.pdf` hashes, one fixed base:
+identical glyphs, shows, domain and page count in all five. So a
+disagreement between two corpus figures cannot be a render artefact.
+**The audit declined to force the conclusion, and that restraint is
+recorded with the result**: it rules out the render, it does not by itself
+prove base-mismatch over corruption, and it tested four figures on one
+edition rather than the whole clause family. Given the coordinator
+over-steered on precisely this question and revision 53 struck my hedge for
+the same reason, an audit that stops exactly where its evidence stops is
+the behaviour to reinforce.
+**One hypothesis retired outright**: a single verdict carries `glyphs
+68800`, a **54-page domain** and `page_count 56` TOGETHER, so 68,800 is not
+a 56-page count. That independently supports dropping 69,071 rather than
+reconciling it, and it arrives from a different direction than WP-0.2i's
+enumeration, which is what makes it worth having.
+
+**A STANDING HABIT, not a worklist item: print the verdict's `inputs` block
+beside the digest and name the base.** A figure then lands in the checkable
+bucket in seconds with no re-run. The argument is empirical: bucket 1 had
+ZERO members at `ba9c3ea`, and WP-5.5a's revision made it the first and
+only one, its check passing (`0460c081...` and `15d3bd5a...` resolving to
+the two worktrees in the order claimed, 85 seconds apart). **One agent
+adopting the habit voluntarily moved the corpus from "unverifiable" to "one
+verified member"**, which is a better case for standardising it than any
+argument from principle.
+
+**URGENT, and load-bearing: WP-0.2i's floor `stairdrift`, the `4.00x`
+margin, has NO DIGEST.** It survives only because two agents measured it
+separately and agreed. That is THE GATE'S FLOOR. The distinction to hold
+onto is epistemic and the coordinator put it correctly to the in-flight
+verifier: **its replay ESTABLISHES the provenance rather than confirming
+it**, so the digest, the base and the input hashes are recorded as new
+facts, not as a check against something already written. Then, in order:
+WP-2.0b's unresolved `11a9c0a8` against its verifier's `38f91a94` for the
+same oracle-only run, a genuine conflict needing one run at `e5e741a`;
+WP-0.2d's 21 digests including the inherited `241`; WP-0.2e/0.2b/0.2c/
+0.0c/1.3; then 54 digest-less fixture runs. **WP-0.2k gates all of it.**
+
+**Two environment corrections, and the first is mine.** Revision 49 said
+`mag parity` refuses to run outside a repo root so isolation must mean a
+WORKTREE. Over-strong: the audit ran everything from a symlink farm, and
+the check in `mag/src/main.rs:218` is literally
+`Path::new("prompts").is_dir()`, so **one directory named `prompts`
+satisfies it**. What actually matters is only that `out_dir` is NOT SHARED.
+Second, **`set -o pipefail` ABORTS ON AN EXPECTED-EMPTY `grep`**, since
+grep exits 1 when it matches nothing; verified here, the statement after
+the pipe never runs. This is a live hazard created by my own revision 49
+guidance, which told every agent to set pipefail, and the plan's own
+U+2014 scan is exactly that shape. Remedy: `|| true` on any pipeline whose
+empty result is the expected one.
+
+**The audit self-corrected through the rule-12 replay**, its section 1a
+having stated "seven" and "five" occurrences where re-deriving gave
+2 / 4 / 2 = 8, and the same replay caught both command defects. **Third
+time the replay has caught something rereading could not**, which is the
+evidence rule 12 was written on.
 
 ## Revision 53 changelog
 
@@ -67,7 +150,11 @@ re-read-before-acting discipline reaching its intended outcome.
 recommendation to carry 68,800/1,488 with its domain named, write 1,503
 only with "whole document", and **RETIRE 69,071 rather than correct it**.
 The covers carry 537 string bytes giving 69,337 document-wide, and 69,071
-is not that, not 450 non-space, and not either cover alone. The reasoning
+is not that, not 450 non-space, and not either cover alone. (Revision 54
+adds independent support from a different direction: a single verdict
+carries `glyphs 68800`, a 54-page DOMAIN and `page_count 56` together, so
+68,800 is not a 56-page count and the two figures are not the same
+measurement disagreeing.) The reasoning
 for deletion over adjustment is the part to keep: **nobody has shown what
 69,071 was ever counting, and a number whose provenance is unrecoverable
 should go rather than be adjusted into plausibility.** It appears at nine
@@ -2720,7 +2807,29 @@ before/after comparisons (WP-4.3); out of scope here.
   inputs are indistinguishable by this check alone. The audit verifies the
   emitted field list itself rather than trusting any description of it,
   re-derives its buckets from the fields that exist, and states that
-  limitation. That is the check, and it works on
+  limitation.
+  **RESULT (revision 54, `8a03c1a`): CLEAN, no mismatches**, five digests
+  and one reader-hash pair checking to the byte, over 139 cited parity runs
+  at `ba9c3ea` (64 digest-bearing across 19 files, 47 distinct; 75
+  digest-less), **139 being a FLOOR rather than a total** since seven of
+  the eleven digest-less rows are second-hand. So the `out_dir` hazard has
+  corrupted no recorded number that can be checked.
+  **And `staged_input_digest` is RETIRED as a provenance instrument
+  entirely, which is further than the limitation above.** Where the field
+  DOES exist it is IDENTICAL across seven render directories of edition
+  010, so it has zero discriminating power even in the staging modes: not
+  mode-limited, useless. Emitted shapes verified from source and from two
+  real verdicts: `--pre-rendered` 8 keys at `521ab79` (9 at `ba9c3ea`), no
+  `staged_input_digest` and no `staleness`; `--oracle-only` 12, a strict
+  superset. Nothing in this plan should propose it as a provenance check.
+  **Corpus figures do not move with the render**, measured over five
+  renders of 010 with five distinct `reader.pdf` hashes at one fixed base:
+  identical glyphs, shows, domain and page count in all five. A
+  disagreement between two corpus figures therefore cannot be a render
+  artefact. The audit deliberately did NOT push further: it rules out the
+  render, it does not prove base-mismatch over corruption, and it tested
+  four figures on one edition rather than the whole clause family.
+  That is the check, and it works on
   evidence already written:
   - evidence recording the verdict digest AND its input hashes: confirm the
     inputs are the artifacts that WP claims to have compared. A foreign
@@ -2728,6 +2837,28 @@ before/after comparisons (WP-4.3); out of scope here.
   - evidence recording only a verdict digest: re-run to confirm the digest
     reproduces, which a verifier does anyway.
   - evidence recording neither: re-measure.
+  **STANDING HABIT for every WP from here, not a worklist item: print the
+  verdict's `inputs` block beside the digest, and name the base.** A figure
+  then lands in the first bucket in seconds, with no re-run ever needed.
+  The case is empirical rather than principled: bucket 1 had ZERO members
+  at `ba9c3ea`, and WP-5.5a adopting the habit on its own initiative made
+  it the first and only one, its check passing (`0460c081...` and
+  `15d3bd5a...` resolving to the two worktrees in the claimed order, 85
+  seconds apart). One agent's voluntary habit moved the corpus from
+  unverifiable to one verified member.
+  **The audit's worklist, in order, with the first item LOAD-BEARING:**
+  - **WP-0.2i's floor `stairdrift`, the `4.00x` margin, has NO DIGEST** and
+    survives only on two agents having measured it separately and agreed.
+    That is the gate's floor. Its replay therefore **ESTABLISHES the
+    provenance rather than confirming it**, so the digest, base and input
+    hashes are recorded as new facts, not checked against something already
+    written. Keep that distinction in the evidence: a replay that creates
+    the record it appears to verify must say so.
+  - WP-2.0b's `11a9c0a8` against its verifier's `38f91a94` for the same
+    oracle-only run: a genuine conflict, one run at `e5e741a` settles it.
+  - WP-0.2d's 21 digests including the inherited `241`; then
+    WP-0.2e/0.2b/0.2c/0.0c/1.3; then 54 digest-less fixture runs.
+  **WP-0.2k gates all of it.**
   Cheaper than re-running what matters, and unlike accepting them on the
   argument that corruption would look obviously broken, it is a check
   rather than a belief. The argument for acceptance is in fact WRONG for
@@ -2777,17 +2908,29 @@ before/after comparisons (WP-4.3); out of scope here.
   `PagedIntrospector` and `Page` live in the former, the main `FileId` needs the
   latter's `RootedPath`/`VirtualRoot`/`VirtualPath`); `comemo` is not needed as a
   direct dependency. MSRV 1.92 against the repo's rustc 1.96.0, no edition bump.
-- **`mag parity` REFUSES to run outside a repo root, so an "isolated cwd"
-  must be a separate WORKTREE.** The instruction to run parity from an
-  isolated cwd, given after the shared-`out_dir` hazard surfaced, is
-  unsatisfiable as literally worded; the worktree form is what satisfies
-  it in substance. Recorded so nobody else burns attempts discovering it.
+- **`mag parity` needs ONE DIRECTORY NAMED `prompts`, and what an
+  "isolated cwd" actually requires is an UNSHARED `out_dir`.** Revision 49
+  said parity refuses to run outside a repo root so isolation must mean a
+  worktree; that was over-strong, and the audit ran everything from a
+  symlink farm. The check at `mag/src/main.rs:218` is literally
+  `Path::new("prompts").is_dir()`. A worktree satisfies the instruction and
+  so does a symlink farm; neither is the point. The hazard the instruction
+  was written for is the SHARED `out_dir`, so that is what an isolated run
+  must actually avoid.
 - **A pipe MASKS exit status.** `<command> | tail` reports the pipe's
   success, so `set -e` does not abort and any cleanup runs even when the
   command failed. This cost the planner two rebuilt commits when a failed
   `git merge --ff-only` was piped to `tail` and the temp branch was deleted
   anyway. Use `set -o pipefail`, or gate on the real exit status with an
   explicit `if`.
+- **But `set -o pipefail` then ABORTS ON AN EXPECTED-EMPTY `grep`**, since
+  grep exits 1 when it matches nothing, so under `set -e` the statement
+  after the pipe never runs. Verified. This is a hazard the previous note
+  CREATED, by telling every agent to set pipefail, and the plan's own
+  U+2014 scan is exactly that shape: a grep whose empty result is the
+  success condition. Remedy: `|| true` on any pipeline whose empty result
+  is the expected one. The pair is the real guidance, since either note
+  alone produces the other's failure.
 - **Environment trap, found by a rule-12 replay rather than by the
   authoring run**: `TYPST_ROOT` is the typst CLI's PROJECT ROOT, not an
   install prefix. WP-1.8's first replay failed outright with
