@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 59 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 60 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,126 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 60 changelog
+
+**CHECK 4 GAVE A FALSE GUARANTEE, NOT A FALSE NEGATIVE, and TWO candidate
+mechanisms were refuted by REPRODUCTION before this was written.** I found
+the main tree's index staging a precise reversion of WP-2.2b's own commit
+shortly after that WP reported "all four post-landing checks pass, index
+clean". The coordinator's first explanation, which I had drafted into this
+revision and struck: that an agent committing from a worktree checks its
+OWN index. Refuted by measurement: every check-4 command WP-2.2b ran
+executed in `/Users/franguijarro/code/magazine`, confirmed by
+`git rev-parse --show-toplevel` and `--git-dir` returning a real `.git`
+directory. **That trap remains plausible for other agents, but this
+incident is no evidence for it**, and recording it as the cause would have
+left the real finding unexamined. Its own candidate, a final
+`git worktree remove --force`, was refuted the same way, in an isolated
+throwaway repo: clean at step 0, **armed by the other tree's `update-ref`**
+at step 1, cleared at step 2, still clean after the forced removal at step
+3. It declines to name a cause it cannot evidence, which is rule 11 applied
+to itself.
+**Its check FIRED CORRECTLY and "index clean" was TRUE when taken.** It saw
+the armed index, verified the staged content as the pre-landing snapshot,
+hit an `index.lock` from a concurrent git process and **waited rather than
+removing the lock**, re-read, re-verified, cleared path-scoped, refreshed
+the working tree, and confirmed empty twice, the second time at tip
+`746a649`.
+**What IS evidenced is stronger, and it converges with a rule this plan
+already has: the main worktree is checked out on `art_directed`, so EVERY
+`update-ref` land by ANY agent silently arms its index with a staged
+reversion of the landed commit.** That makes **check 4 an INSTANTANEOUS
+property, not a durable one**: it re-arms on every subsequent land,
+per-path, with no warning. So the defect is in the REPORT, not the check.
+"Index clean" without the tip at which it was read invites exactly the
+misreading that occurred, because a reader takes it as a state.
+**This is revision 48's own rule arriving from the other side.** I wrote
+that an index reading on a shared tree is a SAMPLE, not a state, and I
+wrote it about ACTING on a reading. **It binds REPORTING just as hard.**
+Check 4 is now stated as **"index clean at tip `<sha>`"** and is **re-read
+immediately before hand-off** rather than run as the last of four
+sequential checks.
+
+**A METHODOLOGICAL RULE ABOUT THE COORDINATOR, proposed by the coordinator,
+and this is the third instance.** A hypothesis was passed to agents as the
+likely cause three times now: the base-mismatch steer revision 53 struck,
+the figure attribution revision 60 records as largely falsified, and this
+worktree-index mechanism. In all three the measurement that killed it was
+done downstream. The existing rule, that a hedge is not a disclaimer when a
+coordinator passes it on, states the hazard; the remedy is now stated too:
+**a coordinator's hypothesis must arrive WITH THE CHEAP TEST THAT WOULD
+KILL IT, or not arrive at all.** A hypothesis with its own refutation
+attached costs one command downstream; without it, it costs a plan
+revision, which is what all three did.
+
+**THE FIGURE ACCOUNT IS UNDERMINED BY MEASUREMENT, which is why revision 56
+held it as a hypothesis rather than adopting it.** The gap is **-1, not
+-4**; per-article spans match **8 of 9 exactly**; and **two of the three
+figure-carrying articles now match the oracle EXACTLY with their figures
+still unplaced** (`the-third-era` 4/4, `towards-self-driving` 5/5), where
+the figure account predicts they should still be short. The surviving form
+of that account is now narrow and carries an obligation: **placing those
+figures has to be PAGE-NEUTRAL for it to hold, and WP-2.2c must SHOW that
+rather than assume it.** The one remaining -1 sits on a figure-carrying
+article and is consistent with the account for that article alone.
+The agent also declined per-cause attribution for the fourth page, its
+three changes not being separable from one measurement. That restraint is
+the useful part: a three-of-four explanation invites itself to be accepted
+whole, and revision 56 recorded that trap one day before the measurement
+sprang it.
+
+**A SAMPLING FAILURE SHARPER THAN ANYTHING THE PLAN RECORDS.** The folio
+printed `012` from page 10 on, because `numbering("01", n)` reads `0` as a
+LITERAL PREFIX where `decimal-leading-zero` pads, and **43 of 010's 46
+folio pages were wrong.** WP-2.2a had measured pages 4 and 5: **the two
+where the two spellings agree.** The sample was not small, it was unlucky
+in a way nobody could see from inside it. New rule: **CHECK THE DISAGREEING
+CASES, NOT A SAMPLE**, with the corollary that **agreement on a sample is
+evidence only if you know the sample CAN disagree.** This is the corpus
+rule's sibling and strictly sharper: the corpus rule says a corpus proves
+only what it contains, and this says a sample proves nothing at all unless
+it spans the discriminating cases.
+
+**"010 CANNOT FALSIFY IT" is a new category, distinct from "010 cannot
+reach it".** WP-2.2b found heading clearance page-count-neutral on 010,
+identical pagination at 25 pt and 0 pt with different bytes, and concluded
+the corpus cannot carry the claim, so a committed synthetic sweep does.
+The distinction matters because the responses differ: an unreachable branch
+needs a fixture that EXERCISES it, while an unfalsifiable one is exercised
+already and still cannot tell right from wrong, so it needs a fixture that
+DISCRIMINATES. Same family as rule 10, different member.
+
+**A SECOND concrete instance of WP-2.1's oracle blindness, verified at
+source.** `_split_standfirst_overflow` (`weasyprint_adapter.py:2808`) moves
+a standfirst tail out of the `header` into a new `<p>` inserted into
+`article` after it (`article.insert(list(article).index(header) + 1,
+remainder)`), changing **which element text belongs to**, not the text or
+its order, which the projection cannot see by construction. Better evidence
+than revision 51's synthetic `#doc-paragraph` demonstration, because it is
+a real adapter behaviour on the live corpus. Owner: WP-2.1's emitter.
+
+**A CLASS-C LATENT DEFECT WITH A TWIST THE PLAN HAS NOT MET BEFORE.**
+`_fitted_display` measures the opener title WITHOUT the
+`letter-spacing: -.045em` the CSS then applies, so a two-line fit can reach
+three under tracking and overflow unnoticed. The template mirrors it
+DELIBERATELY, which is correct under revision 23, and the consequence
+deserves its own sentence: **matching the oracle here means matching its
+BLIND SPOT.** Parity will report agreement precisely because both sides are
+wrong the same way. Latent on 010; a product question, not a port question.
+
+**The verbatim cap has NO REFUSAL ON EITHER LEG**: Dario spans 13 pages
+against a cap of 10 and neither engine objects. Owner WP-2.3.
+
+**Two smaller notes, both rules generalising within a day of landing.** The
+agent declined to add a `density:` parameter on the ground that an unused
+parameter with a default is exactly rule 10c's shape, which carries that
+rule past fixtures into API surface: **a parameter nothing varies proves
+only that the default works.** And it refuted two hypotheses on a
++2.2656 pt residual BY REMOVAL rather than by argument, the drop cap
+because line 2 shifts identically and the inline `rect`s by substitution
+returning a byte-identical PDF, which is rule 11's prescribed method used
+twice in one WP.
 
 ## Revision 59 changelog
 
@@ -1835,6 +1955,19 @@ separate product question.
 every tier passes and parity is blind to it by construction. Class C is the
 class this plan cannot find, which is why the one instance it does know
 about is written down rather than left to imply that none exist.
+**A FOURTH, and it carries the sharpest statement of what class C costs.**
+`_fitted_display` measures the opener title WITHOUT the
+`letter-spacing: -.045em` the CSS then applies, so a two-line fit can reach
+three under tracking and overflow unnoticed. The Typst template mirrors
+this DELIBERATELY, which revision 23 requires, and the consequence is the
+part to keep: **matching the oracle here means matching its BLIND SPOT**,
+so parity will report agreement precisely BECAUSE both sides are wrong the
+same way. Latent on 010. A product question, not a port question.
+**A FIFTH: the verbatim cap has no refusal on EITHER leg.** Dario spans 13
+pages against a cap of 10 and neither engine objects. Owner WP-2.3, and it
+is a genuine product decision rather than a port defect, since reproducing
+the absence is what parity demands and enforcing the cap is what the
+editorial policy says.
 
 **And WP-5.5a's landed increment validates revision 26's strong form.** Its
 four matchers are pinned to PYTHON, not to the author's reading, and that
@@ -3800,6 +3933,34 @@ before/after comparisons (WP-4.3); out of scope here.
    the protocol exactly still leaves the trap armed. After moving the
    branch, confirm `git diff --cached --name-only` returns NOTHING, and
    clear it with **`git reset -- <paths>`** if not.
+   **THIS CHECK IS AN INSTANTANEOUS PROPERTY, NOT A DURABLE ONE, so REPORT
+   IT WITH THE TIP: "index clean at tip `<sha>`".** The main worktree is
+   checked out on `art_directed`, so **every `update-ref` land by any agent
+   silently arms this index with a staged reversion of the commit just
+   landed**, per-path and with no warning. A passing check therefore
+   guarantees nothing about one minute later, and WP-2.2b's true report of
+   "index clean" was found armed shortly afterwards by the planner, with
+   neither party at fault. **Re-read it immediately before HAND-OFF**,
+   rather than running it as the last of four sequential checks and
+   reporting the result of all four together.
+   This is revision 48's rule arriving from the other side: that rule says
+   an index reading on a shared tree is a SAMPLE and not a state, and it
+   was written about ACTING on a reading. **It binds REPORTING just as
+   hard**, because a bare "index clean" is read as a state by everyone
+   downstream.
+   **Name the directory as ordinary hygiene**, running it as
+   `git -C /Users/franguijarro/code/magazine diff --cached --name-only`,
+   since the check is about the MAIN tree's index and an agent standing in
+   a worktree would otherwise read its own. Recorded as a precaution only:
+   it was proposed as the cause of the incident above and REFUTED by
+   measurement, every check-4 command there having run in the main tree
+   (`git rev-parse --show-toplevel` and `--git-dir`). Do not cite that
+   incident as evidence for this hazard.
+   **And when the index is locked, WAIT.** WP-2.2b hit an `index.lock` from
+   a concurrent git process and waited rather than removing it, which is
+   the correct call and worth naming, since removing another process's lock
+   is the kind of unblocking move that looks harmless and corrupts an index
+   under concurrency.
    **But RE-READ BEFORE ACTING, and certainly before resetting: `git status`
    on a shared tree under concurrency is a SAMPLE, not a state.** A reading
    taken while another agent is mid-`update-ref`-and-sync shows that agent's
@@ -4193,6 +4354,39 @@ before/after comparisons (WP-4.3); out of scope here.
    third instance of revision 56's class: **an obligation attached to a
    clause cannot be discharged before the clause can evaluate**, so it
    travels with the clause and is never scheduled against a phase.
+10d. **CHECK THE DISAGREEING CASES, NOT A SAMPLE**, and the corollary:
+   **agreement on a sample is evidence only if you know the sample CAN
+   disagree.** WP-2.2a verified the folio against the oracle on pages 4 and
+   5, which are the two pages where `numbering("01", n)` and
+   `decimal-leading-zero` AGREE: the first reads `0` as a literal prefix
+   where the second pads, so the folio printed `012` from page 10 on and
+   **43 of 010's 46 folio pages were wrong.** The sample was not too small.
+   It was unlucky in a way that is invisible from inside it, because every
+   case in it passed and passing was exactly what it could not help doing.
+   **The sharp form, which names the trap rather than the instance: a
+   sample drawn from the LOW END OF A RANGE can land entirely inside the
+   AGREEING REGION of a formatting rule, and only a case past the boundary
+   discriminates.** No amount of care at pages 4 and 5 would have exposed
+   it, which is why this is not a diligence failure. Formatting rules,
+   padding, rounding, pluralisation, truncation and ordinal suffixes all
+   have such regions, and the first few items of any sequence are the most
+   natural and least informative sample anyone reaches for.
+   This is the corpus rule's sibling and strictly sharper. The corpus rule
+   says a corpus proves only what it CONTAINS; this says a sample proves
+   nothing at all unless it spans the DISCRIMINATING cases. So a
+   verification against an oracle states which cases could have
+   disagreed and shows at least one that did, or says it found none and why
+   that is expected.
+10e. **"THE CORPUS CANNOT FALSIFY IT" is a different finding from "the
+   corpus cannot REACH it", and the two need different fixtures.** WP-2.2b
+   found heading clearance page-count-neutral on 010, identical pagination
+   at 25 pt and at 0 pt with different bytes, so the branch IS exercised
+   and the corpus still cannot tell a right value from a wrong one. An
+   unreachable branch needs a fixture that EXERCISES it; an unfalsifiable
+   one is already exercised and needs a fixture that DISCRIMINATES. Saying
+   which of the two a gap is determines what the fixture has to do, and
+   calling an unfalsifiable claim "not covered by 010" points the next
+   agent at the wrong repair.
 10c. **AN EXPECTED VALUE THAT EQUALS THE FALLBACK proves only that ONE OF
    THE TWO BRANCHES RAN.** WP-5.1f's padded case expected `ARTICLE`, and
    `ui("en", "article")` IS `"ARTICLE"` (`mag/src/model/shared.rs:285`), so
@@ -4359,6 +4553,18 @@ before/after comparisons (WP-4.3); out of scope here.
    Third wrong count at the point of citation in a week, and the first
    where the citer was the coordinator rather than a WP, which is precisely
    why the duty cannot sit only on the artifacts.
+   **AND A COORDINATOR'S HYPOTHESIS MUST ARRIVE WITH THE CHEAP TEST THAT
+   WOULD KILL IT, OR NOT ARRIVE AT ALL.** Proposed by the coordinator about
+   itself after a third instance: the base-mismatch steer (struck in
+   revision 53), the figure attribution (largely falsified in revision 60),
+   and the worktree-index mechanism for check 4 (refuted by reproduction
+   before revision 60 landed). In all three the measurement that killed the
+   hypothesis was done downstream, by an agent or by the planner, after the
+   hypothesis had already been propagated as the likely cause. The existing
+   clause says a hedge is not a disclaimer when a coordinator passes it on;
+   this is the remedy rather than the hazard. **A hypothesis carrying its
+   own refutation costs one command downstream; without it, all three cost
+   a plan revision.**
    **A CITED count is RE-DERIVED at the point of citation.** Revision 38
    put the duty on the author deriving a count from its own enumeration,
    and four instances now show that is the wrong place: every one of these
@@ -5444,6 +5650,16 @@ one number everything else depends on.
     proves SAME TEXT IN SAME ORDER and nothing about structure. Do not cite
     it for a paragraph-level claim; structure is Tier S page boxes and
     WP-2.2b/2.2c.
+    **A SECOND, non-synthetic instance, found by WP-2.2b and verified at
+    source: `_split_standfirst_overflow` (`weasyprint_adapter.py:2808`)**
+    moves a standfirst tail out of the `header` into a new `<p>` inserted
+    into `article` after it
+    (`article.insert(list(article).index(header) + 1, remainder)`). It
+    changes WHICH ELEMENT text belongs to, not the text or its order, so
+    the projection cannot see it by construction. Better evidence than the
+    synthetic demonstration above, since it is real adapter behaviour on
+    the live corpus, and it is the emitter's to reproduce. Owner: WP-2.1's
+    emitter.
   - Three of four normalization clauses are VACUOUS on this corpus (0 soft
     hyphens, 0 U+2010, NFC a no-op); only whitespace collapse acts, on
     2,134 of 70,892 characters. Rule 10a's disclosure, recorded here since
@@ -5536,10 +5752,19 @@ verdict digest recorded.
   the four missing pages correlate with the three figures, over three
   items, and orphan/widow divergence can produce the same pattern, so per
   rule 11 the figure explanation is a hypothesis until this is controlled
-  for. Disable orphans/widows in the oracle, re-measure: if the gap holds
-  at four pages across the same three articles, figures are confirmed.
-  **The fourth missing page is unexplained under either account** and is
-  named here so a three-of-four explanation is not accepted whole.
+  for.
+  **REVISION 60: WP-2.2b's measurement has largely FALSIFIED the figure
+  account, which is why it was held as a hypothesis.** The gap is now
+  **-1, not -4**; per-article spans match **8 of 9 exactly**; and **two of
+  the three figure-carrying articles match the oracle EXACTLY with their
+  figures still unplaced** (`the-third-era` 4/4, `towards-self-driving`
+  5/5), where the figure account predicts they should be short. What
+  survives is narrow and carries an obligation: **placing those two
+  articles' figures must be PAGE-NEUTRAL for the account to hold, and this
+  WP must SHOW that rather than assume it.** The remaining -1 is on a
+  figure-carrying article and is consistent with the account for that
+  article alone. The fourth page's three changes were not separable from
+  one measurement and no per-cause attribution was offered, correctly.
 
 ### WP-2.3 layout result and measure operations
 
