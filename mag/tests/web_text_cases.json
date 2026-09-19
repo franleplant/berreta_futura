@@ -1,0 +1,87 @@
+{
+  "provenance": {
+    "escape": "SPEC-AUTHORED. Inputs and expected values were written from html.escape's documented contract (replace & then < then >, and when quote is set \" and ') without running it, then checked against CPython. A disagreement would therefore indict the port OR the spec reading, not silently inherit Python's behaviour.",
+    "composed": "TRANSCRIBED from CPython output. text/verbatim/attr compose escape with educate_reader_quotes and fold_reader_characters, whose quote-direction algorithm is too intricate to author by hand. These rows therefore CANNOT detect a case where Python itself is wrong; they pin the port to the oracle only. What they do detect is the composition order and the quote flag per helper.",
+    "settable": "Cases are ASCII unless marked non_ascii, because fold_reader_characters short-circuits on is_ascii and only consults the settable set beyond it."
+  },
+  "escape": [
+    {
+      "name": "ampersand_first",
+      "input": "&lt;",
+      "unquoted": "&amp;lt;",
+      "quoted": "&amp;lt;",
+      "note": "DISCRIMINATING: proves & is replaced before < and >. A port replacing < first yields &lt; unchanged and passes every other row here."
+    },
+    {
+      "name": "ampersand",
+      "input": "a & b",
+      "unquoted": "a &amp; b",
+      "quoted": "a &amp; b"
+    },
+    {
+      "name": "less_than",
+      "input": "a < b",
+      "unquoted": "a &lt; b",
+      "quoted": "a &lt; b"
+    },
+    {
+      "name": "greater_than",
+      "input": "a > b",
+      "unquoted": "a &gt; b",
+      "quoted": "a &gt; b"
+    },
+    {
+      "name": "double_quote_splits_on_flag",
+      "input": "say \"hi\"",
+      "unquoted": "say \"hi\"",
+      "quoted": "say &quot;hi&quot;",
+      "note": "RULE 10c: unquoted equals the input. Paired with quoted, which differs, so the row cannot pass by never escaping."
+    },
+    {
+      "name": "single_quote_splits_on_flag",
+      "input": "it's",
+      "unquoted": "it's",
+      "quoted": "it&#x27;s",
+      "note": "RULE 10c: unquoted equals the input; quoted differs, and pins the hex form &#x27; rather than &apos;."
+    },
+    {
+      "name": "all_five",
+      "input": "<a href=\"x?a=1&b=2\">it's</a>",
+      "unquoted": "&lt;a href=\"x?a=1&amp;b=2\"&gt;it's&lt;/a&gt;",
+      "quoted": "&lt;a href=&quot;x?a=1&amp;b=2&quot;&gt;it&#x27;s&lt;/a&gt;"
+    },
+    {
+      "name": "already_escaped_double_escapes",
+      "input": "&amp;",
+      "unquoted": "&amp;amp;",
+      "quoted": "&amp;amp;",
+      "note": "escape is not idempotent; pinning this stops a port from adding an is-already-escaped guard Python does not have."
+    },
+    {
+      "name": "empty",
+      "input": "",
+      "unquoted": "",
+      "quoted": "",
+      "note": "RULE 10c: equals the input by necessity. Kept as a boundary, not as evidence."
+    },
+    {
+      "name": "no_special_characters",
+      "input": "plain ascii text",
+      "unquoted": "plain ascii text",
+      "quoted": "plain ascii text",
+      "note": "RULE 10c: equals the input. Kept only to pin that escape adds nothing; the discriminating rows are the ones above."
+    }
+  ],
+  "composed": [
+    {"name": "plain", "input": "plain text"},
+    {"name": "straight_double_quotes", "input": "he said \"no\" today"},
+    {"name": "straight_single_quotes", "input": "it's Ada's"},
+    {"name": "markup_characters", "input": "a < b & c > d"},
+    {"name": "quotes_and_markup", "input": "<em>\"it's\"</em> & more"},
+    {"name": "leading_quote", "input": "\"opening"},
+    {"name": "apostrophe_start", "input": "'tis"},
+    {"name": "non_breaking_space", "input": "a b", "non_ascii": true},
+    {"name": "settable_accent", "input": "café crème", "non_ascii": true},
+    {"name": "unsettable_codepoint", "input": "a 中 b", "non_ascii": true}
+  ]
+}
