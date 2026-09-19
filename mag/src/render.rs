@@ -658,7 +658,11 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
     };
     match engine {
         Engine::Weasyprint => run_adapter(&repo_root, &render_dir, &request),
-        Engine::Typst => crate::typeset::render_edition(),
+        Engine::Typst => crate::typeset::render_edition(
+            &repo_root,
+            &render_dir,
+            &serde_json::to_string(&request)?,
+        ),
     }
 }
 
