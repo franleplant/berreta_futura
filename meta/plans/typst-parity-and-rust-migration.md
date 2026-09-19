@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-18, revision 51 (Phase 0 built and
+Status: **in execution**, 2026-09-19, revision 52 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,96 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 52 changelog
+
+**A DEFECT TAXONOMY, ruled on because the coordinator is right that the
+plan's machinery answers only one of the three cases.** The axis that
+matters is NOT severity: it is **what the fix is pinned to, and whether the
+item survives WP-6.1.**
+- **Class A, a port-fidelity gap**: Rust differs from Python and Python is
+  right. Fix by matching Python. This is what every tier, every oracle and
+  every fixture in this plan is built for, and the CATEGORY DIES AT WP-6.1,
+  because once Python is deleted there is nothing left to diverge from.
+- **Class B, a live product defect that SURFACES as a divergence**:
+  `content_label` is one. The fix is identical to class A, match Python,
+  which is why the machinery handles it and why the class is easy to miss.
+  Two things differ and they are the whole reason to name it.
+  **Reachability decides SCHEDULE**: a class-A gap in a branch 010 cannot
+  reach can wait for the flip, while a class-B defect is reachable from
+  ordinary user input and ships wrong output the day someone writes that
+  line, so it goes ahead of unreachable gaps.
+  **And its regression test must OUTLIVE the oracle**: a class-A test may
+  say "equals Python", but a class-B test pins the CORRECT STRING directly,
+  because after WP-6.1 a test asserting "matches Python" documents nothing
+  and nobody can tell from it why the string was right.
+- **Class C, BOTH engines wrong.** Parity is blind to it by construction:
+  both legs agree, every tier passes, the output is wrong. **This is not
+  hypothetical, and the same function has one.** Executed, not read:
+  `label: false` yields the literal string `"False"` in Python (the guard
+  is `value is not None`, and `False is not None`) and `"False"` in Rust
+  (`py_str(Bool(false))`), so both engines print "False" as a section label
+  and no amount of parity work will ever notice.
+So the plan says plainly what it does not do: **EQUALITY IS NOT
+CORRECTNESS.** This plan proves the two engines agree. Its entire
+verification machinery is silent on whether what they agree about is right,
+and "010 renders identically" must never be read as "010 renders
+correctly". Class C is found by a reader or by a non-parity check, and
+nothing in Phases 0 to 4 is looking for it.
+Revision 23's "a port must not be stricter than its original" is untouched:
+it governs class A, and class B is not a case of the port being stricter.
+
+**`content_label` is a class-B defect, confirmed at source in both
+engines.** `mag/src/model/shared.rs:327` maps `py_str` over the raw value
+with no None guard, so `Some(Null)` gives `"None"`, non-empty, returned as
+the label; `html_edition.py:737` guards `value is not None and
+str(value).strip()` and falls through to `_ui`. **A bare `label:` in a
+manuscript prints the literal word "None" as a section label.** WP-5.1g.
+Its latency is a CORPUS ACCIDENT, not a guarantee: 548 `label:` keys over
+20 distinct values with none bare is the corpus rule exactly, a statement
+about the corpus rather than about reachability, so the fixture must carry
+the case the corpus lacks.
+
+**A harness that aborts on first failure evidences only the first failure,
+WHICHEVER LAYER ABORTS, and this generalisation is better than the rule it
+replaces.** The narrow form said a short-circuiting `assert_eq!` proves
+only the first failure. WP-5.1f then hit the identical truncation one level
+UP: `cargo test --test a --test b` stops at the first failing binary, so
+its block produced only the label failures while the caption claimed four
+cases. **The assertion, the test binary and the test RUNNER are three
+separate places the same truncation happens, and only the first is
+obvious**, so a WP that carefully writes an accumulating assertion can
+still have its evidence truncated by the runner above it. The check is
+rule 12's caption clause: read the output against the caption and COUNT THE
+FAILURES YOU WERE PROMISED.
+
+**A fixture pattern promoted, because it answers a question this execution
+has asked at least five times: "I found something real and cannot fix it
+here."** WP-5.1f committed the divergence as fixture data flagged
+`known_divergence` plus a tripwire test whose failure message reads *"if
+this changed, the divergence was fixed; clear `known_divergence` in the
+fixture and delete this test"*. It rejected both alternatives with
+reasons worth keeping: committing the Rust value as expected would CEMENT
+THE BUG and make the eventual fixer edit a GREEN test, and prose is the
+rediscovery problem. This replaces the residual paragraph nobody reads.
+
+**A framing correction, and the lesson is one this execution keeps
+relearning.** `content_label`'s whitespace defect was described as confined
+to the empty-test fall-through. The fixture proved otherwise:
+`label: "  Dispatch  "` shows the strip changing the RETURNED VALUE, so it
+was never confined to that branch. Found by writing the fixture rather than
+by reading the code, which is the padded/straddle lesson again.
+
+**The `shared.rs` sweep is CLOSED with a statement a reader can rely on**:
+the grep returns seven lines and only seven, two definitions
+(`is_python_space`, `py_strip`) and five uses, three of which were wrong
+and are now pinned (`is_name_roster` twice, `content_label` once), while
+`ui` and `clamp_roster` handle no whitespace at all. **The next reader does
+not need to re-open the file**, and that is the standard a residual should
+meet: a sweep records the boundary it established, not only what it found.
+
+Rule 9's new citation clause has now corrected the coordinator a fourth
+time, on a claim that the branch had moved when it had not.
 
 ## Revision 51 changelog
 
@@ -1108,6 +1198,12 @@ the PRODUCT rather than in the evidence: a preflight result that is a
 constant dressed as a measurement. If confirmed, the port still reproduces
 it, because the Python is the specification, and it is flagged to Fran as a
 separate product question.
+**A third joins that list, and it is the plan's first named class-C item**
+(rule 6a): `label: false` in a manuscript prints the literal string
+`"False"` as a section label in BOTH engines, executed rather than read, so
+every tier passes and parity is blind to it by construction. Class C is the
+class this plan cannot find, which is why the one instance it does know
+about is written down rather than left to imply that none exist.
 
 **And WP-5.5a's landed increment validates revision 26's strong form.** Its
 four matchers are pinned to PYTHON, not to the author's reading, and that
@@ -3085,6 +3181,60 @@ before/after comparisons (WP-4.3); out of scope here.
 6. **Fail loud.** A WP that cannot meet its target writes the measured gap
    with `Status: blocked` and stops; it never weakens a check, narrows a
    page set, adds a normalization rule, or works around.
+6a. **CLASSIFY every defect found, because the plan's machinery answers
+   only one of the three kinds.** The axis is not severity; it is what the
+   fix is pinned to and whether the item survives WP-6.1.
+   - **A, port-fidelity gap**: Rust differs from Python, Python is right.
+     Fix by matching Python. Every tier, oracle and fixture here is built
+     for this, and the CATEGORY DIES AT WP-6.1, since a deleted oracle
+     cannot be diverged from.
+   - **B, a live product defect surfacing as a divergence**: the output is
+     simply wrong, and would be wrong in Python too but for a guard the
+     port dropped. The FIX is identical to class A, which is why this class
+     hides inside it. Two things differ. **Reachability decides
+     SCHEDULE**: a class-A gap in a branch 010 cannot reach waits for the
+     flip, while a class-B defect is reachable from ordinary user input and
+     ships wrong output the day a user writes that line. **And the
+     regression test must OUTLIVE the oracle**: pin the CORRECT STRING
+     directly, never "equals Python", because after WP-6.1 a
+     matches-Python assertion documents nothing and no reader can recover
+     why the value was right.
+   - **C, both engines wrong.** Parity is blind by construction: the legs
+     agree, every tier passes, the output is wrong. Not hypothetical.
+     `content_label` has one beside its class-B defect: `label: false`
+     prints the literal `"False"` in BOTH engines (Python's guard is
+     `value is not None`, and `False is not None`; Rust's `py_str` maps
+     `Bool(false)` to `"False"`). Verified by execution, not by reading.
+   **EQUALITY IS NOT CORRECTNESS.** This plan proves the engines agree and
+   says nothing about whether what they agree on is right, so "010 renders
+   identically" is never to be written or read as "010 renders correctly".
+   Class C is found by a reader or a non-parity check; nothing in Phases 0
+   to 4 is looking for it, and the plan states that rather than letting the
+   silence imply coverage.
+   Revision 23's "a port must not be STRICTER than its original" governs
+   class A only. Class B is not the port being stricter; it is the port
+   being wrong, and matching Python is the fix rather than the constraint.
+6b. **A DEFECT FOUND BUT NOT FIXABLE IN SCOPE IS COMMITTED AS FIXTURE DATA
+   FLAGGED `known_divergence`, WITH A TRIPWIRE TEST.** "I found something
+   real and cannot fix it here" has come up at least five times in this
+   execution and has been handled every time by a residual paragraph nobody
+   reads. WP-5.1f's answer is better and becomes the standard: record the
+   measured divergence in the fixture, flag it, and commit a test whose
+   FAILURE MESSAGE is the instruction, in the shape *"if this changed, the
+   divergence was fixed; clear `known_divergence` in the fixture and delete
+   this test"*. The two alternatives are rejected with their reasons:
+   committing the Rust value as expected CEMENTS THE BUG and leaves the
+   eventual fixer editing a GREEN test, which is the worst position to
+   discover an intentional divergence from; and prose is the rediscovery
+   problem this plan keeps paying for. The tripwire also makes the
+   divergence self-retiring, since the only way to make the test stop
+   failing is to do the thing the message asks.
+   **A defect's LATENCY is a statement about the corpus, never a
+   guarantee.** `content_label`'s is latent only because 010's 548 `label:`
+   keys over 20 distinct values happen to include no bare one, which is the
+   corpus rule in its ordinary form. A class-B fixture therefore carries
+   the case the corpus LACKS, since that is the case the corpus cannot
+   prove anything about.
 7. **Fran gates** exist only where the plan must change or something
    irreversible happens. Revision 9 resolves the Phase 1 gates (1.1's
    residual, 1.2's match rate, 1.3's mechanism) as plan decisions, so what
@@ -3132,6 +3282,20 @@ before/after comparisons (WP-4.3); out of scope here.
      specific: on replay, read each block's output against its caption's
      SCOPE WORDS, "every", "all", "no other", and confirm the command's
      scope matches the claim's.
+   - **A HARNESS THAT ABORTS ON FIRST FAILURE EVIDENCES ONLY THE FIRST
+     FAILURE, WHICHEVER LAYER ABORTS.** The obvious form is a
+     short-circuiting `assert_eq!`, which proves only the first mismatch,
+     so a block demonstrating several cases must ACCUMULATE and print them
+     all. The form that actually bit is one level up: WP-5.1f ran
+     `cargo test --test a --test b`, which stops at the first failing
+     BINARY, so its block emitted only the label failures while its caption
+     promised four cases. **The assertion, the test binary and the test
+     RUNNER are three separate places the same truncation happens, and only
+     the first is obvious**, so a WP that carefully writes an accumulating
+     assertion can still have its evidence truncated by the runner above
+     it. Split the command, or run each binary separately. The check is the
+     caption clause above: read the output against the caption and COUNT
+     THE FAILURES YOU WERE PROMISED.
    - **HERMETICITY IS A PROPERTY OF THE WHOLE REPLAY PATH, and fixing it in
      one artifact can RELOCATE it into another.** WP-5.3b-i fixed its
      absolute corpus path properly: the test now takes
@@ -4837,6 +5001,39 @@ them or the divergence is a defect:
     non-model module and on a planted short-bodied one; every existing
     oracle in WP-5.1a/b/c and WP-5.4a replays byte-identically, since this
     is a refactor and may not change an oracle byte.
+
+- **WP-5.1f pin the shared whitespace helpers to Python**: owns
+  `mag/src/model/shared.rs` and its fixtures. Done.
+  **The sweep is CLOSED, and its closing statement is the standard other
+  residuals should meet**: the grep returns SEVEN LINES AND ONLY SEVEN, two
+  definitions (`is_python_space`, `py_strip`) and five uses, three of them
+  wrong and now pinned (`is_name_roster` twice, `content_label` once),
+  while `ui` and `clamp_roster` handle no whitespace at all. The next
+  reader does not need to re-open the file. A sweep records the BOUNDARY it
+  established, not only the defects it found; without the boundary the next
+  reader repeats the sweep to learn whether it was complete.
+  Its whitespace finding also corrected a framing: the defect was described
+  as confined to the empty-test fall-through, and the fixture showed
+  `label: "  Dispatch  "` strips the RETURNED VALUE too, so it never was.
+  Found by WRITING THE FIXTURE rather than by reading the code, which is
+  the padded/straddle lesson arriving again.
+
+- **WP-5.1g the `content_label` None guard** (class B per rule 6a): owns
+  `mag/src/model/shared.rs:327` and its fixtures. **A bare `label:` in a
+  manuscript prints the literal word "None" as a section label**, because
+  the Rust maps `py_str` over the raw value with no None guard and
+  `py_str(Null)` is `"None"`, while `html_edition.py:737` guards
+  `value is not None and str(value).strip()` and falls through to `_ui`.
+  Confirmed at source in both engines. Latent in 010 only by CORPUS
+  ACCIDENT, 548 `label:` keys over 20 distinct values with none bare, so
+  the fixture carries the bare case the corpus lacks.
+  Target: `raw=Some(Null)` yields the `ui` fallback, matching Python; the
+  regression test pins the CORRECT STRING rather than "equals Python", per
+  rule 6a, so it still says something after WP-6.1.
+  **Record the class-C neighbour rather than fixing it here**: `label:
+  false` prints the literal `"False"` in BOTH engines (executed, not read),
+  so parity can never see it. That is a product question, not a port
+  question, and it goes to Fran with the others rather than to a WP.
 - **WP-5.2 booklet imposition** (`booklet.py`): owns `mag/src/impose.rs`.
   Oracle: impose the same 010 reader.pdf both ways; display-list equality
   and raster zero-diff per sheet, spread order text identical. Zero-diff is
