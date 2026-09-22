@@ -10,6 +10,7 @@ use crate::model::shared::{
     clamp_roster, content_label, is_name_roster, py_casefold, py_repr, py_str, ui, Result,
     ValidationError,
 };
+use crate::typeset::media::pixels;
 use std::collections::BTreeSet;
 use std::path::Path;
 use typst_syntax::{SyntaxKind, SyntaxNode};
@@ -330,7 +331,7 @@ impl Writer<'_> {
                 out.push_str(&self.block(block, true, false));
             }
         }
-        out.push_str(&self.article_body(article, document, usize::from(illustrated)));
+        out.push_str(&self.article_body(article, document, usize::from(illustrated))?);
         out.push_str(&self.key_ideas(article));
         out.push_str(&format!(
             "#end-mark{}\n\n",
@@ -410,12 +411,12 @@ impl Writer<'_> {
         )
     }
 
-    fn article_body(&self, article: &Article, document: &Document, skip: usize) -> String {
+    fn article_body(&self, article: &Article, document: &Document, skip: usize) -> Result<String> {
         let (opener_figures, anchored_figures) = split_figures(&article.figures);
         let (opener_extracts, anchored_extracts) = split_extracts(&article.extracts);
         let mut out = String::new();
         for figure in &opener_figures {
-            out.push_str(&self.figure(figure));
+            out.push_str(&self.figure(figure)?);
         }
         for extract in &opener_extracts {
             out.push_str(&self.extract(extract));
@@ -434,7 +435,7 @@ impl Writer<'_> {
                 .iter()
                 .filter(|figure| anchor_key(&figure.anchor) == key)
             {
-                out.push_str(&self.figure(figure));
+                out.push_str(&self.figure(figure)?);
             }
             for extract in anchored_extracts
                 .iter()
@@ -443,7 +444,7 @@ impl Writer<'_> {
                 out.push_str(&self.extract(extract));
             }
         }
-        out
+        Ok(out)
     }
 
     fn key_ideas(&self, article: &Article) -> String {
@@ -477,10 +478,12 @@ impl Writer<'_> {
         )
     }
 
-    fn figure(&self, figure: &Figure) -> String {
-        format!(
+    fn figure(&self, figure: &Figure) -> Result<String> {
+        let (width, height) = pixels(&figure.path)?;
+        Ok(format!(
             "#figure-block(\n  id: {},\n  source-id: {},\n  anchor: {},\n  layout: {},\n  \
-             word: {},\n  alt: {},\n)[#figure-caption{}#figure-credit{}]\n\n",
+             word: {},\n  alt: {},\n  pixels: ({width}, {height}),\n\
+             )[#figure-caption{}#figure-credit{}]\n\n",
             string_literal(&figure.id),
             string_literal(&figure.source_id),
             string_literal(&figure.anchor),
@@ -489,7 +492,7 @@ impl Writer<'_> {
             string_literal(&figure.alt_text),
             self.said(&figure.caption),
             self.said(&figure.credit),
-        )
+        ))
     }
 
     fn extract(&self, extract: &Extract) -> String {

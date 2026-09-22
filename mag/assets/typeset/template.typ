@@ -49,6 +49,24 @@
 #let ARTICLE-PAGE-CAP = 7
 #let VERBATIM-PAGE-CAP = 10
 
+#let FIGURE-LABEL-ZONE = 13.1pt
+#let FIGURE-LABEL-PAD = 4.32625pt
+#let FIGURE-LABEL-TRACKING = 0.25pt
+#let FIGURE-CAPTION-ABOVE = 6.3pt
+#let FIGURE-GAP = 15.75pt
+#let COMPACT-FIGURE-GAP = 12pt
+#let FIGURE-MAX-HEIGHT = 205pt
+#let COMPACT-FIGURE-MAX-HEIGHT = 170pt
+#let OPENER-FIGURE-MAX-HEIGHT = 270pt
+#let COMPACT-BAND-INSET = 32.5pt
+#let BAND-LAYOUTS = ("evidence_band", "evidence_band_prose", "adaptive_band")
+#let COMPACT-BAND = "compact_band"
+#let OPENER-ANCHOR = "__opener__"
+#let EXTRACT-GAP = 5mm
+#let EXTRACT-LABEL-AFTER = 2pt
+#let EXTRACT-CAPTION-ABOVE = 2pt
+#let EXTRACT-LABEL-TRACKING = 0.45pt
+
 #let CONTENTS-KICKER-TOP = -13.46915pt
 #let CONTENTS-TITLE-TOP = 32.54098pt
 #let CONTENTS-TITLE-SIZE = 27pt
@@ -191,6 +209,43 @@
 #let plain-page() = page(margin: 0pt, background: none, [])
 
 #let column(body) = pad(left: RAIL, right: RAIL - MEASURE-DELTA, body)
+
+#let NO-ESCAPE = (left: 0pt, right: 0pt)
+#let BAND-ESCAPE = (left: -RAIL, right: MEASURE-DELTA - RAIL)
+#let COMPACT-ESCAPE = (left: COMPACT-BAND-INSET, right: COMPACT-BAND-INSET)
+
+#let flow-counter = counter("mag-flow")
+
+#let flow-mark(kind, layout, body) = {
+  flow-counter.step()
+  context [#metadata((
+      kind: kind,
+      layout: layout,
+      index: flow-counter.get().first(),
+    ))<mag-flow>]
+  context body(flow-counter.get().first())
+}
+
+#let figure-spec(layout, anchor) = {
+  let opener = anchor == OPENER-ANCHOR
+  let compact = layout == COMPACT-BAND
+  (
+    escape: if BAND-LAYOUTS.contains(layout) {
+      BAND-ESCAPE
+    } else if compact { COMPACT-ESCAPE } else { NO-ESCAPE },
+    gap: if opener { 0pt } else if compact { COMPACT-FIGURE-GAP } else { FIGURE-GAP },
+    max-height: if opener {
+      OPENER-FIGURE-MAX-HEIGHT
+    } else if compact { COMPACT-FIGURE-MAX-HEIGHT } else { FIGURE-MAX-HEIGHT },
+  )
+}
+
+#let is-band(layout) = BAND-LAYOUTS.contains(layout) or layout == COMPACT-BAND
+
+#let band-anchored(index) = {
+  let next = query(<mag-flow>).filter(m => m.value.index == index + 1)
+  next.len() > 0 and next.first().value.kind == "figure" and is-band(next.first().value.layout)
+}
 
 #let reader(body) = {
   set page(
@@ -605,9 +660,8 @@
   (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, below: 8pt, fill: VIOLET, caps: true),
 )
 
-#let doc-heading(level: 1, body) = {
-  let spec = HEADINGS.at(calc.min(level, 3) - 1)
-  block(above: spec.above, below: 0pt, breakable: false, {
+#let heading-stack(spec, above, escape, body) = {
+  block(above: above, below: 0pt, breakable: false, width: 100%, inset: escape, {
     text(
       font: spec.font,
       size: spec.size,
@@ -620,6 +674,19 @@
     block(height: HEADING-CLEARANCE, width: 100%, spacing: 0pt, [])
   })
   v(-HEADING-CLEARANCE)
+}
+
+#let doc-heading(level: 1, body) = {
+  let spec = HEADINGS.at(calc.min(level, 3) - 1)
+  flow-mark("heading", none, index => {
+    let anchor = level >= 2 and level <= 3 and band-anchored(index)
+    heading-stack(
+      spec,
+      if anchor { 0pt } else { spec.above },
+      if anchor { BAND-ESCAPE } else { NO-ESCAPE },
+      body,
+    )
+  })
 }
 
 #let ruled(pad-left, pad-rest, fill-color, body) = pad(left: QUOTE-RULE / 2, block(
@@ -742,7 +809,7 @@
 
 #let figure-caption(body) = block(
   text(size: CAPTION-SIZE, ..edges(CAPTION-SIZE, 8.6pt, HALF-SERIF), body),
-  above: 6.3pt,
+  above: FIGURE-CAPTION-ABOVE,
   below: 0pt,
 )
 #let figure-credit(body) = block(
@@ -757,6 +824,38 @@
   above: 0pt,
   below: 0pt,
 )
+
+#let figure-counter = counter("mag-figure")
+
+#let fitted-image-height(width, pixels, max-height) = (
+  pixels.at(1) * calc.min(width / pixels.at(0), max-height / pixels.at(1))
+)
+
+#let figure-image(pixels, spec) = layout(size => block(
+  height: fitted-image-height(size.width, pixels, spec.max-height),
+  width: 100%,
+  spacing: 0pt,
+  [],
+))
+
+#let figure-label(word) = context block(
+  height: FIGURE-LABEL-ZONE,
+  width: 100%,
+  spacing: 0pt,
+  {
+    v(FIGURE-LABEL-PAD + ZERO-LEADING-SANS)
+    text(
+      font: SANS,
+      size: CAPTION-SIZE,
+      weight: 500,
+      fill: VIOLET,
+      ..flat,
+      ..tracked(FIGURE-LABEL-TRACKING),
+      upper(word) + " " + leading-zero(figure-counter.get().first()),
+    )
+  },
+)
+
 #let figure-block(
   id: none,
   source-id: none,
@@ -764,24 +863,94 @@
   layout: none,
   word: none,
   alt: none,
+  pixels: none,
   body,
-) = block(body, above: 0pt, below: 15.75pt, breakable: false)
+) = {
+  assert(pixels != none, message: "figure " + id + " carries no pixel size; the emitter must state it")
+  figure-counter.step()
+  let spec = figure-spec(layout, anchor)
+  flow-mark("figure", layout, _ => block(
+    above: 0pt,
+    below: spec.gap,
+    breakable: false,
+    width: 100%,
+    inset: spec.escape,
+    {
+      figure-label(word)
+      figure-image(pixels, spec)
+      body
+    },
+  ))
+}
 
 #let quote-line(body) = par(body)
 #let extract-caption(body) = block(
   text(font: SANS, size: CAPTION-SIZE, fill: VIOLET, ..edges(CAPTION-SIZE, CAPTION-SIZE * 1.35, HALF-SANS), body),
-  above: 2pt,
+  above: EXTRACT-CAPTION-ABOVE,
   below: 0pt,
 )
-#let extract(id: none, source-id: none, anchor: none, style: none, word: none, body) = block(
-  body,
-  above: 5mm,
-  below: 5mm,
-  breakable: false,
+#let extract-label(word) = block(
+  text(
+    font: SANS,
+    size: CAPTION-SIZE,
+    weight: 500,
+    fill: VIOLET,
+    ..edges(CAPTION-SIZE, CAPTION-SIZE, HALF-SANS),
+    ..tracked(EXTRACT-LABEL-TRACKING),
+    upper(word),
+  ),
+  above: 0pt,
+  below: EXTRACT-LABEL-AFTER,
 )
+#let extract(id: none, source-id: none, anchor: none, style: none, word: none, body) = {
+  flow-mark("extract", none, _ => block(
+    { extract-label(word); body },
+    above: EXTRACT-GAP,
+    below: EXTRACT-GAP,
+    breakable: false,
+  ))
+}
 
 #let tail-art() = none
-#let closing-plate(index: 1, alt: none) = page(background: none, [])
+
+#let plates = state("mag-plates", ())
+#let piece-counter = counter("mag-piece-ordinal")
+
+#let py-round(value) = {
+  let whole = calc.floor(value)
+  let rest = value - whole
+  if rest > 0.5 or (rest == 0.5 and calc.odd(whole)) { whole + 1 } else { whole }
+}
+
+#let plate-slots(articles, count) = range(1, count + 1).map(j => py-round(j * articles / count))
+
+#let plate-page(plate) = page(background: none, [])
+
+#let plate-plan() = {
+  let all = plates.final()
+  let articles = query(<mag-piece>).len()
+  if all.len() == 0 or articles == 0 { (none, 0, ()) } else {
+    (all, articles, plate-slots(articles, all.len()))
+  }
+}
+
+#let plates-before(ordinal) = context {
+  let (all, articles, slots) = plate-plan()
+  if all == none { return }
+  for (j, slot) in slots.enumerate() {
+    if slot == ordinal - 1 { plate-page(all.at(j)) }
+  }
+}
+
+#let closing-plate(index: 1, alt: none) = {
+  plates.update(p => p + ((index: index, alt: alt),))
+  context {
+    let (all, articles, slots) = plate-plan()
+    if all == none { return }
+    let j = all.position(p => p.index == index)
+    if slots.at(j) == articles { plate-page(all.at(j)) }
+  }
+}
 
 #let page-cap(id, kind) = context {
   let head = query(<mag-piece>).find(m => m.value.id == id)
@@ -803,7 +972,10 @@
   opener: "plain",
   body,
 ) = {
+  piece-counter.step()
+  context plates-before(piece-counter.get().first())
   pagebreak(weak: true)
+  figure-counter.update(0)
   let plate = figure-layouts.any(l => l.starts-with("landscape_plate"))
   let after = if kind == "original_editorial" {
     EDITORIAL-AFTER

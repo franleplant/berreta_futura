@@ -1,4 +1,5 @@
 pub(crate) mod content;
+pub(crate) mod media;
 pub(crate) mod template;
 pub(crate) mod world;
 
