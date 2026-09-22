@@ -1,400 +1,646 @@
 # WP-0.2i verification
 
-Verifier for WP-0.2i (per-glyph positions), protocol rule 3. Worker rework
-commit `be15d6c`, verified in a fresh worktree at that commit. This is the
-GATE: the clause that licenses "the new typesetting pipeline renders the same
-as the old one", so the standard applied here is higher than elsewhere.
+Verifier for WP-0.2i (per-glyph positions), protocol rule 3, fourth pass.
+Worker rework commit `0ec67a9`, replayed in a worktree created for this
+verification at that commit and in no other directory. This is the GATE, so
+the standard is higher than elsewhere, and rule 3d binds me to re-read the
+THIRD verification (`521ab79`) rather than only the new evidence. I did.
 
 ## Verdict
 
-**REJECTED**, on the RECORD rather than on the mechanism.
+**Verdict: ACCEPTED.**
 
-The quantum fix is correct, and I could not break it. The floor fixture is now
-representative, the margin is 4.00x, and the size-independence that the whole
-gate rests on survived the quantum change under a harder attack than the
-previous verification mounted. **Do not redo the fix.**
+The three rejections were, in order, the MECHANISM, the RECORD, and three
+overstated claims. The mechanism was cleared by the previous verifier, who
+attacked it across seven orders of magnitude and could not break it; I did not
+re-derive it. What I tested is what the third rejection demanded: whether the
+floor can now be rebuilt by someone holding only this repository, and whether
+the restated claims are true.
 
-What fails is replayability of the floor. `stairdrift` IS the floor, and its
-generator `mkdrift.py` exists nowhere in the repository: not in the evidence,
-not committed, only at an absolute path inside an ephemeral job scratch
-directory. The evidence contradicts itself about this, the recorded run loop
-does not run the floor fixture, and revision 38's new rule-12 clause (a test
-reads only its own checkout) is violated by the whole fixture corpus. A number
-that licenses Phase 3 and Phase 4 cannot rest on an artifact only one job can
-rebuild.
+**The floor is rebuildable. I rebuilt it.** `mkfixtures.py` ran in a worktree
+the author never touched, resolved every path against that checkout, built all
+24 fixtures including `stairdrift`, and the gate reproduced: floor 0.2500 at 0
+violations, ceiling 10.2500, margin 4.00x. **25 of the 26 verdict digests in
+`## Verdicts` reproduce exactly.** The 26th is `glyphsub`, and the finding
+there is that its digest is not reproducible by ANYONE, for a cause I isolated
+and can fix in one line (finding 1).
 
-Three claims reported to the orchestrator are false as recorded. That is the
-rejection.
+Eight errata follow. **None of them touches the floor, the ceiling, the margin,
+the commensurability law, the detection-floor bracket, the reconciliation
+arithmetic, or the irreproducibility of 69,071.** Every load-bearing figure
+reproduced. The errata are descriptive slips, and under rule 9 a corrected
+figure propagates, so they are stated here in the form the plan should carry.
 
-## What the prior rejection was, and that it is fixed
+Acceptance rests on reproduction, not on an argument, with the four items
+labelled under rule 10 in `## What I could not discriminate`, none of which
+is load-bearing.
 
-Commit `18e35ed` was rejected at `2f4d443`. Offsets were quantized at 0.0001 pt
-while one Pango tick is 0.000732421875 pt = **7.32421875 quanta**, not an
-integer. Flat regions of the true difference sequence therefore recorded as
-values alternating between adjacent quanta, `|v|` decreased, and the shape
-check rejected legitimate drift. The floor fixture passed only because a
-perfectly linear ramp never goes flat.
+## The record is replayable, and the proof is not an argument
 
-Fixed, and fixed the right way. `GLYPH_QUANTUM` is now written as the
-expression `GLYPH_DRIFT_PT / 8.0`, so the commensurability is visible in the
-source rather than buried in a magic constant:
+The third rejection's core was that `mkdrift.py` built the floor, appeared zero
+times in the evidence, lived only at an absolute job path, and `exec`'d a
+second scratch file. Each part is now answered by execution rather than by
+prose:
 
-| quantity | value | check |
+- **Zero absolute paths**, verified by grep and not by reading:
+  `grep -nE '/Users/|/home/|/tmp/'` over the committed generator and the
+  evidence file exits **1**. The absence claim rests on that exit status and
+  not on the empty output, because a failed grep and an empty grep print the
+  same nothing: grep is three-way, 0 present, 1 absent, 2 or more unknown, and
+  only 1 supports "none".
+- **Paths resolve against the running checkout.** The generator announced
+  `checkout /Users/.../vwp02i4`, which is MY worktree, not the author's, and
+  `render tree ... (checkout default)`, `output root ... (checkout default)`.
+  Rule 2b's announcement obligation is met in the executed output.
+- **The env gate works and fails loud.** With `MAG_PARITY_RENDER_A` set to a
+  nonexistent path it printed `render tree /nonexistent/tree (env)`, then
+  `missing render tree: /nonexistent/tree/en/reader.pdf` and exited 1. An
+  unknown fixture name exits 1 listing all 24 known names.
+- **Seven scratch scripts, three of which `exec`'d a fourth from an absolute
+  job path.** Confirmed exactly: `mkfix2.py`, `mkfix6.py` and `mkdrift.py` each
+  carry
+  `exec(open("/Users/franguijarro/.claude/jobs/7d99e27f/tmp/mkfix.py").read()...)`.
+  Three, not two, not four.
+
+**And the vindication is sharper than the evidence claims.** The author's
+`mkfix.py` in that job directory has since been OVERWRITTEN by an unrelated
+script: its mtime is 2026-09-18 08:03, later than `mkdrift.py`'s 09-17 12:08,
+and it no longer contains the `# 1. drift` marker the three `exec` lines split
+on. **The floor could no longer be rebuilt from the author's own scratch
+directory either.** The scratch corpus did not merely fail to travel; it
+decayed in place, inside the window between the rejection and the rework.
+Committing the generator was not hygiene, it was recovery.
+
+## Run loop against the registry, re-derived at the point of citation
+
+Rule 9 binds me here, so I parsed both sides rather than counting by eye: the
+`for f in ...` list out of the extracted `## Commands` block, and the
+`BUILDERS` dict out of the generator's AST.
+
+| direction | result |
+| --- | --- |
+| names in the run loop | 24, no duplicates |
+| keys in `BUILDERS` | 24, no duplicates |
+| in loop, not in registry | none |
+| in registry, not in loop | none |
+
+**24 both ways, set-equal, no asymmetric members.** `stairdrift` and
+`smoothdrift` are both present, which was rejection item 3. With the four
+determinism runs the block is 28 runs, as the brief states.
+
+## The gate reproduces
+
+All at base `0ec67a9`. Digest head is the first 16 hex of
+`shasum -a 256 output/parity/010/verdict.json`.
+
+| fixture | exit | ratio | viol | digest (head) | recorded? |
+| --- | --- | --- | --- | --- | --- |
+| A-vs-A run 1 | 0 | 0.0000 | 0 | `468eac3c32c8a4e2` | matches |
+| A-vs-A run 2 | 0 | 0.0000 | 0 | `468eac3c32c8a4e2` | matches |
+| A-vs-B run 1 | 0 | 0.0000 | 0 | `09626f78981b6819` | matches |
+| A-vs-B run 2 | 0 | 0.0000 | 0 | `09626f78981b6819` | matches |
+| control | 0 | 0.0000 | 0 | `494e4e1e46ad1698` | matches |
+| **stairdrift (floor)** | 0 | **0.2500** | **0** | `df9909eeb8c68057` | matches |
+| drift | 0 | 0.2500 | 0 | `bb6dc69d643f933d` | matches |
+| smoothdrift | 0 | 0.6250 | 0 | `cf7376d833853612` | matches |
+| **kern02 (ceiling)** | 1 | **10.2500** | 5 | `40d61b72f0daa2b9` | matches |
+| kern005 | 1 | 2.5625 | 5 | `c768f28a0a19fed0` | matches |
+| kern001 | 1 | 0.5625 | 1 | `b627c661ed777326` | matches |
+| kern00001 | 1 | 0.0625 | 1 | `984c7ea44dd54011` | matches |
+| linmatrix | 1 | 2.8542 | 9 | `372f53f82cb29adc` | matches |
+| glyphsub | 1 | 0.0000 | 0 | `65bf9e73f3bc022e` | **differs**, finding 1 |
+| ocmember | 1 | n/a | n/a | none | matches |
+| annotap | 1 | n/a | n/a | none | matches |
+| advstep | 1 | 0.6406 | 1 | `0c12d7a62f688784` | matches |
+| advmid | 1 | 0.6406 | 1 | `a0b0f44deb108a4e` | matches |
+| advtail02 | 1 | 10.2500 | 9 | `52c02c4c28aaeebd` | matches |
+| advtail_small | 1 | 0.5625 | 1 | `4b54c1f0e2606289` | matches |
+| advtail_late | 1 | 0.6406 | 1 | `c3756e274c23e606` | matches |
+| vq_2q | 1 | 0.0250 | 40 | `3c3479b0ae488b99` | matches |
+| vq_1q | 1 | 0.0125 | 40 | `c408a87501e26373` | matches |
+| vq_half | 1 | 0.0125 | 40 | `ceddd179c6dc58f5` | matches |
+| vq_quarter | 1 | 0.0125 | 40 | `37c2531a3999b6e9` | matches |
+| vq_e2 | 1 | 0.0125 | 40 | `34fbab168991eae9` | matches |
+| vq_e3 | 0 | 0.0000 | 0 | `eec4fa1a6a137b4e` | matches |
+| vq_e4 | 0 | 0.0000 | 0 | `cbcaba0d705305a1` | matches |
+
+**Floor `stairdrift` 0.2500 at 0 violations, ceiling `kern02` 10.2500, margin
+1 / 0.25 = 4.00x against the required 2x. Met.** Worst excess on the ceiling
+0.013550 pt, on `kern005` 0.002289 pt, on `linmatrix` 0.011169 pt, all as
+recorded.
+
+**This measurement ESTABLISHES the floor's provenance rather than corroborating
+it**, and the distinction matters enough to state plainly, because a replay
+that creates the record it appears to verify reads as corroboration a year
+later. Until now the 4.00x margin carried no digest and rested on two agents
+agreeing. It now carries one, at a named commit, with its inputs:
+
+```
+floor    stairdrift   digest df9909eeb8c68057   base 0ec67a9
+  inputs.a_reader_sha256  b9f35d55f01933dbda6fa731e5ad95208e886768db016dc9bb33d601a302ccbe  (control)
+  inputs.b_reader_sha256  7826a83303fbbdc00ba9b669683eee96a4f544b1ce59b9834060bac123084751  (stairdrift)
+ceiling  kern02       digest 40d61b72f0daa2b9   base 0ec67a9
+  inputs.b_reader_sha256  0966ae8fc2c064038d59a25f0dcfc59653c6be032863759d0184f446982c16cb  (kern02)
+oracle leg A (identifies the run, not checkable: the WeasyPrint leg is not
+byte-reproducible)
+  editions/010/render-2026-09-14T01-47-59/en/reader.pdf
+  7b39d11271e335e4928d403a5bfcf6eeca27b6757d5d26a0822f0121527f9156
+```
+
+The fixture hashes ARE checkable: 23 of 24 fixtures rebuilt byte-identically
+from the committed generator, which is what makes the floor's digest mean
+something. `glyphsub` is the exception, and that is finding 1.
+
+## The restated claims, each checked against a measurement
+
+**The law is `ratio = n/(8k)`.** Verified from a fixture rather than by
+accepting the table. `linmatrix` writes its per-glyph violations with the raw
+difference and bound, so I recovered n and k directly: the worst offender is
+**n = 137 quanta at glyph k = 6**, and 137/48 = 2.8541666..., which is exactly
+the verdict's `worst_ratio` of 2.8541666666666665. The bound sequence in those
+violations is k x 0.000732421875 pt exactly (0.000732, 0.001465, 0.002197, ...).
+Every recorded ratio decomposes to an integer n over 8k with the stated k:
+2/8, 5/8, 1/16, 9/16, 41/16, 164/16, 41/64, 137/48, 2/80, 1/80. Sixteenths is
+the k=2 case, as claimed. The strengthening is real.
+
+**The detection floor is between 9.16e-08 and 9.16e-07 pt.** All seven
+magnitudes reproduce: 2Q, Q, Q/2, Q/4 and Q/100 each fail with **40 violations**
+and `worst_excess_pt` exactly **0.000000**, so every one is caught on SHAPE
+ALONE with the magnitude bound contributing nothing; Q/1000 and Q/10000 pass
+with 0. The supporting datum holds in the form that matters: **Q, Q/2, Q/4 and
+Q/100 all record as the same one quantum at k=10, ratio 1/80, with the same 40
+violations**, while 2Q records 2/80. The magnitude stopped mattering; only the
+shape did. That is the evidence that the mechanism is quantisation rather than
+magnitude, and it reproduced. (The factor spanned is 100, not 200; erratum 3.)
+
+**Flats.** The generator printed `stairdrift flat steps 52549/68800 = 76.3794%`
+on its own run, and I re-derived the same figure independently from the
+staircase definition, with the first 24 offsets in ticks reading
+`0 0 0 1 1 1 1 2 2 2 2 3 3 3 3 4 4 4 4 4 5 5 5 5`. Third independent
+derivation. See erratum 5 for what the number is a property OF.
+
+**The CTM-composing recommendation is discharged, and I checked the mechanism
+rather than accepting it.** `display_list` reports **pass** for `stairdrift`,
+`drift` and `smoothdrift` in the same runs where `glyph_positions` passes, so
+the pypdf-built floor IS display-list equal and the plan's premise is false for
+the TJ-kern class. The stated mechanism is that a TJ kern changes no field the
+display list records. Reading `mag/src/parity/streams.rs`, the serialized
+fields of `Element::Text` are `s, font, size, fill, glyphs, gids, m, tr, clip`,
+with `offs` under `#[serde(skip)]`; `m` is computed from `self.tm` BEFORE the
+item loop, and `glyphs`/`gids`/`s` come from string items only. So a kern
+touches none of them. **One precision the evidence omits**: the kern DOES
+accumulate into `tx`, and the show's last act is
+`self.tm = mul(translate(tx, 0.0), self.tm)`, so a kern would move the NEXT
+show's `m` if any show inherited. I measured that it does not:
+**0 of 1,488 interior shows follow another show without an intervening
+`Td`/`TD`/`T*`/`Tm`/`BT`/`ET`.** The mechanism holds, and it holds BECAUSE of
+that corpus property, which the plan already records. Stated so the next reader
+does not generalise it to a corpus where shows chain.
+
+## The count reconciliation, scrutinised hardest
+
+**Block 2 reproduced exactly**: `TJ shows 1488 glyphs 68800 odd tokens 0`,
+`Tj shows 15 string bytes 537`, `document-wide shows 1503`, with page 1 at 5
+shows / 166 bytes and page 56 at 10 shows / 371 bytes.
+
+**I enumerated the 15 as members rather than inferring them from a total**, per
+the brief. All 15, with the font resolved through each page's `/Font` resource
+dict and the render mode taken from the last `Tr` before each show:
+
+| pg | count | operator | font resource | subtype | Tr | bytes |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 5 | `Tj`, literal string | `/F2+0` | `/TrueType` | 3 | 166 |
+| 56 | 10 | `Tj`, literal string | `/F2+0` | `/TrueType` | 3 | 371 |
+
+Confirmed member by member: all 15 are `Tj` not `TJ`; all 15 are at render mode
+`3 Tr`; all 15 are literal `(...)` strings with **zero backslash escapes**; all
+15 are in a SIMPLE font, none `/Type0`; both cover pages carry **zero TJ
+arrays**; and **no page in 2..55 carries a `Tj`**. 1,488 + 15 = 1,503, and the
+gap is the two covers and nothing else. **The show half reconciles exactly and
+the plan's hypothesis is CONFIRMED.** One member attribute is misstated in the
+evidence; that is erratum 1.
+
+The domain is not interpretive: my own verdict carries
+`"interior: reader.pdf pages 2..n-1"`, `first_page 2`, `last_page 55`,
+`page_count a 56 b 56` and `glyphs 68800` **in one document**, so 68,800 is a
+54-page interior count and cannot be a 56-page count. That retires the
+hypothesis independently of the cover measurement.
+
+**69,071 is not reproducible, and I tried harder than the evidence did.** The
+gap to close is 271. Cover countings:
+
+| counting | cover total | document-wide |
 | --- | --- | --- |
-| one Pango tick | 0.000732421875 pt | `= 0.75/1024` exactly, confirmed |
-| `GLYPH_QUANTUM` | 9.1552734375e-05 pt | `= tick/8` exactly, confirmed |
-| tick / quantum | **8.0** | integer, so `round(x + Nq) = round(x) + N` holds |
-| old quantum | 0.0001 pt | made a tick 7.32421875 quanta: the defect |
+| string bytes | 537 | 69,337 |
+| non-space bytes | 450 | 69,250 |
+| alphanumeric | 430 | 69,230 |
+| alphabetic | 411 | 69,211 |
+| front cover alone | 166 | 68,966 |
+| back cover alone | 371 | 69,171 |
 
-**It tightens, and no tolerance was added.** The new quantum is 1.09x FINER
-than the old one (0.0001 / 9.1552734375e-05). `axis_shape`
-(`mag/src/parity/display.rs:419`) is unchanged and carries no epsilon: the sign
-flip is strict and the magnitude test is `if v.abs() < prev { return false }`.
-A tolerance would have been a rule-4 loosening, and it was not taken. This is
-the correct repair.
+Six countings, none yields 271 and none yields 69,071. **69,071 should be
+DROPPED rather than re-cited or corrected to 69,337.** Correcting it would
+assert that 69,337 is what WP-0.2f meant, which no artifact supports; dropping
+it says only what is known. 68,800 / 1,488 travels with "54 interior pages";
+1,503 travels with "whole document"; 69,337 is available if a document-wide
+glyph figure is ever wanted.
 
-One framing correction for the record, since the orchestrator's brief carried
-it and it would mislead a later reader: the quantum is 1.09x finer, NOT eight
-times finer. The 8 is tick/quantum, not old/new. Dump size and runtime are
-therefore materially unchanged, which disposes of three of the critique
-questions asked about the finer quantum.
+**The base-mismatch alternative is dead, and the file-identity argument is the
+decisive one.** I confirmed it at the source: WP-0.2f's own `## Commands` block
+sets `R=editions/010/render-2026-09-14T01-47-59/en/reader.pdf` and calls it
+"the oracle leg used as the base of every fixture". My verdict's
+`a_reader_sha256` is `7b39d112...`, the same file. No commit, render or asset
+difference can sit between two numbers taken from one artifact. I also
+confirmed WP-0.2f states 69,071 / 1,503 exactly once, in prose, with no
+producing command, and has no `.verify.md`.
 
-## The decisive probe: can a compensating kern pass now?
+Tested anyway, as populations: block 3 reproduced exactly. Seven DISTINCT
+sha256 over `editions/010/render-*/en/reader.pdf` (sizes 87,139,111 to
+87,139,128), all giving 1,488 shows and 68,800 glyphs, and
+`per-page vectors all identical: True` over all 56 pages elementwise,
+`interior pages carrying text: 47` against 54 interior pages, leaving 7 plates.
+An aggregate can coincide; a 56-element vector does not.
 
-**No. I tried hard and failed to break it, and the attempt bounded how far the
-constraint reaches.** This was the single most important question, because a
-finer quantum changes what the shape check can see, so the previous failure to
-break it does not automatically carry over.
+**WP-5.5a's 68,530 / 1,501 is correctly NOT folded in.** I agree, and the
+reason is stronger than parsimony: it is a different render pair at a different
+base, `c1253d8`, after the source-codes asset landed, so it is an independent
+measurement rather than a citation of this one. Folding it in would be picking
+the story that accounts for the most numbers, which is what rule 11 forbids.
 
-I built a NEW adversarial family rather than re-running the inherited one: a
-mid-show compensating bump that displaces by `+amount` at glyph 10 and returns
-to zero at glyph 20, applied to every TJ array of 25+ glyphs across all 54
-interior pages. That is the shape the constraint exists to catch, and placing
-it mid-show (not in the tail) means the difference sequence must return toward
-zero inside the recorded range. Seven magnitudes, counted from this list:
-2Q, Q, Q/2, Q/4, Q/100, Q/1000, Q/10000 — **seven**.
+## Finding 1: the `glyphsub` digest is not reproducible by anyone
 
-| amount | pt | result | violations |
-| --- | --- | --- | --- |
-| 2Q | 1.83e-04 | **fail** | 40 |
-| Q | 9.16e-05 | **fail** | 40 |
-| Q/2 | 4.58e-05 | **fail** | 40 |
-| Q/4 | 2.29e-05 | **fail** | 40 |
-| Q/100 | 9.16e-07 | **fail** | 40 |
-| Q/1000 | 9.16e-08 | pass, ratio 0.0 | 0 |
-| Q/10000 | 9.16e-09 | pass, ratio 0.0 | 0 |
+The one digest that did not match. My run gives `65bf9e73f3bc022e` against the
+recorded `d6a545a433a25c6b`. **The substance reproduced exactly**: exit 1,
+`tier S text: pass`, `glyph_positions: pass (ratio 0.0000, 0 violations)`,
+`display_list: fail (12 pages differ)`, and the generator printed the same
+choice, `CID 0089 (F) now draws A; widths and ToUnicode intact`. The blind spot
+is caught by `gids` alone, exactly as claimed.
 
-The naive prediction is that a bump below half a quantum rounds to zero
-everywhere and goes invisible. **That prediction is wrong**, and the reason is
-worth recording: base offsets are distributed across the quantum grid, so among
-68,800 glyphs some always crosses a rounding boundary. A quarter-quantum bump
-still produces 40 violations. This is the same mechanism WP-0.2f found on the
-raster side ("among 69,071 glyphs some origin always crosses a rounding
-boundary"), now working FOR the gate instead of against it.
+I isolated the cause by removing it and measuring:
 
-**Rule 10, stated plainly.** There IS a lower limit, between 9.16e-08 and
-9.16e-07 pt. So the plan's "fails on shape whatever its magnitude" and the
-carried claim "the ceiling has no lower magnitude limit" are **not literally
-true**. The accurate statement is: a compensating kern fails on shape at any
-magnitude down to about 1e-7 pt, which is ~7,000x below one Pango tick and
-~1,700x below one glyph's legitimate drift (0.000173 pt). At 300 dpi that
-limit is 4e-5 of a pixel. The gate is size-independent across every magnitude
-that can physically exist; it is not size-independent across all reals, and the
-evidence should say the former rather than the latter.
+- Building `glyphsub` in ONE environment, same Python, same fontTools 4.63.0,
+  at 00:39 and again at 11:31 gives **two different sha256**. The fixture is
+  not byte-reproducible across runs.
+- The differing bytes (`cmp -l`) lie in exactly **three 4-byte fields** of the
+  embedded font, 9 to 12 bytes depending on the pair: the `head` entry's
+  checksum in the table directory, `head.checkSumAdjustment`, and the low word
+  of `head.modified`. That is the signature of fontTools stamping the current
+  time into `head.modified` on `save()` and recomputing the two checksums that
+  depend on it.
+- With `SOURCE_DATE_EPOCH=1000000000` pinned, two builds are **byte-identical**
+  (`848d02715e540e7a...`), twice, on separate occasions. Remove the cause and
+  the effect goes.
+- The apparent counterexample confirms it: two UNPINNED builds run back to
+  back were also identical to each other. Their mtimes were one second apart
+  and `head.modified` has one-second resolution, so a sub-second build pair
+  shares a timestamp. Builds hours apart do not.
 
-Inherited adversarial variants, spot-checked (3 of 5): `advstep` and `advmid`
-fail on SHAPE ALONE (`worst_excess_pt` exactly 0.0) at ratio 0.640625;
-`advtail02` fails at 10.25 with 9 violations and a real magnitude breach.
-`kern00001` fails on shape alone at ratio 0.0625, i.e. at 6.25% of the bound.
-Size-independence survived the quantum change.
+So `d6a545a433a25c6b` was never reproducible by anyone more than a second away
+from the author's run, and no fontTools version pin would have rescued it. **Recommended,
+one line in the generator**: pin `head.modified` (or honour `SOURCE_DATE_EPOCH`)
+before `face.save()`, and re-record the digest. Until then `## Verdicts` should
+mark the `glyphsub` row as non-reproducible rather than leaving a digest that
+fails on every replay. Not a rejection ground: it is the fixture for glyph
+IDENTITY, not a threshold fixture, it sets neither floor nor ceiling, and its
+clause outputs are stable.
 
-## The floor is now representative, and the flats are real
+## Errata
 
-`stairdrift` injects `tick * round(k * 0.000173 / tick)`, and I verified it
-genuinely produces flats rather than merely being named as if it does:
+Corrections, not rejection grounds. Stated in the form the plan should carry,
+because rule 9 makes a corrected figure propagate and nine plan sites are held
+pending this verdict.
 
-- **52,549 of 68,800 glyph steps are flat: 76.38%.**
-- Moving steps 16,251 (23.62%), against the predicted `rate/tick` = 0.2362.
-- First 24 offsets in ticks: `0 0 0 1 1 1 1 2 2 2 2 3 3 3 3 4 4 4 4 4 5 5 5 5`.
-  The staircase is visible, with flat runs of three to five.
+1. **"every one in the simple font `F1`" is FALSE.** All 15 cover shows use
+   `/F2+0`, which is `/TrueType` `AAAAAA+Inter-Regular`. `/F1` is `/Type1`
+   Helvetica, and it appears only as `BT /F1 12 Tf 14.4 TL ET`, a text object
+   that shows nothing at all. Read: *every one in the simple font `F2+0`
+   (Inter-Regular); the other simple font, Helvetica `F1`, is declared but
+   draws no show.* This matters downstream because WP-5.4g is briefed off this
+   passage and would go looking at the wrong resource.
+   **It is also a rule-12 caption failure, the fourth instance**: the recorded
+   command prints the render modes but never the font, so the caption claims
+   something the block cannot show, and no replay would catch it. The other two
+   named attributes, `Tj` and `3 Tr`, ARE covered.
+2. **"Four distinct denominators appear (8, 16, 48, 64, 80)"** lists five. A
+   count beside its own enumeration, the exact shape rule 9's last clause
+   names. Read: *five distinct denominators.*
+3. **"Q/2, Q/4 and Q/100 span a factor of 200"** is 50, not 200; 200 is the
+   span of the whole failing set including 2Q, which records 2/80 rather than
+   1/80. The accurate vivid form: *Q, Q/2, Q/4 and Q/100 span a factor of 100
+   and all four record as the same one quantum at k=10, ratio 1/80, with the
+   same 40 violations.* Still the right point, at the right size.
+4. **"at 300 dpi it is 4e-5 of a pixel"** is off by 100x. One pixel at 300 dpi
+   is 0.24 pt, so 1e-7 pt is **4.2e-07** of a pixel. The error is conservative
+   (the floor is further below a pixel than claimed) and it was **inherited
+   verbatim from the third verify file**, which is the failure mode rule 3c
+   names: nothing checks a verifier but its own next pass, and here the next
+   pass was a different agent reading the sentence forward. The companion
+   figures are right: 7,324x below a tick, 1,730x below a glyph's drift.
+5. **"52,549 of 68,800 glyph steps are flat"** is a property of a single
+   staircase over k = 0..68,799, which is what `flat_fraction` computes. The
+   BUILT fixture resets k per show (`rebuild` restarts at 0 for each TJ array,
+   mean show length 46.2), and its true flat count is **52,561 / 68,800 =
+   76.3968%**. The evidence labels the figure analytic, so it is honest about
+   its method, but the sentence claims a property of the corpus's actual steps.
+   Difference 12 steps, 0.017 percentage points; "roughly three glyphs in four
+   do not move" is accurate either way.
+6. **"four of the seven scratch scripts used `%.6f` and two used `%.9f`"**
+   cannot be verified and is not what a grep shows: `%.6f` appears in
+   `advkern.py` and `advstep.py` only, `%.9f` in `mkdrift.py` and `vsweep.py`
+   only. The other three emit no kern format of their own because they
+   delegate to the overwritten `mkfix.py`. See rule 10 below.
+7. **The `glyphsub` digest**, finding 1 above.
+8. **Owns.** The commit's two files are
+   `mag/tests/parity_glyph_fixtures/mkfixtures.py` and its own evidence file.
+   The evidence file is implicitly owned; the generator path is NOT in
+   WP-0.2i's Owns list (`mag/src/parity/streams.rs`,
+   `mag/src/parity/display.rs`, `meta/verification/parity.yaml`), and the
+   evidence records no Owns extension. No collision exists: nothing else owns
+   `mag/tests/parity_glyph_fixtures*` (WP-0.2d owns `mag/tests/parity_faults*`,
+   which does not match), the third verification explicitly directed committing
+   the generators, and the coordinator's brief names this exact path. Recorded
+   as an unrecorded extension to be ratified in the plan, not as a defect.
 
-"Roughly three glyphs in four do not move" is accurate.
+## What I could not discriminate (rule 10)
 
-| fixture | flats | ratio | viol | result |
-| --- | --- | --- | --- | --- |
-| **stairdrift** | yes, 76.38% | 0.2500 | 0 | **pass, the floor** |
-| drift (control) | no | 0.2500 | 0 | pass |
-| smoothdrift (control) | no | 0.6250 | 0 | pass |
+- **Erratum 6.** The author's `mkfix.py` was overwritten on 2026-09-18, so the
+  kern format of `mkfix.py`, `mkfix2.py` and `mkfix6.py` is unrecoverable. I
+  can show 2 and 2, not 4 and 2. The claim is immaterial (it explains why
+  fixture BYTES differ from the first submission while every ratio is
+  unchanged, and the ratios did reproduce), but it cannot be checked and should
+  be softened rather than carried.
+- **69,071's impossibility.** Six countings fail to produce it. That is
+  strong evidence it is not derivable from that file, and it is not a proof of
+  impossibility. Neither the evidence nor I claim more, which is the right
+  shape: the recommendation is to DROP the figure, which needs only that nobody
+  can reproduce it, not that nobody ever could.
+- **Runtime.** The evidence records 80 to 83 s per run. My runs took roughly 93
+  to 110 s, with other agents' `mag parity` processes visible on the host
+  throughout and, later, a disk-full event. I cannot separate the artifact's
+  cost from host contention, so I neither confirm nor dispute the figure. The
+  order of magnitude, seconds against the 9 to 15 minutes supersampled
+  rasterization would have cost, is not in doubt.
+- **The f32 residual.** The code claims check out exactly: lopdf 0.45.0 has
+  `Real(f32)`, `num()` does `f64::from(*r)` once, and `tx`, `starts` and `qo`
+  are f64. The conclusion that f32 terms enter as relative scale errors and so
+  add a monotone ramp is an ARGUMENT, corroborated by a discriminating
+  measurement (zero violations across 68,800 glyphs on both ramp controls) but
+  not proven by it. WP-0.2j owns the definitive answer. Not a prerequisite for
+  this clause, as the evidence says.
 
-**Margin 1 / 0.25 = 4.00x** against the required 2x. Reproduced.
+## Environment failures during this replay, reported not worked around
 
-The rule-11 isolation holds: `smoothdrift` is a linear ramp at a HIGHER ratio
-(0.6250) and passes, `stairdrift` has the LOWEST ratio and was the only
-failure. Ratio is not the variable; flatness is. Remove the flats and the
-effect goes.
+Both are host conditions, not artifact defects, and both were caught by the
+rule-12 replay rather than by rereading.
 
-**But the demotion of `drift` to a control is prose-only, and necessarily so.**
-I was asked to confirm it in test code. There is no test code: no
-`parity_glyphs` target exists, and the fixture suite is entirely scratch. There
-is nothing in the repository in which to demote anything. That is a symptom of
-the record defect below, not a separate problem.
+1. **The host filled to 100% disk mid-run.** Nine runs died:
+   `advtail_small` and `advtail_late` at exit 101, and all seven `vq_*` at
+   exit 1 with **no log file created at all**, because the shell could not
+   open the redirect target. `block1.err` carries the proof:
+   `No space left on device (os error 28)`. After the coordinator reclaimed
+   space I re-ran exactly those nine through the same recorded `run()`
+   function, and **all nine then reproduced their recorded digests**. Reported
+   rather than silently retried.
+2. **My worktree's `mag/target/debug/` was removed mid-`cargo test`**,
+   consistent with the reclamation reaching this worktree. It surfaced as
+   `could not execute process .../parity_text_seam-... (never executed)`,
+   exit 101, after 16 result lines. **That is rule 12's abort clause in its
+   runner form**: the run stopped at the first failing BINARY, so those 16
+   lines evidenced only part of the suite and would have understated the total
+   had I reported them. I rebuilt and re-ran to completion. All 28 parity runs
+   and the three violation probes completed BEFORE this removal, against a
+   binary built in this worktree at `0ec67a9`.
 
-## Why this is rejected
+**My own recorded command failed replay, and I record it because it is the
+class the plan tracks.** Rule 12 binds verifiers, so before landing I
+extracted every block of THIS file and executed it. Block 4, the run-loop
+against-registry check, reported `26 24 False ['\\']`: I had transcribed the
+list extraction without the `.replace("\\\n", " ")` that the version I actually
+ran carried, so the two shell line-continuation backslashes counted as fixture
+names. The block in the file now is the corrected one and prints
+`24 24 True []`. The number I reported was right and the command I recorded for
+it was wrong, which is the transcription failure exactly as rule 12 describes
+it, caught by replay and not by rereading. Blocks 3 to 9 were then executed from
+the extracted text and reproduce every figure they are cited for; block 2 is
+the staging recipe, syntax-checked with `bash -n` and not re-run, since the
+staged trees it produces are the ones every other block read.
 
-### 1. The floor's generator is not in the record
-
-`mkdrift.py` builds `stairdrift`, which IS the floor. It appears **zero times**
-in `WP-0.2i.md`, which contains **zero Python code blocks**. It lives only at
-`/Users/franguijarro/.claude/jobs/7d99e27f/tmp/mkdrift.py`, and it `exec`s
-`mkfix.py` from the same directory, so reproducing the floor needs two scratch
-files, neither in the repository.
-
-The rework reported: *"the `mkdrift.py` generator is embedded verbatim in the
-evidence so `stairdrift` survives as part of the record rather than as a
-scratch file."* False in both halves. This is the same failure as WP-5.4's
-second rejection, where a hazard was reported as recorded after the edit had
-silently no-op'd, and it lands here on the gate's floor.
-
-### 2. The evidence contradicts itself about exactly this
-
-`## Commands` says `mkfix.py` and `mkfix6.py` "are reproduced verbatim in ##
-Residuals". `## Residuals` contains no code fences and says the opposite: they
-are "reproduced in the job scratch directory ... They are scratch by the
-established comparator-WP pattern (WP-0.2e), not committed."
-
-Both statements cannot hold. The second is the true one.
-
-### 3. The recorded run loop does not run the floor
-
-```
-for f in control drift kern02 kern005 kern001 kern00001 linmatrix glyphsub ocmember annotap
-```
-
-Ten fixtures, counted from that list, and neither `stairdrift` nor
-`smoothdrift` is among them. The command set the evidence offers as its
-reproduction does not exercise the fixture that IS the floor, nor either
-control that establishes the flatness isolation.
-
-### 4. Rule 12's third artifact class is violated corpus-wide
-
-Revision 38 added: a test reads only its own checkout, no absolute paths to a
-corpus, because every verification runs from an isolated worktree. Every
-fixture here is addressed as `/Users/franguijarro/.claude/jobs/7d99e27f/tmp/...`.
-
-I hit this myself and could not avoid it: I exercised the worktree's binary
-against the main tree's scratch corpus, which is precisely the trace/exercise
-split the rule prohibits. My measurements are sound because the CODE under test
-was the worktree's, and I say so under rule 10 — but the next verifier, on a
-machine where this job has been cleaned, reproduces nothing at all.
-
-### 5. A text splice, and a duplicated paragraph
-
-The f32 paragraph is spliced into the middle of a sentence in `## Commands`,
-between "are reproduced verbatim in ## Residuals" and "Run them with `uv run
-python <script>`", and terminates with a doubled period ("for this clause..").
-The identical paragraph already appears twice more (lines 60-62 and 201-203).
-An editing artifact in the document that carries the gate.
-
-## Inherited obligations from revision 39
-
-Revision 39 withdrew WP-0.2f wholly and made WP-0.2i the SOLE owner of the
-gate's floor, inheriting the `drift` fixture and the CTM-composing
-recommendation. Status of each:
-
-**The CTM-composing recommendation: substantively DISCHARGED, and its premise
-falsified, but never named.** The plan instructs deriving the floor with a
-CTM-composing perturbation through the Rust tracer, because "perturbing raw
-operands through pypdf cannot produce display-list-equal fixtures". The
-evidence never writes "CTM" and never says it declined the recommendation.
-
-It did not need to follow it, and I verified why by measurement rather than
-accepting the argument: `display_list` reports **pass** for `stairdrift`,
-alongside `glyph_positions` pass. The fixture IS display-list-equal. So the
-plan's stated premise is FALSE for the TJ-kern class specifically, because TJ
-kerns change no recorded display-list field. That is a rule-11 falsification of
-a plan claim and belongs in the record as one, not left silent.
-
-**The inherited count is unreconciled (rule 9).** Revision 39 hands down the
-drift fixture as "69,071 glyphs, 1,503 shows". The floor is measured over
-**68,800 glyphs, 1,488 shows**. The evidence states 68,800 four times and never
-reconciles the 271-glyph, 15-show difference against the figure it inherits.
-The likely cause is page selection (the evidence says "54 interior pages" and
-the generator restricts to pages 1..54), but rule 9 requires the number to
-travel with its configuration, and this one does not. Fourth instance of the
-standing unreconciled-count finding.
-
-## The sixteenths claim is false as written
-
-The rework offers "ratios land on exact sixteenths across the suite" as
-evidence the quantum is commensurate. I checked it rather than accepting it,
-and it does not generalize. Three counterexamples:
-
-| fixture | ratio | as a fraction | sixteenth? |
-| --- | --- | --- | --- |
-| advstep | 0.640625 | 41/64 | **no** |
-| advmid | 0.640625 | 41/64 | **no** |
-| my Q/4 bump | 0.0125 | 1/80 | **no** |
-
-The real rule, which fits **every** observation exactly, is
-
-> ratio = n / (8k)
-
-where `n` is the offset difference in quanta and `k` is the glyph index of the
-worst offender: the offset is an integer count of quanta and the bound is `k`
-ticks = `8k` quanta. "Sixteenths" is the `k = 2` special case, which held
-across the tabulated fixtures because their worst offender happened to sit at
-k=2. My bump fixtures place it at glyph 10, and land on eightieths (1/80,
-2/80); the adversarial variants land at k=8, and give sixty-fourths.
-
-This CONFIRMS commensurability more strongly than the sixteenths observation
-does, since `n/(8k)` exact is precisely what an integer tick/quantum ratio
-predicts. But the claim as written is false, and a later reader checking it
-against `advstep` would find it broken.
-
-## Spot-checks of the unchanged legs
-
-All reproduced, all matching the recorded values:
-
-- Determinism, A-vs-A twice: `0e21644ee602ff8a`, `0e21644ee602ff8a`, byte-identical.
-- A-vs-B: `6e932ea43678b91a`, exit 0.
-- Must-fail fixtures, 4 checked from the list linmatrix, glyphsub, ocmember,
-  annotap: all exit 1.
-- Ceilings: kern02 at 10.2500, kern005 at 2.5625.
-- `cargo fmt --check` clean; `cargo clippy --all-targets -- -D warnings` clean;
-  `cargo test` 16 result lines summing to 144 passed, **0 failed**.
-
-The f32 record is accurate. f32 terms enter as relative scale errors
-proportional to the value, so they add a monotone ramp rather than per-step
-noise, which is why the ramp controls produce zero violations across 68,800
-glyphs. WP-0.2j is correctly NOT a prerequisite for this clause.
-
-## What the rework needs
-
-Narrow, and none of it touches the mechanism:
-
-1. Embed `mkfix.py`, `mkfix6.py` and `mkdrift.py` verbatim in the evidence, or
-   commit them under `meta/verification/fixtures/`. The floor must be
-   rebuildable from the repository alone.
-2. Add `stairdrift` and `smoothdrift` to the recorded run loop.
-3. Address rule 12's third class: make the corpus reachable from a checkout, or
-   record explicitly what a verifier must stage and from where, and state that
-   the measurements were taken against an out-of-tree corpus.
-4. Remove the splice in `## Commands` and the two duplicate f32 paragraphs.
-5. Reconcile 68,800 / 1,488 against the inherited 69,071 / 1,503.
-6. Name the CTM-composing recommendation, record that `display_list` = pass
-   falsifies its premise for TJ kerns.
-7. Restate size-independence with its measured floor (~1e-7 pt) instead of "any
-   magnitude", and replace "exact sixteenths" with `n/(8k)`.
+**A hazard for the next agent**, since the protocol is telling everyone to set
+it: `set -o pipefail` plus `set -e` will abort on an expected-empty `grep`,
+which exits 1 when it matches nothing. The recorded block survives this only
+because it sets `pipefail` WITHOUT `set -e`, so the `grep -h 'tier E'` inside
+`run()` returning 1 for `ocmember` and `annotap`, which write no tier lines,
+costs nothing. Guard such greps with `|| true` if `set -e` is ever added.
 
 ## Commands
 
-Run from the worktree root so `uv run` resolves the project environment. The
-fixture corpus is NOT in the checkout; this is finding 4 above, and these
-commands inherit it.
+Run from a worktree created at `0ec67a9` and used for nothing else. The two
+render trees are staged as the evidence directs; here only `en/reader.pdf` and
+`request.json` were copied per tree, which is all `--pre-rendered` reads, and
+all seven `render-*` trees carrying a `reader.pdf` were staged so block 3's
+population test spans the same seven.
 
 ```sh
-T=/Users/franguijarro/.claude/jobs/7d99e27f/tmp
-M=./mag/target/debug/mag
-for f in stairdrift drift smoothdrift kern00001 kern005 kern02 \
-         advstep advmid advtail02 linmatrix glyphsub ocmember annotap; do
-  $M parity 010 --pre-rendered $T/fix/control $T/fix/$f; echo "$f exit=$?"
+MAIN=$PWD
+WT=$(mktemp -d)/wt
+git worktree add "$WT" 0ec67a9
+cd "$WT"
+for d in editions/010/render-2026-09-13T12-57-21 editions/010/render-2026-09-14T01-32-52 \
+         editions/010/render-2026-09-14T01-33-59 editions/010/render-2026-09-14T01-40-18 \
+         editions/010/render-2026-09-14T01-41-32 editions/010/render-2026-09-14T01-47-59 \
+         editions/010/render-2026-09-14T01-49-02; do
+  mkdir -p "$d/en"
+  cp "$MAIN/$d/en/reader.pdf" "$d/en/"
+  cp "$MAIN/$d/request.json" "$d/"
 done
-$M parity 010 --pre-rendered $T/rA $T/rA
-$M parity 010 --pre-rendered $T/rA $T/rB
-cd mag && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+mkdir -p .magazine/vfy
+uv run python - <<'PY'
+import re, pathlib
+src = pathlib.Path("meta/verification/evidence/WP-0.2i.md").read_text()
+for i, (lang, body) in enumerate(re.findall(r"^```(\w*)\n(.*?)^```", src, re.S | re.M), 1):
+    pathlib.Path(f".magazine/vfy/block{i}.{lang or 'txt'}").write_text(body)
+    print("block", i, lang, len(body.splitlines()), "lines")
+PY
+bash .magazine/vfy/block1.sh
+bash .magazine/vfy/block2.sh
+bash .magazine/vfy/block3.sh
 ```
 
-The compensating-kern sweep is `vsweep.py`, reproduced in full so this probe
-survives as part of the record rather than as a scratch file:
+Hermeticity and the env gate, executed rather than read:
 
-```python
-import re, os
-from pypdf import PdfReader, PdfWriter
-from pypdf.generic import DecodedStreamObject, NameObject
+```sh
+grep -nE '/Users/|/home/|/tmp/' mag/tests/parity_glyph_fixtures/mkfixtures.py \
+  meta/verification/evidence/WP-0.2i.md; echo "exit=$?"
+MAG_PARITY_RENDER_A=/nonexistent/tree MAG_PARITY_FIXTURES=.magazine/vfy/f2 \
+  uv run python mag/tests/parity_glyph_fixtures/mkfixtures.py control; echo "exit=$?"
+MAG_PARITY_FIXTURES=.magazine/vfy/f2 \
+  uv run python mag/tests/parity_glyph_fixtures/mkfixtures.py nosuchfixture; echo "exit=$?"
+```
 
-SRC = "<scratch>/rA/en/reader.pdf"
-OUT = "<scratch>/fix"
-TJ = re.compile(rb"\[(.*?)\]\s*TJ", re.S)
-TF = re.compile(rb"/(\w+)\s+([0-9.]+)\s+Tf")
-TOK = re.compile(rb"<([0-9A-Fa-f]*)>|(-?[0-9.]+)")
+Run loop against the registry, both sides parsed:
 
-def size_before(data, pos):
-    m = None
-    for x in TF.finditer(data, 0, pos):
-        m = x
-    return float(m.group(2)) if m else 10.0
+```sh
+uv run python - <<'PY'
+import re, pathlib, ast
+loop = re.search(r"for f in (.*?); do",
+                 pathlib.Path(".magazine/vfy/block1.sh").read_text(),
+                 re.S).group(1).replace("\\\n", " ").split()
+tree = ast.parse(pathlib.Path("mag/tests/parity_glyph_fixtures/mkfixtures.py").read_text())
+keys = [k.value for n in ast.walk(tree) if isinstance(n, ast.Assign)
+        and getattr(n.targets[0], "id", "") == "BUILDERS" for k in n.value.keys]
+print(len(loop), len(keys), set(loop) == set(keys),
+      sorted(set(loop) ^ set(keys)))
+PY
+```
 
-def count_glyphs(body):
-    return sum(len(m.group(1)) // 4
-               for m in TOK.finditer(body) if m.group(1) is not None)
+The 15 cover shows enumerated as members, with font and render mode resolved
+per show (this is what the evidence's own block does NOT cover):
 
-def mid_bump(body, sz, amount):
-    total = count_glyphs(body)
-    parts, k = bytearray(), 0
-    for m in TOK.finditer(body):
-        if m.group(1) is not None:
-            hexs = m.group(1)
-            for i in range(0, len(hexs), 4):
-                parts += b"<" + hexs[i:i + 4] + b">"
-                k += 1
-                if k == 10:
-                    parts += b"%.9f" % (-amount * 1000.0 / sz)
-                elif k == 20:
-                    parts += b"%.9f" % (amount * 1000.0 / sz)
-        else:
-            parts += b" " + m.group(2) + b" "
-    return bytes(parts), total
+```sh
+uv run python - <<'PY'
+import re
+from pypdf import PdfReader
+TJ1 = re.compile(rb"(\([^)]*\)|<[0-9A-Fa-f]*>)\s*Tj")
+TF = re.compile(rb"/([A-Za-z0-9_.+-]+)\s+([0-9.]+)\s+Tf")
+TR = re.compile(rb"([0-9]+)\s+Tr")
+r = PdfReader("editions/010/render-2026-09-14T01-47-59/en/reader.pdf")
+rows = []
+for i, p in enumerate(r.pages):
+    d = p.get_contents().get_data()
+    fonts = p.get("/Resources", {}).get("/Font", {})
+    for m in TJ1.finditer(d):
+        tf = [x for x in TF.finditer(d, 0, m.start())][-1:]
+        tr = [x for x in TR.finditer(d, 0, m.start())][-1:]
+        res = tf[0].group(1).decode() if tf else None
+        fd = fonts.get("/" + res) if res else None
+        rows.append((i + 1, res, str(fd.get_object().get("/Subtype")) if fd is not None else None,
+                     int(tr[0].group(1)) if tr else 0, len(m.group(1)) - 2,
+                     m.group(1)[:1] == b"(", b"\\" in m.group(1)))
+for row in rows: print(row)
+print("members", len(rows), "| all Tr==3", all(x[3] == 3 for x in rows),
+      "| all F1", all(x[1] == "F1" for x in rows),
+      "| all simple", all(x[2] != "/Type0" for x in rows),
+      "| all literal", all(x[5] for x in rows),
+      "| any escape", any(x[6] for x in rows),
+      "| bytes", sum(x[4] for x in rows),
+      "| interior Tj pages", sorted({x[0] for x in rows if 2 <= x[0] <= 55}))
+PY
+```
 
-def build(name, amount):
-    r = PdfReader(SRC); w = PdfWriter(); w.append(r)
-    for i, page in enumerate(w.pages):
-        if not (1 <= i <= 54):
-            continue
-        data = page.get_contents().get_data()
-        out, last, done = bytearray(), 0, 0
-        for m in TJ.finditer(data):
-            sz = size_before(data, m.start())
-            body, total = mid_bump(m.group(1), sz, amount)
-            if total < 25:
-                continue
-            out += data[last:m.start()] + b"[" + body + b"] TJ"
-            last = m.end(); done += 1
-        out += data[last:]
-        if done:
-            s = DecodedStreamObject(); s.set_data(bytes(out))
-            page[NameObject("/Contents")] = w._add_object(s)
-    os.makedirs(f"{OUT}/{name}/en", exist_ok=True)
-    with open(f"{OUT}/{name}/en/reader.pdf", "wb") as f:
-        w.write(f)
+Countings that do not produce 69,071, and the `n/(8k)` recovery from a
+fixture's own violation records:
 
+```sh
+uv run python - <<'PY'
+import json, pathlib, re
+from fractions import Fraction
 Q = 0.000732421875 / 8
-for label, amt in [("vq_2q", 2 * Q), ("vq_1q", Q), ("vq_half", Q / 2),
-                   ("vq_quarter", Q / 4), ("vq_e2", Q / 100),
-                   ("vq_e3", Q / 1000), ("vq_e4", Q / 10000)]:
-    build(label, amt)
+g = json.loads(pathlib.Path("output/parity/010/verdict.json").read_text())["tier_e"]["glyph_positions"]
+best = (0, None)
+for s in g["violations"]:
+    m = re.match(r"page \d+ element \d+ glyph (\d+): ([\d.]+) pt exceeds bound ([\d.]+) pt", s)
+    if not m: continue
+    k, d, b = int(m[1]), float(m[2]), float(m[3])
+    if d / b > best[0]: best = (d / b, (round(d / Q), k))
+n, k = best[1]
+print("worst offender n =", n, "quanta at k =", k, "->", Fraction(n, 8 * k), "=", n / (8 * k))
+print("verdict worst_ratio", g["worst_ratio"], "| equal:", abs(g["worst_ratio"] - n / (8 * k)) < 1e-12)
+PY
 ```
 
-The flat count is derived analytically from the generator, which needs no
-corpus:
+Whether any show inherits a previous show's advance, which is what makes the
+TJ-kern mechanism hold:
 
-```python
-TICK = 0.000732421875
-d = lambda k: TICK * round(k * 0.000173 / TICK)
-N = 68800
-flats = sum(1 for k in range(N) if d(k + 1) == d(k))
+```sh
+uv run python - <<'PY'
+import re
+from pypdf import PdfReader
+OPS = re.compile(rb"(\]\s*TJ|\)\s*Tj|>\s*Tj|\bTd\b|\bTD\b|\bT\*\b|\bTm\b|\bBT\b|\bET\b)")
+r = PdfReader("editions/010/render-2026-09-14T01-47-59/en/reader.pdf")
+inherit = shows = 0
+for i in range(1, 55):
+    prev = False
+    for m in OPS.finditer(r.pages[i].get_contents().get_data()):
+        t = m.group(1)
+        if t.endswith(b"TJ") or t.endswith(b"Tj"):
+            shows += 1; inherit += prev; prev = True
+        else:
+            prev = False
+print("interior shows", shows, "| inheriting", inherit)
+PY
 ```
+
+`glyphsub` reproducibility, cause isolated by removing it:
+
+```sh
+MAG_PARITY_FIXTURES=.magazine/vfy/gsA uv run python mag/tests/parity_glyph_fixtures/mkfixtures.py glyphsub
+MAG_PARITY_FIXTURES=.magazine/vfy/gsB uv run python mag/tests/parity_glyph_fixtures/mkfixtures.py glyphsub
+shasum -a 256 .magazine/vfy/gs[AB]/glyphsub/en/reader.pdf
+cmp -l .magazine/vfy/gsA/glyphsub/en/reader.pdf .magazine/vfy/gsB/glyphsub/en/reader.pdf | wc -l
+for i in A B; do SOURCE_DATE_EPOCH=1000000000 MAG_PARITY_FIXTURES=.magazine/vfy/gs$i \
+  uv run python mag/tests/parity_glyph_fixtures/mkfixtures.py glyphsub; done
+shasum -a 256 .magazine/vfy/gs[AB]/glyphsub/en/reader.pdf
+```
+
+Build and suite, run to completion after the target directory was rebuilt:
+
+```sh
+(cd mag && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test)
+```
+
+## What the branch moving since `0ec67a9` does and does not change
+
+`art_directed` advanced from `0ec67a9` to `3449552` while this verification
+ran, and WP-0.2k landed in `mag/src/parity.rs` along the way. Considered under
+the landing rule rather than assumed: `mag/src/parity/streams.rs`,
+`mag/src/parity/display.rs`, the committed generator and the evidence file are
+untouched across that range (`git diff --stat` between the two commits on
+those paths is empty), so every ratio, violation count, excess and fixture
+hash above carries to the tip unchanged. The verdict DIGESTS are not claimed to
+carry: `parity.rs` gained 788 lines in that range, and if any of them changes
+what `verdict.json` records, as WP-0.2g did between `e2ebc90` and `20adcfb`, a
+replay at the tip hashes differently. I did not replay at the tip, so whether
+the digests move is stated as untested rather than as either outcome. Every digest in this file is bound to
+`0ec67a9`, which is the commit under verification.
+
+## Tool versions
+
+rustc 1.96.0, Python 3.12.11 through `uv run`, pypdf 6.14.2, fontTools 4.63.0,
+lopdf 0.45.0 and ttf-parser 0.25.1 from `mag/Cargo.lock` (the evidence writes
+"0.25"), poppler 25.08.0 (`pdftotext -v`). `mag/Cargo.toml` and
+`mag/Cargo.lock` are untouched by the commit, as the evidence states.
 
 ## Metrics
 
-Observations, not thresholds.
+Observations, not thresholds. All measured at commit `0ec67a9`, which is the
+configuration a total travels with.
 
-- Floor `stairdrift` 0.2500, ceiling `kern02` 10.2500, margin 4.00x.
-- 68,800 glyphs, 1,488 shows, 54 interior pages.
-- Flats 52,549 / 68,800 = 76.38%.
-- Compensating-kern detection limit between 9.16e-08 and 9.16e-07 pt.
-- Ratio law: `n / (8k)`.
-- Runtime 87 s per run, unchanged by the quantum.
+- Floor `stairdrift` **0.2500**, 0 violations, digest `df9909eeb8c68057`.
+- Ceiling `kern02` **10.2500**, 5 violations, worst excess 0.013550 pt, digest
+  `40d61b72f0daa2b9`. **Margin 4.00x.**
+- 68,800 glyphs, 1,488 shows, 54 interior pages of which 47 carry text.
+- Flats: 52,549 / 68,800 = 76.3794% for the global staircase; **52,561 /
+  68,800 = 76.3968%** for the fixture as built, which resets k per show.
+- Detection floor between 9.16e-08 and 9.16e-07 pt; 2Q, Q, Q/2, Q/4, Q/100 all
+  fail at 40 violations with `worst_excess_pt` 0.000000; Q/1000 and Q/10000
+  pass.
+- Ratio law `n/(8k)`, recovered from `linmatrix` as n=137 at k=6; five distinct
+  denominators observed, 8, 16, 48, 64, 80.
+- Cover shows: 15, on pages 1 and 56 only, `/F2+0` `/TrueType`, `3 Tr`, 537
+  string bytes, zero escapes. 1,488 + 15 = 1,503.
+- 25 of 26 recorded verdict digests reproduced; `glyphsub` is not reproducible
+  by any party.
+- 23 of 24 fixtures rebuild byte-identically; `glyphsub` differs by 9 bytes per
+  build, and is stable under `SOURCE_DATE_EPOCH`.
+- `cargo fmt --check` clean, `cargo clippy --all-targets -- -D warnings` clean,
+  `cargo test` **20 result lines, 188 passed, 0 failed**, exit 0. The evidence
+  records 18 / 181 at its base `20adcfb`; the difference is exactly the two
+  test binaries that landed in between, `model_shared_label.rs` (3) and
+  `model_shared_roster.rs` (4), so **188 - 7 = 181 and 20 - 2 = 18**. Both
+  totals are right for their own commit.
+- Per-run wall clock 93 to 110 s under host contention; not comparable to the
+  recorded 80 to 83 s.
 
 ## Status
 
-rejected
+accepted
