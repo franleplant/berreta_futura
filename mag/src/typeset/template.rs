@@ -398,6 +398,162 @@ mod tests {
         );
     }
 
+    fn phase(step: usize) -> (usize, usize) {
+        (4 + step / 4, (step % 4) * 5)
+    }
+
+    fn figure_run(step: usize, layout: &str, figure: Option<&str>) -> Tree {
+        let (paragraphs, lift) = phase(step);
+        let figure = figure.map_or(String::new(), |pixels| {
+            format!(
+                "#figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", layout: \"{layout}\", \
+                 word: \"Figure\", alt: \"a\"{pixels})[#figure-caption[Cap.]#figure-credit[Credit.]]\n"
+            )
+        });
+        synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+             {}#v({lift}pt)\n#doc-heading(level: 2)[Anchor]\n{figure}{}]\n",
+            prose(paragraphs),
+            prose(27)
+        ))
+    }
+
+    fn sweep(range: std::ops::Range<usize>, make: impl Fn(usize) -> (Tree, Tree)) -> Vec<usize> {
+        let mut moved = Vec::new();
+        for n in range {
+            let (more, less) = make(n);
+            let (a, b) = (
+                pages_of(&more, TEMPLATE_TYP).expect("the first run compiles"),
+                pages_of(&less, TEMPLATE_TYP).expect("the second run compiles"),
+            );
+            assert!(
+                a >= b,
+                "at step {n} the run expected to be taller took fewer pages"
+            );
+            if a > b {
+                moved.push(n);
+            }
+        }
+        moved
+    }
+
+    #[test]
+    fn a_figure_reserves_the_image_height_its_pixel_ratio_fits() {
+        let wide = Some(", pixels: (2400, 1350)");
+        let tall = Some(", pixels: (2000, 1418)");
+        let band = "evidence_band";
+        let costs = sweep(0..64, |n| {
+            (figure_run(n, band, wide), figure_run(n, band, None))
+        });
+        assert!(
+            !costs.is_empty(),
+            "no paragraph count made the figure cost a page"
+        );
+        let ratio = sweep(0..64, |n| {
+            (figure_run(n, band, tall), figure_run(n, band, wide))
+        });
+        assert!(
+            !ratio.is_empty(),
+            "a height-limited and a width-limited figure never paginated differently"
+        );
+        let refused = pages_of(&figure_run(3, band, Some("")), TEMPLATE_TYP)
+            .expect_err("a figure with no pixel size must refuse");
+        assert!(
+            refused.to_string().contains("carries no pixel size"),
+            "{refused}"
+        );
+    }
+
+    #[test]
+    fn a_band_anchor_heading_follows_its_paragraph_on_the_space_after_alone() {
+        let square = Some(", pixels: (1000, 1000)");
+        let moved = sweep(0..64, |n| {
+            (
+                figure_run(n, "column_plate", square),
+                figure_run(n, "evidence_band", square),
+            )
+        });
+        assert!(
+            !moved.is_empty(),
+            "dropping the anchor heading's space-before never changed the pagination"
+        );
+    }
+
+    fn blank_pages(pdf: &[u8]) -> Vec<usize> {
+        let doc = Document::load_mem(pdf).expect("the emitted bytes are a PDF");
+        doc.get_pages()
+            .into_iter()
+            .filter(|(_, id)| doc.get_page_content(*id).len() < 16)
+            .map(|(number, _)| number as usize)
+            .collect()
+    }
+
+    fn plated(articles: usize, plates: usize) -> Tree {
+        let pieces: String = (1..=articles)
+            .map(|n| {
+                format!(
+                    "#piece(id: \"p{n}\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+                     #doc-paragraph(standfirst: false, roster: false)[Piece {n}.]\n]\n"
+                )
+            })
+            .collect();
+        let plates: String = (1..=plates)
+            .map(|n| format!("#closing-plate(index: {n}, alt: \"Plate {n}\")\n"))
+            .collect();
+        synthetic(pieces + &plates)
+    }
+
+    #[test]
+    fn closing_plates_interleave_after_the_articles_the_adapter_names() {
+        let (_, font_dir) = roots();
+        let pdf = compile(&Sources::new(&plated(9, 6), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
+            .expect("the plated run compiles");
+        let bankers = vec![1, 2, 5, 7, 9, 12, 15, 17, 18, 19];
+        let half_up = vec![1, 2, 5, 7, 10, 12, 15, 17, 18, 19];
+        assert_ne!(bankers, half_up);
+        assert_eq!(blank_pages(&pdf), bankers);
+        let trailing =
+            compile(&Sources::new(&plated(9, 5), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
+                .expect("five plates compile");
+        assert_eq!(blank_pages(&trailing), vec![1, 2, 5, 8, 10, 13, 16, 17, 18]);
+    }
+
+    fn straddling_run(before: usize) -> Tree {
+        synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+             {}#doc-paragraph(standfirst: false, roster: false)[{}]\n{}]\n",
+            prose(before),
+            "A long paragraph that runs on and on across the column. ".repeat(12),
+            prose(26)
+        ))
+    }
+
+    #[test]
+    fn typst_prevents_orphans_and_widows_by_default_as_the_stylesheet_does() {
+        let allowed = TEMPLATE_TYP.replace(
+            "    hyphenate: false,\n    ..edges(BODY-SIZE, BODY-LEADING, HALF-SERIF),\n  )",
+            "    hyphenate: false,\n    costs: (widow: 0%, orphan: 0%),\n    \
+             ..edges(BODY-SIZE, BODY-LEADING, HALF-SERIF),\n  )",
+        );
+        assert_ne!(
+            allowed, TEMPLATE_TYP,
+            "the reader's text rule was not found"
+        );
+        let moved: Vec<usize> = (16..30)
+            .filter(|before| {
+                let tree = straddling_run(*before);
+                let prevented = pages_of(&tree, TEMPLATE_TYP).expect("the default compiles");
+                let permitted = pages_of(&tree, &allowed).expect("the zero-cost run compiles");
+                assert!(prevented >= permitted);
+                prevented > permitted
+            })
+            .collect();
+        assert!(
+            !moved.is_empty(),
+            "no paragraph position made the default widow and orphan prevention move a line"
+        );
+    }
+
     #[test]
     fn the_architecture_constants_are_the_stylesheet_s_own() {
         for (name, value) in [
