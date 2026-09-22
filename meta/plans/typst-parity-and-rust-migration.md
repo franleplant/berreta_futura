@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-22, revision 67 (Phase 0 built and
+Status: **in execution**, 2026-09-22, revision 68 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,77 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 68 changelog
+
+**WP-0.2i is ACCEPTED (`0cd65b2`) on its fourth verification: three
+rejections on the record, zero on the mechanism, and the record now holds.
+The hold from revision 53 is released and 69,071 is RETIRED at nine sites.**
+
+**The floor is rebuildable from the repository alone, done rather than
+argued.** In a worktree the author never touched, `mkfixtures.py` resolved
+every path against that checkout, announced both as `checkout default`,
+built all 24 fixtures, and the gate reproduced: **floor `stairdrift` 0.2500
+at 0 violations, ceiling `kern02` 10.2500, margin 4.00x**, 25 of 26 verdict
+digests matching. A sharper fact than the evidence claims: **the author's
+scratch `mkfix.py` has since been overwritten**, so the floor could no
+longer be rebuilt from the author's own job directory either, and the
+committed generator is the only source. That is rule 12's "for the gate,
+the artifact IS the evidence" arriving within days of being written.
+
+**Provenance ESTABLISHED, in those words.** The floor carries digest
+`df9909eeb8c68057` at base `0ec67a9` with its verdict `inputs` block, the
+ceiling `40d61b72f0daa2b9`. The verify file states it is a **third
+independent measurement and the first digest-bearing one**, establishing
+rather than corroborating, which is the distinction revision 54 asked it to
+hold. The provenance audit's top worklist item is closed.
+
+**69,071 is DROPPED, not corrected.** The gap is 271 glyphs and **no
+counting of the covers produces it**, six tabulated and more tried. The
+show half reconciles exactly by members, 1,488 + 15, the 15 being 5 on page
+1 and 10 on page 56, all `Tj`, all `3 Tr`, zero escapes, no other page
+carrying one, and the file-identity argument is confirmed at source. The
+plan now carries **68,800 / 1,488 with "54 interior pages"**, **1,503 with
+"whole document"**, and keeps WP-5.5a's 68,530/1,501 as a third
+population. **One erratum bears on the reconciliation: the cover font is
+`F2+0` (Inter-Regular), not `F1`**, `F1` being Helvetica, which draws
+nothing; revision 53 recorded `F1` from the evidence, whose own block never
+prints the font, which is a fourth rule-12 caption instance. Corrected at
+the live site.
+
+**One real finding, one-line fix: `glyphsub`'s digest is reproducible by
+nobody.** fontTools stamps `head.modified` on save, so two builds hours
+apart differ in three 4-byte fields; **pinning `SOURCE_DATE_EPOCH` makes
+them byte-identical.** Clause outputs are stable (pass/pass/fail on 12
+pages) so the gate is unaffected and only the digest wanders. Environment
+note, since any fixture built through fontTools has this.
+
+**Seven smaller errata, none load-bearing**, one of them in rule 3d's class:
+"4e-5 of a pixel" is 4e-7 and was **inherited verbatim from the prior
+verify file**, a verifier's number propagating unchecked into the next
+verifier's argument. Also: "four denominators" lists five; "Q/2, Q/4, Q/100
+span 200x" is 50x; the built fixture's flat count is 52,561 against the
+global 52,549; an Owns extension for `mag/tests/parity_glyph_fixtures/`
+went unrecorded.
+
+**THE COORDINATOR BROKE THIS AGENT'S BUILD, and the agent reported it as a
+host failure without knowing the cause.** Its worktree's `target/` was
+removed mid-`cargo test`, truncating the suite at 16 binaries; the cause
+was the coordinator's post-restart disk sweep running `cargo clean` on
+`vwp02i4`, wrongly classified as finished. The agent rebuilt and got the
+right totals (20 result lines, 188 passed), so nothing was lost, but a
+verifier's test run ON THE GATE was truncated, and had it not noticed it
+would have reported 16 binaries as the suite. Two environment rules, both
+the coordinator's own: **reclaiming a worktree's `target/` is destructive
+to an agent mid-build, and the agent cannot distinguish it from a disk
+failure**, so idleness is CONFIRMED before cleaning, never inferred from
+which WPs have landed; and **a truncated `cargo test` looks like a smaller
+suite, not like an error**, which is rule 10h's absence hazard in a new
+form, since missing binaries do not announce themselves.
+
+The CAS succeeded first time against `a489d52`, and check 4 held an armed
+reversion byte-identical to the third-rejection version, confirmed on two
+reads before clearing.
 
 ## Revision 67 changelog
 
@@ -3245,8 +3316,9 @@ the hope, but it ROUNDS TEXT-OBJECT ORIGINS to the device grid, so at
 (241). Floor 30.125 equals ceiling 30.125, the linear-matrix term brackets
 at 151.641 above every ceiling measured, and the window is inverted rather
 than narrow. The escape hatch closes too: perturbing origins within
-0.001 pt still reaches 122, because among 69,071 glyphs some origin always
-crosses a rounding boundary, so no finer display-list quantum rescues it.
+0.001 pt still reaches 122, because among 68,800 interior glyphs some origin
+always crosses a rounding boundary, so no finer display-list quantum rescues
+it.
 Pixels cannot bound what the display list cannot see, at any resolution.
 
 So the display list gets finer instead: **WP-0.2i records per-glyph
@@ -3793,8 +3865,9 @@ Used to measure convergence during Phase 3; they gate nothing final.
   not fitted: WeasyPrint advances by an integer count of 1/1024 px (Pango),
   Typst sums exact font units, so the legitimate difference at glyph k is
   at most `k x 1/1024 px` (0.000732 pt per glyph; WP-1.6 measured the
-  realized rate at 0.000173 pt per glyph, well inside it, over all 69,071
-  glyphs). The bound is a FUNCTION OF POSITION IN LINE, not a flat number,
+  realized rate at 0.000173 pt per glyph, well inside it, over all 68,800
+  interior glyphs). The bound is a FUNCTION OF POSITION IN LINE, not a flat
+  number,
   which makes it tighter everywhere except the end of the longest line.
   - **shape, which does the real work**: a legitimate difference
     ACCUMULATES, so the difference sequence must be one-signed and monotone
@@ -3816,7 +3889,8 @@ Used to measure convergence during Phase 3; they gate nothing final.
     some always sit near a boundary and cross it. That is WHY
     size-independence holds, and it is worth keeping beside the number.
   - **two-sided, as before**: floor from the drift fixture WP-0.2f already
-    built and proved display-list equal (69,071 glyphs, 1,503 shows);
+    built and proved display-list equal (68,800 glyphs and 1,488 shows over
+    the 54 interior pages; 1,503 shows whole-document);
     ceiling from compensating-kern fixtures at 0.02 pt and below. Derive
     the floor with a CTM-COMPOSING perturbation through the Rust tracer,
     per WP-0.2f's recommendation: perturbing raw operands through pypdf
@@ -3834,8 +3908,9 @@ Used to measure convergence during Phase 3; they gate nothing final.
   linear-matrix term brackets at 151.641, exceeding every ceiling measured,
   so the window is INVERTED rather than merely narrow. The escape hatch
   closes too: perturbing origins within 0.001 pt still reaches 122, because
-  among 69,071 glyphs some origin always crosses a rounding boundary, so no
-  finer display-list quantum rescues it. Pixels cannot bound what the
+  among 68,800 interior glyphs some origin always crosses a rounding
+  boundary, so no finer display-list quantum rescues it. Pixels cannot bound
+  what the
   display list cannot see, at any resolution, because every rasterizer
   snaps text origins. Supersampling moves floor and ceiling together and
   costs 9 to 15 minutes a run against 82 seconds today.
@@ -5310,8 +5385,10 @@ before/after comparisons (WP-4.3); out of scope here.
    exist. Both were caught by audit rather than by the authoring WP, which
    is why it is a rule and not advice.
    **A PARITY FIGURE IS ONLY MEANINGFUL AGAINST A NAMED COMMIT.** Three
-   glyph figures are now in circulation, 69,071/1,503 in the plan,
-   68,800/1,488 from WP-0.2i's floor, and 68,530/1,501 from WP-5.5a at
+   glyph figures were in circulation, 69,071/1,503 in the plan (RETIRED in
+   revision 68: no counting of the covers produces 69,071, so it is dropped
+   rather than corrected), 68,800/1,488 from WP-0.2i's floor over the 54
+   interior pages, and 68,530/1,501 from WP-5.5a at
    `c1253d8`, and the cardinalities moved with them (1,733 colour entries
    and 85 annotations against WP-0.2g's 1,720 and 84, explicable by the
    source-codes asset landing in between).
@@ -5323,8 +5400,10 @@ before/after comparisons (WP-4.3); out of scope here.
    render trees, the per-page `(shows, glyphs)` vector is elementwise
    identical in all seven. The cause is the DOMAIN, exactly as revision 42
    proposed: 1,503 = 1,488 + 15, the 15 enumerated as 5 shows on page 1 and
-   10 on page 56, all `Tj`, font `F1`, render mode `3 Tr`, which is
-   invisible cover text. The rule below stands on its own evidence; it
+   10 on page 56, all `Tj`, font `F2+0` (Inter-Regular; revision 53 wrote
+   `F1` from evidence whose block never printed the font, and `F1` is
+   Helvetica, which draws nothing), render mode `3 Tr`, which is invisible
+   cover text. The rule below stands on its own evidence; it
    simply is not what was happening here, and a hedged wrong steer still
    steers, since this one was passed to two agents.
    Every parity figure therefore carries the commit it was measured at,
@@ -5382,7 +5461,9 @@ before/after comparisons (WP-4.3); out of scope here.
    ten-versus-eleven issue sites (a count beside its own enumeration),
    WP-1.7's 147/149 against WP-1.2's 148/149 (WP-1.8 reconciling), and
    the plan's 69,071 glyphs / 1,503 shows against the floor's
-   68,800 / 1,488. A rule per instance stopped working three instances ago;
+   68,800 / 1,488 (reconciled in revision 68: a DOMAIN difference, 1,503
+   whole-document against 1,488 interior, with 69,071 retired as
+   unreproducible). A rule per instance stopped working three instances ago;
    this puts the check where the numbers meet.
    **A COUNT stated beside an enumeration must be DERIVED from it, not
    carried alongside it.** The plan said "ten issue sites" in its prose
@@ -5645,7 +5726,8 @@ All four own `mag/src/parity.rs` (module registration, driver wiring) and
     on it; do not add it.
   - The reachability-floor and ceiling fixtures specified here are
     superseded by WP-0.2i's per-glyph floor, which inherits this WP's
-    `drift` fixture (69,071 glyphs, 1,503 shows, display-list equal) and
+    `drift` fixture (68,800 glyphs and 1,488 shows over the 54 interior
+    pages, 1,503 shows whole-document, display-list equal) and
     its recommendation that the re-derivation use a CTM-COMPOSING
     perturbation through the Rust tracer rather than operand perturbation
     through pypdf.
@@ -6014,8 +6096,9 @@ one number everything else depends on.
   mechanism-derived bound and the shape constraint Tier E states. Derive
   the floor with a CTM-composing perturbation THROUGH THE RUST TRACER, per
   WP-0.2f's recommendation; perturbing raw operands through pypdf cannot
-  produce display-list-equal fixtures. WP-0.2f's `drift` fixture (69,071
-  glyphs, 1,503 shows, display-list equal, reproducing WP-1.6's 0.000173 pt
+  produce display-list-equal fixtures. WP-0.2f's `drift` fixture (68,800
+  glyphs and 1,488 shows over the 54 interior pages, 1,503 shows
+  whole-document, display-list equal, reproducing WP-1.6's 0.000173 pt
   per glyph) already exists and is the floor fixture; the ceiling fixtures
   are compensating kerns at 0.02 pt and below.
 - Target 2, glyph identity: map character codes to GIDs through the SHARED
@@ -6035,7 +6118,7 @@ one number everything else depends on.
   (0.1625 pt at body measure, against a 0.0512 pt bound at 70 glyphs), an
   equal-advance glyph substitution, an OC membership, an annotation with an
   `/AP`. Record the dump size and the per-run wall-clock: the comparison is
-  O(n) over roughly 69,071 glyphs and must stay far cheaper than the 9 to
+  O(n) over roughly 68,800 glyphs and must stay far cheaper than the 9 to
   15 minutes supersampled rasterization would have cost.
 - WP-3.0g's obligation to re-derive the floor from the real
   Typst-vs-WeasyPrint pair MOVES to this clause with it.
@@ -6055,9 +6138,18 @@ one number everything else depends on.
   demonstrably CAN produce them. The CTM-composing recommendation inherited
   from revision 39 is therefore substantively DISCHARGED; the rework names
   it as such. Fourth plan claim retired by remove-the-cause-and-measure.
-- **FOURTH cross-spike count disagreement**: the plan says 69,071 glyphs and
-  1,503 shows, the floor measures 68,800 and 1,488. Reconcile it or report
-  a real divergence with a named cause.
+- **FOURTH cross-spike count disagreement, RESOLVED in revision 68 by
+  WP-0.2i's accepted rework**: half by exact reconciliation, half by
+  retirement. Shows reconcile BY MEMBERS: 1,503 = 1,488 + 15, the 15 being
+  5 on page 1 and 10 on page 56, all `Tj`, all `3 Tr`, font `F2+0`
+  (Inter-Regular; the evidence's `F1` was Helvetica, which draws nothing),
+  zero escapes, no other page carrying one. Glyphs do NOT reconcile:
+  **no counting of the covers produces 69,071** (six tabulated, more
+  tried), so it is DROPPED rather than corrected, its provenance being
+  unrecoverable. The plan carries 68,800 / 1,488 with "54 interior pages"
+  and 1,503 with "whole document". The original entry follows as record.
+  The plan said 69,071 glyphs and 1,503 shows, the floor measured 68,800
+  and 1,488.
   **Hypothesis, offered as a hypothesis under rule 11 and not as an
   answer**: the differences are 15 shows and 271 glyphs, and the plan
   already carries 1,488 shows independently from WP-0.2b over the 54-page
