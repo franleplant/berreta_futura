@@ -1,6 +1,6 @@
 # Typst parity and the full-Rust migration
 
-Status: **in execution**, 2026-09-19, revision 66 (Phase 0 built and
+Status: **in execution**, 2026-09-22, revision 67 (Phase 0 built and
 verified, the Phase 1 spikes measured and audited, the gate critiqued
 adversarially and repaired, the content-final gate narrowed to where it
 bites). Companion to `rust-rewrite.md`
@@ -10,6 +10,92 @@ plan finishes the job: a Typst-based renderer implemented in Rust inside
 010 (en)** with both engines and comparing mechanically until they are
 exactly the same, then porting every remaining Python module to Rust and
 deleting `src/magazine/`.
+
+## Revision 67 changelog
+
+**WP-5.1f and WP-5.1g ACCEPTED as one unit (`d919080`), verified by
+building SIX `content_label` implementations and running every fixture
+case against each.** Four findings, two of them rules.
+
+**RULE 10c HAS A SECOND LIMB AND NOBODY HAD SWEPT FOR IT.** The rule names
+four coincidences: fallback, default, refusal, and **the input itself**.
+Every sweep so far, the coordinator's included, checked only the fallback
+limb. The verifier swept both, and the input-itself limb holds **four
+unflagged instances** (`label: Dispatch`, `label: None`, `label: "None"`,
+`label: false`): each proves only that the declared branch ran, and none
+can separate "returned the declared value" from "returned the raw input
+unstripped". The set is rescued by the two PADDED cases, **which is why
+those must never be deleted as redundant**: a control that looks redundant
+next to four passing rows is often the one carrying them, and it is exactly
+the kind of dependency tidied away by someone who cannot see it. So a
+fixture set records which cases are load-bearing controls for which limb.
+
+**And the rule gains the PRECISION it lacked: a coincidence is a defect only
+when the correct destination is the OTHER branch.** Seven of thirteen label
+cases expect `ARTICLE`, and for six of them the fallback IS the correct
+destination (nulls, blank, empty string), so the coincidence proves what it
+should. Only the padded case has the declared branch as its correct
+destination while expecting the fallback value. Without this the rule fires
+on every legitimate fallback test and gets ignored.
+
+**A NEW CLASS, distinct from every rule-12 class so far: a recorded command
+that was CORRECT WHEN WRITTEN becomes DESTRUCTIVE after a successor
+lands.** WP-5.1f's `## Commands` block 2, replayed at `3b9cbcb`,
+**regenerates the 5-case Python fixture over WP-5.1g's 13-case
+hand-authored one and turns seven tests red.** Demonstrated, not predicted.
+Rule 12's classes are all about a recorded command diverging from what ran
+or from what was claimed; this one ran correctly, was recorded correctly,
+and became harmful later because a successor replaced the artifact it
+regenerates. **And rule 12 instructs every verifier to replay recorded
+blocks, so the protocol itself carries the instruction to detonate it.**
+The remedy is small and the obligation falls where the knowledge is: **a WP
+that REPLACES an artifact marks its predecessor's regenerating block
+superseded**, since the predecessor cannot know. A regenerating command is
+a time bomb once its output is superseded, and this plan has many.
+
+**THE SPEC-VERSUS-OUTPUT AXIS HAS A BOUNDARY NO ARTIFACT CAN SETTLE, and
+the verifier said so rather than claiming otherwise.** Twelve of thirteen
+values follow from stated product rules with `why` strings naming them; the
+thirteenth is transcribed and is precisely the one flagged
+`agreed_but_suspect`. But **whether the twelve were written from the rules
+or read off block 1's probe, which prints exactly those values and sits
+first in the Commands section, is not recoverable from the artifact.**
+Provenance of an authoring decision is not auditable afterwards: the axis
+disciplines the author and cannot be verified. That does not weaken the
+rule, but a reader must not believe a verification has confirmed
+spec-authorship. The durable half IS checkable and was checked: no
+generator exists, and the corroboration block can only read the file.
+
+**F6: two LIVE divergences inside WP-5.1g's own disclosed gap, dispatched
+as WP-5.1h.** Reported: `label: []` gives Python `()` against Rust `[]`;
+and `!!null` / `!!null ''` parse to `None` in PyYAML but ERROR in
+`serde_yaml`. `py_str`'s container arms are unowned. **The `()` claim is
+held as reported, not confirmed**: PyYAML loads `[]` as a list, whose `str`
+is `[]`, so the tuple must come from somewhere, and
+`publication_document.py:158` `_freeze` tupling sequences is the candidate
+mechanism, a hypothesis under rule 11 until WP-5.1h reproduces the claim on
+both sides. It has been told to report a misreport as a finding if it does
+not hold.
+
+**Corrections for the record.** A total was wrong: 188 across 20 at that
+base, not 192, which was a pre-rebase tree. "20 distinct values" is 20
+distinct LINES and 18 parsed values. **Both sweeps' captions say "every
+whitespace/null site" while the pattern misses two correct sites**,
+`shared.rs:214` (`Value::Null => "None"`, the defect's own mechanism) and
+`shared.rs:54` (`printable`), verified; the verifier considered rejecting
+on that and recorded why it did not, which is the disclosure a borderline
+call owes. And the coordinator's own framing was too strong and it was
+corrected: WP-5.1f's padded case DOES kill the pre-fix body and the
+return-unstripped mutant; it was **blind on the declared-versus-fallback
+axis only**, not worthless, and at fixture-SET level WP-5.1f's `Dispatch`
+controls already killed the always-fallback mutant. The defect is per
+case.
+
+**The CAS was refused SIX times** as the branch moved (`6d18c77`,
+`aa8bdac`, `d23a75b`, `f9781a7`, `4be8bc7`, `0110a50`), and each time it
+rebased afresh and re-gated rather than retrying.
+
+This session and the workers are now on Fable 5.1, per Fran.
 
 ## Revision 66 changelog
 
@@ -4729,6 +4815,18 @@ before/after comparisons (WP-4.3); out of scope here.
      so in the provenance block, and named what those rows cannot see: **a
      case where Python itself is wrong.** Authoring is the default and
      transcription is the disclosed exception, per helper.
+     **THE AXIS HAS A BOUNDARY NO ARTIFACT CAN SETTLE, and it is stated so
+     nobody claims otherwise.** Twelve of WP-5.1g's thirteen values follow
+     from stated product rules with `why` strings naming them, and the
+     thirteenth is transcribed and flagged. But **whether the twelve were
+     written FROM the rules or read OFF the probe in block 1, which prints
+     exactly those values and sits first in the Commands section, is not
+     recoverable from the artifact.** Provenance of an authoring decision
+     is not auditable afterwards: the axis disciplines the author and
+     cannot be verified. That does not weaken it, but no verification may
+     report that spec-authorship was CONFIRMED. The durable half IS
+     checkable and is what a verifier checks: no generator exists, and the
+     corroboration block can only read the file, never write it.
    - **C, both engines wrong.** Parity is blind by construction: the legs
      agree, every tier passes, the output is wrong. Not hypothetical.
      `content_label` has one beside its class-B defect: `label: false`
@@ -4825,6 +4923,23 @@ before/after comparisons (WP-4.3); out of scope here.
      specific: on replay, read each block's output against its caption's
      SCOPE WORDS, "every", "all", "no other", and confirm the command's
      scope matches the claim's.
+   - **A RECORDED COMMAND THAT WAS CORRECT WHEN WRITTEN CAN BECOME
+     DESTRUCTIVE AFTER A SUCCESSOR LANDS**, and this is distinct from every
+     class above: those are a recorded command diverging from what ran or
+     from what was claimed, while this one ran correctly, was recorded
+     correctly, and turned harmful later because a successor REPLACED the
+     artifact it regenerates. WP-5.1f's `## Commands` block 2, replayed at
+     `3b9cbcb`, regenerates the 5-case Python fixture over WP-5.1g's
+     13-case hand-authored one and turns seven tests red; demonstrated, not
+     predicted. **And this rule instructs every verifier to replay recorded
+     blocks, so the protocol itself carries the instruction to detonate
+     it.** The obligation falls where the knowledge is: **a WP that
+     REPLACES an artifact marks its predecessor's regenerating block
+     SUPERSEDED in that predecessor's evidence**, since the predecessor
+     cannot know. A regenerating command is a time bomb once its output is
+     superseded, and this plan has many; a replaying verifier that meets an
+     unmarked one and finds it overwrites a newer artifact stops and reports
+     rather than continuing the replay.
    - **A HARNESS THAT ABORTS ON FIRST FAILURE EVIDENCES ONLY THE FIRST
      FAILURE, WHICHEVER LAYER ABORTS.** The obvious form is a
      short-circuiting `assert_eq!`, which proves only the first mismatch,
@@ -5081,6 +5196,22 @@ before/after comparisons (WP-4.3); out of scope here.
    in one command what an argument about the two rows could not. A row that
    survives that probe genuinely discriminates; one that does not is a
    10c case wearing a second row as cover.
+   **THE RULE HAS A SECOND LIMB, THE INPUT ITSELF, and it is swept
+   separately.** Every sweep before WP-5.1g's verifier checked only the
+   fallback limb; the input limb held FOUR unflagged instances in one
+   fixture (`label: Dispatch`, `label: None`, `label: "None"`,
+   `label: false`), each proving only that the declared branch ran, none
+   able to separate "returned the declared value" from "returned the raw
+   input unstripped". They are rescued by the two PADDED cases. **A control
+   that looks redundant beside four passing rows is often the one carrying
+   them**, so a fixture set records which cases are load-bearing controls
+   for which limb, and a row so marked is never deleted as redundant.
+   **PRECISION: a coincidence is a defect only when the correct destination
+   is the OTHER branch.** Six of the seven `ARTICLE` cases expect the
+   fallback because the fallback IS where a null or blank label should go;
+   only the padded case has the declared branch as its correct destination
+   while expecting the fallback's value. Without this the rule fires on
+   every legitimate fallback test and is ignored.
    **THE STRADDLE RULE HAS THE SAME BLIND SPOT**, so it is amended here
    rather than found wanting later: a pair can straddle a boundary
    correctly and still be satisfied by a wrong branch when BOTH branches
