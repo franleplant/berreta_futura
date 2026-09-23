@@ -227,7 +227,7 @@ def glyphsub(name):
     font = page["/Resources"]["/Font"][NameObject("/" + res_name)].get_object()
     desc = font["/DescendantFonts"].get_object()[0].get_object()
     fd = desc["/FontDescriptor"].get_object()
-    face = TTFont(io.BytesIO(fd["/FontFile2"].get_object().get_data()))
+    face = TTFont(io.BytesIO(fd["/FontFile2"].get_object().get_data()), recalcTimestamp=False)
     order = face.getGlyphOrder()
     donor = next(
         n

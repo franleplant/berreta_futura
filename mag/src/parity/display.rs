@@ -5,14 +5,25 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::Path;
 
+#[path = "canon.rs"]
+mod canon;
+
 #[derive(Serialize)]
 pub struct PageDump {
     pub elements: Vec<Element>,
     pub annots: Vec<Annot>,
     pub boxes: BTreeMap<String, [i64; 4]>,
+    #[serde(skip)]
+    pub ink: Vec<Option<canon::Rect>>,
 }
 
-#[derive(Serialize, PartialEq, Eq, Clone)]
+impl PageDump {
+    fn canonical(&self) -> Vec<Element> {
+        canon::canonical(&self.elements, &self.ink)
+    }
+}
+
+#[derive(Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Annot {
     pub subtype: String,
     pub rect: [i64; 4],
@@ -63,6 +74,7 @@ pub fn extract(
     let doc = Document::load(pdf).with_context(|| format!("loading {}", pdf.display()))?;
     let page_ids = doc.get_pages();
     let mut caches = Caches::new();
+    let mut inks = canon::Inks::new(font_map);
     let mut pages = vec![];
     for number in first..=last {
         let id = *page_ids
@@ -73,10 +85,12 @@ pub fn extract(
         let annots = page_annots(&doc, id, &page_ids)
             .with_context(|| format!("annotations page {number}"))?;
         let boxes = page_boxes(&doc, id)?;
+        let ink = inks.page(&elements)?;
         pages.push(PageDump {
             elements,
             annots,
             boxes,
+            ink,
         });
     }
     let nav = doc_nav(&doc, &page_ids, first, last)?;
@@ -85,6 +99,11 @@ pub fn extract(
 
 fn qr(v: f64) -> i64 {
     (v * 2.0).round() as i64
+}
+
+fn link_rect(n: &[f64]) -> [i64; 4] {
+    let (x, y) = ((qr(n[0]), qr(n[2])), (qr(n[1]), qr(n[3])));
+    [x.0.min(x.1), y.0.min(y.1), x.0.max(x.1), y.0.max(y.1)]
 }
 
 fn text_string(bytes: &[u8]) -> String {
@@ -123,8 +142,7 @@ fn page_annots(
         );
         let rect_arr = deref(doc, dict.get(b"Rect")?)?.as_array()?;
         let nums: Result<Vec<f64>> = rect_arr.iter().map(|o| number(doc, o)).collect();
-        let nums = nums?;
-        let rect = [qr(nums[0]), qr(nums[1]), qr(nums[2]), qr(nums[3])];
+        let rect = link_rect(&nums?);
         let dest = link_dest(doc, dict, page_ids)?;
         out.push(Annot {
             subtype,
@@ -341,17 +359,24 @@ pub struct DisplayClause {
 pub struct PageDiff {
     pub page: u32,
     pub detail: String,
+    pub classes: BTreeMap<String, usize>,
 }
 
 pub fn compare_display(a: &Dump, b: &Dump, first: u32) -> Result<DisplayClause> {
     let mut pages_differing = vec![];
     for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
         let page = first + i as u32;
-        if let Some(detail) = page_diff(pa, pb)? {
-            pages_differing.push(PageDiff { page, detail });
+        let (ea, eb) = (pa.canonical(), pb.canonical());
+        if let Some(detail) = page_diff(pa, pb, &ea, &eb)? {
+            let classes = differing_classes(pa, pb, &ea, &eb)?;
+            pages_differing.push(PageDiff {
+                page,
+                detail,
+                classes,
+            });
         }
     }
-    let count = |d: &Dump| d.pages.iter().map(|p| p.elements.len()).sum();
+    let count = |d: &Dump| d.pages.iter().map(|p| p.canonical().len()).sum();
     Ok(DisplayClause {
         status: status(pages_differing.is_empty()),
         elements_a: count(a),
@@ -360,10 +385,7 @@ pub fn compare_display(a: &Dump, b: &Dump, first: u32) -> Result<DisplayClause> 
     })
 }
 
-fn page_diff(a: &PageDump, b: &PageDump) -> Result<Option<String>> {
-    if serde_json::to_string(a)? == serde_json::to_string(b)? {
-        return Ok(None);
-    }
+fn page_diff(a: &PageDump, b: &PageDump, ea: &[Element], eb: &[Element]) -> Result<Option<String>> {
     if a.boxes != b.boxes {
         return Ok(Some("page boxes differ".into()));
     }
@@ -374,8 +396,8 @@ fn page_diff(a: &PageDump, b: &PageDump) -> Result<Option<String>> {
             b.annots.len()
         )));
     }
-    for (i, (ea, eb)) in a.elements.iter().zip(&b.elements).enumerate() {
-        let (sa, sb) = (serde_json::to_string(ea)?, serde_json::to_string(eb)?);
+    for (i, (x, y)) in ea.iter().zip(eb).enumerate() {
+        let (sa, sb) = (serde_json::to_string(x)?, serde_json::to_string(y)?);
         if sa != sb {
             return Ok(Some(format!(
                 "element {i}: {} vs {}",
@@ -384,11 +406,60 @@ fn page_diff(a: &PageDump, b: &PageDump) -> Result<Option<String>> {
             )));
         }
     }
-    Ok(Some(format!(
-        "element count {} vs {}",
-        a.elements.len(),
-        b.elements.len()
-    )))
+    Ok((ea.len() != eb.len()).then(|| format!("element count {} vs {}", ea.len(), eb.len())))
+}
+
+fn class_keys(elements: &[Element]) -> Result<Vec<(String, String)>> {
+    elements
+        .iter()
+        .map(|e| {
+            let mut v = serde_json::to_value(e)?;
+            let clips: Vec<serde_json::Value> = v["clip"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|k| elements.get(k.as_u64()? as usize))
+                .map(|c| serde_json::to_value(c).map(|c| c["d"].clone()))
+                .collect::<serde_json::Result<_>>()?;
+            v["clip"] = clips.into();
+            let kind = v["kind"].as_str().unwrap_or("element").to_lowercase();
+            Ok((kind, v.to_string()))
+        })
+        .collect()
+}
+
+fn unmatched<T: Ord + Clone>(a: &[T], b: &[T]) -> usize {
+    let mut left: BTreeMap<T, i64> = BTreeMap::new();
+    a.iter()
+        .for_each(|x| *left.entry(x.clone()).or_default() += 1);
+    b.iter()
+        .for_each(|x| *left.entry(x.clone()).or_default() -= 1);
+    left.values().map(|n| n.unsigned_abs() as usize).sum()
+}
+
+fn differing_classes(
+    a: &PageDump,
+    b: &PageDump,
+    ea: &[Element],
+    eb: &[Element],
+) -> Result<BTreeMap<String, usize>> {
+    let (ka, kb) = (class_keys(ea)?, class_keys(eb)?);
+    let mut out = BTreeMap::new();
+    out.insert("boxes".to_string(), usize::from(a.boxes != b.boxes));
+    out.insert("annotations".to_string(), unmatched(&a.annots, &b.annots));
+    for kind in ["text", "path", "clip", "image"] {
+        let of = |k: &[(String, String)]| -> Vec<String> {
+            k.iter()
+                .filter(|x| x.0 == kind)
+                .map(|x| x.1.clone())
+                .collect()
+        };
+        out.insert(kind.to_string(), unmatched(&of(&ka), &of(&kb)));
+    }
+    let same = out.values().all(|n| *n == 0);
+    out.insert("order".to_string(), usize::from(same && ka != kb));
+    out.retain(|_, n| *n > 0);
+    Ok(out)
 }
 
 fn clipped(s: &str) -> String {
@@ -512,7 +583,7 @@ type Paint = (String, Option<Color>);
 fn color_sequences(page: &PageDump) -> [Vec<Paint>; 2] {
     let mut glyphs = vec![];
     let mut paints = vec![];
-    for e in &page.elements {
+    for e in &page.canonical() {
         match e {
             Element::Text {
                 units,
@@ -729,6 +800,7 @@ mod colour_tests {
                 elements,
                 annots: vec![],
                 boxes: BTreeMap::new(),
+                ink: vec![],
             }],
             nav: DocNav {
                 title: None,
@@ -819,10 +891,9 @@ mod colour_tests {
         assert!(d[0].starts_with("page 1: glyph 1: \" \" rgb"), "{}", d[0]);
     }
 
-    #[test]
-    fn a_rule_in_another_colour_still_fails() {
-        let rule = |rgb| Element::Path {
-            d: "re".into(),
+    fn rule(rgb: [i64; 3]) -> Element {
+        Element::Path {
+            d: "re 0 0 100 0 100 10 0 10".into(),
             paint: "f".into(),
             fill: Some(Color {
                 family: "rgb".into(),
@@ -835,7 +906,58 @@ mod colour_tests {
             miter: None,
             dash: None,
             clip: vec![],
-        };
+        }
+    }
+
+    #[test]
+    fn a_leading_white_fill_is_not_paint_but_a_rule_after_it_is() {
+        let a = dump(vec![rule([255; 3]), rule(INK)]);
+        assert_eq!(compare_color(&a, &dump(vec![rule(INK)]), 1).status, "pass");
+        let d = compare_color(&a, &dump(vec![rule(VIOLET)]), 1).details;
+        assert!(
+            d[0].starts_with("page 1: paint 0: \"fill\" rgb [14, 19, 22]"),
+            "{}",
+            d[0]
+        );
+    }
+
+    #[test]
+    fn a_link_rect_compares_by_its_corners_not_their_order() {
+        assert_eq!(
+            link_rect(&[44.0, 520.5, 100.0, 510.0]),
+            link_rect(&[44.0, 510.0, 100.0, 520.5])
+        );
+        assert_eq!(
+            link_rect(&[100.0, 520.5, 44.0, 510.0]),
+            [88, 1020, 200, 1041]
+        );
+        assert_ne!(
+            link_rect(&[44.0, 520.5, 100.0, 510.0]),
+            link_rect(&[44.0, 510.0, 100.5, 520.5])
+        );
+    }
+
+    #[test]
+    fn every_differing_class_is_counted_beside_the_first_difference() {
+        let a = dump(vec![rule(INK), run("Hello", 1000, 5000, INK, 0)]);
+        let b = dump(vec![rule(VIOLET), run("Hellp", 1000, 5000, INK, 0)]);
+        let c = compare_display(&a, &b, 4).unwrap();
+        let p = &c.pages_differing[0];
+        assert!(p.detail.starts_with("element 0: "), "{}", p.detail);
+        let want = BTreeMap::from([("path".to_string(), 2), ("text".to_string(), 2)]);
+        assert_eq!(p.classes, want);
+        let swapped = dump(vec![run("Hello", 1000, 5000, INK, 0), rule(INK)]);
+        let c = compare_display(&a, &swapped, 4).unwrap();
+        let want = BTreeMap::from([("order".to_string(), 1)]);
+        assert_eq!(c.pages_differing[0].classes, want);
+        assert!(compare_display(&a, &a, 4)
+            .unwrap()
+            .pages_differing
+            .is_empty());
+    }
+
+    #[test]
+    fn a_rule_in_another_colour_still_fails() {
         let a = dump(vec![rule([224, 227, 229])]);
         assert_eq!(
             compare_color(&a, &dump(vec![rule([224, 227, 229])]), 1).status,
