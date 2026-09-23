@@ -1,9 +1,9 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p.
+Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a.
-Running: WP-0.2q (+ ICCBased image decode), WP-5.7b, WP-5.3h.
+Running: WP-0.2q (+ ICCBased image decode), WP-5.7b, WP-5.5a increment 2.
 Parked: WP-3.4 on branch `wp-3.4` (1b313d4), done, lands after WP-0.2q
 (blocked only on the comparator's ICCBased image decode).
 
@@ -18,7 +18,8 @@ evidence file records it):
   positions paired on it, even-odd accent strip (running)
 - WP-5.3h spread order by page position, not paint order, in the Rust
   critic (class C: Python has the same defect; WP-5.3c pins it as a
-  declared gap). Queued.
+  declared gap). Landed 7d652a3; Python keeps the defect until WP-6.1
+  deletes it.
 - WP-0.0d sanctioned oracle change: rule-colour token 0.9 -> 230/255
   exact (WP-0.2o.md: typst can only write 230, pixels differ 229 vs 230).
   Queued after WP-3.4 lands (re-seeds the baseline digest).
