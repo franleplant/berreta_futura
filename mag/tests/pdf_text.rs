@@ -293,10 +293,59 @@ fn skewed_mirrored_and_invisible_text_fail_loud() {
     fails(
         helvetica(),
         "BT 3 Tr /F1 12 Tf 72 700 Td (Hidden) Tj ET",
-        "only text is invisible",
+        "0 printed",
     );
     let mixed = "BT /F1 12 Tf 72 700 Td (Shown) Tj 3 Tr 0 -20 Td (Hidden) Tj ET";
-    assert_eq!(read(helvetica(), mixed).unwrap(), "Shown\n");
+    fails(helvetica(), mixed, "6 invisible glyphs, 5 printed");
+}
+
+#[test]
+fn a_scan_with_a_printed_footer_and_an_ocr_layer_fails_loud() {
+    let page = "q 612 0 0 792 0 0 cm /Im1 Do Q \
+        BT /F1 8 Tf 72 30 Td (Downloaded from a library) Tj ET \
+        BT 3 Tr /F1 12 Tf 72 700 Td (The body of the article) Tj ET";
+    fails(helvetica(), page, "1 images");
+    let one_hidden = "q 612 0 0 792 0 0 cm /Im1 Do Q \
+        BT /F1 8 Tf 72 30 Td (Downloaded from a library) Tj ET \
+        BT 3 Tr /F1 12 Tf 72 700 Td (x) Tj ET";
+    fails(helvetica(), one_hidden, "1 invisible glyphs");
+    let footer_only = "q 612 0 0 792 0 0 cm /Im1 Do Q \
+        BT /F1 8 Tf 72 30 Td (Downloaded from a library) Tj ET";
+    assert_eq!(
+        read(helvetica(), footer_only).unwrap(),
+        "Downloaded from a library\n"
+    );
+}
+
+#[test]
+fn a_missing_xobject_fails_loud() {
+    fails(
+        helvetica(),
+        "/Nope Do",
+        "XObject /Nope is invoked but missing",
+    );
+}
+
+#[test]
+fn a_self_invoking_form_fails_loud() {
+    let mut doc = pdf_with(helvetica(), "/Fm1 Do", dictionary! {});
+    let form_id = doc.new_object_id();
+    let form = Stream::new(
+        dictionary! {"Type" => "XObject", "Subtype" => "Form",
+        "BBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
+        "Resources" => dictionary! {"XObject" => dictionary! {"Fm1" => form_id}}},
+        b"/Fm1 Do".to_vec(),
+    );
+    doc.objects.insert(form_id, Object::Stream(form));
+    let page_id = *doc.get_pages().values().next().unwrap();
+    let page = doc.get_object_mut(page_id).unwrap().as_dict_mut().unwrap();
+    let res = page.get_mut(b"Resources").unwrap().as_dict_mut().unwrap();
+    res.set("XObject", dictionary! {"Fm1" => form_id});
+    let err = pdf_text::transcribe_bytes(&bytes(doc)).unwrap_err();
+    assert!(
+        format!("{err:#}").contains("nest deeper than 16 levels"),
+        "{err:#}"
+    );
 }
 
 #[test]

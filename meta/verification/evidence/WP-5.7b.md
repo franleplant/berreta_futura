@@ -175,3 +175,52 @@ Not proven, and why:
   shared: `pdf_text.rs` is included by `#[path]` from its test binary, and
   `parity/` is outside this WP. `rust_helpers` passes, but a shared geometry
   module is the real fix.
+
+## Rework (after the rejection in WP-5.7b.verify.md)
+
+What changed in `mag/src/pdf_text.rs`:
+- The mixed-page skip is gone. A page fails loud when it carries invisible
+  text (render mode 3) and either an image or more invisible glyphs than
+  printed ones. The error names the three counts. This subsumes the old
+  "only text is invisible" branch (0 printed). No real document needs the
+  old skip: the verifier's `eprintln!` found no invisible text in the five
+  fixtures or the held-out file (WP-5.7b.verify.md, "The two departures").
+- A `Do` naming an XObject absent from the resources now fails loud
+  (`XObject /<name> is invoked but missing from the resources`) instead of
+  returning `Ok(())`.
+
+Tests in `mag/tests/pdf_text.rs`:
+- `a_scan_with_a_printed_footer_and_an_ocr_layer_fails_loud`: the verifier's
+  crafted page (full-page image, 8 pt `Downloaded from a library`, invisible
+  OCR line) fails loud; so does the same page with one invisible glyph; the
+  footer over the image with no invisible text still reads (positive control).
+- The old `mixed` assertion (`Ok("Shown\n")`) now asserts the failure
+  (6 invisible, 5 printed); the only-invisible case still fails.
+- `a_missing_xobject_fails_loud` and `a_self_invoking_form_fails_loud`
+  (ungated; the nesting guard fires on a form whose resources name itself).
+- `type3_font_fails_loud` unchanged and green (Type3 with ToUnicode read).
+
+Mutations (each restored, `cmp` exit 0 against the saved file): the new
+condition put back to `invisible > 0 && glyphs.is_empty()` makes the scan
+test FAIL; the missing-XObject `bail!` put back to `return Ok(())` makes
+`a_missing_xobject_fails_loud` FAIL.
+
+| command (in `mag/`, own `CARGO_TARGET_DIR`) | exit | observed |
+| --- | --- | --- |
+| `cargo test --test pdf_text -- --nocapture` | 0 | 14 passed; bert 40/40, deepseek 38/38, fsr 53/53, pytorch 50/50, tarpit 36/36 = 217/217; `three_runs_are_byte_identical` ok |
+| held-out `output/print/a-sneak-preview-.../print.pdf` via `transcribe` (scratch test, not committed) | 0 | Ok, 1,708 words (same as before) |
+| `cargo test` (full) | 0 | 29 binaries, 476 passed, 0 failed |
+| `cargo fmt --check` | 0 | |
+| `cargo clippy -q --all-targets -- -D warnings` | 0 | no output |
+
+### What is and is not proven (rework)
+
+Proven: the crafted scan-with-footer page, the invisible-outnumbers page and
+a missing XObject fail loud, each test bites under mutation, the nesting
+guard has a test, and the corpus, determinism and held-out results are
+unchanged.
+
+Not proven: a page with no image and fewer invisible glyphs than printed ones
+(a hidden watermark, say) still reads its printed text and drops the hidden
+glyphs; no real document with that shape was seen, so the rule's line is
+untested on real input. Still no real scanned PDF in any corpus.
