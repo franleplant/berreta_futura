@@ -121,6 +121,7 @@
 #let OPENER-NOTE-ABOVE = 3.2pt
 #let OPENER-DROP-SIZE = 18.7pt
 #let OPENER-DROP-GAP = 1pt
+#let OPENER-DROP-TOP = 13.0992pt
 #let OPENER-STANDARD = (
   label: 24pt,
   title-gap: 8pt,
@@ -330,26 +331,24 @@
       contents-caption(label)
     })
   }
-  place(top + left, dy: row + offsets.folio + 23pt * HALF-SANS, {
-    let page-number = counter(page).at(query(<mag-piece>)
-      .find(m => m.value.id == destination)
-      .location()).first()
-    text(
-      font: SANS,
-      size: 23pt,
-      weight: 600,
-      fill: VIOLET,
-      ..flat,
-      leading-zero(page-number),
-    )
-  })
+  let target = query(<mag-piece>).find(m => m.value.id == destination).location()
+  let folio = text(
+    font: SANS,
+    size: 23pt,
+    weight: 600,
+    fill: VIOLET,
+    ..flat,
+    leading-zero(counter(page).at(target).first()),
+  )
+  for _ in range(2) {
+    place(top + left, dy: row + offsets.folio, link(target, box(width: measure(folio).width, height: 0pt)))
+  }
+  place(top + left, dy: row + offsets.folio + 23pt * HALF-SANS, folio)
   if title != none {
-    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.title, {
-      box(
-        width: LIVE-WIDTH - CONTENTS-ENTRY-LEFT,
-        text(font: DISPLAY, size: 9.8pt, weight: 600, ..edges(9.8pt, 10.2pt, HALF-SERIF), title),
-      )
-    })
+    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.title, link(target, box(
+      width: LIVE-WIDTH - CONTENTS-ENTRY-LEFT,
+      text(font: DISPLAY, size: 9.8pt, weight: 600, ..edges(9.8pt, 10.2pt, HALF-SERIF), title),
+    )))
   }
   if author != none {
     place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.author + ZERO-LEADING-SANS, {
@@ -389,6 +388,7 @@
 }
 
 #let opener-parts = state("opener-parts", none)
+#let opener-end() = [#metadata(none)<mag-opener-end>]
 
 #let escaped(body) = pad(left: -OPENER-ESCAPE, right: -OPENER-ESCAPE, body)
 
@@ -516,7 +516,9 @@
   collect("note", body)
 }
 #let provenance(body) = none
-#let source-link(destination: none, source-id: none, body) = none
+#let source-link(destination: none, source-id: none, body) = context if opener-parts.get() != none {
+  collect("source", destination)
+}
 
 #let opener-part(rows, name) = {
   let found = rows.filter(r => r.tag == name)
@@ -546,10 +548,30 @@
   }
 }
 
+#let initial(body) = {
+  let parts = if body.has("children") { body.children } else { (body,) }
+  let head = parts.at(0, default: none)
+  if head == none or not head.has("text") { return body }
+  let letters = head.text.clusters()
+  let lead = letters.position(c => c.match(regex("^\\p{P}$")) == none)
+  if lead == none { return body }
+  box(inset: (right: OPENER-DROP-GAP), text(
+    font: DISPLAY,
+    size: OPENER-DROP-SIZE,
+    weight: 600,
+    fill: PAPER-BLUE,
+    top-edge: OPENER-DROP-TOP,
+    bottom-edge: 0pt,
+    letters.slice(0, lead + 1).join(),
+  ))
+  letters.slice(lead + 1).join()
+  parts.slice(1).join()
+}
+
 #let standfirst-text(density, body) = text(
   size: density.standfirst-size,
   ..edges(density.standfirst-size, density.standfirst-leading, HALF-SERIF),
-  body,
+  initial(body),
 )
 
 #let opener-stack(density, title, rows, body) = {
@@ -571,11 +593,18 @@
   )
 }
 
-#let opener-page(rows, body) = {
+#let source-code(destination) = {
+  let code = rect(width: OPENER-QR, height: OPENER-QR, fill: none, stroke: none)
+  if destination == none { return code }
+  place(top + left, link(destination, box(width: OPENER-QR, height: OPENER-QR)))
+  link(destination, code)
+}
+
+#let opener-page(rows, body, split) = {
   let title = opener-part(rows, "title")
   let fit = fitted-title(title, OPENER-TITLE-MAX)
   let density = OPENER-STANDARD
-  if opener-stack(density, fit, rows, body) + OPENER-PANGO-RESERVE > CONTENT-HEIGHT {
+  if split or opener-stack(density, fit, rows, body) + OPENER-PANGO-RESERVE > CONTENT-HEIGHT {
     density = OPENER-COMPACT
     fit = fitted-title(title, OPENER-COMPACT-TITLE-MAX)
   }
@@ -600,13 +629,13 @@
       escaped(block(width: OPENER-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, spacing: 0pt)),
     )
     v(density.meta-pad)
-    escaped(grid(
+    block(above: 0pt, below: 0pt, escaped(grid(
       columns: (1fr, OPENER-QR),
       column-gutter: OPENER-GAP,
       align: horizon,
       credit-column(rows),
-      rect(width: OPENER-QR, height: OPENER-QR, fill: none, stroke: none),
-    ))
+      source-code(opener-part(rows, "source")),
+    )))
     v(density.meta-pad)
     escaped(block(width: 100%, height: OPENER-META-RULE, fill: PAPER-RULE, spacing: 0pt))
     block(above: density.standfirst-gap, below: 0pt, escaped({
@@ -616,8 +645,8 @@
   })
 }
 
-#let opener-standfirst(rows, body) = {
-  opener-page(rows, body)
+#let opener-standfirst(rows, body, split) = {
+  opener-page(rows, body, split)
   opener-parts.update(_ => none)
   context v(PAGE-HEIGHT - MARGIN-BOTTOM - here().position().y)
 }
@@ -639,14 +668,14 @@
   below: PARAGRAPH-AFTER,
 )
 
-#let doc-paragraph(standfirst: false, roster: false, body) = {
+#let doc-paragraph(standfirst: false, roster: false, split: false, body) = {
   if standfirst {
     context {
       let rows = opener-parts.get()
       if rows == none {
         block(text(size: 12pt, ..pinned(16.4pt), body), below: 13pt)
       } else {
-        opener-standfirst(rows, body)
+        opener-standfirst(rows, body, split)
       }
     }
   } else {

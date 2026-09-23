@@ -10,6 +10,7 @@ use crate::model::shared::{
     clamp_roster, content_label, is_name_roster, py_casefold, py_repr, py_str, ui, Result,
     ValidationError,
 };
+use crate::typeset::estimate::{Metrics, Opener};
 use crate::typeset::media::pixels;
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -73,13 +74,14 @@ pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
         },
     )?;
     let settable = settable_codepoints(inputs.fonts).map_err(refusal)?;
-    build(&edition, &settable)
+    build(&edition, &settable, &Metrics::load(inputs.fonts)?)
 }
 
-pub fn build(edition: &Edition, settable: &BTreeSet<u32>) -> Result<Tree> {
+pub fn build(edition: &Edition, settable: &BTreeSet<u32>, metrics: &Metrics) -> Result<Tree> {
     Writer {
         edition,
         settable,
+        metrics,
         illustrated: article_opener_format(edition) == ILLUSTRATED,
     }
     .tree()
@@ -110,6 +112,7 @@ fn is_reference_heading(text: &str) -> bool {
 struct Writer<'a> {
     edition: &'a Edition,
     settable: &'a BTreeSet<u32>,
+    metrics: &'a Metrics,
     illustrated: bool,
 }
 
@@ -326,10 +329,11 @@ impl Writer<'_> {
             )));
         }
         let mut out = self.article_head(article, document, index, illustrated);
-        if illustrated {
-            if let Some(block) = document.blocks.first() {
-                out.push_str(&self.block(block, true, false));
-            }
+        if !illustrated {
+            out.push_str("  #opener-end()\n");
+        }
+        if let (true, Some(block)) = (illustrated, document.blocks.first()) {
+            out.push_str(&self.standfirst(article, block));
         }
         out.push_str(&self.article_body(article, document, usize::from(illustrated))?);
         out.push_str(&self.key_ideas(article));
@@ -345,6 +349,44 @@ impl Writer<'_> {
         }
         out.push_str("]\n");
         Ok(out)
+    }
+
+    fn standfirst(&self, article: &Article, block: &Block) -> String {
+        let Block::Paragraph(children) = block else {
+            return self.block(block, true, false);
+        };
+        let plain = |value: &str| fold_reader_characters(value, self.settable);
+        let keep = self.metrics.standfirst_keep_words(&Opener {
+            title: &plain(&article.title),
+            byline: &plain(&article.author),
+            note: &plain(&article.author_note),
+            intro: &self.plain_text(children),
+        });
+        let Some((kept, moved)) = split_words(children, keep) else {
+            return self.block(block, true, false);
+        };
+        format!(
+            "#doc-paragraph(standfirst: true, roster: {}, split: true)[{}]\n\n\
+             #doc-paragraph(standfirst: false, roster: false)[{}]\n\n",
+            is_name_roster(&inline_text(children)),
+            self.inlines(&kept),
+            self.inlines(&moved),
+        )
+    }
+
+    fn plain_text(&self, inlines: &[Inline]) -> String {
+        inlines
+            .iter()
+            .map(|inline| match inline {
+                Inline::Text(value) => {
+                    fold_reader_characters(&educate_reader_quotes(value), self.settable)
+                }
+                Inline::Code(value) => fold_reader_characters(value, self.settable),
+                Inline::Emphasis(children) | Inline::Strong(children) => self.plain_text(children),
+                Inline::Link { children, .. } => self.plain_text(children),
+                Inline::LineBreak { .. } => "\n".to_string(),
+            })
+            .collect()
     }
 
     fn article_head(
@@ -645,6 +687,42 @@ fn inline_text(inlines: &[Inline]) -> String {
             Inline::LineBreak { .. } => "\n".to_string(),
         })
         .collect()
+}
+
+fn split_words(inlines: &[Inline], mut remaining: usize) -> Option<(Vec<Inline>, Vec<Inline>)> {
+    if remaining == 0 {
+        return None;
+    }
+    for (index, inline) in inlines.iter().enumerate() {
+        let Inline::Text(value) = inline else {
+            let words = inline_text(std::slice::from_ref(inline))
+                .split_whitespace()
+                .count();
+            if remaining == 0 || words > remaining {
+                return Some((inlines[..index].to_vec(), inlines[index..].to_vec()));
+            }
+            remaining -= words;
+            continue;
+        };
+        let starts = value.char_indices().filter(|(at, c)| {
+            !c.is_whitespace()
+                && value[..*at]
+                    .chars()
+                    .next_back()
+                    .is_none_or(char::is_whitespace)
+        });
+        for (at, _) in starts {
+            if remaining == 0 {
+                let mut kept = inlines[..index].to_vec();
+                kept.push(Inline::Text(value[..at].trim_end().to_string()));
+                let mut moved = vec![Inline::Text(value[at..].to_string())];
+                moved.extend_from_slice(&inlines[index + 1..]);
+                return Some((kept, moved));
+            }
+            remaining -= 1;
+        }
+    }
+    None
 }
 
 fn read_manuscript(path: &Path) -> Result<Document> {
@@ -1313,6 +1391,31 @@ mod tests {
             error.to_string().contains("unprojectable markup"),
             "{error}"
         );
+    }
+
+    #[test]
+    fn a_standfirst_splits_at_its_word_budget_and_moves_an_unfitting_inline_whole() {
+        let text = |v: &str| Inline::Text(v.to_string());
+        let run = [
+            text("one two "),
+            Inline::Code("three four".into()),
+            text(" five six"),
+        ];
+        let (kept, moved) = split_words(&run, 1).expect("one word splits");
+        assert_eq!(
+            (kept, moved),
+            (
+                vec![text("one")],
+                vec![text("two "), run[1].clone(), run[2].clone()]
+            )
+        );
+        let (kept, moved) = split_words(&run, 3).expect("the code does not fit");
+        assert_eq!((kept, moved), (run[..1].to_vec(), run[1..].to_vec()));
+        let (kept, moved) = split_words(&run, 5).expect("five of six words");
+        assert_eq!(kept, vec![text("one two "), run[1].clone(), text(" five")]);
+        assert_eq!(moved, vec![text("six")]);
+        assert_eq!(split_words(&run, 6), None);
+        assert_eq!(split_words(&run, 0), None);
     }
 
     #[test]

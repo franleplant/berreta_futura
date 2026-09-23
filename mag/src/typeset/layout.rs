@@ -24,6 +24,7 @@ pub struct Piece {
     pub foot: Option<usize>,
     pub illustrated: bool,
     pub opener_bottom: Option<f64>,
+    pub opener_end: Option<usize>,
     pub figures: Vec<usize>,
 }
 
@@ -111,6 +112,7 @@ pub fn measure(document: &PagedDocument) -> Result<Measured> {
                 ..Piece::default()
             }),
             (Some("mag-piece-end"), Some(piece)) => piece.foot = Some(page),
+            (Some("mag-opener-end"), Some(piece)) => piece.opener_end = Some(page),
             (Some("mag-flow"), Some(piece))
                 if text(&meta.value, "kind").as_deref() == Some("figure") =>
             {
@@ -121,6 +123,12 @@ pub fn measure(document: &PagedDocument) -> Result<Measured> {
     }
     if let Some(piece) = pieces.iter().find(|p| p.foot.is_none()) {
         bail!("piece {} has no end mark in the typst document", piece.id);
+    }
+    if let Some(piece) = pieces
+        .iter()
+        .find(|p| p.article().is_some() && !p.illustrated && p.opener_end.is_none())
+    {
+        bail!("the plain opener of {} has no opener-end mark", piece.id);
     }
     for piece in pieces.iter_mut().filter(|p| p.illustrated) {
         let frame = &document.pages()[piece.head - 1].frame;
@@ -179,10 +187,9 @@ impl Measured {
             .collect()
     }
 
-    pub fn unmeasured_openers(&self) -> Vec<&str> {
+    pub fn plain_opener_fits(&self) -> Map<String, Value> {
         self.articles()
-            .filter(|(_, p)| !p.illustrated)
-            .map(|(id, _)| id)
+            .filter_map(|(id, p)| Some((id.to_string(), json!(p.opener_end? == p.head))))
             .collect()
     }
 
@@ -373,8 +380,12 @@ fn written(path: &Path, bytes: &[u8], kind: &str) -> Result<Value> {
 
 pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Result<Value> {
     let measured = measure(document)?;
-    for id in measured.unmeasured_openers() {
-        eprintln!("warning: article {id} has a plain opener, which carries no opener-end mark; its opener fit is unmeasured (WP-3.2)");
+    for (id, _) in measured
+        .plain_opener_fits()
+        .iter()
+        .filter(|(_, fits)| fits.as_bool() == Some(false))
+    {
+        eprintln!("warning: the plain opener of {id} runs past its first page");
     }
     if let Some(article) = request.article {
         anyhow::ensure!(
@@ -414,15 +425,14 @@ mod tests {
     use std::path::PathBuf;
 
     const TARGET: [&str; 3] = ["article_pages", "editorial_pages", "article_opener_fits"];
-    const IDENTITY: &str = "none: engine identity label, by design";
-    const OWNERS: [(&str, &str); 13] = [
+    const ENGINE_METADATA: [&str; 1] = ["design_direction"];
+    const OWNERS: [(&str, &str); 12] = [
         ("article_pages", "WP-3.1"),
         ("editorial_pages", "WP-3.1"),
         ("article_opener_fits", "WP-3.2"),
         ("toc", "WP-3.2"),
         ("figures", "WP-3.4"),
         ("tail_arts", "WP-3.4"),
-        ("design_direction", IDENTITY),
         ("cover_art_size_points", "WP-2.3"),
         ("article_terminal_balance", "WP-2.3"),
         ("maximum_article_pages", "WP-2.3"),
@@ -488,6 +498,7 @@ mod tests {
             .collect();
         fields.sort();
         fields.dedup();
+        fields.retain(|f| !ENGINE_METADATA.contains(&f.as_str()));
         let mut rows = Vec::new();
         for field in fields {
             let (o, t) = (&oracle[field.as_str()], &typst[field.as_str()]);
@@ -537,7 +548,13 @@ mod tests {
         }
     }
 
-    fn print_table(rows: &[Row]) {
+    fn print_table(oracle: &Value, typst: &Value, rows: &[Row]) {
+        for field in ENGINE_METADATA {
+            println!(
+                "excluded as engine metadata: {field} (oracle {}, typst {})",
+                oracle[field], typst[field]
+            );
+        }
         println!("| field | key | oracle | typst | verdict |\n|---|---|---|---|---|");
         for r in rows {
             let verdict = if r.oracle == r.typst {
@@ -586,7 +603,7 @@ mod tests {
             read(&typst)["layout"].clone(),
         );
         let rows = table(&oracle, &typst);
-        print_table(&rows);
+        print_table(&oracle, &typst, &rows);
         if let Err(message) = verdict(&oracle, &rows) {
             panic!("{message}");
         }
@@ -672,6 +689,75 @@ mod tests {
         assert_eq!(spilling, fitting + 1);
     }
 
+    fn plain_fits(note_words: usize) -> bool {
+        let note = vec!["note"; note_words].join(" ");
+        let tree = Tree {
+            files: vec![File {
+                path: "main.typ".to_string(),
+                source: format!(
+                    "#piece(id: \"article-a\", kind: \"article\", short-title: \"A\")[\n\
+                     #piece-title[A Fixture Title]\n\
+                     #byline[#byline-prefix[By]#byline-name[ Ada]]\n\
+                     #author-note[{note}]\n\
+                     #opener-end()\n\
+                     #doc-paragraph(standfirst: true, roster: false)[Body.]\n]\n"
+                ),
+            }],
+        };
+        let measured = measure(&compiled(&tree)).expect("the run measures");
+        measured.plain_opener_fits()["a"]
+            .as_bool()
+            .expect("measured")
+    }
+
+    fn links(document: &PagedDocument) -> Vec<(u32, String)> {
+        let pdf = template::pdf(document).expect("the pdf exports");
+        let doc = lopdf::Document::load_mem(&pdf).expect("the pdf parses");
+        let mut out = Vec::new();
+        for (number, id) in doc.get_pages() {
+            for annot in doc.get_page_annotations(id).expect("annotations read") {
+                let target = match annot.get_deref(b"A", &doc).and_then(|a| a.as_dict()) {
+                    Ok(action) => action
+                        .get(b"URI")
+                        .and_then(lopdf::Object::as_str)
+                        .map_or("goto".into(), |u| String::from_utf8_lossy(u).into_owned()),
+                    Err(_) => "dest".into(),
+                };
+                out.push((number, target));
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn the_contents_and_the_opener_code_carry_their_links() {
+        let (_, document, _, _) = fixture("900");
+        let contents: Vec<_> = links(&document)
+            .into_iter()
+            .filter(|(p, _)| *p == 3)
+            .collect();
+        assert_eq!(
+            contents.len(),
+            12,
+            "three links per contents entry: {contents:?}"
+        );
+        let mut tree = opener_run(10);
+        tree.files[0].source = tree.files[0].source.replace(
+            "#doc-paragraph(standfirst: true",
+            "#source-link(destination: \"https://example.com/a\", source-id: \"a\")[a]\n\
+             #doc-paragraph(standfirst: true",
+        );
+        let opener = links(&compiled(&tree));
+        assert_eq!(opener, vec![(3, "https://example.com/a".to_string()); 2]);
+        assert!(links(&compiled(&opener_run(10))).is_empty());
+    }
+
+    #[test]
+    fn the_plain_opener_fit_is_read_from_its_end_mark() {
+        assert!(plain_fits(10));
+        assert!(!plain_fits(4000));
+    }
+
     #[test]
     fn the_fixture_pieces_measure_as_emitted() {
         let (tree, document, edition, root) = fixture("900");
@@ -689,8 +775,11 @@ mod tests {
         assert_eq!(layout["editorial_pages"], json!(1));
         assert_eq!(layout["article_opener_fits"], json!({}));
         assert_eq!(
-            measured.unmeasured_openers(),
-            ["plain-opener-article", "second-fixture-article"]
+            measured.plain_opener_fits(),
+            json!({"plain-opener-article": true, "second-fixture-article": true})
+                .as_object()
+                .cloned()
+                .unwrap()
         );
         assert_eq!(layout["figures"][0]["id"], "budget-diagram");
         assert_eq!(layout["figures"][0]["page"], 6);
@@ -736,7 +825,8 @@ mod tests {
     fn the_verdict_discriminates_each_rule() {
         let oracle = sample();
         let rows = table(&oracle, &oracle);
-        assert_eq!(rows.len(), 9);
+        assert_eq!(rows.len(), 8);
+        assert!(rows.iter().all(|r| r.field != "design_direction"));
         assert_eq!(verdict(&oracle, &rows), Ok(()));
         let mut owned = sample();
         owned["figures"][0]["box_points"] = Value::Null;
