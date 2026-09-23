@@ -644,13 +644,22 @@ pub fn normalized(raw: &str) -> String {
         .join(" ")
 }
 
-pub fn spread_text(elements: &[Element]) -> String {
-    elements
+pub fn spread_text(elements: &[Element], media: [f64; 4]) -> String {
+    let middle = if media[2] - media[0] > media[3] - media[1] {
+        (media[0] + media[2]) / 2.0
+    } else {
+        f64::INFINITY
+    };
+    let (left, right): (Vec<_>, Vec<_>) = elements
         .iter()
         .filter_map(|element| match element {
-            Element::Text { s, .. } => Some(s.as_str()),
+            Element::Text { s, m, .. } => Some((s.as_str(), m[4] as f64 / 100.0)),
             _ => None,
         })
+        .partition(|(_, x)| *x < middle);
+    left.into_iter()
+        .chain(right)
+        .map(|(s, _)| s)
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -725,7 +734,8 @@ pub fn read_leg(pdf: &Path, fonts: &BTreeMap<String, TextFace>) -> Result<Leg> {
         raw: traced.iter().map(|page| page_text(page)).collect(),
         normalized: traced
             .iter()
-            .map(|page| normalized(&spread_text(page)))
+            .zip(&media)
+            .map(|(page, box_points)| normalized(&spread_text(page, *box_points)))
             .collect(),
         media,
     })

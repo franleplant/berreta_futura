@@ -358,9 +358,10 @@ struct Fault {
     edit: fn(&mut Variant),
     added: &'static [Row],
     removed: &'static [Row],
-    missed: &'static [Row],
-    spurious: &'static [Row],
+    python_missed: &'static [Row],
+    python_spurious: &'static [Row],
     probes: &'static [Probe],
+    python_probes: &'static [Probe],
 }
 
 fn resaved(_: &mut Variant) {}
@@ -432,8 +433,8 @@ const FAULTS: [Fault; 7] = [
         edit: resaved,
         added: &[],
         removed: &[],
-        missed: &[],
-        spurious: &[],
+        python_missed: &[],
+        python_spurious: &[],
         probes: &[
             ("reader", 2, "blank", || json!(true)),
             ("reader", 13, "ink_free", || json!(false)),
@@ -443,14 +444,15 @@ const FAULTS: [Fault; 7] = [
             ("cover", 1, "ink_free", || json!(false)),
             ("spreads", 5, "text_order_matches", || json!(true)),
         ],
+        python_probes: &[],
     },
     Fault {
         name: "swapped-sheets",
         edit: swapped_sheets,
         added: &ORDER,
         removed: &[],
-        missed: &[],
-        spurious: &[],
+        python_missed: &[],
+        python_spurious: &[],
         probes: &[
             ("spreads", 5, "text_order_matches", || json!(false)),
             ("spreads", 6, "text_order_matches", || json!(true)),
@@ -459,15 +461,21 @@ const FAULTS: [Fault; 7] = [
             ("interior_spreads", 5, "text_order_matches", || json!(false)),
             ("cover_spreads", 1, "text_order_matches", || json!(false)),
         ],
+        python_probes: &[],
     },
     Fault {
         name: "half-swaps",
         edit: half_swaps,
         added: &[ORDER[0], ORDER[2]],
         removed: &[],
-        missed: &[ORDER[0], ORDER[2]],
-        spurious: &[ORDER[1]],
+        python_missed: &[ORDER[0], ORDER[2]],
+        python_spurious: &[ORDER[1]],
         probes: &[
+            ("spreads", 5, "text_order_matches", || json!(false)),
+            ("interior_spreads", 3, "text_order_matches", || json!(true)),
+            ("cover_spreads", 1, "text_order_matches", || json!(false)),
+        ],
+        python_probes: &[
             ("spreads", 5, "text_order_matches", || json!(true)),
             ("interior_spreads", 3, "text_order_matches", || json!(false)),
             ("cover_spreads", 1, "text_order_matches", || json!(true)),
@@ -478,21 +486,23 @@ const FAULTS: [Fault; 7] = [
         edit: missing_tail_band,
         added: &[("article-tail-gap", "review", Some(44))],
         removed: &[],
-        missed: &[],
-        spurious: &[],
+        python_missed: &[],
+        python_spurious: &[],
         probes: &[
             ("reader", 44, "tail_band", || Value::Null),
             ("reader", 44, "body_text_lines", || json!(18)),
         ],
+        python_probes: &[],
     },
     Fault {
         name: "low-ppi-figure",
         edit: low_ppi_figure,
         added: &[],
         removed: &[],
-        missed: &[],
-        spurious: &[],
+        python_missed: &[],
+        python_spurious: &[],
         probes: &[],
+        python_probes: &[],
     },
     Fault {
         name: "text-fields",
@@ -512,8 +522,8 @@ const FAULTS: [Fault; 7] = [
             ORDER[2],
         ],
         removed: &[],
-        missed: &[],
-        spurious: &[],
+        python_missed: &[],
+        python_spurious: &[],
         probes: &[
             ("reader", 2, "text_characters", || json!(12)),
             ("reader", 2, "ink_ratio", || json!(0.0)),
@@ -539,6 +549,7 @@ const FAULTS: [Fault; 7] = [
             ("booklet", 11, "ink_ratio", || json!(0.0)),
             ("cover", 1, "ink_free", || json!(true)),
         ],
+        python_probes: &[],
     },
     Fault {
         name: "raster-halves",
@@ -548,8 +559,8 @@ const FAULTS: [Fault; 7] = [
             ORDER[2],
         ],
         removed: &[],
-        missed: &[],
-        spurious: &[],
+        python_missed: &[],
+        python_spurious: &[],
         probes: &[
             ("booklet", 2, "blank", || json!(false)),
             ("booklet", 2, "text_characters", || json!(0)),
@@ -557,6 +568,7 @@ const FAULTS: [Fault; 7] = [
             ("cover", 1, "ink_ratio", || json!(0.0)),
             ("cover", 1, "text_characters", || json!(6)),
         ],
+        python_probes: &[],
     },
 ];
 
@@ -592,11 +604,31 @@ fn by_rule(fault: &Fault) -> Vec<Row> {
         .collect()
 }
 
-fn measured_expectation(fault: &Fault) -> Vec<Row> {
+fn python_expectation(fault: &Fault) -> Vec<Row> {
     by_rule(fault)
         .into_iter()
-        .filter(|row| !fault.missed.contains(row))
-        .chain(fault.spurious.iter().copied())
+        .filter(|row| !fault.python_missed.contains(row))
+        .chain(fault.python_spurious.iter().copied())
+        .collect()
+}
+
+fn python_want(fault: &Fault, probe: &Probe) -> Value {
+    let (leg, number, field, want) = probe;
+    fault
+        .python_probes
+        .iter()
+        .find(|(l, n, f, _)| (l, n, f) == (leg, number, field))
+        .map_or_else(want, |(_, _, _, python)| python())
+}
+
+fn shared_rows(value: &Value, gaps: &[Row]) -> Vec<Value> {
+    let gaps = keys(gaps);
+    value["issues"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|row| !gaps.contains(&key(row)))
+        .cloned()
         .collect()
 }
 
@@ -734,13 +766,16 @@ fn authored_expectations_follow_the_imposition_plan() {
     }
     for fault in &FAULTS {
         assert!(
-            fault.missed.iter().all(|row| by_rule(fault).contains(row)),
+            fault
+                .python_missed
+                .iter()
+                .all(|row| by_rule(fault).contains(row)),
             "{}: a missed row must be expected by the rule",
             fault.name
         );
         assert!(
             fault
-                .spurious
+                .python_spurious
                 .iter()
                 .all(|row| !by_rule(fault).contains(row)),
             "{}: a spurious row must not be expected by the rule",
@@ -750,7 +785,7 @@ fn authored_expectations_follow_the_imposition_plan() {
 }
 
 #[test]
-fn both_critics_decide_every_fault_by_the_rule() {
+fn rust_decides_every_fault_by_the_rule() {
     let Ok(render) = std::env::var("MAG_CRITIC_FAULTS_RENDER_DIR") else {
         println!("MODE: skipped, MAG_CRITIC_FAULTS_RENDER_DIR unset");
         return;
@@ -776,9 +811,11 @@ fn both_critics_decide_every_fault_by_the_rule() {
         );
         let expected: Value = serde_json::from_slice(&output.stdout).expect("python prints json");
         let rows = |value: &Value| value["issues"].as_array().unwrap().clone();
-        let mut python_keys: Vec<_> = rows(&expected).iter().map(key).collect();
-        python_keys.sort();
-        let wanted = keys(&measured_expectation(fault));
+        let sorted = |value: &Value| {
+            let mut out: Vec<_> = rows(value).iter().map(key).collect();
+            out.sort();
+            out
+        };
         println!(
             "FAULT: {} python {} rust {} issues, result {} / {}",
             fault.name,
@@ -787,41 +824,51 @@ fn both_critics_decide_every_fault_by_the_rule() {
             expected["result"],
             produced["result"]
         );
-        for row in rows(&expected) {
+        for row in rows(&produced) {
             println!("  ISSUE: {:?}", key(&row));
         }
-        for row in fault.missed {
-            println!("  GAP missed by both: {row:?}");
+        for row in fault.python_missed {
+            println!("  PYTHON GAP missed: {row:?}");
         }
-        for row in fault.spurious {
-            println!("  GAP spurious in both: {row:?}");
+        for row in fault.python_spurious {
+            println!("  PYTHON GAP spurious: {row:?}");
         }
-        let decisions =
-            |value: &Value| json!({"result": value["result"], "issues": value["issues"]});
-        if decisions(&expected) != decisions(&produced) {
+        let python_shared = shared_rows(&expected, fault.python_spurious);
+        let rust_shared = shared_rows(&produced, fault.python_missed);
+        if expected["result"] != produced["result"] || python_shared != rust_shared {
             failures.push(format!(
-                "{}: the critics disagree\n python {}\n rust   {}",
-                fault.name,
-                decisions(&expected),
-                decisions(&produced)
+                "{}: the critics disagree beyond the declared python gaps\n python {}\n rust   {}",
+                fault.name, expected["issues"], produced["issues"]
             ));
         }
-        for (leg, number, field, want) in fault.probes {
+        for probe in fault.probes {
+            let (leg, number, field, want) = probe;
             let pick = |value: &Value| value[*leg][number - 1][*field].clone();
             let (python_value, rust_value) = (pick(&expected), pick(&produced));
             println!("  PROBE: {leg} {number} {field} python {python_value} rust {rust_value}");
-            if python_value != want() || rust_value != want() {
+            if python_value != python_want(fault, probe) || rust_value != want() {
                 failures.push(format!(
-                    "{}: {leg} {number} {field} wants {}",
+                    "{}: {leg} {number} {field} wants rust {} python {}",
                     fault.name,
-                    want()
+                    want(),
+                    python_want(fault, probe)
                 ));
             }
         }
-        if python_keys != wanted {
+        if sorted(&produced) != keys(&by_rule(fault)) {
             failures.push(format!(
-                "{}: decided {python_keys:?}\n  the rule wants {wanted:?}",
-                fault.name
+                "{}: rust decided {:?}\n  the rule wants {:?}",
+                fault.name,
+                sorted(&produced),
+                keys(&by_rule(fault))
+            ));
+        }
+        if sorted(&expected) != keys(&python_expectation(fault)) {
+            failures.push(format!(
+                "{}: python decided {:?}\n  its declared gaps want {:?}",
+                fault.name,
+                sorted(&expected),
+                keys(&python_expectation(fault))
             ));
         }
     }
