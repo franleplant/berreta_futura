@@ -27,6 +27,7 @@ mod parity_seam_is_reachable_from_critic {
             m: [qc(size_pt), 0, 0, qc(size_pt), qc(x_pt), qc(y_pt)],
             tr: 0,
             clip: vec![],
+            origin: [qo(x_pt), qo(y_pt)],
             offs,
             units: s.chars().map(String::from).collect(),
         }

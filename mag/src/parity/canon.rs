@@ -3,7 +3,24 @@ use anyhow::{Context, Result};
 use std::collections::{BTreeMap, HashMap};
 
 pub type Rect = [i64; 4];
+pub type Ink = Option<Vec<Option<Rect>>>;
 type P = (i64, i64);
+
+pub struct Glyph {
+    pub show: usize,
+    pub line: usize,
+    pub at: [i64; 2],
+    pub start: [i64; 2],
+    pub step: usize,
+}
+
+pub const GAP_EM: f64 = 3.0;
+
+pub struct Canon {
+    pub elements: Vec<Element>,
+    pub glyphs: Vec<Option<Glyph>>,
+    pub paint_order_runs: usize,
+}
 
 #[derive(Clone, PartialEq)]
 enum Seg {
@@ -287,11 +304,24 @@ fn canon_paths(elements: &mut [Element]) {
     }
 }
 
-fn contained_clips(elements: &mut [Element], text_ink: &[Option<Rect>]) {
+fn union(ink: Option<&Ink>) -> Option<Rect> {
+    let mut boxes = ink?.as_ref()?.iter().flatten();
+    let first = *boxes.next()?;
+    Some(boxes.fold(first, |u, b| {
+        [
+            u[0].min(b[0]),
+            u[1].min(b[1]),
+            u[2].max(b[2]),
+            u[3].max(b[3]),
+        ]
+    }))
+}
+
+fn contained_clips(elements: &mut [Element], text_ink: &[Ink]) {
     let boxes: Vec<Option<Rect>> = elements
         .iter()
         .enumerate()
-        .map(|(i, e)| painted_box(e, text_ink.get(i).copied().flatten()))
+        .map(|(i, e)| painted_box(e, union(text_ink.get(i))))
         .collect();
     for c in 0..elements.len() {
         let Element::Clip { d, .. } = &elements[c] else {
@@ -419,7 +449,7 @@ fn leading_white(elements: &[Element]) -> Vec<bool> {
     drop
 }
 
-pub fn canonical(elements: &[Element], text_ink: &[Option<Rect>]) -> Vec<Element> {
+pub fn canonical(elements: &[Element], text_ink: &[Ink]) -> Canon {
     let mut out = elements.to_vec();
     canon_paths(&mut out);
     contained_clips(&mut out, text_ink);
@@ -436,7 +466,8 @@ pub fn canonical(elements: &[Element], text_ink: &[Option<Rect>]) -> Vec<Element
         drop[i] |= !paints(e) && !used[i];
     }
     let mut index = HashMap::new();
-    out.into_iter()
+    let kept: Vec<(usize, Element)> = out
+        .into_iter()
         .enumerate()
         .filter(|(i, _)| !drop[*i])
         .map(|(i, mut e)| {
@@ -444,9 +475,203 @@ pub fn canonical(elements: &[Element], text_ink: &[Option<Rect>]) -> Vec<Element
             *s = s.iter().filter_map(|k| index.get(k).copied()).collect();
             let n = index.len() as u32;
             index.insert(i as u32, n);
-            e
+            (i, e)
         })
-        .collect()
+        .collect();
+    ordered(split(kept, text_ink))
+}
+
+struct Item {
+    e: Element,
+    glyph: Option<Glyph>,
+    ink: Option<Rect>,
+    id: u32,
+}
+
+fn inked(gid: Option<u32>, unit: &str) -> bool {
+    match gid {
+        Some(streams::BLANK_GID) => false,
+        Some(streams::UNRESOLVED_GID) | None => !unit.trim().is_empty(),
+        Some(_) => true,
+    }
+}
+
+fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
+    let mut items = vec![];
+    for (show, (orig, e)) in kept.into_iter().enumerate() {
+        let id = show as u32;
+        let Element::Text {
+            font,
+            size,
+            fill,
+            gids,
+            m,
+            tr,
+            clip,
+            origin,
+            offs,
+            units,
+            ..
+        } = &e
+        else {
+            items.push(Item {
+                e,
+                glyph: None,
+                ink: None,
+                id,
+            });
+            continue;
+        };
+        let ink = text_ink.get(orig).and_then(Option::as_ref);
+        let mut last = None;
+        for (k, (unit, off)) in units.iter().zip(offs).enumerate() {
+            let gid = gids.get(k).copied();
+            if !inked(gid, unit) {
+                continue;
+            }
+            let at = [0, 1].map(|i| origin[i] + off[i]);
+            let e = Element::Text {
+                s: unit.clone(),
+                font: font.clone(),
+                size: *size,
+                fill: fill.clone(),
+                glyphs: 1,
+                gids: gid.into_iter().collect(),
+                m: *m,
+                tr: *tr,
+                clip: clip.clone(),
+                origin: at,
+                offs: vec![[0, 0]],
+                units: vec![unit.clone()],
+            };
+            let step = last.map_or(k + 1, |j| k - j);
+            last = Some(k);
+            items.push(Item {
+                e,
+                glyph: Some(Glyph {
+                    show,
+                    line: 0,
+                    at,
+                    start: at,
+                    step,
+                }),
+                ink: ink.and_then(|v| v.get(k).copied().flatten()),
+                id,
+            });
+        }
+    }
+    items
+}
+
+fn gap(e: &Element) -> i64 {
+    let Element::Text { m, .. } = e else {
+        return 0;
+    };
+    let em = (m[0] as f64).hypot(m[1] as f64) / 100.0;
+    (GAP_EM * em / streams::GLYPH_QUANTUM) as i64
+}
+
+fn lines(run: &mut [Item], next: &mut usize) -> Vec<usize> {
+    let at = |r: &[Item], i: usize| r[i].glyph.as_ref().map_or([0, 0], |g| g.at);
+    let baseline = streams::qo(0.01);
+    let mut order: Vec<usize> = (0..run.len()).collect();
+    order.sort_by_key(|&i| (-at(run, i)[1], at(run, i)[0]));
+    let mut bands: Vec<Vec<usize>> = vec![];
+    for i in order {
+        match bands.last_mut() {
+            Some(b) if at(run, b[b.len() - 1])[1] - at(run, i)[1] <= baseline => b.push(i),
+            _ => bands.push(vec![i]),
+        }
+    }
+    let mut order = vec![];
+    for mut band in bands {
+        band.sort_by_key(|&i| at(run, i)[0]);
+        let (mut start, mut step, mut prev) = ([0, 0], 0, None);
+        for i in band {
+            let p = at(run, i);
+            match prev {
+                Some(j) if p[0] - at(run, j)[0] <= gap(&run[j].e) => {
+                    step += run[i].glyph.as_ref().map_or(0, |g| g.step)
+                }
+                _ => (start, step, *next) = (p, 0, *next + 1),
+            }
+            prev = Some(i);
+            if let Some(g) = run[i].glyph.as_mut() {
+                (g.line, g.start, g.step) = (*next, start, step);
+            }
+            if let Element::Text { m, .. } = &mut run[i].e {
+                (m[4], m[5]) = (
+                    streams::qc(start[0] as f64 * streams::GLYPH_QUANTUM),
+                    streams::qc(start[1] as f64 * streams::GLYPH_QUANTUM),
+                );
+            }
+            order.push(i);
+        }
+    }
+    order
+}
+
+fn look(e: &Element) -> (String, i64) {
+    match e {
+        Element::Text { fill, tr, .. } => (format!("{fill:?}"), *tr),
+        _ => (String::new(), 0),
+    }
+}
+
+fn clash(run: &[Item], rank: &[usize]) -> bool {
+    let touch = |a: Option<Rect>, b: Option<Rect>| match (a, b) {
+        (Some(a), Some(b)) => meet(a, b).is_some(),
+        _ => true,
+    };
+    (0..run.len()).any(|i| {
+        (i + 1..run.len()).any(|j| {
+            rank[i] > rank[j] && look(&run[i].e) != look(&run[j].e) && touch(run[i].ink, run[j].ink)
+        })
+    })
+}
+
+fn ordered(items: Vec<Item>) -> Canon {
+    let mut out: Vec<Item> = vec![];
+    let (mut paint_order_runs, mut line) = (0, 0);
+    let mut rest = items.into_iter().peekable();
+    while let Some(first) = rest.next() {
+        if first.glyph.is_none() {
+            out.push(first);
+            continue;
+        }
+        let mut run = vec![first];
+        while let Some(next) = rest.next_if(|x| x.glyph.is_some()) {
+            run.push(next);
+        }
+        let order = lines(&mut run, &mut line);
+        let mut rank = vec![0; run.len()];
+        order.iter().enumerate().for_each(|(r, &i)| rank[i] = r);
+        if clash(&run, &rank) {
+            paint_order_runs += 1;
+            out.extend(run);
+            continue;
+        }
+        let mut slots: Vec<Option<Item>> = run.into_iter().map(Some).collect();
+        out.extend(order.iter().filter_map(|&i| slots[i].take()));
+    }
+    let at: HashMap<u32, u32> = out
+        .iter()
+        .enumerate()
+        .filter(|(_, x)| x.glyph.is_none())
+        .map(|(n, x)| (x.id, n as u32))
+        .collect();
+    let (mut elements, mut glyphs) = (vec![], vec![]);
+    for Item { mut e, glyph, .. } in out {
+        let s = stack(&mut e);
+        *s = s.iter().filter_map(|k| at.get(k).copied()).collect();
+        elements.push(e);
+        glyphs.push(glyph);
+    }
+    Canon {
+        elements,
+        glyphs,
+        paint_order_runs,
+    }
 }
 
 struct Glyphs {
@@ -479,15 +704,16 @@ impl<'a> Inks<'a> {
         }
     }
 
-    pub fn page(&mut self, elements: &[Element]) -> Result<Vec<Option<Rect>>> {
+    pub fn page(&mut self, elements: &[Element]) -> Result<Vec<Ink>> {
         elements.iter().map(|e| self.text(e)).collect()
     }
 
-    fn text(&mut self, e: &Element) -> Result<Option<Rect>> {
+    fn text(&mut self, e: &Element) -> Result<Ink> {
         let Element::Text {
             font,
             gids,
             m,
+            origin,
             offs,
             ..
         } = e
@@ -507,40 +733,35 @@ impl<'a> Inks<'a> {
             return Ok(None);
         };
         let lin = |i: usize| m[i] as f64 / 100.0 / g.upem;
-        let mut pts = vec![];
+        let lo = |v: f64| (v * 100.0).floor() as i64 - 1;
+        let hi = |v: f64| (v * 100.0).ceil() as i64 + 1;
+        let mut out = vec![];
         for (k, o) in offs.iter().enumerate() {
             let id = gids.get(k).copied().unwrap_or(streams::UNRESOLVED_GID);
             if id == streams::BLANK_GID {
+                out.push(None);
                 continue;
             }
             let Some(b) = g.boxes.get(id as usize).copied().flatten() else {
                 return Ok(None);
             };
-            let ox = m[4] as f64 / 100.0 + o[0] as f64 * streams::GLYPH_QUANTUM;
-            let oy = m[5] as f64 / 100.0 + o[1] as f64 * streams::GLYPH_QUANTUM;
-            for (x, y) in [
+            let [ox, oy] = [0, 1].map(|i| (origin[i] + o[i]) as f64 * streams::GLYPH_QUANTUM);
+            let pts = [
                 (b.x_min, b.y_min),
                 (b.x_max, b.y_min),
                 (b.x_min, b.y_max),
                 (b.x_max, b.y_max),
-            ] {
-                let (x, y) = (f64::from(x), f64::from(y));
-                pts.push((ox + lin(0) * x + lin(2) * y, oy + lin(1) * x + lin(3) * y));
-            }
-        }
-        let lo = |v: f64| (v * 100.0).floor() as i64 - 1;
-        let hi = |v: f64| (v * 100.0).ceil() as i64 + 1;
-        let fold = |f: fn(f64, f64) -> f64, s: f64, pick: fn(&(f64, f64)) -> f64| {
-            pts.iter().map(pick).fold(s, f)
-        };
-        Ok((!pts.is_empty()).then(|| {
-            [
-                lo(fold(f64::min, f64::INFINITY, |p| p.0)),
-                lo(fold(f64::min, f64::INFINITY, |p| p.1)),
-                hi(fold(f64::max, f64::NEG_INFINITY, |p| p.0)),
-                hi(fold(f64::max, f64::NEG_INFINITY, |p| p.1)),
             ]
-        }))
+            .map(|(x, y)| {
+                let (x, y) = (f64::from(x), f64::from(y));
+                (ox + lin(0) * x + lin(2) * y, oy + lin(1) * x + lin(3) * y)
+            });
+            let (xs, ys) = (pts.map(|p| p.0), pts.map(|p| p.1));
+            let min = |v: [f64; 4]| v.into_iter().fold(f64::INFINITY, f64::min);
+            let max = |v: [f64; 4]| v.into_iter().fold(f64::NEG_INFINITY, f64::max);
+            out.push(Some([lo(min(xs)), lo(min(ys)), hi(max(xs)), hi(max(ys))]));
+        }
+        Ok(Some(out))
     }
 }
 
@@ -608,22 +829,23 @@ mod tests {
             m: [1000, 0, 0, 1000, 5000, 5000],
             tr: 0,
             clip: clip.to_vec(),
+            origin: [streams::qo(50.0); 2],
             offs: vec![[0, 0]],
             units: vec!["a".into()],
         }
     }
 
+    fn json(e: &[Element], ink: &[Ink]) -> String {
+        serde_json::to_string(&canonical(e, ink).elements).unwrap()
+    }
+
     fn same(a: &[Element], b: &[Element]) -> bool {
-        let json = |e: &[Element], ink: &[Option<Rect>]| {
-            serde_json::to_string(&canonical(e, ink)).unwrap()
-        };
         json(a, &[]) == json(b, &[])
     }
 
     fn same_ink(a: &[Element], ink: Option<Rect>, b: &[Element]) -> bool {
-        let ink: Vec<Option<Rect>> = a.iter().map(|_| ink).collect();
-        serde_json::to_string(&canonical(a, &ink)).unwrap()
-            == serde_json::to_string(&canonical(b, &[])).unwrap()
+        let ink: Vec<Ink> = a.iter().map(|_| ink.map(|r| vec![Some(r)])).collect();
+        json(a, &ink) == json(b, &[])
     }
 
     #[test]
@@ -754,6 +976,6 @@ mod tests {
         if let Element::Path { d, .. } = &mut ring[1] {
             *d = format!("{} {inner}", expand_rects(hole));
         }
-        assert_eq!(canonical(&ring, &[]).len(), 2);
+        assert_eq!(canonical(&ring, &[]).elements.len(), 2);
     }
 }

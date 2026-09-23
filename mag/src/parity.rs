@@ -1530,6 +1530,7 @@ mod measured_pages {
                     status: "pass".into(),
                     elements_a: 10,
                     elements_b: 10,
+                    text_runs_in_paint_order: 0,
                     pages_differing: vec![],
                 }),
                 glyph_positions: Some(display::GlyphClause {
