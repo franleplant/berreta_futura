@@ -165,6 +165,7 @@ fn text_show(s: &str, x_pt: f64, y_pt: f64, size_pt: f64, advance_pt: f64) -> st
         tr: 0,
         clip: vec![],
         offs,
+        units: s.chars().map(String::from).collect(),
     }
 }
 

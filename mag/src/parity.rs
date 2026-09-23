@@ -1435,6 +1435,7 @@ mod measured_pages {
                 status: "pass".into(),
                 entries_compared: 10,
                 pages_differing: vec![],
+                details: vec![],
             }),
             navigation: Some(display::NavClause {
                 status: "pass".into(),

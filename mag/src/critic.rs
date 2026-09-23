@@ -28,6 +28,7 @@ mod parity_seam_is_reachable_from_critic {
             tr: 0,
             clip: vec![],
             offs,
+            units: s.chars().map(String::from).collect(),
         }
     }
 
