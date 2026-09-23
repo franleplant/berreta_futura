@@ -404,6 +404,7 @@ pub struct SimpleClause {
     pub status: String,
     pub entries_compared: usize,
     pub pages_differing: Vec<u32>,
+    pub details: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -506,43 +507,96 @@ fn status(pass: bool) -> String {
     if pass { "pass" } else { "fail" }.into()
 }
 
-fn color_sequence(page: &PageDump) -> Vec<(String, Color)> {
-    let mut seq = vec![];
+type Paint = (String, Option<Color>);
+
+fn color_sequences(page: &PageDump) -> [Vec<Paint>; 2] {
+    let mut glyphs = vec![];
+    let mut paints = vec![];
     for e in &page.elements {
         match e {
-            Element::Text { s, fill, .. } => seq.push((format!("text:{s}"), fill.clone())),
+            Element::Text {
+                units,
+                fill,
+                tr,
+                m,
+                offs,
+                gids,
+                ..
+            } => {
+                for (k, (u, o)) in units.iter().zip(offs).enumerate() {
+                    let inked = match gids.get(k) {
+                        Some(&streams::BLANK_GID) => false,
+                        Some(&streams::UNRESOLVED_GID) | None => !u.trim().is_empty(),
+                        Some(_) => true,
+                    };
+                    let at = |i: usize| {
+                        qc(m[i + 4] as f64 / 100.0 + o[i] as f64 * streams::GLYPH_QUANTUM)
+                    };
+                    if inked {
+                        glyphs.push((
+                            (-at(1), at(0)),
+                            (u.clone(), (*tr != 3).then(|| fill.clone())),
+                        ));
+                    }
+                }
+            }
             Element::Path { fill, stroke, .. } => {
-                if let Some(c) = fill {
-                    seq.push(("fill".into(), c.clone()));
-                }
-                if let Some(c) = stroke {
-                    seq.push(("stroke".into(), c.clone()));
-                }
+                paints.extend(fill.iter().map(|c| ("fill".into(), Some(c.clone()))));
+                paints.extend(stroke.iter().map(|c| ("stroke".into(), Some(c.clone()))));
             }
             _ => {}
         }
     }
-    seq
+    glyphs.sort_by_key(|g| g.0);
+    [glyphs.into_iter().map(|g| g.1).collect(), paints]
+}
+
+fn first_difference(kind: &str, a: &[Paint], b: &[Paint]) -> Option<String> {
+    let show = |p: &Paint| match &p.1 {
+        Some(c) => format!("{:?} {} {:?}", p.0, c.family, c.rgb),
+        None => format!("{:?} invisible", p.0),
+    };
+    match a.iter().zip(b).position(|(x, y)| x != y) {
+        Some(k) => {
+            let near = |s: &[Paint]| {
+                s[k..]
+                    .iter()
+                    .take(16)
+                    .map(|p| p.0.as_str())
+                    .collect::<String>()
+            };
+            Some(format!(
+                "{kind} {k}: {} vs {} (from here {:?} vs {:?})",
+                show(&a[k]),
+                show(&b[k]),
+                near(a),
+                near(b)
+            ))
+        }
+        None => (a.len() != b.len()).then(|| format!("{} {kind}s vs {}", a.len(), b.len())),
+    }
 }
 
 pub fn compare_color(a: &Dump, b: &Dump, first: u32) -> SimpleClause {
-    let pages_differing: Vec<u32> = a
-        .pages
-        .iter()
-        .zip(&b.pages)
-        .enumerate()
-        .filter(|(_, (pa, pb))| {
-            let (sa, sb) = (color_sequence(pa), color_sequence(pb));
-            sa.iter()
-                .map(|(t, c)| (t, &c.family, c.rgb))
-                .ne(sb.iter().map(|(t, c)| (t, &c.family, c.rgb)))
-        })
-        .map(|(i, _)| first + i as u32)
-        .collect();
+    let mut pages_differing = vec![];
+    let mut details = vec![];
+    for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
+        let ([ga, sa], [gb, sb]) = (color_sequences(pa), color_sequences(pb));
+        let diff = first_difference("glyph", &ga, &gb).or(first_difference("paint", &sa, &sb));
+        if let Some(d) = diff {
+            pages_differing.push(first + i as u32);
+            details.push(format!("page {}: {d}", first + i as u32));
+        }
+    }
     SimpleClause {
         status: status(pages_differing.is_empty()),
-        entries_compared: a.pages.iter().map(|p| color_sequence(p).len()).sum(),
+        entries_compared: a
+            .pages
+            .iter()
+            .map(|p| color_sequences(p).iter().map(Vec::len).sum::<usize>())
+            .sum(),
         pages_differing,
+        details,
     }
 }
 
@@ -639,5 +693,155 @@ mod box_tests {
         );
         let e = boxes(dictionary! {}).err().unwrap().to_string();
         assert!(e.contains("no MediaBox"), "{e}");
+    }
+}
+
+#[cfg(test)]
+mod colour_tests {
+    use super::*;
+
+    const INK: [i64; 3] = [14, 19, 22];
+    const VIOLET: [i64; 3] = [49, 93, 140];
+
+    fn run(text: &str, x: i64, y: i64, rgb: [i64; 3], tr: i64) -> Element {
+        let units: Vec<String> = text.chars().map(String::from).collect();
+        Element::Text {
+            s: text.into(),
+            font: "F".into(),
+            size: 1000,
+            fill: Color {
+                family: "rgb".into(),
+                rgb,
+            },
+            glyphs: units.len(),
+            gids: vec![],
+            m: [1000, 0, 0, 1000, x, y],
+            tr,
+            clip: vec![],
+            offs: (0..units.len() as i64).map(|k| [k * 10_000, 0]).collect(),
+            units,
+        }
+    }
+
+    fn dump(elements: Vec<Element>) -> Dump {
+        Dump {
+            pages: vec![PageDump {
+                elements,
+                annots: vec![],
+                boxes: BTreeMap::new(),
+            }],
+            nav: DocNav {
+                title: None,
+                lang: None,
+                outlines: vec![],
+            },
+        }
+    }
+
+    fn one_show() -> Dump {
+        dump(vec![
+            run("Hello world", 1000, 5000, INK, 0),
+            run("Head", 1000, 9000, VIOLET, 0),
+        ])
+    }
+
+    fn detail(b: Vec<Element>) -> Vec<String> {
+        compare_color(&one_show(), &dump(b), 3).details
+    }
+
+    #[test]
+    fn the_same_glyph_colours_pass_whatever_the_segmentation_or_paint_order() {
+        let c = compare_color(
+            &one_show(),
+            &dump(vec![
+                run("Head", 1000, 9000, VIOLET, 0),
+                run("world", 1000 + 549, 5000, INK, 0),
+                run("Hello", 1000, 5000, INK, 0),
+            ]),
+            3,
+        );
+        assert_eq!((c.status.as_str(), c.entries_compared), ("pass", 14));
+    }
+
+    #[test]
+    fn one_glyph_in_another_colour_fails_and_names_it() {
+        let d = detail(vec![
+            run("Hel", 1000, 5000, INK, 0),
+            run("l", 1000 + 275, 5000, VIOLET, 0),
+            run("o world", 1000 + 366, 5000, INK, 0),
+            run("Head", 1000, 9000, VIOLET, 0),
+        ]);
+        assert_eq!(d.len(), 1);
+        assert!(
+            d[0].starts_with("page 3: glyph 7: \"l\" rgb [14, 19, 22] vs \"l\" rgb [49, 93, 140]"),
+            "{}",
+            d[0]
+        );
+        let d = detail(vec![
+            run("Hello world", 1000, 5000, INK, 3),
+            run("Head", 1000, 9000, VIOLET, 0),
+        ]);
+        assert!(
+            d[0].contains("\"H\" rgb [14, 19, 22] vs \"H\" invisible"),
+            "{}",
+            d[0]
+        );
+    }
+
+    #[test]
+    fn a_missing_or_extra_glyph_fails() {
+        let d = detail(vec![
+            run("Hello worl", 1000, 5000, INK, 0),
+            run("Head", 1000, 9000, VIOLET, 0),
+        ]);
+        assert_eq!(d, ["page 3: 14 glyphs vs 13"]);
+        let d = detail(vec![
+            run("Hello world!", 1000, 5000, INK, 0),
+            run("Head", 1000, 9000, VIOLET, 0),
+        ]);
+        assert_eq!(d, ["page 3: 14 glyphs vs 15"]);
+    }
+
+    #[test]
+    fn only_a_glyph_without_an_outline_goes_uncompared() {
+        let with_gids = |ids: Vec<u32>| {
+            let mut e = run("a b", 1000, 5000, INK, 0);
+            if let Element::Text { gids, .. } = &mut e {
+                *gids = ids;
+            }
+            dump(vec![e])
+        };
+        let ab = dump(vec![run("ab", 1000, 5000, INK, 0)]);
+        let blank = with_gids(vec![1, streams::BLANK_GID, 2]);
+        assert_eq!(compare_color(&blank, &ab, 1).status, "pass");
+        let inked = with_gids(vec![1, 7, 2]);
+        let d = compare_color(&inked, &ab, 1).details;
+        assert!(d[0].starts_with("page 1: glyph 1: \" \" rgb"), "{}", d[0]);
+    }
+
+    #[test]
+    fn a_rule_in_another_colour_still_fails() {
+        let rule = |rgb| Element::Path {
+            d: "re".into(),
+            paint: "f".into(),
+            fill: Some(Color {
+                family: "rgb".into(),
+                rgb,
+            }),
+            stroke: None,
+            lw: None,
+            cap: None,
+            join: None,
+            miter: None,
+            dash: None,
+            clip: vec![],
+        };
+        let a = dump(vec![rule([224, 227, 229])]);
+        assert_eq!(
+            compare_color(&a, &dump(vec![rule([224, 227, 229])]), 1).status,
+            "pass"
+        );
+        let d = compare_color(&a, &dump(vec![rule([224, 227, 230])]), 1).details;
+        assert!(d[0].starts_with("page 1: paint 0: "), "{}", d[0]);
     }
 }

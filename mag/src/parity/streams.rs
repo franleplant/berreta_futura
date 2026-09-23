@@ -139,6 +139,8 @@ pub enum Element {
         clip: Vec<u32>,
         #[serde(skip)]
         offs: Vec<[i64; 2]>,
+        #[serde(skip)]
+        units: Vec<String>,
     },
     Path {
         d: String,
@@ -510,14 +512,14 @@ impl Tracer<'_> {
         let trm = mul(params, mul(self.tm, self.gs.ctm));
         let size_eff = (trm[2] * trm[2] + trm[3] * trm[3]).sqrt();
         let base = mul(self.tm, self.gs.ctm);
-        let mut s = String::new();
+        let mut units = vec![];
         let mut tx = 0.0;
         let mut starts = vec![];
         let mut gids = vec![];
         for item in items {
             match item {
                 Object::String(bytes, _) => {
-                    self.decode_show(&font, bytes, &mut s, &mut tx, &mut starts, &mut gids)?;
+                    self.decode_show(&font, bytes, &mut units, &mut tx, &mut starts, &mut gids)?;
                 }
                 other => tx -= num(other)? / 1000.0 * self.gs.size * (self.gs.tz / 100.0),
             }
@@ -527,7 +529,7 @@ impl Tracer<'_> {
             .map(|v| [qo(v * base[0]), qo(v * base[1])])
             .collect();
         self.out.push(Element::Text {
-            s,
+            s: units.concat(),
             font: font.name.clone(),
             size: qc(size_eff),
             fill: self.gs.fill.clone(),
@@ -537,6 +539,7 @@ impl Tracer<'_> {
             tr: self.gs.tr,
             clip: self.gs.clips.clone(),
             offs,
+            units,
         });
         self.tm = mul(translate(tx, 0.0), self.tm);
         Ok(())
@@ -546,7 +549,7 @@ impl Tracer<'_> {
         &self,
         font: &Font,
         bytes: &[u8],
-        s: &mut String,
+        units: &mut Vec<String>,
         tx: &mut f64,
         starts: &mut Vec<f64>,
         gids: &mut Vec<u32>,
@@ -571,7 +574,7 @@ impl Tracer<'_> {
                 .tounicode
                 .get(&code)
                 .with_context(|| format!("font {} lacks ToUnicode for code {code}", font.name))?;
-            s.push_str(uni);
+            units.push(uni.clone());
             starts.push(*tx);
             gids.push(font.ids.get(&code).copied().unwrap_or(UNRESOLVED_GID));
             let w = font.widths.get(&code).copied().unwrap_or(font.dw);
@@ -771,7 +774,7 @@ fn matrix(args: &[Object]) -> Result<M> {
 
 pub const UNRESOLVED_GID: u32 = u32::MAX;
 
-const BLANK_GID: u32 = u32::MAX - 1;
+pub const BLANK_GID: u32 = u32::MAX - 1;
 
 struct Outline(String);
 
@@ -1406,10 +1409,17 @@ mod tests {
             cs.set(name, space);
         }
         let content = doc.add_object(Stream::new(dictionary! {}, ops.as_bytes().to_vec()));
+        let font = doc.add_object(dictionary! {
+            "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica",
+            "FirstChar" => 32, "Widths" => vec![Object::Integer(500); 95],
+        });
         let page = doc.add_object(dictionary! {
             "Type" => "Page",
             "Contents" => content,
-            "Resources" => dictionary! { "ColorSpace" => cs },
+            "Resources" => dictionary! {
+                "ColorSpace" => cs,
+                "Font" => dictionary! { "F1" => font },
+            },
         });
         let pages = doc.add_object(dictionary! {
             "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1,
@@ -1564,5 +1574,17 @@ mod tests {
         assert!(e.contains("1 components for a 3-component"), "{e}");
         let e = error("0.5 0.5 rg", vec![]);
         assert!(e.contains("operator rg"), "{e}");
+    }
+
+    #[test]
+    fn a_show_records_one_unicode_unit_per_glyph_in_order() {
+        let els = trace("BT /F1 10 Tf 1 0 0 rg 5 7 Td [(ab) -250 (c)] TJ ET", vec![]).unwrap();
+        let Element::Text { s, units, offs, .. } = &els[0] else {
+            panic!("not text")
+        };
+        assert_eq!(s, "abc");
+        assert_eq!(units, &["a", "b", "c"]);
+        assert_eq!(offs.len(), 3);
+        assert!(offs[1][0] < offs[2][0]);
     }
 }
