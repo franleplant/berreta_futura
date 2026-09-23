@@ -49,7 +49,7 @@ pub struct Face {
 }
 
 fn qcolor(v: f64) -> i64 {
-    (v * 1_000_000.0).round() as i64
+    (v * 255.0).round() as i64
 }
 
 #[derive(Serialize, Clone, PartialEq, Eq, Debug)]
@@ -1510,13 +1510,36 @@ mod tests {
     #[test]
     fn a_genuinely_different_colour_still_compares_unequal() {
         let base = fill_of("0.5 0.5 0.5 rg");
-        assert_ne!(fill_of("/c0 cs 0.5 0.5 0.501 scn"), base);
-        assert_ne!(fill_of("/c1 cs 0.499 scn"), base);
+        assert_ne!(fill_of("/c0 cs 0.5 0.5 0.504 scn"), base);
+        assert_ne!(fill_of("/c1 cs 0.496 scn"), base);
         assert_ne!(
             stroke_of("/c0 CS 0.5 0.5 0.5 SCN"),
             stroke_of("0.5 0.5 0.6 RG")
         );
         assert_ne!(fill_of("/DeviceGray cs 0.5 sc"), base);
+    }
+
+    #[test]
+    fn colours_compare_at_the_nearest_eighth_bit_step() {
+        let ink = fill_of("0.055 0.075 0.085 rg");
+        assert_eq!(fill_of("/c0 cs 0.054902 0.07451 0.086275 scn"), ink);
+        assert_eq!(ink.rgb, [14, 19, 22]);
+        let off = 0.4 / 255.0;
+        assert_eq!(
+            fill_of(&format!("{} 0.5 0.5 rg", 0.25 + off)),
+            fill_of("0.25 0.5 0.5 rg")
+        );
+        for k in 0..=254 {
+            let v = f64::from(k) / 255.0;
+            for d in [1.0, 1.0001, 2.0] {
+                assert_ne!(qcolor(v), qcolor(v + d / 255.0), "{k} + {d} steps");
+            }
+            assert_ne!(
+                qcolor(v + 0.49 / 255.0),
+                qcolor(v + 1.49 / 255.0),
+                "{k} + 0.49"
+            );
+        }
     }
 
     #[test]

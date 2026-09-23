@@ -223,16 +223,16 @@ fn named_dest(doc: &Document, name: &[u8]) -> Result<Vec<Object>> {
 
 fn page_boxes(doc: &Document, page_id: lopdf::ObjectId) -> Result<BTreeMap<String, [i64; 4]>> {
     let mut out = BTreeMap::new();
+    let mut effective = None;
     for key in ["MediaBox", "CropBox", "TrimBox"] {
         if let Some(obj) = page_attr(doc, page_id, key.as_bytes())? {
             let arr = deref(doc, &obj)?.as_array()?.clone();
             let nums: Result<Vec<f64>> = arr.iter().map(|o| number(doc, o)).collect();
             let nums = nums?;
-            out.insert(
-                key.to_string(),
-                [qc(nums[0]), qc(nums[1]), qc(nums[2]), qc(nums[3])],
-            );
+            effective = Some([qc(nums[0]), qc(nums[1]), qc(nums[2]), qc(nums[3])]);
         }
+        let value = effective.with_context(|| format!("page has no {key} and no default"))?;
+        out.insert(key.to_string(), value);
     }
     Ok(out)
 }
@@ -581,5 +581,63 @@ pub fn compare_navigation(a: &Dump, b: &Dump, first: u32) -> NavClause {
         title_compared: usize::from(a.nav.title.is_some()),
         lang_compared: usize::from(a.nav.lang.is_some()),
         mismatches,
+    }
+}
+
+#[cfg(test)]
+mod box_tests {
+    use super::*;
+    use lopdf::dictionary;
+
+    fn boxes(page: lopdf::Dictionary) -> Result<BTreeMap<String, [i64; 4]>> {
+        let mut doc = Document::with_version("1.7");
+        let id = doc.add_object(page);
+        page_boxes(&doc, id)
+    }
+
+    fn a5(extra: &[(&str, [f64; 4])]) -> lopdf::Dictionary {
+        let mut page =
+            dictionary! { "MediaBox" => vec![0.into(), 0.into(), 419.53.into(), 595.28.into()] };
+        for (key, b) in extra {
+            page.set(
+                *key,
+                b.iter()
+                    .map(|&v| Object::Real(v as f32))
+                    .collect::<Vec<_>>(),
+            );
+        }
+        page
+    }
+
+    #[test]
+    fn a_missing_trim_or_crop_box_takes_its_pdf_default() {
+        let media = [0.0, 0.0, 419.53, 595.28];
+        let stated = boxes(a5(&[("CropBox", media), ("TrimBox", media)])).unwrap();
+        assert_eq!(boxes(a5(&[])).unwrap(), stated);
+        assert_eq!(boxes(a5(&[("TrimBox", media)])).unwrap(), stated);
+        let crop = [10.0, 10.0, 409.53, 585.28];
+        let cropped = boxes(a5(&[("CropBox", crop)])).unwrap();
+        assert_eq!(cropped["TrimBox"], cropped["CropBox"]);
+        assert_eq!(cropped["TrimBox"], [1000, 1000, 40953, 58528]);
+    }
+
+    #[test]
+    fn a_genuinely_different_effective_box_still_differs() {
+        let media = [0.0, 0.0, 419.53, 595.28];
+        let plain = boxes(a5(&[])).unwrap();
+        assert_ne!(
+            boxes(a5(&[("TrimBox", [9.0, 9.0, 410.53, 586.28])])).unwrap(),
+            plain
+        );
+        assert_ne!(
+            boxes(a5(&[("CropBox", [0.0, 0.0, 419.53, 590.0])])).unwrap(),
+            plain
+        );
+        assert_ne!(
+            boxes(a5(&[("TrimBox", media)])).unwrap(),
+            boxes(a5(&[("CropBox", [0.0, 0.0, 400.0, 595.28])])).unwrap()
+        );
+        let e = boxes(dictionary! {}).err().unwrap().to_string();
+        assert!(e.contains("no MediaBox"), "{e}");
     }
 }
