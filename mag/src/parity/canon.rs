@@ -137,8 +137,33 @@ fn loop_of(s: &Sub) -> Option<Sub> {
         .min_by_key(|r| render(std::slice::from_ref(r)))
 }
 
+fn reversed(s: &Sub) -> Sub {
+    let vertex = |j: usize| if j == 0 { s.start } else { s.segs[j - 1].end() };
+    let segs = (0..s.segs.len())
+        .rev()
+        .map(|j| match &s.segs[j] {
+            Seg::Line(_) => Seg::Line(vertex(j)),
+            Seg::Curve(a, b, _) => Seg::Curve(*b, *a, vertex(j)),
+        })
+        .collect();
+    Sub {
+        start: s.start,
+        segs,
+        closed: s.closed,
+    }
+}
+
 pub fn fill_region(d: &str) -> String {
-    render(&parse(d).iter().filter_map(loop_of).collect::<Vec<_>>())
+    let loops: Vec<Sub> = parse(d).iter().filter_map(loop_of).collect();
+    match loops.as_slice() {
+        [one] => [Some(one.clone()), loop_of(&reversed(one))]
+            .into_iter()
+            .flatten()
+            .map(|l| render(&[l]))
+            .min()
+            .unwrap_or_default(),
+        _ => render(&loops),
+    }
 }
 
 pub fn rect(d: &str) -> Option<Rect> {
@@ -315,6 +340,71 @@ fn fill_the_clip(elements: &mut [Element]) {
     }
 }
 
+fn meet(a: Rect, b: Rect) -> Option<Rect> {
+    let k = [
+        a[0].max(b[0]),
+        a[1].max(b[1]),
+        a[2].min(b[2]),
+        a[3].min(b[3]),
+    ];
+    (k[0] < k[2] && k[1] < k[3]).then_some(k)
+}
+
+fn cut(r: Rect, hole: Rect) -> Option<Rect> {
+    let Some(k) = meet(r, hole) else {
+        return Some(r);
+    };
+    let (full_x, full_y) = (k[0] == r[0] && k[2] == r[2], k[1] == r[1] && k[3] == r[3]);
+    match (full_x, full_y) {
+        (false, true) if k[0] == r[0] => Some([k[2], r[1], r[2], r[3]]),
+        (false, true) if k[2] == r[2] => Some([r[0], r[1], k[0], r[3]]),
+        (true, false) if k[1] == r[1] => Some([r[0], k[3], r[2], r[3]]),
+        (true, false) if k[3] == r[3] => Some([r[0], r[1], r[2], k[1]]),
+        _ => None,
+    }
+}
+
+fn frame(d: &str) -> Option<(Rect, Rect)> {
+    let rects: Vec<Rect> = parse(d)
+        .iter()
+        .map(|s| rect(&render(std::slice::from_ref(s))))
+        .collect::<Option<_>>()?;
+    match rects[..] {
+        [a, b] if inside(b, a) => Some((a, b)),
+        [a, b] if inside(a, b) => Some((b, a)),
+        _ => None,
+    }
+}
+
+fn strip_fill(elements: &mut [Element]) {
+    let clips: HashMap<u32, Rect> = elements
+        .iter()
+        .enumerate()
+        .filter_map(|(i, e)| match e {
+            Element::Clip { d, .. } => Some((i as u32, rect(d)?)),
+            _ => None,
+        })
+        .collect();
+    for e in elements.iter_mut().filter(|e| fill_only(e)) {
+        let Element::Path { d, paint, clip, .. } = e else {
+            continue;
+        };
+        let Some((outer, inner)) = frame(d).filter(|_| paint == "eofill") else {
+            continue;
+        };
+        let Some(at) = clip.iter().position(|k| clips.contains_key(k)) else {
+            continue;
+        };
+        let Some(r) = meet(outer, clips[&clip[at]]).and_then(|r| cut(r, inner)) else {
+            continue;
+        };
+        let [x0, y0, x1, y1] = r;
+        *d = fill_region(&format!("re {x0} {y0} {x1} {y0} {x1} {y1} {x0} {y1}"));
+        *paint = "fill".into();
+        clip.remove(at);
+    }
+}
+
 fn leading_white(elements: &[Element]) -> Vec<bool> {
     let mut drop = vec![false; elements.len()];
     for (i, e) in elements.iter().enumerate() {
@@ -334,6 +424,7 @@ pub fn canonical(elements: &[Element], text_ink: &[Option<Rect>]) -> Vec<Element
     canon_paths(&mut out);
     contained_clips(&mut out, text_ink);
     fill_the_clip(&mut out);
+    strip_fill(&mut out);
     let mut drop = leading_white(&out);
     let mut used = vec![false; out.len()];
     for (i, e) in out.iter().enumerate() {
@@ -589,6 +680,12 @@ mod tests {
         let later = "m 37701 56755 l 37701 56700 l 4400 56700 l 4400 56755 h";
         assert!(same(&[fill(RULE, INK, &[])], &[fill(later, INK, &[])]));
         assert!(!same(&[stroke(RULE, &[])], &[stroke(later, &[])]));
+        let back = "m 4400 56755 l 4400 56700 l 37701 56700 l 37701 56755 h";
+        assert!(same(&[fill(RULE, INK, &[])], &[fill(back, INK, &[])]));
+        assert!(!same(&[stroke(RULE, &[])], &[stroke(back, &[])]));
+        let two = format!("{RULE} {PAGE}");
+        let two_back = format!("{back} {PAGE}");
+        assert!(!same(&[fill(&two, INK, &[])], &[fill(&two_back, INK, &[])]));
     }
 
     fn weasy_bullet(bottom: i64, left: i64) -> Vec<Element> {
@@ -623,5 +720,40 @@ mod tests {
             &[0, 1],
         );
         assert!(!same(&small, &typst_bullet()));
+    }
+
+    fn accent(clip_d: &str) -> Vec<Element> {
+        let mut bar = fill(
+            "m 4950 7974 l 4950 10574 l 37300 10574 l 37300 7974 l 4950 7974 \
+             m 4800 7974 l 4800 10574 l 37300 10574 l 37300 7974 l 4800 7974",
+            [64, 26, 110],
+            &[0],
+        );
+        if let Element::Path { paint, .. } = &mut bar {
+            *paint = "eofill".into();
+        }
+        vec![clip(clip_d, &[]), bar]
+    }
+
+    #[test]
+    fn a_frame_clipped_to_its_strip_is_that_strip_but_a_moved_edge_is_not() {
+        let strip = "re 4800 7974 4950 7974 4950 10574 4800 10574";
+        let typst = [fill(strip, [64, 26, 110], &[])];
+        assert!(same(&accent(strip), &typst));
+        let wide = "re 4800 7974 4951 7974 4951 10574 4800 10574";
+        assert!(!same(&accent(strip), &[fill(wide, [64, 26, 110], &[])]));
+        let short = "re 4800 7974 4949 7974 4949 10574 4800 10574";
+        assert!(!same(&accent(short), &typst));
+        let across = "re 4800 7974 5000 7974 5000 10574 4800 10574";
+        assert!(same(&accent(across), &typst));
+        let inset = "re 4801 7974 4950 7974 4950 10574 4801 10574";
+        assert!(!same(&accent(inset), &typst));
+        let hole = "re 4800 8000 4950 8000 4950 9000 4800 9000";
+        let inner = "m 4900 8500 l 4900 8600 l 5000 8600 l 5000 8500 h";
+        let mut ring = accent(hole);
+        if let Element::Path { d, .. } = &mut ring[1] {
+            *d = format!("{} {inner}", expand_rects(hole));
+        }
+        assert_eq!(canonical(&ring, &[]).len(), 2);
     }
 }
