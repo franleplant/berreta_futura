@@ -1,9 +1,9 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o.
+Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a.
-Running: WP-3.4, WP-0.2p, WP-5.7b.
+Running: WP-3.4, WP-0.2q, WP-5.7b.
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -11,7 +11,9 @@ evidence file records it):
 - WP-0.2n effective page boxes, 8-bit colour quantization (landed 917aff1)
 - WP-0.2o per-glyph colour clause, display-list triage (landed e5e3498)
 - WP-0.2p five representation-only normalizations, mkfixtures
-  determinism, per-page difference counts (running)
+  determinism, per-page difference counts (landed 066b58d)
+- WP-0.2q display-list text at glyph level (spaces dropped), glyph
+  positions paired on it, even-odd accent strip (running)
 - WP-5.3h spread order by page position, not paint order, in the Rust
   critic (class C: Python has the same defect; WP-5.3c pins it as a
   declared gap). Queued.
@@ -25,6 +27,10 @@ evidence file records it):
 Orchestrator decisions:
 - Colours compare at 8-bit resolution on both legs (typst-pdf rounds).
 - `design_direction` is an engine label, excluded from layout comparison.
+- What renders is the glyph (face, size, id, position, fill), not the
+  engine's grouping into show operators; outline-less glyphs paint nothing.
+- Bullets: template changes to WeasyPrint's control points (0.01 pt off,
+  not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
 - tools/pdf2md.py's ". . ." paragraph filter silently drops real text
