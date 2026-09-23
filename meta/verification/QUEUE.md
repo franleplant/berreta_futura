@@ -1,10 +1,11 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-5.5a (increments 1+2), WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Landed, awaiting a verifier: WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h.
-Running: WP-0.2r (glyph-level display list, contract b), WP-3.1 body
-text, WP-5.7b rework (invisible text plus image, missing XObject).
+Running: WP-3.1 body text, WP-5.5c package, verifier for WP-5.5a +
+WP-5.7b rework.
+Next after WP-3.1 lands: WP-0.0d (rule colour oracle change, re-seed).
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -17,6 +18,8 @@ evidence file records it):
   positions paired on it, even-odd accent strip. Partly landed 45fc32a
   (accent strip, loop direction, ICCBased images); glyph-level text on
   branch wp-0.2q-full, see WP-0.2r.
+- WP-0.2r glyph-level display list under contract (b) (landed aad29c1);
+  parity.yaml `swapped_words` must_flag gains glyph_positions (ratified).
 - WP-5.3h spread order by page position, not paint order, in the Rust
   critic (class C: Python has the same defect; WP-5.3c pins it as a
   declared gap). Landed 7d652a3; Python keeps the defect until WP-6.1
