@@ -592,7 +592,7 @@
     )))
     block(above: density.title-gap, below: 0pt, escaped({
       set par(leading: 0pt, spacing: 0pt)
-      opener-title-text(fit.size, title)
+      text(..tracked(OPENER-TITLE-TRACKING * fit.size), opener-title-text(fit.size, title))
     }))
     block(
       above: density.tick,
