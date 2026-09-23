@@ -1,0 +1,79 @@
+id: wfx
+issue_number: 7
+title: The Fixture Issue
+subtitle: '  Every branch the corpus cannot reach  '
+publication_date: '2026-09-23'
+tail_art_fit: contain
+editorial: editions/wfx/editorial.md
+cover:
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png
+articles:
+- id: keyed
+  title: The "Quoted" <Title> & More
+  short_title: '"Quoted" <Title>'
+  opener_variant: split_axis
+  author: Ada Lovelace
+  author_note: A note with 'single' quotes.
+  content_mode: article
+  source_ids:
+  - an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+  - claude-of-duty-prompt-md-at-main-dd93105d
+  manuscript: editions/wfx/articles/keyed.md
+  key_ideas:
+  - The first idea, with "quotes".
+  - The second idea.
+  figures:
+  - id: opener-figure
+    source_id: an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+    path: media/001.png
+    caption: An opener figure caption.
+    credit: A credit line.
+    alt_text: Alt text with "quotes".
+    anchor: __opener__
+    layout: evidence_band_prose
+  - id: anchored-figure
+    source_id: an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+    path: media/001.png
+    caption: An anchored figure caption.
+    credit: Another credit.
+    alt_text: Anchored alt.
+    anchor: How We Found It
+    layout: evidence_band_prose
+  extracts:
+  - id: the-prompt
+    source_id: claude-of-duty-prompt-md-at-main-dd93105d
+    begin: I want you to build a first-person shooter
+    end: Fan out sub-agents and ultracode.
+    style: code
+    caption: The prompt, verbatim.
+    anchor: __opener__
+  - id: the-intro
+    source_id: claude-of-duty-prompt-md-at-main-dd93105d
+    begin: This is the entire prompt
+    end: produced this repository.
+    style: quote
+    caption: The introduction, quoted.
+    anchor: How We Found It
+- id: tailed
+  title: A Tailed Article
+  short_title: Tailed
+  opener_variant: edge_medallion
+  author: Grace Hopper, Katherine Johnson, Dorothy Vaughan, Mary Jackson, Annie Easley
+  content_mode: in_a_nutshell
+  source_ids:
+  - an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+  manuscript: editions/wfx/articles/tailed.md
+  tail_art_path: editions/010/art/rounds/2026-09-13T01-40-20/tail-rails-lantern-along-the-wall-v3.png
+sections:
+- kind: glossary
+  title: Terms of Art
+  path: editions/wfx/glossary.md
+- kind: try_it
+  path: editions/wfx/try.md
+closing_plates:
+- title: The "Last" Plate
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/closing-harbour-watch-v1.png
+- title: The Long Descent
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/closing-the-long-descent-v2.png
+- title: The Snow Signal
+  art_path: editions/010/art/rounds/2026-09-13T01-40-20/closing-snow-signal-v4.png
