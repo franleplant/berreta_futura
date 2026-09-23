@@ -3,7 +3,9 @@
 Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a.
-Running: WP-3.4, WP-0.2q, WP-5.7b.
+Running: WP-0.2q (+ ICCBased image decode), WP-5.7b, WP-5.3h.
+Parked: WP-3.4 on branch `wp-3.4` (1b313d4), done, lands after WP-0.2q
+(blocked only on the comparator's ICCBased image decode).
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -20,6 +22,10 @@ evidence file records it):
 - WP-0.0d sanctioned oracle change: rule-colour token 0.9 -> 230/255
   exact (WP-0.2o.md: typst can only write 230, pixels differ 229 vs 230).
   Queued after WP-3.4 lands (re-seeds the baseline digest).
+- WP-3.2 follow-up: draw opener art rasters; opener-art border typst
+  strokes (23,25,28) where WeasyPrint fills.
+- Typst leg must enforce the same 300 ppi figure refusal as the Python
+  leg; fixture 900's 14 ppi figure needs replacing (WP-3.4 follow-up).
 - WP-3.5 carries: running-head paint order via `page.foreground`.
 - WP-3.1 carries: inline `code` padding/background (page 4, 6), `END / NN`
   marks 5.4 pt off (WP-3.2.md).
