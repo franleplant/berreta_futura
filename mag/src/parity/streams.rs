@@ -1324,11 +1324,18 @@ fn image_pixels(doc: &Document, stream: &lopdf::Stream) -> Result<(Vec<u8>, u32,
     let height = num(resolve(doc, dict.get(b"Height")?)?)? as u32;
     let bpc = num(resolve(doc, dict.get(b"BitsPerComponent")?)?)? as u32;
     anyhow::ensure!(bpc == 8, "image bpc {bpc} unsupported");
-    let cs = name_str(resolve(doc, dict.get(b"ColorSpace")?)?)?;
-    let channels = match cs.as_str() {
-        "DeviceRGB" => 3,
-        "DeviceGray" => 1,
-        other => bail!("image color space {other} unsupported"),
+    let cso = resolve(doc, dict.get(b"ColorSpace")?)?;
+    let (cs, channels) = match cso.as_array().map(Vec::as_slice) {
+        Ok([Object::Name(kind), profile]) if kind == b"ICCBased" => {
+            let space = icc_space(doc, resolve(doc, profile)?.as_stream()?)
+                .context("image colour space")?;
+            ("ICCBased".to_string(), space.n)
+        }
+        _ => match name_str(cso)?.as_str() {
+            "DeviceRGB" => ("DeviceRGB".to_string(), 3),
+            "DeviceGray" => ("DeviceGray".to_string(), 1),
+            other => bail!("image color space {other} unsupported"),
+        },
     };
     if let Ok(obj) = dict.get(b"Decode") {
         let arr = resolve(doc, obj)?.as_array()?;
@@ -1586,5 +1593,43 @@ mod tests {
         assert_eq!(units, &["a", "b", "c"]);
         assert_eq!(offs.len(), 3);
         assert!(offs[1][0] < offs[2][0]);
+    }
+
+    fn image_hash(space: Option<&[u8]>, name: &str, n: i64, samples: &[u8]) -> Result<String> {
+        let mut doc = Document::with_version("1.7");
+        let cs: Object = match space {
+            Some(profile) => {
+                let s = Stream::new(dictionary! { "N" => n }, profile.to_vec());
+                vec!["ICCBased".into(), doc.add_object(s).into()].into()
+            }
+            None => Object::Name(name.as_bytes().to_vec()),
+        };
+        let image = Stream::new(
+            dictionary! {
+                "Width" => 2, "Height" => 1, "BitsPerComponent" => 8, "ColorSpace" => cs,
+            },
+            samples.to_vec(),
+        );
+        decode_image(&doc, &image).map(|d| d.0)
+    }
+
+    #[test]
+    fn an_icc_image_decodes_as_its_srgb_or_grey_samples_and_nothing_else() {
+        let rgb = [10, 20, 30, 40, 50, 60];
+        let device = image_hash(None, "DeviceRGB", 3, &rgb).unwrap();
+        assert_eq!(image_hash(Some(SRGB), "", 3, &rgb).unwrap(), device);
+        let other = image_hash(Some(SRGB), "", 3, &[10, 20, 30, 40, 50, 61]).unwrap();
+        assert_ne!(other, device);
+        let grey = image_hash(None, "DeviceGray", 1, &[7, 200]).unwrap();
+        assert_eq!(image_hash(Some(SGREY), "", 1, &[7, 200]).unwrap(), grey);
+        let mut foreign = SRGB.to_vec();
+        foreign[100] ^= 1;
+        let e = format!("{:#}", image_hash(Some(&foreign), "", 3, &rgb).unwrap_err());
+        assert!(e.contains("is not the sRGB or sGrey v4 profile"), "{e}");
+        let e = format!(
+            "{:#}",
+            image_hash(Some(SRGB), "", 1, &[7, 200]).unwrap_err()
+        );
+        assert!(e.contains("does not match its profile"), "{e}");
     }
 }
