@@ -1581,6 +1581,7 @@ mod measured_pages {
             .pages_differing = vec![display::PageDiff {
             page: 3,
             detail: "seeded".into(),
+            classes: BTreeMap::new(),
         }];
         let entries = measured(&v);
         assert_eq!(
