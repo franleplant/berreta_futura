@@ -1,10 +1,10 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Landed, awaiting a verifier: WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h.
-Running: WP-5.5a increment 2, WP-3.4 landing (+ 300 ppi refusal,
-fixture 900 figure), WP-0.2r (glyph-level display list, contract b).
+Running: WP-5.5a increment 2, WP-0.2r (glyph-level display list,
+contract b), WP-3.1 body text.
 Next: WP-5.7b rework (rejected in WP-5.7b.verify.md: fail loud on
 invisible text plus an image; missing XObject resource returns Ok).
 
@@ -28,8 +28,6 @@ evidence file records it):
   Queued after WP-3.4 lands (re-seeds the baseline digest).
 - WP-3.2 follow-up: draw opener art rasters; opener-art border typst
   strokes (23,25,28) where WeasyPrint fills.
-- Typst leg must enforce the same 300 ppi figure refusal as the Python
-  leg; fixture 900's 14 ppi figure needs replacing (WP-3.4 follow-up).
 - WP-3.5 carries: running-head paint order via `page.foreground`.
 - WP-3.1 carries: inline `code` padding/background (page 4, 6), `END / NN`
   marks 5.4 pt off (WP-3.2.md).
