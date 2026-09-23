@@ -19,10 +19,14 @@ fn joined(messages: Vec<String>) -> String {
     messages.join("\n  ")
 }
 
+#[cfg(test)]
 pub fn compile(world: &Sources) -> Result<Vec<u8>> {
-    let compiled = typst::compile::<PagedDocument>(world);
-    let document = match compiled.output {
-        Ok(document) => document,
+    pdf(&document(world)?)
+}
+
+pub fn document(world: &Sources) -> Result<PagedDocument> {
+    match typst::compile::<PagedDocument>(world).output {
+        Ok(document) => Ok(document),
         Err(errors) => bail!(
             "the Typst reader template did not compile:\n  {}",
             joined(
@@ -43,7 +47,10 @@ pub fn compile(world: &Sources) -> Result<Vec<u8>> {
                     .collect()
             )
         ),
-    };
+    }
+}
+
+pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
     let options = PdfOptions {
         ident: Smart::Custom(IDENT.to_string()),
         creator: Smart::Custom(Some(IDENT.to_string())),
@@ -53,7 +60,7 @@ pub fn compile(world: &Sources) -> Result<Vec<u8>> {
         tagged: false,
         pretty: false,
     };
-    typst_pdf::pdf(&document, &options).map_err(|errors| {
+    typst_pdf::pdf(document, &options).map_err(|errors| {
         anyhow::anyhow!(
             "PDF export failed:\n  {}",
             joined(errors.iter().map(|e| e.message.to_string()).collect())

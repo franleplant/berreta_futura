@@ -1,4 +1,5 @@
 pub(crate) mod content;
+pub(crate) mod layout;
 pub(crate) mod media;
 pub(crate) mod template;
 pub(crate) mod world;
@@ -31,18 +32,13 @@ fn stage(request: &Value, into: &Path) -> Result<usize> {
     Ok(rows.len())
 }
 
-pub(crate) fn render_edition(
+pub(crate) fn run_request(
     repo_root: &Path,
     render_dir: &Path,
     request_json: &str,
-) -> Result<i32> {
+) -> Result<Value> {
     let request: Value =
         serde_json::from_str(request_json).context("parsing the render request as JSON")?;
-    let operation = field(&request, "operation")?;
-    anyhow::ensure!(
-        operation == "render_edition",
-        "--engine typst implements render_edition only; '{operation}' is WP-2.3's"
-    );
     let language = field(&request, "primaryLanguage")?.to_string();
     let out_dir = render_dir.join(&language);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
@@ -83,15 +79,20 @@ pub(crate) fn render_edition(
         tree.files.len(),
         projection.text.chars().count()
     );
-    let pdf = template::compile(&template::world(&tree, &fonts)?)?;
-    let reader = out_dir.join("reader.pdf");
-    fs::write(&reader, &pdf).with_context(|| format!("writing {}", reader.display()))?;
-    println!("reader: {} ({} bytes)", reader.display(), pdf.len());
-    println!(
-        "\nnext: `mag parity {}` compares this leg against weasyprint",
-        field(&request, "editionId")?
-    );
-    Ok(0)
+    let document = template::document(&template::world(&tree, &fonts)?)?;
+    layout::report(
+        &layout::Request {
+            operation: field(&request, "operation")?,
+            article: request.get("articleId").and_then(Value::as_str),
+            edition_id: field(&request, "editionId")?,
+            publication_name: field(&request, "publicationName")?,
+            language: &language,
+            staged: &staged,
+            out_dir: &out_dir,
+        },
+        &document,
+        &tree,
+    )
 }
 
 #[cfg(test)]

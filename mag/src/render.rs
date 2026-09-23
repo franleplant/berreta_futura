@@ -284,8 +284,9 @@ fn stage_article_extracts(staging: &mut Staging, article: &serde_yaml::Value) ->
 }
 
 fn print_summary(value: &serde_json::Value, out_dir: &Path) {
-    if let Some(layouts) = value.get("layouts").and_then(|v| v.as_object()) {
-        for (lang, info) in layouts {
+    if let Some(layouts) = value.get("layouts").and_then(|v| v.as_array()) {
+        for info in layouts {
+            let lang = info.get("language").and_then(|v| v.as_str()).unwrap_or("?");
             let total_pages = info
                 .get("totalPages")
                 .map(|v| v.to_string())
@@ -658,12 +659,29 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
     };
     match engine {
         Engine::Weasyprint => run_adapter(&repo_root, &render_dir, &request),
-        Engine::Typst => crate::typeset::render_edition(
-            &repo_root,
-            &render_dir,
-            &serde_json::to_string(&request)?,
-        ),
+        Engine::Typst => run_typst(&repo_root, &render_dir, &request),
     }
+}
+
+fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i32> {
+    let value =
+        crate::typeset::run_request(repo_root, render_dir, &serde_json::to_string(request)?)?;
+    let result = render_dir.join("result.json");
+    fs::write(&result, serde_json::to_string_pretty(&value)? + "\n")
+        .with_context(|| format!("writing {}", result.display()))?;
+    print_summary(&value, &render_dir.join(&request.primary_language));
+    if request.operation == "render_edition" {
+        println!(
+            "\nnext: `mag parity {}` compares this leg against weasyprint",
+            request.edition_id
+        );
+    } else {
+        println!(
+            "\nnext: `mag render {} --engine typst` renders the reader this measure describes",
+            request.edition_id
+        );
+    }
+    Ok(0)
 }
 
 fn pick_content_run(
