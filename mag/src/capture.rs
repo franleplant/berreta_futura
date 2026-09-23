@@ -6,6 +6,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+#[path = "pdf_text.rs"]
+mod pdf_text;
+
 const RAW_DIR: &str = ".magazine/capture";
 const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
 
@@ -640,17 +643,9 @@ pub struct CaptureArgs {
 }
 
 fn pdf_to_extraction(pdf: &Path) -> Result<Extraction> {
-    let out = Command::new("uv")
-        .args(["run", "python", "tools/pdf2md.py"])
-        .arg(pdf)
-        .output()
-        .context("running tools/pdf2md.py (needs uv)")?;
-    if !out.status.success() {
-        bail!("pdf2md failed: {}", String::from_utf8_lossy(&out.stderr));
-    }
-    let article = String::from_utf8_lossy(&out.stdout).trim().to_string() + "\n";
+    let article = pdf_text::transcribe(pdf)?.trim().to_string() + "\n";
     if article.split_whitespace().count() < 50 {
-        bail!("pdf2md got almost no text out of {}", pdf.display());
+        bail!("got almost no text out of {}", pdf.display());
     }
     let tail = article.split("Abstract").nth(1).unwrap_or(&article);
     let synopsis = tail
