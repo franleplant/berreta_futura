@@ -24,6 +24,13 @@
 #let HALF-SERIF = 0.3505
 #let HALF-SANS = 0.36377
 #let HALF-MONO = 0.355
+#let MONO-ADVANCE = 0.6
+#let CODE-SIZE = 0.82
+#let CODE-PAD-X = 3pt
+#let CODE-PAD-Y = 1.2pt
+#let CODE-RADIUS = 2pt
+#let DISC = 5pt
+#let DISC-KAPPA = 0.55
 
 #let DATUM = 10.0046pt
 #let BODY-SIZE = 10pt
@@ -35,6 +42,8 @@
 #let CAPTION-SIZE = 6.8pt
 #let FOLIO-BASELINE = 19.5pt
 #let LIST-INDENT = 14pt
+#let ITEM-AFTER = 6pt
+#let REFERENCE-AFTER = 3pt
 #let REFERENCE-HANG = 12.9744pt
 #let QUOTE-RULE = 1.5pt
 #let QUOTE-PAD = 4mm
@@ -670,14 +679,30 @@
 
 #let doc-link(destination: none, title: none, body) = link(destination, body)
 
-#let inline-code(body) = text(
-  font: MONO,
-  size: 0.82 * BODY-SIZE,
-  weight: 500,
-  fill: VIOLET,
-  hyphenate: false,
-  body,
-)
+#let code-pad = text(font: MONO, size: CODE-PAD-X / MONO-ADVANCE, ..flat, "\u{a0}")
+
+#let inline-code(body) = context {
+  let size = CODE-SIZE * text.size
+  let leading = (text.top-edge - text.bottom-edge).to-absolute()
+  code-pad
+  highlight(
+    fill: PALE-VIOLET,
+    radius: CODE-RADIUS,
+    extent: CODE-PAD-X,
+    top-edge: (0.5 + HALF-MONO) * size + CODE-PAD-Y,
+    bottom-edge: (HALF-MONO - 0.5) * size - CODE-PAD-Y,
+    text(
+      font: MONO,
+      size: size,
+      weight: 500,
+      fill: VIOLET,
+      hyphenate: false,
+      ..edges(size, leading, HALF-MONO),
+      body,
+    ),
+  )
+  code-pad
+}
 
 #let doc-rule() = block(
   line(length: 100%, stroke: 0.55pt + COOL-GRAY),
@@ -775,17 +800,31 @@
 
 #let reference-list = state("reference-list", false)
 
+#let disc = {
+  let (r, k) = (DISC / 2, DISC / 2 * (1 - DISC-KAPPA))
+  curve(
+    fill: VIOLET,
+    stroke: none,
+    curve.move((0pt, r)),
+    curve.cubic((0pt, k), (k, 0pt), (r, 0pt)),
+    curve.cubic((DISC - k, 0pt), (DISC, k), (DISC, r)),
+    curve.cubic((DISC, DISC - k), (DISC - k, DISC), (r, DISC)),
+    curve.cubic((k, DISC), (0pt, DISC - k), (0pt, r)),
+    curve.close(mode: "straight"),
+  )
+}
+
 #let doc-item(body) = context {
   if reference-list.get() {
-    block(body, above: 0pt, below: 3pt)
+    block(body, above: 0pt, below: REFERENCE-AFTER)
   } else {
     block(
       {
-        place(top + left, dy: 3.505pt, circle(radius: 2.5pt, fill: VIOLET, stroke: none))
+        place(top + left, dy: 3.505pt, disc)
         pad(left: LIST-INDENT, body)
       },
       above: 0pt,
-      below: 6pt,
+      below: ITEM-AFTER,
     )
   }
 }
@@ -803,8 +842,8 @@
     }
     reference-list.update(_ => false)
   },
-  above: PARAGRAPH-AFTER,
-  below: PARAGRAPH-AFTER,
+  above: auto,
+  below: if references { REFERENCE-AFTER } else { ITEM-AFTER },
 )
 
 #let key-ideas-label(body) = block(
@@ -825,11 +864,12 @@
 )
 
 #let end-mark(body) = {
+  set par(spacing: 0pt)
   v(-20pt)
   block(
     height: 0pt,
     width: 100%,
-    above: 0pt,
+    above: auto,
     below: 0pt,
     {
       place(

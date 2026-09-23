@@ -1076,4 +1076,168 @@ mod tests {
             .expect_err("vacuous")
             .contains("WP-0.0c"));
     }
+
+    type Laid = Vec<(f64, f64, FrameItem)>;
+
+    fn laid(body: String) -> Laid {
+        let document = compiled(&piece_run(body));
+        let mut out = vec![];
+        for (index, page) in document.pages().iter().enumerate() {
+            flatten(&page.frame, 0.0, 1e4 * index as f64, &mut out);
+        }
+        out
+    }
+
+    fn flatten(frame: &Frame, x: f64, y: f64, out: &mut Laid) {
+        for (at, item) in frame.items() {
+            let (x, y) = (x + at.x.to_pt(), y + at.y.to_pt());
+            match item {
+                FrameItem::Group(group) => flatten(&group.frame, x, y, out),
+                _ => out.push((x, y, item.clone())),
+            }
+        }
+    }
+
+    fn word(items: &Laid, word: &str) -> (f64, f64, f64) {
+        items
+            .iter()
+            .find_map(|(x, y, item)| match item {
+                FrameItem::Text(text) if text.text.as_str() == word => {
+                    Some((*x, *y, text.width().to_pt()))
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("no text item {word:?}"))
+    }
+
+    fn gap(body: String, above: &str, below: &str) -> f64 {
+        let items = laid(body);
+        word(&items, below).1 - word(&items, above).1
+    }
+
+    fn para(text: &str) -> String {
+        format!("#doc-paragraph(standfirst: false, roster: false)[{text}]\n")
+    }
+
+    fn bullets(text: &str) -> String {
+        format!(
+            "#doc-list(ordered: false, start: 1, references: false)[\n  #doc-item[\n{}]\n]\n",
+            para(text)
+        )
+    }
+
+    fn near(found: f64, want: f64) {
+        assert!((found - want).abs() < 1e-3, "{found} against {want}");
+    }
+
+    #[test]
+    fn body_blocks_collapse_their_margins_as_the_oracle_css_does() {
+        let line = 13.0;
+        near(
+            gap(para("Alpha.") + &bullets("Beta."), "Alpha.", "Beta."),
+            line + 5.4,
+        );
+        near(
+            gap(bullets("Beta.") + &para("Gamma."), "Beta.", "Gamma."),
+            line + 6.0,
+        );
+        let heading = "#doc-heading(level: 2)[Head]\n".to_string();
+        near(
+            gap(heading.clone() + &bullets("Delta."), "Head", "Delta."),
+            gap(heading + &para("Delta."), "Head", "Delta."),
+        );
+        let mark = "#end-mark[End / 01]\n";
+        let to_mark = line - 10.0046 - 20.0 + 2.47375 + 28.53085;
+        near(
+            gap(para("Alpha.") + mark, "Alpha.", "END / 01"),
+            to_mark + 5.4,
+        );
+        near(
+            gap(bullets("Beta.") + mark, "Beta.", "END / 01"),
+            to_mark + 6.0,
+        );
+    }
+
+    #[test]
+    fn inline_code_carries_the_oracle_padding_chip_and_line_box() {
+        let items = laid(para("Alpha #inline-code[beta] gamma") + &para("Omega."));
+        let (x, y, width) = word(&items, "beta");
+        let pads: Vec<f64> = items
+            .iter()
+            .filter_map(|(_, _, item)| match item {
+                FrameItem::Text(text) if text.text.as_str() == "\u{a0}" => {
+                    Some(text.width().to_pt())
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(pads.len(), 2);
+        pads.iter().for_each(|pad| near(*pad, 3.0));
+        let chip = items
+            .iter()
+            .find_map(|(cx, cy, item)| match item {
+                FrameItem::Shape(shape, _) if shape.fill.is_some() => {
+                    let (x0, y0, x1, y1) = bounds(&shape.geometry);
+                    Some((cx + x0, cy + y0, x1 - x0, y1 - y0))
+                }
+                _ => None,
+            })
+            .expect("the code chip is painted");
+        let size = 8.2;
+        near(chip.0, x - 3.0);
+        near(chip.1, y - (0.855 * size + 1.2));
+        near(chip.2, width + 6.0);
+        near(chip.3, size + 2.4);
+        let grown = (6.5 - 0.355 * size) - (13.0 - 10.0046);
+        near(word(&items, "Omega.").1 - y, 13.0 + 5.4 + grown);
+    }
+
+    fn bounds(geometry: &typst::visualize::Geometry) -> (f64, f64, f64, f64) {
+        use typst::visualize::{CurveItem, Geometry};
+        let points: Vec<_> = match geometry {
+            Geometry::Curve(curve) => curve
+                .0
+                .iter()
+                .flat_map(|item| match item {
+                    CurveItem::Move(p) | CurveItem::Line(p) => vec![*p],
+                    CurveItem::Cubic(a, b, c) => vec![*a, *b, *c],
+                    CurveItem::Close => vec![],
+                })
+                .collect(),
+            Geometry::Rect(size) => vec![typst::layout::Point::zero(), size.to_point()],
+            Geometry::Line(p) => vec![typst::layout::Point::zero(), *p],
+        };
+        let fold = |f: fn(f64, f64) -> f64, pick: fn(&typst::layout::Point) -> f64, start| {
+            points.iter().map(pick).fold(start, f)
+        };
+        (
+            fold(f64::min, |p| p.x.to_pt(), f64::MAX),
+            fold(f64::min, |p| p.y.to_pt(), f64::MAX),
+            fold(f64::max, |p| p.x.to_pt(), f64::MIN),
+            fold(f64::max, |p| p.y.to_pt(), f64::MIN),
+        )
+    }
+
+    #[test]
+    fn the_list_disc_takes_the_oracle_bezier_constant() {
+        let items = laid(bullets("Beta."));
+        let controls: Vec<f64> = items
+            .iter()
+            .filter_map(|(_, _, item)| match item {
+                FrameItem::Shape(shape, _) => match &shape.geometry {
+                    typst::visualize::Geometry::Curve(curve) => Some(curve),
+                    _ => None,
+                },
+                _ => None,
+            })
+            .flat_map(|curve| curve.0.iter())
+            .filter_map(|item| match item {
+                typst::visualize::CurveItem::Cubic(a, b, _) => Some(a.y.to_pt() + b.x.to_pt()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(controls.len(), 4, "{controls:?}");
+        near(controls[0], 2.0 * 2.5 * (1.0 - 0.55));
+        assert!((controls[0] - 2.0 * 2.5 * (1.0 - 0.552_284_75)).abs() > 8e-3);
+    }
 }
