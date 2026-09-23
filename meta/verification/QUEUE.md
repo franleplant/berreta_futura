@@ -2,9 +2,9 @@
 
 Landed, awaiting a verifier: WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
-WP-5.3c, WP-5.7a, WP-5.3h.
-Running: WP-3.1 body text, WP-5.5c package, verifier for WP-5.5a +
-WP-5.7b rework.
+WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
+Running: WP-3.1 body text, WP-5.5c package, adversarial verifier for
+the comparator WPs 0.2m-0.2r.
 Next after WP-3.1 lands: WP-0.0d (rule colour oracle change, re-seed).
 
 New WPs opened outside the plan text (each brief is its section, the
@@ -29,7 +29,9 @@ evidence file records it):
   Queued after WP-3.4 lands (re-seeds the baseline digest).
 - WP-5.5d: fenced code with a language refuses in the Rust web port
   (pygments not reproduced); needed before WP-6.1 deletes Python.
-  Also JPEG closing plates.
+  Also JPEG closing plates, and a start-0 ordered list row in the wfx
+  fixture (WP-5.5a.verify.md). WP-5.7b: an inline-image scan test
+  (WP-5.7b.verify.md).
 - WP-5.1h scope: consolidate `anchor_key`, `is_reference_heading`,
   `inline_text`, `article_opener_format` (duplicated in web/ and
   typeset/content.rs) into model/shared.rs; typeset's `anchor_key` uses
