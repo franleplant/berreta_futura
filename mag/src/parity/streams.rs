@@ -138,6 +138,8 @@ pub enum Element {
         tr: i64,
         clip: Vec<u32>,
         #[serde(skip)]
+        origin: [i64; 2],
+        #[serde(skip)]
         offs: Vec<[i64; 2]>,
         #[serde(skip)]
         units: Vec<String>,
@@ -538,6 +540,7 @@ impl Tracer<'_> {
             m: trm.map(qc),
             tr: self.gs.tr,
             clip: self.gs.clips.clone(),
+            origin: [qo(trm[4]), qo(trm[5])],
             offs,
             units,
         });

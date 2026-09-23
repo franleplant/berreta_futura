@@ -312,7 +312,7 @@ fault_suite:
   expected_detections:
     swapped_words:
       intended_check: text
-      must_flag: [color, display_list, text]
+      must_flag: [color, display_list, glyph_positions, text]
     line_moved_005:
       intended_check: display_list
       must_flag: [display_list]

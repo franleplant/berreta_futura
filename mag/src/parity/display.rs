@@ -14,11 +14,11 @@ pub struct PageDump {
     pub annots: Vec<Annot>,
     pub boxes: BTreeMap<String, [i64; 4]>,
     #[serde(skip)]
-    pub ink: Vec<Option<canon::Rect>>,
+    pub ink: Vec<canon::Ink>,
 }
 
 impl PageDump {
-    fn canonical(&self) -> Vec<Element> {
+    fn canonical(&self) -> canon::Canon {
         canon::canonical(&self.elements, &self.ink)
     }
 }
@@ -352,6 +352,7 @@ pub struct DisplayClause {
     pub status: String,
     pub elements_a: usize,
     pub elements_b: usize,
+    pub text_runs_in_paint_order: usize,
     pub pages_differing: Vec<PageDiff>,
 }
 
@@ -366,7 +367,7 @@ pub fn compare_display(a: &Dump, b: &Dump, first: u32) -> Result<DisplayClause> 
     let mut pages_differing = vec![];
     for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
         let page = first + i as u32;
-        let (ea, eb) = (pa.canonical(), pb.canonical());
+        let (ea, eb) = (pa.canonical().elements, pb.canonical().elements);
         if let Some(detail) = page_diff(pa, pb, &ea, &eb)? {
             let classes = differing_classes(pa, pb, &ea, &eb)?;
             pages_differing.push(PageDiff {
@@ -376,11 +377,13 @@ pub fn compare_display(a: &Dump, b: &Dump, first: u32) -> Result<DisplayClause> 
             });
         }
     }
-    let count = |d: &Dump| d.pages.iter().map(|p| p.canonical().len()).sum();
+    let count = |d: &Dump| d.pages.iter().map(|p| p.canonical().elements.len()).sum();
+    let runs = |d: &Dump| -> usize { d.pages.iter().map(|p| p.canonical().paint_order_runs).sum() };
     Ok(DisplayClause {
         status: status(pages_differing.is_empty()),
         elements_a: count(a),
         elements_b: count(b),
+        text_runs_in_paint_order: runs(a) + runs(b),
         pages_differing,
     })
 }
@@ -508,69 +511,100 @@ fn axis_shape(d: &[i64]) -> bool {
     true
 }
 
-pub fn compare_glyphs(a: &Dump, b: &Dump, first: u32) -> GlyphClause {
-    let mut glyphs = 0;
-    let mut shows = 0;
-    let mut worst_excess = f64::NEG_INFINITY;
-    let mut worst_ratio = 0.0f64;
-    let mut worst = None;
-    let mut violations = vec![];
-    for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
-        let page = first + i as u32;
-        for (j, (ea, eb)) in pa.elements.iter().zip(&pb.elements).enumerate() {
-            let (Element::Text { offs: oa, .. }, Element::Text { offs: ob, .. }) = (ea, eb) else {
-                continue;
-            };
-            if oa.len() != ob.len() {
-                violations.push(format!(
-                    "page {page} element {j}: {} glyphs vs {}",
-                    oa.len(),
-                    ob.len()
-                ));
-                continue;
+fn glyph_list(page: &PageDump) -> Vec<canon::Glyph> {
+    page.canonical().glyphs.into_iter().flatten().collect()
+}
+
+fn drift(
+    ga: &[canon::Glyph],
+    gb: &[canon::Glyph],
+    r: std::ops::Range<usize>,
+) -> Vec<(usize, [i64; 2])> {
+    r.map(|j| {
+        let (a, b) = (&ga[j], &gb[j]);
+        let d = [0, 1].map(|i| (a.at[i] - a.start[i]) - (b.at[i] - b.start[i]));
+        (a.step.max(b.step), d)
+    })
+    .collect()
+}
+
+fn paired_runs(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<std::ops::Range<usize>> {
+    let key = |g: &canon::Glyph| (g.line, g.show);
+    let mut runs: Vec<std::ops::Range<usize>> = vec![];
+    for j in 0..ga.len() {
+        let same = j > 0 && key(&ga[j - 1]) == key(&ga[j]) && key(&gb[j - 1]) == key(&gb[j]);
+        match runs.last_mut() {
+            Some(r) if same => r.end = j + 1,
+            _ => runs.push(j..j + 1),
+        }
+    }
+    runs
+}
+
+#[derive(Default)]
+struct GlyphTally {
+    glyphs: usize,
+    shows: usize,
+    worst_excess: Option<f64>,
+    worst_ratio: f64,
+    worst: Option<String>,
+    violations: Vec<String>,
+}
+
+impl GlyphTally {
+    fn run(&mut self, at: &str, d: &[(usize, [i64; 2])]) {
+        self.shows += 1;
+        self.glyphs += d.len();
+        for (k, [x, y]) in d {
+            let mag = ((*x as f64).hypot(*y as f64)) * streams::GLYPH_QUANTUM;
+            let bound = *k as f64 * streams::GLYPH_DRIFT_PT;
+            if bound > 0.0 {
+                self.worst_ratio = self.worst_ratio.max(mag / bound);
             }
-            shows += 1;
-            glyphs += oa.len();
-            let dx: Vec<i64> = oa.iter().zip(ob).map(|(p, q)| p[0] - q[0]).collect();
-            let dy: Vec<i64> = oa.iter().zip(ob).map(|(p, q)| p[1] - q[1]).collect();
-            for (k, (x, y)) in dx.iter().zip(&dy).enumerate() {
-                let mag = ((*x as f64).hypot(*y as f64)) * streams::GLYPH_QUANTUM;
-                let bound = k as f64 * streams::GLYPH_DRIFT_PT;
-                if bound > 0.0 {
-                    worst_ratio = worst_ratio.max(mag / bound);
-                }
-                let excess = mag - bound;
-                if excess > worst_excess {
-                    worst_excess = excess;
-                    worst = Some(format!("page {page} element {j} glyph {k}: {mag:.6} pt"));
-                }
-                if excess > 0.0 {
-                    violations.push(format!(
-                        "page {page} element {j} glyph {k}: {mag:.6} pt exceeds bound {:.6} pt",
-                        k as f64 * streams::GLYPH_DRIFT_PT
-                    ));
-                }
+            let excess = mag - bound;
+            if self.worst_excess.is_none_or(|w| excess > w) {
+                self.worst_excess = Some(excess);
+                self.worst = Some(format!("{at} glyph {k}: {mag:.6} pt"));
             }
-            if !axis_shape(&dx) || !axis_shape(&dy) {
-                violations.push(format!(
-                    "page {page} element {j}: difference sequence is not one-signed and monotone"
+            if excess > 0.0 {
+                self.violations.push(format!(
+                    "{at} glyph {k}: {mag:.6} pt exceeds bound {bound:.6} pt"
                 ));
             }
         }
+        let axis = |i: usize| d.iter().map(|x| x.1[i]).collect::<Vec<_>>();
+        if !axis_shape(&axis(0)) || !axis_shape(&axis(1)) {
+            self.violations.push(format!(
+                "{at}: difference sequence is not one-signed and monotone"
+            ));
+        }
     }
-    violations.truncate(40);
+}
+
+pub fn compare_glyphs(a: &Dump, b: &Dump, first: u32) -> GlyphClause {
+    let mut t = GlyphTally::default();
+    for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
+        let page = first + i as u32;
+        let (ga, gb) = (glyph_list(pa), glyph_list(pb));
+        if ga.len() != gb.len() {
+            t.violations
+                .push(format!("page {page}: {} glyphs vs {}", ga.len(), gb.len()));
+            continue;
+        }
+        for r in paired_runs(&ga, &gb) {
+            let at = format!("page {page} glyphs {}..{}", r.start, r.end);
+            t.run(&at, &drift(&ga, &gb, r));
+        }
+    }
+    t.violations.truncate(40);
     GlyphClause {
-        status: status(violations.is_empty()),
-        glyphs,
-        shows,
-        worst_excess_pt: if worst_excess.is_finite() {
-            worst_excess
-        } else {
-            0.0
-        },
-        worst_ratio,
-        worst,
-        violations,
+        status: status(t.violations.is_empty()),
+        glyphs: t.glyphs,
+        shows: t.shows,
+        worst_excess_pt: t.worst_excess.unwrap_or(0.0),
+        worst_ratio: t.worst_ratio,
+        worst: t.worst,
+        violations: t.violations,
     }
 }
 
@@ -583,33 +617,10 @@ type Paint = (String, Option<Color>);
 fn color_sequences(page: &PageDump) -> [Vec<Paint>; 2] {
     let mut glyphs = vec![];
     let mut paints = vec![];
-    for e in &page.canonical() {
+    for e in &page.canonical().elements {
         match e {
-            Element::Text {
-                units,
-                fill,
-                tr,
-                m,
-                offs,
-                gids,
-                ..
-            } => {
-                for (k, (u, o)) in units.iter().zip(offs).enumerate() {
-                    let inked = match gids.get(k) {
-                        Some(&streams::BLANK_GID) => false,
-                        Some(&streams::UNRESOLVED_GID) | None => !u.trim().is_empty(),
-                        Some(_) => true,
-                    };
-                    let at = |i: usize| {
-                        qc(m[i + 4] as f64 / 100.0 + o[i] as f64 * streams::GLYPH_QUANTUM)
-                    };
-                    if inked {
-                        glyphs.push((
-                            (-at(1), at(0)),
-                            (u.clone(), (*tr != 3).then(|| fill.clone())),
-                        ));
-                    }
-                }
+            Element::Text { s, fill, tr, m, .. } => {
+                glyphs.push(((-m[5], m[4]), (s.clone(), (*tr != 3).then(|| fill.clone()))));
             }
             Element::Path { fill, stroke, .. } => {
                 paints.extend(fill.iter().map(|c| ("fill".into(), Some(c.clone()))));
@@ -789,6 +800,7 @@ mod colour_tests {
             m: [1000, 0, 0, 1000, x, y],
             tr,
             clip: vec![],
+            origin: [streams::qo(x as f64 / 100.0), streams::qo(y as f64 / 100.0)],
             offs: (0..units.len() as i64).map(|k| [k * 10_000, 0]).collect(),
             units,
         }
@@ -965,5 +977,177 @@ mod colour_tests {
         );
         let d = compare_color(&a, &dump(vec![rule([224, 227, 230])]), 1).details;
         assert!(d[0].starts_with("page 1: paint 0: "), "{}", d[0]);
+    }
+
+    fn glyph_run(text: &str, at: [i64; 2], font: &str, gids: Vec<u32>) -> Element {
+        let mut e = run(text, 0, 0, INK, 0);
+        if let Element::Text {
+            m,
+            origin,
+            font: f,
+            gids: g,
+            ..
+        } = &mut e
+        {
+            *origin = at;
+            m[4] = streams::qc(at[0] as f64 * streams::GLYPH_QUANTUM);
+            m[5] = streams::qc(at[1] as f64 * streams::GLYPH_QUANTUM);
+            *f = font.into();
+            *g = gids;
+        }
+        e
+    }
+
+    const O: [i64; 2] = [109_227, 546_133];
+    const IDS: [u32; 11] = [1, 2, 3, 3, 4, streams::BLANK_GID, 5, 4, 6, 3, 7];
+
+    fn ids(r: std::ops::Range<usize>) -> Vec<u32> {
+        IDS[r].to_vec()
+    }
+
+    fn whole() -> Dump {
+        dump(vec![glyph_run("Hello world", O, "F", ids(0..11))])
+    }
+
+    fn halves(second: [i64; 2], font: &str, tail: Vec<u32>) -> Dump {
+        dump(vec![
+            glyph_run("world", second, font, tail),
+            glyph_run("Hello ", O, "F", ids(0..6)),
+        ])
+    }
+
+    fn display(b: &Dump) -> String {
+        compare_display(&whole(), b, 1).unwrap().status
+    }
+
+    #[test]
+    fn the_same_glyphs_pass_whatever_the_show_grouping_or_trailing_space() {
+        let b = halves([O[0] + 60_000, O[1]], "F", ids(6..11));
+        assert_eq!(display(&b), "pass");
+        assert_eq!(compare_glyphs(&whole(), &b, 1).status, "pass");
+        let c = compare_display(&whole(), &b, 1).unwrap();
+        assert_eq!((c.elements_a, c.elements_b), (10, 10));
+    }
+
+    fn both(a: &Dump, b: &Dump) -> (String, String) {
+        let d = compare_display(a, b, 1).unwrap().status;
+        (d, compare_glyphs(a, b, 1).status)
+    }
+
+    fn pass_fail(d: &str, g: &str) -> (String, String) {
+        (d.into(), g.into())
+    }
+
+    #[test]
+    fn a_missing_glyph_another_glyph_id_face_or_a_moved_line_start_fails_the_display_list() {
+        let at = [O[0] + 60_000, O[1]];
+        let mut other = ids(6..11);
+        other[2] = 9;
+        assert_eq!(display(&halves(at, "F", other)), "fail");
+        assert_eq!(display(&halves(at, "G", ids(6..11))), "fail");
+        let short = dump(vec![
+            glyph_run("worl", at, "F", ids(6..10)),
+            glyph_run("Hello ", O, "F", ids(0..6)),
+        ]);
+        assert_eq!(display(&short), "fail");
+        let quantum = streams::qo(0.01) + 1;
+        for shift in [[quantum, 0], [-quantum, 0], [0, quantum]] {
+            let moved = dump(vec![
+                glyph_run(
+                    "world",
+                    [at[0] + shift[0], at[1] + shift[1]],
+                    "F",
+                    ids(6..11),
+                ),
+                glyph_run("Hello ", [O[0] + shift[0], O[1] + shift[1]], "F", ids(0..6)),
+            ]);
+            assert_eq!(display(&moved), "fail", "{shift:?}");
+        }
+    }
+
+    #[test]
+    fn drift_inside_a_line_passes_the_display_list_and_the_glyph_clause_judges_it() {
+        let at = [O[0] + 60_000, O[1]];
+        let near = halves([at[0] + 1, at[1]], "F", ids(6..11));
+        let g = compare_glyphs(&whole(), &near, 1);
+        assert_eq!((g.status.as_str(), g.glyphs, g.shows), ("pass", 10, 2));
+        let quantum = halves([at[0] + streams::qo(0.01) + 1, at[1]], "F", ids(6..11));
+        assert_eq!(both(&whole(), &quantum), pass_fail("pass", "fail"));
+        let mut far = halves(at, "F", ids(6..11));
+        if let Element::Text { offs, .. } = &mut far.pages[0].elements[0] {
+            offs[2..].iter_mut().for_each(|o| o[0] += 8 * 8 + 1);
+        }
+        assert_eq!(both(&whole(), &far), pass_fail("pass", "fail"));
+        if let Element::Text { offs, .. } = &mut far.pages[0].elements[0] {
+            offs[2..].iter_mut().for_each(|o| o[0] -= 2);
+        }
+        assert_eq!(both(&whole(), &far), pass_fail("pass", "pass"));
+        let split = halves(at, "F", ids(6..11));
+        let mut stairs = halves(at, "F", ids(6..11));
+        for e in &mut stairs.pages[0].elements {
+            if let Element::Text { offs, .. } = e {
+                offs.iter_mut().zip(0..).for_each(|(o, k)| o[0] += 2 * k);
+            }
+        }
+        assert_eq!(both(&split, &stairs), pass_fail("pass", "pass"));
+    }
+
+    #[test]
+    fn a_line_is_one_baseline_within_a_quantum_split_at_a_gap_of_three_em() {
+        let em = streams::qo(10.0);
+        let q = streams::qo(0.01);
+        let pair = |dx: i64, dy: i64, shift: i64| {
+            dump(vec![
+                glyph_run("ab", O, "F", vec![1, 2]),
+                glyph_run("cd", [O[0] + dx + shift, O[1] + dy], "F", vec![3, 4]),
+            ])
+        };
+        let lines = |d: &Dump| {
+            glyph_list(&d.pages[0])
+                .iter()
+                .map(|g| g.line)
+                .collect::<Vec<_>>()
+        };
+        let (near, far) = (10_000 + 3 * em - 200, 10_000 + 3 * em + 50);
+        assert_eq!(lines(&pair(near, 0, 0)), [1, 1, 1, 1]);
+        assert_eq!(lines(&pair(near, q, 0)), [1, 1, 1, 1]);
+        assert_eq!(lines(&pair(far, 0, 0)), [1, 1, 2, 2]);
+        assert_eq!(lines(&pair(near, q + 1, 0)), [1, 1, 2, 2]);
+        assert_eq!(
+            both(&pair(near, 0, 0), &pair(near, 0, q + 1)),
+            pass_fail("pass", "fail")
+        );
+        assert_eq!(
+            both(&pair(far, 0, 0), &pair(far, 0, q + 1)),
+            pass_fail("fail", "pass")
+        );
+        let sup = |shift: i64| pair(20_000, 2 * q, shift);
+        assert_eq!(both(&sup(0), &sup(q + 1)), pass_fail("fail", "pass"));
+    }
+
+    #[test]
+    fn overlapping_glyphs_in_other_colours_keep_their_paint_order() {
+        let glyph = |x: i64, rgb| run("a", x, 5000, rgb, 0);
+        let page = |es: Vec<Element>, reach: i64| {
+            let mut d = dump(es);
+            d.pages[0].ink = d.pages[0]
+                .elements
+                .iter()
+                .map(|e| match e {
+                    Element::Text { m, .. } => Some(vec![Some([m[4], 5000, m[4] + reach, 5500])]),
+                    _ => None,
+                })
+                .collect();
+            d
+        };
+        for (reach, want, kept) in [(400, "pass", 0), (600, "fail", 1)] {
+            let a = page(vec![glyph(1500, INK), glyph(1000, VIOLET)], reach);
+            let b = page(vec![glyph(1000, VIOLET), glyph(1500, INK)], reach);
+            let c = compare_display(&a, &b, 1).unwrap();
+            assert_eq!(
+                (c.status.as_str(), c.text_runs_in_paint_order),
+                (want, kept)
+            );
+        }
     }
 }
