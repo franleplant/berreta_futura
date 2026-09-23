@@ -6,6 +6,9 @@
 
 ## Status
 
+port complete for 010's surface and a fixture edition (increment 2, below);
+not wired into the binary, which is WP-5.6's `render.rs`; pygments
+highlighting still refuses loudly. Earlier status, kept for history:
 blocked on the port itself; both committed-asset legs proven
 
 The four brittle matchers from WP-0.0c are PORTED, tested and landed as
@@ -977,9 +980,147 @@ is latent rather than active. It is left unfixed because repairing it is a
 behaviour change outside the lift's granted scope, and a lift that silently
 alters behaviour is the thing the narrow grant existed to prevent.
 
+### Port increment 2: `render_html_edition` and `write_web_edition`
+
+`mag/src/web/semantic.rs` ports `html_edition.py` (semantic HTML plus the
+asset inventory) and `mag/src/web/edition.rs` ports `web_edition.py` (asset
+and source-code materialisation, source-code installation, print-only drop,
+provenance numbering, source rewriting, figure links, document paging, cover,
+masthead, colophon, page turns, index, edition.html, stylesheet and font
+copy). `text.rs` gained an `Escaper` so both modules share one set of
+escaping helpers. The web side's `_text` is `verbatim` (no quote education),
+which the port keeps.
+
+**The oracle shells the real Python from `cargo test`**
+(`mag/tests/web_port.rs`), per the Phase 5 preamble. The test stages a root
+in `CARGO_TARGET_TMPDIR` by HARD LINKS (library/sources, 010's art and
+source-codes, the fixture edition) plus copies of 010's manifest and its
+nine manuscripts from `editions/010/run-2026-09-13T01-34-51`. Hard links,
+not symlinks, because Python's `safe_project_path` resolves symlinks and
+would refuse a symlinked stage, and file URIs would then differ. The
+inline Python programs are the `PYTHON` and `WEB_PYTHON` constants in that
+file, recorded there verbatim.
+
+Results, `cargo test --test web_port`: exit 0, 13 passed.
+
+| comparison | result |
+|---|---|
+| 010 semantic HTML | byte-identical; 27 assets equal field by field (9 openers, 9 tails, 3 figures, 5 plates, 1 cover) |
+| 010 web tree | 51 files byte-identical, 11 HTML pages, 9 source-code SVGs |
+| 010 web tree vs a PRODUCTION render | `diff -rq editions/010/render-2026-09-23T22-57-54/en/web <rust tree>` exit 0 (render made by the main tree today, not by this test) |
+| negative control for that diff | the `010_chrome` tree against the same render differs on every page (exit 1 from diff) |
+| fixture `wfx` semantic HTML + web tree | byte-identical, 28 files |
+| `chrome` (wordmark, favicon, headline lines, two alternates) | byte-identical, 30 files |
+| `mismatch` (headline lines that do not re-join to the headline) | byte-identical; falls back to the plain headline |
+| `010_chrome`, `010_mixed` (article 2 stripped of opener art), `nourl` (one source without an address) | byte-identical |
+| `dup_keyed`, `dup_tailed` (collision refusals) | refusal messages equal to Python's, character for character |
+
+**Corpus-unreachable branches, enumerated from the Python and covered by the
+`wfx` fixture** (`mag/tests/web_port_fixtures/wfx`): `_render_editorial`,
+`_render_section` (a titled glossary and an untitled try_it),
+`_render_extract` (code and quote styles), `_extracts_by_anchor` (opener and
+heading anchors), `_render_key_ideas`, `_highlight_code`'s no-language
+branch, the non-illustrated `_render_article` path (author note, provenance,
+end-of-article source link, tail art with `tail_art_fit: contain`), the
+subtitle, a declared manuscript label, name rosters as standfirst and as
+body, reference lists under `References` and `Referencias`, ordered lists
+with and without `start`, block quotes, a titled link, inline code with
+quotes, hard breaks and a rule, a roster-clamped author. `010_mixed` reaches
+the non-illustrated path INSIDE an illustrated edition, which is also the
+only input where `_install_illustrated_source_codes` must close its opener
+window (a later source link outside the header must stay print-only).
+
+**Straddle pairs** (rule: one step apart, one refuses, one passes):
+contents title 62 passes / 63 refuses; contents density 8 entries plain / 9
+tight; plate aspect 1000x586 passes / 1000x584 refuses at the upper bound
+and 1000x2343 passes / 1000x2345 refuses at the lower. Each is compared
+against Python, not only asserted.
+
+**Mutation sweeps.** `semantic.rs`: 8 injected, 7 caught on the first run;
+the survivor (density `>` to `>=`) exposed that no input had exactly 8
+entries, so the 8/9 pair was added and it is now caught. `edition.rs`: 10
+injected, 7 caught on the first run. Two survivors were real coverage gaps
+and are now caught: the unaddressed provenance `<span>` branch (every corpus
+source has a URL; the `nourl` spec added) and the opener window never
+closing (every 010 article is illustrated; `010_mixed` added). The third,
+`replace_all` to `replace` in `link_figures`, is an EQUIVALENT mutant: a
+figure line carries exactly one `<img>` by construction, so no input can
+tell them apart.
+
+**Deliberate narrowings and refusals, each loud rather than silent:**
+
+- fenced code WITH a language bails ("needs pygments highlighting, which the
+  web port does not reproduce yet"); tested. Python would highlight. This is
+  the revision-33 decision still open; zero editions carry fenced code.
+- closing plates are read as PNG only (IHDR); Python uses PIL, which also
+  reads JPEG and others. All 109 `art_path` values under `editions/` end in
+  `.png` (`grep -h art_path editions/*/edition.yaml`), so no edition is
+  affected, but the port is narrower than its oracle and refuses a JPEG
+  plate that Python would accept. The fix is to share
+  `package/preflight.rs`'s `raster_dimensions`, which is WP-5.5b's file.
+- the structural matchers from `markup.rs` replace the four brittle regexes
+  inside the pipeline, as the WP prescribes; on every compared input the
+  outputs are identical.
+
+**Duplicate-helper finding, for the coordinator.** The `rust_helpers` lint
+caught `anchor_key`, `is_reference_heading`, `inline_text` and
+`article_opener_format` also defined in `mag/src/typeset/content.rs`, which
+this WP may not touch. They are NOT all the same function: `content.rs`
+strips with `str::trim`, which disagrees with Python's `strip()` on
+U+001C..U+001F (the same divergence recorded above for `is_name_roster`),
+and its `article_opener_format` turns a YAML null into `"None"` where Python
+gives `""` (harmless today, since the value is only compared against the
+illustrated constant and the loader validates it). The web copies are the
+Python-exact forms and are named `py_anchor_key`, `py_is_reference_heading`,
+`py_article_opener_format`; `plain_text` is a genuine duplicate of
+`content.rs`'s `inline_text`. Lifting all four into `model/shared.rs` and
+pointing `content.rs` at them needs an Owns extension over
+`typeset/content.rs`, and would fix the U+001C..U+001F divergence there.
+
+**Equality is not correctness: shared defects looked for, none found beyond
+those already recorded.** Not a proof: the two outputs are generated by the
+same algorithm, so a wrong design choice common to both (for example that
+illustrated articles carry no provenance line on the web, so 010's web tree
+names no sources outside the QR) would pass. That one reads as design, not
+defect, and is noted for Fran rather than changed.
+
+### What is and is not proven (increment 2)
+
+Proven: for edition 010 as staged from its committed run, and for the
+fixture specs listed, the Rust semantic HTML, asset inventory and complete
+web tree are byte-identical to the Python modules they port, and the 010
+tree is byte-identical to a production render's `en/web`. Each threshold
+the modules guard is pinned by a one-step straddle compared against Python.
+
+Not proven: behaviour on fenced code with a language (refused), on non-PNG
+plates (refused), on translated editions (not in the oracle), on inputs
+that would reach the unfixtured shape refusals, and correctness of any
+choice the two implementations share by construction. Nothing here says the
+binary produces this tree: it does not call the port yet.
+
+### Commands (increment 2)
+
+    cd mag && cargo test --test web_port          # exit 0, 13 passed
+    cd mag && cargo test                          # exit 0, 28 binaries ok
+    cd mag && cargo fmt --check && cargo clippy --all-targets -- -D warnings   # clean
+    diff -rq editions/010/render-2026-09-23T22-57-54/en/web \
+      mag/target/tmp/web-port-stage/rust-web/010  # exit 0
+
 ## Residuals
 
-- **What remains of the port**, in dependency order: `html_edition.py`'s
+- **What remains after increment 2**: (1) wiring: nothing in the binary
+  calls `write_web_edition`; the production web tree is still written by
+  `engine_render_bridge.py`, and switching it is `render.rs`, WP-5.6's file,
+  so `#[allow(dead_code)]` on `web.rs` stays until then; (2) pygments
+  highlighting (refuses loudly, see above); (3) non-PNG closing plates; (4)
+  translations: 010 has none, so `load_translation` output is not in the web
+  oracle, though nothing in either module branches on language beyond `ui`;
+  (5) unfixtured refusals that the semantic renderer cannot produce: the
+  reserved-name page collision (every piece id is prefixed `article-`,
+  `section-` or is `editorial`), the source-code filename collision, and
+  `_parse_document`'s shape refusals, all ported and all reachable only if
+  the renderer changes shape.
+- *(increment 1 text, superseded by the entry above)* **What remains of the port**, in dependency order: `html_edition.py`'s
   `render_html_edition` path (~45 functions, 875 lines) produces the semantic
   HTML that `web_edition.py`'s pipeline (~30 functions, 755 lines) transforms,
   so the former comes first. The four matchers are done; the rest of

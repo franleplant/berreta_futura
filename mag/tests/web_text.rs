@@ -10,6 +10,7 @@ mod model {
 }
 
 #[path = "../src/web/text.rs"]
+#[allow(dead_code)]
 mod text;
 
 use serde_json::Value;
