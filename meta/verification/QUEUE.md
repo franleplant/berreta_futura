@@ -2,10 +2,11 @@
 
 Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
-WP-5.3c, WP-5.7a.
-Running: WP-5.5a increment 2, verifier for WP-5.7b + WP-5.3h, WP-3.4
-landing (+ 300 ppi refusal, fixture 900 figure).
-Next: WP-0.2r = land branch wp-0.2q-full (acad53b) under contract (b).
+WP-5.3c, WP-5.7a, WP-5.3h.
+Running: WP-5.5a increment 2, WP-3.4 landing (+ 300 ppi refusal,
+fixture 900 figure), WP-0.2r (glyph-level display list, contract b).
+Next: WP-5.7b rework (rejected in WP-5.7b.verify.md: fail loud on
+invisible text plus an image; missing XObject resource returns Ok).
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -42,8 +43,8 @@ Orchestrator decisions:
   pass: the display list pins which glyphs appear, their order and each
   line's start; positions within a line belong to the glyph-position
   clause and its drift allowance.
-- WP-5.7b departures accepted: Type3 fonts with ToUnicode are read;
-  invisible text on a page that also prints text is skipped.
+- WP-5.7b: Type3 with ToUnicode read (accepted); skipping invisible text
+  beside printed text REJECTED by the verifier (hides scans).
 - WP-6.1 also deletes tools/pdf2md.py (unused since WP-5.7b, 4727939).
 - Bullets: template changes to WeasyPrint's control points (0.01 pt off,
   not normalizable within the quantum). Owner WP-3.1.
