@@ -12,6 +12,7 @@ use typst_syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 pub const ROOT: &str = "/root.typ";
 pub const TEMPLATE: &str = "/template.typ";
 pub const PRELUDE: &str = "#import \"/template.typ\": *\n";
+const RASTERS: [&str; 3] = [".png", ".jpg", ".jpeg"];
 
 pub struct Sources {
     library: LazyHash<Library>,
@@ -94,6 +95,15 @@ impl World for Sources {
     }
 
     fn file(&self, file: FileId) -> FileResult<Bytes> {
+        let path = file.vpath().get_with_slash();
+        if RASTERS
+            .iter()
+            .any(|kind| path.to_lowercase().ends_with(kind))
+        {
+            return std::fs::read(path)
+                .map(Bytes::new)
+                .map_err(|error| FileError::from_io(error, Path::new(path)));
+        }
         self.source(file)
             .map(|source| Bytes::from_string(source.text().to_string()))
     }

@@ -434,7 +434,8 @@ mod tests {
         let figure = figure.map_or(String::new(), |pixels| {
             format!(
                 "#figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", layout: \"{layout}\", \
-                 word: \"Figure\", alt: \"a\"{pixels})[#figure-caption[Cap.]#figure-credit[Credit.]]\n"
+                 word: \"Figure\", alt: \"a\", path: \"{}\"{pixels})[#figure-caption[Cap.]#figure-credit[Credit.]]\n",
+                fixture_png()
             )
         });
         synthetic(format!(
@@ -506,13 +507,28 @@ mod tests {
         );
     }
 
-    fn blank_pages(pdf: &[u8]) -> Vec<usize> {
+    fn fixture_png() -> String {
+        format!(
+            "{}/tests/typeset_fixtures/media/landscape.png",
+            env!("CARGO_MANIFEST_DIR")
+        )
+    }
+
+    fn pages_where(pdf: &[u8], keep: impl Fn(&[u8]) -> bool) -> Vec<usize> {
         let doc = Document::load_mem(pdf).expect("the emitted bytes are a PDF");
         doc.get_pages()
             .into_iter()
-            .filter(|(_, id)| doc.get_page_content(*id).len() < 16)
+            .filter(|(_, id)| keep(&doc.get_page_content(*id)))
             .map(|(number, _)| number as usize)
             .collect()
+    }
+
+    fn blank_pages(pdf: &[u8]) -> Vec<usize> {
+        pages_where(pdf, |content| content.len() < 16)
+    }
+
+    fn plate_pages(pdf: &[u8]) -> Vec<usize> {
+        pages_where(pdf, |content| content.windows(3).any(|w| w == b" Do"))
     }
 
     fn plated(articles: usize, plates: usize) -> Tree {
@@ -525,7 +541,12 @@ mod tests {
             })
             .collect();
         let plates: String = (1..=plates)
-            .map(|n| format!("#closing-plate(index: {n}, alt: \"Plate {n}\")\n"))
+            .map(|n| {
+                format!(
+                    "#closing-plate(index: {n}, alt: \"Plate {n}\", path: \"{}\")\n",
+                    fixture_png()
+                )
+            })
             .collect();
         synthetic(pieces + &plates)
     }
@@ -535,14 +556,16 @@ mod tests {
         let (_, font_dir) = roots();
         let pdf = compile(&Sources::new(&plated(9, 6), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
             .expect("the plated run compiles");
-        let bankers = vec![1, 2, 5, 7, 9, 12, 15, 17, 18, 19];
-        let half_up = vec![1, 2, 5, 7, 10, 12, 15, 17, 18, 19];
+        let bankers = vec![5, 7, 9, 12, 15, 17];
+        let half_up = vec![5, 7, 10, 12, 15, 17];
         assert_ne!(bankers, half_up);
-        assert_eq!(blank_pages(&pdf), bankers);
+        assert_eq!(plate_pages(&pdf), bankers);
+        assert_eq!(blank_pages(&pdf), vec![1, 2, 18, 19]);
         let trailing =
             compile(&Sources::new(&plated(9, 5), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
                 .expect("five plates compile");
-        assert_eq!(blank_pages(&trailing), vec![1, 2, 5, 8, 10, 13, 16, 17, 18]);
+        assert_eq!(plate_pages(&trailing), vec![5, 8, 10, 13, 16]);
+        assert_eq!(blank_pages(&trailing), vec![1, 2, 17, 18]);
     }
 
     fn straddling_run(before: usize) -> Tree {
