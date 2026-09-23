@@ -3,10 +3,9 @@
 Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a.
-Running: WP-0.2q (+ ICCBased image decode), WP-5.5a increment 2,
-verifier for WP-5.7b + WP-5.3h.
-Parked: WP-3.4 on branch `wp-3.4` (1b313d4), done, lands after WP-0.2q
-(blocked only on the comparator's ICCBased image decode).
+Running: WP-5.5a increment 2, verifier for WP-5.7b + WP-5.3h, WP-3.4
+landing (+ 300 ppi refusal, fixture 900 figure).
+Next: WP-0.2r = land branch wp-0.2q-full (acad53b) under contract (b).
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -16,7 +15,9 @@ evidence file records it):
 - WP-0.2p five representation-only normalizations, mkfixtures
   determinism, per-page difference counts (landed 066b58d)
 - WP-0.2q display-list text at glyph level (spaces dropped), glyph
-  positions paired on it, even-odd accent strip (running)
+  positions paired on it, even-odd accent strip. Partly landed 45fc32a
+  (accent strip, loop direction, ICCBased images); glyph-level text on
+  branch wp-0.2q-full, see WP-0.2r.
 - WP-5.3h spread order by page position, not paint order, in the Rust
   critic (class C: Python has the same defect; WP-5.3c pins it as a
   declared gap). Landed 7d652a3; Python keeps the defect until WP-6.1
@@ -37,6 +38,10 @@ Orchestrator decisions:
 - `design_direction` is an engine label, excluded from layout comparison.
 - What renders is the glyph (face, size, id, position, fill), not the
   engine's grouping into show operators; outline-less glyphs paint nothing.
+- Tier E contract (b), matching the plan's stairdrift floor that must
+  pass: the display list pins which glyphs appear, their order and each
+  line's start; positions within a line belong to the glyph-position
+  clause and its drift allowance.
 - WP-5.7b departures accepted: Type3 fonts with ToUnicode are read;
   invisible text on a page that also prints text is skipped.
 - WP-6.1 also deletes tools/pdf2md.py (unused since WP-5.7b, 4727939).
