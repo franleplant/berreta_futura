@@ -341,8 +341,8 @@ impl Writer<'_> {
             "#end-mark{}\n\n",
             self.said(&format!("{} / {index:02}", self.ui("end")))
         ));
-        if article.tail_art.is_some() {
-            out.push_str("#tail-art()\n\n");
+        if let Some(path) = &article.tail_art {
+            out.push_str(&self.tail_art(article, path)?);
         }
         if !illustrated {
             out.push_str(&self.source_link(article));
@@ -524,7 +524,7 @@ impl Writer<'_> {
         let (width, height) = pixels(&figure.path)?;
         Ok(format!(
             "#figure-block(\n  id: {},\n  source-id: {},\n  anchor: {},\n  layout: {},\n  \
-             word: {},\n  alt: {},\n  pixels: ({width}, {height}),\n\
+             word: {},\n  alt: {},\n  path: {},\n  pixels: ({width}, {height}),\n\
              )[#figure-caption{}#figure-credit{}]\n\n",
             string_literal(&figure.id),
             string_literal(&figure.source_id),
@@ -532,8 +532,24 @@ impl Writer<'_> {
             string_literal(&figure.layout),
             string_literal(&self.ui("figure")),
             string_literal(&figure.alt_text),
+            path_literal(&figure.path),
             self.said(&figure.caption),
             self.said(&figure.credit),
+        ))
+    }
+
+    fn tail_art(&self, article: &Article, path: &Path) -> Result<String> {
+        let (width, height) = pixels(path)?;
+        let fit = self
+            .edition
+            .raw
+            .get("tail_art_fit")
+            .and_then(|v| v.as_str());
+        Ok(format!(
+            "#tail-art(article: {}, path: {}, pixels: ({width}, {height}), fit: {})\n\n",
+            string_literal(&article.id),
+            path_literal(path),
+            string_literal(fit.unwrap_or("cover").trim()),
         ))
     }
 
@@ -643,9 +659,10 @@ impl Writer<'_> {
             .enumerate()
             .map(|(index, plate)| {
                 format!(
-                    "#closing-plate(index: {}, alt: {})\n",
+                    "#closing-plate(index: {}, alt: {}, path: {})\n",
                     index + 1,
-                    string_literal(&plate.title)
+                    string_literal(&plate.title),
+                    path_literal(&plate.art_path)
                 )
             })
             .collect()
@@ -741,6 +758,11 @@ pub fn escape_markup(text: &str) -> String {
         out.push(character);
     }
     out
+}
+
+fn path_literal(path: &Path) -> String {
+    let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
+    string_literal(&absolute.to_string_lossy())
 }
 
 pub fn string_literal(value: &str) -> String {

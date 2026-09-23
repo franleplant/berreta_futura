@@ -59,6 +59,13 @@
 #let COMPACT-FIGURE-MAX-HEIGHT = 170pt
 #let OPENER-FIGURE-MAX-HEIGHT = 270pt
 #let COMPACT-BAND-INSET = 32.5pt
+#let FIGURE-RULE = 0.55pt
+#let CAPTION-NUDGE = 0.1166pt
+#let CREDIT-NUDGE = -0.09023pt
+#let TAIL-MAX-HEIGHT = 214pt
+#let TAIL-FRAME-BOTTOM = 45pt
+#let TAIL-CLEARANCE = 12pt
+#let PAGE-TOP-EPSILON = 0.01pt
 #let BAND-LAYOUTS = ("evidence_band", "evidence_band_prose", "adaptive_band")
 #let COMPACT-BAND = "compact_band"
 #let OPENER-ANCHOR = "__opener__"
@@ -248,6 +255,15 @@
   next.len() > 0 and next.first().value.kind == "figure" and is-band(next.first().value.layout)
 }
 
+#let tail-layer() = context {
+  let page = here().page()
+  for tail in query(<mag-tail>).map(m => m.value).filter(t => t.printed and t.page == page) {
+    let x = if calc.odd(page) { MARGIN-INNER } else { MARGIN-OUTER }
+    let y = PAGE-HEIGHT - MARGIN-BOTTOM + DATUM - tail.height
+    place(top + left, dx: x + RAIL, dy: y, image(tail.path, width: MEASURE, height: tail.height, fit: tail.fit))
+  }
+}
+
 #let reader(body) = {
   set page(
     width: PAGE-WIDTH,
@@ -260,6 +276,7 @@
     ),
     binding: left,
     background: furniture(),
+    foreground: tail-layer(),
   )
   set text(
     font: SERIF,
@@ -685,20 +702,20 @@
 
 #let HEADINGS = (
   (font: DISPLAY, size: 22pt, leading: 25pt, above: 23.4pt, below: 13pt, fill: INK, caps: false),
-  (font: DISPLAY, size: 18.5pt, leading: 21.5pt, above: 20.4pt, below: 11pt, fill: INK, caps: false),
-  (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, below: 8pt, fill: VIOLET, caps: true),
+  (font: DISPLAY, size: 18.5pt, leading: 21.5pt, above: 20.4pt, below: 11pt, fill: INK, caps: false, drop: 15pt),
+  (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, below: 8pt, fill: VIOLET, caps: true, drop: 10pt),
 )
 
-#let heading-stack(spec, above, escape, body) = {
+#let heading-stack(spec, above, escape, drop, body) = {
   block(above: above, below: 0pt, breakable: false, width: 100%, inset: escape, {
-    text(
+    move(dy: drop, text(
       font: spec.font,
       size: spec.size,
       weight: 600,
       fill: spec.fill,
       ..pinned(spec.leading),
       if spec.caps { upper(body) } else { body },
-    )
+    ))
     v(spec.below)
     block(height: HEADING-CLEARANCE, width: 100%, spacing: 0pt, [])
   })
@@ -709,10 +726,12 @@
   let spec = HEADINGS.at(calc.min(level, 3) - 1)
   flow-mark("heading", none, index => {
     let anchor = level >= 2 and level <= 3 and band-anchored(index)
+    let midpage = anchor and here().position().y > MARGIN-TOP + PAGE-TOP-EPSILON
     heading-stack(
       spec,
-      if anchor { 0pt } else { spec.above },
+      if anchor { auto } else { spec.above },
       if anchor { BAND-ESCAPE } else { NO-ESCAPE },
+      if midpage { spec.drop } else { 0pt },
       body,
     )
   })
@@ -818,6 +837,7 @@
         dy: 28.53085pt - 0.07625pt - 2.47375pt,
         rect(width: 17pt, height: 1.1pt, fill: SIGNAL-ORANGE, stroke: none),
       )
+      place(top + left, dy: 28.53085pt + 2.47375pt, [#metadata(none)<mag-end-baseline>])
       place(
         top + left,
         dx: 24pt,
@@ -837,19 +857,19 @@
 }
 
 #let figure-caption(body) = block(
-  text(size: CAPTION-SIZE, ..edges(CAPTION-SIZE, 8.6pt, HALF-SERIF), body),
+  move(dy: CAPTION-NUDGE, text(size: CAPTION-SIZE, ..edges(CAPTION-SIZE, 8.6pt, HALF-SERIF), body)),
   above: FIGURE-CAPTION-ABOVE,
   below: 0pt,
 )
 #let figure-credit(body) = block(
-  text(
+  move(dy: CAPTION-NUDGE + CREDIT-NUDGE, text(
     font: SANS,
     size: CAPTION-SIZE,
     weight: 500,
     fill: SLATE,
     ..edges(CAPTION-SIZE, 8.6pt, HALF-SANS),
     body,
-  ),
+  )),
   above: 0pt,
   below: 0pt,
 )
@@ -860,12 +880,15 @@
   pixels.at(1) * calc.min(width / pixels.at(0), max-height / pixels.at(1))
 )
 
-#let figure-image(pixels, spec) = layout(size => block(
-  height: fitted-image-height(size.width, pixels, spec.max-height),
-  width: 100%,
-  spacing: 0pt,
-  [],
-))
+#let figure-image(id, path, pixels, spec) = layout(size => {
+  let height = fitted-image-height(size.width, pixels, spec.max-height)
+  let width = pixels.at(0) * height / pixels.at(1)
+  block(height: height, width: 100%, spacing: 0pt, align(center, block(width: width, height: height, {
+    place(top + left, [#metadata((id: id, width: width, height: height))<mag-figure-box>])
+    place(top + left, image(path, width: width, height: height, fit: "stretch"))
+    place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK))
+  })))
+})
 
 #let figure-label(word) = context block(
   height: FIGURE-LABEL-ZONE,
@@ -892,6 +915,7 @@
   layout: none,
   word: none,
   alt: none,
+  path: none,
   pixels: none,
   body,
 ) = {
@@ -904,11 +928,11 @@
     breakable: false,
     width: 100%,
     inset: spec.escape,
-    {
+    move(dy: DATUM, {
       figure-label(word)
-      figure-image(pixels, spec)
+      figure-image(id, path, pixels, spec)
       body
-    },
+    }),
   ))
 }
 
@@ -940,7 +964,15 @@
   ))
 }
 
-#let tail-art() = none
+#let tail-art(article: none, path: none, pixels: none, fit: "cover") = context {
+  let baseline = query(selector(<mag-end-baseline>).before(here())).last().location().position()
+  let height = calc.min(MEASURE * pixels.at(1) / pixels.at(0), TAIL-MAX-HEIGHT)
+  let room = PAGE-HEIGHT - baseline.y - TAIL-FRAME-BOTTOM - TAIL-CLEARANCE
+  let printed = room >= height
+  let tail = (article: article, printed: printed, height: height, room: room, page: baseline.page)
+  [#metadata(tail + (path: path, fit: fit))<mag-tail>]
+}
+
 
 #let plates = state("mag-plates", ())
 #let piece-counter = counter("mag-piece-ordinal")
@@ -953,7 +985,10 @@
 
 #let plate-slots(articles, count) = range(1, count + 1).map(j => py-round(j * articles / count))
 
-#let plate-page(plate) = page(background: none, [])
+#let plate-page(plate) = page(
+  background: none,
+  place(top + left, dy: -MARGIN-TOP, image(plate.path, width: LIVE-WIDTH, height: PAGE-HEIGHT, fit: "contain")),
+)
 
 #let plate-plan() = {
   let all = plates.final()
@@ -971,8 +1006,8 @@
   }
 }
 
-#let closing-plate(index: 1, alt: none) = {
-  plates.update(p => p + ((index: index, alt: alt),))
+#let closing-plate(index: 1, alt: none, path: none) = {
+  plates.update(p => p + ((index: index, alt: alt, path: path),))
   context {
     let (all, articles, slots) = plate-plan()
     if all == none { return }

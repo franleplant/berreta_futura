@@ -14,7 +14,7 @@ use typst_layout::PagedDocument;
 pub const DESIGN: &str = "Typst / A5 fold proof";
 const OPENER_STATE: &str = "opener-parts";
 const FIT_TOLERANCE_PT: f64 = 0.01;
-const TAIL_DROP: &str = "the typst template sets no tail art";
+const RASTER_NUDGE_PT: f64 = 0.005;
 
 #[derive(Debug, Default)]
 pub struct Piece {
@@ -28,10 +28,31 @@ pub struct Piece {
     pub figures: Vec<usize>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Placed {
+    pub id: String,
+    pub page: usize,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Tail {
+    pub article: String,
+    pub printed: bool,
+    pub height: f64,
+    pub room: f64,
+}
+
 #[derive(Debug)]
 pub struct Measured {
     pub pieces: Vec<Piece>,
+    pub boxes: Vec<Placed>,
+    pub tails: Vec<Tail>,
     pub total_pages: usize,
+    pub page_height: f64,
     pub content_bottom: f64,
 }
 
@@ -49,6 +70,26 @@ fn text(value: &Typed, key: &str) -> Option<String> {
         Typed::Dict(d) => d.get(key).ok().and_then(|v| text(v, "")),
         _ => None,
     }
+}
+
+fn points(value: &Typed, key: &str) -> Option<f64> {
+    match value {
+        Typed::Dict(d) => match d.get(key).ok()? {
+            Typed::Length(length) => Some(length.abs.to_pt()),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn tail(value: &Typed) -> Option<Tail> {
+    let Typed::Dict(d) = value else { return None };
+    Some(Tail {
+        article: text(value, "article")?,
+        printed: matches!(d.get("printed").ok()?, Typed::Bool(true)),
+        height: points(value, "height")?,
+        room: points(value, "room")?,
+    })
 }
 
 fn ink_bottom(frame: &Frame, top: f64) -> f64 {
@@ -87,6 +128,7 @@ fn block_after(frame: &Frame, mark: Location, top: f64) -> Option<f64> {
 pub fn measure(document: &PagedDocument) -> Result<Measured> {
     let introspector = document.introspector();
     let mut pieces: Vec<Piece> = Vec::new();
+    let (mut boxes, mut tails) = (Vec::new(), Vec::new());
     for content in introspector.elements().all() {
         let Some(at) = content.location().and_then(|l| introspector.position(l)) else {
             continue;
@@ -113,6 +155,17 @@ pub fn measure(document: &PagedDocument) -> Result<Measured> {
             }),
             (Some("mag-piece-end"), Some(piece)) => piece.foot = Some(page),
             (Some("mag-opener-end"), Some(piece)) => piece.opener_end = Some(page),
+            (Some("mag-figure-box"), _) => boxes.push(Placed {
+                id: text(&meta.value, "id").context("a figure box carries no id")?,
+                page,
+                x: at.point.x.to_pt(),
+                y: at.point.y.to_pt(),
+                width: points(&meta.value, "width").context("a figure box carries no width")?,
+                height: points(&meta.value, "height").context("a figure box carries no height")?,
+            }),
+            (Some("mag-tail"), _) => {
+                tails.push(tail(&meta.value).context("a tail mark is malformed")?)
+            }
             (Some("mag-flow"), Some(piece))
                 if text(&meta.value, "kind").as_deref() == Some("figure") =>
             {
@@ -149,7 +202,10 @@ pub fn measure(document: &PagedDocument) -> Result<Measured> {
         .to_pt();
     Ok(Measured {
         pieces,
+        boxes,
+        tails,
         total_pages: document.pages().len(),
+        page_height,
         content_bottom: page_height - declared_pt("MARGIN-BOTTOM")?,
     })
 }
@@ -308,14 +364,21 @@ fn figures(edition: &Edition, measured: &Measured, tree: &Tree, root: &Path) -> 
             .find(|f| f.id == id)
             .with_context(|| format!("figure {id} is not declared by article {article}"))?;
         let (width, height) = pixels(&figure.path)?;
+        let placed = measured
+            .boxes
+            .iter()
+            .find(|b| b.id == id)
+            .with_context(|| format!("figure {id} placed no image box"))?;
+        let ppi = effective_ppi((width, height), placed.width, placed.height);
+        let bottom = measured.page_height - placed.y - placed.height + RASTER_NUDGE_PT;
         out.push(json!({
             "id": id,
             "article_id": article,
             "page": page,
             "path": figure.path.strip_prefix(root).unwrap_or(&figure.path).to_string_lossy().replace('\\', "/"),
             "pixel_dimensions": [width, height],
-            "box_points": null,
-            "effective_ppi": null,
+            "box_points": ([placed.x, bottom, placed.width, placed.height].map(|v| rounded(v, 3))),
+            "effective_ppi": rounded(ppi, 1),
             "caption": figure.caption,
             "credit": figure.credit,
         }));
@@ -325,6 +388,40 @@ fn figures(edition: &Edition, measured: &Measured, tree: &Tree, root: &Path) -> 
         "the typst document marks more figures than the tree emits"
     );
     Ok(out)
+}
+
+fn rounded(value: f64, places: i32) -> f64 {
+    let scale = 10f64.powi(places);
+    (value * scale).round() / scale
+}
+
+fn effective_ppi(pixels: (u32, u32), width: f64, height: f64) -> f64 {
+    (f64::from(pixels.0) / (width / 72.0)).min(f64::from(pixels.1) / (height / 72.0))
+}
+
+fn tail_art(article: &crate::model::manifest::Article, measured: &Measured) -> Result<Value> {
+    let tail = match article.tail_art {
+        None => None,
+        Some(_) => Some(
+            measured
+                .tails
+                .iter()
+                .find(|t| t.article == article.id)
+                .with_context(|| format!("the tail art of {} left no mark", article.id))?,
+        ),
+    };
+    let printed = tail.is_some_and(|t| t.printed);
+    Ok(json!({
+        "article": article.id,
+        "declared": tail.is_some(),
+        "printed": printed,
+        "height_points": tail.filter(|t| t.printed).map(|t| rounded(t.height, 4)),
+        "drop_reason": tail.filter(|t| !t.printed).map(|t| format!(
+            "the article's last page leaves {:.1}pt of open tail room below the end mark's \
+             12pt clearance; the strip prints at its one {:.1}pt size or not at all",
+            t.room, t.height
+        )),
+    }))
 }
 
 pub fn manifest_layout(
@@ -353,13 +450,11 @@ pub fn manifest_layout(
         "maximum_editorial_pages": format_int(edition, "max_editorial_pages", 2),
         "editorial_pages": measured.editorial_pages(),
         "figures": figures(edition, measured, tree, root)?,
-        "tail_arts": edition.articles.iter().map(|a| json!({
-            "article": a.id,
-            "declared": a.tail_art.is_some(),
-            "printed": false,
-            "height_points": null,
-            "drop_reason": a.tail_art.as_ref().map(|_| TAIL_DROP),
-        })).collect::<Vec<_>>(),
+        "tail_arts": edition
+            .articles
+            .iter()
+            .map(|a| tail_art(a, measured))
+            .collect::<Result<Vec<_>>>()?,
     }))
 }
 
@@ -785,9 +880,91 @@ mod tests {
         assert_eq!(layout["figures"][0]["page"], 6);
         assert_eq!(layout["figures"][0]["pixel_dimensions"], json!([48, 40]));
         assert_eq!(layout["tail_arts"][1]["declared"], true);
+        let figure = &layout["figures"][0];
+        assert_eq!(figure["box_points"][0], json!(86.024));
+        assert_eq!(figure["box_points"][2], json!(246.0));
+        assert_eq!(figure["box_points"][3], json!(205.0));
+        assert_eq!(figure["effective_ppi"], json!(14.0));
+        assert_eq!(layout["tail_arts"][1]["printed"], true);
+        assert_eq!(layout["tail_arts"][1]["height_points"], json!(108.3333));
         let row = measured.row("en", 1, "not_run");
         assert_eq!(row["totalPages"], 13);
         assert_eq!(row["editorialPages"], 1);
+    }
+
+    fn media(name: &str) -> String {
+        format!(
+            "{}/tests/typeset_fixtures/{name}",
+            env!("CARGO_MANIFEST_DIR")
+        )
+    }
+
+    fn piece_run(body: String) -> Tree {
+        Tree {
+            files: vec![File {
+                path: "main.typ".to_string(),
+                source: format!(
+                    "#piece(id: \"article-a\", kind: \"article\", short-title: \"A\")[\n\
+                     #opener-end()\n{body}]\n"
+                ),
+            }],
+        }
+    }
+
+    fn tail_after(gap: usize) -> Tail {
+        let tail = media("corpus/editions/900/art/tail.png");
+        let run = piece_run(format!(
+            "#v({gap}pt)\n#end-mark[End / 01]\n\
+             #tail-art(article: \"a\", path: \"{tail}\", pixels: (60, 20), fit: \"cover\")\n"
+        ));
+        let measured = measure(&compiled(&run)).expect("the run measures");
+        measured.tails[0].clone()
+    }
+
+    #[test]
+    fn the_tail_art_prints_only_when_its_strip_fits_the_room_under_the_end_mark() {
+        let spill = (0..500).find(|gap| !tail_after(*gap).printed);
+        let first = spill.expect("some gap leaves no room for the strip");
+        let (fits, spills) = (tail_after(first - 1), tail_after(first));
+        assert!(fits.printed);
+        assert!(!spills.printed);
+        assert!((fits.height - 325.0 / 3.0).abs() < 1e-9);
+        assert!(fits.room >= fits.height && spills.room < spills.height);
+        assert!((fits.room - spills.room - 1.0).abs() < 1e-6);
+    }
+
+    fn anchor_gap(lead: &str) -> f64 {
+        let run = piece_run(format!(
+            "{lead}#doc-heading(level: 2)[Anchor]\n\
+             #figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", \
+             layout: \"evidence_band\", word: \"Figure\", alt: \"a\", \
+             path: \"{}\", pixels: (40, 25))[#figure-caption[Cap.]#figure-credit[Credit.]]\n",
+            media("media/landscape.png")
+        ));
+        let document = compiled(&run);
+        let measured = measure(&document).expect("the run measures");
+        let placed = &measured.boxes[0];
+        let frame = &document.pages()[placed.page - 1].frame;
+        placed.y - glyph_top(frame, "Anchor", 0.0).expect("the heading is set")
+    }
+
+    fn glyph_top(frame: &Frame, word: &str, top: f64) -> Option<f64> {
+        frame.items().find_map(|(at, item)| match item {
+            FrameItem::Group(group) => glyph_top(&group.frame, word, top + at.y.to_pt()),
+            FrameItem::Text(text) if text.text.as_str() == word => Some(top + at.y.to_pt()),
+            _ => None,
+        })
+    }
+
+    #[test]
+    fn a_midpage_band_anchor_is_painted_down_by_its_dropped_space_before() {
+        let midpage = anchor_gap("#doc-paragraph(standfirst: false, roster: false)[Bridge.]\n");
+        let page_top =
+            anchor_gap("#doc-paragraph(standfirst: false, roster: false)[Bridge.]\n#colbreak()\n");
+        assert!(
+            (page_top - midpage - 15.0).abs() < 1e-6,
+            "{page_top} against {midpage}"
+        );
     }
 
     #[test]
