@@ -15,6 +15,7 @@ pub const DESIGN: &str = "Typst / A5 fold proof";
 const OPENER_STATE: &str = "opener-parts";
 const FIT_TOLERANCE_PT: f64 = 0.01;
 const RASTER_NUDGE_PT: f64 = 0.005;
+const MIN_FIGURE_PPI: f64 = 300.0;
 
 #[derive(Debug, Default)]
 pub struct Piece {
@@ -370,6 +371,12 @@ fn figures(edition: &Edition, measured: &Measured, tree: &Tree, root: &Path) -> 
             .find(|b| b.id == id)
             .with_context(|| format!("figure {id} placed no image box"))?;
         let ppi = effective_ppi((width, height), placed.width, placed.height);
+        if ppi < MIN_FIGURE_PPI {
+            bail!(
+                "Curated figure {id} resolves to {ppi:.1} ppi at its Quiet Standard placement; \
+                 the minimum is {MIN_FIGURE_PPI:.0} ppi"
+            );
+        }
         let bottom = measured.page_height - placed.y - placed.height + RASTER_NUDGE_PT;
         out.push(json!({
             "id": id,
@@ -411,6 +418,15 @@ fn tail_art(article: &crate::model::manifest::Article, measured: &Measured) -> R
         ),
     };
     let printed = tail.is_some_and(|t| t.printed);
+    if let (Some(path), Some(t)) = (&article.tail_art, tail.filter(|t| t.printed)) {
+        let ppi = effective_ppi(pixels(path)?, declared_pt("MEASURE")?, t.height);
+        if ppi < MIN_FIGURE_PPI {
+            bail!(
+                "Article tail art {} resolves to {ppi:.1} ppi; the minimum is {MIN_FIGURE_PPI:.0} ppi",
+                path.display()
+            );
+        }
+    }
     Ok(json!({
         "article": article.id,
         "declared": tail.is_some(),
@@ -878,18 +894,48 @@ mod tests {
         );
         assert_eq!(layout["figures"][0]["id"], "budget-diagram");
         assert_eq!(layout["figures"][0]["page"], 6);
-        assert_eq!(layout["figures"][0]["pixel_dimensions"], json!([48, 40]));
+        assert_eq!(
+            layout["figures"][0]["pixel_dimensions"],
+            json!([1200, 1000])
+        );
         assert_eq!(layout["tail_arts"][1]["declared"], true);
         let figure = &layout["figures"][0];
         assert_eq!(figure["box_points"][0], json!(86.024));
         assert_eq!(figure["box_points"][2], json!(246.0));
         assert_eq!(figure["box_points"][3], json!(205.0));
-        assert_eq!(figure["effective_ppi"], json!(14.0));
+        assert_eq!(figure["effective_ppi"], json!(351.2));
         assert_eq!(layout["tail_arts"][1]["printed"], true);
         assert_eq!(layout["tail_arts"][1]["height_points"], json!(108.3333));
         let row = measured.row("en", 1, "not_run");
         assert_eq!(row["totalPages"], 13);
         assert_eq!(row["editorialPages"], 1);
+    }
+
+    #[test]
+    fn a_figure_or_printed_tail_below_300_ppi_is_refused_with_the_adapter_wording() {
+        let (tree, document, mut edition, root) = fixture("900");
+        let measured = measure(&document).expect("the fixture measures");
+        let small = PathBuf::from(media(
+            "corpus/library/sources/fixture-source-a/media/diagram-2.png",
+        ));
+        edition.articles[0].figures[0].path = small;
+        let refused = manifest_layout(&edition, &measured, &tree, &root).unwrap_err();
+        assert_eq!(
+            refused.to_string(),
+            "Curated figure budget-diagram resolves to 14.0 ppi at its Quiet Standard placement; \
+             the minimum is 300 ppi"
+        );
+        let (_, _, mut edition, _) = fixture("900");
+        let strip = PathBuf::from(media("media/landscape.png"));
+        edition.articles[1].tail_art = Some(strip.clone());
+        let refused = manifest_layout(&edition, &measured, &tree, &root).unwrap_err();
+        assert_eq!(
+            refused.to_string(),
+            format!(
+                "Article tail art {} resolves to 8.9 ppi; the minimum is 300 ppi",
+                strip.display()
+            )
+        );
     }
 
     fn media(name: &str) -> String {
@@ -915,7 +961,7 @@ mod tests {
         let tail = media("corpus/editions/900/art/tail.png");
         let run = piece_run(format!(
             "#v({gap}pt)\n#end-mark[End / 01]\n\
-             #tail-art(article: \"a\", path: \"{tail}\", pixels: (60, 20), fit: \"cover\")\n"
+             #tail-art(article: \"a\", path: \"{tail}\", pixels: (1500, 500), fit: \"cover\")\n"
         ));
         let measured = measure(&compiled(&run)).expect("the run measures");
         measured.tails[0].clone()
