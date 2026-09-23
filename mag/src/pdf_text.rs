@@ -72,8 +72,13 @@ fn read_page(doc: &Document, id: ObjectId, fonts: &mut FontCache) -> Result<Vec<
     {
         bail!("{what} is declared textless (ToUnicode U+0000) yet sits inside a word");
     }
-    if it.glyphs.is_empty() && it.invisible > 0 {
-        bail!("the page's only text is invisible (render mode 3, an OCR layer over a scan?), not printed text");
+    if it.invisible > 0 && (it.images > 0 || it.invisible > it.glyphs.len()) {
+        bail!(
+            "the page carries invisible text (render mode 3: {} invisible glyphs, {} printed, {} images), an OCR layer over a scan?; OCR is not transcription",
+            it.invisible,
+            it.glyphs.len(),
+            it.images
+        );
     }
     if it.glyphs.is_empty() && it.images > 0 {
         bail!("the page is an image with no text layer (a scan?); OCR is not transcription");
@@ -843,7 +848,10 @@ impl Interp<'_> {
             .and_then(|x| x.get(key).ok())
             .and_then(|s| deref(self.doc, s).as_stream().ok())
         else {
-            return Ok(());
+            bail!(
+                "XObject /{} is invoked but missing from the resources",
+                String::from_utf8_lossy(key)
+            );
         };
         match stream.dict.get(b"Subtype").map(name_of).as_deref() {
             Ok("Image") => self.images += 1,
