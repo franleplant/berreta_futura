@@ -1,6 +1,9 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-5.3c, WP-3.2, WP-0.2o, WP-5.7a (5.3c + 5.7a verifier running).
+Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o.
+Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
+WP-5.3c, WP-5.7a.
+Running: WP-3.4, WP-0.2p, WP-5.7b.
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
