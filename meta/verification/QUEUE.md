@@ -1,6 +1,6 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-5.3c, WP-3.2, WP-0.2o.
+Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-5.3c, WP-3.2, WP-0.2o, WP-5.7a (5.3c + 5.7a verifier running).
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -24,6 +24,9 @@ Orchestrator decisions:
 - `design_direction` is an engine label, excluded from layout comparison.
 
 For Fran (product questions, nothing blocks on them):
+- tools/pdf2md.py's ". . ." paragraph filter silently drops real text
+  (WP-5.7a.md, tarpit fixture); may affect article.md files captured from
+  PDFs. WP-5.7b replaces it.
 - `cover-booklet-inside-not-blank` is unreachable in both critics.
 - `label: false` prints "False" in both engines.
 - The verbatim ten-page cap has no refusal on either leg (Dario 13 pp).
