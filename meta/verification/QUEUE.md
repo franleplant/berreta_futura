@@ -3,7 +3,8 @@
 Landed, awaiting a verifier: WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a.
-Running: WP-0.2q (+ ICCBased image decode), WP-5.7b, WP-5.5a increment 2.
+Running: WP-0.2q (+ ICCBased image decode), WP-5.5a increment 2,
+verifier for WP-5.7b + WP-5.3h.
 Parked: WP-3.4 on branch `wp-3.4` (1b313d4), done, lands after WP-0.2q
 (blocked only on the comparator's ICCBased image decode).
 
@@ -36,6 +37,9 @@ Orchestrator decisions:
 - `design_direction` is an engine label, excluded from layout comparison.
 - What renders is the glyph (face, size, id, position, fill), not the
   engine's grouping into show operators; outline-less glyphs paint nothing.
+- WP-5.7b departures accepted: Type3 fonts with ToUnicode are read;
+  invisible text on a page that also prints text is skipped.
+- WP-6.1 also deletes tools/pdf2md.py (unused since WP-5.7b, 4727939).
 - Bullets: template changes to WeasyPrint's control points (0.01 pt off,
   not normalizable within the quantum). Owner WP-3.1.
 
