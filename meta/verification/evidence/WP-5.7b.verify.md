@@ -105,3 +105,67 @@ body.
 Not proven: behaviour on any real scanned PDF (none in corpus; the loss case
 is synthetic but built from standard operators); fidelity on documents
 outside the five fixtures beyond the one held-out file.
+
+## Re-verify (rework 9c65b66)
+
+Verifier worktree at 9c65b66, own `CARGO_TARGET_DIR`. No code changed;
+scratch tests and mutations restored (`cmp` exit 0, `git status` clean).
+
+### Verdict: ACCEPTED
+
+The rejected point is fixed: the crafted scan page fails loud, the positive
+controls still read, and the one remaining rule (no image, fewer invisible
+glyphs than printed) does not hide loss of printed text.
+
+### Replay
+
+| command (in `mag/`) | exit | observed |
+| --- | --- | --- |
+| `cargo test --test pdf_text -- --nocapture` | 0 | 14 passed; bert 40/40, deepseek 38/38, fsr 53/53, pytorch 50/50, tarpit 36/36 = 217/217; `three_runs_are_byte_identical` ok |
+| `cargo test` (full) | 0 | 29 binaries, 476 passed, 0 failed (matches the rework evidence) |
+| `cargo fmt --check`, `cargo clippy -q --all-targets -- -D warnings` | 0, 0 | |
+| held-out `output/print/a-sneak-preview-.../print.pdf` (scratch test) | 0 | Ok, 1,708 words, unchanged |
+
+`a_scan_with_a_printed_footer_and_an_ocr_layer_fails_loud` is my original
+crafted page verbatim (full-page `/Im1`, 8 pt `Downloaded from a library`,
+`3 Tr` body line) and asserts the error; its footer-only positive control
+reads `"Downloaded from a library\n"`. `positive_control_reads_a_plain_page`
+and the Type3-with-ToUnicode read are green.
+
+### Crafted probes (scratch test, not committed)
+
+| page | result |
+| --- | --- |
+| scan as an INLINE image (`BI ... ID ... EI`) + footer + OCR | Err, "4 invisible glyphs, 22 printed, 1 images" |
+| scan + footer + OCR in `7 Tr` (invisible and clip) | Err, same counts |
+| scan image drawn inside a Form XObject + footer + OCR | Err, same counts (images counted through the form) |
+| no image, vector fill, 22 printed, 4 invisible | Ok, printed text only (the accepted rule) |
+| no image, 4 printed, 4 invisible | Ok, printed only (`>` is strict; equal counts read) |
+
+### Mutations of my own (each restored)
+
+| mutation | result |
+| --- | --- |
+| drop the `it.images > 0 \|\|` clause | caught: `a_scan_with_a_printed_footer...` fails |
+| `invisible > glyphs` to `invisible > 2 * glyphs` | caught: `skewed_mirrored_and_invisible_text_fail_loud` fails |
+| inline images (`BI`/`EI`) no longer counted | SURVIVED: no committed test builds an inline image |
+
+### Why the remaining rule is accepted
+
+Everything the rule reads is printed; what it drops is text a reader of the
+page cannot see. A scan needs a raster, and every raster path I tried
+(XObject, inline, inside a form) is counted and trips the image clause, so
+an OCR body is never dropped for being outnumbered by a footer. The rule
+can only drop an OCR layer where the scan is not a counted image (a raster
+painted through a tiling pattern, or a vector-traced page) AND the hidden
+glyphs are fewer than the printed ones; that is contrived, and a real OCR
+body outnumbers its stamped footer, which fails loud on the count alone.
+
+### Residuals (not grounds for rejection)
+
+- Inline-image counting is correct today (probe above) but unpinned: the
+  mutation that removes it survives. A one-line inline-image variant of the
+  scan test would pin it.
+- Rasters painted through patterns are not counted as images.
+- The missing-XObject fix is tested (`a_missing_xobject_fails_loud`) and
+  bites under the worker's mutation; not re-mutated here.
