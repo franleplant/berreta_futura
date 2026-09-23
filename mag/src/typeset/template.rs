@@ -379,6 +379,26 @@ mod tests {
     }
 
     #[test]
+    fn the_opener_title_is_set_with_its_tracking() {
+        let (_, font_dir) = roots();
+        let tree = fixture_tree("901");
+        let untracked = TEMPLATE_TYP.replace(
+            "#let OPENER-TITLE-TRACKING = -0.045",
+            "#let OPENER-TITLE-TRACKING = 0",
+        );
+        assert_ne!(untracked, TEMPLATE_TYP, "the tracking constant moved");
+        let render = |template: &str| {
+            compile(&Sources::new(&tree, template, ROOT_TYP, font_dir).expect("the world builds"))
+                .expect("the opener run compiles")
+        };
+        assert_ne!(
+            render(TEMPLATE_TYP),
+            render(&untracked),
+            "OPENER-TITLE-TRACKING reaches no glyph on the illustrated opener"
+        );
+    }
+
+    #[test]
     fn the_illustrated_opener_owns_its_own_page() {
         let (_, font_dir) = roots();
         let tree = fixture_tree("901");

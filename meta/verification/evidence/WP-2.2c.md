@@ -2,6 +2,14 @@
 
 ## Base
 
+- **Re-landed at `art_directed` `0494017`.** The work below was measured at
+  `0cd65b2` and parked as `b31c05e`; it was cherry-picked onto `0494017`
+  (clean apply, no conflict) in a fresh detached worktree at `.../tmp/wp22c2`,
+  and this slice then landed WP-2.2b's rework, the opener-title tracking
+  (`### The opener title tracking` under `## Metrics`). Steps 1 to 5, 7 and 8
+  of `## Commands` were re-run there; step 6 was not (it touches nothing this
+  WP owns and its table is dated below). Numbers in `## Metrics` are the
+  re-run's unless a row says otherwise.
 - Measured at `art_directed` **`0cd65b2`** (`verify(parity): WP-0.2i accepted`)
   with this WP's diff applied, in a detached worktree at `.../tmp/wp22c2`.
   **The first worktree of this WP (`.../tmp/wp22c`, based at `746a649` and
@@ -181,6 +189,24 @@ PY
 # 7. Determinism of the typst leg.
 ./mag/target/debug/mag render 010 --engine typst --no-model --langs en --run "$RUN" > /dev/null
 shasum -a 256 "$TYPST/en/reader.pdf" "$(ls -d editions/010/render-* | tail -1)/en/reader.pdf"
+
+# 8. The opener title tracking: on each of the nine opener pages, the title's
+#    line count, first-line word count and first-line width on both legs.
+#    Title lines are the lines at least 0.8x the page's tallest line.
+cat > "$STAGE/titles.py" <<'PY'
+import re, subprocess, sys
+def lines(pdf, page):
+    out = subprocess.run(["pdftotext","-f",str(page),"-l",str(page),"-bbox-layout",pdf,"-"],capture_output=True,text=True).stdout
+    return [(float(l.group(1)), float(l.group(3)), float(l.group(4)) - float(l.group(2)), re.findall(r'>([^<]*)</word>', l.group(5)))
+            for l in re.finditer(r'<line xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">(.*?)</line>', out, re.S)]
+def title(pdf, page):
+    ls = lines(pdf, page); big = max(h for *_, h, _ in ls)
+    return [(x1 - x0, ws) for x0, x1, h, ws in ls if h > big * 0.8]
+for p in [4, 7, 11, 17, 31, 36, 40, 46, 50]:
+    a, b = title(sys.argv[1], p), title(sys.argv[2], p)
+    print(f"p{p:2d} lines {len(a)}/{len(b)} | first-line words {len(a[0][1])}/{len(b[0][1])} | width {a[0][0]:.2f}/{b[0][0]:.2f} delta {b[0][0]-a[0][0]:+.2f}")
+PY
+uv run python "$STAGE/titles.py" "$ORACLE/en/reader.pdf" "$TYPST/en/reader.pdf"
 ```
 
 ## Tool versions
@@ -190,16 +216,16 @@ shasum -a 256 "$TYPST/en/reader.pdf" "$(ls -d editions/010/render-* | tail -1)/e
   nor `Cargo.lock`**; the PNG and JPEG headers are read by 40 lines in
   `media.rs` rather than by a decoder, because only the frame size is wanted
   and a decoder dependency would have put this WP under rule 1a for nothing.
-- poppler 25.09.1; WeasyPrint 69.0 (the oracle leg and the synthetic probe);
+- poppler 25.08.0 (`pdfinfo -v`, matching `parity.yaml:271`; the parked file said 25.09.1, WP-2.2b's defect G carried forward, corrected here); WeasyPrint 69.0 (the oracle leg and the synthetic probe);
   CPython 3.12.11 through `uv run python`; Pillow 12.3.0 generated the three
   media fixtures (40x25 PNG, 17x29 JPEG, 11x13 WebP).
 - No typst CLI; `TYPST_ROOT` unset and irrelevant.
 
 ## Metrics
 
-Every number below is from `## Commands` at `0cd65b2` with this diff, except
-the orphan/widow table, measured in the deleted worktree at `746a649` and
-re-derived at its two boundary values by step 6.
+Every number below is from `## Commands` at `0494017` with this diff and the
+tracking fix, except the orphan/widow table, measured in the deleted worktree
+at `746a649` and re-derived at its two boundary values by step 6 at `0cd65b2`.
 
 | quantity | value |
 | --- | --- |
@@ -214,10 +240,45 @@ re-derived at its two boundary values by step 6.
 | figure block y on its page, oracle minus typst | +54.4 / +15.4 / +80.4 pt: content above the figure differs, WP-3.1's rows and WP-3.4's images; same-page placement is met, same-y is not claimed |
 | WP-2.1 projection oracle | **68,758 characters / 69,097 bytes, sha256 `bec79cc1aa9f...`, before and after**; `compared the live edition: 68758 characters` both times |
 | `pixels:` arguments emitted | 3: `(2000, 1418)`, `(2400, 1350)`, `(2400, 1350)`, read from the staged PNG headers |
-| typst PDF sha256, two renders of one staged input set | identical, **`23bbbe107f13...`** |
+| typst PDF sha256, two renders of one staged input set | identical, **`02417ef38b39...`** (`23bbbe107f13...` before the tracking fix, at `0cd65b2` and again at `0494017` with the fix reverted) |
+| opener title lines / first-line words equal to the oracle's | **9 of 9 / 9 of 9** (before the fix: 9 / 5 of 9) |
+| opener title first-line width, typst minus oracle | **-0.53 to -0.82 pt** on all nine (before the fix: +25.1 to +33.1 pt on five, the break different on four) |
 | comparator exit / verdict written | **1 / none**: `tracing page 3 ... operator cs: unsupported operator cs` |
 | page-3 colour operators, typst / weasyprint | `cs` 48, `scn` 48 / `rg` 48 |
-| `cargo test` binaries / tests, all passing | **24 / 235** at `0cd65b2` with this diff (WP-2.2b landed at 23 / 221) |
+| `cargo test` binaries / tests, all passing | **25 / 265** at `0494017` with this diff and the tracking test (24 / 235 at `0cd65b2`; WP-2.2b landed at 23 / 221) |
+
+### The opener title tracking (WP-2.2b's rejection)
+
+WP-2.2b's verifier found `OPENER-TITLE-TRACKING = -0.045` declared and read
+nowhere. Its Python source is `weasyprint-a5.css:1495-1499`,
+`article[data-article-opener="illustrated_paper_spots_v1"] > header > h1 {
+letter-spacing: -.045em }`: the illustrated opener's title, at render only.
+The adapter's fit (`_fitted_display` -> `_wrap`, `weasyprint_adapter.py`)
+takes no tracking argument, so the fit is untracked. The template now matches
+that scope: `opener-page` sets the title inside
+`text(..tracked(OPENER-TITLE-TRACKING * fit.size), ...)`, and `fitted-title`
+still measures `opener-title-text` untracked. `opener-title-text` has no other
+caller.
+
+- Measured on 010 (step 8): same line count and same first-line words as the
+  oracle on all nine openers, first-line width within 0.53 to 0.82 pt,
+  typst narrower on all nine. The residual is not explained; it is of the
+  size of one glyph's tracking (`0.045 x ~30 pt`) or less, and a trailing
+  tracking step after the last glyph is one hypothesis, not tested.
+- Positive control, the same script with the fix reverted in the same
+  worktree: +31.73 / +29.09 / +29.20 / +33.05 / +25.12 pt on the five
+  openers whose break matched, and the break different on Dario, third-era,
+  DeepSeek and Storage, exactly WP-2.2b's verifier's measurement. The
+  reverted leg hashed `23bbbe107f13...`, the parked leg's hash, so the fix is
+  the whole of the difference.
+- Page count and all nine spans and starts are unchanged by the fix (56 / 46,
+  step 3), as the verifier predicted: the opener page is filled either way.
+- Committed test `the_opener_title_is_set_with_its_tracking` compiles fixture
+  901 (an illustrated opener) with the template and with the constant zeroed
+  and requires different PDF bytes. **It failed with the fix reverted**
+  (`OPENER-TITLE-TRACKING reaches no glyph on the illustrated opener`) and
+  passes with it. It proves the constant reaches the ink; it does not pin
+  the direction or the magnitude, which step 8 measures on 010.
 
 ### The central question, answered by measurement
 
@@ -365,8 +426,9 @@ What stands in the verdict's place:
 - page count **56 == 56**, measured directly by `pdfinfo` on both legs (step 3)
   and demonstrated by the comparator itself reaching the tracer (WP-2.2b's run
   stopped at `tier S page_count: fail (56 vs 55)`);
-- `b_reader_sha256` **`23bbbe107f139beeb516d0d32287b44d01a8029e151e13ddfdca37d3f7d01a3c`**,
-  reproduced across two renders; `staged_input_digest` unchanged from WP-2.2a
+- `b_reader_sha256` **`02417ef38b3948fe4ca73d72908dbf9104fae5e62b4795ab88f7ae5d92d40e0a`**
+  at `0494017` with the tracking fix, reproduced across two renders
+  (`23bbbe10...` before the fix); `staged_input_digest` unchanged from WP-2.2a
   and WP-2.2b, `e48eb5c6...`, since the staged inputs are the same 57 files
   (the comparator printed it before aborting in the pre-loss run);
 - oracle leg `8e81e8b4...` for this worktree's render, not reproducible
@@ -424,6 +486,10 @@ mode and enters no reader text. Structure is proved only by the PDF.
   order.* `media.rs` tests use a 40x25 PNG and a 17x29 JPEG, assert both,
   assert they differ from each other and are non-square, and assert WebP and a
   missing file refuse by name.
+- *The opener title carries its tracking and breaks where the oracle's
+  does.* Step 8 on nine openers and the reverted-fix control;
+  `the_opener_title_is_set_with_its_tracking` fails when the constant is
+  unapplied.
 - *The `FIGURE nn` label, which no text oracle sees, is printed, numbered and
   positioned.* Step 5: text `FIGURE 01`, x exact, label-to-caption within
   0.118pt on all three, against the oracle's PDF.
@@ -442,6 +508,8 @@ mode and enters no reader text. Structure is proved only by the PDF.
   cause is a hypothesis.
 - **Extracts, compact bands, opener figures, plate pages**: transcribed,
   unexercised by 010, fixture-only until **WP-3.3** / **WP-3.4**.
+- **The opener title's residual 0.53 to 0.82 pt** first-line width: measured,
+  unexplained, no break affected on 010.
 - **The `es` locale**: untouched.
 
 ## Residuals
@@ -464,5 +532,10 @@ mode and enters no reader text. Structure is proved only by the PDF.
 
 ## Landing
 
-Filled at landing: base captured before rebasing, CAS against it, the four
-checks, check 4 stated as instantaneous at a named tip.
+Per the worker brief: two commits in the worktree on base `0494017` (the
+cherry-pick of `b31c05e`, then the tracking fix with this file), landed with
+`git merge --ff-only` from the main tree onto `art_directed` at tip
+`0494017`. `cargo fmt --check`, `cargo clippy --all-targets -D warnings` and
+`cargo test` (25 binaries, 265 tests, exit 0) were run at the second commit's
+tree; the pre-commit hook re-ran fmt, clippy, ruff and nocomments. Branch
+`wp22c-parked` deleted after landing.
