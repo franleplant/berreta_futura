@@ -1,9 +1,18 @@
+#[path = "../src/cover/text.rs"]
+#[allow(dead_code)]
+mod cover_text;
 #[path = "../src/model/doc.rs"]
 #[allow(dead_code)]
 mod doc;
+#[path = "../src/web/edition.rs"]
+#[allow(dead_code)]
+mod edition;
 #[path = "../src/model/manifest.rs"]
 #[allow(dead_code)]
 mod manifest;
+#[path = "../src/web/markup.rs"]
+#[allow(dead_code)]
+mod markup;
 #[path = "../src/model/records.rs"]
 #[allow(dead_code)]
 mod records;
@@ -21,10 +30,15 @@ mod model {
     pub(crate) use super::{doc, manifest, records, shared};
 }
 
+mod cover {
+    pub(crate) use super::cover_text as text;
+}
+
+use edition::{write_web_edition, WebOptions};
 use manifest::{load_edition, Edition, LoadOptions, Records};
 use semantic::{file_uri, render_html_edition, HtmlAsset};
 use serde_json::{json, Value};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
@@ -92,7 +106,7 @@ fn write_png(path: &Path, width: u32, height: u32) {
 
 fn build_stage() -> PathBuf {
     let repo = repository();
-    let stage = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("web-semantic-stage");
+    let stage = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("web-port-stage");
     if stage.exists() {
         std::fs::remove_dir_all(&stage).expect("the previous stage is removable");
     }
@@ -105,7 +119,11 @@ fn build_stage() -> PathBuf {
         &stage.join("editions/010/art"),
     );
     link_tree(
-        &Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/web_semantic_fixtures/wfx"),
+        &repo.join("editions/010/source-codes"),
+        &stage.join("editions/010/source-codes"),
+    );
+    link_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/web_port_fixtures/wfx"),
         &stage.join("editions/wfx"),
     );
     let manifest = repo.join("editions/010/edition.yaml");
@@ -393,4 +411,293 @@ fn fenced_code_with_a_language_refuses_rather_than_diverging() {
     editorial.path = path;
     let error = render_html_edition(&edition, &settable()).expect_err("pygments is not ported");
     assert!(error.to_string().contains("\"python\""), "{error}");
+}
+
+const WEB_PYTHON: &str = r#"
+import dataclasses, json, sys
+from pathlib import Path
+from magazine.manifest import load_edition
+from magazine.records import load_records
+from magazine.web_edition import write_web_edition
+root = Path(sys.argv[1]).resolve()
+records = {record.id: record for record in load_records(root / "library" / "sources")}
+urls = {record.id: record.url for record in records.values() if record.url}
+for spec in json.loads(sys.argv[2]):
+    edition = load_edition(root, spec["edition"], set(records), publication_name=sys.argv[3], source_records=records)
+    if "strip_opener" in spec:
+        index = spec["strip_opener"]
+        stripped = dataclasses.replace(edition.articles[index], opener_art=None)
+        edition = dataclasses.replace(edition, articles=(*edition.articles[:index], stripped, *edition.articles[index + 1:]))
+    optional = {key: root / spec[key] for key in ("wordmark", "favicon") if key in spec}
+    if "headline" in spec:
+        optional["headline_lines"] = tuple(spec["headline"])
+    if "duplicate" in spec:
+        edition = dataclasses.replace(edition, articles=(*edition.articles, edition.articles[spec["duplicate"]]))
+    kept = {key: value for key, value in urls.items() if key not in spec.get("drop_urls", [])}
+    try:
+        write_web_edition(edition, root / "python-web" / spec["name"], source_urls=kept, alternates=dict(spec.get("alternates", [])), **optional)
+    except Exception as error:
+        (root / "python-web" / f"{spec['name']}.error").write_text(str(error))
+"#;
+
+const WORDMARK: &str =
+    "editions/010/source-codes/source-code-an-alignment-assessment-of-recent-cybersecurity-415f8f1a.svg";
+const FAVICON: &str =
+    "editions/010/source-codes/source-code-countering-misuse-of-ai-september-2026-anthropic-d957d6c9.svg";
+
+fn web_specs() -> Value {
+    json!([
+        {"name": "010", "edition": "010"},
+        {"name": "wfx", "edition": "wfx"},
+        {"name": "chrome", "edition": "wfx", "wordmark": WORDMARK, "favicon": FAVICON,
+         "headline": ["The Fixture", "Issue"],
+         "alternates": [["es", "../../es/web/"], ["pt", "../../pt/web/"]]},
+        {"name": "mismatch", "edition": "wfx", "wordmark": WORDMARK, "headline": ["Wrong"]},
+        {"name": "010_chrome", "edition": "010", "wordmark": WORDMARK, "favicon": FAVICON},
+        {"name": "010_mixed", "edition": "010", "strip_opener": 1},
+        {"name": "dup_keyed", "edition": "wfx", "duplicate": 0},
+        {"name": "dup_tailed", "edition": "wfx", "duplicate": 1},
+        {"name": "nourl", "edition": "wfx", "drop_urls": ["claude-of-duty-prompt-md-at-main-dd93105d"]},
+    ])
+}
+
+fn python_web() -> &'static Path {
+    static WRITTEN: OnceLock<PathBuf> = OnceLock::new();
+    WRITTEN.get_or_init(|| {
+        let output = Command::new("uv")
+            .args(["run", "python", "-c", WEB_PYTHON])
+            .arg(stage())
+            .arg(web_specs().to_string())
+            .arg(PUBLICATION)
+            .current_dir(repository())
+            .output()
+            .expect("uv runs");
+        assert!(
+            output.status.success(),
+            "the Python web oracle failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        stage().join("python-web")
+    })
+}
+
+fn tree(root: &Path) -> BTreeMap<String, Vec<u8>> {
+    fn walk(root: &Path, directory: &Path, into: &mut BTreeMap<String, Vec<u8>>) {
+        for entry in std::fs::read_dir(directory).expect("the tree is readable") {
+            let path = entry.expect("an entry").path();
+            if path.is_dir() {
+                walk(root, &path, into);
+            } else {
+                let relative = path.strip_prefix(root).expect("inside the root");
+                into.insert(
+                    relative.to_string_lossy().into_owned(),
+                    std::fs::read(&path).expect("the file reads"),
+                );
+            }
+        }
+    }
+    let mut files = BTreeMap::new();
+    walk(root, root, &mut files);
+    files
+}
+
+fn rust_web(name: &str) -> Result<PathBuf, String> {
+    let spec = web_specs()
+        .as_array()
+        .expect("specs")
+        .iter()
+        .find(|spec| spec["name"] == name)
+        .expect("the spec exists")
+        .clone();
+    let root = stage();
+    let urls: BTreeMap<String, String> = records::load_records(&root.join("library/sources"))
+        .expect("records")
+        .into_iter()
+        .filter(|record| !record.url.is_empty())
+        .filter(|record| {
+            !spec["drop_urls"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .any(|dropped| dropped == record.id.as_str())
+        })
+        .map(|record| (record.id, record.url))
+        .collect();
+    let wordmark = spec["wordmark"].as_str().map(|path| root.join(path));
+    let favicon = spec["favicon"].as_str().map(|path| root.join(path));
+    let options = WebOptions {
+        wordmark: wordmark.as_deref(),
+        favicon: favicon.as_deref(),
+        source_urls: urls,
+        headline_lines: spec["headline"].as_array().map(|lines| {
+            lines
+                .iter()
+                .map(|line| line.as_str().expect("a line").to_string())
+                .collect()
+        }),
+        alternates: spec["alternates"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|pair| {
+                (
+                    pair[0].as_str().expect("code").to_string(),
+                    pair[1].as_str().expect("prefix").to_string(),
+                )
+            })
+            .collect(),
+    };
+    let destination = root.join("rust-web").join(name);
+    let mut edition = load(spec["edition"].as_str().expect("an edition"));
+    if let Some(index) = spec["strip_opener"].as_u64() {
+        edition.articles[index as usize].opener_art = None;
+    }
+    if let Some(index) = spec["duplicate"].as_u64() {
+        let copy = edition.articles[index as usize].clone();
+        edition.articles.push(copy);
+    }
+    write_web_edition(
+        &edition,
+        &settable(),
+        &repository().join("src/magazine/assets"),
+        &destination,
+        &options,
+    )
+    .map(|_| destination)
+    .map_err(|error| error.to_string())
+}
+
+fn compare_tree(name: &str) -> BTreeMap<String, Vec<u8>> {
+    let want = tree(&python_web().join(name));
+    let got = tree(&rust_web(name).unwrap_or_else(|error| panic!("{name} writes: {error}")));
+    assert_eq!(
+        got.keys().collect::<Vec<_>>(),
+        want.keys().collect::<Vec<_>>(),
+        "{name}: the file sets differ"
+    );
+    for (path, bytes) in &want {
+        let mine = &got[path];
+        if mine != bytes {
+            let (left, right) = (
+                String::from_utf8_lossy(mine),
+                String::from_utf8_lossy(bytes),
+            );
+            panic!("{name}/{path} differs\n{}", first_difference(&left, &right));
+        }
+    }
+    got
+}
+
+fn page(files: &BTreeMap<String, Vec<u8>>, path: &str) -> String {
+    String::from_utf8(files[path].clone()).expect("pages are UTF-8")
+}
+
+#[test]
+fn edition_010_web_tree_is_byte_identical() {
+    let files = compare_tree("010");
+    let pages = files
+        .keys()
+        .filter(|path| path.starts_with("article-"))
+        .count();
+    assert_eq!(pages, 9);
+    let codes = files
+        .keys()
+        .filter(|path| path.starts_with("assets/source-code-"))
+        .count();
+    assert_eq!(codes, 9);
+    let index = page(&files, "index.html");
+    assert!(index.contains("<nav id=\"contents\" "));
+    let edition = page(&files, "edition.html");
+    assert_eq!(
+        edition
+            .matches("class=\"source-link opener-source-link\"")
+            .count(),
+        9
+    );
+    assert!(!edition.contains("class=\"article-tail\""));
+    assert!(!edition.contains("class=\"closing-plate\""));
+    assert!(!edition.contains("data-provenance"));
+    assert!(edition.contains("<a class=\"figure-link\" href=\"assets/"));
+}
+
+#[test]
+fn fixture_web_tree_is_byte_identical() {
+    let files = compare_tree("wfx");
+    for page_name in [
+        "editorial.html",
+        "section-0.html",
+        "section-1.html",
+        "article-keyed.html",
+        "article-tailed.html",
+    ] {
+        assert!(files.contains_key(page_name), "no page {page_name}");
+    }
+    let keyed = page(&files, "article-keyed.html");
+    assert!(keyed.contains("<a class=\"provenance-source\" data-source-id=\"an-alignment"));
+    assert!(keyed.contains(">02</a></p>"));
+    assert!(keyed.contains("rel=\"prev\" href=\"editorial.html\""));
+    assert!(keyed.contains("rel=\"next\" href=\"article-tailed.html\""));
+    assert!(!page(&files, "editorial.html").contains("rel=\"prev\""));
+    assert!(!page(&files, "section-1.html").contains("rel=\"next\""));
+}
+
+#[test]
+fn chrome_options_are_byte_identical() {
+    let files = compare_tree("chrome");
+    let index = page(&files, "index.html");
+    assert!(index.contains("<span class=\"cover-headline-line\">The Fixture</span>"));
+    assert!(index.contains("<a class=\"cover-cue\" href=\"#contents\">"));
+    assert!(index.contains("hreflang=\"pt\""));
+    assert!(index.contains("rel=\"icon\""));
+    assert!(files.contains_key("assets/wordmark.svg") && files.contains_key("assets/favicon.svg"));
+    let mismatch = compare_tree("mismatch");
+    assert!(!page(&mismatch, "index.html").contains("cover-headline-line"));
+    compare_tree("010_chrome");
+}
+
+#[test]
+fn an_unillustrated_article_in_an_illustrated_edition_keeps_its_link_print_only() {
+    let files = compare_tree("010_mixed");
+    let page = page(
+        &files,
+        "article-countering-misuse-of-ai-september-2026-anthropic.html",
+    );
+    assert!(!page.contains("class=\"article-opener\""));
+    assert!(!page.contains("source-link"));
+    assert!(page.contains("data-provenance"));
+    let codes = files
+        .keys()
+        .filter(|path| path.starts_with("assets/source-code-"))
+        .count();
+    assert_eq!(codes, 8);
+}
+
+#[test]
+fn a_source_without_an_address_is_numbered_but_not_linked() {
+    let files = compare_tree("nourl");
+    let keyed = page(&files, "article-keyed.html");
+    assert!(keyed.contains("<span class=\"provenance-source\" data-source-id=\"claude-of-duty"));
+    assert!(keyed.contains(">02</span></p>"));
+}
+
+fn compare_refusal(name: &str) -> String {
+    let want = std::fs::read_to_string(python_web().join(format!("{name}.error")))
+        .unwrap_or_else(|_| panic!("{name}: Python did not refuse"));
+    let got = rust_web(name).expect_err("the port refuses too");
+    assert_eq!(got, want, "{name}: the refusals differ");
+    got
+}
+
+#[test]
+fn filename_collisions_refuse_like_web_edition() {
+    let asset = compare_refusal("dup_keyed");
+    assert!(
+        asset.starts_with("web asset filename collision: 'figure-keyed-opener-figure'"),
+        "{asset}"
+    );
+    let page = compare_refusal("dup_tailed");
+    assert!(
+        page.starts_with("web page filename collision: piece ids 'article-tailed'"),
+        "{page}"
+    );
 }

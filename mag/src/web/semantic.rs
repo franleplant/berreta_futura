@@ -1,4 +1,4 @@
-use super::text::{attr, escape, text, verbatim};
+use super::text::{escape, Escaper};
 use crate::model::doc::{
     fold_reader_characters, parse_publication_document, Block, Document, Inline,
 };
@@ -40,7 +40,12 @@ pub struct HtmlEdition {
 }
 
 pub fn render_html_edition(edition: &Edition, settable: &BTreeSet<u32>) -> Result<HtmlEdition> {
-    Renderer { edition, settable }.render()
+    Renderer {
+        edition,
+        settable,
+        escape: Escaper(settable),
+    }
+    .render()
 }
 
 pub fn py_article_opener_format(edition: &Edition) -> String {
@@ -64,7 +69,7 @@ pub fn file_uri(path: &Path) -> String {
     uri
 }
 
-fn raw_or(value: Option<&Value>, fallback: &str) -> String {
+pub fn raw_or(value: Option<&Value>, fallback: &str) -> String {
     let truthy = match value {
         None | Some(Value::Null) => false,
         Some(Value::Bool(flag)) => *flag,
@@ -183,21 +188,10 @@ impl<'a> Anchored<'a> {
 struct Renderer<'a> {
     edition: &'a Edition,
     settable: &'a BTreeSet<u32>,
+    escape: Escaper<'a>,
 }
 
 impl Renderer<'_> {
-    fn t(&self, value: &str) -> String {
-        text(value, self.settable)
-    }
-
-    fn v(&self, value: &str) -> String {
-        verbatim(value, self.settable)
-    }
-
-    fn a(&self, value: &str) -> String {
-        attr(value, self.settable)
-    }
-
     fn render(&self) -> Result<HtmlEdition> {
         let edition = self.edition;
         let mut assets = Vec::new();
@@ -223,16 +217,16 @@ impl Renderer<'_> {
         } else {
             String::new()
         };
-        let id = self.a(&edition.id);
+        let id = self.escape.attr(&edition.id);
         let mut lines = vec![
             "<!doctype html>".to_string(),
             format!(
                 "<html lang=\"{}\" data-edition-id=\"{id}\"{format_attribute}>",
-                self.a(&edition.locale)
+                self.escape.attr(&edition.locale)
             ),
             "<head>".to_string(),
             "  <meta charset=\"utf-8\">".to_string(),
-            format!("  <title>{}</title>", self.t(&title)),
+            format!("  <title>{}</title>", self.escape.text(&title)),
             "</head>".to_string(),
             "<body>".to_string(),
             format!("  <main data-edition-id=\"{id}\">"),
@@ -252,23 +246,26 @@ impl Renderer<'_> {
             "<header class=\"edition-header\" data-edition-header=\"true\">".to_string(),
             format!(
                 "  <p class=\"publication-name\">{}</p>",
-                self.t(&edition.publication_name)
+                self.escape.text(&edition.publication_name)
             ),
             format!(
                 "  <p class=\"issue-number\" data-issue-number=\"{}\">{} {}</p>",
-                self.a(&edition.issue_number),
-                self.t(&ui(&self.edition.language, "issue")),
-                self.t(&edition.issue_number)
+                self.escape.attr(&edition.issue_number),
+                self.escape.text(&ui(&self.edition.language, "issue")),
+                self.escape.text(&edition.issue_number)
             ),
-            format!("  <h1>{}</h1>", self.t(&edition.title)),
+            format!("  <h1>{}</h1>", self.escape.text(&edition.title)),
         ];
         if !subtitle.is_empty() {
-            lines.push(format!("  <p class=\"subtitle\">{}</p>", self.t(&subtitle)));
+            lines.push(format!(
+                "  <p class=\"subtitle\">{}</p>",
+                self.escape.text(&subtitle)
+            ));
         }
         lines.push(format!(
             "  <time datetime=\"{}\">{}</time>",
-            self.a(&edition.publication_date),
-            self.t(&edition.publication_date)
+            self.escape.attr(&edition.publication_date),
+            self.escape.text(&edition.publication_date)
         ));
         lines.push("</header>".to_string());
         lines.join("\n")
@@ -333,25 +330,31 @@ impl Renderer<'_> {
         let mut lines = vec![
             format!(
                 "<nav aria-label=\"{}\" data-edition-navigation=\"contents\"{density}>",
-                self.a(&label)
+                self.escape.attr(&label)
             ),
-            format!("  <p class=\"contents-kicker\">{}</p>", self.t(&kicker)),
-            format!("  <h2>{}</h2>", self.t(&label)),
+            format!(
+                "  <p class=\"contents-kicker\">{}</p>",
+                self.escape.text(&kicker)
+            ),
+            format!("  <h2>{}</h2>", self.escape.text(&label)),
             "  <ol>".to_string(),
         ];
         for [destination, entry_label, title, author] in &entries {
             let author = if author.is_empty() {
                 String::new()
             } else {
-                format!("<span class=\"entry-author\">{}</span>", self.t(author))
+                format!(
+                    "<span class=\"entry-author\">{}</span>",
+                    self.escape.text(author)
+                )
             };
-            let href = self.a(destination);
+            let href = self.escape.attr(destination);
             lines.push(format!(
                 "    <li><span class=\"entry-label\">{}</span><a class=\"entry-folio\" \
                  href=\"#{href}\" aria-hidden=\"true\"></a><a class=\"entry-title\" \
                  href=\"#{href}\">{}</a>{author}</li>",
-                self.t(entry_label),
-                self.t(title)
+                self.escape.text(entry_label),
+                self.escape.text(title)
             ));
         }
         lines.extend(["  </ol>", "</nav>"].map(String::from));
@@ -361,8 +364,8 @@ impl Renderer<'_> {
     fn byline(&self, author: &str) -> String {
         format!(
             "<p class=\"byline\" data-byline=\"true\"><span class=\"byline-prefix\">{}</span> {}</p>",
-            self.t(&ui(&self.edition.language, "by")),
-            self.t(author)
+            self.escape.text(&ui(&self.edition.language, "by")),
+            self.escape.text(author)
         )
     }
 
@@ -371,15 +374,15 @@ impl Renderer<'_> {
             format!(
                 "<section id=\"editorial\" class=\"editorial\" data-section-kind=\"original_editorial\" \
                  data-short-title=\"{}\">",
-                self.a(&ui(&self.edition.language, "editorial"))
+                self.escape.attr(&ui(&self.edition.language, "editorial"))
             ),
             "  <header>".to_string(),
             format!(
                 "    <p class=\"content-label\" data-content-mode=\"original_editorial\">\
                  <span class=\"label-primary\">{}</span></p>",
-                self.t(&editorial.label)
+                self.escape.text(&editorial.label)
             ),
-            format!("    <h1>{}</h1>", self.t(&editorial.title)),
+            format!("    <h1>{}</h1>", self.escape.text(&editorial.title)),
             format!("    {}", self.byline(&editorial.byline)),
             "  </header>".to_string(),
         ];
@@ -389,19 +392,19 @@ impl Renderer<'_> {
     }
 
     fn section(&self, index: usize, section: &Section, document: &Document) -> Result<String> {
-        let kind = self.a(&section.kind);
+        let kind = self.escape.attr(&section.kind);
         let mut lines = vec![
             format!(
                 "<section id=\"section-{index}\" data-section-kind=\"{kind}\" data-short-title=\"{}\">",
-                self.a(&section.title)
+                self.escape.attr(&section.title)
             ),
             "  <header>".to_string(),
             format!(
                 "    <p class=\"content-label\" data-content-mode=\"{kind}\">\
                  <span class=\"label-primary\">{}</span></p>",
-                self.t(&ui(&self.edition.language, &section.kind))
+                self.escape.text(&ui(&self.edition.language, &section.kind))
             ),
-            format!("    <h1>{}</h1>", self.t(&section.title)),
+            format!("    <h1>{}</h1>", self.escape.text(&section.title)),
             "  </header>".to_string(),
         ];
         lines.extend(indent(&self.standfirst_blocks(&document.blocks)?, 2));
@@ -421,12 +424,12 @@ impl Renderer<'_> {
         format!(
             "<article id=\"{}\" data-article-id=\"{}\" data-content-mode=\"{}\" \
              data-source-ids=\"{}\" data-figure-layouts=\"{}\" data-short-title=\"{}\"{}>",
-            self.a(&format!("article-{}", article.id)),
-            self.a(&article.id),
-            self.a(&article.content_mode),
-            self.a(&article.source_ids.join(" ")),
-            self.a(&figure_layouts(article)),
-            self.a(&article.short_title),
+            self.escape.attr(&format!("article-{}", article.id)),
+            self.escape.attr(&article.id),
+            self.escape.attr(&article.content_mode),
+            self.escape.attr(&article.source_ids.join(" ")),
+            self.escape.attr(&figure_layouts(article)),
+            self.escape.attr(&article.short_title),
             if illustrated {
                 format!(" data-article-opener=\"{ILLUSTRATED}\"")
             } else {
@@ -450,17 +453,17 @@ impl Renderer<'_> {
             .map(|dateline| {
                 format!(
                     "{separator}<span class=\"label-date\">{}</span>",
-                    self.t(dateline)
+                    self.escape.text(dateline)
                 )
             })
             .unwrap_or_default();
         format!(
             "<p class=\"content-label\" data-content-mode=\"{}\"><span class=\"label-primary\">{} {index:02}</span>{}\
              <span class=\"label-secondary\">{}</span>{date}</p>",
-            self.a(&article.content_mode),
-            self.t(&ui(&self.edition.language, "feature")),
+            self.escape.attr(&article.content_mode),
+            self.escape.text(&ui(&self.edition.language, "feature")),
             if separated { separator } else { "" },
-            self.t(&content_label(
+            self.escape.text(&content_label(
                 &self.edition.language,
                 &document.metadata,
                 &article.content_mode
@@ -481,13 +484,13 @@ impl Renderer<'_> {
                 "    {}",
                 self.content_label_line(article, document, index, false)
             ),
-            format!("    <h1>{}</h1>", self.t(&article.title)),
+            format!("    <h1>{}</h1>", self.escape.text(&article.title)),
             format!("    {}", self.byline(&article.author)),
         ];
         if !article.author_note.is_empty() {
             lines.push(format!(
                 "    <p class=\"author-note\">{}</p>",
-                self.t(&article.author_note)
+                self.escape.text(&article.author_note)
             ));
         }
         let sources: Vec<String> = article
@@ -496,14 +499,14 @@ impl Renderer<'_> {
             .map(|id| {
                 format!(
                     "<span data-source-id=\"{}\">{}</span>",
-                    self.a(id),
-                    self.t(id)
+                    self.escape.attr(id),
+                    self.escape.text(id)
                 )
             })
             .collect();
         lines.push(format!(
             "    <p class=\"provenance\" data-provenance=\"source-ids\">{}: {}</p>",
-            self.t(&ui(&self.edition.language, "sources")),
+            self.escape.text(&ui(&self.edition.language, "sources")),
             sources.join(", ")
         ));
         lines.push("  </header>".to_string());
@@ -601,7 +604,7 @@ impl Renderer<'_> {
         lines.extend(indent(&self.key_ideas(article), 2));
         lines.push(format!(
             "  <p class=\"end-mark\" data-end-mark=\"true\">{} / {index:02}</p>",
-            self.t(&ui(&self.edition.language, "end"))
+            self.escape.text(&ui(&self.edition.language, "end"))
         ));
         let Some(tail) = &article.tail_art else {
             return;
@@ -617,9 +620,9 @@ impl Renderer<'_> {
         lines.push(format!(
             "  <figure class=\"article-tail\" data-asset-role=\"article_tail\" data-fit=\"{}\">\
              <img src=\"{}\" alt=\"{}\"></figure>",
-            self.a(&fit),
-            self.a(&tail_asset.src),
-            self.a(&tail_asset.alt_text)
+            self.escape.attr(&fit),
+            self.escape.attr(&tail_asset.src),
+            self.escape.attr(&tail_asset.alt_text)
         ));
         assets.push(tail_asset);
     }
@@ -649,7 +652,7 @@ impl Renderer<'_> {
             self.article_opening(article, true),
             format!(
                 "  <header class=\"article-opener\" data-article-id=\"{}\">",
-                self.a(&article.id)
+                self.escape.attr(&article.id)
             ),
             "    <figure class=\"article-opener-art\" data-asset-role=\"article_opener\">"
                 .to_string(),
@@ -657,15 +660,15 @@ impl Renderer<'_> {
                 .to_string(),
             format!(
                 "      <img src=\"{}\" alt=\"{}\">",
-                self.a(&art.src),
-                self.a(&art.alt_text)
+                self.escape.attr(&art.src),
+                self.escape.attr(&art.alt_text)
             ),
             "    </figure>".to_string(),
             format!(
                 "    {}",
                 self.content_label_line(article, document, index, true)
             ),
-            format!("    <h1>{}</h1>", self.t(&article.title)),
+            format!("    <h1>{}</h1>", self.escape.text(&article.title)),
             "    <span class=\"opener-tick\" aria-hidden=\"true\"></span>".to_string(),
             "    <div class=\"opener-meta\">".to_string(),
             "      <div class=\"opener-credit\">".to_string(),
@@ -675,7 +678,7 @@ impl Renderer<'_> {
         if !article.author_note.is_empty() {
             lines.push(format!(
                 "        <p class=\"author-note\">{}</p>",
-                self.t(&article.author_note)
+                self.escape.text(&article.author_note)
             ));
         }
         lines.push("      </div>".to_string());
@@ -693,14 +696,14 @@ impl Renderer<'_> {
         let items: String = article
             .key_ideas
             .iter()
-            .map(|idea| format!("<li>{}</li>", self.t(idea)))
+            .map(|idea| format!("<li>{}</li>", self.escape.text(idea)))
             .collect();
         vec![format!(
             "<aside class=\"key-ideas\" data-key-ideas=\"{}\" data-article-id=\"{}\">\
              <p class=\"key-ideas-label\">{}</p><ul>{items}</ul></aside>",
             article.key_ideas.len(),
-            self.a(&article.id),
-            self.t(&ui(&self.edition.language, "key_ideas"))
+            self.escape.attr(&article.id),
+            self.escape.text(&ui(&self.edition.language, "key_ideas"))
         )]
     }
 
@@ -710,9 +713,9 @@ impl Renderer<'_> {
         };
         vec![format!(
             "<a class=\"source-link\" data-source-link=\"primary\" data-source-id=\"{}\" href=\"{}\">{}</a>",
-            self.a(article.source_ids.first().map_or("", String::as_str)),
-            self.a(url),
-            self.v(url)
+            self.escape.attr(article.source_ids.first().map_or("", String::as_str)),
+            self.escape.attr(url),
+            self.escape.verbatim(url)
         )]
     }
 
@@ -745,8 +748,8 @@ impl Renderer<'_> {
             plates.push(format!(
                 "<figure class=\"closing-plate\" data-asset-role=\"closing_plate\" \
                  data-closing-plate=\"{index}\"><img src=\"{}\" alt=\"{}\"></figure>",
-                self.a(&plate_asset.src),
-                self.a(&plate.title)
+                self.escape.attr(&plate_asset.src),
+                self.escape.attr(&plate.title)
             ));
             assets.push(plate_asset);
         }
@@ -772,16 +775,16 @@ impl Renderer<'_> {
              data-anchor=\"{}\" data-layout=\"{}\" data-figure-label=\"{}\"><img src=\"{}\" \
              alt=\"{}\"><figcaption><span class=\"caption\">{}</span><span class=\"credit\">{}\
              </span></figcaption></figure>",
-            self.a(&figure.id),
-            self.a(&article.id),
-            self.a(&figure.source_id),
-            self.a(&figure.anchor),
-            self.a(&figure.layout),
-            self.a(&ui(&self.edition.language, "figure")),
-            self.a(&figure_asset.src),
-            self.a(&figure.alt_text),
-            self.t(&figure.caption),
-            self.t(&figure.credit)
+            self.escape.attr(&figure.id),
+            self.escape.attr(&article.id),
+            self.escape.attr(&figure.source_id),
+            self.escape.attr(&figure.anchor),
+            self.escape.attr(&figure.layout),
+            self.escape.attr(&ui(&self.edition.language, "figure")),
+            self.escape.attr(&figure_asset.src),
+            self.escape.attr(&figure.alt_text),
+            self.escape.text(&figure.caption),
+            self.escape.text(&figure.credit)
         );
         assets.push(figure_asset);
         html
@@ -789,7 +792,11 @@ impl Renderer<'_> {
 
     fn extract(&self, article: &Article, extract: &Extract) -> String {
         let body = if extract.style == "code" {
-            let lines: Vec<String> = extract.text.split('\n').map(|line| self.v(line)).collect();
+            let lines: Vec<String> = extract
+                .text
+                .split('\n')
+                .map(|line| self.escape.verbatim(line))
+                .collect();
             format!("<pre><code>{}</code></pre>", lines.join("<br>"))
         } else {
             let paragraphs: String = extract
@@ -797,7 +804,7 @@ impl Renderer<'_> {
                 .split("\n\n")
                 .map(py_strip)
                 .filter(|paragraph| !paragraph.is_empty())
-                .map(|paragraph| format!("<p>{}</p>", self.v(paragraph)))
+                .map(|paragraph| format!("<p>{}</p>", self.escape.verbatim(paragraph)))
                 .collect();
             format!("<blockquote>{paragraphs}</blockquote>")
         };
@@ -805,13 +812,13 @@ impl Renderer<'_> {
             "<aside class=\"extract\" data-extract-id=\"{}\" data-article-id=\"{}\" \
              data-source-id=\"{}\" data-anchor=\"{}\" data-style=\"{}\" data-extract-label=\"{}\">\
              {body}<p class=\"extract-caption\">{}</p></aside>",
-            self.a(&extract.id),
-            self.a(&article.id),
-            self.a(&extract.source_id),
-            self.a(&extract.anchor),
-            self.a(&extract.style),
-            self.a(&ui(&self.edition.language, "verbatim")),
-            self.t(&extract.caption)
+            self.escape.attr(&extract.id),
+            self.escape.attr(&article.id),
+            self.escape.attr(&extract.source_id),
+            self.escape.attr(&extract.anchor),
+            self.escape.attr(&extract.style),
+            self.escape.attr(&ui(&self.edition.language, "verbatim")),
+            self.escape.text(&extract.caption)
         )
     }
 
@@ -879,7 +886,7 @@ impl Renderer<'_> {
         let class = if language.is_empty() {
             String::new()
         } else {
-            format!(" class=\"language-{}\"", self.a(language))
+            format!(" class=\"language-{}\"", self.escape.attr(language))
         };
         if !language.is_empty() {
             bail!(
@@ -895,12 +902,12 @@ impl Renderer<'_> {
         inlines
             .iter()
             .map(|inline| match inline {
-                Inline::Text(value) => self.t(value),
+                Inline::Text(value) => self.escape.text(value),
                 Inline::Emphasis(children) => format!("<em>{}</em>", self.inline_html(children)),
                 Inline::Strong(children) => {
                     format!("<strong>{}</strong>", self.inline_html(children))
                 }
-                Inline::Code(value) => format!("<code>{}</code>", self.v(value)),
+                Inline::Code(value) => format!("<code>{}</code>", self.escape.verbatim(value)),
                 Inline::Link {
                     destination,
                     title,
@@ -908,11 +915,11 @@ impl Renderer<'_> {
                 } => {
                     let title = title
                         .as_deref()
-                        .map(|title| format!(" title=\"{}\"", self.a(title)))
+                        .map(|title| format!(" title=\"{}\"", self.escape.attr(title)))
                         .unwrap_or_default();
                     format!(
                         "<a href=\"{}\"{title}>{}</a>",
-                        self.a(destination),
+                        self.escape.attr(destination),
                         self.inline_html(children)
                     )
                 }
