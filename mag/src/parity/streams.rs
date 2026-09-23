@@ -52,7 +52,7 @@ fn qcolor(v: f64) -> i64 {
     (v * 1_000_000.0).round() as i64
 }
 
-#[derive(Serialize, Clone, PartialEq, Eq)]
+#[derive(Serialize, Clone, PartialEq, Eq, Debug)]
 pub struct Color {
     pub family: String,
     pub rgb: [i64; 3],
@@ -63,6 +63,65 @@ fn rgb(r: f64, g: f64, b: f64, family: &str) -> Color {
         family: family.into(),
         rgb: [qcolor(r), qcolor(g), qcolor(b)],
     }
+}
+
+#[derive(Clone, Copy)]
+struct Space {
+    n: usize,
+    family: &'static str,
+}
+
+const DEVICE_GRAY: Space = Space {
+    n: 1,
+    family: "gray",
+};
+const DEVICE_RGB: Space = Space {
+    n: 3,
+    family: "rgb",
+};
+const DEVICE_CMYK: Space = Space {
+    n: 4,
+    family: "cmyk",
+};
+const SRGB_V4_SHA256: &str = "c56e1685d888f5edb92fe07f2750f387f8fe8e91b32ff8fb0b56bfbbb9458353";
+const SGREY_V4_SHA256: &str = "00c0f94e09127520a17dc0e1d9264b5702081d96dbdb1549ee88e3631ce42a9d";
+
+fn paint(space: Space, args: &[Object]) -> Result<Color> {
+    let v: Vec<f64> = args.iter().map(num).collect::<Result<_>>()?;
+    anyhow::ensure!(
+        v.len() == space.n,
+        "{} components for a {}-component {} colour space",
+        v.len(),
+        space.n,
+        space.family
+    );
+    Ok(match v[..] {
+        [g] => rgb(g, g, g, space.family),
+        [r, g, b] => rgb(r, g, b, space.family),
+        _ => rgb(
+            (1.0 - v[0]) * (1.0 - v[3]),
+            (1.0 - v[1]) * (1.0 - v[3]),
+            (1.0 - v[2]) * (1.0 - v[3]),
+            space.family,
+        ),
+    })
+}
+
+fn icc_space(doc: &Document, stream: &lopdf::Stream) -> Result<Space> {
+    let digest = hex::encode(Sha256::digest(decode_stream(doc, stream)?));
+    let space = match digest.as_str() {
+        SRGB_V4_SHA256 => DEVICE_RGB,
+        SGREY_V4_SHA256 => Space { n: 1, family: "rgb" },
+        other => bail!(
+            "ICCBased profile sha256 {other} is not the sRGB or sGrey v4 profile, so its values are not comparable as sRGB (fail loud per Tier E)"
+        ),
+    };
+    let n = num(resolve(doc, stream.dict.get(b"N")?)?)?;
+    anyhow::ensure!(
+        n == space.n as f64,
+        "ICCBased /N {n} does not match its profile"
+    );
+    Ok(space)
 }
 
 #[derive(Serialize, Clone)]
@@ -120,6 +179,8 @@ struct GState {
     ctm: M,
     fill: Color,
     stroke: Color,
+    fill_space: Space,
+    stroke_space: Space,
     lw: f64,
     cap: i64,
     join: i64,
@@ -142,6 +203,8 @@ impl GState {
             ctm: ID,
             fill: rgb(0.0, 0.0, 0.0, "rgb"),
             stroke: rgb(0.0, 0.0, 0.0, "rgb"),
+            fill_space: DEVICE_GRAY,
+            stroke_space: DEVICE_GRAY,
             lw: 1.0,
             cap: 0,
             join: 0,
@@ -280,12 +343,22 @@ impl Tracer<'_> {
             }
             "W" => self.pending_clip = Some(false),
             "W*" => self.pending_clip = Some(true),
-            "rg" => self.gs.fill = rgb(num(&args[0])?, num(&args[1])?, num(&args[2])?, "rgb"),
-            "RG" => self.gs.stroke = rgb(num(&args[0])?, num(&args[1])?, num(&args[2])?, "rgb"),
-            "g" => self.gs.fill = gray(num(&args[0])?),
-            "G" => self.gs.stroke = gray(num(&args[0])?),
-            "k" => self.gs.fill = cmyk(args)?,
-            "K" => self.gs.stroke = cmyk(args)?,
+            "rg" => self.set_fill(DEVICE_RGB, args)?,
+            "RG" => self.set_stroke(DEVICE_RGB, args)?,
+            "g" => self.set_fill(DEVICE_GRAY, args)?,
+            "G" => self.set_stroke(DEVICE_GRAY, args)?,
+            "k" => self.set_fill(DEVICE_CMYK, args)?,
+            "K" => self.set_stroke(DEVICE_CMYK, args)?,
+            "cs" => {
+                let space = self.color_space(&args[0], res)?;
+                self.set_fill(space, &vec![Object::Integer(0); space.n])?;
+            }
+            "CS" => {
+                let space = self.color_space(&args[0], res)?;
+                self.set_stroke(space, &vec![Object::Integer(0); space.n])?;
+            }
+            "sc" | "scn" => self.gs.fill = paint(self.gs.fill_space, args)?,
+            "SC" | "SCN" => self.gs.stroke = paint(self.gs.stroke_space, args)?,
             "BT" => {
                 self.tm = ID;
                 self.tlm = ID;
@@ -327,6 +400,37 @@ impl Tracer<'_> {
             other => bail!("unsupported operator {other}"),
         }
         Ok(())
+    }
+
+    fn set_fill(&mut self, space: Space, args: &[Object]) -> Result<()> {
+        self.gs.fill = paint(space, args)?;
+        self.gs.fill_space = space;
+        Ok(())
+    }
+
+    fn set_stroke(&mut self, space: Space, args: &[Object]) -> Result<()> {
+        self.gs.stroke = paint(space, args)?;
+        self.gs.stroke_space = space;
+        Ok(())
+    }
+
+    fn color_space(&self, name: &Object, res: &Dictionary) -> Result<Space> {
+        let name = name_str(name)?;
+        match name.as_str() {
+            "DeviceGray" => return Ok(DEVICE_GRAY),
+            "DeviceRGB" => return Ok(DEVICE_RGB),
+            "DeviceCMYK" => return Ok(DEVICE_CMYK),
+            _ => {}
+        }
+        let spaces = resolve(self.doc, res.get(b"ColorSpace")?)?.as_dict()?;
+        let space = resolve(self.doc, spaces.get(name.as_bytes())?)?;
+        match space.as_array().map(Vec::as_slice) {
+            Ok([Object::Name(kind), profile]) if kind == b"ICCBased" => {
+                icc_space(self.doc, resolve(self.doc, profile)?.as_stream()?)
+                    .with_context(|| format!("colour space {name}"))
+            }
+            _ => bail!("colour space {name} = {space:?} unsupported (fail loud per Tier E)"),
+        }
     }
 
     fn td(&mut self, tx: f64, ty: f64) {
@@ -658,30 +762,6 @@ fn paint_kind(operator: &str) -> Result<(bool, bool, &'static str)> {
     })
 }
 
-fn gray(v: f64) -> Color {
-    Color {
-        family: "gray".into(),
-        rgb: [qcolor(v), qcolor(v), qcolor(v)],
-    }
-}
-
-fn cmyk(args: &[Object]) -> Result<Color> {
-    let (c, m, y, k) = (
-        num(&args[0])?,
-        num(&args[1])?,
-        num(&args[2])?,
-        num(&args[3])?,
-    );
-    Ok(Color {
-        family: "cmyk".into(),
-        rgb: [
-            qcolor((1.0 - c) * (1.0 - k)),
-            qcolor((1.0 - m) * (1.0 - k)),
-            qcolor((1.0 - y) * (1.0 - k)),
-        ],
-    })
-}
-
 fn matrix(args: &[Object]) -> Result<M> {
     let nums: Result<Vec<f64>> = args.iter().map(num).collect();
     let nums = nums?;
@@ -916,7 +996,7 @@ fn load_font(
 ) -> Result<Font> {
     let base = name_str(resolve(doc, dict.get(b"BaseFont")?)?)?;
     let stripped = strip_subset_tag(&base);
-    let entry = map.get(&stripped);
+    let entry = face_entry(map, &stripped);
     let name = entry.map_or_else(|| stripped.clone(), |f| f.face.clone());
     let subtype = name_str(dict.get(b"Subtype")?)?;
     let encoding = dict
@@ -982,6 +1062,11 @@ fn load_font(
         ids: HashMap::new(),
         metrics,
     })
+}
+
+fn face_entry<'a>(map: &'a BTreeMap<String, Face>, name: &str) -> Option<&'a Face> {
+    map.get(name)
+        .or_else(|| map.values().find(|f| f.face == name))
 }
 
 fn strip_subset_tag(base: &str) -> String {
@@ -1295,4 +1380,166 @@ fn decode_image(doc: &Document, stream: &lopdf::Stream) -> Result<(String, u32, 
         rgba.extend_from_slice(&[r, g, b, a]);
     }
     Ok((hex::encode(Sha256::digest(&rgba)), width, height))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use lopdf::{dictionary, Stream};
+
+    const SRGB: &[u8] = include_bytes!("../../tests/parity_icc/sRGB-v4.icc");
+    const SGREY: &[u8] = include_bytes!("../../tests/parity_icc/sGrey-v4.icc");
+
+    fn trace(ops: &str, spaces: Vec<(&str, Object)>) -> Result<Vec<Element>> {
+        let mut doc = Document::with_version("1.7");
+        let mut cs = Dictionary::new();
+        for (name, space) in spaces {
+            let space = match space {
+                Object::Stream(s) => {
+                    let n = if s.content.len() == SGREY.len() { 1 } else { 3 };
+                    let mut s = s;
+                    s.dict.set("N", n);
+                    vec!["ICCBased".into(), doc.add_object(s).into()].into()
+                }
+                other => other,
+            };
+            cs.set(name, space);
+        }
+        let content = doc.add_object(Stream::new(dictionary! {}, ops.as_bytes().to_vec()));
+        let page = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Contents" => content,
+            "Resources" => dictionary! { "ColorSpace" => cs },
+        });
+        let pages = doc.add_object(dictionary! {
+            "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1,
+        });
+        doc.get_object_mut(page)?
+            .as_dict_mut()?
+            .set("Parent", pages);
+        trace_page(&doc, page, &BTreeMap::new(), &mut Caches::new())
+    }
+
+    fn icc(bytes: &[u8]) -> Object {
+        Object::Stream(Stream::new(dictionary! {}, bytes.to_vec()))
+    }
+
+    fn typst_spaces() -> Vec<(&'static str, Object)> {
+        vec![("c0", icc(SRGB)), ("c1", icc(SGREY))]
+    }
+
+    fn paints(ops: &str) -> Vec<(Option<Color>, Option<Color>)> {
+        trace(ops, typst_spaces())
+            .unwrap()
+            .into_iter()
+            .filter_map(|e| match e {
+                Element::Path { fill, stroke, .. } => Some((fill, stroke)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn fill_of(ops: &str) -> Color {
+        paints(&format!("{ops} 0 0 1 1 re f")).remove(0).0.unwrap()
+    }
+
+    fn stroke_of(ops: &str) -> Color {
+        paints(&format!("{ops} 0 0 1 1 re S")).remove(0).1.unwrap()
+    }
+
+    fn error(ops: &str, spaces: Vec<(&str, Object)>) -> String {
+        format!("{:#}", trace(ops, spaces).err().expect("must fail loud"))
+    }
+
+    #[test]
+    fn a_face_resolves_by_its_alias_or_by_its_postscript_name_and_nothing_else() {
+        let map = BTreeMap::from([(
+            "Magazine-Sans-Medium".to_string(),
+            Face {
+                face: "Inter-Medium".into(),
+                file: "Inter-Medium.ttf".into(),
+            },
+        )]);
+        let by_alias = face_entry(&map, "Magazine-Sans-Medium").map(|f| &f.file);
+        assert_eq!(by_alias, Some(&"Inter-Medium.ttf".to_string()));
+        let by_face = face_entry(&map, "Inter-Medium").map(|f| &f.file);
+        assert_eq!(by_face, by_alias);
+        assert!(face_entry(&map, "Inter-Bold").is_none());
+    }
+
+    #[test]
+    fn an_srgb_icc_fill_equals_the_same_rg_fill() {
+        let rg = fill_of("0.19215687 0.3647059 0.54901963 rg");
+        assert_eq!(fill_of("/c0 cs 0.19215687 0.3647059 0.54901963 scn"), rg);
+        assert_eq!(fill_of("/c0 cs 0.19215687 0.3647059 0.54901963 sc"), rg);
+        assert_eq!(rg.family, "rgb");
+    }
+
+    #[test]
+    fn an_srgb_icc_stroke_equals_the_same_rg_stroke() {
+        let rg = stroke_of("0.09019608 0.09803922 0.10980392 RG");
+        assert_eq!(stroke_of("/c0 CS 0.09019608 0.09803922 0.10980392 SCN"), rg);
+        assert_eq!(stroke_of("/c0 CS 0.09019608 0.09803922 0.10980392 SC"), rg);
+    }
+
+    #[test]
+    fn an_sgrey_icc_value_equals_the_rgb_triple_it_denotes() {
+        assert_eq!(fill_of("/c1 cs 1 scn"), fill_of("1 1 1 rg"));
+        assert_eq!(fill_of("/c1 cs 0.25 scn"), fill_of("0.25 0.25 0.25 rg"));
+    }
+
+    #[test]
+    fn device_spaces_selected_by_cs_equal_their_shorthand_operators() {
+        assert_eq!(
+            fill_of("/DeviceRGB cs 0.1 0.2 0.3 scn"),
+            fill_of("0.1 0.2 0.3 rg")
+        );
+        assert_eq!(fill_of("/DeviceGray cs 0.4 sc"), fill_of("0.4 g"));
+        assert_eq!(
+            fill_of("/DeviceCMYK cs 0 0.5 1 0.2 sc"),
+            fill_of("0 0.5 1 0.2 k")
+        );
+    }
+
+    #[test]
+    fn cs_resets_the_colour_to_the_space_s_initial_black() {
+        assert_eq!(fill_of("1 0 0 rg /c0 cs"), fill_of("0 0 0 rg"));
+        assert_eq!(stroke_of("1 0 0 RG /c1 CS"), stroke_of("0 0 0 RG"));
+    }
+
+    #[test]
+    fn a_genuinely_different_colour_still_compares_unequal() {
+        let base = fill_of("0.5 0.5 0.5 rg");
+        assert_ne!(fill_of("/c0 cs 0.5 0.5 0.501 scn"), base);
+        assert_ne!(fill_of("/c1 cs 0.499 scn"), base);
+        assert_ne!(
+            stroke_of("/c0 CS 0.5 0.5 0.5 SCN"),
+            stroke_of("0.5 0.5 0.6 RG")
+        );
+        assert_ne!(fill_of("/DeviceGray cs 0.5 sc"), base);
+    }
+
+    #[test]
+    fn an_unrecognised_icc_profile_fails_loud_rather_than_equating() {
+        let mut other = SRGB.to_vec();
+        other[100] ^= 1;
+        let e = error("/p cs 0.5 0.5 0.5 scn", vec![("p", icc(&other))]);
+        assert!(e.contains("is not the sRGB or sGrey v4 profile"), "{e}");
+    }
+
+    #[test]
+    fn unsupported_spaces_and_wrong_arity_fail_loud() {
+        let lab: Object = vec!["Lab".into(), dictionary! {}.into()].into();
+        let e = error("/l cs", vec![("l", lab)]);
+        assert!(
+            e.contains("colour space l") && e.contains("unsupported"),
+            "{e}"
+        );
+        let e = error("/Pattern cs /P0 scn", vec![]);
+        assert!(e.contains("operator cs"), "{e}");
+        let e = error("/c0 cs 0.5 scn", typst_spaces());
+        assert!(e.contains("1 components for a 3-component"), "{e}");
+        let e = error("0.5 0.5 rg", vec![]);
+        assert!(e.contains("operator rg"), "{e}");
+    }
 }
