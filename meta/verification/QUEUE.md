@@ -1,12 +1,10 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Landed, awaiting a verifier: WP-5.5a (increments 1+2), WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h.
-Running: WP-5.5a increment 2, WP-0.2r (glyph-level display list,
-contract b), WP-3.1 body text.
-Next: WP-5.7b rework (rejected in WP-5.7b.verify.md: fail loud on
-invisible text plus an image; missing XObject resource returns Ok).
+Running: WP-0.2r (glyph-level display list, contract b), WP-3.1 body
+text, WP-5.7b rework (invisible text plus image, missing XObject).
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -26,6 +24,14 @@ evidence file records it):
 - WP-0.0d sanctioned oracle change: rule-colour token 0.9 -> 230/255
   exact (WP-0.2o.md: typst can only write 230, pixels differ 229 vs 230).
   Queued after WP-3.4 lands (re-seeds the baseline digest).
+- WP-5.5d: fenced code with a language refuses in the Rust web port
+  (pygments not reproduced); needed before WP-6.1 deletes Python.
+  Also JPEG closing plates.
+- WP-5.1h scope: consolidate `anchor_key`, `is_reference_heading`,
+  `inline_text`, `article_opener_format` (duplicated in web/ and
+  typeset/content.rs) into model/shared.rs; typeset's `anchor_key` uses
+  str::trim, wrong on U+001C..U+001F.
+- WP-5.6 wires the Rust web port into render.rs.
 - WP-3.2 follow-up: draw opener art rasters; opener-art border typst
   strokes (23,25,28) where WeasyPrint fills.
 - WP-3.5 carries: running-head paint order via `page.foreground`.
