@@ -7,6 +7,7 @@ use unicode_normalization::UnicodeNormalization;
 #[derive(Serialize)]
 pub struct TextClause {
     pub status: String,
+    pub pages_compared: usize,
     pub pages_differing: Vec<u32>,
 }
 
@@ -85,6 +86,7 @@ pub fn compare(a: &[String], b: &[String], first_page: u32) -> TextClause {
         } else {
             "fail".into()
         },
+        pages_compared: a.len().min(b.len()),
         pages_differing,
     }
 }

@@ -84,6 +84,7 @@ struct PageCount {
 #[derive(Serialize)]
 struct NotEvaluated {
     status: String,
+    reason: String,
     owner: String,
 }
 
@@ -92,6 +93,8 @@ struct Staleness {
     status: String,
     current: Option<String>,
     baseline: Option<String>,
+    edition_inputs: usize,
+    renderer_inputs: usize,
 }
 
 fn not_staged() -> Staleness {
@@ -99,6 +102,8 @@ fn not_staged() -> Staleness {
         status: "not_staged".into(),
         current: None,
         baseline: None,
+        edition_inputs: 0,
+        renderer_inputs: 0,
     }
 }
 
@@ -265,9 +270,10 @@ fn raised(
     merged
 }
 
-fn not_evaluated(owner: &str) -> NotEvaluated {
+fn not_evaluated(reason: &str, owner: &str) -> NotEvaluated {
     NotEvaluated {
         status: "not_evaluated".into(),
+        reason: reason.into(),
         owner: owner.into(),
     }
 }
@@ -365,7 +371,24 @@ fn sha256_file(path: &Path) -> Result<String> {
     Ok(hex::encode(Sha256::digest(bytes)))
 }
 
-fn staged_digest(request: &Path) -> Result<String> {
+const RENDERER_INPUTS: [&str; 2] = ["src/magazine", "uv.lock"];
+
+fn renderer_files(path: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
+    if !path.is_dir() {
+        out.push(path.to_path_buf());
+        return Ok(());
+    }
+    for entry in fs::read_dir(path).with_context(|| format!("reading {}", path.display()))? {
+        let child = entry?.path();
+        let name = child.file_name().unwrap_or_default().to_string_lossy();
+        if name != "__pycache__" && !name.starts_with('.') {
+            renderer_files(&child, out)?;
+        }
+    }
+    Ok(())
+}
+
+fn digest_entries(request: &Path) -> Result<Vec<String>> {
     let raw =
         fs::read_to_string(request).with_context(|| format!("reading {}", request.display()))?;
     let doc: serde_json::Value =
@@ -386,7 +409,20 @@ fn staged_digest(request: &Path) -> Result<String> {
             .context("input row missing sourcePath")?;
         entries.push(format!("{target}\u{1f}{}", sha256_file(Path::new(source))?));
     }
+    let mut files = Vec::new();
+    for root in RENDERER_INPUTS {
+        renderer_files(Path::new(root), &mut files)?;
+    }
+    for file in files {
+        let hash = sha256_file(&file)?;
+        entries.push(format!("renderer:{}\u{1f}{hash}", file.display()));
+    }
     entries.sort();
+    Ok(entries)
+}
+
+fn staged_digest(request: &Path) -> Result<String> {
+    let entries = digest_entries(request)?;
     Ok(hex::encode(Sha256::digest(entries.join("\u{1e}"))))
 }
 
@@ -592,6 +628,8 @@ fn staleness(current: &str) -> Result<Staleness> {
         status: status.into(),
         current: Some(current.to_string()),
         baseline,
+        edition_inputs: 0,
+        renderer_inputs: 0,
     })
 }
 
@@ -961,8 +999,17 @@ fn compare(
     if let Some(digest) = legs.digest {
         let guard = staleness(&digest)?;
         let unseeded = guard.status == "unseeded";
+        let entries = digest_entries(&dir_a.join("request.json"))?;
+        let renderer = entries
+            .iter()
+            .filter(|e| e.starts_with("renderer:"))
+            .count();
         verdict.staged_input_digest = Some(digest.clone());
-        verdict.staleness = guard;
+        verdict.staleness = Staleness {
+            edition_inputs: entries.len() - renderer,
+            renderer_inputs: renderer,
+            ..guard
+        };
         let manifest = dir_a.join("en/edition-manifest.json");
         let texts = text::page_texts(&pdf_a, verdict.domain.first_page, verdict.domain.last_page)?;
         let code = code_pages(
@@ -1056,10 +1103,16 @@ fn build_verdict(
             },
             boxes: None,
             text: None,
-            code_blocks: not_evaluated("WP-0.2b input level, WP-3.3 fixture"),
+            code_blocks: not_evaluated(
+                "the comparator has no code-block comparison yet",
+                "WP-0.2b input level, WP-3.3 fixture",
+            ),
             color: None,
             navigation: None,
-            critic: not_evaluated("WP-2.0b oracle leg, WP-5.3g typst leg"),
+            critic: not_evaluated(
+                "the comparator does not read either leg's critic report yet",
+                "WP-2.0b oracle leg, WP-5.3g typst leg",
+            ),
         },
         tier_g: None,
         tier_v: None,
@@ -1173,13 +1226,17 @@ fn summarize_run(v: &Verdict) {
         };
         println!("self-comparison: both legs hash identically ({note})");
     }
-    println!(
-        "staged inputs: {} ({})",
-        v.staleness.status,
-        v.staleness.current.as_deref().unwrap_or(
-            "the comparator did not stage these inputs, so no digest exists and the baseline vouches for nothing"
-        )
-    );
+    let s = &v.staleness;
+    match &s.current {
+        Some(digest) => println!(
+            "staged inputs: {} ({digest}; {} edition inputs, {} renderer files)",
+            s.status, s.edition_inputs, s.renderer_inputs
+        ),
+        None => println!(
+            "staged inputs: {} (the comparator did not stage these inputs, so no digest exists and the baseline vouches for nothing)",
+            s.status
+        ),
+    }
     if let Some(sets) = &v.page_sets {
         let counts: Vec<String> = sets
             .iter()
@@ -1210,12 +1267,39 @@ fn summarize_run(v: &Verdict) {
     }
 }
 
+const DOMAIN_CLAUSES: [&str; 9] = [
+    "tier S boxes",
+    "tier S text",
+    "tier G",
+    "tier S color",
+    "tier S navigation",
+    "tier E glyph positions",
+    "tier E display list",
+    "tier V",
+    "tier E raster",
+];
+
 fn summarize(v: &Verdict) {
     summarize_run(v);
+    let (a, b) = (v.tier_s.page_count.a, v.tier_s.page_count.b);
     println!(
-        "tier S page_count: {} ({} vs {})",
-        v.tier_s.page_count.status, v.tier_s.page_count.a, v.tier_s.page_count.b
+        "tier S page_count: {} ({a} vs {b})",
+        v.tier_s.page_count.status
     );
+    for (name, clause) in [
+        ("code_blocks", &v.tier_s.code_blocks),
+        ("critic", &v.tier_s.critic),
+    ] {
+        println!(
+            "tier S {name}: {} ({}; owner {})",
+            clause.status, clause.reason, clause.owner
+        );
+    }
+    if v.tier_s.boxes.is_none() {
+        for name in DOMAIN_CLAUSES {
+            println!("{name}: not_evaluated (page counts {a} vs {b}: the interior domain needs equal counts of at least 3)");
+        }
+    }
     if let Some(b) = &v.tier_s.boxes {
         println!(
             "tier S boxes: {} ({} boxes, {} rotations compared; {} box, {} rotation mismatches)",
@@ -1228,15 +1312,16 @@ fn summarize(v: &Verdict) {
     }
     if let Some(t) = &v.tier_s.text {
         println!(
-            "tier S text: {} ({} pages differ)",
+            "tier S text: {} ({} pages compared, {} differ)",
             t.status,
+            t.pages_compared,
             t.pages_differing.len()
         );
     }
     if let Some(g) = &v.tier_g {
         println!(
-            "tier G: max dx {:.3} pt, max dy {:.3} pt, beyond G1 {}, beyond G2 {}, structure mismatches {}",
-            g.max_dx_pt, g.max_dy_pt, g.lines_beyond_g1, g.lines_beyond_g2,
+            "tier G: {} pages compared, max dx {:.3} pt, max dy {:.3} pt, beyond G1 {}, beyond G2 {}, structure mismatches {}",
+            g.pages.len(), g.max_dx_pt, g.max_dy_pt, g.lines_beyond_g1, g.lines_beyond_g2,
             g.block_or_line_count_mismatches
         );
     }
@@ -1260,6 +1345,10 @@ fn summarize(v: &Verdict) {
             n.mismatches.len()
         );
     }
+    summarize_e(v);
+}
+
+fn summarize_e(v: &Verdict) {
     if let Some(g) = &v.tier_e.glyph_positions {
         println!(
             "tier E glyph positions: {} ({} glyphs, {} shows, worst excess {:.6} pt, worst ratio {:.4}, {} violations)",
@@ -1273,14 +1362,17 @@ fn summarize(v: &Verdict) {
     }
     if let Some(d) = &v.tier_e.display_list {
         println!(
-            "tier E display list: {} ({} pages differ)",
+            "tier E display list: {} ({} vs {} elements compared, {} pages differ)",
             d.status,
+            d.elements_a,
+            d.elements_b,
             d.pages_differing.len()
         );
     }
     if let Some(r) = &v.tier_v {
         println!(
-            "tier V: dims {} (mismatches {}), V1 {}, V2 {}, worst page fraction {:.6}, max channel delta {}",
+            "tier V: {} pages compared, dims {} (mismatches {}), V1 {}, V2 {}, worst page fraction {:.6}, max channel delta {}",
+            r.pages.len(),
             r.status,
             r.dimension_mismatches.len(),
             r.v1,
@@ -1299,7 +1391,9 @@ fn summarize(v: &Verdict) {
             pages_beyond.len()
         ),
         Some(raster::RasterGuard::NotEvaluated { owner, .. }) => {
-            println!("tier E raster: not_evaluated ({owner})");
+            println!(
+                "tier E raster: not_evaluated (parity.yaml tiers.e.raster_bound has no value; owner {owner})"
+            );
         }
         None => {}
     }
@@ -1333,9 +1427,10 @@ mod measured_pages {
             }),
             text: Some(text::TextClause {
                 status: "pass".into(),
+                pages_compared: 3,
                 pages_differing: vec![],
             }),
-            code_blocks: not_evaluated("test"),
+            code_blocks: not_evaluated("test", "test"),
             color: Some(display::SimpleClause {
                 status: "pass".into(),
                 entries_compared: 10,
@@ -1350,7 +1445,7 @@ mod measured_pages {
                 lang_compared: 0,
                 mismatches: vec![],
             }),
-            critic: not_evaluated("test"),
+            critic: not_evaluated("test", "test"),
         }
     }
 
@@ -1658,5 +1753,55 @@ mod ratchet_rules {
         assert_eq!(merged[&3].tier, "G2");
         assert_eq!(merged[&4].tier, "V1");
         assert!(regressions(&merged, &committed).expect("ranks").is_empty());
+    }
+}
+
+#[cfg(test)]
+mod renderer_digest {
+    use super::*;
+
+    #[test]
+    fn walks_every_renderer_file_and_skips_caches() {
+        let root = std::env::temp_dir().join(format!("mag-renderer-{}", std::process::id()));
+        for dir in ["assets/fonts/inter", "__pycache__"] {
+            fs::create_dir_all(root.join(dir)).expect("mkdir");
+        }
+        for file in [
+            "adapter.py",
+            "assets/a5.css",
+            "assets/fonts/inter/Inter.ttf",
+            "__pycache__/adapter.pyc",
+            ".DS_Store",
+        ] {
+            fs::write(root.join(file), file).expect("write");
+        }
+        let mut found = Vec::new();
+        renderer_files(&root, &mut found).expect("walk");
+        let mut names: Vec<String> = found
+            .iter()
+            .map(|p| {
+                p.strip_prefix(&root)
+                    .expect("under root")
+                    .display()
+                    .to_string()
+            })
+            .collect();
+        names.sort();
+        fs::remove_dir_all(&root).expect("cleanup");
+        assert_eq!(
+            names,
+            [
+                "adapter.py",
+                "assets/a5.css",
+                "assets/fonts/inter/Inter.ttf"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_missing_renderer_input_fails_loud() {
+        let mut found = Vec::new();
+        renderer_files(Path::new("no/such/uv.lock"), &mut found).expect("a file path is listed");
+        assert!(sha256_file(&found[0]).is_err());
     }
 }
