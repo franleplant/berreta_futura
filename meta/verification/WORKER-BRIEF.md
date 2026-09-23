@@ -37,7 +37,8 @@ whole large files.
   If it refuses, the branch moved: `git rebase art_directed` in your
   worktree, re-run the tests if the new commits touch anything you depend
   on, and retry. Never edit files in the main tree directly.
-- Then `git worktree remove --force <your worktree>` and report.
+- Only after the merge SUCCEEDED (check its exit status, never chain it
+  with `;`), `git worktree remove --force <your worktree>` and report.
 
 ## Report (your final message, <= 15 lines)
 
