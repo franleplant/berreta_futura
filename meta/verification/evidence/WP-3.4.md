@@ -2,24 +2,17 @@
 
 ## Base
 
-`art_directed` `85d1d4c`, rebased onto `f5754b8` (carries WP-0.2o's comparator
-change) before the final measurements; detached worktree `.../tmp/wp34`, tracked
-content run `editions/010/run-2026-09-13T01-34-51`, `--langs en`.
+Rebased onto `art_directed` `45fc32a` (WP-0.2q, which makes the comparator
+decode `[/ICCBased n]` image colour spaces); detached worktree `.../tmp/wp34`,
+tracked content run `editions/010/run-2026-09-13T01-34-51`, `--langs en`.
+Every tier number below is from the committed comparator at that base;
+`mag/src/parity/**` is not touched by this WP.
 
-**Status: NOT LANDED, blocked on a comparator defect.** The typst leg now
-places rasters, and the committed comparator cannot trace any typst PDF that
-carries one: `mag parity` exits 1 with
-`error: tracing page 9 of .../reader.pdf: operator Do: decoding image: expected
-name, got [/ICCBased 318 0 R]` and produces no verdict. Landing would break the
-ratchet for every later WP. All numbers below marked *patched* were measured
-with a scratch comparator binary carrying the 5-line fix quoted under
-"Comparator defect"; the fix was never committed and `mag/src/parity/**` is
-unchanged in this commit (`git diff f5754b8 -- mag/src/parity` is empty).
-
-With that fix: page count 56 = 56, WP-2.1 projection byte-identical, staged
-ratchet pass with 0 regressions, placement set Tier S same-page 11/11, figure
-boxes equal to the oracle to the printed digit and `effective_ppi` equal on all
-three figures, tail arts printed on the same 8 of 9 articles.
+Result: page count 56 = 56, WP-2.1 projection byte-identical, staged ratchet
+pass with 0 regressions and a verdict written, placement set Tier S same-page
+11/11, figure boxes equal to the oracle to the printed digit and
+`effective_ppi` equal on all three figures, tail arts printed on the same 8 of
+9 articles.
 
 ## What changed
 
@@ -59,6 +52,20 @@ three figures, tail arts printed on the same 8 of 9 articles.
   CSS paints an absolutely positioned box).
 - **Closing plates** (`plate-page`): the art is set 333.0079 x 595.2756pt from
   the page's top-left of the live area, `fit: "contain"` (css:1646).
+- **300 ppi floor** (`layout.rs`): `figures()` refuses a figure whose
+  `effective_ppi` at its placed box is below 300 and `tail_art()` refuses a
+  printed strip below 300 (width over the 325pt `MEASURE`, height over the
+  strip height), with the adapter's exact wording
+  (`weasyprint_adapter.py` `_figure_placement` :2454, `_measured_tail_art`
+  :2140): `Curated figure <id> resolves to <ppi:.1f> ppi at its Quiet Standard
+  placement; the minimum is 300 ppi` and `Article tail art <path> resolves to
+  <ppi:.1f> ppi; the minimum is 300 ppi`. As in the adapter, a dropped strip
+  and closing plates are not checked.
+- **Fixture 900 rasters** (`mag/tests/typeset_fixtures/corpus`): `diagram.png`
+  48x40 -> 1200x1000 and `tail.png` 60x20 -> 1500x500, nearest-neighbour
+  upscales of the same pictures at the same aspect, so every placed box is
+  unchanged; the figure now resolves to 351.2 ppi (was 14.0) and the tail strip
+  to 332.3 ppi (was 13.3).
 - **layout.json** (`layout.rs`): `figures[].box_points` =
   `(x, page_h - top - h + 0.005, w, h)` rounded to 3 places, the oracle's
   `_figure_placement` definition including its `_RASTER_NUDGE_POINTS`;
@@ -69,44 +76,43 @@ three figures, tail arts printed on the same 8 of 9 articles.
 
 ```sh
 unset TYPST_ROOT; RUN=editions/010/run-2026-09-13T01-34-51
-./mag/target/debug/mag parity 010 --run $RUN        # base binary 85d1d4c: exit 1, ratchet pass; weasy T21-39-26, typst T21-40-36
-./mag/target/debug/mag render 010 --engine typst --no-model --langs en --run $RUN   # iterations, final T22-13-20, exit 0
-./mag/target/debug/mag parity 010 --pre-rendered <T21-39-26> <T21-40-36>   # rebased binary, BEFORE: exit 1 (tiers)
-./mag/target/debug/mag parity 010 --pre-rendered <T21-39-26> <T22-14-04>   # rebased binary, AFTER leg: exit 1, "decoding image: expected name, got [/ICCBased 318 0 R]"
-<scratch patched binary> parity 010 --run $RUN                             # AFTER, staged: exit 1 (tiers), ratchet pass; typst leg T22-18-17
-python3 .../wp34s/place.py <weasy> <typst> <verdict.json>                   # placement-set rows below (scratch script)
-(cd mag && MAG_LAYOUT_ORACLE=<T21-39-26>/en/edition-manifest.json MAG_LAYOUT_TYPST=<leg>/en/layout.json \
-  cargo test --bin mag the_live_field_by_field_table -- --nocapture)        # exit 0 before (T21-40-36) and after (T22-18-17)
-uv run python mag/tests/typeset_oracle.py stage --request <T22-13-20>/request.json --into $ST/live --artifact-root .
+./mag/target/debug/mag parity 010 --run $RUN   # AFTER, staged: exit 1 (tiers fail), ratchet pass, verdict output/parity/010/verdict.json; weasy leg cached T21-39-26, typst leg T23-18-12
+./mag/target/debug/mag parity 010 --pre-rendered editions/010/render-2026-09-23T21-39-26 editions/010/render-2026-09-23T21-40-36
+                                               # BEFORE: same binary and comparator, base typst leg (85d1d4c): exit 1 (tiers)
+python3 .../wp34s/place.py <weasy> <typst> <verdict.json>   # placement-set rows below (scratch script)
+(cd mag && MAG_LAYOUT_ORACLE=<T21-39-26>/en/edition-manifest.json MAG_LAYOUT_TYPST=<T23-18-12>/en/layout.json \
+  cargo test --bin mag the_live_field_by_field_table -- --nocapture)   # exit 0, "cells: 134, equal: 133, differing: 1"
+uv run python mag/tests/typeset_oracle.py stage --request <T23-18-12>/request.json --into $ST/live --artifact-root .
 uv run python mag/tests/typeset_oracle.py project --root $ST/live --edition 010 --publication-name "Berreta Futura" --out $ST/oracle-010.json
 (cd mag && MAG_TYPESET_ROOT=$ST/live MAG_TYPESET_ORACLE=$ST/oracle-010.json MAG_TYPESET_PUBLICATION="Berreta Futura" \
   cargo test --bin mag the_live_edition -- --nocapture)   # "compared the live edition: 68758 characters of reader text", ok
-uv run --with pypdf python .../tmp/wp02n-colours.py <weasy pdf> <typst pdf>  # WP-0.2n's colour census, before and after
-mutool trace <pdf> <page>                                                    # image and rule transforms quoted below
-DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib uv run python .../wp34s/boxes.py <staged root> 12,37,42   # oracle box dump (scratch)
-(cd mag && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test)  # all exit 0 on the rebased tree, 394 passed 0 failed, 27 result lines
-python3 tools/nocomments.py   # "no comments"
+(cd mag && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test)  # all exit 0, 460 passed 0 failed, 28 result lines
+python3 tools/nocomments.py   # "no comments", exit 0
 ```
+
+Earlier iterations (colour census with WP-0.2n's script, `mutool trace`
+transforms, the oracle box dump) were measured on the pre-rebase leg T22-18-17
+and are quoted where used; the placement rows, figure boxes and PPIs were
+re-measured on T23-18-12 and are identical.
 
 ## Metrics: `mag parity 010`, before and after
 
-Same WeasyPrint leg (T21-39-26). Before = base typst leg T21-40-36, rebased
-comparator, `--pre-rendered` (ratchet `not_evaluated` in that mode; the base
-binary's own staged run passed, 54 measured, 0 regressions). After = the final
-binary, staged `--run`, *patched* comparator.
+Same WeasyPrint leg (T21-39-26), same committed comparator (45fc32a). Before
+= base typst leg T21-40-36, `--pre-rendered` (ratchet `not_evaluated` in that
+mode; the base binary's own staged run passed, 54 measured, 0 regressions).
+After = this commit, staged `--run`, typst leg T23-18-12.
 
-| tier | before | after (patched comparator) |
+| tier | before | after |
 |---|---|---|
-| ratchet | pass on the base staged run | **pass, 54 committed, 54 measured, 0 regressions**; digest fresh `d92eca1d...` |
+| ratchet | not evaluated (pre-rendered); pass on the base staged run | **pass, 54 committed, 54 measured, 0 regressions**; staged digest fresh `d92eca1d...` |
 | S page_count | pass 56 vs 56 | pass 56 vs 56 |
-| S boxes | pass | pass |
-| S text | fail, 5 of 54 (4, 6, 42, 43, 44) | fail, **2** of 54 (4, 6) |
+| S boxes | pass (162 boxes, 54 rotations) | pass (162 boxes, 54 rotations) |
+| S text | fail, 5 of 54 | fail, **2** of 54 (4, 6) |
 | G | max dx 325.563, max dy 167.672, beyond G1 56, beyond G2 141, structure mismatches 9 | max dx **0.003**, max dy **7.182**, beyond G1 10, beyond G2 95, structure mismatches **0** |
-| G pages over 0.5 pt or with line mismatches | 18 | 14 |
-| S color | fail, 58855 glyph entries, 47 pages | fail, 58855, 47 pages |
-| S navigation | fail, 22 mismatches | fail, 22 mismatches |
+| S color | fail, 58800 entries, 47 pages | fail, 58800 entries, 47 pages |
+| S navigation | fail, 85 links, 6 mismatches | fail, 85 links, 6 mismatches |
 | E glyph positions | 2837 glyphs, 51 shows, worst excess 37.99, 40 violations | 2910 glyphs, 52 shows, worst excess 37.99, 40 violations |
-| E display list | 2189 vs 1642 elements, 52 pages | 2189 vs 1661 elements, 52 pages |
+| E display list | 1728 vs 1642 elements, 52 pages differ | 1728 vs 1661 elements, 52 pages differ |
 | V | V1/V2 fail, worst fraction 0.624 (plate pages) | V1/V2 fail, worst fraction **0.288** (page 4, an opener) |
 
 **Page set `placement`** (9, 12, 16, 29, 34, 37, 39, 42, 44, 49, 53), from the
@@ -137,8 +143,8 @@ two verdicts and layouts:
 - The remaining G2 failure on the eight tail pages is the `END / NN` mark,
   5.40pt off (6.00 on 39), already a named WP-3.1 / WP-3.5 residual in
   WP-3.2.md; the strip itself is not text and is not in G.
-- Closing plates (10, 30, 35, 45, 54): V differing fraction 0.62 -> 0.0004
-  (0.6242/0.6152/0.6226/0.6226/0.6237 -> 0.0004/0.0003/0.0004/0.0004/0.0004).
+- Closing plates (10, 30, 35, 45, 54): V differing fraction
+  0.6242/0.6152/0.6226/0.6226/0.6237 -> 0.0004/0.0003/0.0004/0.0004/0.0004.
 
 ## WP-2.3 field table, before and after
 
@@ -147,7 +153,7 @@ two verdicts and layouts:
 | | cells | equal | differing | WP-3.4 cells differing |
 |---|---|---|---|---|
 | before (T21-40-36) | 125 | 94 | 31 | 31 (6 figure box/ppi, 25 tail art) |
-| after (T22-18-17) | 134 | 133 | **1** | 1 |
+| after (T23-18-12) | 134 | 133 | **1** | 1 |
 
 Cells grew by 9 because `box_points` is now an array of four cells instead of
 one null. The one differing cell:
@@ -186,36 +192,20 @@ page, WP-3.1, not the tail rule. Figures and tail rows after:
   the oracle paints that border as a fill (WeasyPrint `border` is filled,
   css note at :1082-1086). Owner: WP-3.2 (illustrated opener).
 
-## Comparator defect (for the orchestrator, `mag/src/parity/streams.rs`, not touched)
-
-`image_pixels` reads `/ColorSpace` with `name_str`, so any image XObject whose
-colour space is an array fails. typst-pdf 0.15.1 writes every image that way:
-`convert.rs:56` sets `no_device_cs: true`, so krilla emits `[/ICCBased n]` (an
-sRGB profile) for all RGB images. The 010 PNGs carry only an `sRGB` chunk and
-no `iCCP` profile; the array comes from typst, not from the art. The scratch
-fix used for the *patched* figures, at `streams.rs` `image_pixels`:
-
-```rust
-let cso = resolve(doc, dict.get(b"ColorSpace")?)?;
-let cs = match cso.as_array() {
-    Ok(a) => { let n = num(resolve(doc, resolve(doc, &a[1])?.as_stream()?.dict.get(b"N")?)?)?;
-               if n == 3.0 { "DeviceRGB".to_string() } else { "DeviceGray".to_string() } }
-    Err(_) => name_str(cso)?,
-};
-```
-
-It decodes the samples as their N components, which is right for an sRGB or
-grey ICC profile and says nothing about other profiles. A comparator WP should
-make the real fix with its own tests; after it lands, this commit rebases and
-lands with the unpatched gate.
-
 ## Tests added or changed
 
 - `layout::the_fixture_pieces_measure_as_emitted`: fixture 900's band figure
-  (48 x 40 px, verso page 6) has `box_points` x 86.024, w 246.0, h 205.0 and
-  `effective_ppi` 14.0, all derived by hand: scale `min(333.008/48, 205/40)` =
-  5.125, x = 42.5197 + (333.008 - 246)/2, ppi = 48 / (246/72) = 14.05. Its tail
-  art prints at 108.3333 (= 325 x 20/60).
+  (1200 x 1000 px, verso page 6) has `box_points` x 86.024, w 246.0, h 205.0
+  and `effective_ppi` 351.2, all derived by hand: scale
+  `min(333.008/1200, 205/1000)` = 0.205, x = 42.5197 + (333.008 - 246)/2,
+  ppi = 1000 / (205/72) = 351.22. Its tail art prints at 108.3333
+  (= 325 x 500/1500).
+- `layout::a_figure_or_printed_tail_below_300_ppi_is_refused_with_the_adapter_wording`:
+  the same fixture with the figure swapped for `diagram-2.png` (49 x 40) is
+  refused as `... resolves to 14.0 ppi ...` (min(49/(246/72), 40/(205/72)) =
+  14.05), and with the tail swapped for `media/landscape.png` (40 x 25) as
+  `... resolves to 8.9 ppi ...` (40/(325/72) = 8.86); the unswapped fixture at
+  351.2 / 332.3 ppi is the positive control in the test above.
 - `layout::the_tail_art_prints_only_when_its_strip_fits_the_room_under_the_end_mark`:
   a 1pt straddle: the last gap that prints and the first that does not, with
   room >= height on one side and < on the other, and the rooms 1pt apart.
@@ -229,11 +219,6 @@ lands with the unpatched gate.
 
 ## Not ported, with owners
 
-- The 300 ppi floor. The adapter raises below 300 ppi (`_figure_placement`,
-  `_measured_tail_art`); the typst leg reports `effective_ppi` and does not
-  refuse, because fixture 900's own figure is 14 ppi and replacing that fixture
-  is outside this WP's paths. Needs an orchestrator call (a fixture WP, or the
-  preflight port reading `effective_ppi`).
 - `adaptive_band` image shrinking (`_measured_adaptive_images`), a band landing
   on another page than its bridge (`_measured_band_offsets`), landscape plates
   (`_rewrite_landscape_plates`) and the `band-clearance` rule. 010 has none of
@@ -244,18 +229,20 @@ lands with the unpatched gate.
 
 ## What is and is not proven
 
-- Proven (patched comparator): on 010 en every placement page carries its
+- Proven (committed comparator): on 010 en every placement page carries its
   figure or tail on the same page as the oracle, the three figure boxes and
   PPIs are equal to the printed digit, the band anchor pages 12, 37, 42 are
   within 0.002pt in G, the tail decision matches 9/9, closing plates match to a
   V fraction of 0.0004, page count 56 = 56, ratchet pass with 0 regressions on
-  a fresh staged digest.
-- Proven without the comparator: the WP-2.1 projection is byte-identical
-  (68758 characters, the new arguments are paths, not reader text); the
-  WP-2.3 table goes from 31 to 1 differing cell; `cargo test` 394/0 (rebased), fmt,
-  clippy, nocomments clean.
-- Not proven: any of the tier numbers under the committed comparator, which
-  cannot produce a verdict on this leg at all. That is the blocker.
+  a fresh staged digest and a verdict written.
+- Proven: the WP-2.1 projection is byte-identical (68758 characters, the new
+  arguments are paths, not reader text); the WP-2.3 table goes from 31 to 1
+  differing cell; the 300 ppi floor refuses a figure and a printed strip below
+  it with the adapter's wording and passes 010 (498.0/518.9/518.9) and fixture
+  900; `cargo test` 460/0, fmt, clippy, nocomments clean.
+- Not proven: the floor at its exact boundary (the test straddles it at 14.0 /
+  8.9 vs 351.2 / 332.3 ppi, not at 299.9 / 300.0), which the adapter's strict
+  `<` shares by construction.
 - Equality caveats (rule 4): `box_points` keeps the oracle's 0.005pt raster
   nudge and the tail room keeps its 45pt frame bottom although the strip's foot
   lands at 44.995pt; both are the oracle's definitions, ported as such. The
