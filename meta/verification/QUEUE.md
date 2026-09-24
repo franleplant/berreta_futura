@@ -17,8 +17,10 @@ MILESTONE: WP-0.2x landed e1822cf; `mag parity 010` exits 0, every
 evaluated Tier E clause green (raster not_evaluated, WP-0.2f withdrawn).
 WP-3.0g landed 4c3697b: ratchet target E, all 54 pages at E, two clean
 staged runs identical.
-Running: final adversarial comparator verify (+ baseline raise
-re-derivation), WP-5.6 native render (+ cover step), typeset-set
+Final comparator verify (WP-3.0g.verify.md): 0.2u, 0.2w, 0.2x, 3.0g
+ACCEPTED (baseline raise re-derived); 0.2v REJECTED (JPEG colour
+transform) plus image-identity holes: rework WP-0.2y running.
+Running: WP-0.2y, WP-5.6 native render (+ cover step), typeset-set
 verifier. WP-3.9 landed 0508801 and WP-0.0f 38550f4: `--adhoc 008`
 exits 0, display list differs only on p4 (editorial, out of scope).
 WP-3.7c landed cbe1629: 010 display list 0 pages, navigation 0; glyph
@@ -87,6 +89,9 @@ evidence file records it):
   normalization. Decided at WP-3.0g, no change.
 
 Orchestrator decisions:
+- Workers may rebase baseline.json's staged digest when their own oracle
+  change moved it and they prove the delta; a verifier re-derives it
+  (WP-3.0g.verify.md confirmed bc49b2aa).
 - `cap_dots_125pt_100_tick` (one tick per step, inside the k-step bound)
   passes by design: it is the drift allowance's accepted limit, not a
   hole (WP-0.2x.md). Link rects compare within 0.25 pt, half their
