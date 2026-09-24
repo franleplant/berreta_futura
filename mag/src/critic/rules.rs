@@ -1664,7 +1664,7 @@ fn crop_rgb(image: &Rgb, box_rect: [u32; 4]) -> Rgb {
     }
 }
 
-fn write_png(path: &Path, image: &Rgb) -> Result<()> {
+pub(crate) fn write_png(path: &Path, image: &Rgb) -> Result<()> {
     let file =
         std::fs::File::create(path).with_context(|| format!("cannot create {}", path.display()))?;
     let mut encoder = png::Encoder::new(std::io::BufWriter::new(file), image.width, image.height);
