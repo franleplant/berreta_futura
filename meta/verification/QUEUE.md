@@ -13,11 +13,13 @@ Landed, awaiting a verifier: WP-0.2w, WP-5.1h part 2; WP-0.0e, WP-3.5, WP-0.0d, 
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d, WP-4.0g, WP-5.10, WP-5.1h part 1.
-Running: WP-0.2x (quantize at-start in f64; half-quantum tolerance
-instead of bucket equality), WP-3.9 (generalize to 008).
+MILESTONE: WP-0.2x landed e1822cf; `mag parity 010` exits 0, every
+evaluated Tier E clause green (raster not_evaluated, WP-0.2f withdrawn).
+Running: WP-3.0g enforcement flip, WP-3.9 (generalize to 008).
 WP-3.7c landed cbe1629: 010 display list 0 pages, navigation 0; glyph
 clause 90 single-quantum blips (comparator artifact, WP-0.2x).
-Next: WP-3.0g, WP-5.6, WP-4.1.
+Next: final adversarial comparator verify (all 0.2 WPs at the tip),
+typeset-set verifier, WP-5.6, WP-4.1, WP-4.2, WP-4.3, WP-6.1.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.7a, 3.7c, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
 Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
@@ -80,6 +82,10 @@ evidence file records it):
   normalization (WP-0.2m-r.verify.md); decide at WP-3.0g.
 
 Orchestrator decisions:
+- `cap_dots_125pt_100_tick` (one tick per step, inside the k-step bound)
+  passes by design: it is the drift allowance's accepted limit, not a
+  hole (WP-0.2x.md). Link rects compare within 0.25 pt, half their
+  0.5 pt quantum; borders are zero-width so only the click area moves.
 - Cross-leg coordinates compare as |a-b| <= 0.005 pt in f64 (half the
   quantum), not bucket equality after rounding: tighter in its maximum,
   and immune to sub-quantum edge flips (WP-3.7c.md). Glyph positions are
