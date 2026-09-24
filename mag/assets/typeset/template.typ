@@ -463,8 +463,8 @@
 #let PLAIN-NOTE-DROP = 12pt
 #let NOTE-LEADING = 9.45pt
 
-#let plain-opener(size: 35pt, field: 0pt, tracking: 0pt, title: "", body) = {
-  plain-head.update((size: size, tracking: tracking, title: title))
+#let plain-opener(size: 35pt, field: 0pt, tracking: 0pt, title: "", wide: false, body) = {
+  plain-head.update((size: size, tracking: tracking, title: title, escape: if wide { RAIL } else { 0pt }))
   block(height: field, width: 100%, above: 0pt, below: 0pt, breakable: false, body)
   plain-head.update(none)
 }
@@ -478,11 +478,11 @@
   body,
 )
 
-#let plain-title-block(size, body) = block(width: MEASURE + MEASURE-DELTA, plain-title-text(size, body))
+#let plain-title-block(head, body) = block(width: MEASURE + MEASURE-DELTA + 2 * head.escape, plain-title-text(head.size, body))
 
 #let plain-byline-baseline(head) = {
   let leading = head.size * OPENER-TITLE-LEADING-RATIO
-  let lines = calc.round(measure(plain-title-block(head.size, head.title)).height / leading)
+  let lines = calc.round(measure(plain-title-block(head, head.title)).height / leading)
   PLAIN-TITLE-TOP + head.size + lines * leading + 10pt
 }
 
@@ -537,10 +537,11 @@
 }
 
 #let content-label(body) = context if plain-head.get() != none {
-  let items = body.children.enumerate().map(((i, item)) => {
+  let escape = plain-head.get().escape
+  let items = (if body.has("children") { body.children } else { (body,) }).enumerate().map(((i, item)) => {
     (if i == 1 { box(move(dx: LABEL-TRACKING, item)) } else { unspaced(item) }) + h(LABEL-TRACKING)
   })
-  place(top + left, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, [#box(width: 100% - MEASURE-DELTA, text(
+  place(top + left, dx: -escape, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, [#box(width: 100% - MEASURE-DELTA + 2 * escape, text(
     font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(LABEL-TRACKING),
     tracked-body(LABEL-TRACKING, upper(items.intersperse(h(1fr)).join())),
   ))<mag-spread>])
@@ -582,9 +583,9 @@
 })
 
 #let piece-title(body) = context if plain-head.get() != none {
-  let size = plain-head.get().size
-  let leading = size * OPENER-TITLE-LEADING-RATIO
-  place(top + left, dy: PLAIN-TITLE-TOP + size - (leading / 2 + HALF-SERIF * size), bookmark(1, body) + plain-title-block(size, body))
+  let head = plain-head.get()
+  let (size, leading) = (head.size, head.size * OPENER-TITLE-LEADING-RATIO)
+  place(top + left, dx: -head.escape, dy: PLAIN-TITLE-TOP + size - (leading / 2 + HALF-SERIF * size), bookmark(1, body) + plain-title-block(head, body))
 } else if opener-parts.get() == none {
   block(
     bookmark(1, body) + text(font: DISPLAY, size: 24pt, weight: 600, ..edges(24pt, 24pt * 1.08, HALF-SERIF), body),
@@ -638,7 +639,7 @@
     block(above: 12pt, below: 0pt, credit)
   } else {
     let shift = pango-center(HALF-SANS, OPENER-BYLINE-SIZE) - HALF-SANS * OPENER-BYLINE-SIZE
-    place(top + left, dy: plain-byline-baseline(head) + shift, block(width: 100%, credit))
+    place(top + left, dx: -head.escape, dy: plain-byline-baseline(head) + shift, block(width: 100% + 2 * head.escape, credit))
   }
 } else {
   collect("byline", body)

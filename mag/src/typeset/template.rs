@@ -963,6 +963,50 @@ mod tests {
     }
 
     #[test]
+    fn an_editorial_opener_spans_the_live_width_and_wraps_on_it() {
+        let run = |wide: bool| {
+            let tree = synthetic(format!(
+                "#piece(id: \"editorial\", kind: \"original_editorial\", short-title: \"E\")[\n\
+                 #plain-opener(size: 35pt, field: 153.2756pt, title: \"Upkeep Scaled Quickly\", \
+                 wide: {wide})[\n#content-label[#label-primary[Editorial]]\n\
+                 #piece-title[Upkeep Scaled Quickly]\n\
+                 #byline(code: none)[#byline-prefix[By]#byline-name[ The Editors]]\n]\n\
+                 #doc-paragraph(standfirst: true, roster: false)[Standfirst words.]\n]\n"
+            ));
+            let page: Vec<Mark> = laid(&tree, TEMPLATE_TYP).into_iter().flatten().collect();
+            let at = |keep: &dyn Fn(&Mark) -> bool| {
+                page.iter()
+                    .filter(|m| keep(m))
+                    .map(|m| (m.x, m.y))
+                    .collect::<Vec<_>>()
+            };
+            [
+                at(&|m| m.text.starts_with("EDITORIAL")),
+                at(&|m| (m.size - 35.0).abs() < 1e-6),
+                at(&|m| m.text == "BY"),
+                at(&|m| m.text.starts_with("Standfirst")),
+            ]
+        };
+        let [label, title, byline, standfirst] = run(true);
+        let rail = 4.00395;
+        assert_eq!(title.len(), 1, "one line on the 333pt live width");
+        for (x, _) in [label[0], title[0], byline[0]] {
+            assert!(
+                (x + rail - standfirst[0].0).abs() < 1e-3,
+                "{x} vs {standfirst:?}"
+            );
+        }
+        let [_, narrow, low, prose] = run(false);
+        assert_eq!(narrow.len(), 2, "two lines on the 325pt article measure");
+        assert!((narrow[0].0 - prose[0].0).abs() < 1e-3);
+        assert!((low[0].1 - byline[0].1 - 35.0 * 0.96).abs() < 1e-3);
+        assert!(
+            (prose[0].1 - standfirst[0].1).abs() < 1e-3,
+            "the field holds the standfirst"
+        );
+    }
+
+    #[test]
     fn a_heading_goes_to_the_next_page_with_the_figure_it_anchors() {
         let loose = TEMPLATE_TYP.replace(
             "sticky: next-flow(index).kind == \"figure\",",

@@ -32,6 +32,8 @@ const CODE_SIDE: f64 = 55.5;
 const CREDIT_GAP: f64 = 4.5 * 3.15;
 const INTER_CAP: f64 = 1490.0 / 2048.0;
 const FIGURE_FIELD_BASE: f64 = 25.0 + 12.0 + 10.0 + 12.0;
+const LIVE_WIDTH: f64 = 333.0079;
+const EDITORIAL_FIELD_FLOOR: f64 = 595.2756 - 52.0 - 390.0;
 
 pub struct PlainOpener {
     pub size: f64,
@@ -148,6 +150,18 @@ impl Metrics {
                 "Title cannot fit the Quiet Standard display box: {title}"
             ))),
         }
+    }
+
+    pub fn editorial_opener(&self, title: &str) -> Result<(f64, f64)> {
+        let (size, lines) = self
+            .fitted(title, LIVE_WIDTH, 135.0, 35.0, 25.0, 4)
+            .ok_or_else(|| {
+                ValidationError::one(format!(
+                    "Title cannot fit the Quiet Standard display box: {title}"
+                ))
+            })?;
+        let field = FIGURE_FIELD_BASE + 13.0 + size * (1.0 + TITLE_LEADING * lines as f64);
+        Ok((size, field.max(EDITORIAL_FIELD_FLOOR)))
     }
 
     pub fn plain_opener(
@@ -308,5 +322,26 @@ mod tests {
         assert_eq!((size, lines), (32.5, 1));
         let long = ["Unbreakable"; 12].join(" ");
         assert!(metrics.illustrated_titles(&long).is_err());
+    }
+
+    #[test]
+    fn an_editorial_title_is_fitted_on_the_live_width_over_a_clamped_field() {
+        let metrics = metrics();
+        let (size, field) = metrics
+            .editorial_opener("The Pen Moves Faster Than Review")
+            .expect("it fits");
+        assert_eq!(size, 35.0);
+        assert!((field - (72.0 + 35.0 * (1.0 + 0.96 * 2.0))).abs() < 1e-9);
+        let upkeep = "Upkeep Scaled Quickly";
+        let (size, field) = metrics.editorial_opener(upkeep).expect("one line");
+        assert_eq!(size, 35.0);
+        assert!((field - 153.2756).abs() < 1e-9);
+        assert_eq!(
+            metrics.fitted(upkeep, PLAIN_MEASURE, 135.0, 35.0, 25.0, 4),
+            Some((35.0, 2))
+        );
+        assert!(metrics
+            .editorial_opener(&["Unbreakable"; 12].join(" "))
+            .is_err());
     }
 }

@@ -319,12 +319,16 @@ impl Writer<'_> {
     }
 
     fn editorial(&self, editorial: &Editorial, document: &Document) -> Result<String> {
+        let (size, field) = self.metrics.editorial_opener(&editorial.title)?;
+        let title = fold_reader_characters(&educate_reader_quotes(&editorial.title), self.settable);
         Ok(format!(
-            "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n)[\n  \
-             #content-label[#label-primary{}]\n  #piece-title{}\n  {}\n{}]\n",
+            "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n)[\n\
+             #plain-opener(size: {size}pt, field: {field}pt, title: {}, wide: true)[\n  \
+             #content-label[#label-primary{}]\n  #piece-title{}\n  {}\n]\n{}]\n",
             string_literal("editorial"),
             string_literal("original_editorial"),
             string_literal(&self.ui("editorial")),
+            string_literal(&title),
             self.said(&editorial.label),
             self.said(&editorial.title),
             self.byline(&editorial.byline),
