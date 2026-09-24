@@ -58,7 +58,9 @@ Orchestrator decisions:
   zlib-ng vs png crate) and PDF serializers (pypdf vs lopdf). The package
   is equal when JSON/text entries are byte-equal, PNGs pixel-equal, PDFs
   page-count and page-raster equal, archives per entry, and SHA256SUMS
-  lists the same files in the same order. Measured on 010: met.
+  lists the same files in the same order (hash fields of non-byte-equal
+  entries, e.g. render-critic.json booklet_sha256, excepted). Measured on
+  010 per WP-5.5c.md; the verifier confirms.
 - WP-5.6 uses package::archive::archive_tree for package.zip.
 - WP-5.7b: Type3 with ToUnicode read (accepted); skipping invisible text
   beside printed text REJECTED by the verifier (hides scans).
