@@ -1,9 +1,11 @@
 use crate::typeset::content::{File, Tree};
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
+use lopdf::{Object, ObjectId};
 use std::path::Path;
 use typst::foundations::Smart;
-use typst::layout::{Frame, FrameItem, Point, Size};
+use typst::introspection::{Location, PagedPosition};
+use typst::layout::{Abs, Frame, FrameItem, Point, Size};
 use typst::model::{Destination, Document, Url};
 use typst_layout::PagedDocument;
 use typst_pdf::{PdfOptions, PdfStandards};
@@ -13,6 +15,7 @@ pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
 pub const FONT_DIR: &str = "src/magazine/assets/fonts";
 const IDENT: &str = "mag-typeset-reader";
 const INLINE_LINK: &str = " mag-inline-link";
+const TYPST_DEST_LIFT: f64 = 10.0;
 
 pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
     Sources::new(tree, TEMPLATE_TYP, ROOT_TYP, font_dir)
@@ -113,7 +116,7 @@ fn flush(frame: &mut Frame, open: &mut Option<(Destination, Run, Vec<Run>)>) {
     }
 }
 
-fn weasyprint_links(frame: &mut Frame) {
+fn weasyprint_links(frame: &mut Frame, at: &dyn Fn(Location) -> Option<PagedPosition>) {
     let items: Vec<_> = frame.items().cloned().collect();
     frame.clear();
     let mut open = None;
@@ -121,7 +124,7 @@ fn weasyprint_links(frame: &mut Frame) {
         let FrameItem::Link(dest, size) = &item else {
             if let FrameItem::Group(group) = &mut item {
                 flush(frame, &mut open);
-                weasyprint_links(&mut group.frame);
+                weasyprint_links(&mut group.frame, at);
             }
             frame.push(pos, item);
             continue;
@@ -134,6 +137,15 @@ fn weasyprint_links(frame: &mut Frame) {
                     true,
                 )
             }
+            Destination::Location(loc) => (
+                at(*loc).map_or(dest.clone(), |p| {
+                    Destination::Position(PagedPosition {
+                        point: Point::new(p.point.x, p.point.y + Abs::pt(TYPST_DEST_LIFT)),
+                        ..p
+                    })
+                }),
+                false,
+            ),
             other => (other.clone(), false),
         };
         match &mut open {
@@ -156,8 +168,9 @@ fn weasyprint_links(frame: &mut Frame) {
 
 pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
     let mut pages = document.pages().to_vec();
+    let at = |loc| document.introspector().position(loc);
     for page in &mut pages {
-        weasyprint_links(&mut page.frame);
+        weasyprint_links(&mut page.frame, &at);
     }
     let document = PagedDocument::new(pages.into(), document.info().clone());
     let options = PdfOptions {
@@ -169,12 +182,47 @@ pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
         tagged: false,
         pretty: false,
     };
-    typst_pdf::pdf(&document, &options).map_err(|errors| {
+    let bytes = typst_pdf::pdf(&document, &options).map_err(|errors| {
         anyhow::anyhow!(
             "PDF export failed:\n  {}",
             joined(errors.iter().map(|e| e.message.to_string()).collect())
         )
-    })
+    })?;
+    weasyprint_annotations(&bytes)
+}
+
+fn open_outline(doc: &mut lopdf::Document, id: ObjectId) -> Result<i64> {
+    let mut count = 0;
+    let mut child = doc.get_dictionary(id)?.get(b"First").ok().cloned();
+    while let Some(Object::Reference(kid)) = child {
+        count += 1 + open_outline(doc, kid)?;
+        child = doc.get_dictionary(kid)?.get(b"Next").ok().cloned();
+    }
+    doc.get_dictionary_mut(id)?.set("Count", count);
+    Ok(count)
+}
+
+fn weasyprint_annotations(bytes: &[u8]) -> Result<Vec<u8>> {
+    let mut doc = lopdf::Document::load_mem(bytes)?;
+    for object in doc.objects.values_mut() {
+        if let Ok(dict) = object.as_dict_mut() {
+            if dict.get(b"Subtype").and_then(Object::as_name).ok() == Some(b"Link") {
+                dict.remove(b"Border");
+                dict.remove(b"F");
+                dict.set("BS", lopdf::dictionary! { "W" => 0 });
+            }
+        }
+    }
+    if let Ok(root) = doc
+        .catalog()?
+        .get(b"Outlines")
+        .and_then(Object::as_reference)
+    {
+        open_outline(&mut doc, root)?;
+    }
+    let mut out = Vec::new();
+    doc.save_to(&mut out)?;
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -998,6 +1046,97 @@ mod tests {
                 "{title}"
             );
         }
+    }
+
+    fn descendants(doc: &Document, id: ObjectId, bad: &mut Vec<String>) -> i64 {
+        let node = doc.get_dictionary(id).expect("an outline node");
+        let mut total = 0;
+        let mut child = node.get(b"First").and_then(Object::as_reference).ok();
+        while let Some(kid) = child {
+            total += 1 + descendants(doc, kid, bad);
+            child = doc
+                .get_dictionary(kid)
+                .and_then(|k| k.get(b"Next"))
+                .and_then(Object::as_reference)
+                .ok();
+        }
+        if node.get(b"Count").and_then(Object::as_i64).ok() != Some(total) {
+            bad.push(format!(
+                "{id:?} holds {:?} for {total}",
+                node.get(b"Count").ok()
+            ));
+        }
+        total
+    }
+
+    fn links(pdf: &[u8]) -> (Document, Vec<lopdf::Dictionary>) {
+        let doc = Document::load_mem(pdf).expect("the emitted bytes are a PDF");
+        let found = doc
+            .objects
+            .values()
+            .filter_map(|o| o.as_dict().ok())
+            .filter(|d| d.get(b"Subtype").and_then(Object::as_name).ok() == Some(b"Link"))
+            .cloned()
+            .collect();
+        (doc, found)
+    }
+
+    #[test]
+    fn links_and_bookmarks_are_written_as_weasyprint_writes_them() {
+        for (edition_id, top) in [("903", 553.275_591), ("902", 565.275_591)] {
+            let (doc, found) = links(&fixture_pdf(edition_id));
+            let internal: Vec<f64> = found
+                .iter()
+                .filter_map(|d| {
+                    d.get(b"Dest")
+                        .or_else(|_| {
+                            d.get(b"A")
+                                .and_then(Object::as_dict)
+                                .and_then(|a| a.get(b"D"))
+                        })
+                        .ok()
+                        .and_then(|o| doc.dereference(o).ok())
+                        .and_then(|(_, o)| o.as_array().ok())
+                })
+                .map(|dest| dest[3].as_float().expect("an XYZ top") as f64)
+                .collect();
+            assert!(internal.len() >= 3, "fixture {edition_id}: {internal:?}");
+            assert!(
+                internal.iter().all(|y| (y - top).abs() < 0.001),
+                "fixture {edition_id} links to {internal:?}, not the piece top {top}"
+            );
+            for link in &found {
+                assert_eq!(
+                    (link.get(b"BS").ok(), link.has(b"Border"), link.has(b"F")),
+                    (
+                        Some(&Object::from(lopdf::dictionary! { "W" => 0 })),
+                        false,
+                        false
+                    ),
+                    "fixture {edition_id}: {link:?}"
+                );
+            }
+            let root = doc
+                .catalog()
+                .and_then(|c| c.get(b"Outlines"))
+                .and_then(Object::as_reference)
+                .expect("an outline");
+            let mut bad = vec![];
+            assert!(descendants(&doc, root, &mut bad) >= 3);
+            assert!(bad.is_empty(), "fixture {edition_id} collapses {bad:?}");
+        }
+        let (_, raw) = links(
+            &typst_pdf::pdf(
+                &document(&world(&fixture_tree("902"), roots().1).expect("the world builds"))
+                    .expect("it compiles"),
+                &PdfOptions::default(),
+            )
+            .expect("it exports"),
+        );
+        assert!(
+            raw.iter().all(|l| l.has(b"Border")),
+            "the unpatched export already writes WeasyPrint's links"
+        );
     }
 
     struct Mark {
