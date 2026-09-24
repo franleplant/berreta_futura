@@ -1,10 +1,13 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-5.9, WP-5.5c, WP-0.0d, WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Comparator verify (WP-0.2m-r.verify.md): 0.2m/n/o ACCEPTED; 0.2p, 0.2q,
+0.2r REJECTED (adversarial pairs pass); rework is WP-0.2s, then
+re-verify adversarially.
+Landed, awaiting a verifier: WP-5.9, WP-5.5c, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
 Running: WP-3.5 furniture, WP-3.3a Rust highlighter (pygments up to the
-CSS colour equivalence), adversarial verifier for comparator 0.2m-0.2r.
+CSS colour equivalence), WP-0.2s comparator rework.
 Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
 3.7.
 
