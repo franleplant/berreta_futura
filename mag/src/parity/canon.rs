@@ -11,7 +11,7 @@ pub struct Glyph {
     pub line: usize,
     pub at: [i64; 2],
     pub start: [i64; 2],
-    pub step: usize,
+    pub step: [usize; 3],
 }
 
 pub const GAP_EM: f64 = 3.0;
@@ -192,11 +192,14 @@ pub fn rect(d: &str) -> Option<Rect> {
         pts.push(*e);
     }
     let r = bounds(&pts)?;
-    let axis = pts.windows(2).all(|w| w[0].0 == w[1].0 || w[0].1 == w[1].1);
-    let corners = pts
-        .iter()
-        .all(|p| [r[0], r[2]].contains(&p.0) && [r[1], r[3]].contains(&p.1));
-    (pts.len() == 5 && pts[0] == pts[4] && axis && corners).then_some(r)
+    let axis = pts
+        .windows(2)
+        .all(|w| (w[0].0 == w[1].0) != (w[0].1 == w[1].1));
+    let mut corners = pts.iter().take(4).copied().collect::<Vec<P>>();
+    corners.sort_unstable();
+    let four = corners == [(r[0], r[1]), (r[0], r[3]), (r[2], r[1]), (r[2], r[3])];
+    let area = r[0] < r[2] && r[1] < r[3];
+    (pts.len() == 5 && pts[0] == pts[4] && axis && four && area).then_some(r)
 }
 
 fn bounds(pts: &[P]) -> Option<Rect> {
@@ -245,7 +248,10 @@ fn painted_box(e: &Element, text: Option<Rect>) -> Option<Rect> {
                         Some(0) if !square => miter.unwrap_or(0),
                         _ => 0,
                     };
-                    (w * spike.max(142) + 199) / 200 + 1
+                    let [a, b, c] = w.map(|v| v as f64);
+                    let (g11, g12, g22) = (a * a, a * b, b * b + c * c);
+                    let top = ((g11 + g22) / 2.0 + ((g11 - g22) / 2.0).hypot(g12)).sqrt();
+                    (top * spike.max(142) as f64 / 200.0).ceil() as i64 + 1
                 }
                 _ => 0,
             };
@@ -544,7 +550,8 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
                 offs: vec![[0, 0]],
                 units: vec![unit.clone()],
             };
-            let step = last.map_or(k + 1, |j| k - j);
+            let blanks = last.map_or(k, |j| k - j - 1);
+            let step = [1, blanks, usize::from(blanks > 0)];
             last = Some(k);
             items.push(Item {
                 e,
@@ -586,14 +593,15 @@ fn lines(run: &mut [Item], next: &mut usize) -> Vec<usize> {
     let mut order = vec![];
     for mut band in bands {
         band.sort_by_key(|&i| at(run, i)[0]);
-        let (mut start, mut step, mut prev) = ([0, 0], 0, None);
+        let (mut start, mut step, mut prev) = ([0, 0], [0; 3], None);
         for i in band {
             let p = at(run, i);
             match prev {
                 Some(j) if p[0] - at(run, j)[0] <= gap(&run[j].e) => {
-                    step += run[i].glyph.as_ref().map_or(0, |g| g.step)
+                    let add = run[i].glyph.as_ref().map_or([0; 3], |g| g.step);
+                    (0..3).for_each(|n| step[n] += add[n]);
                 }
-                _ => (start, step, *next) = (p, 0, *next + 1),
+                _ => (start, step, *next) = (p, [0; 3], *next + 1),
             }
             prev = Some(i);
             if let Some(g) = run[i].glyph.as_mut() {
@@ -801,7 +809,7 @@ mod tests {
             paint: "stroke".into(),
             fill: None,
             stroke: Some(color(INK)),
-            lw: Some(55),
+            lw: Some([55, 0, 55]),
             cap: Some(0),
             join: Some(0),
             miter: Some(400),
@@ -980,7 +988,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "WP-0.2m-r.verify.md: rect() accepts a zero-area out-and-back loop (WP-0.2p, WP-0.2q rejected)"]
     fn a_zero_area_loop_with_rect_corners_is_not_a_rect_region() {
         let flat = "m 100 100 l 300 100 l 300 200 l 300 100 l 100 100";
         let hidden = [clip(flat, &[]), text(&[0])];

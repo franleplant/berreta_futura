@@ -48,6 +48,16 @@ pub struct Face {
     pub file: String,
 }
 
+fn pen(m: M, w: f64) -> [i64; 3] {
+    let (n0, n1) = (m[0].hypot(m[2]), m[1].hypot(m[3]));
+    if n0 == 0.0 {
+        return [0, qc(w * n1), 0];
+    }
+    let tilt = (m[0] * m[1] + m[2] * m[3]) / n0;
+    let height = (m[0] * m[3] - m[1] * m[2]).abs() / n0;
+    [qc(w * n0), qc(w * tilt), qc(w * height)]
+}
+
 fn qcolor(v: f64) -> i64 {
     (v * 255.0).round() as i64
 }
@@ -98,12 +108,14 @@ fn paint(space: Space, args: &[Object]) -> Result<Color> {
     Ok(match v[..] {
         [g] => rgb(g, g, g, space.family),
         [r, g, b] => rgb(r, g, b, space.family),
-        _ => rgb(
-            (1.0 - v[0]) * (1.0 - v[3]),
-            (1.0 - v[1]) * (1.0 - v[3]),
-            (1.0 - v[2]) * (1.0 - v[3]),
-            space.family,
-        ),
+        _ => {
+            let q: Vec<i64> = v.iter().map(|c| qcolor(*c)).collect();
+            let u = |i: usize| 1.0 - q[i] as f64 / 255.0;
+            Color {
+                family: format!("cmyk {q:?}"),
+                ..rgb(u(0) * u(3), u(1) * u(3), u(2) * u(3), space.family)
+            }
+        }
     })
 }
 
@@ -149,7 +161,7 @@ pub enum Element {
         paint: String,
         fill: Option<Color>,
         stroke: Option<Color>,
-        lw: Option<i64>,
+        lw: Option<[i64; 3]>,
         cap: Option<i64>,
         join: Option<i64>,
         miter: Option<i64>,
@@ -577,6 +589,11 @@ impl Tracer<'_> {
                 .tounicode
                 .get(&code)
                 .with_context(|| format!("font {} lacks ToUnicode for code {code}", font.name))?;
+            anyhow::ensure!(
+                font.two_byte || code == 32 || !uni.trim().is_empty(),
+                "simple font {} maps code {code} to whitespace; only code 32 is provably blank (fail loud per Tier E)",
+                font.name
+            );
             units.push(uni.clone());
             starts.push(*tx);
             gids.push(font.ids.get(&code).copied().unwrap_or(UNRESOLVED_GID));
@@ -666,7 +683,7 @@ impl Tracer<'_> {
                 paint: paint.into(),
                 fill: fills.then(|| self.gs.fill.clone()),
                 stroke: strokes.then(|| self.gs.stroke.clone()),
-                lw: strokes.then(|| qc(self.gs.lw * scale)),
+                lw: strokes.then(|| pen(self.gs.ctm, self.gs.lw)),
                 cap: strokes.then_some(self.gs.cap),
                 join: strokes.then_some(self.gs.join),
                 miter: strokes.then(|| qc(self.gs.miter)),
@@ -825,6 +842,13 @@ fn glyph_ids(
     vend: &HashMap<String, u32>,
     file: &str,
 ) -> Result<HashMap<u32, u32>> {
+    if let Ok(map) = desc.get(b"CIDToGIDMap") {
+        let map = resolve(doc, map)?;
+        anyhow::ensure!(
+            map.as_name().is_ok_and(|n| n == b"Identity"),
+            "CIDToGIDMap is not /Identity, so gid = CID does not hold (fail loud per Tier E)"
+        );
+    }
     let fd = resolve(doc, desc.get(b"FontDescriptor")?)?.as_dict()?;
     let program = decode_stream(doc, resolve(doc, fd.get(b"FontFile2")?)?.as_stream()?)?;
     let emb = ttf_parser::Face::parse(&program, 0).context("parsing embedded subset")?;
@@ -1404,6 +1428,14 @@ mod tests {
     const SGREY: &[u8] = include_bytes!("../../tests/parity_icc/sGrey-v4.icc");
 
     fn trace(ops: &str, spaces: Vec<(&str, Object)>) -> Result<Vec<Element>> {
+        trace_with(ops, spaces, None)
+    }
+
+    fn trace_with(
+        ops: &str,
+        spaces: Vec<(&str, Object)>,
+        tounicode: Option<&str>,
+    ) -> Result<Vec<Element>> {
         let mut doc = Document::with_version("1.7");
         let mut cs = Dictionary::new();
         for (name, space) in spaces {
@@ -1419,10 +1451,15 @@ mod tests {
             cs.set(name, space);
         }
         let content = doc.add_object(Stream::new(dictionary! {}, ops.as_bytes().to_vec()));
-        let font = doc.add_object(dictionary! {
+        let mut font = dictionary! {
             "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica",
             "FirstChar" => 32, "Widths" => vec![Object::Integer(500); 95],
-        });
+        };
+        if let Some(cmap) = tounicode {
+            let cmap = Stream::new(dictionary! {}, cmap.as_bytes().to_vec());
+            font.set("ToUnicode", doc.add_object(cmap));
+        }
+        let font = doc.add_object(font);
         let page = doc.add_object(dictionary! {
             "Type" => "Page",
             "Contents" => content,
@@ -1472,7 +1509,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "WP-0.2m-r.verify.md: lw is scaled by sqrt|det|, so the WP-0.2p stroke reach misses an anisotropic stroke"]
     fn an_anisotropic_stroke_is_not_the_isotropic_one_of_mean_width() {
         let tall = trace("1 0 0 16 0 0 cm 1 w 1 J 1 j 100 20 m 300 20 l S", vec![]).unwrap();
         let thin = trace("4 w 1 J 1 j 100 320 m 300 320 l S", vec![]).unwrap();
@@ -1494,6 +1530,42 @@ mod tests {
         let by_face = face_entry(&map, "Inter-Medium").map(|f| &f.file);
         assert_eq!(by_face, by_alias);
         assert!(face_entry(&map, "Inter-Bold").is_none());
+    }
+
+    #[test]
+    fn a_simple_font_may_map_only_code_32_to_whitespace() {
+        let cmap = "beginbfchar <20> <0020> <41> <0020> <78> <0078> endbfchar";
+        let show = |s: &str| {
+            let ops = format!("BT /F1 10 Tf ({s}) Tj ET");
+            trace_with(&ops, vec![], Some(cmap)).map_err(|e| format!("{e:#}"))
+        };
+        assert!(show("x x").is_ok());
+        assert!(show("xAx")
+            .err()
+            .unwrap()
+            .contains("maps code 65 to whitespace"));
+    }
+
+    #[test]
+    fn a_cid_to_gid_map_other_than_identity_fails_loud() {
+        let mut doc = Document::with_version("1.7");
+        let stream = doc.add_object(Stream::new(dictionary! {}, vec![0, 5]));
+        let ids = |map: Object| {
+            let desc = dictionary! { "CIDToGIDMap" => map };
+            let e = glyph_ids(&doc, &desc, &[], &HashMap::new(), "f").err();
+            format!("{:#}", e.expect("no FontDescriptor either"))
+        };
+        assert!(ids(stream.into()).contains("CIDToGIDMap is not /Identity"));
+        assert!(ids(Object::Name(b"Other".to_vec())).contains("CIDToGIDMap is not /Identity"));
+        assert!(!ids(Object::Name(b"Identity".to_vec())).contains("CIDToGIDMap"));
+    }
+
+    #[test]
+    fn cmyk_compares_its_device_components_not_a_conversion() {
+        assert_ne!(fill_of("1 1 1 0 k"), fill_of("0 0 0 1 k"));
+        assert_ne!(stroke_of("1 1 1 0 K"), stroke_of("0 0 0 1 K"));
+        assert_eq!(fill_of("0 0 0 0.5 k"), fill_of("0 0 0 0.5001 k"));
+        assert_ne!(fill_of("0 0 0 0.5 k"), fill_of("0 0 0 0.51 k"));
     }
 
     #[test]

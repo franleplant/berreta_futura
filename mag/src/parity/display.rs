@@ -28,6 +28,7 @@ pub struct Annot {
     pub subtype: String,
     pub rect: [i64; 4],
     pub dest: String,
+    pub border: String,
 }
 
 #[derive(Serialize, PartialEq, Eq)]
@@ -144,13 +145,61 @@ fn page_annots(
         let nums: Result<Vec<f64>> = rect_arr.iter().map(|o| number(doc, o)).collect();
         let rect = link_rect(&nums?);
         let dest = link_dest(doc, dict, page_ids)?;
+        let border = link_border(doc, dict)?;
         out.push(Annot {
             subtype,
             rect,
             dest,
+            border,
         });
     }
     Ok(out)
+}
+
+fn quantized(doc: &Document, o: &Object, scale: f64) -> Result<Vec<i64>> {
+    let arr = deref(doc, o)?.as_array()?;
+    arr.iter()
+        .map(|v| Ok((number(doc, v)? * scale).round() as i64))
+        .collect()
+}
+
+fn link_border(doc: &Document, dict: &lopdf::Dictionary) -> Result<String> {
+    let colour = match dict.get(b"C") {
+        Ok(c) => quantized(doc, c, 255.0)?,
+        Err(_) => vec![],
+    };
+    let (width, dash, radii) = match (dict.get(b"BS"), dict.get(b"Border")) {
+        (Ok(bs), _) => {
+            let bs = deref(doc, bs)?.as_dict()?;
+            let width = bs.get(b"W").map_or(Ok(1.0), |w| number(doc, w))?;
+            let style = bs.get(b"S").map_or(Ok(&b"S"[..]), Object::as_name)?;
+            anyhow::ensure!(
+                style == b"S" || style == b"D",
+                "link border style {} is not compared (fail loud per Tier E)",
+                String::from_utf8_lossy(style)
+            );
+            let dash = match bs.get(b"D") {
+                _ if style == b"S" => None,
+                Ok(d) => Some(quantized(doc, d, 100.0)?),
+                Err(_) => Some(vec![300]),
+            };
+            (width, dash, vec![0, 0])
+        }
+        (_, Ok(b)) => {
+            let arr = deref(doc, b)?.as_array()?;
+            let at = |i: usize| arr.get(i).map_or(Ok(0.0), |v| number(doc, v));
+            let dash = arr.get(3).map(|d| quantized(doc, d, 100.0)).transpose()?;
+            (at(2)?, dash, vec![qr(at(0)?), qr(at(1)?)])
+        }
+        _ => (1.0, None, vec![0, 0]),
+    };
+    let width = qc(width);
+    if width == 0 || colour.is_empty() {
+        return Ok("none".into());
+    }
+    Ok(format!(
+        "width {width} dash {dash:?} radii {radii:?} colour {colour:?}"
+    ))
 }
 
 fn link_dest(
@@ -523,7 +572,8 @@ fn drift(
     r.map(|j| {
         let (a, b) = (&ga[j], &gb[j]);
         let d = [0, 1].map(|i| (a.at[i] - a.start[i]) - (b.at[i] - b.start[i]));
-        (a.step.max(b.step), d)
+        let (sa, sb) = (a.step, b.step);
+        (sa[0].max(sb[0]) + sa[1].min(sb[1]).max(sa[2].max(sb[2])), d)
     })
     .collect()
 }
@@ -950,6 +1000,36 @@ mod colour_tests {
     }
 
     #[test]
+    fn a_link_border_compares_what_is_drawn_with_spec_defaults() {
+        let doc = Document::with_version("1.7");
+        let border = |d: lopdf::Dictionary| link_border(&doc, &d).unwrap();
+        let red = || Object::from(vec![1.into(), 0.into(), 0.into()]);
+        let none = border(lopdf::dictionary! { "Border" => vec![0.into(), 0.into(), 0.into()] });
+        assert_eq!(none, "none");
+        assert_eq!(
+            border(lopdf::dictionary! { "BS" => lopdf::dictionary! { "W" => 0 } }),
+            none
+        );
+        assert_eq!(border(lopdf::dictionary! {}), none);
+        let drawn = border(lopdf::dictionary! { "C" => red() });
+        assert_ne!(drawn, none);
+        let bs = lopdf::dictionary! { "C" => red(), "BS" => lopdf::dictionary! {} };
+        assert_eq!(border(bs), drawn);
+        let wide = vec![0.into(), 0.into(), 3.into()];
+        assert_ne!(
+            border(lopdf::dictionary! { "C" => red(), "Border" => wide }),
+            drawn
+        );
+        let blue = Object::from(vec![0.into(), 0.into(), 1.into()]);
+        assert_ne!(border(lopdf::dictionary! { "C" => blue }), drawn);
+        let dashed = lopdf::dictionary! { "S" => "D" };
+        assert_ne!(
+            border(lopdf::dictionary! { "C" => red(), "BS" => dashed }),
+            drawn
+        );
+    }
+
+    #[test]
     fn every_differing_class_is_counted_beside_the_first_difference() {
         let a = dump(vec![rule(INK), run("Hello", 1000, 5000, INK, 0)]);
         let b = dump(vec![rule(VIOLET), run("Hellp", 1000, 5000, INK, 0)]);
@@ -1093,7 +1173,6 @@ mod colour_tests {
     }
 
     #[test]
-    #[ignore = "WP-0.2m-r.verify.md: blanks on one leg raise the glyph bound (WP-0.2r rejected)"]
     fn blanks_on_one_leg_buy_no_drift_allowance() {
         let blanks = 7000;
         let shift = streams::qo(5.0);
@@ -1121,6 +1200,22 @@ mod colour_tests {
             both(&whole(), &dump(vec![padded])),
             pass_fail("pass", "fail")
         );
+    }
+
+    #[test]
+    fn blanks_on_both_legs_count_each_but_one_leg_alone_adds_one_step_per_gap() {
+        let line = |text: &str, last: i64| {
+            let mut e = glyph_run(text, O, "F", vec![]);
+            if let Element::Text { offs, .. } = &mut e {
+                *offs.last_mut().unwrap() = [last, 0];
+            }
+            dump(vec![e])
+        };
+        let status = |b: Dump| compare_glyphs(&line("a    b", 50_000), &b, 1).status;
+        assert_eq!(status(line("a    b", 50_000 + 5 * 8)), "pass");
+        assert_eq!(status(line("a    b", 50_000 + 5 * 8 + 1)), "fail");
+        assert_eq!(status(line("ab", 50_000 + 2 * 8)), "pass");
+        assert_eq!(status(line("ab", 50_000 + 2 * 8 + 1)), "fail");
     }
 
     #[test]
