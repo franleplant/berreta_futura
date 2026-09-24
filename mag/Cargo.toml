@@ -38,6 +38,7 @@ tiny-skia = "=0.12.0"
 base64 = "0.22"
 pdf_encoding = "0.4"
 fancy-regex = "0.16"
+toml = "0.8"
 
 [lints.clippy]
 cognitive_complexity = "warn"

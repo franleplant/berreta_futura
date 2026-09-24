@@ -119,7 +119,7 @@ impl Fonts {
     }
 }
 
-fn pyf(value: f64) -> String {
+pub(crate) fn pyf(value: f64) -> String {
     if value == value.trunc() && value.abs() < 1e16 {
         format!("{value:.1}")
     } else {
@@ -127,7 +127,7 @@ fn pyf(value: f64) -> String {
     }
 }
 
-fn escape(value: &str) -> String {
+pub(crate) fn escape(value: &str) -> String {
     value
         .replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -437,54 +437,16 @@ impl Builder<'_> {
     }
 
     fn wrap(&mut self, text: &str, bold: bool, size: f64, width: f64) -> Result<Vec<String>> {
-        let mut lines = Vec::new();
-        let mut current = String::new();
-        for word in text.split_whitespace() {
-            let candidate = if current.is_empty() {
-                word.to_string()
-            } else {
-                format!("{current} {word}")
-            };
-            let font = if bold {
-                &mut self.fonts.bold
-            } else {
-                &mut self.fonts.regular
-            };
-            if !current.is_empty() && font.measure(&candidate, size, 0.0, 100.0)? > width {
-                lines.push(std::mem::take(&mut current));
-                current = word.to_string();
-            } else {
-                current = candidate;
-            }
-        }
-        if !current.is_empty() {
-            lines.push(current);
-        }
-        Ok(lines)
+        let font = if bold {
+            &mut self.fonts.bold
+        } else {
+            &mut self.fonts.regular
+        };
+        font.wrap(text, size, width)
     }
 
     fn display_wrap(&mut self, text: &str, size: f64, width: f64) -> Result<Vec<String>> {
-        let mut lines = Vec::new();
-        let mut current = String::new();
-        for word in text.split_whitespace() {
-            let candidate = if current.is_empty() {
-                word.to_string()
-            } else {
-                format!("{current} {word}")
-            };
-            if !current.is_empty()
-                && self.fonts.display.measure(&candidate, size, 0.0, 100.0)? > width
-            {
-                lines.push(std::mem::take(&mut current));
-                current = word.to_string();
-            } else {
-                current = candidate;
-            }
-        }
-        if !current.is_empty() {
-            lines.push(current);
-        }
-        Ok(lines)
+        self.fonts.display.wrap(text, size, width)
     }
 
     fn headline_layout(&mut self, value: &str, described_as: &str) -> Result<(Vec<String>, f64)> {

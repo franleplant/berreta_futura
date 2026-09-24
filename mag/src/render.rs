@@ -672,7 +672,9 @@ fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i
     print_summary(&value, &render_dir.join(&request.primary_language));
     if request.operation == "render_edition" {
         println!(
-            "\nnext: `mag parity {}` compares this leg against weasyprint",
+            "\nnext: read the PDF in {}; fix copy in the run finals or picks in edition.yaml and re-render; \
+             `mag parity {}` compares this leg against weasyprint",
+            render_dir.join(&request.primary_language).display(),
             request.edition_id
         );
     } else {

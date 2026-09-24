@@ -1,7 +1,9 @@
 pub(crate) mod content;
+pub(crate) mod cover;
 pub(crate) mod estimate;
 pub(crate) mod layout;
 pub(crate) mod media;
+pub(crate) mod release;
 pub(crate) mod runt;
 pub(crate) mod template;
 pub(crate) mod text_shim;
@@ -43,6 +45,18 @@ pub(crate) fn run_request(
     let request: Value =
         serde_json::from_str(request_json).context("parsing the render request as JSON")?;
     let language = field(&request, "primaryLanguage")?.to_string();
+    let others: Vec<&str> = request["languages"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .filter(|code| *code != language)
+        .collect();
+    anyhow::ensure!(
+        others.is_empty() || field(&request, "operation")? != "render_edition",
+        "the typst engine renders the primary language only; drop {} with `--langs {language}`",
+        others.join(", ")
+    );
     let out_dir = render_dir.join(&language);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     let request_path = render_dir.join("request.json");
@@ -92,6 +106,9 @@ pub(crate) fn run_request(
             language: &language,
             staged: &staged,
             out_dir: &out_dir,
+            render_dir,
+            assets: &repo_root.join("src/magazine/assets"),
+            raw: &request,
         },
         &document,
         &tree,

@@ -482,6 +482,9 @@ pub struct Request<'a> {
     pub language: &'a str,
     pub staged: &'a Path,
     pub out_dir: &'a Path,
+    pub render_dir: &'a Path,
+    pub assets: &'a Path,
+    pub raw: &'a Value,
 }
 
 fn written(path: &Path, bytes: &[u8], kind: &str) -> Result<Value> {
@@ -507,24 +510,28 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
     let edition = edition(request.staged, request.edition_id, request.publication_name)?;
     let layout = manifest_layout(&edition, &measured, tree, request.staged)?;
     let figures = layout["figures"].as_array().map_or(0, Vec::len);
-    let mut files = vec![written(
-        &request.out_dir.join("layout.json"),
-        (serde_json::to_string_pretty(&json!({ "layout": layout }))? + "\n").as_bytes(),
-        "render_layout",
-    )?];
-    if request.operation == "render_edition" {
-        let pdf = crate::typeset::template::pdf(document)?;
-        files.push(written(
-            &request.out_dir.join("reader.pdf"),
-            &pdf,
-            "reader_pdf",
-        )?);
+    let row = |critic: &str| measured.row(request.language, figures, critic);
+    if request.operation != "render_edition" {
+        let file = written(
+            &request.out_dir.join("layout.json"),
+            (serde_json::to_string_pretty(&json!({ "layout": layout }))? + "\n").as_bytes(),
+            "render_layout",
+        )?;
+        return Ok(
+            json!({"operation": request.operation, "layouts": [row("not_run")], "files": [file]}),
+        );
     }
-    Ok(json!({
-        "operation": request.operation,
-        "layouts": [measured.row(request.language, figures, "not_run")],
-        "files": files,
-    }))
+    let (files, critic) = super::release::publish(super::release::Publish {
+        request: request.raw,
+        edition: &edition,
+        layout,
+        interior: crate::typeset::template::pdf(document)?,
+        staged: request.staged,
+        assets: request.assets,
+        render_dir: request.render_dir,
+        out_dir: request.out_dir,
+    })?;
+    Ok(json!({"operation": request.operation, "layouts": [row(&critic)], "files": files}))
 }
 
 #[cfg(test)]
