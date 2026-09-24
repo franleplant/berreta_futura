@@ -236,6 +236,16 @@ pub(crate) fn py_strip(value: &str) -> &str {
     value.trim_matches(is_python_space)
 }
 
+pub(crate) trait PyStrip {
+    fn py_trim(&self) -> &str;
+}
+
+impl PyStrip for str {
+    fn py_trim(&self) -> &str {
+        py_strip(self)
+    }
+}
+
 pub(crate) fn py_casefold(value: &str) -> String {
     mapped(value, folds())
 }

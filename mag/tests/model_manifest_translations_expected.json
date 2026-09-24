@@ -1,0 +1,240 @@
+[
+ {
+  "edition": "906",
+  "language": "es",
+  "outcome": {
+   "ok": {
+    "articles": [
+     {
+      "author": "Dee Fixture",
+      "author_note": "Una nota de autoría de prueba para la apertura ilustrada.",
+      "content_mode": "article",
+      "dateline": null,
+      "display_emphasis": "Partición",
+      "extracts": [],
+      "figures": [],
+      "id": "hyphenation-article",
+      "key_ideas": [],
+      "manuscript": "editions/906/translations/es/articles/hyphenation-article.md",
+      "minimum_reader_pages": 1,
+      "opener_art": {
+       "alt_text": "A fixture opener illustration.",
+       "credit": "Illustration generated for this fixture.",
+       "path": "editions/906/art/opener.png"
+      },
+      "opener_variant": "stepped_title",
+      "short_title": "Partición silábica",
+      "source_ids": [
+       "fixture-source-d"
+      ],
+      "source_url": "https://example.invalid/d",
+      "tail_art": null,
+      "title": "El artículo de la partición silábica"
+     },
+     {
+      "author": "Ada Fixture",
+      "author_note": "Una nota de autoría de prueba para la segunda apertura.",
+      "content_mode": "article",
+      "dateline": null,
+      "display_emphasis": "Figura",
+      "extracts": [],
+      "figures": [
+       {
+        "alt_text": "Un diagrama de prueba.",
+        "anchor": "Presupuestos",
+        "caption": "El diagrama del presupuesto, con su epígrafe en el idioma de la edición.",
+        "credit": "Fixture credit.",
+        "id": "budget-diagram",
+        "layout": "evidence_band",
+        "path": "library/sources/fixture-source-a/media/diagram.png",
+        "source_id": "fixture-source-a"
+       }
+      ],
+      "id": "figure-article",
+      "key_ideas": [],
+      "manuscript": "editions/906/translations/es/articles/figure-article.md",
+      "minimum_reader_pages": 1,
+      "opener_art": {
+       "alt_text": "A second fixture opener illustration.",
+       "credit": "Illustration generated for this fixture.",
+       "path": "editions/906/art/opener-2.png"
+      },
+      "opener_variant": "stepped_title",
+      "short_title": "Figura localizada",
+      "source_ids": [
+       "fixture-source-a"
+      ],
+      "source_url": "https://example.invalid/a",
+      "tail_art": null,
+      "title": "El artículo de la figura localizada"
+     }
+    ],
+    "closing_plates": [
+     {
+      "art_path": "editions/906/art/plate-1.png",
+      "title": "La primera lámina de idiomas."
+     },
+     {
+      "art_path": "editions/906/art/plate-2.png",
+      "title": "La segunda lámina de idiomas."
+     },
+     {
+      "art_path": "editions/906/art/plate-3.png",
+      "title": "La tercera lámina de idiomas."
+     },
+     {
+      "art_path": "editions/906/art/plate-4.png",
+      "title": "La cuarta lámina de idiomas."
+     },
+     {
+      "art_path": "editions/906/art/plate-5.png",
+      "title": "La quinta lámina de idiomas."
+     },
+     {
+      "art_path": "editions/906/art/plate-6.png",
+      "title": "La sexta lámina de idiomas."
+     },
+     {
+      "art_path": "editions/906/art/plate-7.png",
+      "title": "La séptima lámina de idiomas."
+     },
+     {
+      "art_path": "editions/906/art/plate-8.png",
+      "title": "La octava lámina de idiomas."
+     }
+    ],
+    "cover": {
+     "back_text": "La misma edición, compuesta una vez por idioma, con su propia partición silábica y sus rótulos.",
+     "deck": "Dos informes compuestos en dos idiomas.",
+     "headline": "Edición de idiomas"
+    },
+    "cover_art": "editions/906/art/cover.png",
+    "editorial": null,
+    "id": "906",
+    "issue_number": "906",
+    "language": "es",
+    "locale": "es-AR",
+    "publication_date": "2026-09-05",
+    "publication_name": "Magazine",
+    "raw": {
+     "art_direction_path": "art-directions/fixture.yaml",
+     "articles": [
+      {
+       "author": "Dee Fixture",
+       "author_note": "Una nota de autoría de prueba para la apertura ilustrada.",
+       "content_mode": "article",
+       "display_emphasis": "Partición",
+       "figures": [],
+       "id": "hyphenation-article",
+       "manuscript": "editions/906/translations/es/articles/hyphenation-article.md",
+       "opener_art": {
+        "alt_text": "A fixture opener illustration.",
+        "credit": "Illustration generated for this fixture.",
+        "path": "editions/906/art/opener.png"
+       },
+       "opener_variant": "stepped_title",
+       "short_title": "Partición silábica",
+       "source_ids": [
+        "fixture-source-d"
+       ],
+       "tail_art_path": null,
+       "title": "El artículo de la partición silábica"
+      },
+      {
+       "author": "Ada Fixture",
+       "author_note": "Una nota de autoría de prueba para la segunda apertura.",
+       "content_mode": "article",
+       "display_emphasis": "Figura",
+       "figures": [
+        {
+         "alt_text": "Un diagrama de prueba.",
+         "anchor": "Presupuestos",
+         "caption": "El diagrama del presupuesto, con su epígrafe en el idioma de la edición.",
+         "credit": "Fixture credit.",
+         "id": "budget-diagram",
+         "layout": "evidence_band",
+         "path": "<ROOT>/library/sources/fixture-source-a/media/diagram.png",
+         "source_id": "fixture-source-a"
+        }
+       ],
+       "id": "figure-article",
+       "manuscript": "editions/906/translations/es/articles/figure-article.md",
+       "opener_art": {
+        "alt_text": "A second fixture opener illustration.",
+        "credit": "Illustration generated for this fixture.",
+        "path": "editions/906/art/opener-2.png"
+       },
+       "opener_variant": "stepped_title",
+       "short_title": "Figura localizada",
+       "source_ids": [
+        "fixture-source-a"
+       ],
+       "tail_art_path": null,
+       "title": "El artículo de la figura localizada"
+      }
+     ],
+     "closing_plates": [
+      {
+       "art_path": "editions/906/art/plate-1.png",
+       "title": "La primera lámina de idiomas."
+      },
+      {
+       "art_path": "editions/906/art/plate-2.png",
+       "title": "La segunda lámina de idiomas."
+      },
+      {
+       "art_path": "editions/906/art/plate-3.png",
+       "title": "La tercera lámina de idiomas."
+      },
+      {
+       "art_path": "editions/906/art/plate-4.png",
+       "title": "La cuarta lámina de idiomas."
+      },
+      {
+       "art_path": "editions/906/art/plate-5.png",
+       "title": "La quinta lámina de idiomas."
+      },
+      {
+       "art_path": "editions/906/art/plate-6.png",
+       "title": "La sexta lámina de idiomas."
+      },
+      {
+       "art_path": "editions/906/art/plate-7.png",
+       "title": "La séptima lámina de idiomas."
+      },
+      {
+       "art_path": "editions/906/art/plate-8.png",
+       "title": "La octava lámina de idiomas."
+      }
+     ],
+     "cover": {
+      "back_text": "La misma edición, compuesta una vez por idioma, con su propia partición silábica y sus rótulos.",
+      "deck": "Dos informes compuestos en dos idiomas.",
+      "headline": "Edición de idiomas"
+     },
+     "editorial": null,
+     "format": {
+      "article_opener": "illustrated_paper_spots_v1"
+     },
+     "id": "906",
+     "issue_number": 906,
+     "language": "es",
+     "locale": "es-AR",
+     "publication_date": "2026-09-05",
+     "sections": [],
+     "status": "draft",
+     "subtitle": "",
+     "title": "Edición de idiomas",
+     "translation": {
+      "fallback_locale": null,
+      "policy": null,
+      "source_language": "en"
+     }
+    },
+    "sections": [],
+    "title": "Edición de idiomas"
+   }
+  },
+  "root": "tests/typeset_fixtures/corpus"
+ }
+]

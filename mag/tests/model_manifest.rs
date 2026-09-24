@@ -109,7 +109,7 @@ fn dump(edition: &Edition, root: &Path) -> Json {
             "figures": article.figures.iter().map(|figure| json!({
                 "id": figure.id,
                 "source_id": figure.source_id,
-                "path": figure.path.to_string_lossy().replace('\\', "/"),
+                "path": relative(&figure.path, root),
                 "caption": figure.caption,
                 "credit": figure.credit,
                 "alt_text": figure.alt_text,
@@ -245,8 +245,12 @@ fn cases() -> Vec<Value> {
     serde_yaml::from_str(&text).expect("the cases are YAML")
 }
 
-const PARSER_DIAGNOSTIC_CASES: [&str; 2] =
-    ["editorial_frontmatter_unparseable", "manifest_unparseable"];
+const PARSER_DIAGNOSTIC_CASES: [&str; 4] = [
+    "editorial_frontmatter_unparseable",
+    "manifest_unparseable",
+    "translation_editorial_frontmatter_unparseable",
+    "translation_manifest_unparseable",
+];
 
 fn shared_prefix(left: &str, right: &str) -> String {
     let take = left
@@ -287,7 +291,7 @@ fn cases_match_the_python_loader() {
             compared += 1;
             continue;
         }
-        if &got != want {
+        if got != python_figure_paths_made_source_relative(want).0 {
             mismatches.push(format!("{name}\n  rust: {got}\n  python: {want}"));
         }
         compared += 1;
@@ -299,6 +303,52 @@ fn cases_match_the_python_loader() {
         mismatches.join("\n")
     );
     assert_eq!(compared + PYTHON_CRASHES.len(), expected.len());
+}
+
+fn python_figure_paths_made_source_relative(want: &Json) -> (Json, usize) {
+    let mut want = want.clone();
+    let mut rewritten = 0;
+    let rows = want
+        .pointer_mut("/ok/raw/articles")
+        .and_then(Json::as_array_mut);
+    for figure in rows
+        .into_iter()
+        .flatten()
+        .filter_map(|row| row.get_mut("figures").and_then(Json::as_array_mut))
+        .flatten()
+    {
+        let prefix = format!(
+            "<ROOT>/library/sources/{}/",
+            figure["source_id"].as_str().unwrap_or_default()
+        );
+        if let Some(path) = figure["path"]
+            .as_str()
+            .and_then(|path| path.strip_prefix(&prefix))
+        {
+            figure["path"] = json!(path);
+            rewritten += 1;
+        }
+    }
+    (want, rewritten)
+}
+
+#[test]
+fn python_writes_translated_figure_paths_absolute_where_rust_keeps_them_source_relative() {
+    let expected = committed("model_manifest_cases_expected.json");
+    let rewritten: Vec<(&String, usize)> = expected
+        .as_object()
+        .expect("the oracle is an object")
+        .iter()
+        .map(|(name, want)| (name, python_figure_paths_made_source_relative(want).1))
+        .filter(|(_, count)| *count > 0)
+        .collect();
+    assert_eq!(
+        rewritten,
+        vec![
+            (&"translation_heading_split_at_separator".to_string(), 1),
+            (&"translation_media_loads_cleanly".to_string(), 1),
+        ]
+    );
 }
 
 #[test]
@@ -605,4 +655,60 @@ fn a_translated_figure_path_stays_source_relative_as_in_the_base_edition() {
         .iter()
         .flat_map(|a| &a.figures)
         .all(|f| f.path.is_absolute()));
+}
+
+fn load_translated(root: &Path, edition: &str, language: &str) -> Json {
+    let records: Records = records::load_records(&root.join("library/sources"))
+        .expect("the records load")
+        .into_iter()
+        .map(|record| (record.id.clone(), record))
+        .collect();
+    let known: BTreeSet<String> = records.keys().cloned().collect();
+    let options = LoadOptions {
+        publication_name: "Magazine",
+        source_records: Some(&records),
+        ..LoadOptions::default()
+    };
+    match load_edition(root, edition, &known, &options)
+        .and_then(|base| load_translation(root, &base, language))
+    {
+        Ok(loaded) => json!({ "ok": dump(&loaded, root) }),
+        Err(ValidationError(errors)) => json!({ "errors": errors
+            .iter()
+            .map(|line| line.replace(&root.to_string_lossy().to_string(), "<ROOT>"))
+            .collect::<Vec<String>>() }),
+    }
+}
+
+#[test]
+fn real_translations_match_the_python_loader() {
+    let mut oracle = committed("model_manifest_translations_expected.json");
+    if let Ok(extra) = std::env::var("MAG_TRANSLATION_ORACLE") {
+        let extra: Json = serde_json::from_str(
+            &std::fs::read_to_string(extra).expect("the extra oracle is readable"),
+        )
+        .expect("the extra oracle is JSON");
+        oracle.as_array_mut().expect("the oracle is a list").extend(
+            extra
+                .as_array()
+                .expect("the extra oracle is a list")
+                .clone(),
+        );
+    }
+    for entry in oracle.as_array().expect("the oracle is a list") {
+        let text = |key: &str| entry[key].as_str().expect("an oracle field is text");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(text("root"))
+            .canonicalize()
+            .expect("the oracle root exists");
+        let got = load_translated(&root, text("edition"), text("language"));
+        let (want, _) = python_figure_paths_made_source_relative(&entry["outcome"]);
+        assert_eq!(
+            got,
+            want,
+            "{} {} diverges",
+            text("edition"),
+            text("language")
+        );
+    }
 }

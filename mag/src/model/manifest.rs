@@ -4,8 +4,8 @@ use super::records::{
     ExtractRequest, Figure, FigureRequest, SourceRecord,
 };
 use super::shared::{
-    load_structured, normalize, py_repr, py_repr_value, py_str, safe_project_path, Result,
-    ValidationError,
+    load_structured, normalize, py_casefold, py_repr, py_repr_value, py_str, safe_project_path,
+    PyStrip, Result, ValidationError,
 };
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
@@ -248,7 +248,7 @@ fn check_declared_sources(
     };
     if rows
         .iter()
-        .any(|value| !matches!(value, Value::String(text) if !text.trim().is_empty()))
+        .any(|value| !matches!(value, Value::String(text) if !text.py_trim().is_empty()))
     {
         errors.push("Edition sources must contain non-empty source id strings".to_string());
         return;
@@ -279,14 +279,18 @@ fn edition_opener_format(data: &Value, errors: &mut Vec<String>) -> bool {
         }
     };
     let article_opener = or_empty(edition_format.get("article_opener"));
-    let article_opener = article_opener.trim();
+    let article_opener = article_opener.py_trim();
     if !article_opener.is_empty() && article_opener != ILLUSTRATED_OPENER {
         errors.push(format!(
             "Edition has invalid format.article_opener: {article_opener}"
         ));
     }
     let illustrated = article_opener == ILLUSTRATED_OPENER;
-    if illustrated && or_empty(data.get("art_direction_path")).trim().is_empty() {
+    if illustrated
+        && or_empty(data.get("art_direction_path"))
+            .py_trim()
+            .is_empty()
+    {
         errors.push(format!(
             "Edition format.article_opener {ILLUSTRATED_OPENER} requires art_direction_path"
         ));
@@ -350,7 +354,7 @@ fn article_identity(
         ));
         return None;
     };
-    if article_id.trim().is_empty() {
+    if article_id.py_trim().is_empty() {
         errors.push(format!(
             "Article {} id must be a non-empty string",
             index + 1
@@ -374,7 +378,7 @@ fn article_source_ids(declared: Option<&Value>) -> Option<Vec<String>> {
     if items.is_empty()
         || items
             .iter()
-            .any(|value| !matches!(value, Value::String(text) if !text.trim().is_empty()))
+            .any(|value| !matches!(value, Value::String(text) if !text.py_trim().is_empty()))
     {
         return Some(Vec::new());
     }
@@ -387,14 +391,14 @@ fn article_source_ids(declared: Option<&Value>) -> Option<Vec<String>> {
 }
 
 fn article_author_note(label: &str, row: &Value, errors: &mut Vec<String>) -> (String, bool) {
-    let author_note = or_empty(row.get("author_note")).trim().to_string();
+    let author_note = or_empty(row.get("author_note")).py_trim().to_string();
     if author_note.contains('\n') || author_note.chars().count() > 160 {
         errors.push(format!(
             "{label} author_note must be a single line of at most 160 characters"
         ));
     }
     let author = py_str(row.get("author").unwrap_or(&Value::Null));
-    let house_byline = HOUSE_BYLINES.contains(&casefold(author.trim()).as_str());
+    let house_byline = HOUSE_BYLINES.contains(&py_casefold(author.py_trim()).as_str());
     if !author_note.is_empty() && house_byline {
         errors.push(format!(
             "{label} must omit author_note for the self-explanatory house byline {}",
@@ -459,7 +463,7 @@ fn article_opener_art(
     let missing: Vec<&str> = ["path", "alt_text", "credit"]
         .into_iter()
         .filter(|key| {
-            !matches!(raw.and_then(|value| value.get(*key)), Some(Value::String(text)) if !text.trim().is_empty())
+            !matches!(raw.and_then(|value| value.get(*key)), Some(Value::String(text)) if !text.py_trim().is_empty())
         })
         .collect();
     if !missing.is_empty() {
@@ -484,10 +488,10 @@ fn article_opener_art(
     Some(ArticleOpenerArt {
         path,
         alt_text: or_empty(raw.and_then(|value| value.get("alt_text")))
-            .trim()
+            .py_trim()
             .to_string(),
         credit: or_empty(raw.and_then(|value| value.get("credit")))
-            .trim()
+            .py_trim()
             .to_string(),
     })
 }
@@ -559,24 +563,24 @@ fn article_display(label: &str, row: &Value, errors: &mut Vec<String>) -> Displa
             "{label} minimum_reader_pages must be an integer from 1 to 7"
         ));
     }
-    let title = casefold(&py_str(row.get("title").unwrap_or(&Value::Null)));
-    let display_emphasis = or_empty(row.get("display_emphasis")).trim().to_string();
-    if !display_emphasis.is_empty() && !title.contains(&casefold(&display_emphasis)) {
+    let title = py_casefold(&py_str(row.get("title").unwrap_or(&Value::Null)));
+    let display_emphasis = or_empty(row.get("display_emphasis")).py_trim().to_string();
+    if !display_emphasis.is_empty() && !title.contains(&py_casefold(&display_emphasis)) {
         errors.push(format!(
             "{label} display_emphasis must occur in its localized title"
         ));
     }
-    let short_title = or_empty(row.get("short_title")).trim().to_string();
+    let short_title = or_empty(row.get("short_title")).py_trim().to_string();
     if short_title.contains('\n') || short_title.chars().count() > 40 {
         errors.push(format!(
             "{label} short_title must be a single line of at most 40 characters"
         ));
-    } else if !title.contains(&casefold(&short_title)) {
+    } else if !title.contains(&py_casefold(&short_title)) {
         errors.push(format!(
             "{label} short_title must occur in its localized title"
         ));
     }
-    let opener_variant = or_empty(row.get("opener_variant")).trim().to_string();
+    let opener_variant = or_empty(row.get("opener_variant")).py_trim().to_string();
     if !OPENER_VARIANTS.contains(&opener_variant.as_str()) {
         errors.push(format!(
             "{label} has invalid opener_variant: {opener_variant}"
@@ -768,7 +772,7 @@ fn check_verbatim_title(
         return;
     };
     let title = py_str(row.get("title").unwrap_or(&Value::Null));
-    if title.trim() != record.title.trim() {
+    if title.py_trim() != record.title.py_trim() {
         errors.push(format!(
             "{label} verbatim title must stay the captured source title {}",
             py_repr(&record.title)
@@ -832,7 +836,7 @@ fn load_section(
         return None;
     }
     let kind = py_str(row.get("kind").expect("the kind is present"));
-    if casefold(kind.trim()) == "colophon" {
+    if py_casefold(kind.py_trim()) == "colophon" {
         errors.push("Colophon sections are no longer supported".to_string());
         return None;
     }
@@ -877,7 +881,7 @@ fn load_cover(
         }
     };
     let tail_art_fit = or_default(data.get("tail_art_fit"), "cover");
-    if !["cover", "contain"].contains(&tail_art_fit.trim()) {
+    if !["cover", "contain"].contains(&tail_art_fit.py_trim()) {
         errors.push("Edition tail_art_fit must be cover or contain".to_string());
     }
     let art_path = cover.get(Value::String("art_path".to_string()));
@@ -912,7 +916,7 @@ fn art_variant_stem(path: &str) -> String {
 fn art_slots(data: &Value) -> Vec<(String, String)> {
     let mut slots: Vec<(String, String)> = Vec::new();
     if let Some(Value::String(path)) = data.get("cover").and_then(|cover| cover.get("art_path")) {
-        if !path.trim().is_empty() {
+        if !path.py_trim().is_empty() {
             slots.push(("cover".to_string(), path.clone()));
         }
     }
@@ -924,12 +928,12 @@ fn art_slots(data: &Value) -> Vec<(String, String)> {
             let id = py_str(row.get("id").unwrap_or(&Value::Null));
             if let Some(Value::String(path)) = row.get("opener_art").and_then(|art| art.get("path"))
             {
-                if !path.trim().is_empty() {
+                if !path.py_trim().is_empty() {
                     slots.push((format!("article {id} opener"), path.clone()));
                 }
             }
             if let Some(Value::String(path)) = row.get("tail_art_path") {
-                if !path.trim().is_empty() {
+                if !path.py_trim().is_empty() {
                     slots.push((format!("article {id} tail"), path.clone()));
                 }
             }
@@ -1030,7 +1034,7 @@ fn closing_plate(
         return;
     }
     let title = py_str(row.get("title").expect("the title is present"))
-        .trim()
+        .py_trim()
         .to_string();
     let art_path = match edition_path(root, edition_dir, row.get("art_path"), !allow_missing_art) {
         Ok(path) => path,
@@ -1039,7 +1043,7 @@ fn closing_plate(
             return;
         }
     };
-    if titles.contains(&casefold(&title)) {
+    if titles.contains(&py_casefold(&title)) {
         errors.push(format!("Closing plate title must be unique: {title}"));
     }
     if paths.contains(&art_path) {
@@ -1048,7 +1052,7 @@ fn closing_plate(
             py_str(row.get("art_path").expect("the art path is present"))
         ));
     }
-    titles.insert(casefold(&title));
+    titles.insert(py_casefold(&title));
     paths.insert(art_path.clone());
     plates.push(ClosingPlate { title, art_path });
 }
@@ -1253,7 +1257,7 @@ fn translation_author_note(
     prefix: &str,
     errors: &mut Vec<String>,
 ) -> String {
-    let author_note = or_empty(row.get("author_note")).trim().to_string();
+    let author_note = or_empty(row.get("author_note")).py_trim().to_string();
     if !article.author_note.is_empty() && author_note.is_empty() {
         errors.push(format!(
             "{prefix} requires author_note because the source article has one"
@@ -1272,19 +1276,19 @@ fn translation_author_note(
 }
 
 fn translation_titles(row: &Value, prefix: &str, errors: &mut Vec<String>) -> (String, String) {
-    let title = casefold(&py_str(row.get("title").unwrap_or(&Value::Null)));
-    let display_emphasis = or_empty(row.get("display_emphasis")).trim().to_string();
-    if !display_emphasis.is_empty() && !title.contains(&casefold(&display_emphasis)) {
+    let title = py_casefold(&py_str(row.get("title").unwrap_or(&Value::Null)));
+    let display_emphasis = or_empty(row.get("display_emphasis")).py_trim().to_string();
+    if !display_emphasis.is_empty() && !title.contains(&py_casefold(&display_emphasis)) {
         errors.push(format!(
             "{prefix} display_emphasis must occur in its localized title"
         ));
     }
-    let short_title = or_empty(row.get("short_title")).trim().to_string();
+    let short_title = or_empty(row.get("short_title")).py_trim().to_string();
     if short_title.contains('\n') || short_title.chars().count() > 40 {
         errors.push(format!(
             "{prefix} short_title must be a single line of at most 40 characters"
         ));
-    } else if !title.contains(&casefold(&short_title)) {
+    } else if !title.contains(&py_casefold(&short_title)) {
         errors.push(format!(
             "{prefix} short_title must occur in its localized title"
         ));
@@ -1385,7 +1389,7 @@ fn translation_article(
         None => article.author.clone(),
         Some(value) => {
             let author = if truthy(Some(value)) {
-                py_str(value).trim().to_string()
+                py_str(value).py_trim().to_string()
             } else {
                 String::new()
             };
@@ -1450,7 +1454,7 @@ fn translation_closing_plates(
     };
     let titles: Vec<String> = rows
         .iter()
-        .map(|value| py_str(value).trim().to_string())
+        .map(|value| py_str(value).py_trim().to_string())
         .collect();
     if titles.iter().any(String::is_empty) {
         errors.push(format!(
@@ -1459,7 +1463,7 @@ fn translation_closing_plates(
         ));
         return Vec::new();
     }
-    let folded: BTreeSet<String> = titles.iter().map(|title| casefold(title)).collect();
+    let folded: BTreeSet<String> = titles.iter().map(|title| py_casefold(title)).collect();
     if folded.len() != titles.len() {
         errors.push(format!(
             "Translation {} closing_plate_titles must be unique",
@@ -1922,7 +1926,7 @@ fn representative_dateline(source_ids: &[String], records: Option<&Records>) -> 
         .iter()
         .filter_map(|id| records.get(id))
         .filter_map(|record| record.published_at.as_ref())
-        .map(|value| value.trim().to_string())
+        .map(|value| value.py_trim().to_string())
         .filter(|value| !value.is_empty())
         .max()?;
     let parts: Vec<&str> = newest.split('-').collect();
@@ -1935,7 +1939,7 @@ fn representative_dateline(source_ids: &[String], records: Option<&Records>) -> 
 fn primary_source_url(source_ids: &[String], records: Option<&Records>) -> Option<String> {
     let records = records?;
     let record = records.get(source_ids.first()?)?;
-    let url = record.url.trim();
+    let url = record.url.py_trim();
     if url.is_empty() {
         None
     } else {
@@ -1957,7 +1961,7 @@ fn edition_path(
     must_exist: bool,
 ) -> Result<PathBuf> {
     let text = match value {
-        Some(Value::String(text)) if !text.trim().is_empty() => text.clone(),
+        Some(Value::String(text)) if !text.py_trim().is_empty() => text.clone(),
         other => {
             return Err(ValidationError(vec![format!(
                 "Referenced path must be a non-empty string, got {}",
@@ -1996,7 +2000,7 @@ fn key_ideas(label: &str, value: Option<&Value>) -> Result<Vec<String>> {
         }
     };
     let invalid = items.iter().any(|item| {
-        !matches!(item, Value::String(text) if !text.trim().is_empty() && !text.contains('\n'))
+        !matches!(item, Value::String(text) if !text.py_trim().is_empty() && !text.contains('\n'))
     });
     if items.is_empty() || invalid {
         return Err(ValidationError(vec![format!(
@@ -2005,7 +2009,7 @@ fn key_ideas(label: &str, value: Option<&Value>) -> Result<Vec<String>> {
     }
     let ideas: Vec<String> = items
         .iter()
-        .filter_map(|item| item.as_str().map(|text| text.trim().to_string()))
+        .filter_map(|item| item.as_str().map(|text| text.py_trim().to_string()))
         .collect();
     let words: usize = ideas
         .iter()
@@ -2070,7 +2074,7 @@ fn load_editorial(path: &Path) -> Result<Editorial> {
         )])
     })?;
     let title = match metadata.get("title") {
-        Some(value) if !py_str(value).trim().is_empty() => py_str(value).trim().to_string(),
+        Some(value) if !py_str(value).py_trim().is_empty() => py_str(value).py_trim().to_string(),
         _ => {
             return Err(ValidationError(vec![format!(
                 "Editorial requires a non-empty title: {}",
@@ -2082,16 +2086,16 @@ fn load_editorial(path: &Path) -> Result<Editorial> {
         path: path.to_path_buf(),
         title,
         byline: or_default(metadata.get("byline"), "The editors")
-            .trim()
+            .py_trim()
             .to_string(),
         label: or_default(metadata.get("label"), "ORIGINAL EDITORIAL")
-            .trim()
+            .py_trim()
             .to_string(),
     })
 }
 
 pub fn source_code_payload(url: &str) -> String {
-    let mut payload = url.trim();
+    let mut payload = url.py_trim();
     for scheme in ["https://", "http://"] {
         if let Some(rest) = payload.strip_prefix(scheme) {
             payload = rest;
@@ -2138,13 +2142,9 @@ fn to_int(value: Option<&Value>) -> i64 {
             .as_i64()
             .or_else(|| number.as_f64().map(|value| value.trunc() as i64))
             .unwrap_or(0),
-        Some(Value::String(text)) => text.trim().parse::<i64>().unwrap_or(0),
+        Some(Value::String(text)) => text.py_trim().parse::<i64>().unwrap_or(0),
         Some(_) => 0,
     }
-}
-
-fn casefold(text: &str) -> String {
-    text.to_lowercase()
 }
 
 fn repr_option(value: Option<&Value>) -> String {
