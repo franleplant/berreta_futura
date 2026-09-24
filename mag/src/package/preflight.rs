@@ -145,13 +145,13 @@ fn inherited_media_box(document: &Document, page: ObjectId) -> Result<(f64, f64)
     anyhow::bail!("page {page:?} has no MediaBox")
 }
 
-struct Pdf {
+pub(crate) struct Pdf {
     sizes: Vec<(f64, f64)>,
     encrypted: bool,
 }
 
 impl Pdf {
-    fn read(path: &Path) -> Result<Self> {
+    pub(crate) fn read(path: &Path) -> Result<Self> {
         let document =
             Document::load(path).with_context(|| format!("cannot read pdf {}", path.display()))?;
         let pages: BTreeMap<u32, ObjectId> = document.get_pages();
@@ -165,11 +165,11 @@ impl Pdf {
         })
     }
 
-    fn page_count(&self) -> usize {
+    pub(crate) fn page_count(&self) -> usize {
         self.sizes.len()
     }
 
-    fn all_near(&self, expected: (f64, f64)) -> bool {
+    pub(crate) fn all_near(&self, expected: (f64, f64)) -> bool {
         self.sizes.iter().all(|size| near(*size, expected))
     }
 }

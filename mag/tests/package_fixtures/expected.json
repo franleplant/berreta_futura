@@ -1,0 +1,126 @@
+{
+ "sheet_pixels": [
+  "8c2a0f4ed815eb3ce37007b9768cc34c9f5795ae39a473b4e8c6c1f5775c8730",
+  "e470f79ea69756abea1e5ca686c7063581c554ac8dd730162374733638a7e025"
+ ],
+ "sheet_names": [
+  "fixture-sheet-01.png",
+  "fixture-sheet-02.png"
+ ],
+ "json_input": {
+  "floats": [
+   1e-05,
+   1.5e-07,
+   1e+16,
+   1234567890123456.0,
+   1.0,
+   0.0001,
+   1.2345678901234568e+17,
+   -0.0,
+   0.1,
+   2.5e-310,
+   1e+22,
+   12345.678,
+   -3e-05
+  ],
+  "ints": [
+   0,
+   -7,
+   9223372036854775807
+  ],
+  "text": "ñ \"q\" \\ \n\t\u0001  é",
+  "empty": [
+   [],
+   {}
+  ],
+  "nested": {
+   "b": [
+    1,
+    {
+     "z": null,
+     "a": true
+    }
+   ],
+   "a": false,
+   "É": "x",
+   "Z": 1
+  }
+ },
+ "json_text": "{\n  \"empty\": [\n    [],\n    {}\n  ],\n  \"floats\": [\n    1e-05,\n    1.5e-07,\n    1e+16,\n    1234567890123456.0,\n    1.0,\n    0.0001,\n    1.2345678901234568e+17,\n    -0.0,\n    0.1,\n    2.5e-310,\n    1e+22,\n    12345.678,\n    -3e-05\n  ],\n  \"ints\": [\n    0,\n    -7,\n    9223372036854775807\n  ],\n  \"nested\": {\n    \"Z\": 1,\n    \"a\": false,\n    \"b\": [\n      1,\n      {\n        \"a\": true,\n        \"z\": null\n      }\n    ],\n    \"É\": \"x\"\n  },\n  \"text\": \"ñ \\\"q\\\" \\\\ \\n\\t\\u0001  é\"\n}\n",
+ "instructions": {
+  "en": "# Home printing\n\nPrint at 100% on A4 landscape, duplex, flipping on the short edge. On a simplex printer, print odd PDF pages first, then even PDF pages in reverse order. Fold the stack in half and saddle-staple. First run a test to confirm your printer's feed direction.\n\nThree impositions of the same magazine are included. Print either the all-in-one booklet or the interior-and-cover pair, not both.\n\n## booklet-a4.pdf — all in one\n\nThe whole magazine, cover included: 14 A4 sheets on one stock. This is the single-stock print, with nothing to collate.\n\n## booklet-a4-interior.pdf — interior on text stock\n\nReader pages 3 to 54: the magazine without the cover and without the blank inside covers. 13 A4 sheets on ordinary 80-100 gsm text stock.\n\n## booklet-a4-cover.pdf — cover wrap on heavier stock\n\n1 A4 sheet, printed single-sided: the back cover beside the front cover. The PDF is that one page — there is no inside face to print. Use heavier stock — 160-250 gsm folds well — and let the ink dry before folding.\n\n## Assembling the two-stock print\n\nFold the interior stack and the cover sheet separately, nest the interior inside the folded cover, then saddle-staple through the spine of both.\n",
+  "es": "# Impresión doméstica\n\nImprimir al 100 % en A4 horizontal, a doble cara y volteando por el borde corto. En una impresora de una sola cara, imprimir primero las páginas impares del PDF y después las pares en orden inverso. Doblar el bloque por la mitad y graparlo a caballete. Hacer primero una prueba para confirmar la orientación de alimentación de la impresora.\n\nHay tres imposiciones de la misma revista. Imprimir el cuadernillo completo o bien la pareja de interior y cubierta, no ambas cosas.\n\n## booklet-a4.pdf — todo en uno\n\nLa revista entera, cubierta incluida: 14 hojas A4 en un solo papel. Es la opción para imprimir con un único gramaje y sin nada que intercalar.\n\n## booklet-a4-interior.pdf — interior en papel de texto\n\nLas páginas 3 a 54 del PDF de lectura: la revista sin la cubierta y sin las páginas en blanco de su cara interior. Son 13 hojas A4 en papel corriente de 80 a 100 g/m².\n\n## booklet-a4-cover.pdf — cubierta en papel más grueso\n\n1 hoja A4, a una sola cara: la contracubierta junto a la cubierta. El PDF es esa única página — no hay cara interior que imprimir. Usar papel más grueso —de 160 a 250 g/m², que dobla bien— y dejar secar la tinta antes de doblar.\n\n## Montaje de la impresión en dos papeles\n\nDoblar por separado el bloque interior y la hoja de cubierta, encajar el interior dentro de la cubierta doblada y grapar a caballete atravesando ambos por el lomo.\n",
+  "es-AR": "# Impresión doméstica\n\nImprimir al 100 % en A4 horizontal, a doble cara y volteando por el borde corto. En una impresora de una sola cara, imprimir primero las páginas impares del PDF y después las pares en orden inverso. Doblar el bloque por la mitad y graparlo a caballete. Hacer primero una prueba para confirmar la orientación de alimentación de la impresora.\n\nHay tres imposiciones de la misma revista. Imprimir el cuadernillo completo o bien la pareja de interior y cubierta, no ambas cosas.\n\n## booklet-a4.pdf — todo en uno\n\nLa revista entera, cubierta incluida: 14 hojas A4 en un solo papel. Es la opción para imprimir con un único gramaje y sin nada que intercalar.\n\n## booklet-a4-interior.pdf — interior en papel de texto\n\nLas páginas 3 a 54 del PDF de lectura: la revista sin la cubierta y sin las páginas en blanco de su cara interior. Son 13 hojas A4 en papel corriente de 80 a 100 g/m².\n\n## booklet-a4-cover.pdf — cubierta en papel más grueso\n\n1 hoja A4, a una sola cara: la contracubierta junto a la cubierta. El PDF es esa única página — no hay cara interior que imprimir. Usar papel más grueso —de 160 a 250 g/m², que dobla bien— y dejar secar la tinta antes de doblar.\n\n## Montaje de la impresión en dos papeles\n\nDoblar por separado el bloque interior y la hoja de cubierta, encajar el interior dentro de la cubierta doblada y grapar a caballete atravesando ambos por el lomo.\n",
+  "fr": "# Home printing\n\nPrint at 100% on A4 landscape, duplex, flipping on the short edge. On a simplex printer, print odd PDF pages first, then even PDF pages in reverse order. Fold the stack in half and saddle-staple. First run a test to confirm your printer's feed direction.\n\nThree impositions of the same magazine are included. Print either the all-in-one booklet or the interior-and-cover pair, not both.\n\n## booklet-a4.pdf — all in one\n\nThe whole magazine, cover included: 14 A4 sheets on one stock. This is the single-stock print, with nothing to collate.\n\n## booklet-a4-interior.pdf — interior on text stock\n\nReader pages 3 to 54: the magazine without the cover and without the blank inside covers. 13 A4 sheets on ordinary 80-100 gsm text stock.\n\n## booklet-a4-cover.pdf — cover wrap on heavier stock\n\n1 A4 sheet, printed single-sided: the back cover beside the front cover. The PDF is that one page — there is no inside face to print. Use heavier stock — 160-250 gsm folds well — and let the ink dry before folding.\n\n## Assembling the two-stock print\n\nFold the interior stack and the cover sheet separately, nest the interior inside the folded cover, then saddle-staple through the spine of both.\n",
+  "esp": "# Home printing\n\nPrint at 100% on A4 landscape, duplex, flipping on the short edge. On a simplex printer, print odd PDF pages first, then even PDF pages in reverse order. Fold the stack in half and saddle-staple. First run a test to confirm your printer's feed direction.\n\nThree impositions of the same magazine are included. Print either the all-in-one booklet or the interior-and-cover pair, not both.\n\n## booklet-a4.pdf — all in one\n\nThe whole magazine, cover included: 14 A4 sheets on one stock. This is the single-stock print, with nothing to collate.\n\n## booklet-a4-interior.pdf — interior on text stock\n\nReader pages 3 to 54: the magazine without the cover and without the blank inside covers. 13 A4 sheets on ordinary 80-100 gsm text stock.\n\n## booklet-a4-cover.pdf — cover wrap on heavier stock\n\n1 A4 sheet, printed single-sided: the back cover beside the front cover. The PDF is that one page — there is no inside face to print. Use heavier stock — 160-250 gsm folds well — and let the ink dry before folding.\n\n## Assembling the two-stock print\n\nFold the interior stack and the cover sheet separately, nest the interior inside the folded cover, then saddle-staple through the spine of both.\n"
+ },
+ "studio": {
+  "en": "# Studio handoff pending\n\nThe reader PDF is A5, but it is not PDF/X. Select a printer ICC profile, add bleed where artwork requires it, convert to PDF/X-4, and pass the printer's preflight before release.\n",
+  "es": "# Entrega a imprenta pendiente\n\nEl PDF de lectura tiene formato A5, pero no es PDF/X. Antes de imprimir hay que seleccionar el perfil ICC de la imprenta, añadir el sangrado requerido, convertir a PDF/X-4 y superar la verificación de preimpresión.\n",
+  "es-AR": "# Entrega a imprenta pendiente\n\nEl PDF de lectura tiene formato A5, pero no es PDF/X. Antes de imprimir hay que seleccionar el perfil ICC de la imprenta, añadir el sangrado requerido, convertir a PDF/X-4 y superar la verificación de preimpresión.\n",
+  "fr": "# Studio handoff pending\n\nThe reader PDF is A5, but it is not PDF/X. Select a printer ICC profile, add bleed where artwork requires it, convert to PDF/X-4, and pass the printer's preflight before release.\n",
+  "esp": "# Studio handoff pending\n\nThe reader PDF is A5, but it is not PDF/X. Select a printer ICC profile, add bleed where artwork requires it, convert to PDF/X-4, and pass the printer's preflight before release.\n"
+ },
+ "archive_entries": [
+  [
+   "a.txt",
+   [
+    1980,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   2175008768,
+   8,
+   2673897196,
+   6
+  ],
+  [
+   "sub-c.json",
+   [
+    1980,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   2175008768,
+   8,
+   3292778609,
+   5
+  ],
+  [
+   "sub/b.md",
+   [
+    1980,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   2175008768,
+   8,
+   3873679221,
+   5
+  ],
+  [
+   "ñ.txt",
+   [
+    1980,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   2175008768,
+   8,
+   737224987,
+   8
+  ]
+ ]
+}
