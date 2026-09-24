@@ -1,3 +1,4 @@
+use super::exact::{self, num};
 use anyhow::{bail, Context, Result};
 use flate2::read::ZlibDecoder;
 use lopdf::content::Content;
@@ -295,25 +296,17 @@ pub fn trace_page(
         cur: None,
         pending_clip: None,
     };
-    tracer.run(&content, &resources)?;
+    tracer.run(&content, resources)?;
     Ok(tracer.out)
 }
 
-fn page_resources(doc: &Document, page_id: ObjectId) -> Result<Dictionary> {
+fn page_resources(doc: &Document, page_id: ObjectId) -> Result<&Dictionary> {
     let (maybe, ids) = doc.get_page_resources(page_id)?;
     if let Some(d) = maybe {
-        return Ok(d.clone());
+        return Ok(d);
     }
     let id = *ids.first().context("page has no resources")?;
-    Ok(doc.get_dictionary(id)?.clone())
-}
-
-fn num(o: &Object) -> Result<f64> {
-    match o {
-        Object::Integer(i) => Ok(*i as f64),
-        Object::Real(r) => Ok(f64::from(*r)),
-        _ => bail!("expected number, got {o:?}"),
-    }
+    Ok(doc.get_dictionary(id)?)
 }
 
 fn name_str(o: &Object) -> Result<String> {
@@ -333,6 +326,7 @@ fn resolve<'a>(doc: &'a Document, o: &'a Object) -> Result<&'a Object> {
 impl Tracer<'_> {
     fn run(&mut self, content: &[u8], res: &Dictionary) -> Result<()> {
         let ops = Content::decode(content).context("decoding content stream")?;
+        let _exact = exact::content(&ops.operations, content)?;
         for op in &ops.operations {
             self.op(op.operator.as_str(), &op.operands, res)
                 .with_context(|| format!("operator {}", op.operator))?;
@@ -356,7 +350,7 @@ impl Tracer<'_> {
             "d" => self.set_dash(args)?,
             "BDC" => self.marked_content(args, res)?,
             "i" | "ri" | "BMC" | "EMC" | "MP" | "DP" => {}
-            "m" | "l" | "c" | "v" | "y" | "h" | "re" => self.path_op(operator, args)?,
+            "m" | "l" | "c" | "v" | "y" | "h" | "re" => self.path_op(operator, &nums(args)?)?,
             "S" | "s" | "f" | "F" | "f*" | "B" | "B*" | "b" | "b*" | "n" => {
                 self.paint_op(operator)?;
             }
@@ -513,8 +507,8 @@ impl Tracer<'_> {
             _ => bail!("font {name} not a reference"),
         };
         if !self.caches.fonts.contains_key(&id) {
-            let dict = self.doc.get_dictionary(id)?.clone();
-            let font = load_font(self.doc, &dict, self.font_map, &mut self.caches.faces)
+            let dict = self.doc.get_dictionary(id)?;
+            let font = load_font(self.doc, dict, self.font_map, &mut self.caches.faces)
                 .with_context(|| format!("loading font {name}"))?;
             self.caches.fonts.insert(id, Rc::new(font));
         }
@@ -611,9 +605,7 @@ impl Tracer<'_> {
         Ok(())
     }
 
-    fn path_op(&mut self, operator: &str, args: &[Object]) -> Result<()> {
-        let nums: Result<Vec<f64>> = args.iter().map(num).collect();
-        let nums = nums?;
+    fn path_op(&mut self, operator: &str, nums: &[f64]) -> Result<()> {
         let dev = |i: usize| apply(self.gs.ctm, nums[i], nums[i + 1]);
         match operator {
             "m" => {
@@ -718,11 +710,11 @@ impl Tracer<'_> {
             Object::Reference(id) => *id,
             _ => bail!("XObject {name} not a reference"),
         };
-        let stream = self.doc.get_object(id)?.as_stream()?.clone();
+        let stream = self.doc.get_object(id)?.as_stream()?;
         let subtype = name_str(stream.dict.get(b"Subtype")?)?;
         match subtype.as_str() {
-            "Image" => self.image(id, &stream),
-            "Form" => self.form(&stream),
+            "Image" => self.image(id, stream),
+            "Form" => self.form(stream),
             other => bail!("XObject subtype {other} unsupported"),
         }
     }
@@ -744,33 +736,29 @@ impl Tracer<'_> {
     fn form(&mut self, stream: &lopdf::Stream) -> Result<()> {
         self.stack.push(self.gs.clone());
         if let Ok(m) = stream.dict.get(b"Matrix") {
-            let arr = resolve(self.doc, m)?.as_array()?.clone();
-            self.gs.ctm = mul(matrix(&arr)?, self.gs.ctm);
+            let arr = resolve(self.doc, m)?.as_array()?;
+            self.gs.ctm = mul(matrix(arr)?, self.gs.ctm);
         }
         if let Ok(bbox) = stream.dict.get(b"BBox") {
-            let arr = resolve(self.doc, bbox)?.as_array()?.clone();
-            let nums: Result<Vec<f64>> = arr.iter().map(num).collect();
-            let nums = nums?;
-            self.path_op(
-                "re",
-                &to_objects(&[nums[0], nums[1], nums[2] - nums[0], nums[3] - nums[1]]),
-            )?;
+            let n = nums(resolve(self.doc, bbox)?.as_array()?)?;
+            self.path_op("re", &[n[0], n[1], n[2] - n[0], n[3] - n[1]])?;
             self.pending_clip = Some(false);
             self.paint_op("n")?;
         }
+        let empty = Dictionary::new();
         let res = match stream.dict.get(b"Resources") {
-            Ok(r) => resolve(self.doc, r)?.as_dict()?.clone(),
-            Err(_) => Dictionary::new(),
+            Ok(r) => resolve(self.doc, r)?.as_dict()?,
+            Err(_) => &empty,
         };
         let content = decode_stream(self.doc, stream)?;
-        self.run(&content, &res)?;
+        self.run(&content, res)?;
         self.gs = self.stack.pop().context("form state")?;
         Ok(())
     }
 }
 
-fn to_objects(nums: &[f64]) -> Vec<Object> {
-    nums.iter().map(|n| Object::Real(*n as f32)).collect()
+fn nums(args: &[Object]) -> Result<Vec<f64>> {
+    args.iter().map(num).collect()
 }
 
 fn paint_kind(operator: &str) -> Result<(bool, bool, &'static str)> {
@@ -1525,6 +1513,19 @@ mod tests {
 
     fn error(ops: &str, spaces: Vec<(&str, Object)>) -> String {
         format!("{:#}", trace(ops, spaces).err().expect("must fail loud"))
+    }
+
+    #[test]
+    fn a_coordinate_whose_f32_crosses_a_quantum_boundary_traces_at_its_authored_quantum() {
+        let paths: Vec<String> = trace("300.004999 0 1 1 re f", vec![])
+            .unwrap()
+            .into_iter()
+            .filter_map(|e| match e {
+                Element::Path { d, .. } => Some(d),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(paths, ["re 30000 0 30100 0 30100 100 30000 100"]);
     }
 
     #[test]

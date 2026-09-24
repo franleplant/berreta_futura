@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
-const ALLOWED: [(&str, &str, &str); 22] = [
+const ALLOWED: [(&str, &str, &str); 23] = [
     (
         "cover/outline.rs",
         "move_to",
@@ -59,6 +59,11 @@ const ALLOWED: [(&str, &str, &str); 22] = [
     ),
     (
         "capture.rs",
+        "drop",
+        "Drop::drop is a trait-required name; the bodies differ",
+    ),
+    (
+        "parity/exact.rs",
         "drop",
         "Drop::drop is a trait-required name; the bodies differ",
     ),

@@ -1,4 +1,5 @@
 mod display;
+mod exact;
 mod geometry;
 mod raster;
 mod report;

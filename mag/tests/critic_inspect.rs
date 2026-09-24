@@ -6,6 +6,9 @@ mod model {
     pub use super::shared;
 }
 
+#[path = "../src/parity/exact.rs"]
+#[allow(dead_code)]
+pub mod exact;
 #[path = "../src/parity/streams.rs"]
 #[allow(dead_code, clippy::new_without_default)]
 pub mod streams;
