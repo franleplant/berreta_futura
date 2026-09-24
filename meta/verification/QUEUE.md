@@ -38,7 +38,13 @@
   uv unreachable (965); oracle tests read committed expectations and a
   repo_snapshot/ + sha256 pins, never live library/editions (except
   typeset/cover.rs:684, for WP-6.1). Fixture 906 source-codes regenerated.
-- Running: verifier for WP-4.2, 4.2b, 4.3, 6.0, 6.0b, 6.0c, 6.0d.
+- WP-4.2, 4.2b, 4.3, 6.0, 6.0b, 6.0c, 6.0d ACCEPTED (c306373).
+- Running: WP-4.2c (typst leg lost the verbatim page-cap WARNING; next-step
+  test; magazine.toml comment; cover.rs:684 live read).
+- WP-6.1 must also: move fonts out of src/magazine/assets/fonts; snapshot
+  or drop critic_rules.rs's reads of render_critic.py (:1098, :1396,
+  :1525) and highlight.rs:32's read of weasyprint-a5.css; keep the pinned
+  art/JPEGs byte-stable.
 - Was running: WP-6.0c (cargo test without uv/python; nocomments in
   Rust).
 - Then: WP-6.1 is Fran-gated (a shipped Typst edition, tools/ keep/delete,
