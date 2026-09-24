@@ -52,7 +52,9 @@ pub fn trace_elements(
     last: u32,
     font_map: &BTreeMap<String, Face>,
 ) -> Result<Vec<Vec<Element>>> {
-    let doc = Document::load(pdf).with_context(|| format!("loading {}", pdf.display()))?;
+    let raw = std::fs::read(pdf).with_context(|| format!("reading {}", pdf.display()))?;
+    let doc = Document::load_mem(&raw).with_context(|| format!("loading {}", pdf.display()))?;
+    let _exact = super::exact::authored(&doc, &raw)?;
     let page_ids = doc.get_pages();
     let mut caches = Caches::new();
     let mut pages = vec![];
@@ -74,7 +76,9 @@ pub fn extract(
     last: u32,
     font_map: &BTreeMap<String, Face>,
 ) -> Result<Dump> {
-    let doc = Document::load(pdf).with_context(|| format!("loading {}", pdf.display()))?;
+    let raw = std::fs::read(pdf).with_context(|| format!("reading {}", pdf.display()))?;
+    let doc = Document::load_mem(&raw).with_context(|| format!("loading {}", pdf.display()))?;
+    let _exact = super::exact::authored(&doc, &raw)?;
     let page_ids = doc.get_pages();
     let mut caches = Caches::new();
     let mut inks = canon::Inks::new(font_map);
@@ -132,8 +136,7 @@ fn page_annots(
     let Ok(annots) = page.get(b"Annots") else {
         return Ok(out);
     };
-    let annots = deref(doc, annots)?.as_array()?.clone();
-    for a in &annots {
+    for a in deref(doc, annots)?.as_array()? {
         let dict = deref(doc, a)?.as_dict()?;
         let subtype = match dict.get(b"Subtype") {
             Ok(Object::Name(n)) => String::from_utf8_lossy(n).into_owned(),
@@ -304,7 +307,7 @@ fn page_boxes(doc: &Document, page_id: lopdf::ObjectId) -> Result<BTreeMap<Strin
     let mut effective = None;
     for key in ["MediaBox", "CropBox", "TrimBox"] {
         if let Some(obj) = page_attr(doc, page_id, key.as_bytes())? {
-            let arr = deref(doc, &obj)?.as_array()?.clone();
+            let arr = deref(doc, obj)?.as_array()?;
             let nums: Result<Vec<f64>> = arr.iter().map(|o| number(doc, o)).collect();
             let nums = nums?;
             effective = Some([qc(nums[0]), qc(nums[1]), qc(nums[2]), qc(nums[3])]);
@@ -315,14 +318,18 @@ fn page_boxes(doc: &Document, page_id: lopdf::ObjectId) -> Result<BTreeMap<Strin
     Ok(out)
 }
 
-fn page_attr(doc: &Document, page_id: lopdf::ObjectId, key: &[u8]) -> Result<Option<Object>> {
-    let mut node = doc.get_dictionary(page_id)?.clone();
+fn page_attr<'a>(
+    doc: &'a Document,
+    page_id: lopdf::ObjectId,
+    key: &[u8],
+) -> Result<Option<&'a Object>> {
+    let mut node = doc.get_dictionary(page_id)?;
     loop {
         if let Ok(v) = node.get(key) {
-            return Ok(Some(v.clone()));
+            return Ok(Some(v));
         }
         match node.get(b"Parent") {
-            Ok(Object::Reference(pid)) => node = doc.get_dictionary(*pid)?.clone(),
+            Ok(Object::Reference(pid)) => node = doc.get_dictionary(*pid)?,
             _ => return Ok(None),
         }
     }
@@ -400,11 +407,7 @@ fn deref<'a>(doc: &'a Document, o: &'a Object) -> Result<&'a Object> {
 }
 
 fn number(doc: &Document, o: &Object) -> Result<f64> {
-    match deref(doc, o)? {
-        Object::Integer(i) => Ok(*i as f64),
-        Object::Real(r) => Ok(f64::from(*r)),
-        other => bail!("expected number, got {other:?}"),
-    }
+    super::exact::num(deref(doc, o)?)
 }
 
 #[derive(Serialize)]
@@ -604,6 +607,8 @@ fn drift(
 
 const ADVANCE_QUANTA: f64 = 10.0;
 
+pub const MIN_ADVANCE_PT: f64 = 0.5;
+
 fn gap_step(a: &canon::Glyph, b: &canon::Glyph, pa: &canon::Glyph, pb: &canon::Glyph) -> usize {
     let moves = |v: [i64; 2]| v != [0, 0];
     if !a.opens && !b.opens && a.gap.len() == b.gap.len() {
@@ -624,6 +629,13 @@ fn advance_miss(a: &canon::Glyph, b: &canon::Glyph) -> Option<f64> {
 }
 
 fn steps(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<usize> {
+    let reach =
+        |g: &canon::Glyph| ((g.at[0] - g.start[0]) as f64).hypot((g.at[1] - g.start[1]) as f64);
+    let mut span: HashMap<(usize, usize), f64> = HashMap::new();
+    for (a, b) in ga.iter().zip(gb) {
+        let s = span.entry((a.line, b.line)).or_default();
+        *s = s.max(reach(a)).max(reach(b));
+    }
     let mut last: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
     (0..ga.len())
         .map(|j| {
@@ -631,7 +643,8 @@ fn steps(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<usize> {
             let prev = last.get(&(a.line, b.line));
             let k = prev.map_or(0, |&(k, i)| k + gap_step(a, b, &ga[i], &gb[i]));
             last.insert((a.line, b.line), (k, j));
-            k
+            let held = span[&(a.line, b.line)] * streams::GLYPH_QUANTUM / MIN_ADVANCE_PT;
+            k.min(held as usize + 1)
         })
         .collect()
 }
@@ -842,6 +855,10 @@ mod box_tests {
     fn boxes(page: lopdf::Dictionary) -> Result<BTreeMap<String, [i64; 4]>> {
         let mut doc = Document::with_version("1.7");
         let id = doc.add_object(page);
+        let mut raw = vec![];
+        doc.save_to(&mut raw)?;
+        let doc = Document::load_mem(&raw)?;
+        let _exact = super::super::exact::authored(&doc, &raw)?;
         page_boxes(&doc, id)
     }
 
@@ -1066,39 +1083,20 @@ mod colour_tests {
     #[test]
     fn a_link_border_compares_what_is_drawn_with_spec_defaults() {
         let doc = Document::with_version("1.7");
-        let border = |d: lopdf::Dictionary| link_border(&doc, &d).unwrap();
-        let arr = |v: [f64; 3]| Object::from(v.map(|x| Object::Real(x as f32)).to_vec());
-        let red = || arr([1.0, 0.0, 0.0]);
-        let zero = border(lopdf::dictionary! { "Border" => arr([0.0; 3]) });
-        assert_ne!(border(lopdf::dictionary! {}), zero);
-        assert_eq!(
-            border(lopdf::dictionary! {}),
-            border(lopdf::dictionary! { "Border" => vec![0.into(), 0.into(), 1.into()] })
-        );
-        assert_ne!(
-            border(lopdf::dictionary! { "BS" => lopdf::dictionary! { "W" => 0 } }),
-            zero
-        );
-        let drawn = border(lopdf::dictionary! { "C" => red() });
-        assert_eq!(
-            border(lopdf::dictionary! { "C" => vec![1.into(), 0.into(), 0.into()] }),
-            drawn
-        );
-        let bs = lopdf::dictionary! { "C" => red(), "BS" => lopdf::dictionary! {} };
-        assert_ne!(border(bs), drawn);
-        assert_ne!(
-            border(lopdf::dictionary! { "C" => red(), "Border" => arr([0.0, 0.0, 3.0]) }),
-            drawn
-        );
-        assert_ne!(
-            border(lopdf::dictionary! { "C" => arr([0.0, 0.0, 1.0]) }),
-            drawn
-        );
-        let dashed = lopdf::dictionary! { "S" => "D" };
-        assert_ne!(
-            border(lopdf::dictionary! { "C" => red(), "BS" => dashed }),
-            drawn
-        );
+        let border = |text: &str| {
+            let dict = super::super::exact::parsed(text).as_dict().unwrap();
+            link_border(&doc, dict).unwrap()
+        };
+        let zero = border("<</Border [0.0 0.0 0.0]>>");
+        assert_ne!(border("<<>>"), zero);
+        assert_eq!(border("<<>>"), border("<</Border [0 0 1]>>"));
+        assert_ne!(border("<</BS <</W 0>>>>"), zero);
+        let drawn = border("<</C [1.0 0.0 0.0]>>");
+        assert_eq!(border("<</C [1 0 0]>>"), drawn);
+        assert_ne!(border("<</C [1.0 0.0 0.0] /BS <<>>>>"), drawn);
+        assert_ne!(border("<</C [1.0 0.0 0.0] /Border [0.0 0.0 3.0]>>"), drawn);
+        assert_ne!(border("<</C [0.0 0.0 1.0]>>"), drawn);
+        assert_ne!(border("<</C [1.0 0.0 0.0] /BS <</S /D>>>>"), drawn);
     }
 
     #[test]
@@ -1415,6 +1413,57 @@ mod colour_tests {
             .status
         };
         assert_eq!([moved(20_016), moved(20_017)], ["pass", "fail"]);
+    }
+
+    fn ladder(advances: &[i64]) -> Dump {
+        let mut e = run("Helloworld", 0, 0, INK, 0);
+        if let Element::Text {
+            origin,
+            gids,
+            offs,
+            units,
+            ..
+        } = &mut e
+        {
+            *origin = O;
+            let pad: Vec<[i64; 2]> = advances
+                .iter()
+                .scan(40_000, |x, a| {
+                    *x += a;
+                    Some([*x, 0])
+                })
+                .collect();
+            let x = pad.last().map_or(40_000, |p| p[0]);
+            let tail = (1..6).map(|k| [x + k * 10_000, 0]);
+            *offs = (0..5)
+                .map(|k| [k * 10_000, 0])
+                .chain(pad)
+                .chain(tail)
+                .collect();
+            *gids = [ids(0..5), vec![3; advances.len()], ids(6..11)].concat();
+            let chars = "Helloworld".chars().map(String::from);
+            *units = chars.clone().take(5).collect();
+            units.extend(std::iter::repeat_n(".".to_string(), advances.len()));
+            units.extend(chars.skip(5));
+        }
+        dump(vec![e])
+    }
+
+    #[test]
+    fn a_line_buys_no_more_steps_than_its_span_can_hold() {
+        let status = |n: usize, step: f64, tick: i64| {
+            let step = streams::qo(step);
+            compare_glyphs(&ladder(&vec![step; n]), &ladder(&vec![step + tick; n]), 1).status
+        };
+        assert_eq!(
+            status(7000, 0.0015, 8),
+            "fail",
+            "7000 ticks, 5.1 pt, on a 10 pt span"
+        );
+        assert_eq!(status(7000, 0.0015, 0), "pass");
+        assert_eq!(status(400, MIN_ADVANCE_PT, 8), "pass");
+        assert_eq!(status(400, MIN_ADVANCE_PT / 2.0, 8), "fail");
+        assert_eq!(status(100, 1.25, 8), "pass");
     }
 
     #[test]

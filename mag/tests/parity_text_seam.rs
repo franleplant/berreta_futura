@@ -1,6 +1,9 @@
 #[path = "../src/parity/display.rs"]
 #[allow(dead_code)]
 mod display;
+#[path = "../src/parity/exact.rs"]
+#[allow(dead_code)]
+mod exact;
 #[path = "../src/parity/streams.rs"]
 #[allow(dead_code)]
 mod streams;
