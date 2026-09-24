@@ -794,7 +794,18 @@ print(image.size[0], image.size[1], hashlib.sha256(image.tobytes()).hexdigest())
             hex::encode(Sha256::digest(&image.data))
         );
         assert_eq!(ours, PINNED);
-        assert_eq!(pillow(width, height), PINNED);
+        let live = std::env::var("MAG_ORACLE").is_ok();
+        eprintln!(
+            "ORACLE MODE: {}",
+            if live {
+                "live pillow"
+            } else {
+                "committed PINNED"
+            }
+        );
+        if live {
+            assert_eq!(pillow(width, height), PINNED);
+        }
     }
 
     const PINNED: &str = "512 16 e08736354006ce070549837cd88ac69b25885703a435fad99b18498d902486fd";

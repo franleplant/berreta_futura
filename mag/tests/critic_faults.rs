@@ -46,6 +46,8 @@ mod critic {
     pub use super::{metrics, text};
 }
 
+#[allow(dead_code)]
+mod oracle;
 #[path = "../src/critic/rules.rs"]
 #[allow(dead_code)]
 mod rules;
@@ -733,6 +735,49 @@ fn stage(render: &Path, root: &Path, fault: &Fault) -> [PathBuf; 2] {
     dirs
 }
 
+fn inputs(dir: &Path) -> Value {
+    let mut names: Vec<String> = LEGS.iter().map(|leg| leg.to_string()).collect();
+    names.push("edition-manifest.json".into());
+    let digest = |name: &String| oracle::sha256(&std::fs::read(dir.join(name)).unwrap());
+    json!(names
+        .iter()
+        .map(|name| (name.clone(), digest(name)))
+        .collect::<BTreeMap<_, _>>())
+}
+
+fn probe_key((leg, number, field, _): &Probe) -> String {
+    format!("{leg} {number} {field}")
+}
+
+fn committed_python(staged: &[[PathBuf; 2]]) -> Value {
+    let text = oracle::expectation("critic_faults_expected.json", || {
+        let children: Vec<Child> = staged.iter().map(|[py, _]| python(py)).collect();
+        let mut verdicts = BTreeMap::new();
+        for ((child, fault), [py, _]) in children.into_iter().zip(&FAULTS).zip(staged) {
+            let output = child.wait_with_output().expect("python finishes");
+            assert!(
+                output.status.success(),
+                "{}: python critic failed: {}",
+                fault.name,
+                String::from_utf8_lossy(&output.stderr)
+            );
+            let full: Value = serde_json::from_slice(&output.stdout).expect("python prints json");
+            let probes: BTreeMap<String, Value> = fault
+                .probes
+                .iter()
+                .map(|probe @ (leg, number, field, _)| {
+                    (probe_key(probe), full[*leg][number - 1][*field].clone())
+                })
+                .collect();
+            let python =
+                json!({"result": full["result"], "issues": full["issues"], "probes": probes});
+            verdicts.insert(fault.name, json!({"inputs": inputs(py), "python": python}));
+        }
+        serde_json::to_string_pretty(&verdicts).expect("json") + "\n"
+    });
+    serde_json::from_str(&text).expect("the expectation parses")
+}
+
 fn python(dir: &Path) -> Child {
     Command::new("uv")
         .args(["run", "python", "-c", PYTHON])
@@ -798,22 +843,22 @@ fn rust_decides_every_fault_by_the_rule() {
     println!("MODE: full, faulting {}", render.display());
     let root = std::env::temp_dir().join(format!("wp53c-faults-{}", std::process::id()));
     let staged: Vec<[PathBuf; 2]> = FAULTS.iter().map(|f| stage(&render, &root, f)).collect();
-    let children: Vec<Child> = staged.iter().map(|[py, _]| python(py)).collect();
+    let committed = committed_python(&staged);
     let fonts = font_map();
     let rust: Vec<Value> = staged
         .iter()
         .map(|[_, rs]| rust_observed(rs, &fonts))
         .collect();
     let mut failures = Vec::new();
-    for ((fault, child), produced) in FAULTS.iter().zip(children).zip(rust) {
-        let output = child.wait_with_output().expect("python finishes");
-        assert!(
-            output.status.success(),
-            "{}: python critic failed: {}",
-            fault.name,
-            String::from_utf8_lossy(&output.stderr)
+    for (([py, _], fault), produced) in staged.iter().zip(&FAULTS).zip(rust) {
+        let recorded = &committed[fault.name];
+        assert_eq!(
+            recorded["inputs"],
+            inputs(py),
+            "{}: the staged legs differ from the ones the committed Python verdict read",
+            fault.name
         );
-        let expected: Value = serde_json::from_slice(&output.stdout).expect("python prints json");
+        let expected = recorded["python"].clone();
         let rows = |value: &Value| value["issues"].as_array().unwrap().clone();
         let sorted = |value: &Value| {
             let mut out: Vec<_> = rows(value).iter().map(key).collect();
@@ -847,8 +892,8 @@ fn rust_decides_every_fault_by_the_rule() {
         }
         for probe in fault.probes {
             let (leg, number, field, want) = probe;
-            let pick = |value: &Value| value[*leg][number - 1][*field].clone();
-            let (python_value, rust_value) = (pick(&expected), pick(&produced));
+            let python_value = expected["probes"][probe_key(probe)].clone();
+            let rust_value = produced[*leg][number - 1][*field].clone();
             println!("  PROBE: {leg} {number} {field} python {python_value} rust {rust_value}");
             if python_value != python_want(fault, probe) || rust_value != want() {
                 failures.push(format!(

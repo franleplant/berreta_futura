@@ -1,0 +1,186 @@
+Crafted inputs for mag/tests/nocomments.rs, one file per "=== path" header.
+
+=== tools/usage.py
+"""Usage: tools/usage.py <arg>"""
+import sys
+
+print(__doc__)
+
+=== tools/moduledoc.py
+"""A module docstring without the usage switch."""
+
+x = 1
+
+=== tools/shapes.py
+#!/usr/bin/env python3
+# a plain comment
+import os  # trailing comment
+import re  # noqa: F401
+x = []  # type: list
+y = 1  #pragma: no cover
+# fmt: off
+s = "# not a comment"
+t = '''a
+# still not a comment
+'''
+#! not a shebang on line 12
+
+
+class Outer:
+    """class docstring"""
+
+    class Inner:
+        "inner docstring"
+
+        def method(self):
+            '''method docstring'''
+            return 1
+
+    def after(self):
+        ("parenthesised" " concatenated")
+
+
+def top():
+    """top docstring"""
+    if os:
+        "if body"
+    elif re:
+        "elif body"
+    elif x:
+        "second elif body"
+    else:
+        "else body is orelse"
+    for _ in x:
+        "for body"
+    else:
+        "for else"
+    while y:
+        "while body"
+        break
+    try:
+        "try body"
+    except ValueError:
+        "except body"
+    except (KeyError, IndexError) as e:
+        "second handler"
+    else:
+        "try else"
+    finally:
+        "finally body"
+    with open(s) as f:
+        "with body"
+    return f
+
+
+def one(): "one-liner body"
+
+
+z = 1; "after semicolon"
+f"an f-string statement"
+b"a bytes statement"
+u"a unicode statement"
+r"a raw statement"
+"a".join(x)
+"a" if x else "b"
+("tuple", "not a docstring")
+(
+    "spread"
+    "over lines"
+)
+w = {
+    "k": 1,  # comment inside braces
+}
+while (n := len(x)) > 3:
+    "walrus loop"
+
+
+async def co():
+    "async docstring"
+    async with x:
+        "async with body"
+
+
+@staticmethod
+def decorated():
+	"tab indented docstring"
+	if x:
+		"tab if body"
+
+
+def last():
+    def nested():
+        "nested docstring at depth two"
+    "last docstring"
+
+=== crlf tools/crlf.py
+x = 1
+# crlf comment
+def g():
+    "crlf docstring"
+
+=== tools/nocomments.py
+# skipped by name
+
+=== tools/nohash.pyc
+# ignored suffix
+
+=== tools/runner
+#!/bin/sh
+# shell comment
+echo "# not flagged? it is not at line start"
+  # indented comment
+set -e
+
+=== tools/notshell
+#!/usr/bin/env bash
+# bash is not scanned
+
+=== tools/.hidden
+#!/bin/sh
+# dotfile with no suffix
+
+=== tools/trailing.
+#!/bin/sh
+# name ending in a dot
+
+=== mag/src/plain.rs
+// line comment
+fn a() -> &'static str {
+    let s = "// not a comment \" still inside";
+    let r = r#"/* not a comment "# ;
+    let r2 = r"// raw";
+    let c = '"';
+    let d = '\'';
+    let e = '/';
+    let b = b'/';
+    let bs = br"// raw bytes";
+    let for_ = 1; let bar = 2;
+    s
+}
+/// doc comment without clap
+//! inner doc
+/* block
+spanning
+lines */
+fn after_block() {}
+// drifted line number
+fn lifetimes<'a>(x: &'a str) -> &'a str { x }
+fn url() -> &'static str { "http://example.com" }
+fn tail() { let x = 1; /* inline */ }
+
+=== mag/src/cli.rs
+#[derive(Parser)]
+struct Cli {
+    /// help text is exempt
+    name: String,
+}
+// but a line comment is not
+//! nor inner docs
+
+=== mag/src/nested/deep.rs
+fn z() {} // nested dir comment
+
+=== src/magazine/pkg.py
+def f():
+    """package docstring"""
+    return 1
