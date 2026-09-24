@@ -1,3 +1,4 @@
+mod critic;
 mod display;
 mod exact;
 mod geometry;
@@ -74,7 +75,7 @@ struct TierS {
     code_blocks: NotEvaluated,
     color: Option<display::SimpleClause>,
     navigation: Option<display::NavClause>,
-    critic: NotEvaluated,
+    critic: critic::CriticClause,
 }
 
 #[derive(Serialize)]
@@ -694,11 +695,13 @@ fn page_clauses(v: &Verdict, page: u32) -> Vec<String> {
         .navigation
         .as_ref()
         .is_some_and(|c| c.status == "pass");
+    let critic = v.tier_s.critic.status() == "pass";
     for (name, pass) in [
         ("boxes", boxes),
         ("text", text),
         ("color", color),
         ("navigation", nav),
+        ("critic", critic),
     ] {
         if pass {
             out.push(name.to_string());
@@ -1056,6 +1059,12 @@ fn compare(
     inputs.insert("a_reader_sha256".into(), sha256_file(&pdf_a)?);
     inputs.insert("b_reader_sha256".into(), sha256_file(&pdf_b)?);
     let mut verdict = build_verdict(spec, edition, inputs, &pdf_a, &pdf_b, out_dir)?;
+    verdict.tier_s.critic = critic::compare(
+        &dir_a,
+        &dir_b,
+        &critic_exclusions(spec)?,
+        &font_name_map(spec)?,
+    )?;
     verdict.mode = legs.mode.into();
     verdict.gate = if opts.adhoc { "tier_s" } else { "all_tiers" }.into();
     verdict.typst_leg = legs.typst_leg;
@@ -1083,18 +1092,10 @@ fn compare(
             ..guard
         };
         let manifest = dir_a.join("en/edition-manifest.json");
-        let texts = text::page_texts(&pdf_a, verdict.domain.first_page, verdict.domain.last_page)?;
-        let code = code_pages(
-            &dir_a.join("request.json"),
-            &texts,
-            verdict.domain.first_page,
-        )?;
-        verdict.page_sets = Some(page_sets(
-            &manifest,
-            verdict.domain.first_page,
-            verdict.domain.last_page,
-            code,
-        )?);
+        let (first, last) = (2, verdict.domain.last_page.saturating_sub(1));
+        let texts = text::page_texts(&pdf_a, first, last)?;
+        let code = code_pages(&dir_a.join("request.json"), &texts, first)?;
+        verdict.page_sets = Some(page_sets(&manifest, first, last, code)?);
         if let Some(name) = &opts.set {
             verdict.scored_set = Some(score_set(&verdict, name)?);
         }
@@ -1167,8 +1168,8 @@ fn build_verdict(
     out_dir: &Path,
 ) -> Result<Verdict> {
     let (na, nb) = (geometry::page_count(pdf_a)?, geometry::page_count(pdf_b)?);
-    let counts_equal = na == nb && na >= 3;
-    let (first, last) = (2, na.saturating_sub(1));
+    let counts_equal = na == nb && na >= 1;
+    let (first, last) = (1, na);
     let mut verdict = Verdict {
         edition: edition.into(),
         mode: "pre_rendered".into(),
@@ -1190,7 +1191,7 @@ fn build_verdict(
         self_comparison: inputs.get("a_reader_sha256") == inputs.get("b_reader_sha256"),
         inputs,
         domain: Domain {
-            description: "interior: reader.pdf pages 2..n-1, n required equal".into(),
+            description: "reader.pdf end to end: pages 1..n, n required equal".into(),
             first_page: first,
             last_page: last,
         },
@@ -1208,10 +1209,10 @@ fn build_verdict(
             ),
             color: None,
             navigation: None,
-            critic: not_evaluated(
-                "the comparator does not read either leg's critic report yet",
-                "WP-2.0b oracle leg, WP-5.3g typst leg",
-            ),
+            critic: critic::CriticClause::NotEvaluated {
+                status: "not_evaluated".into(),
+                reason: "not compared yet".into(),
+            },
         },
         tier_g: None,
         tier_v: None,
@@ -1262,6 +1263,31 @@ fn build_verdict(
     Ok(verdict)
 }
 
+fn critic_exclusions(spec: &serde_yaml::Value) -> Result<Vec<String>> {
+    let groups = spec
+        .get("tiers")
+        .and_then(|t| t.get("s"))
+        .and_then(|s| s.get("critic"))
+        .and_then(|c| c.get("excluded_leaves"))
+        .and_then(serde_yaml::Value::as_mapping)
+        .context("parity.yaml tiers.s.critic.excluded_leaves missing")?;
+    let mut out = vec![];
+    for (name, group) in groups {
+        let leaves = group
+            .get("leaves")
+            .and_then(serde_yaml::Value::as_sequence)
+            .with_context(|| format!("tiers.s.critic.excluded_leaves.{name:?} has no leaves"))?;
+        for leaf in leaves {
+            out.push(
+                leaf.as_str()
+                    .context("an excluded leaf is not a string")?
+                    .to_string(),
+            );
+        }
+    }
+    Ok(out)
+}
+
 fn raster_bound(spec: &serde_yaml::Value) -> Result<Option<u8>> {
     let Some(node) = spec
         .get("tiers")
@@ -1289,6 +1315,7 @@ fn tier_s_pass(v: &Verdict) -> bool {
             .navigation
             .as_ref()
             .is_some_and(|c| c.status == "pass")
+        && v.tier_s.critic.status() != "fail"
 }
 
 fn all_evaluated_pass(v: &Verdict) -> bool {
@@ -1393,18 +1420,15 @@ fn summarize(v: &Verdict) {
         "tier S page_count: {} ({a} vs {b})",
         v.tier_s.page_count.status
     );
-    for (name, clause) in [
-        ("code_blocks", &v.tier_s.code_blocks),
-        ("critic", &v.tier_s.critic),
-    ] {
-        println!(
-            "tier S {name}: {} ({}; owner {})",
-            clause.status, clause.reason, clause.owner
-        );
-    }
+    let c = &v.tier_s.code_blocks;
+    println!(
+        "tier S code_blocks: {} ({}; owner {})",
+        c.status, c.reason, c.owner
+    );
+    summarize_critic(&v.tier_s.critic);
     if v.tier_s.boxes.is_none() {
         for name in DOMAIN_CLAUSES {
-            println!("{name}: not_evaluated (page counts {a} vs {b}: the interior domain needs equal counts of at least 3)");
+            println!("{name}: not_evaluated (page counts {a} vs {b}: the domain needs equal counts of at least 1)");
         }
     }
     if let Some(b) = &v.tier_s.boxes {
@@ -1453,6 +1477,36 @@ fn summarize(v: &Verdict) {
         );
     }
     summarize_e(v);
+}
+
+fn summarize_critic(c: &critic::CriticClause) {
+    match c {
+        critic::CriticClause::NotEvaluated { status, reason } => {
+            println!("tier S critic: {status} ({reason})");
+        }
+        critic::CriticClause::Evaluated {
+            status,
+            result_a,
+            result_b,
+            issues,
+            leaves_compared,
+            leaves_excluded,
+            leaves_differing,
+            text_pages_compared,
+            text_fields_differing,
+            text_characters_differing,
+        } => {
+            println!(
+                "tier S critic: {status} (results {result_a} vs {result_b}, {issues} issues; {leaves_compared} report leaves compared, {leaves_excluded} excluded, {} differ; Rust text fields on {text_pages_compared} pages, {} differ; text_characters excluded, {} pages differ)",
+                leaves_differing.len(),
+                text_fields_differing.len(),
+                text_characters_differing.len()
+            );
+            for line in leaves_differing.iter().chain(text_fields_differing) {
+                println!("  critic: {line}");
+            }
+        }
+    }
 }
 
 fn summarize_e(v: &Verdict) {
@@ -1553,7 +1607,10 @@ mod measured_pages {
                 lang_compared: 0,
                 mismatches: vec![],
             }),
-            critic: not_evaluated("test", "test"),
+            critic: critic::CriticClause::NotEvaluated {
+                status: "not_evaluated".into(),
+                reason: "test".into(),
+            },
         }
     }
 

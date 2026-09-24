@@ -1,5 +1,5 @@
 {
-  "schema_note": "per interior page of edition 010 (en) reader.pdf: the best parity tier the ENGINE PAIR has achieved and the Tier S clauses passing on that page, bound to the staged-input digest they were measured from. mag parity refuses to run at all when the current staged-input digest differs from this one, and refuses to run when the working tree lowers any entry committed at HEAD; raises are written only by verifiers (protocol rule 3) from the baseline-proposed.json a run writes beside its verdict. The tier ladder is CUMULATIVE: a page holds a tier only when every lower rung also holds. Seeded by WP-0.2k at `seeded_at_commit`, which every later ratchet comparison inherits as its base, at tier none for all 54 interior pages, because no typst leg exists yet and a WeasyPrint-versus-itself run measures nothing about the pair; mag parity therefore proposes no entries from a self-comparison. Ratcheted by WP-3.0g to tier E on all 54 pages from the staged run's baseline-proposed.json, once parity.yaml ratchet.target_tier became E.",
+  "schema_note": "per page of edition 010 (en) reader.pdf: the best parity tier the ENGINE PAIR has achieved and the Tier S clauses passing on that page, bound to the staged-input digest they were measured from. mag parity refuses to run at all when the current staged-input digest differs from this one, and refuses to run when the working tree lowers any entry committed at HEAD; raises are written only by verifiers (protocol rule 3) from the baseline-proposed.json a run writes beside its verdict. The tier ladder is CUMULATIVE: a page holds a tier only when every lower rung also holds. Seeded by WP-0.2k at `seeded_at_commit`, which every later ratchet comparison inherits as its base, at tier none for all 54 interior pages, because no typst leg exists yet and a WeasyPrint-versus-itself run measures nothing about the pair; mag parity therefore proposes no entries from a self-comparison. Ratcheted by WP-3.0g to tier E on all 54 pages from the staged run's baseline-proposed.json, once parity.yaml ratchet.target_tier became E. WP-5.4g extended the compared domain to reader.pdf pages 1..n and seeded the two cover pages, 1 and 56, at tier none with no clauses, the seed rule WP-0.2k used; raising them from a measured run's baseline-proposed.json is a verifier's.",
   "page_entry_shape": {
     "tier": "none | G1 | G2 | V1 | V2 | E",
     "s_clauses_passing": [
@@ -15,6 +15,10 @@
   "seeded_at_commit": "20adcfb81cc866cd26870c5cac0623868c75c324",
   "staged_input_digest": "bc49b2aaad8844155a2e5496d135360534771b57c9a87a690b4e9243ae5fed5b",
   "pages": {
+    "1": {
+      "tier": "none",
+      "s_clauses_passing": []
+    },
     "2": {
       "tier": "E",
       "s_clauses_passing": [
@@ -554,6 +558,10 @@
         "color",
         "navigation"
       ]
+    },
+    "56": {
+      "tier": "none",
+      "s_clauses_passing": []
     }
   }
 }

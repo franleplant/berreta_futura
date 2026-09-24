@@ -60,7 +60,7 @@ fn shows(elements: &[Element]) -> Vec<Show> {
             s, m, size, offs, ..
         } = element
         {
-            if s.is_empty() {
+            if s.trim().is_empty() {
                 continue;
             }
             let width = match (offs.first(), offs.last(), offs.len()) {
@@ -84,6 +84,9 @@ fn shows(elements: &[Element]) -> Vec<Show> {
 }
 
 fn separator(previous: &Show, next: &Show) -> &'static str {
+    if previous.text.ends_with(char::is_whitespace) || next.text.starts_with(char::is_whitespace) {
+        return "";
+    }
     let gap = next.x - (previous.x + previous.width);
     let threshold = (previous.size.max(next.size) as f64 * WORD_GAP_FRACTION) as i64;
     if gap > threshold {
@@ -94,26 +97,25 @@ fn separator(previous: &Show, next: &Show) -> &'static str {
 }
 
 pub(crate) fn page_lines(elements: &[Element]) -> Vec<String> {
-    let mut lines: Vec<String> = vec![];
-    let mut current: Option<(i64, String, Show)> = None;
+    let mut groups: Vec<Vec<Show>> = vec![];
     for show in shows(elements) {
-        match current.take() {
-            Some((y, mut line, previous)) if (y - show.y).abs() <= SAME_LINE_TOLERANCE => {
-                line.push_str(separator(&previous, &show));
-                line.push_str(&show.text);
-                current = Some((y, line, show));
-            }
-            Some((_, line, _)) => {
-                lines.push(line);
-                current = Some((show.y, show.text.clone(), show));
-            }
-            None => current = Some((show.y, show.text.clone(), show)),
+        match groups.last_mut() {
+            Some(group) if (group[0].y - show.y).abs() <= SAME_LINE_TOLERANCE => group.push(show),
+            _ => groups.push(vec![show]),
         }
     }
-    if let Some((_, line, _)) = current {
-        lines.push(line);
-    }
-    lines
+    groups
+        .into_iter()
+        .map(|mut group| {
+            group.sort_by_key(|show| show.x);
+            let mut line = group[0].text.clone();
+            for pair in group.windows(2) {
+                line.push_str(separator(&pair[0], &pair[1]));
+                line.push_str(&pair[1].text);
+            }
+            line.trim().to_string()
+        })
+        .collect()
 }
 
 pub(crate) fn page_text(elements: &[Element]) -> String {
@@ -137,4 +139,61 @@ pub(crate) fn trace_text(
         .iter()
         .map(|page| page_text(page))
         .collect())
+}
+
+#[cfg(test)]
+mod writer_independent {
+    use super::page_text;
+    use crate::parity::{Color, Element, GLYPH_QUANTUM};
+
+    fn show(s: &str, x_pt: f64, y_pt: f64, advance_pt: f64) -> Element {
+        let glyphs = s.chars().count();
+        let step = advance_pt / glyphs.saturating_sub(1).max(1) as f64;
+        let (x, y) = ((x_pt * 100.0).round() as i64, (y_pt * 100.0).round() as i64);
+        Element::Text {
+            s: s.into(),
+            font: "t".into(),
+            size: 1000,
+            fill: Color {
+                family: "DeviceGray".into(),
+                rgb: [0, 0, 0],
+            },
+            glyphs,
+            gids: vec![],
+            m: [1000, 0, 0, 1000, x, y],
+            tr: 0,
+            clip: vec![],
+            origin: [x, y],
+            offs: (0..glyphs)
+                .map(|i| [(step * i as f64 / GLYPH_QUANTUM).round() as i64, 0])
+                .collect(),
+            units: s.chars().map(String::from).collect(),
+        }
+    }
+
+    #[test]
+    fn invisible_space_glyphs_add_no_text() {
+        let plain = [
+            show("every client:", 0.0, 700.0, 60.0),
+            show("code", 70.0, 700.0, 20.0),
+            show("next line", 0.0, 680.0, 40.0),
+        ];
+        let spaced = [
+            show("every client: ", 0.0, 700.0, 63.0),
+            show("\u{a0}", 67.0, 700.0, 0.0),
+            show("code", 70.0, 700.0, 20.0),
+            show("next line ", 0.0, 680.0, 43.0),
+        ];
+        assert_eq!(page_text(&plain), "every client: code\nnext line");
+        assert_eq!(page_text(&spaced), page_text(&plain));
+    }
+
+    #[test]
+    fn one_line_reads_left_to_right_whatever_its_baselines_order() {
+        let spread = [
+            show("right half", 300.0, 700.3, 40.0),
+            show("left half", 20.0, 700.0, 40.0),
+        ];
+        assert_eq!(page_text(&spread), "left half right half");
+    }
 }

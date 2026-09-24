@@ -138,7 +138,7 @@ impl PageInspection {
     }
 }
 
-fn standalone_punctuation_lines(text: &str) -> Vec<String> {
+pub(crate) fn standalone_punctuation_lines(text: &str) -> Vec<String> {
     text.lines()
         .map(py_strip)
         .filter(|line| {
