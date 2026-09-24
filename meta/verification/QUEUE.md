@@ -9,11 +9,11 @@ WP-0.2t landed 3efaf3c. Verify WP-0.2j.verify.md: 0.2r, 0.2s, 0.2t and
 glyphs; 0.477 pt in-page); plus two older tracer holes. Rework WP-0.2u
 landed fe1bd56 (MIN_ADVANCE_PT 1.25, strict decode, operand counts, no
 #[ignore] left). Final adversarial comparator verify runs with WP-3.0g.
-Landed, awaiting a verifier: WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
+Landed, awaiting a verifier: WP-4.0g, WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
-Running: WP-3.7a burn-down structure items, WP-4.0g ad hoc parity mode,
+Running: WP-3.7a burn-down structure items, WP-0.2v JPEG in the tracer,
 WP-5.1h part 1 (strict decode in pdf_text/impose, exact decimals,
 shared helpers).
 Next after WP-3.7a: WP-3.7c advance post-pass (decision below). Behind WP-3.7a (typeset owner): WP-3.7 drift fix, WP-5.1h helpers,
@@ -47,6 +47,10 @@ evidence file records it):
   edition; WP-5.5d wires it into the web port (fenced code with a
   language refuses there today) and accepts JPEG closing plates.
 - cover.py replace_first_page is dead (WP-6.1 deletes it anyway).
+- WP-3.9 (after WP-3.7): generalize past 010 with `--adhoc 008`
+  (WP-4.0g.md: headings break at different words, text order differs on
+  pp. 16-20). Pre-010 editions lack committed source-codes/; 009 refuses
+  on a repeated closing-plate art (edition data, for Fran).
 - WP-5.6 must add the cover step to the typst path (it has none; the
   parity domain excludes cover pages today).
 - WP-5.1h scope: pdf_text.rs and impose.rs use lenient Content::decode;
@@ -120,6 +124,9 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- Edition 009 no longer renders: one closing plate repeats another's art
+  (the no-repeat rule). Editions before 010 have no committed
+  source-codes/.
 - Oracle quirks Typst now reproduces (WP-3.8): contents rows 98.25 pt
   apart although the stylesheet comment wants the six-row cap (WeasyPrint
   ignores max-height there); plates sharing a slot print in reverse order.
