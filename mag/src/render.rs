@@ -522,6 +522,8 @@ pub(crate) struct RenderArgs {
         help = "Typesetting engine: weasyprint or typst (default: magazine.toml [render] engine)"
     )]
     pub engine: Option<String>,
+    #[arg(skip)]
+    pub parity: bool,
 }
 
 struct EditionInputs {
@@ -659,13 +661,13 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
     };
     match engine {
         Engine::Weasyprint => run_adapter(&repo_root, &render_dir, &request),
-        Engine::Typst => run_typst(&repo_root, &render_dir, &request),
+        Engine::Typst => run_typst(&repo_root, &render_dir, &request, args.parity),
     }
 }
 
-fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i32> {
-    let value =
-        crate::typeset::run_request(repo_root, render_dir, &serde_json::to_string(request)?)?;
+fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request, parity: bool) -> Result<i32> {
+    let json = serde_json::to_string(request)?;
+    let value = crate::typeset::run_request(repo_root, render_dir, &json, parity)?;
     let result = render_dir.join("result.json");
     fs::write(&result, serde_json::to_string_pretty(&value)? + "\n")
         .with_context(|| format!("writing {}", result.display()))?;

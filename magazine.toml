@@ -26,6 +26,10 @@ engine = "typst"
 # Design direction of the reportlab engine. Read only when that engine is
 # selected; the weasyprint engine has one design and names it itself.
 design = "monument"
+# English prose hyphenates (Typst's own patterns) and no prose block ends more
+# than two consecutive lines on a hyphen (WP-4.3b). Absent means true.
+# `mag parity` renders the typst leg with false regardless of this key.
+hyphenate_english = true
 trim = "A5"
 home_sheet = "A4"
 body_font = "SourceSerif4-SmText"

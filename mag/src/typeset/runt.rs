@@ -21,7 +21,9 @@ const MEASURE: f64 = 325.0;
 const COLUMN_RIGHT: f64 = 4.00395 + MEASURE;
 const RUNT_MEASURE_FRACTION: f64 = 0.15;
 const RUNT_MAX_RAG_FRACTION: f64 = 0.33;
-const PASSES: usize = 3;
+const PASSES: usize = 6;
+const LADDER_LIMIT: usize = 2;
+const UNHYPHENATED: &str = "#text(hyphenate: false)[";
 const LINE_SLACK: f64 = 4.0;
 const NO_BREAK: &str = "\\u{a0}";
 const SHY: &str = "\u{ad}";
@@ -338,21 +340,104 @@ fn weasyprint_hyphenates(block: &Block, rows: &[Row], line: usize) -> bool {
     attempted(&text, first, room, block.size)
 }
 
-fn unhyphenated(sources: &dyn World, (span, offset): Anchor) -> Vec<(FileId, usize, usize)> {
-    let Some(file) = span.id() else {
-        return vec![];
-    };
-    let (Ok(source), Some(range)) = (sources.source(file), sources.range(span)) else {
-        return vec![];
-    };
+fn word(
+    sources: &dyn World,
+    (span, offset): Anchor,
+    bound: impl Fn(char) -> bool,
+) -> Option<(FileId, usize, String)> {
+    let file = span.id()?;
+    let (source, range) = (sources.source(file).ok()?, sources.range(span)?);
     let text = source.text();
-    let at = (range.start + offset).min(text.len());
+    let mut at = (range.start + offset).min(text.len());
+    while !text.is_char_boundary(at) {
+        at -= 1;
+    }
+    let from = text[..at].rfind(&bound).map_or(0, |i| i + 1);
+    let to = text[at..].find(&bound).map_or(text.len(), |i| at + i);
+    Some((file, from, text[from..to].to_string()))
+}
+
+fn unhyphenated(sources: &dyn World, anchor: Anchor) -> Vec<(FileId, usize, usize)> {
     let bound = |c: char| c.is_whitespace() || "[]#\\".contains(c);
-    let from = text[..at].rfind(bound).map_or(0, |i| i + 1);
-    let to = text[at..].find(bound).map_or(text.len(), |i| at + i);
-    text[from..to]
-        .match_indices(SHY)
+    let Some((file, from, text)) = word(sources, anchor, bound) else {
+        return vec![];
+    };
+    text.match_indices(SHY)
         .map(|(i, m)| (file, from + i, from + i + m.len()))
+        .collect()
+}
+
+fn unladdered(sources: &dyn World, anchor: Anchor) -> Vec<Edit> {
+    let shy = unhyphenated(sources, anchor);
+    if !shy.is_empty() {
+        return shy.into_iter().map(|(f, a, b)| (f, a, b, "")).collect();
+    }
+    let Some((file, from, text)) = word(sources, anchor, |c| !c.is_alphanumeric()) else {
+        return vec![];
+    };
+    let to = from + text.len();
+    vec![(file, from, from, UNHYPHENATED), (file, to, to, "]")]
+}
+
+fn hyphen_ended(row: &Row) -> Option<char> {
+    let mut chars = row.1.iter().rev().flat_map(|(_, t, _)| t.chars().rev());
+    chars
+        .find(|c| !c.is_whitespace())
+        .filter(|c| ['-', '\u{2010}', '\u{ad}'].contains(c))
+}
+
+fn ladders(rows: &[Row]) -> Vec<std::ops::Range<usize>> {
+    let mut start = 0;
+    let mut found = vec![];
+    for i in 0..=rows.len() {
+        if i < rows.len() && hyphen_ended(&rows[i]).is_some() {
+            continue;
+        }
+        if i - start > LADDER_LIMIT {
+            found.push(start..i);
+        }
+        start = i + 1;
+    }
+    found
+}
+
+fn laddered(doc: &PagedDocument, sources: &dyn World) -> Vec<Edit> {
+    prose_blocks(doc)
+        .iter()
+        .flat_map(|(_, block)| {
+            let rows = ordered(block);
+            ladders(&rows)
+                .into_iter()
+                .filter_map(|run| {
+                    run.skip(LADDER_LIMIT)
+                        .find(|&i| hyphen_ended(&rows[i]) == Some('\u{ad}'))
+                })
+                .filter_map(|i| rows[i].2)
+                .flat_map(|anchor| unladdered(sources, anchor))
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+pub fn ladder_warnings(doc: &PagedDocument, edition: &str) -> Vec<String> {
+    prose_blocks(doc)
+        .iter()
+        .enumerate()
+        .flat_map(|(key, (_, block))| {
+            let mut pages: Vec<_> = block.lines.iter().map(|(p, y, _)| (*p, *y)).collect();
+            pages.sort_by(|a, b| a.partial_cmp(b).expect("finite baselines"));
+            let rows = ordered(block);
+            ladders(&rows).into_iter().map(move |run| {
+                let sample: String = rows[run.start].1.iter().map(|(_, t, _)| t.as_str()).collect();
+                format!(
+                    "hyphen ladder: edition {edition} reader page {} sets {} consecutive \
+                     hyphen-ended lines in prose block {key} (allowed {LADDER_LIMIT}), starting {:?}",
+                    pages[run.start].0 + 1,
+                    run.len(),
+                    sample.chars().take(60).collect::<String>()
+                )
+            })
+        })
         .collect()
 }
 
@@ -383,6 +468,7 @@ fn bind(tree: Tree, found: &[Edit]) -> Tree {
             .map(|(_, a, b, with)| (a - PRELUDE.len(), b - PRELUDE.len(), *with))
             .collect();
         here.sort_unstable_by(|a, b| b.cmp(a));
+        here.dedup();
         for (a, b, with) in here {
             source.replace_range(a..b, with);
         }
@@ -408,9 +494,14 @@ pub fn bound(
             false => Vec::new(),
         }
         .into_iter();
+        let ladders = match hyphenation.limit_ladders {
+            true => laddered(&doc, &sources),
+            false => Vec::new(),
+        };
         let edits: Vec<Edit> = runts
             .map(|(f, a, b)| (f, a, b, NO_BREAK))
             .chain(shy.map(|(f, a, b)| (f, a, b, "")))
+            .chain(ladders)
             .collect();
         if edits.is_empty() {
             return Ok((tree, doc));
@@ -496,6 +587,18 @@ mod tests {
                 ),
             }],
         }
+    }
+
+    #[test]
+    fn a_ladder_is_more_than_two_consecutive_hyphen_ended_lines() {
+        let row = |end: &str| (0.0, vec![(0.0, format!("word{end}"), String::new())], None);
+        let rows: Vec<Row> = ["\u{ad}", "-", "\u{2010}", "", "\u{ad}", "\u{ad}", ""]
+            .iter()
+            .map(|end| row(end))
+            .collect();
+        assert_eq!(ladders(&rows), vec![0..3]);
+        assert_eq!(ladders(&rows[1..]), Vec::<std::ops::Range<usize>>::new());
+        assert_eq!(hyphen_ended(&rows[0]), Some('\u{ad}'));
     }
 
     #[test]

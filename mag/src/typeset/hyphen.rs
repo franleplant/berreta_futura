@@ -18,12 +18,19 @@ pub const SHY: char = '\u{ad}';
 pub struct Hyphenation {
     pub english: bool,
     pub weasyprint69_skip: bool,
+    pub limit_ladders: bool,
 }
 
 impl Hyphenation {
     pub const PARITY: Self = Self {
         english: false,
         weasyprint69_skip: true,
+        limit_ladders: false,
+    };
+    pub const SHIPPED: Self = Self {
+        english: true,
+        weasyprint69_skip: true,
+        limit_ladders: true,
     };
 
     pub fn from_settings(setting: impl Fn(&str) -> Option<String>) -> Result<Self, String> {
@@ -35,10 +42,11 @@ impl Hyphenation {
                 "magazine.toml [render] {key} = {other}: expected true or false"
             )),
         };
-        let parity = Self::PARITY;
+        let shipped = Self::SHIPPED;
         Ok(Self {
-            english: flag("hyphenate_english", parity.english)?,
-            weasyprint69_skip: flag("weasyprint69_hyphen_skip", parity.weasyprint69_skip)?,
+            english: flag("hyphenate_english", shipped.english)?,
+            weasyprint69_skip: flag("weasyprint69_hyphen_skip", shipped.weasyprint69_skip)?,
+            ..shipped
         })
     }
 
@@ -187,13 +195,14 @@ mod tests {
     }
 
     #[test]
-    fn the_parity_configuration_is_the_default_and_a_bad_value_is_refused() {
+    fn english_hyphenation_ships_by_default_and_a_bad_value_is_refused() {
         let unset = Hyphenation::from_settings(|_| None).expect("defaults");
-        assert_eq!(unset, Hyphenation::PARITY);
-        assert!(!unset.native("en") && unset.weasyprint69_skip);
-        let on = Hyphenation::from_settings(|key| Some((key == "hyphenate_english").to_string()))
+        assert_eq!(unset, Hyphenation::SHIPPED);
+        assert!(unset.native("en") && unset.weasyprint69_skip && unset.limit_ladders);
+        assert!(!Hyphenation::PARITY.native("en") && !Hyphenation::PARITY.limit_ladders);
+        let off = Hyphenation::from_settings(|key| Some((key != "hyphenate_english").to_string()))
             .expect("booleans");
-        assert!(on.native("en-GB") && !on.native("es-AR") && !on.weasyprint69_skip);
+        assert!(!off.native("en-GB") && off.weasyprint69_skip && off.limit_ladders);
         let refused = Hyphenation::from_settings(|_| Some("yes".into())).expect_err("not a bool");
         assert!(refused.contains("hyphenate_english"), "{refused}");
     }
