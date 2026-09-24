@@ -9,13 +9,12 @@ WP-0.2t landed 3efaf3c. Verify WP-0.2j.verify.md: 0.2r, 0.2s, 0.2t and
 glyphs; 0.477 pt in-page); plus two older tracer holes. Rework WP-0.2u
 landed fe1bd56 (MIN_ADVANCE_PT 1.25, strict decode, operand counts, no
 #[ignore] left). Final adversarial comparator verify runs with WP-3.0g.
-Landed, awaiting a verifier: WP-4.0g, WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
+Landed, awaiting a verifier: WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
 Running: WP-3.7a burn-down structure items, WP-0.2v JPEG in the tracer,
-WP-5.1h part 1 (strict decode in pdf_text/impose, exact decimals,
-shared helpers).
+verifier for WP-4.0g + WP-5.10 + WP-5.1h part 1.
 Next after WP-3.7a: WP-3.7c advance post-pass (decision below). Behind WP-3.7a (typeset owner): WP-3.7 drift fix, WP-5.1h helpers,
 then WP-3.0g, WP-5.6, WP-4.1.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.4, 3.5, 0.0d, 0.0e)
@@ -53,14 +52,12 @@ evidence file records it):
   on a repeated closing-plate art (edition data, for Fran).
 - WP-5.6 must add the cover step to the typst path (it has none; the
   parity domain excludes cover pages today).
-- WP-5.1h scope: pdf_text.rs and impose.rs use lenient Content::decode;
-  switch to decode_strict (WP-0.2u.md).
-- WP-5.1h scope: impose.rs raw-byte decimal recovery should use
-  parity/exact.rs (refuses object streams today).
-- WP-5.1h scope: consolidate `anchor_key`, `is_reference_heading`,
-  `inline_text`, `article_opener_format` (duplicated in web/ and
-  typeset/content.rs) into model/shared.rs; typeset's `anchor_key` uses
-  str::trim, wrong on U+001C..U+001F.
+- WP-5.1h part 2 (after the typeset WPs): typeset adopts shared.rs's
+  anchor_key/is_reference_heading/article_opener_format and
+  scalar_label (content.rs:889 prints `[]` for a list label); delete the 4
+  ALLOWED rows in tests/rust_helpers.rs; inline_text moves to doc.rs;
+  parity.rs gains `pub(crate) use exact::{authored, num};` so impose.rs
+  uses the exact-decimal path (after WP-0.2v).
 - WP-5.6 wires the Rust web port into render.rs.
 - WP-3.2b: draw opener art rasters; opener-art border typst strokes
   (23,25,28) where WeasyPrint fills; opener QR/credit block colour at
