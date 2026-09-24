@@ -1,10 +1,10 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-5.5c, WP-0.0d, WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Landed, awaiting a verifier: WP-5.9, WP-5.5c, WP-0.0d, WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
-Running: WP-3.5 furniture, WP-5.9 Phase 5 cleanup batch, adversarial
-verifier for the comparator WPs 0.2m-0.2r.
+Running: WP-3.5 furniture, WP-3.3a Rust highlighter (pygments up to the
+CSS colour equivalence), adversarial verifier for comparator 0.2m-0.2r.
 Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
 3.7.
 
@@ -27,11 +27,9 @@ evidence file records it):
   deletes it.
 - WP-0.0d rule-colour token 230/255 exact (landed 0870773; baseline
   digest now 12c24234...).
-- WP-5.5d: fenced code with a language refuses in the Rust web port
-  (pygments not reproduced); needed before WP-6.1 deletes Python.
-  Also JPEG closing plates, and a start-0 ordered list row in the wfx
-  fixture (WP-5.5a.verify.md). WP-5.7b: an inline-image scan test
-  (WP-5.7b.verify.md).
+- WP-3.3b wires mag/src/highlight into the template and WP-3.3's fixture
+  edition; WP-5.5d wires it into the web port (fenced code with a
+  language refuses there today) and accepts JPEG closing plates.
 - WP-5.1h scope: consolidate `anchor_key`, `is_reference_heading`,
   `inline_text`, `article_opener_format` (duplicated in web/ and
   typeset/content.rs) into model/shared.rs; typeset's `anchor_key` uses
