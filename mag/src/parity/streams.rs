@@ -1986,4 +1986,135 @@ mod tests {
         let image = sampled(Some("DCTDecode"), "DeviceRGB", &[], truncated);
         assert!(image_pixels(&doc, &image).is_err());
     }
+
+    fn drawn(build: impl FnOnce(&mut Document) -> Stream) -> Result<String> {
+        let mut doc = Document::with_version("1.7");
+        let mut image = build(&mut doc);
+        image.dict.set("Subtype", "Image");
+        let image = doc.add_object(image);
+        let ops = b"q 200 0 0 200 100 250 cm /Im1 Do Q".to_vec();
+        let content = doc.add_object(Stream::new(dictionary! {}, ops));
+        let page = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Contents" => content,
+            "Resources" => dictionary! { "XObject" => dictionary! { "Im1" => image } },
+        });
+        let pages = doc.add_object(dictionary! {
+            "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1,
+        });
+        doc.get_object_mut(page)?
+            .as_dict_mut()?
+            .set("Parent", pages);
+        let elements = trace_page(&doc, page, &BTreeMap::new(), &mut Caches::new())?;
+        Ok(serde_json::to_string(&elements)?)
+    }
+
+    fn told_apart(a: Result<String>, b: Result<String>) -> bool {
+        let a = a.expect("the plain image traces");
+        !matches!(b, Ok(y) if y == a)
+    }
+
+    fn samples(n: usize) -> Vec<u8> {
+        (0..n)
+            .map(|i| ((i * 37 + i / 48 * 91) % 256) as u8)
+            .collect()
+    }
+
+    fn rgb16(extra: &[(&str, Object)]) -> impl FnOnce(&mut Document) -> Stream {
+        let extra: Vec<(String, Object)> = extra
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), v.clone()))
+            .collect();
+        move |_| {
+            let mut image = sampled(None, "DeviceRGB", &[], samples(768));
+            extra.into_iter().for_each(|(k, v)| image.dict.set(k, v));
+            image
+        }
+    }
+
+    #[test]
+    #[ignore = "WP-3.0g.verify: image identity omits Width/Height; poppler paints the reshape differently (674288 px at 300 dpi)"]
+    fn the_same_samples_in_another_shape_are_another_picture() {
+        let reshaped = |_: &mut Document| {
+            let mut image = sampled(None, "DeviceRGB", &[], samples(768));
+            image.dict.set("Width", 32);
+            image.dict.set("Height", 8);
+            image
+        };
+        assert!(told_apart(drawn(rgb16(&[])), drawn(reshaped)));
+    }
+
+    #[test]
+    #[ignore = "WP-3.0g.verify: /Interpolate, /Mask and SMask /Matte are ignored; each pair paints differently in poppler (679818, 108941, 348194, 653022 px)"]
+    fn image_keys_poppler_paints_by_are_traced_or_fail_loud() {
+        let key = Object::Array(vec![
+            0.into(),
+            160.into(),
+            0.into(),
+            160.into(),
+            0.into(),
+            160.into(),
+        ]);
+        let mut missed = vec![];
+        let mut check = |name: &'static str, apart: bool| {
+            if !apart {
+                missed.push(name);
+            }
+        };
+        let interpolated = drawn(rgb16(&[("Interpolate", true.into())]));
+        check("Interpolate", told_apart(drawn(rgb16(&[])), interpolated));
+        let keyed = drawn(rgb16(&[("Mask", key)]));
+        check("Mask colour key", told_apart(drawn(rgb16(&[])), keyed));
+        let stencil = |doc: &mut Document| {
+            let mask = doc.add_object(Stream::new(
+                dictionary! { "Width" => 16, "Height" => 16, "ImageMask" => true, "BitsPerComponent" => 1 },
+                (0..32).map(|i| if i % 4 < 2 { 0x0F } else { 0xF0 }).collect(),
+            ));
+            let mut image = sampled(None, "DeviceRGB", &[], samples(768));
+            image.dict.set("Mask", mask);
+            image
+        };
+        check(
+            "Mask stencil",
+            told_apart(drawn(rgb16(&[])), drawn(stencil)),
+        );
+        let with_smask = |matte: bool| {
+            move |doc: &mut Document| {
+                let mut smask = sampled(
+                    None,
+                    "DeviceGray",
+                    &[],
+                    (0..256).map(|i| (i % 16 * 16) as u8).collect(),
+                );
+                if matte {
+                    smask.dict.set("Matte", vec![1.into(), 1.into(), 1.into()]);
+                }
+                let smask = doc.add_object(smask);
+                let mut image = sampled(None, "DeviceRGB", &[], samples(768));
+                image.dict.set("SMask", smask);
+                image
+            }
+        };
+        let matte = told_apart(drawn(with_smask(false)), drawn(with_smask(true)));
+        check("SMask Matte", matte);
+        assert!(missed.is_empty(), "traced equal, painted apart: {missed:?}");
+    }
+
+    #[test]
+    #[ignore = "WP-3.0g.verify: zune reads 'R','G','B' component ids as RGB even under JFIF; libjpeg (poppler) reads JFIF as YCbCr, so these two JPEGs paint differently (696390 px) and trace equal"]
+    fn a_jpeg_whose_colour_transform_readers_infer_differently_is_told_apart_or_fails_loud() {
+        let mut ids = jpeg("rgb444.jpg");
+        let sof = ids.windows(2).position(|w| w == [0xFF, 0xC0]).unwrap();
+        let sos = ids.windows(2).position(|w| w == [0xFF, 0xDA]).unwrap();
+        for (k, c) in b"RGB".iter().enumerate() {
+            ids[sof + 10 + 3 * k] = *c;
+            ids[sos + 5 + 2 * k] = *c;
+        }
+        let jfif = usize::from(u16::from_be_bytes([ids[4], ids[5]]));
+        let bare: Vec<u8> = ids[..2].iter().chain(&ids[4 + jfif..]).copied().collect();
+        let dct = |bytes: Vec<u8>| {
+            move |_: &mut Document| sampled(Some("DCTDecode"), "DeviceRGB", &[], bytes)
+        };
+        assert!(told_apart(drawn(dct(ids)), drawn(dct(bare))));
+    }
 }
