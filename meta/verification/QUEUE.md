@@ -41,10 +41,10 @@
 - WP-4.2, 4.2b, 4.3, 6.0, 6.0b, 6.0c, 6.0d ACCEPTED (c306373).
 - WP-4.2c landed 2d5a7ac: the page-cap WARNING restored on the typst
   leg, next-step test, cover.rs reads the snapshot.
-- NOTHING RUNNING. Remaining work is Fran-gated: WP-4.3 hyphenation choice
-  (if English hyphenation goes on, port WeasyPrint's "hyphen ladder"
-  warning, weasyprint_adapter.py:928, and decide a consecutive-hyphen
-  limit: Typst has none, 010 shows runs of up to 4), then WP-6.1.
+- 2026-09-24 Fran: hyphenation option 2 (English on); WP-6.1 WAITS (no
+  deletion yet); OK with every other decision and product note listed
+  below. Running: WP-4.3b (English hyphenation default, consecutive-hyphen
+  limit or ladder warning, parity keeps the parity configuration).
 - WP-6.1 must also: move fonts out of src/magazine/assets/fonts; snapshot
   or drop critic_rules.rs's reads of render_critic.py (:1098, :1396,
   :1525) and highlight.rs:32's read of weasyprint-a5.css; keep the pinned
