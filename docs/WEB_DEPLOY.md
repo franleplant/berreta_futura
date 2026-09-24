@@ -18,11 +18,10 @@ rebuild output, or treat a deployment manifest as workflow authority.
 Sources and manuscripts are private by default. An exposed surface must have
 authentication and authorization before it serves a private artifact.
 
-The old Python workflow, CLI, tests, source bridge, and Cloudflare assembly
-scaffold are deleted. Do not recreate or run them. The TypeScript/XState engine
-is the sole workflow, orchestration, state, validation, and export authority;
-the only Python seam receives an immutable renderer manifest and a
-caller-owned destination from its TypeScript worker.
+`mag render` typesets with the native typst engine by default
+(`magazine.toml [render] engine`, overridable per run with `--engine`), and a full
+render writes the web edition from Rust. The Python WeasyPrint
+renderer stays reachable through `--engine weasyprint` as the rollback.
 
 `inputs/` and `durable/` are Git-tracked immutable revisions. `.magazine/` is
 ignored runtime storage and `output/` is ignored, ephemeral exported material.
