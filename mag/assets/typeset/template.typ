@@ -29,6 +29,9 @@
 #let CODE-PAD-X = 3pt
 #let CODE-PAD-Y = 1.2pt
 #let CODE-RADIUS = 2pt
+#let CODE-BLOCK-SIZE = 7.5pt
+#let CODE-BLOCK-LEADING = 1.3
+#let CODE-BLOCK-PAD = 3mm
 #let DISC = 5pt
 #let DISC-KAPPA = 0.55
 
@@ -44,6 +47,8 @@
 #let LIST-INDENT = 14pt
 #let ITEM-AFTER = 6pt
 #let REFERENCE-AFTER = 3pt
+#let REFERENCE-SIZE = 7.2pt
+#let REFERENCE-LEADING = 9.4pt
 #let REFERENCE-HANG = 12.9744pt
 #let QUOTE-RULE = 1.5pt
 #let QUOTE-PAD = 4mm
@@ -115,6 +120,9 @@
 #let OPENER-FOCUS = (49%, 47%)
 #let OPENER-QR-QUIET = 4
 #let OPENER-QR = 41pt
+#let PLAIN-QR = 55.5pt
+#let CODE-CREDIT-GAP = 4.5 * 3.15pt
+#let INTER-CAP = 1490 / 2048
 #let OPENER-GAP = 14pt
 #let OPENER-TICK-WIDTH = 14.5pt
 #let OPENER-TICK = 2.4pt
@@ -531,7 +539,7 @@
 }
 
 #let byline-prefix(body) = context if opener-parts.get() == none {
-  text(size: OPENER-PREFIX-SIZE, fill: VIOLET, body)
+  body
 } else {
   text(
     size: OPENER-PREFIX-SIZE,
@@ -542,17 +550,43 @@
   h(OPENER-PREFIX-GAP * OPENER-PREFIX-SIZE)
 }
 #let byline-name(body) = text(body)
-#let byline(body) = context if opener-parts.get() == none {
-  block(
-    text(font: SANS, size: OPENER-BYLINE-SIZE, weight: 600, ..flat, upper(body)),
-    above: 12pt,
-    below: 0pt,
+#let qr-symbol(rows, side: OPENER-QR) = {
+  let unit = side / (rows.len() + 2 * OPENER-QR-QUIET)
+  let svg(length) = calc.round(length / 1pt, digits: 4) * 1pt
+  let runs = ()
+  for (y, row) in rows.enumerate() {
+    for run in row.matches(regex("1+")) {
+      let (x0, y0) = (svg((run.start + OPENER-QR-QUIET) * unit), svg((y + OPENER-QR-QUIET) * unit))
+      let (x1, y1) = (x0 + svg(run.text.len() * unit), y0 + svg(unit))
+      runs += (curve.move((x0, y0)), curve.line((x1, y0)), curve.line((x1, y1)), curve.line((x0, y1)), curve.close(mode: "straight"))
+    }
+  }
+  place(top + left, rect(width: side, height: side, fill: white, stroke: none))
+  place(top + left, curve(fill: INK, stroke: none, ..runs))
+}
+
+#let code-quiet(code) = OPENER-QR-QUIET * PLAIN-QR / (code.len() + 2 * OPENER-QR-QUIET)
+#let credit-inset(code) = if code == none { 0pt } else { PLAIN-QR - 2 * code-quiet(code) + CODE-CREDIT-GAP }
+#let byline(code: none, body) = context if opener-parts.get() == none {
+  let line = text(font: SANS, size: OPENER-BYLINE-SIZE, weight: 600, ..flat, upper(body))
+  let room = MEASURE - credit-inset(code)
+  assert(
+    code == none or measure(line).width <= room,
+    message: "the byline reaches past the credit column beside its source code; the oracle's letter-spacing compression is not ported",
   )
+  block(above: 12pt, below: 0pt, {
+    if code != none {
+      let quiet = code-quiet(code)
+      place(top + left, dx: -quiet, dy: -OPENER-BYLINE-SIZE * INTER-CAP - quiet, qr-symbol(code, side: PLAIN-QR))
+    }
+    pad(left: credit-inset(code), line)
+  })
 } else {
   collect("byline", body)
 }
-#let author-note(body) = context if opener-parts.get() == none {
+#let author-note(code: none, body) = context if opener-parts.get() == none {
   block(
+    inset: (left: credit-inset(code)),
     text(
       font: SANS,
       size: CAPTION-SIZE,
@@ -644,21 +678,6 @@
       + density.standfirst-gap
       + standfirst
   )
-}
-
-#let qr-symbol(rows) = {
-  let unit = OPENER-QR / (rows.len() + 2 * OPENER-QR-QUIET)
-  let svg(length) = calc.round(length / 1pt, digits: 4) * 1pt
-  let runs = ()
-  for (y, row) in rows.enumerate() {
-    for run in row.matches(regex("1+")) {
-      let (x0, y0) = (svg((run.start + OPENER-QR-QUIET) * unit), svg((y + OPENER-QR-QUIET) * unit))
-      let (x1, y1) = (x0 + svg(run.text.len() * unit), y0 + svg(unit))
-      runs += (curve.move((x0, y0)), curve.line((x1, y0)), curve.line((x1, y1)), curve.line((x0, y1)), curve.close(mode: "straight"))
-    }
-  }
-  place(top + left, rect(width: OPENER-QR, height: OPENER-QR, fill: white, stroke: none))
-  place(top + left, curve(fill: INK, stroke: none, ..runs))
 }
 
 #let source-code(source) = {
@@ -820,14 +839,16 @@
   })
 }
 
-#let ruled(pad-left, pad-rest, fill-color, body) = pad(left: QUOTE-RULE / 2, block(
-  stroke: (left: QUOTE-RULE + VIOLET),
-  fill: fill-color,
-  inset: (left: pad-left + QUOTE-RULE / 2, rest: pad-rest),
-  width: 100%,
-  above: 0pt,
-  below: 0pt,
-  body,
+#let ruled(pad-left, pad-rest, fill-color, body) = block(fill: fill-color, width: 100%, spacing: 0pt, pad(
+  left: QUOTE-RULE / 2,
+  block(
+    stroke: (left: QUOTE-RULE + VIOLET),
+    inset: (left: pad-left + QUOTE-RULE / 2, rest: pad-rest),
+    width: 100%,
+    above: 0pt,
+    below: 0pt,
+    body,
+  ),
 ))
 
 #let doc-quote(body) = block(
@@ -839,21 +860,39 @@
   below: 4mm,
 )
 
-#let doc-code(lang: "", body) = block(
-  {
-    set par(leading: 0pt, spacing: 0pt)
-    set text(
-      font: MONO,
-      size: 7.5pt,
-      weight: 400,
-      fill: INK,
-      hyphenate: false,
-      ..edges(7.5pt, 7.5pt * 1.3, HALF-MONO),
-    )
-    ruled(3mm, 3mm, PALE-VIOLET, body)
-  },
-  above: PARAGRAPH-AFTER,
-  below: PARAGRAPH-AFTER,
+#let code-runs(source, inks) = {
+  let runs = if inks.len() == 0 { ((source.len(), none),) } else { inks }
+  assert(runs.map(r => r.at(0)).sum() == source.len(), message: "the code inks do not cover the code block")
+  let at = 0
+  for (length, ink) in runs {
+    let run = source.slice(at, at + length)
+    at += length
+    if ink == none { run } else { text(fill: ink, run) }
+  }
+}
+
+#let code-panel(inks: (), collapse: false, body) = {
+  set par(leading: 0pt, spacing: 0pt)
+  set text(
+    font: MONO,
+    size: CODE-BLOCK-SIZE,
+    weight: 400,
+    fill: INK,
+    hyphenate: false,
+    ..edges(CODE-BLOCK-SIZE, CODE-BLOCK-SIZE * CODE-BLOCK-LEADING, HALF-MONO),
+  )
+  let lines = body.text.split("\n").map(line => line.trim().replace(regex("\\s+"), " "))
+  ruled(CODE-BLOCK-PAD, CODE-BLOCK-PAD, PALE-VIOLET, if collapse {
+    lines.join(linebreak())
+  } else {
+    code-runs(body.text, inks)
+  })
+}
+
+#let doc-code(lang: "", inks: (), body) = block(
+  code-panel(inks: inks, body),
+  above: CODE-BLOCK-SIZE,
+  below: CODE-BLOCK-SIZE,
 )
 
 #let reference-list = state("reference-list", false)
@@ -874,7 +913,7 @@
 
 #let doc-item(body) = context {
   if reference-list.get() {
-    block(body, above: 0pt, below: REFERENCE-AFTER)
+    block(move(dy: DATUM - REFERENCE-LEADING / 2 - HALF-SERIF * REFERENCE-SIZE, body), above: 0pt, below: REFERENCE-AFTER)
   } else {
     block(
       {
@@ -887,22 +926,25 @@
   }
 }
 
-#let doc-list(ordered: false, start: 1, references: false, body) = block(
-  {
-    reference-list.update(_ => references)
-    set par(spacing: 0pt)
-    if references {
-      set text(size: 7.2pt, ..pinned(9.4pt))
-      set par(hanging-indent: REFERENCE-HANG)
-      body
-    } else {
-      body
-    }
-    reference-list.update(_ => false)
-  },
-  above: auto,
-  below: if references { REFERENCE-AFTER } else { ITEM-AFTER },
-)
+#let doc-list(ordered: false, start: 1, references: false, body) = {
+  let references = references and not ordered
+  block(
+    {
+      reference-list.update(_ => references)
+      set par(spacing: 0pt)
+      if references {
+        set text(size: REFERENCE-SIZE, ..edges(REFERENCE-SIZE, REFERENCE-LEADING, HALF-SERIF))
+        set par(hanging-indent: REFERENCE-HANG)
+        body
+      } else {
+        body
+      }
+      reference-list.update(_ => false)
+    },
+    above: auto,
+    below: if references { REFERENCE-AFTER } else { ITEM-AFTER },
+  )
+}
 
 #let key-ideas-label(body) = block(
   text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: VIOLET, ..flat, ..tracked(0.45pt), upper(body)),
@@ -1046,7 +1088,7 @@
     size: CAPTION-SIZE,
     weight: 500,
     fill: VIOLET,
-    ..edges(CAPTION-SIZE, CAPTION-SIZE, HALF-SANS),
+    ..edges(CAPTION-SIZE, BODY-LEADING, HALF-SANS),
     ..tracked(EXTRACT-LABEL-TRACKING),
     upper(word),
   ),

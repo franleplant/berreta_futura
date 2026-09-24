@@ -1,0 +1,77 @@
+id: '903'
+issue_number: 903
+title: Plain Code Fixture
+publication_date: '2026-09-03'
+status: draft
+cover:
+  layout: footer_caption
+  headline: Code Fixture
+  deck: A fixture deck.
+  back_text: A fixture back cover paragraph.
+  art_path: editions/903/art/cover.png
+articles:
+- id: code-fixture-article
+  title: A Code Fixture Article
+  short_title: Code Fixture
+  display_emphasis: Code
+  opener_variant: stepped_title
+  author: Cy Fixture
+  author_note: A fixture author note beside the plain opener code.
+  content_mode: article
+  source_ids:
+  - fixture-source-c
+  manuscript: editions/903/articles/code-fixture-article.md
+  extracts:
+  - id: budget-call
+    source_id: fixture-source-c
+    begin: EXTRACT-BEGIN
+    end: EXTRACT-END
+    style: code
+    caption: The captured budget call.
+    anchor: Tooling
+- id: second-code-article
+  title: The Second Code Article
+  short_title: Second Code
+  display_emphasis: Second
+  opener_variant: stepped_title
+  author: Dee Fixture
+  author_note: A fixture author note beside the plain opener code.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/903/articles/second-code-article.md
+- id: third-code-article
+  title: The Third Code Article
+  short_title: Third Code
+  display_emphasis: Third
+  opener_variant: stepped_title
+  author: Dee Fixture
+  author_note: A fixture author note beside the plain opener code.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/903/articles/third-code-article.md
+- id: fourth-code-article
+  title: The Fourth Code Article
+  short_title: Fourth Code
+  display_emphasis: Fourth
+  opener_variant: stepped_title
+  author: Dee Fixture
+  author_note: A fixture author note beside the plain opener code.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/903/articles/fourth-code-article.md
+closing_plates:
+- title: The first code plate.
+  art_path: editions/903/art/plate-1.png
+- title: The second code plate.
+  art_path: editions/903/art/plate-2.png
+- title: The third code plate.
+  art_path: editions/903/art/plate-3.png
+- title: The fourth code plate.
+  art_path: editions/903/art/plate-4.png
+- title: The fifth code plate.
+  art_path: editions/903/art/plate-5.png
+- title: The sixth code plate.
+  art_path: editions/903/art/plate-6.png

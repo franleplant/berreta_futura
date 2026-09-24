@@ -1,0 +1,94 @@
+id: '902'
+issue_number: 902
+title: Code Fixture
+publication_date: '2026-09-03'
+status: draft
+art_direction_path: art-directions/fixture.yaml
+format:
+  article_opener: illustrated_paper_spots_v1
+cover:
+  layout: footer_caption
+  headline: Code Fixture
+  deck: A fixture deck.
+  back_text: A fixture back cover paragraph.
+  art_path: editions/902/art/cover.png
+articles:
+- id: code-fixture-article
+  title: A Code Fixture Article
+  short_title: Code Fixture
+  display_emphasis: Code
+  opener_variant: stepped_title
+  author: Cy Fixture
+  author_note: A fixture author note for the illustrated opener.
+  content_mode: article
+  source_ids:
+  - fixture-source-c
+  manuscript: editions/902/articles/code-fixture-article.md
+  opener_art:
+    path: editions/902/art/opener.png
+    alt_text: A fixture opener illustration.
+    credit: Illustration generated for this fixture.
+  extracts:
+  - id: budget-call
+    source_id: fixture-source-c
+    begin: EXTRACT-BEGIN
+    end: EXTRACT-END
+    style: code
+    caption: The captured budget call.
+    anchor: Tooling
+- id: second-code-article
+  title: The Second Code Article
+  short_title: Second Code
+  display_emphasis: Second
+  opener_variant: stepped_title
+  author: Dee Fixture
+  author_note: A fixture author note for the illustrated opener.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/902/articles/second-code-article.md
+  opener_art:
+    path: editions/902/art/opener-2.png
+    alt_text: A fixture opener illustration.
+    credit: Illustration generated for this fixture.
+- id: third-code-article
+  title: The Third Code Article
+  short_title: Third Code
+  display_emphasis: Third
+  opener_variant: stepped_title
+  author: Dee Fixture
+  author_note: A fixture author note for the illustrated opener.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/902/articles/third-code-article.md
+  opener_art:
+    path: editions/902/art/opener-3.png
+    alt_text: A fixture opener illustration.
+    credit: Illustration generated for this fixture.
+- id: fourth-code-article
+  title: The Fourth Code Article
+  short_title: Fourth Code
+  display_emphasis: Fourth
+  opener_variant: stepped_title
+  author: Dee Fixture
+  author_note: A fixture author note for the illustrated opener.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/902/articles/fourth-code-article.md
+  opener_art:
+    path: editions/902/art/opener-4.png
+    alt_text: A fixture opener illustration.
+    credit: Illustration generated for this fixture.
+closing_plates:
+- title: The first code plate.
+  art_path: editions/902/art/plate-1.png
+- title: The second code plate.
+  art_path: editions/902/art/plate-2.png
+- title: The third code plate.
+  art_path: editions/902/art/plate-3.png
+- title: The fourth code plate.
+  art_path: editions/902/art/plate-4.png
+- title: The fifth code plate.
+  art_path: editions/902/art/plate-5.png

@@ -924,4 +924,251 @@ mod tests {
             );
         }
     }
+
+    struct Mark {
+        text: String,
+        x: f64,
+        y: f64,
+        size: f64,
+        fill: [u8; 4],
+    }
+
+    fn marks(frame: &Frame, at: Point, out: &mut Vec<Mark>) {
+        for (pos, item) in frame.items() {
+            let origin = at + *pos;
+            match item {
+                FrameItem::Group(group) => {
+                    let shift = Point::new(group.transform.tx, group.transform.ty);
+                    marks(&group.frame, origin + shift, out)
+                }
+                FrameItem::Text(text) => out.push(Mark {
+                    text: text.text.to_string(),
+                    x: origin.x.to_pt(),
+                    y: origin.y.to_pt(),
+                    size: text.size.to_pt(),
+                    fill: match &text.fill {
+                        Paint::Solid(color) => color.to_vec4_u8(),
+                        _ => [0; 4],
+                    },
+                }),
+                FrameItem::Shape(shape, _) => {
+                    let size = shape.bbox(false).size();
+                    if let Some(Paint::Solid(color)) = &shape.fill {
+                        out.push(Mark {
+                            text: format!("shape {:.2}x{:.2}", size.x.to_pt(), size.y.to_pt()),
+                            x: origin.x.to_pt(),
+                            y: origin.y.to_pt(),
+                            size: 0.0,
+                            fill: color.to_vec4_u8(),
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn page_marks(tree: &Tree, keep: impl Fn(&[Mark]) -> bool) -> Vec<Vec<Mark>> {
+        let (_, font_dir) = roots();
+        let world = world(tree, font_dir).expect("the world builds");
+        document(&world)
+            .expect("the fixture compiles")
+            .pages()
+            .iter()
+            .map(|page| {
+                let mut out = vec![];
+                marks(&page.frame, Point::zero(), &mut out);
+                out
+            })
+            .filter(|out| keep(out))
+            .collect()
+    }
+
+    fn inked_runs(marks: &[Mark]) -> Vec<(String, [u8; 3])> {
+        let mut runs: Vec<(String, [u8; 3])> = vec![];
+        for mark in marks.iter().filter(|m| (m.size - 7.5).abs() < 1e-6) {
+            let fill = [mark.fill[0], mark.fill[1], mark.fill[2]];
+            let text: String = mark.text.chars().filter(|c| !c.is_whitespace()).collect();
+            match runs.last_mut() {
+                _ if text.is_empty() => {}
+                Some((run, ink)) if *ink == fill => run.push_str(&text),
+                _ => runs.push((text, fill)),
+            }
+        }
+        runs
+    }
+
+    #[test]
+    fn a_fenced_code_block_takes_the_stylesheet_s_ink_per_token_class() {
+        const INK: [u8; 3] = [14, 19, 22];
+        const KEYWORD: [u8; 3] = [240, 87, 56];
+        const NAME: [u8; 3] = [28, 56, 140];
+        const TYPE: [u8; 3] = [64, 26, 110];
+        const COMMENT: [u8; 3] = [117, 115, 122];
+        const NUMBER: [u8; 3] = [115, 31, 41];
+        const STRING: [u8; 3] = [23, 84, 51];
+        let pages = page_marks(&fixture_tree("902"), |m| {
+            m.iter()
+                .any(|m| m.text.starts_with("fn") && (m.size - 7.5).abs() < 1e-6)
+        });
+        let runs = inked_runs(&pages[0]);
+        let want: Vec<(&str, [u8; 3])> = vec![
+            ("fn", KEYWORD),
+            ("budget", NAME),
+            ("(tokens:", INK),
+            ("u32", TYPE),
+            (")->", INK),
+            ("u32", TYPE),
+            ("{", INK),
+            ("//fourcharacterspertoken", COMMENT),
+            ("let", KEYWORD),
+            ("spare=tokens.rem_euclid(", INK),
+            ("4", NUMBER),
+            (
+                ");tokens.div_ceil(spare)}EXTRACT-BEGINletspent=budget(4096);\
+                 assert!(spent<=1024,\"overbudget\");EXTRACT-END",
+                INK,
+            ),
+        ];
+        assert_eq!(
+            runs[..want.len()]
+                .iter()
+                .map(|(t, i)| (t.as_str(), *i))
+                .collect::<Vec<_>>(),
+            want
+        );
+        assert!(
+            runs.iter().any(|(t, i)| t == "`cap${" && *i == STRING),
+            "{runs:?}"
+        );
+        let plain = TEMPLATE_TYP.replace(
+            "if ink == none { run } else { text(fill: ink, run) }",
+            "run",
+        );
+        let (_, font_dir) = roots();
+        let world = Sources::new(&fixture_tree("902"), &plain, ROOT_TYP, font_dir)
+            .expect("the world builds");
+        let mut flat = vec![];
+        for page in document(&world).expect("it compiles").pages() {
+            marks(&page.frame, Point::zero(), &mut flat);
+        }
+        assert!(
+            inked_runs(&flat).iter().all(|(_, ink)| *ink == INK),
+            "the check cannot tell an inked code block from a plain one"
+        );
+    }
+
+    #[test]
+    fn a_reference_list_sets_on_its_own_leading_and_an_ordered_list_does_not() {
+        let pages = page_marks(&fixture_tree("902"), |m| {
+            m.iter().any(|m| m.text.starts_with("Ada"))
+        });
+        let page = &pages[0];
+        let line = |start: &str| {
+            page.iter()
+                .find(|m| m.text.starts_with(start))
+                .unwrap_or_else(|| panic!("no mark starts {start:?}"))
+        };
+        let first = line("Ada");
+        let second = line("so");
+        let third = line("runs");
+        assert!((first.size - 7.2).abs() < 1e-6 && (second.size - 7.2).abs() < 1e-6);
+        assert!(
+            ((second.y - first.y) - 9.4).abs() < 1e-3,
+            "pitch {}",
+            second.y - first.y
+        );
+        assert!(
+            ((third.y - second.y) - 9.4).abs() < 1e-3,
+            "pitch {}",
+            third.y - second.y
+        );
+        assert!(
+            ((second.x - first.x) - 12.9744).abs() < 1e-3,
+            "hang {}",
+            second.x - first.x
+        );
+        let ordered = line("An");
+        assert!(
+            (ordered.size - 10.0).abs() < 1e-6,
+            "the ordered entry set at {}",
+            ordered.size
+        );
+    }
+
+    #[test]
+    fn a_plain_opener_places_its_source_code_off_the_byline_as_the_adapter_does() {
+        let tree = fixture_tree("903");
+        let with_code = |m: &[Mark]| m.iter().any(|m| m.text == "shape 55.50x55.50");
+        let pages = page_marks(&tree, with_code);
+        assert_eq!(pages.len(), 4, "every plain opener carries its code");
+        let quiet = 4.0 * 55.5 / 29.0;
+        let inset = 55.5 - 2.0 * quiet + 4.5 * 3.15;
+        for page in &pages {
+            let square = page
+                .iter()
+                .position(|m| m.text == "shape 55.50x55.50")
+                .unwrap();
+            assert_eq!(page[square].fill, [255, 255, 255, 255]);
+            assert_eq!(
+                page[square + 1].fill,
+                [14, 19, 22, 255],
+                "the ink follows the paper"
+            );
+            let byline = page
+                .iter()
+                .find(|m| m.text.starts_with("BY") && (m.size - 7.4).abs() < 1e-6)
+                .expect("the byline is set at 7.4pt");
+            let (x, y) = (page[square].x, page[square].y);
+            assert!(
+                (y - (byline.y - 7.4 * 1490.0 / 2048.0 - quiet)).abs() < 1e-3,
+                "{y} {}",
+                byline.y
+            );
+            assert!(
+                (x - (byline.x - inset - quiet)).abs() < 1e-3,
+                "{x} {}",
+                byline.x
+            );
+        }
+        let mut bare = tree.clone();
+        for file in &mut bare.files {
+            while let Some(start) = file.source.find("#byline(code: (") {
+                let end = start + file.source[start..].find(")[").expect("the call closes");
+                file.source.replace_range(start..end, "#byline(code: none");
+            }
+        }
+        assert!(
+            page_marks(&bare, with_code).is_empty(),
+            "the control still draws a code"
+        );
+    }
+
+    #[test]
+    fn the_reader_declares_the_edition_locale_as_its_language() {
+        let (_, font_dir) = roots();
+        let lang = |tree: &Tree| {
+            let pdf =
+                compile(&world(tree, font_dir).expect("the world builds")).expect("it compiles");
+            let doc = Document::load_mem(&pdf).expect("a PDF");
+            match doc.catalog().and_then(|c| c.get(b"Lang")) {
+                Ok(Object::String(bytes, _)) => String::from_utf8_lossy(bytes).into_owned(),
+                other => panic!("no /Lang: {other:?}"),
+            }
+        };
+        let tree = fixture_tree("900");
+        assert_eq!(lang(&tree), "en");
+        let mut spanish = tree.clone();
+        let main = spanish
+            .files
+            .iter_mut()
+            .find(|f| f.path == "main.typ")
+            .unwrap();
+        assert!(main.source.contains("#set text(lang: \"en\")"));
+        main.source = main.source.replace(
+            "#set text(lang: \"en\")",
+            "#set text(lang: \"es\", region: \"AR\")",
+        );
+        assert_eq!(lang(&spanish), "es-AR");
+    }
 }
