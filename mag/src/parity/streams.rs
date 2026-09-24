@@ -163,6 +163,8 @@ pub enum Element {
         offs: Vec<[i64; 2]>,
         #[serde(skip)]
         units: Vec<String>,
+        #[serde(skip)]
+        pen: [i64; 2],
     },
     Path {
         d: String,
@@ -600,6 +602,7 @@ impl Tracer<'_> {
             origin: [qo(trm[4]), qo(trm[5])],
             offs,
             units,
+            pen: [qo(tx * base[0]), qo(tx * base[1])],
         });
         self.tm = mul(translate(tx, 0.0), self.tm);
         Ok(())

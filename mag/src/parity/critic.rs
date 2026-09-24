@@ -184,7 +184,9 @@ pub fn compare(
             .unwrap_or("missing")
             .to_string()
     };
-    let pass = leaves_differing.is_empty() && text_fields_differing.is_empty();
+    let pass = leaves_differing.is_empty()
+        && text_fields_differing.is_empty()
+        && text_characters_differing.is_empty();
     Ok(CriticClause::Evaluated {
         status: if pass { "pass" } else { "fail" }.into(),
         result_a: result(&a),
