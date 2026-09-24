@@ -24,6 +24,15 @@ const ILLUSTRATED: &str = "illustrated_paper_spots_v1";
 const OPENER_ANCHOR: &str = "__opener__";
 const REFERENCE_HEADINGS: [&str; 2] = ["references", "referencias"];
 const MAIN: &str = "main.typ";
+const CODE_INKS: [(&str, &str); 7] = [
+    ("k kc kd kn kp kr ow", "rgb(240 87 56)"),
+    ("kt", "rgb(25% 10% 43%)"),
+    ("s s1 s2 sb sd se si sr ss sa", "rgb(9% 33% 20%)"),
+    ("c c1 cm cs cp cpf", "rgb(46% 45% 48%)"),
+    ("m mi mf mh mo mb il", "rgb(45% 12% 16%)"),
+    ("nf fm nc nn nd", "rgb(11% 22% 55%)"),
+    ("nb bp nt", "rgb(11% 22% 55%)"),
+];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct File {
@@ -158,7 +167,7 @@ impl Writer<'_> {
             main.push_str(&include_piece(
                 &mut files,
                 "pieces/editorial.typ".to_string(),
-                self.editorial(editorial, &document),
+                self.editorial(editorial, &document)?,
             ));
         }
         for (index, article) in self.edition.articles.iter().enumerate() {
@@ -174,7 +183,7 @@ impl Writer<'_> {
             main.push_str(&include_piece(
                 &mut files,
                 format!("pieces/section-{index}.typ"),
-                self.section(index, section, &document),
+                self.section_piece(index, section, &document)?,
             ));
         }
         main.push_str(&self.closing_plates());
@@ -197,9 +206,10 @@ impl Writer<'_> {
             .map(|value| value.trim().to_string())
             .unwrap_or_default();
         format!(
-            "#set document(title: {})\n\n#edition-header[\n  #publication-name{}\n  #issue-line{}\n  #edition-title{}\n{}  \
-             #edition-date{}\n]\n\n",
+            "#set document(title: {})\n#set text({})\n\n#edition-header[\n  #publication-name{}\n  \
+             #issue-line{}\n  #edition-title{}\n{}  #edition-date{}\n]\n\n",
             string_literal(&format!("{}: {}", edition.publication_name, edition.title)),
+            text_locale(&edition.locale),
             self.said(&edition.publication_name),
             self.said(&format!("{} {}", self.ui("issue"), edition.issue_number)),
             self.said(&edition.title),
@@ -288,8 +298,8 @@ impl Writer<'_> {
         entries
     }
 
-    fn editorial(&self, editorial: &Editorial, document: &Document) -> String {
-        format!(
+    fn editorial(&self, editorial: &Editorial, document: &Document) -> Result<String> {
+        Ok(format!(
             "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n)[\n  \
              #content-label[#label-primary{}]\n  #piece-title{}\n  {}\n{}]\n",
             string_literal("editorial"),
@@ -298,12 +308,17 @@ impl Writer<'_> {
             self.said(&editorial.label),
             self.said(&editorial.title),
             self.byline(&editorial.byline),
-            self.blocks(&document.blocks, true),
-        )
+            self.blocks(&document.blocks, true)?,
+        ))
     }
 
-    fn section(&self, index: usize, section: &Section, document: &Document) -> String {
-        format!(
+    fn section_piece(
+        &self,
+        index: usize,
+        section: &Section,
+        document: &Document,
+    ) -> Result<String> {
+        Ok(format!(
             "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n)[\n  \
              #content-label[#label-primary{}]\n  #piece-title{}\n{}]\n",
             string_literal(&format!("section-{index}")),
@@ -311,13 +326,17 @@ impl Writer<'_> {
             string_literal(&section.title),
             self.said(&self.ui(&section.kind)),
             self.said(&section.title),
-            self.blocks(&document.blocks, true),
-        )
+            self.blocks(&document.blocks, true)?,
+        ))
     }
 
     fn byline(&self, name: &str) -> String {
+        self.coded_byline(name, "none")
+    }
+
+    fn coded_byline(&self, name: &str, code: &str) -> String {
         format!(
-            "#byline[#byline-prefix{}#byline-name{}]",
+            "#byline(code: {code})[#byline-prefix{}#byline-name{}]",
             self.said(&self.ui("by")),
             self.said(&format!(" {name}"))
         )
@@ -335,7 +354,7 @@ impl Writer<'_> {
             out.push_str("  #opener-end()\n");
         }
         if let (true, Some(block)) = (illustrated, document.blocks.first()) {
-            out.push_str(&self.standfirst(article, block));
+            out.push_str(&self.standfirst(article, block)?);
         }
         out.push_str(&self.article_body(article, document, usize::from(illustrated))?);
         out.push_str(&self.key_ideas(article));
@@ -353,9 +372,9 @@ impl Writer<'_> {
         Ok(out)
     }
 
-    fn standfirst(&self, article: &Article, block: &Block) -> String {
+    fn standfirst(&self, article: &Article, block: &Block) -> Result<String> {
         let Block::Paragraph(children) = block else {
-            return self.block(block, true, false);
+            return self.markup_block(block, true, false);
         };
         let plain = |value: &str| fold_reader_characters(value, self.settable);
         let keep = self.metrics.standfirst_keep_words(&Opener {
@@ -365,15 +384,15 @@ impl Writer<'_> {
             intro: &self.plain_text(children),
         });
         let Some((kept, moved)) = split_words(children, keep) else {
-            return self.block(block, true, false);
+            return self.markup_block(block, true, false);
         };
-        format!(
+        Ok(format!(
             "#doc-paragraph(standfirst: true, roster: {}, split: true)[{}]\n\n\
              #doc-paragraph(standfirst: false, roster: false)[{}]\n\n",
             is_name_roster(&inline_text(children)),
             self.inlines(&kept),
             self.inlines(&moved),
-        )
+        ))
     }
 
     fn plain_text(&self, inlines: &[Inline]) -> String {
@@ -421,9 +440,16 @@ impl Writer<'_> {
             ));
         }
         label.push_str("]\n");
+        let code = match (&article.source_url, illustrated) {
+            (Some(url), false) => source_code(article, url)?,
+            _ => "none".to_string(),
+        };
         let note = match article.author_note.is_empty() {
             true => String::new(),
-            false => format!("  #author-note{}\n", self.said(&article.author_note)),
+            false => format!(
+                "  #author-note(code: {code}){}\n",
+                self.said(&article.author_note)
+            ),
         };
         let provenance = if illustrated {
             match &article.source_url {
@@ -464,7 +490,7 @@ impl Writer<'_> {
             string_array(&figure_layouts(article)),
             string_literal(if illustrated { ILLUSTRATED } else { "plain" }),
             self.said(&article.title),
-            self.byline(&article.author),
+            self.coded_byline(&article.author, &code),
         ))
     }
 
@@ -483,7 +509,7 @@ impl Writer<'_> {
             if let Block::Heading { children, .. } = block {
                 references = is_reference_heading(&inline_text(children));
             }
-            out.push_str(&self.block(block, skip == 0 && position == 0, references));
+            out.push_str(&self.markup_block(block, skip == 0 && position == 0, references)?);
             let Block::Heading { children, .. } = block else {
                 continue;
             };
@@ -570,7 +596,10 @@ impl Writer<'_> {
 
     fn extract(&self, extract: &Extract) -> String {
         let body = if extract.style == "code" {
-            raw_block(&fold_reader_characters(&extract.text, self.settable))
+            format!(
+                "  #code-panel(collapse: true, {})",
+                raw_block(&fold_reader_characters(&extract.text, self.settable))
+            )
         } else {
             extract
                 .text
@@ -592,16 +621,16 @@ impl Writer<'_> {
         )
     }
 
-    fn blocks(&self, blocks: &[Block], standfirst: bool) -> String {
+    fn blocks(&self, blocks: &[Block], standfirst: bool) -> Result<String> {
         blocks
             .iter()
             .enumerate()
-            .map(|(index, block)| self.block(block, standfirst && index == 0, false))
+            .map(|(index, block)| self.markup_block(block, standfirst && index == 0, false))
             .collect()
     }
 
-    fn block(&self, block: &Block, standfirst: bool, references: bool) -> String {
-        match block {
+    fn markup_block(&self, block: &Block, standfirst: bool, references: bool) -> Result<String> {
+        Ok(match block {
             Block::Heading { level, children } => format!(
                 "#doc-heading(level: {level})[{}]\n\n",
                 self.inlines(children)
@@ -611,13 +640,19 @@ impl Writer<'_> {
                 is_name_roster(&inline_text(children)),
                 self.inlines(children)
             ),
-            Block::FencedCode { code, info } => format!(
-                "#doc-code(lang: {})[\n{}]\n\n",
-                string_literal(info.split_whitespace().next().unwrap_or("")),
-                raw_block(&fold_reader_characters(code, self.settable)),
-            ),
+            Block::FencedCode { code, info } => {
+                let language = info.split_whitespace().next().unwrap_or("");
+                let folded = fold_reader_characters(code, self.settable);
+                let shown = folded.trim_end_matches('\n');
+                format!(
+                    "#doc-code(lang: {}, inks: {}, {})\n\n",
+                    string_literal(language),
+                    code_inks(&folded, shown.len(), language)?,
+                    raw_block(shown),
+                )
+            }
             Block::Quote(children) => {
-                format!("#doc-quote[\n{}]\n\n", self.blocks(children, false))
+                format!("#doc-quote[\n{}]\n\n", self.blocks(children, false)?)
             }
             Block::List {
                 ordered,
@@ -627,11 +662,11 @@ impl Writer<'_> {
                 "#doc-list(ordered: {ordered}, start: {start}, references: {references})[\n{}]\n\n",
                 items
                     .iter()
-                    .map(|item| format!("  #doc-item[\n{}]\n", self.blocks(item, false)))
-                    .collect::<String>()
+                    .map(|item| Ok(format!("  #doc-item[\n{}]\n", self.blocks(item, false)?)))
+                    .collect::<Result<String>>()?
             ),
             Block::HorizontalRule => "#doc-rule()\n\n".to_string(),
-        }
+        })
     }
 
     fn inlines(&self, inlines: &[Inline]) -> String {
@@ -811,6 +846,17 @@ fn source_code(article: &Article, url: &str) -> Result<String> {
     Ok(string_array(&rows))
 }
 
+fn text_locale(locale: &str) -> String {
+    match locale.split_once(['-', '_']) {
+        Some((lang, region)) => format!(
+            "lang: {}, region: {}",
+            string_literal(lang),
+            string_literal(region)
+        ),
+        None => format!("lang: {}", string_literal(locale)),
+    }
+}
+
 fn path_literal(path: &Path) -> String {
     let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
     string_literal(&absolute.to_string_lossy())
@@ -845,6 +891,49 @@ fn string_array(values: &[String]) -> String {
             .collect::<Vec<String>>()
             .join(", ")
     )
+}
+
+fn class_ink(class: &str) -> Option<&'static str> {
+    class.split_whitespace().find_map(|token| {
+        CODE_INKS
+            .iter()
+            .find(|(classes, _)| classes.split(' ').any(|c| c == token))
+            .map(|(_, ink)| *ink)
+    })
+}
+
+fn code_inks(code: &str, shown: usize, language: &str) -> Result<String> {
+    let spans = crate::highlight::spans(code, language)
+        .map_err(|error| ValidationError::one(format!("code block: {error:#}")))?;
+    let Some(spans) = spans else {
+        return Ok("()".to_string());
+    };
+    if spans.iter().map(|(text, _)| text.len()).sum::<usize>() != code.len() {
+        return Err(ValidationError::one(format!(
+            "the {language} highlighter's spans do not cover the code block"
+        )));
+    }
+    let mut runs: Vec<(usize, Option<&str>)> = Vec::new();
+    let mut left = shown;
+    for (text, class) in &spans {
+        let length = text.len().min(left);
+        left -= length;
+        let ink = class_ink(class);
+        match runs.last_mut() {
+            Some((run, last)) if *last == ink => *run += length,
+            _ if length > 0 => runs.push((length, ink)),
+            _ => {}
+        }
+    }
+    Ok(format!(
+        "({})",
+        runs.iter()
+            .map(|(length, ink)| match ink {
+                Some(ink) => format!("({length}, {}), ", ink.replace(' ', ", ")),
+                None => format!("({length}, none), "),
+            })
+            .collect::<String>()
+    ))
 }
 
 pub fn raw_block(code: &str) -> String {
@@ -1197,6 +1286,107 @@ mod tests {
     fn the_illustrated_opener_fixture_projects_to_the_python_text() {
         let root = corpus();
         compare("901", &projection_of(&root, "901"));
+    }
+
+    #[test]
+    fn the_code_fixtures_project_to_the_python_text() {
+        let root = corpus();
+        compare("902", &projection_of(&root, "902"));
+        compare("903", &projection_of(&root, "903"));
+    }
+
+    #[test]
+    fn every_code_run_is_a_contiguous_run_of_its_captured_source() {
+        let root = corpus();
+        let captured =
+            std::fs::read_to_string(root.join("library/sources/fixture-source-c/article.md"))
+                .expect("the captured source is readable");
+        let runs = projection_of(&root, "902").verbatim;
+        assert_eq!(runs.len(), 4, "three fences and one extract: {runs:?}");
+        for run in &runs {
+            assert!(
+                captured.contains(run.as_str()),
+                "{run:?} is not a run of the source"
+            );
+        }
+    }
+
+    #[test]
+    fn a_fence_in_a_language_mag_does_not_implement_is_refused() {
+        let root = mutated("go-fence", "902", &[]);
+        let manuscript = root.join("editions/902/articles/code-fixture-article.md");
+        let text = std::fs::read_to_string(&manuscript).expect("the manuscript is readable");
+        assert!(
+            text.contains("```bash\n"),
+            "the fixture no longer carries a bash fence"
+        );
+        std::fs::write(&manuscript, text.replace("```bash\n", "```go\n"))
+            .expect("the manuscript is writable");
+        let refused = refusal_of(&root, "902");
+        assert!(refused.contains("\"go\""), "{refused}");
+    }
+
+    #[test]
+    fn a_highlighted_fence_carries_one_ink_run_per_ink_change() {
+        assert_eq!(
+            code_inks("fn x() {}\n", 9, "rust").expect("rust highlights"),
+            "((2, rgb(240, 87, 56)), (1, none), (1, rgb(11%, 22%, 55%)), (5, none), )"
+        );
+        assert_eq!(code_inks("fn x() {}\n", 9, "").expect("plain"), "()");
+        assert_eq!(
+            code_inks("fn x() {}\n", 9, "jsonc").expect("no lexer"),
+            "()"
+        );
+    }
+
+    #[test]
+    fn the_code_inks_are_the_stylesheet_s_own() {
+        let css =
+            std::fs::read_to_string(repository().join("src/magazine/assets/weasyprint-a5.css"))
+                .expect("the stylesheet is readable");
+        let mut found: Vec<(String, String)> = vec![];
+        for line in css.lines().filter(|l| l.starts_with("pre code .")) {
+            let (selectors, rule) = line.split_once('{').expect("a rule opens");
+            let colour = rule
+                .trim()
+                .trim_start_matches("color:")
+                .trim_end_matches('}')
+                .trim()
+                .trim_end_matches(';')
+                .trim()
+                .to_string();
+            for class in selectors
+                .split(',')
+                .map(|s| s.trim().trim_start_matches("pre code ."))
+            {
+                found.push((class.to_string(), colour.clone()));
+            }
+        }
+        assert_eq!(found.len(), 41, "{found:?}");
+        for (class, colour) in &found {
+            let want = (colour != "inherit").then_some(colour.as_str());
+            assert_eq!(class_ink(class), want, "class {class}");
+        }
+        assert_eq!(class_ink("p p-Indicator"), None);
+        assert_eq!(class_ink("err"), None);
+    }
+
+    #[test]
+    fn the_text_locale_carries_the_region_when_the_edition_names_one() {
+        assert_eq!(text_locale("en"), "lang: \"en\"");
+        assert_eq!(text_locale("es-AR"), "lang: \"es\", region: \"AR\"");
+        let root = mutated(
+            "spanish",
+            "902",
+            &[("status: draft\n", "status: draft\nlocale: es\n")],
+        );
+        let tree = pipeline(&inputs(&root, "902")).expect("the fixture edition loads");
+        let main = tree.get(MAIN).expect("the tree has a main file");
+        assert!(
+            main.source.contains("#set text(lang: \"es\")"),
+            "{}",
+            main.source
+        );
     }
 
     #[test]
