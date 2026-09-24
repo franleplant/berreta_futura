@@ -182,7 +182,7 @@ pub enum Element {
         clip: Vec<u32>,
     },
     Image {
-        rgba_sha256: String,
+        paint_sha256: String,
         m: [i64; 6],
         clip: Vec<u32>,
     },
@@ -255,7 +255,7 @@ impl GState {
 }
 
 pub struct Caches {
-    images: HashMap<ObjectId, (String, u32, u32)>,
+    images: HashMap<ObjectId, String>,
     fonts: HashMap<ObjectId, Rc<Font>>,
     faces: HashMap<String, Rc<HashMap<String, u32>>>,
 }
@@ -772,14 +772,14 @@ impl Tracer<'_> {
             let decoded = decode_image(self.doc, stream).context("decoding image")?;
             self.caches.images.insert(id, decoded);
         }
-        let (hash, _, _) = self.caches.images[&id].clone();
+        let hash = self.caches.images[&id].clone();
         let pose = Pose {
             m: self.gs.ctm,
             offs: vec![],
         };
         self.poses.insert(self.out.len(), pose);
         self.out.push(Element::Image {
-            rgba_sha256: hash,
+            paint_sha256: hash,
             m: self.gs.ctm.map(qc),
             clip: self.gs.clips.clone(),
         });
@@ -1290,29 +1290,72 @@ pub fn decode_stream(doc: &Document, stream: &lopdf::Stream) -> Result<Vec<u8>> 
     Ok(data)
 }
 
+fn jpeg_markers(data: &[u8]) -> Result<(bool, Option<u8>, Vec<u8>)> {
+    let (mut jfif, mut adobe, mut ids, mut i) = (false, None, vec![], 2);
+    while data.get(i + 1).is_some_and(|m| *m != 0xDA) {
+        anyhow::ensure!(data[i] == 0xFF, "jpeg marker expected at byte {i}");
+        let len = usize::from(u16::from_be_bytes([data[i + 2], data[i + 3]]));
+        let body = data
+            .get(i + 4..i + 2 + len)
+            .context("jpeg segment truncated")?;
+        match data[i + 1] {
+            0xE0 if body.starts_with(b"JFIF\0") => jfif = true,
+            0xEE if body.len() >= 12 && body.starts_with(b"Adobe") => adobe = Some(body[11]),
+            0xC0..=0xCF if ![0xC4, 0xC8, 0xCC].contains(&data[i + 1]) => {
+                ids = body[6..]
+                    .iter()
+                    .step_by(3)
+                    .take(usize::from(body[5]))
+                    .copied()
+                    .collect();
+            }
+            _ => {}
+        }
+        i += 2 + len;
+    }
+    Ok((jfif, adobe, ids))
+}
+
+fn jpeg_ycc(data: &[u8]) -> Result<bool> {
+    let (jfif, adobe, ids) = jpeg_markers(data)?;
+    Ok(match (ids.len(), adobe) {
+        (1, _) | (4, None | Some(0)) => false,
+        (3, Some(t @ (0 | 1))) | (4, Some(t @ 2)) => t != 0,
+        (3, None) if jfif || ids == [1, 2, 3] => true,
+        (3, None) if ids == b"RGB" => false,
+        (n, t) => bail!(
+            "jpeg with {n} components, Adobe transform {t:?}, JFIF {jfif}, component ids {ids:?}: its colour transform is ambiguous across readers"
+        ),
+    })
+}
+
 fn dct(data: &[u8]) -> Result<Vec<u8>> {
+    let ycc = jpeg_ycc(data)?;
     let mut jpeg = JpegDecoder::new(ZCursor::new(data));
     jpeg.decode_headers()
         .map_err(|e| anyhow!("jpeg headers: {e:?}"))?;
-    let input = jpeg.input_colorspace().context("jpeg colour space")?;
+    let raw = match jpeg.input_colorspace().context("jpeg colour space")? {
+        ColorSpace::CMYK if jpeg.info().is_some_and(|i| i.components == 3) => ColorSpace::RGB,
+        other => other,
+    };
     jpeg.set_options(
         DecoderOptions::default()
             .set_strict_mode(true)
             .set_use_unsafe(false)
-            .jpeg_set_out_colorspace(input),
+            .jpeg_set_out_colorspace(raw),
     );
-    let raw = jpeg.decode().map_err(|e| anyhow!("jpeg decode: {e:?}"))?;
-    Ok(match input {
-        ColorSpace::YCbCr => raw.chunks_exact(3).flat_map(ycc_rgb).collect(),
-        ColorSpace::YCCK => raw
+    let samples = jpeg.decode().map_err(|e| anyhow!("jpeg decode: {e:?}"))?;
+    Ok(match (raw.num_components(), ycc) {
+        (3, true) => samples.chunks_exact(3).flat_map(ycc_rgb).collect(),
+        (4, true) => samples
             .chunks_exact(4)
             .flat_map(|p| {
                 let [r, g, b] = ycc_rgb(p);
                 [r, g, b, p[3]]
             })
             .collect(),
-        ColorSpace::Luma | ColorSpace::RGB | ColorSpace::CMYK => raw,
-        other => bail!("jpeg colour space {other:?} unsupported"),
+        (1 | 3 | 4, false) => samples,
+        _ => bail!("jpeg colour space {raw:?} unsupported"),
     })
 }
 
@@ -1500,33 +1543,193 @@ fn image_pixels(doc: &Document, stream: &lopdf::Stream) -> Result<(Vec<u8>, u32,
     Ok((data, width, height, channels))
 }
 
-fn decode_image(doc: &Document, stream: &lopdf::Stream) -> Result<(String, u32, u32)> {
-    let (data, width, height, channels) = image_pixels(doc, stream)?;
-    let alpha = match stream.dict.get(b"SMask") {
-        Ok(o) => {
-            let smask = resolve(doc, o)?.as_stream()?;
-            let (sdata, sw, sh, sc) = image_pixels(doc, smask).context("decoding SMask")?;
+const PAINT_NEUTRAL: [&str; 7] = [
+    "Type",
+    "Subtype",
+    "Length",
+    "Filter",
+    "DecodeParms",
+    "Metadata",
+    "Name",
+];
+
+fn known_keys(dict: &Dictionary, handled: &[&str]) -> Result<()> {
+    for (key, _) in dict {
+        let key = String::from_utf8_lossy(key);
+        anyhow::ensure!(
+            PAINT_NEUTRAL.contains(&key.as_ref()) || handled.contains(&key.as_ref()),
+            "image key /{key} is not traced, so a leg that changes it would pass unseen"
+        );
+    }
+    Ok(())
+}
+
+fn flag(doc: &Document, dict: &Dictionary, key: &[u8]) -> Result<bool> {
+    dict.get(key)
+        .map_or(Ok(false), |o| Ok(resolve(doc, o)?.as_bool()?))
+}
+
+fn stencil(doc: &Document, mask: &lopdf::Stream, width: u32, height: u32) -> Result<Vec<bool>> {
+    let d = &mask.dict;
+    known_keys(
+        d,
+        &["Width", "Height", "ImageMask", "BitsPerComponent", "Decode"],
+    )?;
+    let dim = |k: &[u8]| -> Result<u32> { Ok(num(resolve(doc, d.get(k)?)?)? as u32) };
+    anyhow::ensure!(
+        flag(doc, d, b"ImageMask")? && dim(b"BitsPerComponent").unwrap_or(1) == 1,
+        "image /Mask stream is not a 1-bit ImageMask"
+    );
+    anyhow::ensure!(
+        (dim(b"Width")?, dim(b"Height")?) == (width, height),
+        "image /Mask geometry differs from the image"
+    );
+    let inverted = match d.get(b"Decode") {
+        Ok(o) => match nums(resolve(doc, o)?.as_array()?)?.as_slice() {
+            [0.0, 1.0] => false,
+            [1.0, 0.0] => true,
+            other => bail!("image /Mask Decode {other:?}"),
+        },
+        Err(_) => false,
+    };
+    anyhow::ensure!(
+        !d.has(b"DecodeParms"),
+        "image /Mask DecodeParms unsupported"
+    );
+    let bits = decode_stream(doc, mask)?;
+    let stride = width.div_ceil(8) as usize;
+    anyhow::ensure!(
+        bits.len() == stride * height as usize,
+        "image /Mask data length {}",
+        bits.len()
+    );
+    Ok((0..height as usize * width as usize)
+        .map(|i| {
+            let (y, x) = (i / width as usize, i % width as usize);
+            (bits[y * stride + x / 8] >> (7 - x % 8) & 1 == 1) != inverted
+        })
+        .collect())
+}
+
+fn masked(
+    doc: &Document,
+    dict: &Dictionary,
+    data: &[u8],
+    width: u32,
+    height: u32,
+    channels: usize,
+) -> Result<Vec<bool>> {
+    let Ok(mask) = dict.get(b"Mask") else {
+        return Ok(vec![false; data.len() / channels]);
+    };
+    match resolve(doc, mask)? {
+        Object::Stream(m) => stencil(doc, m, width, height),
+        Object::Array(a) => {
+            let key = nums(a)?;
             anyhow::ensure!(
-                sw == width && sh == height && sc == 1,
-                "SMask geometry mismatch"
+                key.len() == 2 * channels && !dict.has(b"Decode"),
+                "image /Mask colour key {key:?} for {channels} channels"
             );
-            Some(sdata)
+            Ok(data
+                .chunks_exact(channels)
+                .map(|s| {
+                    s.iter()
+                        .zip(key.chunks(2))
+                        .all(|(v, r)| (r[0]..=r[1]).contains(&f64::from(*v)))
+                })
+                .collect())
         }
+        other => bail!("image /Mask {other:?}"),
+    }
+}
+
+fn soft_mask(
+    doc: &Document,
+    smask: &lopdf::Stream,
+    size: (u32, u32),
+) -> Result<(Vec<u8>, bool, Option<Vec<f64>>)> {
+    let sd = &smask.dict;
+    known_keys(
+        sd,
+        &[
+            "Width",
+            "Height",
+            "ColorSpace",
+            "BitsPerComponent",
+            "Decode",
+            "Interpolate",
+            "Matte",
+        ],
+    )?;
+    let (alpha, sw, sh, sc) = image_pixels(doc, smask).context("decoding SMask")?;
+    anyhow::ensure!((sw, sh) == size && sc == 1, "SMask geometry mismatch");
+    let matte = match sd.get(b"Matte") {
+        Ok(m) => Some(nums(resolve(doc, m)?.as_array()?)?),
         Err(_) => None,
     };
-    let mut rgba = if channels == 4 {
-        b"DeviceCMYK".to_vec()
-    } else {
-        vec![]
+    Ok((alpha, flag(doc, sd, b"Interpolate")?, matte))
+}
+
+fn unmatted(s: &[u8], a: u8, matte: Option<&[f64]>) -> Vec<u8> {
+    let Some(matte) = matte else {
+        return s.to_vec();
     };
-    for (i, s) in data.chunks_exact(channels).enumerate() {
-        match s {
-            [g] => rgba.extend_from_slice(&[*g, *g, *g]),
-            _ => rgba.extend_from_slice(s),
-        }
-        rgba.push(alpha.as_ref().map_or(255, |a| a[i]));
+    s.iter()
+        .zip(matte)
+        .map(|(c, m)| {
+            let m = m * 255.0;
+            (m + (f64::from(*c) - m) * 255.0 / f64::from(a))
+                .round()
+                .clamp(0.0, 255.0) as u8
+        })
+        .collect()
+}
+
+fn decode_image(doc: &Document, stream: &lopdf::Stream) -> Result<String> {
+    let dict = &stream.dict;
+    known_keys(
+        dict,
+        &[
+            "Width",
+            "Height",
+            "ColorSpace",
+            "BitsPerComponent",
+            "Decode",
+            "Interpolate",
+            "SMask",
+            "Mask",
+        ],
+    )?;
+    anyhow::ensure!(
+        !(dict.has(b"SMask") && dict.has(b"Mask")),
+        "image carries both /SMask and /Mask"
+    );
+    let (data, width, height, channels) = image_pixels(doc, stream)?;
+    let hidden = masked(doc, dict, &data, width, height, channels)?;
+    let (alpha, smask_interpolate, matte) = match dict.get(b"SMask") {
+        Ok(o) => soft_mask(doc, resolve(doc, o)?.as_stream()?, (width, height))?,
+        Err(_) => (vec![255; hidden.len()], false, None),
+    };
+    anyhow::ensure!(
+        matte.as_ref().is_none_or(|m| m.len() == channels),
+        "SMask Matte {matte:?} for {channels} channels"
+    );
+    let interpolate = flag(doc, dict, b"Interpolate")?;
+    let mut rgba =
+        format!("{width}x{height} interpolate {interpolate} {smask_interpolate}").into_bytes();
+    if channels == 4 {
+        rgba.extend_from_slice(b"DeviceCMYK");
     }
-    Ok((hex::encode(Sha256::digest(&rgba)), width, height))
+    for (i, s) in data.chunks_exact(channels).enumerate() {
+        let a = if hidden[i] { 0 } else { alpha[i] };
+        match (a, unmatted(s, a, matte.as_deref()).as_slice()) {
+            (0, _) => rgba.extend_from_slice(&vec![0; channels.max(3)]),
+            (_, [g]) => rgba.extend_from_slice(&[*g, *g, *g]),
+            (_, c) => rgba.extend_from_slice(c),
+        }
+        rgba.push(a);
+    }
+    Ok(hex::encode(Sha256::digest(&rgba)))
 }
 
 #[cfg(test)]
@@ -1860,7 +2063,7 @@ mod tests {
             },
             samples.to_vec(),
         );
-        decode_image(&doc, &image).map(|d| d.0)
+        decode_image(&doc, &image)
     }
 
     #[test]
@@ -1913,7 +2116,7 @@ mod tests {
     fn dct_image(name: &str, cs: &str, decode: &[i64]) -> Result<(Vec<u8>, String)> {
         let doc = Document::with_version("1.7");
         let image = sampled(Some("DCTDecode"), cs, decode, jpeg(name));
-        Ok((image_pixels(&doc, &image)?.0, decode_image(&doc, &image)?.0))
+        Ok((image_pixels(&doc, &image)?.0, decode_image(&doc, &image)?))
     }
 
     fn max_diff(a: &[u8], b: &[u8]) -> u8 {
@@ -1932,7 +2135,7 @@ mod tests {
             let libjpeg = jpeg(reference);
             let d = max_diff(&px, &libjpeg[libjpeg.len() - px.len()..]);
             assert!(d <= tol, "{name} {d}");
-            let raw = decode_image(&doc, &sampled(None, cs, &[], px)).unwrap().0;
+            let raw = decode_image(&doc, &sampled(None, cs, &[], px)).unwrap();
             assert_eq!(hash, raw, "{name}");
         }
     }
@@ -1962,7 +2165,7 @@ mod tests {
         assert_ne!(stored_hash, plain_hash);
         let doc = Document::with_version("1.7");
         let raw = sampled(None, "DeviceCMYK", &[], plain);
-        assert_eq!(decode_image(&doc, &raw).unwrap().0, plain_hash);
+        assert_eq!(decode_image(&doc, &raw).unwrap(), plain_hash);
     }
 
     #[test]
@@ -2033,7 +2236,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "WP-3.0g.verify: image identity omits Width/Height; poppler paints the reshape differently (674288 px at 300 dpi)"]
     fn the_same_samples_in_another_shape_are_another_picture() {
         let reshaped = |_: &mut Document| {
             let mut image = sampled(None, "DeviceRGB", &[], samples(768));
@@ -2045,7 +2247,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "WP-3.0g.verify: /Interpolate, /Mask and SMask /Matte are ignored; each pair paints differently in poppler (679818, 108941, 348194, 653022 px)"]
     fn image_keys_poppler_paints_by_are_traced_or_fail_loud() {
         let key = Object::Array(vec![
             0.into(),
@@ -2100,8 +2301,108 @@ mod tests {
         assert!(missed.is_empty(), "traced equal, painted apart: {missed:?}");
     }
 
+    fn with_stencil(bits: u8, decode: Option<Vec<Object>>) -> impl FnOnce(&mut Document) -> Stream {
+        move |doc: &mut Document| {
+            let mut dict = dictionary! { "Width" => 16, "Height" => 16, "ImageMask" => true, "BitsPerComponent" => 1 };
+            if let Some(d) = decode {
+                dict.set("Decode", d);
+            }
+            let mask = doc.add_object(Stream::new(dict, vec![bits; 32]));
+            let mut image = sampled(None, "DeviceRGB", &[], samples(768));
+            image.dict.set("Mask", mask);
+            image
+        }
+    }
+
     #[test]
-    #[ignore = "WP-3.0g.verify: zune reads 'R','G','B' component ids as RGB even under JFIF; libjpeg (poppler) reads JFIF as YCbCr, so these two JPEGs paint differently (696390 px) and trace equal"]
+    fn equal_paint_traces_equal_and_each_painted_key_traces_to_another_picture() {
+        let plain = drawn(rgb16(&[])).unwrap();
+        let same = |b: Result<String>| b.unwrap() == plain;
+        assert!(same(drawn(rgb16(&[("Interpolate", false.into())]))));
+        assert!(!same(drawn(rgb16(&[("Interpolate", true.into())]))));
+        let white = Object::Array(vec![255.into(); 6]);
+        assert!(same(drawn(rgb16(&[("Mask", white)]))));
+        let dark = Object::Array([0, 160].repeat(3).into_iter().map(Object::from).collect());
+        assert!(!same(drawn(rgb16(&[("Mask", dark)]))));
+        assert!(same(drawn(with_stencil(0x00, None))));
+        assert!(same(drawn(with_stencil(
+            0xFF,
+            Some(vec![1.into(), 0.into()])
+        ))));
+        assert!(!same(drawn(with_stencil(0xFF, None))));
+        assert_eq!(
+            drawn(with_stencil(0x0F, None)).unwrap(),
+            drawn(with_stencil(0xF0, Some(vec![1.into(), 0.into()]))).unwrap()
+        );
+        let binary = |matte: bool| {
+            move |doc: &mut Document| {
+                let alpha = (0..256).map(|i| if i % 3 == 0 { 0 } else { 255 }).collect();
+                let mut smask = sampled(None, "DeviceGray", &[], alpha);
+                if matte {
+                    smask.dict.set("Matte", vec![1.into(), 0.into(), 1.into()]);
+                }
+                let mut image = sampled(None, "DeviceRGB", &[], samples(768));
+                image.dict.set("SMask", doc.add_object(smask));
+                image
+            }
+        };
+        assert_eq!(drawn(binary(false)).unwrap(), drawn(binary(true)).unwrap());
+        let e = format!(
+            "{:#}",
+            drawn(rgb16(&[("Intent", "Saturation".into())])).unwrap_err()
+        );
+        assert!(e.contains("/Intent is not traced"), "{e}");
+    }
+
+    fn jpeg_variant(ids: Option<&[u8; 3]>, jfif: bool, adobe: Option<u8>) -> Vec<u8> {
+        let mut bytes = jpeg("rgb444.jpg");
+        let sof = bytes.windows(2).position(|w| w == [0xFF, 0xC0]).unwrap();
+        let sos = bytes.windows(2).position(|w| w == [0xFF, 0xDA]).unwrap();
+        for (k, c) in ids.into_iter().flatten().enumerate() {
+            bytes[sof + 10 + 3 * k] = *c;
+            bytes[sos + 5 + 2 * k] = *c;
+        }
+        let app0 = usize::from(u16::from_be_bytes([bytes[4], bytes[5]]));
+        let body = if jfif {
+            &bytes[2..]
+        } else {
+            &bytes[4 + app0..]
+        };
+        let adobe = adobe.map_or(vec![], |t| {
+            [&[0xFF, 0xEE, 0, 14][..], b"Adobe", &[0, 100, 0, 0, 0, 0, t]].concat()
+        });
+        [&bytes[..2], &adobe, body].concat()
+    }
+
+    #[test]
+    fn a_jpeg_colour_transform_follows_adobe_then_jfif_then_component_ids() {
+        let doc = Document::with_version("1.7");
+        let hash =
+            |b: Vec<u8>| decode_image(&doc, &sampled(Some("DCTDecode"), "DeviceRGB", &[], b));
+        let ycc = hash(jpeg_variant(None, true, None)).unwrap();
+        let rgb = hash(jpeg_variant(None, true, Some(0))).unwrap();
+        assert_ne!(ycc, rgb);
+        for (ids, jfif, adobe, want) in [
+            (None, false, None, &ycc),
+            (Some(b"RGB"), true, None, &ycc),
+            (None, true, Some(1), &ycc),
+            (Some(b"RGB"), false, None, &rgb),
+            (None, false, Some(0), &rgb),
+            (Some(b"RGB"), true, Some(0), &rgb),
+        ] {
+            let got = hash(jpeg_variant(ids, jfif, adobe)).unwrap();
+            assert_eq!(&got, want, "{ids:?} {jfif} {adobe:?}");
+        }
+        let e = format!(
+            "{:#}",
+            hash(jpeg_variant(Some(&[7, 8, 9]), false, None)).unwrap_err()
+        );
+        assert!(e.contains("ambiguous across readers"), "{e}");
+        let e = format!("{:#}", hash(jpeg_variant(None, true, Some(2))).unwrap_err());
+        assert!(e.contains("ambiguous across readers"), "{e}");
+    }
+
+    #[test]
     fn a_jpeg_whose_colour_transform_readers_infer_differently_is_told_apart_or_fails_loud() {
         let mut ids = jpeg("rgb444.jpg");
         let sof = ids.windows(2).position(|w| w == [0xFF, 0xC0]).unwrap();

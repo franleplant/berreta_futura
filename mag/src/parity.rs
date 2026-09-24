@@ -199,18 +199,40 @@ fn read_entries(path: &Path) -> Result<BTreeMap<u32, PageEntry>> {
     parse_entries(&raw, &path.display().to_string())
 }
 
+fn at_head(path: &str) -> Option<String> {
+    let o = Command::new("git")
+        .args(["show", &format!("HEAD:{path}")])
+        .output()
+        .ok()?;
+    o.status
+        .success()
+        .then(|| String::from_utf8_lossy(&o.stdout).into_owned())
+}
+
+fn target_tier(spec: &serde_yaml::Value) -> Option<&str> {
+    spec.get("ratchet")?.get("target_tier")?.as_str()
+}
+
+fn guard_target(spec: &serde_yaml::Value, committed: Option<&str>) -> Result<()> {
+    let head = committed.and_then(|raw| serde_yaml::from_str::<serde_yaml::Value>(raw).ok());
+    let (Some(working), Some(held)) = (target_tier(spec), head.as_ref().and_then(target_tier))
+    else {
+        return Ok(());
+    };
+    anyhow::ensure!(
+        tier_rank(working)? >= tier_rank(held)?,
+        "{SPEC_PATH} lowers ratchet.target_tier from the committed {held} to {working}, which only a verifier may change"
+    );
+    Ok(())
+}
+
 fn committed_entries() -> (Option<BTreeMap<u32, PageEntry>>, String) {
-    let out = Command::new("git")
-        .args(["show", &format!("HEAD:{BASELINE_PATH}")])
-        .output();
-    match out {
-        Ok(o) if o.status.success() => {
-            match parse_entries(&String::from_utf8_lossy(&o.stdout), "HEAD:baseline.json") {
-                Ok(entries) => (Some(entries), "checked".into()),
-                Err(e) => (None, format!("unavailable: {e}")),
-            }
-        }
-        _ => (
+    match at_head(BASELINE_PATH) {
+        Some(raw) => match parse_entries(&raw, "HEAD:baseline.json") {
+            Ok(entries) => (Some(entries), "checked".into()),
+            Err(e) => (None, format!("unavailable: {e}")),
+        },
+        None => (
             None,
             "unavailable: git show HEAD:baseline.json failed".into(),
         ),
@@ -949,7 +971,8 @@ fn stage_legs(edition: &str, opts: &Options, out_dir: &Path) -> Result<Legs> {
     }
 }
 
-fn guard_baseline() -> Result<(BTreeMap<u32, PageEntry>, Ratchet)> {
+fn guard_baseline(spec: &serde_yaml::Value) -> Result<(BTreeMap<u32, PageEntry>, Ratchet)> {
+    guard_target(spec, at_head(SPEC_PATH).as_deref())?;
     let working = read_entries(&baseline_path())?;
     let (committed, committed_check) = committed_entries();
     let pages_committed = committed.as_ref().map_or(0, BTreeMap::len);
@@ -996,7 +1019,7 @@ pub fn run(edition: &str, opts: Options) -> Result<i32> {
     let (recorded, ratchet) = if opts.adhoc {
         (BTreeMap::new(), adhoc_ratchet())
     } else {
-        guard_baseline()?
+        guard_baseline(&spec)?
     };
     let out_dir = out_dir(edition, opts.adhoc);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
@@ -1112,11 +1135,7 @@ fn ratchet_pages(
     unseeded: bool,
 ) -> Result<()> {
     let measured = measure_pages(verdict, spec)?;
-    let target = spec
-        .get("ratchet")
-        .and_then(|r| r.get("target_tier"))
-        .and_then(|t| t.as_str())
-        .context("parity.yaml ratchet.target_tier missing")?;
+    let target = target_tier(spec).context("parity.yaml ratchet.target_tier missing")?;
     verdict.ratchet.target_tier = target.into();
     if let Some(measured) = &measured {
         verdict.ratchet.pages_measured = measured.len();
@@ -1900,6 +1919,23 @@ mod ratchet_rules {
         );
         assert!(below_target(&measured, "V2").expect("ranks").is_empty());
         assert!(below_target(&measured, "X").is_err());
+    }
+
+    #[test]
+    fn a_working_ratchet_target_below_the_committed_one_fails_loud() {
+        let spec = |t: &str| {
+            serde_yaml::from_str::<serde_yaml::Value>(&format!("ratchet: {{target_tier: {t}}}"))
+                .unwrap()
+        };
+        let head = Some("ratchet:\n  target_tier: E\n");
+        let e = format!("{:#}", guard_target(&spec("V2"), head).unwrap_err());
+        assert!(
+            e.contains("lowers ratchet.target_tier from the committed E to V2"),
+            "{e}"
+        );
+        assert!(guard_target(&spec("E"), head).is_ok());
+        assert!(guard_target(&spec("none"), Some("ratchet:\n  target_tier: none\n")).is_ok());
+        assert!(guard_target(&spec("V2"), None).is_ok());
     }
 
     #[test]
