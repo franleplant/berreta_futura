@@ -1030,6 +1030,25 @@ mod colour_tests {
     }
 
     #[test]
+    #[ignore = "WP-0.2s.verify: poppler draws an absent /C in black and skips hidden links"]
+    fn a_link_border_follows_what_poppler_draws() {
+        let doc = Document::with_version("1.7");
+        let border = |d: lopdf::Dictionary| link_border(&doc, &d).unwrap();
+        let wide = || Object::from(vec![0.into(), 0.into(), 3.into()]);
+        let black = || Object::from(vec![0.into(), 0.into(), 0.into()]);
+        let drawn = border(lopdf::dictionary! { "Border" => wide(), "C" => black() });
+        let hidden = lopdf::dictionary! { "Border" => wide(), "C" => black(), "F" => 2 };
+        assert_eq!(
+            [
+                border(lopdf::dictionary! { "Border" => wide() }) == drawn,
+                border(lopdf::dictionary! {}) != "none",
+                border(hidden) == "none",
+            ],
+            [true; 3]
+        );
+    }
+
+    #[test]
     fn every_differing_class_is_counted_beside_the_first_difference() {
         let a = dump(vec![rule(INK), run("Hello", 1000, 5000, INK, 0)]);
         let b = dump(vec![rule(VIOLET), run("Hellp", 1000, 5000, INK, 0)]);
@@ -1174,16 +1193,21 @@ mod colour_tests {
 
     #[test]
     fn blanks_on_one_leg_buy_no_drift_allowance() {
-        let blanks = 7000;
-        let shift = streams::qo(5.0);
-        let mut padded = run("Helloworld", 0, 0, INK, 0);
+        assert_eq!(
+            both(&whole(), &padded(7000, streams::qo(5.0))),
+            pass_fail("pass", "fail")
+        );
+    }
+
+    fn padded(blanks: usize, shift: i64) -> Dump {
+        let mut e = run("Helloworld", 0, 0, INK, 0);
         if let Element::Text {
             origin,
             gids,
             offs,
             units,
             ..
-        } = &mut padded
+        } = &mut e
         {
             *origin = O;
             let head = (0..5).map(|k| [k * 10_000, 0]);
@@ -1196,9 +1220,19 @@ mod colour_tests {
             units.extend(std::iter::repeat_n(" ".to_string(), blanks));
             units.extend(chars.skip(5));
         }
+        dump(vec![e])
+    }
+
+    #[test]
+    #[ignore = "WP-0.2s.verify: blanks both legs carry buy a visible move"]
+    fn blanks_both_legs_carry_buy_no_visible_move() {
+        let moved = [
+            both(&padded(7000, 0), &padded(5000, streams::qo(3.0))),
+            both(&padded(7000, 0), &padded(7000, streams::qo(5.0))),
+        ];
         assert_eq!(
-            both(&whole(), &dump(vec![padded])),
-            pass_fail("pass", "fail")
+            moved,
+            [pass_fail("pass", "fail"), pass_fail("pass", "fail")]
         );
     }
 
