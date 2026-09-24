@@ -2,7 +2,8 @@ use super::streams::{self, qc, Caches, Color, Element, Face};
 use anyhow::{bail, Context, Result};
 use lopdf::{Document, Object};
 use serde::Serialize;
-use std::collections::BTreeMap;
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 #[path = "canon.rs"]
@@ -29,6 +30,7 @@ pub struct Annot {
     pub rect: [i64; 4],
     pub dest: String,
     pub border: String,
+    pub appearance: Option<String>,
 }
 
 #[derive(Serialize, PartialEq, Eq)]
@@ -137,9 +139,14 @@ fn page_annots(
             Ok(Object::Name(n)) => String::from_utf8_lossy(n).into_owned(),
             _ => "unknown".into(),
         };
+        let appearance = match dict.get(b"AP") {
+            Ok(ap) => Some(hex::encode(Sha256::digest(raw(doc, ap, 0)?))),
+            Err(_) => None,
+        };
         anyhow::ensure!(
-            dict.get(b"AP").is_err(),
-            "annotation {subtype} carries an appearance stream, which the display list does not compare (fail loud per Tier E)"
+            (subtype == "Link") == appearance.is_none(),
+            "annotation {subtype} {} an appearance stream; only a Link without one or another subtype with one is compared (fail loud per Tier E)",
+            if appearance.is_some() { "carries" } else { "lacks" }
         );
         let rect_arr = deref(doc, dict.get(b"Rect")?)?.as_array()?;
         let nums: Result<Vec<f64>> = rect_arr.iter().map(|o| number(doc, o)).collect();
@@ -151,54 +158,58 @@ fn page_annots(
             rect,
             dest,
             border,
+            appearance,
         });
     }
     Ok(out)
 }
 
-fn quantized(doc: &Document, o: &Object, scale: f64) -> Result<Vec<i64>> {
-    let arr = deref(doc, o)?.as_array()?;
-    arr.iter()
-        .map(|v| Ok((number(doc, v)? * scale).round() as i64))
-        .collect()
+fn raw(doc: &Document, o: &Object, depth: usize) -> Result<String> {
+    anyhow::ensure!(depth < 32, "annotation object nests past 32 levels");
+    let all = |v: &mut dyn Iterator<Item = Result<String>>| -> Result<String> {
+        Ok(v.collect::<Result<Vec<_>>>()?.join(" "))
+    };
+    Ok(match deref(doc, o)? {
+        Object::Integer(_) | Object::Real(_) => qc(number(doc, o)?).to_string(),
+        Object::Array(v) => format!("[{}]", all(&mut v.iter().map(|x| raw(doc, x, depth + 1)))?),
+        Object::Dictionary(d) => format!("<<{}>>", dict_raw(doc, d, depth)?),
+        Object::Stream(st) => format!(
+            "<<{}>>stream {}",
+            dict_raw(doc, &st.dict, depth)?,
+            hex::encode(Sha256::digest(&st.content))
+        ),
+        other => format!("{other:?}"),
+    })
+}
+
+fn dict_raw(doc: &Document, d: &lopdf::Dictionary, depth: usize) -> Result<String> {
+    let mut keys: Vec<_> = d
+        .iter()
+        .filter(|(k, _)| k.as_slice() != b"Parent")
+        .collect();
+    keys.sort_by_key(|(k, _)| k.to_vec());
+    let parts: Result<Vec<String>> = keys
+        .into_iter()
+        .map(|(k, v)| {
+            Ok(format!(
+                "/{} {}",
+                String::from_utf8_lossy(k),
+                raw(doc, v, depth + 1)?
+            ))
+        })
+        .collect();
+    Ok(parts?.join(" "))
 }
 
 fn link_border(doc: &Document, dict: &lopdf::Dictionary) -> Result<String> {
-    let colour = match dict.get(b"C") {
-        Ok(c) => quantized(doc, c, 255.0)?,
-        Err(_) => vec![],
-    };
-    let (width, dash, radii) = match (dict.get(b"BS"), dict.get(b"Border")) {
-        (Ok(bs), _) => {
-            let bs = deref(doc, bs)?.as_dict()?;
-            let width = bs.get(b"W").map_or(Ok(1.0), |w| number(doc, w))?;
-            let style = bs.get(b"S").map_or(Ok(&b"S"[..]), Object::as_name)?;
-            anyhow::ensure!(
-                style == b"S" || style == b"D",
-                "link border style {} is not compared (fail loud per Tier E)",
-                String::from_utf8_lossy(style)
-            );
-            let dash = match bs.get(b"D") {
-                _ if style == b"S" => None,
-                Ok(d) => Some(quantized(doc, d, 100.0)?),
-                Err(_) => Some(vec![300]),
-            };
-            (width, dash, vec![0, 0])
-        }
-        (_, Ok(b)) => {
-            let arr = deref(doc, b)?.as_array()?;
-            let at = |i: usize| arr.get(i).map_or(Ok(0.0), |v| number(doc, v));
-            let dash = arr.get(3).map(|d| quantized(doc, d, 100.0)).transpose()?;
-            (at(2)?, dash, vec![qr(at(0)?), qr(at(1)?)])
-        }
-        _ => (1.0, None, vec![0, 0]),
-    };
-    let width = qc(width);
-    if width == 0 || colour.is_empty() {
-        return Ok("none".into());
-    }
+    let spec = Object::from(vec![0.into(), 0.into(), 1.into()]);
+    let border = raw(doc, dict.get(b"Border").unwrap_or(&spec), 0)?;
+    let key = |k: &[u8]| dict.get(k).map_or(Ok("absent".into()), |o| raw(doc, o, 0));
+    let flags = dict.get(b"F").map_or(Ok(0.0), |f| number(doc, f))? as i64 & (2 | 4 | 32);
     Ok(format!(
-        "width {width} dash {dash:?} radii {radii:?} colour {colour:?}"
+        "border {border} bs {} colour {} flags {flags}",
+        key(b"BS")?,
+        key(b"C")?
     ))
 }
 
@@ -416,6 +427,17 @@ pub fn compare_display(a: &Dump, b: &Dump, first: u32) -> Result<DisplayClause> 
     let mut pages_differing = vec![];
     for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
         let page = first + i as u32;
+        let others = |p: &PageDump| {
+            p.annots
+                .iter()
+                .filter(|x| x.subtype != "Link")
+                .cloned()
+                .collect::<Vec<_>>()
+        };
+        anyhow::ensure!(
+            others(pa) == others(pb),
+            "page {page}: an annotation other than Link differs between legs; only byte-equal appearance streams are compared (fail loud per Tier E)"
+        );
         let (ea, eb) = (pa.canonical().elements, pb.canonical().elements);
         if let Some(detail) = page_diff(pa, pb, &ea, &eb)? {
             let classes = differing_classes(pa, pb, &ea, &eb)?;
@@ -567,15 +589,51 @@ fn glyph_list(page: &PageDump) -> Vec<canon::Glyph> {
 fn drift(
     ga: &[canon::Glyph],
     gb: &[canon::Glyph],
+    ks: &[usize],
     r: std::ops::Range<usize>,
 ) -> Vec<(usize, [i64; 2])> {
     r.map(|j| {
         let (a, b) = (&ga[j], &gb[j]);
-        let d = [0, 1].map(|i| (a.at[i] - a.start[i]) - (b.at[i] - b.start[i]));
-        let (sa, sb) = (a.step, b.step);
-        (sa[0].max(sb[0]) + sa[1].min(sb[1]).max(sa[2].max(sb[2])), d)
+        (
+            ks[j],
+            [0, 1].map(|i| (a.at[i] - a.start[i]) - (b.at[i] - b.start[i])),
+        )
     })
     .collect()
+}
+
+const ADVANCE_QUANTA: f64 = 10.0;
+
+fn gap_step(a: &canon::Glyph, b: &canon::Glyph, pa: &canon::Glyph, pb: &canon::Glyph) -> usize {
+    let moves = |v: [i64; 2]| v != [0, 0];
+    if !a.opens && !b.opens && a.gap.len() == b.gap.len() {
+        let pairs = a.gap.iter().zip(&b.gap);
+        return pairs.filter(|(x, y)| moves(**x) || moves(**y)).count();
+    }
+    let travel = |g: &canon::Glyph, p: &canon::Glyph| [0, 1].map(|i| g.at[i] - p.at[i]);
+    let blanks = |g: &canon::Glyph| g.gap.len() > usize::from(!g.opens);
+    let moved = moves(travel(a, pa)) || moves(travel(b, pb));
+    usize::from(moved) * (1 + usize::from(blanks(a) || blanks(b)))
+}
+
+fn advance_miss(a: &canon::Glyph, b: &canon::Glyph) -> Option<f64> {
+    let paired = !a.opens && !b.opens && a.gap.len() == b.gap.len();
+    let diff = |(x, y): (&[i64; 2], &[i64; 2])| ((x[0] - y[0]) as f64).hypot((x[1] - y[1]) as f64);
+    let worst = a.gap.iter().zip(&b.gap).map(diff).fold(0.0, f64::max);
+    (paired && worst > ADVANCE_QUANTA).then_some(worst * streams::GLYPH_QUANTUM)
+}
+
+fn steps(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<usize> {
+    let mut last: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
+    (0..ga.len())
+        .map(|j| {
+            let (a, b) = (&ga[j], &gb[j]);
+            let prev = last.get(&(a.line, b.line));
+            let k = prev.map_or(0, |&(k, i)| k + gap_step(a, b, &ga[i], &gb[i]));
+            last.insert((a.line, b.line), (k, j));
+            k
+        })
+        .collect()
 }
 
 fn paired_runs(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<std::ops::Range<usize>> {
@@ -641,9 +699,15 @@ pub fn compare_glyphs(a: &Dump, b: &Dump, first: u32) -> GlyphClause {
                 .push(format!("page {page}: {} glyphs vs {}", ga.len(), gb.len()));
             continue;
         }
+        for (j, miss) in (0..ga.len()).filter_map(|j| Some((j, advance_miss(&ga[j], &gb[j])?))) {
+            t.violations.push(format!(
+                "page {page} glyph {j}: an advance before it differs by {miss:.6} pt, beyond one tick"
+            ));
+        }
+        let ks = steps(&ga, &gb);
         for r in paired_runs(&ga, &gb) {
             let at = format!("page {page} glyphs {}..{}", r.start, r.end);
-            t.run(&at, &drift(&ga, &gb, r));
+            t.run(&at, &drift(&ga, &gb, &ks, r));
         }
     }
     t.violations.truncate(40);
@@ -1003,25 +1067,33 @@ mod colour_tests {
     fn a_link_border_compares_what_is_drawn_with_spec_defaults() {
         let doc = Document::with_version("1.7");
         let border = |d: lopdf::Dictionary| link_border(&doc, &d).unwrap();
-        let red = || Object::from(vec![1.into(), 0.into(), 0.into()]);
-        let none = border(lopdf::dictionary! { "Border" => vec![0.into(), 0.into(), 0.into()] });
-        assert_eq!(none, "none");
+        let arr = |v: [f64; 3]| Object::from(v.map(|x| Object::Real(x as f32)).to_vec());
+        let red = || arr([1.0, 0.0, 0.0]);
+        let zero = border(lopdf::dictionary! { "Border" => arr([0.0; 3]) });
+        assert_ne!(border(lopdf::dictionary! {}), zero);
         assert_eq!(
-            border(lopdf::dictionary! { "BS" => lopdf::dictionary! { "W" => 0 } }),
-            none
+            border(lopdf::dictionary! {}),
+            border(lopdf::dictionary! { "Border" => vec![0.into(), 0.into(), 1.into()] })
         );
-        assert_eq!(border(lopdf::dictionary! {}), none);
-        let drawn = border(lopdf::dictionary! { "C" => red() });
-        assert_ne!(drawn, none);
-        let bs = lopdf::dictionary! { "C" => red(), "BS" => lopdf::dictionary! {} };
-        assert_eq!(border(bs), drawn);
-        let wide = vec![0.into(), 0.into(), 3.into()];
         assert_ne!(
-            border(lopdf::dictionary! { "C" => red(), "Border" => wide }),
+            border(lopdf::dictionary! { "BS" => lopdf::dictionary! { "W" => 0 } }),
+            zero
+        );
+        let drawn = border(lopdf::dictionary! { "C" => red() });
+        assert_eq!(
+            border(lopdf::dictionary! { "C" => vec![1.into(), 0.into(), 0.into()] }),
             drawn
         );
-        let blue = Object::from(vec![0.into(), 0.into(), 1.into()]);
-        assert_ne!(border(lopdf::dictionary! { "C" => blue }), drawn);
+        let bs = lopdf::dictionary! { "C" => red(), "BS" => lopdf::dictionary! {} };
+        assert_ne!(border(bs), drawn);
+        assert_ne!(
+            border(lopdf::dictionary! { "C" => red(), "Border" => arr([0.0, 0.0, 3.0]) }),
+            drawn
+        );
+        assert_ne!(
+            border(lopdf::dictionary! { "C" => arr([0.0, 0.0, 1.0]) }),
+            drawn
+        );
         let dashed = lopdf::dictionary! { "S" => "D" };
         assert_ne!(
             border(lopdf::dictionary! { "C" => red(), "BS" => dashed }),
@@ -1030,22 +1102,77 @@ mod colour_tests {
     }
 
     #[test]
-    #[ignore = "WP-0.2s.verify: poppler draws an absent /C in black and skips hidden links"]
     fn a_link_border_follows_what_poppler_draws() {
         let doc = Document::with_version("1.7");
         let border = |d: lopdf::Dictionary| link_border(&doc, &d).unwrap();
         let wide = || Object::from(vec![0.into(), 0.into(), 3.into()]);
         let black = || Object::from(vec![0.into(), 0.into(), 0.into()]);
         let drawn = border(lopdf::dictionary! { "Border" => wide(), "C" => black() });
-        let hidden = lopdf::dictionary! { "Border" => wide(), "C" => black(), "F" => 2 };
+        let flagged =
+            |f: i64| border(lopdf::dictionary! { "Border" => wide(), "C" => black(), "F" => f });
+        let empty = lopdf::dictionary! { "Border" => wide(), "C" => Object::from(vec![]) };
+        let zero = lopdf::dictionary! { "Border" => vec![0.into(), 0.into(), 0.into()] };
         assert_eq!(
             [
-                border(lopdf::dictionary! { "Border" => wide() }) == drawn,
-                border(lopdf::dictionary! {}) != "none",
-                border(hidden) == "none",
+                border(lopdf::dictionary! { "Border" => wide() }) != drawn,
+                border(lopdf::dictionary! { "Border" => wide() }) != border(empty),
+                border(lopdf::dictionary! {}) != border(zero),
+                flagged(2) != drawn,
+                flagged(32) != drawn,
+                flagged(4) != drawn,
+                flagged(1) == drawn,
             ],
-            [true; 3]
+            [true; 7]
         );
+    }
+
+    fn annots(page: lopdf::Dictionary, doc: &mut Document) -> Result<Vec<Annot>> {
+        let id = doc.add_object(page);
+        page_annots(doc, id, &BTreeMap::new())
+    }
+
+    fn annot(subtype: &str, ap: Option<&[u8]>, doc: &mut Document) -> Object {
+        let mut d = lopdf::dictionary! {
+            "Type" => "Annot",
+            "Subtype" => subtype,
+            "Rect" => vec![0.into(), 0.into(), 10.into(), 10.into()]
+        };
+        if let Some(bytes) = ap {
+            let n = doc.add_object(lopdf::Stream::new(lopdf::dictionary! {}, bytes.to_vec()));
+            d.set("AP", lopdf::dictionary! { "N" => n });
+        }
+        Object::Reference(doc.add_object(d))
+    }
+
+    #[test]
+    fn an_annotation_other_than_link_is_compared_only_by_byte_equal_appearance() {
+        let mut doc = Document::with_version("1.7");
+        let mut page = |subtype: &str, ap: Option<&[u8]>| {
+            let a = annot(subtype, ap, &mut doc);
+            annots(lopdf::dictionary! { "Annots" => vec![a] }, &mut doc)
+        };
+        assert!(page("Link", None).is_ok());
+        assert!(page("Link", Some(b"0 0 m")).is_err());
+        assert!(page("Square", None).is_err());
+        assert!(page("FreeText", None).is_err());
+        let square = page("Square", Some(b"1 0 0 rg 0 0 10 10 re f")).unwrap();
+        let other = page("Square", Some(b"0 0 1 rg 0 0 10 10 re f")).unwrap();
+        let same = page("Square", Some(b"1 0 0 rg 0 0 10 10 re f")).unwrap();
+        let leg = |annots: Vec<Annot>| Dump {
+            pages: vec![PageDump {
+                elements: vec![],
+                annots,
+                boxes: BTreeMap::new(),
+                ink: vec![],
+            }],
+            nav: DocNav {
+                title: None,
+                lang: None,
+                outlines: vec![],
+            },
+        };
+        assert!(compare_display(&leg(square.clone()), &leg(same), 1).is_ok());
+        assert!(compare_display(&leg(square), &leg(other), 1).is_err());
     }
 
     #[test]
@@ -1177,10 +1304,12 @@ mod colour_tests {
             offs[2..].iter_mut().for_each(|o| o[0] += 8 * 8 + 1);
         }
         assert_eq!(both(&whole(), &far), pass_fail("pass", "fail"));
-        if let Element::Text { offs, .. } = &mut far.pages[0].elements[0] {
-            offs[2..].iter_mut().for_each(|o| o[0] -= 2);
+        for (by, verdict) in [(-55, "pass"), (1, "fail")] {
+            if let Element::Text { offs, .. } = &mut far.pages[0].elements[0] {
+                offs[2..].iter_mut().for_each(|o| o[0] += by);
+            }
+            assert_eq!(both(&whole(), &far), pass_fail("pass", verdict), "{by}");
         }
-        assert_eq!(both(&whole(), &far), pass_fail("pass", "pass"));
         let split = halves(at, "F", ids(6..11));
         let mut stairs = halves(at, "F", ids(6..11));
         for e in &mut stairs.pages[0].elements {
@@ -1194,12 +1323,15 @@ mod colour_tests {
     #[test]
     fn blanks_on_one_leg_buy_no_drift_allowance() {
         assert_eq!(
-            both(&whole(), &padded(7000, streams::qo(5.0))),
+            both(
+                &whole(),
+                &padded(7000, streams::qo(5.0), streams::BLANK_GID)
+            ),
             pass_fail("pass", "fail")
         );
     }
 
-    fn padded(blanks: usize, shift: i64) -> Dump {
+    fn padded(blanks: usize, shift: i64, fill: u32) -> Dump {
         let mut e = run("Helloworld", 0, 0, INK, 0);
         if let Element::Text {
             origin,
@@ -1214,42 +1346,75 @@ mod colour_tests {
             let pad = std::iter::repeat_n([50_000, 0], blanks);
             let tail = (6..11).map(|k| [k * 10_000 + shift, 0]);
             *offs = head.chain(pad).chain(tail).collect();
-            *gids = [ids(0..5), vec![streams::BLANK_GID; blanks], ids(6..11)].concat();
+            *gids = [ids(0..5), vec![fill; blanks], ids(6..11)].concat();
             let chars = "Helloworld".chars().map(String::from);
             *units = chars.clone().take(5).collect();
-            units.extend(std::iter::repeat_n(" ".to_string(), blanks));
+            let unit = if fill == streams::BLANK_GID { " " } else { "." };
+            units.extend(std::iter::repeat_n(unit.to_string(), blanks));
             units.extend(chars.skip(5));
         }
         dump(vec![e])
     }
 
     #[test]
-    #[ignore = "WP-0.2s.verify: blanks both legs carry buy a visible move"]
     fn blanks_both_legs_carry_buy_no_visible_move() {
+        let b = streams::BLANK_GID;
         let moved = [
-            both(&padded(7000, 0), &padded(5000, streams::qo(3.0))),
-            both(&padded(7000, 0), &padded(7000, streams::qo(5.0))),
+            both(&padded(7000, 0, b), &padded(5000, streams::qo(3.0), b)),
+            both(&padded(7000, 0, b), &padded(7000, streams::qo(5.0), b)),
+            both(&padded(7000, 0, 3), &padded(7000, streams::qo(5.0), 3)),
+            both(&padded(7000, 0, 3), &padded(7000, 0, 3)),
         ];
         assert_eq!(
             moved,
-            [pass_fail("pass", "fail"), pass_fail("pass", "fail")]
+            [
+                pass_fail("pass", "fail"),
+                pass_fail("pass", "fail"),
+                pass_fail("pass", "fail"),
+                pass_fail("pass", "pass")
+            ]
         );
     }
 
     #[test]
-    fn blanks_on_both_legs_count_each_but_one_leg_alone_adds_one_step_per_gap() {
-        let line = |text: &str, last: i64| {
+    fn a_step_counts_each_advance_both_legs_carry_that_moves_the_pen() {
+        let line = |text: &str, at: &[i64]| {
             let mut e = glyph_run(text, O, "F", vec![]);
             if let Element::Text { offs, .. } = &mut e {
-                *offs.last_mut().unwrap() = [last, 0];
+                *offs = at.iter().map(|&x| [x, 0]).collect();
             }
             dump(vec![e])
         };
-        let status = |b: Dump| compare_glyphs(&line("a    b", 50_000), &b, 1).status;
-        assert_eq!(status(line("a    b", 50_000 + 5 * 8)), "pass");
-        assert_eq!(status(line("a    b", 50_000 + 5 * 8 + 1)), "fail");
-        assert_eq!(status(line("ab", 50_000 + 2 * 8)), "pass");
-        assert_eq!(status(line("ab", 50_000 + 2 * 8 + 1)), "fail");
+        let spread = |gap: i64, tick: i64| (0..6).map(|k| k * (gap + tick)).collect::<Vec<_>>();
+        let with_last = |mut v: Vec<i64>, by: i64| {
+            *v.last_mut().unwrap() += by;
+            v
+        };
+        let status = |a: &[i64], b: &str, at: &[i64]| {
+            compare_glyphs(&line("a    b", a), &line(b, at), 1).status
+        };
+        let base = spread(10_000, 0);
+        let cases = [
+            ("a    b", spread(10_000, 8), "pass"),
+            ("a    b", with_last(spread(10_000, 8), 1), "fail"),
+            ("a    b", with_last(base.clone(), 10), "pass"),
+            ("a    b", with_last(base.clone(), 11), "fail"),
+            ("ab", vec![0, 50_000 + 2 * 8], "pass"),
+            ("ab", vec![0, 50_000 + 2 * 8 + 1], "fail"),
+        ];
+        for (text, at, verdict) in cases {
+            assert_eq!(status(&base, text, &at), verdict, "{text} {at:?}");
+        }
+        let stacked = [0, 10_000, 10_000, 10_000, 10_000, 20_000];
+        let moved = |last: i64| {
+            compare_glyphs(
+                &line("a    b", &stacked),
+                &line("a    b", &[0, 10_008, 10_008, 10_008, 10_008, last]),
+                1,
+            )
+            .status
+        };
+        assert_eq!([moved(20_016), moved(20_017)], ["pass", "fail"]);
     }
 
     #[test]

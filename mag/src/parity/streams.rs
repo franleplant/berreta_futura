@@ -49,6 +49,9 @@ pub struct Face {
 }
 
 fn pen(m: M, w: f64) -> [i64; 3] {
+    if w == 0.0 {
+        return [-1; 3];
+    }
     let (n0, n1) = (m[0].hypot(m[2]), m[1].hypot(m[3]));
     if n0 == 0.0 {
         return [0, qc(w * n1), 0];
@@ -1423,6 +1426,22 @@ fn decode_image(doc: &Document, stream: &lopdf::Stream) -> Result<(String, u32, 
 mod tests {
     use super::*;
     use lopdf::{dictionary, Stream};
+
+    #[test]
+    fn a_zero_width_hairline_is_not_any_positive_width() {
+        let id = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+        let hair = pen(id, 0.0);
+        for m in [
+            id,
+            [4.0, 0.0, 0.0, 4.0, 0.0, 0.0],
+            [0.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+        ] {
+            assert_eq!(pen(m, 0.0), hair);
+            for w in [0.000_1, 0.004, 0.006, 0.25, 1.0] {
+                assert_ne!(pen(m, w), hair, "{m:?} {w}");
+            }
+        }
+    }
 
     const SRGB: &[u8] = include_bytes!("../../tests/parity_icc/sRGB-v4.icc");
     const SGREY: &[u8] = include_bytes!("../../tests/parity_icc/sGrey-v4.icc");
