@@ -16,9 +16,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   `tools/imagegen`) -> pick in `art/showcase.html` -> `mag render NNN`. If a
   step leaves you guessing what comes next, fix the step's output in code;
   documenting the gap here is the fallback, not the fix.
-- `src/magazine/` (Python, run through `uv`) is the renderer: it loads
-  `edition.yaml`, lays out reader pages, and produces PDF/web output through
-  WeasyPrint. It renders; it does not orchestrate.
+- `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
+  loads `edition.yaml`, lays out reader pages, and writes the PDF and web
+  output. `src/magazine/` (Python, WeasyPrint, run through `uv`) stays only
+  as the rollback (`--engine weasyprint`) until it is deleted.
 - `mag print <url> [--html file] [--out dir] [--chrome bin]` is a standalone
   side tool, not an edition step: it turns one blog post into
   `output/print/<slug>/print.pdf` ready to print (plus the self-contained
@@ -125,5 +126,5 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   hook is installed. Zero warnings is the standing state, not a goal.
 - Verification: `cargo test` in `mag/` (also runs the comment check and the
   hook-install check); load the editions through
-  `magazine.manifest.load_edition` when the Python side changes.
+  `magazine.manifest.load_edition` when the Python rollback changes.
 - Work on the branch the user asks for and commit coherent checkpoints.
