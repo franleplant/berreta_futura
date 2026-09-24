@@ -681,7 +681,11 @@ mod tests {
 
     #[test]
     fn the_010_back_cover_rasterizes_to_the_pixels_the_python_compiler_printed() {
-        let yaml = std::fs::read_to_string(root().join("editions/010/edition.yaml")).expect("010");
+        let yaml = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("tests/repo_snapshot/editions/010/edition.yaml"),
+        )
+        .expect("010");
         let raw: serde_yaml::Value = serde_yaml::from_str(&yaml).expect("010 parses");
         let cover = raw["cover"].as_mapping().expect("010 has a cover").clone();
         let (svg, _) = back_face("en", cover);

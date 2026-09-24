@@ -76,7 +76,7 @@ pub(crate) fn run_request(
         crate::render::toml_value(repo_root, "render", key)
     })
     .map_err(anyhow::Error::msg)?;
-    let mut result = serde_json::json!({"layouts": [], "files": []});
+    let mut result = serde_json::json!({"layouts": [], "files": [], "warnings": []});
     for language in languages {
         let edition = if language == primary {
             base.clone()
@@ -95,7 +95,7 @@ pub(crate) fn run_request(
             &work,
             hyphenation,
         )?;
-        for key in ["layouts", "files"] {
+        for key in ["layouts", "files", "warnings"] {
             let rows = one[key].as_array().cloned().unwrap_or_default();
             result[key].as_array_mut().expect("seeded").extend(rows);
         }
