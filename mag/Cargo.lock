@@ -1736,6 +1736,8 @@ dependencies = [
  "unicode-normalization",
  "url",
  "usvg",
+ "zune-core",
+ "zune-jpeg",
 ]
 
 [[package]]
