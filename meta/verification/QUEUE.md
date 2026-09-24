@@ -1,13 +1,15 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
 Comparator verify (WP-0.2m-r.verify.md): 0.2m/n/o ACCEPTED; 0.2p, 0.2q,
-0.2r REJECTED (adversarial pairs pass); rework WP-0.2s landed d7c970c,
-re-verify running.
+0.2r REJECTED (adversarial pairs pass); rework WP-0.2s landed d7c970c.
+Re-verify (WP-0.2s.verify.md): 0.2p, 0.2q ACCEPTED; 0.2r, 0.2s REJECTED
+(blank counts on both legs buy drift; link /C and /F defaults). Rework
+WP-0.2t running, then re-verify.
 Landed, awaiting a verifier: WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
-Running: WP-3.2b openers, adversarial re-verify of 0.2p/q/r/s, WP-5.10
+Running: WP-3.2b openers, WP-0.2t (glyph bound, link raw keys), WP-5.10
 (package raster pins, fold fixture, U+001C lexing, per-piece titles).
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
