@@ -3,11 +3,13 @@
 Comparator verify (WP-0.2m-r.verify.md): 0.2m/n/o ACCEPTED; 0.2p, 0.2q,
 0.2r REJECTED (adversarial pairs pass); rework WP-0.2s landed d7c970c,
 re-verify running.
-Landed, awaiting a verifier: WP-5.5d, WP-3.5, WP-3.3a, WP-5.9, WP-5.5c, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
+Landed, awaiting a verifier: WP-0.0e, WP-5.5d, WP-3.5, WP-3.3a, WP-5.9, WP-5.5c, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
-Running: WP-0.0e oracle keeps /Lang /Title outline, WP-3.2b openers,
-adversarial re-verify of 0.2p/q/r/s.
+Running: WP-3.2b openers, adversarial re-verify of 0.2p/q/r/s, verifier
+for 5.5c/5.9/3.3a/5.5d.
+Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.4, 3.5, 0.0d, 0.0e)
+get one verifier after WP-3.7, since each later WP re-measures them.
 Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
 Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
 3.7.
@@ -34,6 +36,11 @@ evidence file records it):
 - WP-3.3b wires mag/src/highlight into the template and WP-3.3's fixture
   edition; WP-5.5d wires it into the web port (fenced code with a
   language refuses there today) and accepts JPEG closing plates.
+- Per-piece web titles still join with U+2014 (web_edition.py:691,
+  web/edition.rs:957); change both to ": " with the next web WP.
+  cover.py replace_first_page is dead (WP-6.1 deletes it anyway).
+- WP-5.6 must add the cover step to the typst path (it has none; the
+  parity domain excludes cover pages today).
 - WP-5.1h scope: consolidate `anchor_key`, `is_reference_heading`,
   `inline_text`, `article_opener_format` (duplicated in web/ and
   typeset/content.rs) into model/shared.rs; typeset's `anchor_key` uses
