@@ -1,45 +1,24 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Comparator verify (WP-0.2m-r.verify.md): 0.2m/n/o ACCEPTED; 0.2p, 0.2q,
-0.2r REJECTED (adversarial pairs pass); rework WP-0.2s landed d7c970c.
-Re-verify (WP-0.2s.verify.md): 0.2p, 0.2q ACCEPTED; 0.2r, 0.2s REJECTED
-(blank counts on both legs buy drift; link /C and /F defaults). Rework
-WP-0.2t landed 3efaf3c. Verify WP-0.2j.verify.md: 0.2r, 0.2s, 0.2t and
-0.2j's exact-number path ACCEPTED; 0.2j span cap REJECTED (off-page
-glyphs; 0.477 pt in-page); plus two older tracer holes. Rework WP-0.2u
-landed fe1bd56 (MIN_ADVANCE_PT 1.25, strict decode, operand counts, no
-#[ignore] left). Final adversarial comparator verify runs with WP-3.0g.
-Landed, awaiting a verifier: WP-5.6, WP-0.2y, WP-5.4g, WP-5.3g (all go
-to the WP-4.1 gate verifier).
-Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
-WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
-WP-5.5d, WP-4.0g, WP-5.10, WP-5.1h part 1.
-MILESTONE: WP-0.2x landed e1822cf; `mag parity 010` exits 0, every
-evaluated Tier E clause green (raster not_evaluated, WP-0.2f withdrawn).
-WP-3.0g landed 4c3697b: ratchet target E, all 54 pages at E, two clean
-staged runs identical.
-Final comparator verify (WP-3.0g.verify.md): 0.2u, 0.2w, 0.2x, 3.0g
-ACCEPTED (baseline raise re-derived); 0.2v REJECTED (JPEG colour
-transform) plus image-identity holes: rework WP-0.2y running.
-Typeset set verify (TYPESET-SET.verify.md): all 17 WPs ACCEPTED.
-WP-5.6 landed 2ea64da: `mag render --engine typst` runs natively (only
-poppler spawned), cover step included; parity 010 green without uv.
-WP-0.2y landed a5aadc9 (JPEG transform, image identity, target tier vs
-HEAD).
-WP-5.4g + WP-5.3g landed e7c7670: 010 compares pages 1..56, critic
-clause evaluated and passing; cover rows seeded at none (verifier raises).
-Running: WP-3.10 (Spanish on typst), WP-5.11 (critic JPEG decode for
---adhoc 008, pen-end word gaps, stale critic_text pin).
-Next: WP-4.1 full gate + its verifier (raises covers 1/56 to E). WP-3.9 landed 0508801 and WP-0.0f 38550f4: `--adhoc 008`
-exits 0, display list differs only on p4 (editorial, out of scope).
-WP-3.7c landed cbe1629: 010 display list 0 pages, navigation 0; glyph
-clause 90 single-quantum blips (comparator artifact, WP-0.2x).
-Then: WP-4.2, WP-4.3, WP-6.1.
-Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.7a, 3.7c, 3.9, 0.0f, 3.4, 3.5, 0.0d, 0.0e)
-get one verifier after WP-3.7, since each later WP re-measures them.
-Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
-Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
-3.7.
+## Status
+
+- `mag parity 010` staged: exit 0, ratchet target E, pages 1..56, critic
+  clause passing (WP-5.4g/5.3g e7c7670). `mag render --engine typst` runs
+  natively without uv (WP-5.6 2ea64da). `--adhoc 008`: display list equal
+  except p4 (editorial, out of scope); exit 1 until WP-5.11 (critic JPEG
+  decode).
+- Comparator: every 0.2 WP accepted after adversarial rounds
+  (WP-0.2m-r, 0.2s, 0.2j, 3.0g verify files) except WP-0.2y (rework of
+  0.2v, landed a5aadc9, verified at the WP-4.1 gate).
+- Typeset set (17 WPs): accepted, TYPESET-SET.verify.md.
+- Accepted since the restart: WP-5.4c, 5.4b-i, 5.4b-ii, 0.2l, 5.3c, 5.7a,
+  5.3h, 5.5a (1+2), 5.7b, 5.5c, 5.9, 3.3a, 5.5d, 4.0g, 5.10, 5.1h part 1,
+  0.2u, 0.2w, 0.2x, 3.0g, and the typeset set.
+- Awaiting the WP-4.1 gate verifier: WP-5.6, 0.2y, 5.4g, 5.3g, 3.10,
+  5.11; it also raises cover rows 1 and 56 to E.
+- Running: WP-3.10 (Spanish on typst), WP-5.11.
+- Next: WP-4.1 full gate, then WP-4.2 flip, WP-4.3 post-flip hyphenation,
+  WP-6.1 delete Python.
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
