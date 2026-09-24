@@ -1,8 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 use crate::critic::metrics::{decode_rgb, round_half_even, Rgb};
+use crate::critic::rules::write_png;
 
 const CONTACT_COLUMNS: u32 = 4;
 const CONTACT_ROWS: u32 = 4;
@@ -239,12 +240,7 @@ pub fn write_contact_sheets(
             );
         }
         let output = destination.join(format!("{prefix}-{:02}.png", sheet_index + 1));
-        let file = std::fs::File::create(&output)
-            .with_context(|| format!("cannot create {}", output.display()))?;
-        let mut encoder = png::Encoder::new(std::io::BufWriter::new(file), width, height);
-        encoder.set_color(png::ColorType::Rgb);
-        encoder.set_depth(png::BitDepth::Eight);
-        encoder.write_header()?.write_image_data(&sheet.data)?;
+        write_png(&output, &sheet)?;
         outputs.push(output);
     }
     Ok(outputs)
