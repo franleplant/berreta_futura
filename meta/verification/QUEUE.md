@@ -11,9 +11,8 @@ WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.
 WP-5.5d.
 Running: WP-3.8 fixture-exposed divergences (plain opener, closing-plate
 order/count, 4-entry contents, heading after opener, baseline rebase),
-WP-0.2j (exact decimals + physical drift cap).
-Queued behind WP-0.2j (parity owner): adversarial re-verify of
-0.2r/0.2s/0.2t/0.2j together, then WP-4.0g ad hoc mode. Behind WP-3.8 (typeset owner): WP-5.1h helpers,
+adversarial verify of 0.2r/0.2s/0.2t/0.2j (WP-0.2j landed d68b309).
+Queued behind it: WP-4.0g ad hoc mode. Behind WP-3.8 (typeset owner): WP-5.1h helpers,
 WP-3.0g, WP-3.7.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
@@ -46,6 +45,8 @@ evidence file records it):
 - cover.py replace_first_page is dead (WP-6.1 deletes it anyway).
 - WP-5.6 must add the cover step to the typst path (it has none; the
   parity domain excludes cover pages today).
+- WP-5.1h scope: impose.rs raw-byte decimal recovery should use
+  parity/exact.rs (refuses object streams today).
 - WP-5.1h scope: consolidate `anchor_key`, `is_reference_heading`,
   `inline_text`, `article_opener_format` (duplicated in web/ and
   typeset/content.rs) into model/shared.rs; typeset's `anchor_key` uses
