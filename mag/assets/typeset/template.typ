@@ -133,12 +133,6 @@
 #let OPENER-LABEL-TRACKING = 0.16
 #let OPENER-TITLE-LEADING-RATIO = 0.96
 #let OPENER-TITLE-TRACKING = -0.045
-#let OPENER-TITLE-MAX = 32.5pt
-#let OPENER-COMPACT-TITLE-MAX = 30pt
-#let OPENER-TITLE-MIN = 22pt
-#let OPENER-TITLE-STEP = 0.5pt
-#let OPENER-TITLE-BOX = 64pt
-#let OPENER-TITLE-MAX-LINES = 2
 #let OPENER-BYLINE-SIZE = 7.4pt
 #let OPENER-BYLINE-LEADING = 8.5pt
 #let OPENER-BYLINE-TRACKING = 0.04
@@ -286,14 +280,17 @@
 
 #let is-band(layout) = BAND-LAYOUTS.contains(layout) or layout == COMPACT-BAND
 
-#let band-anchored(index) = {
-  let next = query(<mag-flow>).filter(m => m.value.index == index + 1)
-  next.len() > 0 and next.first().value.kind == "figure" and is-band(next.first().value.layout)
-}
+#let next-flow(index) = query(<mag-flow>).filter(m => m.value.index == index + 1).map(m => m.value).at(0, default: (kind: none, layout: none))
+#let band-anchored(index) = next-flow(index).kind == "figure" and is-band(next-flow(index).layout)
 
 #let layer(body) = [#body<mag-layer>]
 #let backdrop(body) = [#body<mag-backdrop>]
 #let prose(body) = [#body<mag-prose>]
+#let caption-edge = state("mag-caption-edge", none)
+#let edge-prose(body) = context {
+  let edge = caption-edge.get()
+  if edge == "band" [#body<mag-prose-band>] else if edge == "compact" [#body<mag-prose-compact>] else [#body<mag-prose>]
+}
 #let clipped(width, height, body) = box(width: width, height: height, clip: true, body)
 
 #let tail-baseline(at) = query(selector(<mag-end-baseline>).before(at)).last().location().position()
@@ -584,21 +581,6 @@
   body
 })
 
-#let fitted-title(body, maximum) = {
-  let size = maximum
-  while size > OPENER-TITLE-MIN {
-    let leading = size * OPENER-TITLE-LEADING-RATIO
-    let rows = calc.round(
-      measure(wrapped(OPENER-RAIL, opener-title-text(size, body))).height / leading,
-    )
-    if rows <= OPENER-TITLE-MAX-LINES and size + (rows - 1) * leading <= OPENER-TITLE-BOX {
-      return (size: size, lines: rows)
-    }
-    size -= OPENER-TITLE-STEP
-  }
-  (size: size, lines: OPENER-TITLE-MAX-LINES)
-}
-
 #let piece-title(body) = context if plain-head.get() != none {
   let size = plain-head.get().size
   let leading = size * OPENER-TITLE-LEADING-RATIO
@@ -765,11 +747,11 @@
 
 #let opener-page(rows, body, split) = {
   let title = opener-part(rows, "title")
-  let fit = fitted-title(title, OPENER-TITLE-MAX)
+  let (fit, compact) = opener-part(rows, "titles")
   let density = OPENER-STANDARD
   if split or opener-stack(density, fit, rows, body) + OPENER-PANGO-RESERVE > CONTENT-HEIGHT {
     density = OPENER-COMPACT
-    fit = fitted-title(title, OPENER-COMPACT-TITLE-MAX)
+    fit = compact
   }
   let rail(body) = block(width: OPENER-RAIL, above: 0pt, below: 0pt, body)
   let label = rail(text(
@@ -886,8 +868,8 @@
   (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, after-standfirst: 23pt, below: 8pt, fill: VIOLET, caps: true, drop: 10pt),
 )
 
-#let heading-stack(level, spec, above, escape, drop, body, lead: false) = {
-  layer(block(above: if lead { 0pt } else { above }, below: 0pt, breakable: false, width: 100%, inset: escape, {
+#let heading-stack(level, spec, above, escape, drop, body, lead: false, sticky: false) = {
+  layer(block(above: if lead { 0pt } else { above }, below: 0pt, breakable: false, sticky: sticky, width: 100%, inset: escape, {
     if lead { v(above, weak: false) }
     bookmark(level, body)
     move(dy: drop, text(
@@ -917,6 +899,7 @@
       if midpage { spec.drop } else { 0pt },
       body,
       lead: lead and not anchor,
+      sticky: next-flow(index).kind == "figure",
     )
   })
 }
@@ -1079,19 +1062,19 @@
 }
 
 #let figure-caption(body) = block(
-  move(dy: CAPTION-NUDGE, text(size: CAPTION-SIZE, ..edges(CAPTION-SIZE, 8.6pt, HALF-SERIF), body)),
+  edge-prose(move(dy: CAPTION-NUDGE, text(size: CAPTION-SIZE, ..edges(CAPTION-SIZE, 8.6pt, HALF-SERIF), body))),
   above: FIGURE-CAPTION-ABOVE,
   below: 0pt,
 )
 #let figure-credit(body) = block(
-  move(dy: CAPTION-NUDGE + CREDIT-NUDGE, text(
+  edge-prose(move(dy: CAPTION-NUDGE + CREDIT-NUDGE, text(
     font: SANS,
     size: CAPTION-SIZE,
     weight: 500,
     fill: SLATE,
     ..edges(CAPTION-SIZE, 8.6pt, HALF-SANS),
     body,
-  )),
+  ))),
   above: 0pt,
   below: 0pt,
 )
@@ -1136,6 +1119,12 @@
   v(-room)
 }
 
+#let carried-shift(index) = {
+  let anchor = query(<mag-flow>).filter(m => m.value.index == index - 1 and m.value.kind == "heading")
+  let top = anchor.len() > 0 and anchor.first().location().position().y <= MARGIN-TOP + PAGE-TOP-EPSILON
+  if not top { 0pt } else if calc.odd(here().page()) { MARGIN-OUTER - MARGIN-INNER } else { MARGIN-INNER - MARGIN-OUTER }
+}
+
 #let figure-block(
   id: none,
   source-id: none,
@@ -1152,13 +1141,14 @@
   figure-counter.step()
   let spec = figure-spec(layout, anchor)
   spec.max-height -= trim
-  flow-mark("figure", layout, _ => layer(block(
+  caption-edge.update(if BAND-LAYOUTS.contains(layout) { "band" } else if layout == COMPACT-BAND { "compact" })
+  flow-mark("figure", layout, index => layer(block(
     above: 0pt,
     below: spec.gap,
     breakable: false,
     width: 100%,
     inset: spec.escape,
-    move(dy: DATUM, {
+    move(dx: if is-band(layout) and anchor != OPENER-ANCHOR { carried-shift(index) } else { 0pt }, dy: DATUM, {
       figure-label(word)
       figure-image(id, path, pixels, spec)
       body
@@ -1267,6 +1257,7 @@
   figure-layouts: (),
   opener: "plain",
   art: none,
+  titles: none,
   body,
 ) = {
   pagebreak(weak: true)
@@ -1285,7 +1276,7 @@
     let mark = [#metadata((id: id, head: short-title))<mag-piece>]
     if opener == ILLUSTRATED { place(top + left, dy: -OPENER-MARK-LIFT, mark) } else { mark }
     if opener == ILLUSTRATED {
-      opener-parts.update(_ => ((tag: "art", body: art),))
+      opener-parts.update(_ => ((tag: "art", body: art), (tag: "titles", body: titles)))
     }
     body
     [#metadata(id)<mag-piece-end>]

@@ -17,6 +17,7 @@ const PAGE: f64 = 595.2756 - 42.0004 - 54.9996;
 const RESERVE: f64 = 13.2;
 const TITLE_BOX: f64 = 64.0;
 const TITLE_MIN: f64 = 22.0;
+const TITLE_MAX: f64 = 32.5;
 const COMPACT_TITLE_MAX: f64 = 30.0;
 const TITLE_LEADING: f64 = 0.96;
 const COMPACT_FIXED: f64 = 195.1 + 20.0 + 7.15 + 6.0 + 18.0 + 2.4 + 16.0 + 6.0;
@@ -139,6 +140,16 @@ impl Metrics {
         self.fitted(title, RAIL, TITLE_BOX, COMPACT_TITLE_MAX, TITLE_MIN, 2)
     }
 
+    pub fn illustrated_titles(&self, title: &str) -> Result<[(f64, usize); 2]> {
+        let standard = self.fitted(title, RAIL, TITLE_BOX, TITLE_MAX, TITLE_MIN, 2);
+        match (standard, self.compact_title(title)) {
+            (Some(standard), Some(compact)) => Ok([standard, compact]),
+            _ => Err(ValidationError::one(format!(
+                "Title cannot fit the Quiet Standard display box: {title}"
+            ))),
+        }
+    }
+
     pub fn plain_opener(
         &self,
         title: &str,
@@ -259,19 +270,21 @@ mod tests {
     use super::*;
     use crate::typeset::template::FONT_DIR;
 
-    fn keep(words: usize) -> usize {
+    fn metrics() -> Metrics {
         let fonts = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("..")
             .join(FONT_DIR);
+        Metrics::load(&fonts).expect("the faces load")
+    }
+
+    fn keep(words: usize) -> usize {
         let intro = vec!["standfirst"; words].join(" ");
-        Metrics::load(&fonts)
-            .expect("the faces load")
-            .standfirst_keep_words(&Opener {
-                title: "A Fixture Title",
-                byline: "Ada",
-                note: "A note on the author.",
-                intro: &intro,
-            })
+        metrics().standfirst_keep_words(&Opener {
+            title: "A Fixture Title",
+            byline: "Ada",
+            note: "A note on the author.",
+            intro: &intro,
+        })
     }
 
     #[test]
@@ -279,5 +292,21 @@ mod tests {
         assert_eq!(keep(63), 0);
         assert_eq!(keep(64), 63);
         assert_eq!(keep(400), 63);
+    }
+
+    #[test]
+    fn an_illustrated_title_is_fitted_on_advance_widths_as_the_adapter_fits_it() {
+        let metrics = metrics();
+        let title = "Automated Researchers Can Reliably Mitigate Alignment Failures";
+        assert_eq!(
+            metrics.illustrated_titles(title).expect("it fits"),
+            [(22.5, 2), (22.5, 2)]
+        );
+        let [(size, lines), _] = metrics
+            .illustrated_titles("The Pen")
+            .expect("a short title fits");
+        assert_eq!((size, lines), (32.5, 1));
+        let long = ["Unbreakable"; 12].join(" ");
+        assert!(metrics.illustrated_titles(&long).is_err());
     }
 }

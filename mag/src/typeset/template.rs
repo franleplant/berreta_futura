@@ -931,6 +931,139 @@ mod tests {
         );
     }
 
+    fn laid(tree: &Tree, template: &str) -> Vec<Vec<Mark>> {
+        let (_, font_dir) = roots();
+        let world = Sources::new(tree, template, ROOT_TYP, font_dir).expect("the world builds");
+        document(&world)
+            .expect("the run compiles")
+            .pages()
+            .iter()
+            .map(|page| {
+                let mut out = vec![];
+                marks(&page.frame, Point::zero(), &mut out);
+                out
+            })
+            .collect()
+    }
+
+    fn heading_and_label(tree: &Tree, template: &str) -> [(usize, f64); 3] {
+        let pages = laid(tree, template);
+        let find = |keep: &dyn Fn(&Mark) -> bool| {
+            pages
+                .iter()
+                .enumerate()
+                .find_map(|(n, page)| page.iter().find(|m| keep(m)).map(|m| (n + 1, m.x)))
+                .expect("the mark is laid")
+        };
+        [
+            find(&|m| m.text == "Anchor" && (m.size - 18.5).abs() < 1e-6),
+            find(&|m| m.text.starts_with("FIGURE")),
+            find(&|m| m.text == "Line 0."),
+        ]
+    }
+
+    #[test]
+    fn a_heading_goes_to_the_next_page_with_the_figure_it_anchors() {
+        let loose = TEMPLATE_TYP.replace(
+            "sticky: next-flow(index).kind == \"figure\",",
+            "sticky: false,",
+        );
+        assert_ne!(loose, TEMPLATE_TYP, "the sticky rule moved");
+        let wide = Some(", pixels: (2400, 1350)");
+        let mut parted = vec![];
+        for n in 0..64 {
+            for layout in ["evidence_band", "column_plate"] {
+                let tree = figure_run(n, layout, wide);
+                let [heading, label, _] = heading_and_label(&tree, TEMPLATE_TYP);
+                assert_eq!(heading.0, label.0, "step {n}, {layout}");
+                let [heading, label, _] = heading_and_label(&tree, &loose);
+                if heading.0 != label.0 {
+                    parted.push(n);
+                }
+            }
+        }
+        assert!(
+            !parted.is_empty(),
+            "no step left the heading behind without sticky"
+        );
+        let extract = |n: usize| {
+            let (paragraphs, lift) = phase(n);
+            synthetic(format!(
+                "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+                 {}#v({lift}pt)\n#doc-heading(level: 2)[Anchor]\n#extract(id: \"e\", source-id: \"s\", \
+                 anchor: \"Anchor\", style: \"quote\", word: \"Figure\")[#quote-line[{}]]\n{}]\n",
+                prose(paragraphs),
+                "Quoted words. ".repeat(60),
+                prose(27)
+            ))
+        };
+        assert!(
+            (0..64).any(|n| {
+                let [heading, label, _] = heading_and_label(&extract(n), TEMPLATE_TYP);
+                heading.0 < label.0
+            }),
+            "a heading before an extract keeps its clearance break, as the adapter's does"
+        );
+    }
+
+    #[test]
+    fn a_band_carried_past_its_bridge_keeps_the_bridge_page_s_left_edge_as_the_adapter_does() {
+        let left = |page: usize| if page % 2 == 1 { 44.0 } else { 42.5197 };
+        let wide = Some(", pixels: (2400, 1350)");
+        let (mut carried, mut stayed) = (0, 0);
+        for n in 0..64 {
+            let [heading, label, first] =
+                heading_and_label(&figure_run(n, "evidence_band", wide), TEMPLATE_TYP);
+            let [plain, column, _] =
+                heading_and_label(&figure_run(n, "column_plate", wide), TEMPLATE_TYP);
+            let bridge = heading.0 - usize::from(heading.0 > first.0);
+            assert!((label.1 - left(bridge)).abs() < 1e-3, "step {n}: {label:?}");
+            assert!(
+                (column.1 - left(plain.0) - 4.004).abs() < 1e-3,
+                "step {n}: {column:?}"
+            );
+            carried += usize::from(heading.0 > first.0 && heading.0 % 2 == 0);
+            stayed += usize::from(heading.0 == first.0 && first.0 % 2 == 1);
+        }
+        assert!(
+            carried > 0 && stayed > 0,
+            "{carried} carried, {stayed} stayed"
+        );
+    }
+
+    #[test]
+    fn a_jpeg_figure_is_embedded_as_its_own_bytes_exif_and_all() {
+        let (_, font_dir) = roots();
+        let path = format!(
+            "{}/tests/typeset_fixtures/media/exif.jpg",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        let bytes = std::fs::read(&path).expect("the fixture reads");
+        assert!(
+            bytes.windows(4).any(|w| w == b"Exif"),
+            "the fixture lost its EXIF segment"
+        );
+        let tree = synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+             #doc-heading(level: 2)[Anchor]\n#figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", \
+             layout: \"evidence_band\", word: \"Figure\", alt: \"a\", path: \"{path}\", pixels: (24, 16))\
+             [#figure-caption[Cap.]]\n]\n"
+        ));
+        let pdf = compile(&world(&tree, font_dir).expect("the world builds")).expect("it compiles");
+        let doc = Document::load_mem(&pdf).expect("the emitted bytes are a PDF");
+        let embedded: Vec<&[u8]> = doc
+            .objects
+            .values()
+            .filter_map(|object| object.as_stream().ok())
+            .filter(|stream| {
+                stream.dict.get(b"Filter").and_then(Object::as_name).ok()
+                    == Some(b"DCTDecode".as_slice())
+            })
+            .map(|stream| stream.content.as_slice())
+            .collect();
+        assert_eq!(embedded, vec![bytes.as_slice()]);
+    }
+
     fn fixture_png() -> String {
         format!(
             "{}/tests/typeset_fixtures/media/landscape.png",
