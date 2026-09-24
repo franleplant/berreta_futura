@@ -135,6 +135,7 @@ mod tests {
     use lopdf::{Document, Object};
     use std::collections::BTreeSet;
     use std::path::PathBuf;
+    use typst::visualize::{FillRule, Paint};
 
     const OLD_QUOTE_RULE: &str = "grid(\n      columns: (QUOTE-RULE, QUOTE-PAD, 1fr),\n      \
         rect(width: QUOTE-RULE, height: 100%, fill: VIOLET, stroke: none),\n      [],\n      \
@@ -276,7 +277,7 @@ mod tests {
                 }
             }
         }
-        for own in ["include", "import", "strong", "emph"] {
+        for own in ["include", "import", "set", "strong", "emph"] {
             out.remove(own);
         }
         out
@@ -740,5 +741,187 @@ mod tests {
             (content_height - 498.275_590_551_181_1).abs() < 1e-9,
             "the content height is {content_height}, not the reader's 498.2756pt"
         );
+    }
+
+    fn paints(frame: &Frame, out: &mut Vec<String>) {
+        for (_, item) in frame.items() {
+            match item {
+                FrameItem::Group(group) => paints(&group.frame, out),
+                FrameItem::Image(_, size, _) => {
+                    out.push(format!("image {:.2}x{:.2}", size.x.to_pt(), size.y.to_pt()))
+                }
+                FrameItem::Shape(shape, _) => {
+                    let size = shape.bbox(false).size();
+                    let area = format!("{:.2}x{:.2}", size.x.to_pt(), size.y.to_pt());
+                    if let Some(Paint::Solid(color)) = &shape.fill {
+                        let [r, g, b, _] = color.to_vec4_u8();
+                        let rule = match shape.fill_rule {
+                            FillRule::EvenOdd => "evenodd",
+                            FillRule::NonZero => "fill",
+                        };
+                        out.push(format!("{rule} {r},{g},{b} {area}"));
+                    }
+                    if shape.stroke.is_some() {
+                        out.push(format!("stroke {area}"));
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn opener_paints(template: &str) -> Vec<String> {
+        let (_, font_dir) = roots();
+        let world = Sources::new(&fixture_tree("901"), template, ROOT_TYP, font_dir)
+            .expect("the world builds");
+        let document = document(&world).expect("the fixture compiles");
+        document
+            .pages()
+            .iter()
+            .map(|page| {
+                let mut out = vec![];
+                paints(&page.frame, &mut out);
+                out
+            })
+            .find(|out| {
+                out.iter()
+                    .any(|p| p.starts_with("fill 240,87,56 348.00x203.00"))
+            })
+            .expect("one page carries the opener's orange offset")
+    }
+
+    #[test]
+    fn the_illustrated_opener_paints_art_code_and_ring_in_the_oracle_order() {
+        let found = opener_paints(TEMPLATE_TYP);
+        let want = [
+            "fill 240,87,56 14.50x2.40",
+            "fill 240,87,56 348.00x203.00",
+            "fill 200,192,179 348.00x1.00",
+            "fill 255,255,255 41.00x41.00",
+            "fill 14,19,22 ",
+            "evenodd 23,25,28 348.00x203.00",
+            "image 343.20x405.60",
+        ];
+        let mut at = 0;
+        for paint in &found {
+            if at < want.len() && paint.starts_with(want[at]) {
+                at += 1;
+            }
+        }
+        assert_eq!(at, want.len(), "paint order {found:?}");
+        assert!(
+            !found.iter().any(|p| p.starts_with("stroke")),
+            "the opener strokes nothing: {found:?}"
+        );
+        let bare =
+            opener_paints(&TEMPLATE_TYP.replace("opener-art(opener-part(rows, \"art\"))", "none"));
+        assert!(
+            !bare
+                .iter()
+                .any(|p| p.starts_with("image") || p.starts_with("evenodd")),
+            "the check cannot tell a drawn opener from a bare one: {bare:?}"
+        );
+    }
+
+    fn outline(pdf: &[u8]) -> (Option<String>, Vec<(usize, String)>) {
+        let doc = Document::load_mem(pdf).expect("the emitted bytes are a PDF");
+        let text = |o: &Object| match o {
+            Object::String(bytes, _) => match bytes.strip_prefix(&[0xFE, 0xFF]) {
+                Some(wide) => String::from_utf16_lossy(
+                    &wide
+                        .chunks(2)
+                        .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                        .collect::<Vec<u16>>(),
+                ),
+                None => String::from_utf8_lossy(bytes).into_owned(),
+            },
+            _ => String::new(),
+        };
+        let title = doc
+            .trailer
+            .get(b"Info")
+            .and_then(Object::as_reference)
+            .and_then(|id| doc.get_dictionary(id))
+            .and_then(|info| info.get(b"Title"))
+            .map(text)
+            .ok();
+        let mut out = vec![];
+        let mut stack: Vec<(usize, Option<&Object>)> = vec![];
+        let root = doc
+            .catalog()
+            .and_then(|c| c.get(b"Outlines"))
+            .and_then(Object::as_reference)
+            .and_then(|id| doc.get_dictionary(id))
+            .expect("the reader carries an outline");
+        stack.push((1, root.get(b"First").ok()));
+        while let Some((depth, next)) = stack.pop() {
+            let Some(id) = next.and_then(|o| o.as_reference().ok()) else {
+                continue;
+            };
+            let entry = doc
+                .get_dictionary(id)
+                .expect("an outline entry is a dictionary");
+            out.push((depth, entry.get(b"Title").map(text).unwrap_or_default()));
+            stack.push((depth, entry.get(b"Next").ok()));
+            stack.push((depth + 1, entry.get(b"First").ok()));
+        }
+        (title, out)
+    }
+
+    fn weasyprint_outline(tree: &Tree) -> Vec<(usize, String)> {
+        let mut levels: Vec<usize> = vec![];
+        let mut out = vec![];
+        let calls = tree
+            .files
+            .iter()
+            .flat_map(|f| f.source.lines())
+            .filter_map(|line| {
+                let line = line.trim();
+                let text = |rest: &str| {
+                    rest.trim_start_matches('[')
+                        .trim_end_matches(']')
+                        .replace('\\', "")
+                };
+                if let Some(rest) = line.strip_prefix("#doc-heading(level: ") {
+                    let (level, rest) = rest.split_once(')').expect("a heading call closes");
+                    Some((level.parse::<usize>().expect("a numeric level"), text(rest)))
+                } else if let Some(rest) = line.strip_prefix("#piece-title") {
+                    Some((1, text(rest)))
+                } else {
+                    line.strip_prefix("#contents-label")
+                        .map(|rest| (1, text(rest)))
+                }
+            });
+        for (level, title) in calls {
+            while levels.last().is_some_and(|&l| l >= level) {
+                levels.pop();
+            }
+            levels.push(level);
+            out.push((levels.len(), title));
+        }
+        out
+    }
+
+    #[test]
+    fn the_reader_carries_its_title_and_a_bookmark_per_heading_nested_as_weasyprint_does() {
+        let (_, font_dir) = roots();
+        for edition_id in ["900", "901"] {
+            let tree = fixture_tree(edition_id);
+            let pdf =
+                compile(&world(&tree, font_dir).expect("the world builds")).expect("it compiles");
+            let (title, found) = outline(&pdf);
+            let want = weasyprint_outline(&tree);
+            assert!(want.len() >= 3, "fixture {edition_id} carries {want:?}");
+            assert!(
+                want.iter().any(|w| w.0 == 2),
+                "fixture {edition_id} never nests: {want:?}"
+            );
+            assert_eq!(found, want, "fixture {edition_id}");
+            let title = title.expect("the reader carries a title");
+            assert!(
+                title.starts_with("Fixture Press: ") && title.len() > "Fixture Press: ".len(),
+                "{title}"
+            );
+        }
     }
 }
