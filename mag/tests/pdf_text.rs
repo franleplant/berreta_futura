@@ -368,3 +368,19 @@ fn an_image_only_page_fails_loud() {
         "no text layer",
     );
 }
+
+#[test]
+fn a_stray_token_fails_loud_instead_of_truncating_the_page() {
+    let lost = "BT /F1 12 Tf 72 600 Td (Lost line) Tj ET";
+    assert_eq!(
+        read(helvetica(), &format!("{HELLO} {lost}")).unwrap(),
+        "Hello world\n\nLost line\n"
+    );
+    for junk in ["@", "]"] {
+        fails(
+            helvetica(),
+            &format!("{HELLO} {junk} {lost}"),
+            "holds a token lopdf cannot parse",
+        );
+    }
+}

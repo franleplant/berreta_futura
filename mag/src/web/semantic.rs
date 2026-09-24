@@ -5,10 +5,10 @@ use crate::model::doc::{
 use crate::model::manifest::{Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
-    clamp_roster, content_label, is_name_roster, py_casefold, py_repr, py_str, py_strip, ui,
+    anchor_key, article_opener_format, clamp_roster, content_label, is_name_roster,
+    is_reference_heading, py_repr, py_strip, raw_or, scalar_label, ui,
 };
 use anyhow::{bail, Context, Result};
-use serde_yaml::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -48,15 +48,6 @@ pub fn render_html_edition(edition: &Edition, settable: &BTreeSet<u32>) -> Resul
     .render()
 }
 
-pub fn py_article_opener_format(edition: &Edition) -> String {
-    match edition.raw.get("format") {
-        Some(Value::Mapping(format)) => {
-            py_strip(&raw_or(format.get("article_opener"), "")).to_string()
-        }
-        _ => String::new(),
-    }
-}
-
 pub fn file_uri(path: &Path) -> String {
     let mut uri = String::from("file://");
     for byte in path.to_string_lossy().bytes() {
@@ -69,33 +60,9 @@ pub fn file_uri(path: &Path) -> String {
     uri
 }
 
-pub fn raw_or(value: Option<&Value>, fallback: &str) -> String {
-    let truthy = match value {
-        None | Some(Value::Null) => false,
-        Some(Value::Bool(flag)) => *flag,
-        Some(Value::Number(number)) => number.as_f64().is_some_and(|value| value != 0.0),
-        Some(Value::String(text)) => !text.is_empty(),
-        Some(Value::Sequence(items)) => !items.is_empty(),
-        Some(Value::Mapping(mapping)) => !mapping.is_empty(),
-        Some(Value::Tagged(_)) => true,
-    };
-    match value {
-        Some(value) if truthy => py_str(value),
-        _ => fallback.to_string(),
-    }
-}
-
 fn indent(lines: &[String], spaces: usize) -> Vec<String> {
     let prefix = " ".repeat(spaces);
     lines.iter().map(|line| format!("{prefix}{line}")).collect()
-}
-
-fn py_anchor_key(value: &str) -> String {
-    py_casefold(py_strip(value))
-}
-
-fn py_is_reference_heading(text: &str) -> bool {
-    matches!(py_anchor_key(text).as_str(), "references" | "referencias")
 }
 
 fn plain_text(inlines: &[Inline]) -> String {
@@ -114,7 +81,9 @@ fn plain_text(inlines: &[Inline]) -> String {
 fn read_document(path: &Path) -> Result<Document> {
     let markdown = std::fs::read_to_string(path)
         .with_context(|| format!("Cannot read manuscript {}", path.display()))?;
-    parse_publication_document(&markdown)
+    let document = parse_publication_document(&markdown)?;
+    scalar_label(&document.metadata)?;
+    Ok(document)
 }
 
 fn asset(id: String, role: &str, path: &Path, alt_text: &str) -> HtmlAsset {
@@ -147,7 +116,7 @@ fn by_anchor<T>(rows: &[T], anchor: impl Fn(&T) -> &str) -> (Vec<&T>, BTreeMap<S
             opener.push(row);
         } else {
             anchored
-                .entry(py_anchor_key(anchor(row)))
+                .entry(anchor_key(anchor(row)))
                 .or_default()
                 .push(row);
         }
@@ -202,7 +171,7 @@ impl Renderer<'_> {
             assets.push(asset("cover-art".to_string(), "cover_art", cover_art, &alt));
         }
         let title = format!("{}: {}", edition.publication_name, edition.title);
-        let format_attribute = if py_article_opener_format(edition) == ILLUSTRATED {
+        let format_attribute = if article_opener_format(&edition.raw) == ILLUSTRATED {
             format!(" data-article-opener-format=\"{ILLUSTRATED}\"")
         } else {
             String::new()
@@ -511,7 +480,7 @@ impl Renderer<'_> {
         assets: &mut Vec<HtmlAsset>,
     ) -> Result<String> {
         let anchored = Anchored::of(article);
-        let illustrated = py_article_opener_format(self.edition) == ILLUSTRATED;
+        let illustrated = article_opener_format(&self.edition.raw) == ILLUSTRATED;
         let (mut lines, rest) = match (&article.opener_art, illustrated) {
             (Some(_), true) => (
                 self.illustrated_header(article, document, index, assets)?,
@@ -531,7 +500,7 @@ impl Renderer<'_> {
                 _ => None,
             };
             if let Some(heading) = &heading {
-                references = py_is_reference_heading(heading);
+                references = is_reference_heading(heading);
             }
             let standfirst = standfirst_first && position == 0;
             lines.push(format!("  {}", self.block(block, standfirst, references)?));
@@ -539,7 +508,7 @@ impl Renderer<'_> {
                 self.anchored_rows(
                     article,
                     &anchored,
-                    &py_anchor_key(&heading),
+                    &anchor_key(&heading),
                     &mut lines,
                     assets,
                 );

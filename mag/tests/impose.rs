@@ -472,3 +472,59 @@ fn imposition_matches_the_python_oracle() {
     }
     assert!(compared >= 9, "only {compared} imposition cases compared");
 }
+
+fn colliding_reader(junk: &str, tag: &str) -> PathBuf {
+    use lopdf::{dictionary, Stream};
+    let mut doc = Document::with_version("1.7");
+    let pages_id = doc.new_object_id();
+    let kids: Vec<Object> = (1..=4)
+        .map(|page| {
+            let font = doc.add_object(dictionary! {
+                "Type" => "Font", "Subtype" => "Type1", "BaseFont" => format!("Face{page}"),
+            });
+            let content = format!(
+                "BT /F1 12 Tf 72 500 Td (page {page}) Tj ET {junk} 0 0 0 rg 10 10 50 50 re f"
+            );
+            let content = doc.add_object(Stream::new(dictionary! {}, content.into_bytes()));
+            let media: Vec<Object> = vec![0.into(), 0.into(), 420.into(), 595.into()];
+            doc.add_object(dictionary! {
+                "Type" => "Page", "Parent" => pages_id, "Contents" => content, "MediaBox" => media,
+                "Resources" => dictionary! {"Font" => dictionary! {"F1" => font}},
+            })
+            .into()
+        })
+        .collect();
+    doc.objects.insert(
+        pages_id,
+        Object::Dictionary(dictionary! {"Type" => "Pages", "Kids" => kids, "Count" => 4}),
+    );
+    let catalog = doc.add_object(dictionary! {"Type" => "Catalog", "Pages" => pages_id});
+    doc.trailer.set("Root", catalog);
+    let path = std::env::temp_dir().join(format!("wp51h-{tag}-{}.pdf", std::process::id()));
+    doc.save(&path).expect("the reader saves");
+    path
+}
+
+#[test]
+fn a_stray_token_in_a_renamed_page_fails_loud_instead_of_truncating() {
+    let clean = colliding_reader("", "clean");
+    let produced = clean.with_extension("imposed.pdf");
+    impose::impose_a5_on_a4(&clean, &produced, "all").expect("the clean reader imposes");
+    let imposed = Document::load(&produced).expect("the sheet loads");
+    let sheet = *imposed.get_pages().values().next().expect("one sheet");
+    let content = String::from_utf8_lossy(&imposed.get_page_content(sheet)).into_owned();
+    assert!(
+        content.contains("/F1-0"),
+        "the second page was renamed: {content}"
+    );
+    assert_eq!(content.matches(" re").count(), 4, "{content}");
+    for junk in ["@", "]"] {
+        let dirty = colliding_reader(junk, "dirty");
+        let error = impose::impose_a5_on_a4(&dirty, &produced, "all")
+            .expect_err("a stray token must not truncate a page");
+        assert!(
+            format!("{error:#}").contains("holds a token lopdf cannot parse"),
+            "{error:#}"
+        );
+    }
+}
