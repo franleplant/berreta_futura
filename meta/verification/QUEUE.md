@@ -19,6 +19,9 @@
 - FLIP: WP-4.2 landed 2316f2c: `[render] engine = "typst"` default,
   `--engine weasyprint` rollback works, CLAUDE.md/docs updated; in-flight
   edition is 010, `--adhoc 010` exit 0.
+- WP-4.3 landed 511a9fb, awaiting-fran: magazine.toml [render]
+  `hyphenate_english` (default false) and `weasyprint69_hyphen_skip`
+  (default true); review PDFs in output/hyphenation-review/.
 - Running: WP-4.2b (fallback engine typst, translate next-step on the
   typst leg, two docs), WP-4.3 hyphenation measurement (ends
   awaiting-fran), WP-6.0 pre-deletion oracles + WP-6.1 inventory.
@@ -140,6 +143,11 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- HYPHENATION (WP-4.3.md): (1) keep parity; (2) English hyphenation on:
+  010 stays 56 pp, 227 hyphens, 11 fewer lines, line ends move on 36 pp,
+  Typst allows up to 4 consecutive hyphenated lines; (3) drop the copied
+  Spanish skip rule (1 break of 69 on fixture 906). Compare
+  output/hyphenation-review/wp43-010-{native,parity}-en.pdf.
 - Every edition before 010 except 008 is refused by the current Python
   renderer (004 pending anchors; 005-007 too few closing plates; 009
   repeated plate art; 001-003 no edition.yaml), so 008 is the only
