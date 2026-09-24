@@ -634,7 +634,8 @@ struct Interp<'a> {
 
 impl Interp<'_> {
     fn interpret(&mut self, content: &[u8], res: &Dictionary) -> Result<()> {
-        let ops = Content::decode(content).context("decoding the content stream")?;
+        let ops = Content::decode_strict(content)
+            .context("the content stream holds a token lopdf cannot parse")?;
         let mut path: Vec<[f64; 5]> = Vec::new();
         let mut cur = (0.0, 0.0);
         for op in &ops.operations {

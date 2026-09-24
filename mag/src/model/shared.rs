@@ -324,6 +324,51 @@ pub fn ui(language: &str, key: &str) -> String {
         .unwrap_or_else(|| py_upper(&key.replace(['_', '-'], " ")))
 }
 
+pub fn raw_or(value: Option<&Value>, fallback: &str) -> String {
+    let truthy = match value {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(flag)) => *flag,
+        Some(Value::Number(number)) => number.as_f64().is_some_and(|value| value != 0.0),
+        Some(Value::String(text)) => !text.is_empty(),
+        Some(Value::Sequence(items)) => !items.is_empty(),
+        Some(Value::Mapping(mapping)) => !mapping.is_empty(),
+        Some(Value::Tagged(_)) => true,
+    };
+    match value {
+        Some(value) if truthy => py_str(value),
+        _ => fallback.to_string(),
+    }
+}
+
+pub fn article_opener_format(raw: &Value) -> String {
+    match raw.get("format") {
+        Some(Value::Mapping(format)) => {
+            py_strip(&raw_or(format.get("article_opener"), "")).to_string()
+        }
+        _ => String::new(),
+    }
+}
+
+pub fn anchor_key(value: &str) -> String {
+    py_casefold(py_strip(value))
+}
+
+pub fn is_reference_heading(text: &str) -> bool {
+    matches!(anchor_key(text).as_str(), "references" | "referencias")
+}
+
+pub fn scalar_label(metadata: &Mapping) -> Result<()> {
+    match metadata.get("label") {
+        Some(value @ (Value::Sequence(_) | Value::Mapping(_))) => {
+            Err(ValidationError::one(format!(
+                "Frontmatter label must be text, not {}",
+                py_repr_value(value)
+            )))
+        }
+        _ => Ok(()),
+    }
+}
+
 pub fn content_label(language: &str, metadata: &Mapping, content_mode: &str) -> String {
     let declared = metadata
         .get(Value::String("label".to_string()))

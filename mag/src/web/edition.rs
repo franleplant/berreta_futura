@@ -1,8 +1,9 @@
 use super::markup::{is_illustrated_opener_header, is_print_only, piece_opening, source_link};
-use super::semantic::{raw_or, render_html_edition, HtmlAsset};
+use super::semantic::{render_html_edition, HtmlAsset};
 use super::text::{attr, Escaper};
 use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cover_tab_issue};
 use crate::model::manifest::{source_code_payload, Edition};
+use crate::model::shared::raw_or;
 use crate::model::shared::{is_python_space, py_casefold, py_repr, py_strip, py_upper};
 use anyhow::{bail, Context, Result};
 use regex::{Captures, Regex};

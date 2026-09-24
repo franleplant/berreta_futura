@@ -290,7 +290,8 @@ fn real(value: f64) -> String {
 }
 
 fn rename_names(content: &[u8], renames: &[(Vec<u8>, Vec<u8>)]) -> Result<Vec<u8>> {
-    let mut decoded = Content::decode(content)?;
+    let mut decoded = Content::decode_strict(content)
+        .context("a page content stream holds a token lopdf cannot parse")?;
     for operation in &mut decoded.operations {
         for operand in &mut operation.operands {
             if let Object::Name(name) = operand {
