@@ -108,6 +108,7 @@
 #let OPENER-RAIL = 348pt
 #let OPENER-ART-HEIGHT = 207.1pt
 #let OPENER-ART-LIFT = 12.0004pt
+#let OPENER-MARK-LIFT = 12pt
 #let OPENER-ART-FLOW = 195.1pt
 #let OPENER-META-MEASURE = 293pt
 #let OPENER-PANGO-RESERVE = 13.2pt
@@ -1241,7 +1242,8 @@
   set par(spacing: after)
   set text(..edges(BODY-SIZE, PLATE-LEADING, HALF-SERIF)) if plate
   column({
-    [#metadata((id: id, head: short-title))<mag-piece>]
+    let mark = [#metadata((id: id, head: short-title))<mag-piece>]
+    if opener == ILLUSTRATED { place(top + left, dy: -OPENER-MARK-LIFT, mark) } else { mark }
     if opener == ILLUSTRATED {
       opener-parts.update(_ => ((tag: "art", body: art),))
     }
