@@ -223,8 +223,9 @@ fn lanczos(x: f64) -> f64 {
     }
 }
 
-fn precompute_coeffs(in_size: u32, in0: f64, in1: f64, out_size: u32) -> Coeffs {
-    let scale = (in1 - in0) / out_size as f64;
+fn precompute_coeffs(in_size: u32, in0: f32, in1: f32, out_size: u32) -> Coeffs {
+    let scale = f64::from(in1 - in0) / out_size as f64;
+    let in0 = f64::from(in0);
     let filterscale = scale.max(1.0);
     let support = LANCZOS_SUPPORT * filterscale;
     let ksize = (support.ceil() as usize) * 2 + 1;
@@ -410,8 +411,9 @@ fn reduce(source: &Rgb, factor: (u32, u32)) -> Rgb {
 
 pub(crate) fn resize(source: &Rgb, size: (u32, u32), box_rect: (f64, f64, f64, f64)) -> Rgb {
     let (width, height) = size;
-    let horizontal = precompute_coeffs(source.width, box_rect.0, box_rect.2, width);
-    let mut vertical = precompute_coeffs(source.height, box_rect.1, box_rect.3, height);
+    let horizontal = precompute_coeffs(source.width, box_rect.0 as f32, box_rect.2 as f32, width);
+    let mut vertical =
+        precompute_coeffs(source.height, box_rect.1 as f32, box_rect.3 as f32, height);
     let first = vertical.bounds[0].0;
     let last = vertical.bounds[height as usize - 1];
     let rows = (last.0 + last.1 - first) as u32;
@@ -697,4 +699,70 @@ mod exif_tests {
         assert_eq!(exif_orientation(&offset_only), None);
         assert_eq!(exif_orientation(b"not exif"), None);
     }
+}
+
+#[cfg(test)]
+mod thumbnail_tests {
+    use super::{thumbnail, Rgb};
+    use sha2::{Digest, Sha256};
+
+    const PILLOW: &str = r#"
+import hashlib, sys
+from PIL import Image
+w, h = int(sys.argv[1]), int(sys.argv[2])
+data = bytes(v for y in range(h) for x in range(w) for v in ((x * 7 + y * 13) % 256, (x * x + y) % 251, (x ^ y) % 256))
+image = Image.frombytes("RGB", (w, h), data)
+image.thumbnail((512, 512), Image.Resampling.LANCZOS)
+print(image.size[0], image.size[1], hashlib.sha256(image.tobytes()).hexdigest())
+"#;
+
+    fn pattern(width: u32, height: u32) -> Rgb {
+        let data = (0..height)
+            .flat_map(|y| {
+                (0..width).flat_map(move |x| {
+                    [
+                        ((x * 7 + y * 13) % 256) as u8,
+                        ((x * x + y) % 251) as u8,
+                        ((x ^ y) % 256) as u8,
+                    ]
+                })
+            })
+            .collect();
+        Rgb {
+            width,
+            height,
+            data,
+        }
+    }
+
+    fn pillow(width: u32, height: u32) -> String {
+        let output = std::process::Command::new("uv")
+            .args(["run", "python", "-c", PILLOW])
+            .arg(width.to_string())
+            .arg(height.to_string())
+            .current_dir(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".."))
+            .output()
+            .expect("uv runs");
+        assert!(output.status.success(), "{output:?}");
+        String::from_utf8(output.stdout)
+            .expect("utf8")
+            .trim()
+            .to_string()
+    }
+
+    #[test]
+    fn thumbnail_matches_pillow_when_the_reduce_factor_leaves_a_remainder() {
+        let (width, height) = (3073, 97);
+        let image = thumbnail(&pattern(width, height));
+        let ours = format!(
+            "{} {} {}",
+            image.width,
+            image.height,
+            hex::encode(Sha256::digest(&image.data))
+        );
+        assert_eq!(ours, PINNED);
+        assert_eq!(pillow(width, height), PINNED);
+    }
+
+    const PINNED: &str = "512 16 e08736354006ce070549837cd88ac69b25885703a435fad99b18498d902486fd";
 }
