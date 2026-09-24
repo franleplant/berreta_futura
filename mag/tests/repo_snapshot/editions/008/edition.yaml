@@ -1,0 +1,237 @@
+# Edition 8 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
+# TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
+# Claude on 2026-08-30 for the editor to revise. ART SELECTIONS ARE PROVISIONAL
+# too, picked by Claude from rounds 2026-08-30T14-06-08 (tails) and 2026-08-30T18-03-42
+# (cover, openers at the frame's 1.71:1 size, six closing plates); the
+# editor's real selection happens in editions/008/art/showcase.html. Article order is the reading order:
+# the self-improvement loop opens, the cost and market pieces in the middle,
+# memory, the agent civilizations story, then the lab bench as closer.
+id: '008'
+issue_number: 8
+title: The Token Bill
+subtitle: Warp's self-improving skills, Claude fixing its own alignment, Uber's cost equation, inference
+  eating software, memory as the moat, three agent civilizations, and agents at the lab bench
+publication_date: '2026-08-30'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: The Token Bill
+  deck: Warp's self-improving skills, Claude fixing its own alignment, Uber's cost equation, inference eating
+    software, memory as the moat, three agent civilizations, and agents at the lab bench
+  back_text: 'Every month the inference bill grows, and the work behind it changes hands: agents that rewrite
+    their own instructions, researchers that train the next model, a spend equation with six terms, a
+    notebook that decides what to forget, and a laser relocked overnight. This issue follows the tokens
+    to where the money now goes.'
+  art_path: editions/008/art/rounds/2026-08-30T19-44-48/cover-wildcard-the-chain-runs-out-v3.png
+articles:
+- id: how-warp-builds-self-improving-agents-on-claude
+  title: How Warp Builds Self-Improving Agents
+  short_title: Self-Improving Agents
+  display_emphasis: Self-Improving
+  opener_variant: split_axis
+  author: Michael Segner
+  author_note: From the Claude blog, with Warp founder Zach Lloyd.
+  content_mode: article
+  source_ids:
+  - how-warp-builds-self-improving-agents-on-claude-9e96ce55
+  manuscript: editions/008/articles/how-warp-builds-self-improving-agents-on-claude.md
+  figures:
+  - id: the-loop
+    source_id: how-warp-builds-self-improving-agents-on-claude-9e96ce55
+    path: media/001.jpg
+    credit: 'Diagram by Anthropic; source: How Warp builds self-improving agents on Claude.'
+    caption: The agent runs off a base skill, a human reviews and leaves feedback, and a second skill turns
+      that feedback into an edit of the first.
+    alt_text: A three-step loop diagram, agent executes a task, human reviews and gives feedback, agent reviews
+      feedback and improves itself, with an arrow back to the start.
+    anchor: The loop
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/008/art/rounds/2026-08-30T18-03-42/warp-opener-the-run-that-fixes-its-track-v2.png
+    alt_text: Maro releases a marble at the left of a long wooden marble run while Pedro chalks a cross on the floor where the last one flew off and Flopaz tilts the track section that will send the next one into the cup.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/warp-tail-last-card-of-the-morning-v2.png
+- id: automated-researchers-can-reliably-mitigate-alignment-failures
+  title: Automated Researchers Can Reliably Mitigate Alignment Failures
+  short_title: Mitigate Alignment Failures
+  display_emphasis: Researchers
+  opener_variant: edge_medallion
+  author: Anthropic
+  author_note: From Anthropic's research blog.
+  content_mode: article
+  source_ids:
+  - automated-researchers-can-reliably-mitigate-alig-a9acbff7
+  manuscript: editions/008/articles/automated-researchers-can-reliably-mitigate-alignment-failures.md
+  figures:
+  - id: ten-failures
+    source_id: automated-researchers-can-reliably-mitigate-alig-a9acbff7
+    path: media/002.png
+    credit: 'Chart by Anthropic; source: Automated researchers can reliably mitigate alignment failures.'
+    caption: Across ten alignment failures, from sycophancy to reward hacking, the automated researcher closed
+      between 26% and 96% of the safety gap.
+    alt_text: A bar chart of ten alignment failure categories with the percentage of safety gap closed for each.
+    anchor: The setup
+    layout: compact_band
+  - id: production-model
+    source_id: automated-researchers-can-reliably-mitigate-alig-a9acbff7
+    path: media/003.png
+    credit: 'Chart by Anthropic; source: Automated researchers can reliably mitigate alignment failures.'
+    caption: On an early Opus 4.8 checkpoint, 60 hours of automated research closed 65% of the safety gap,
+      against 72% for the released model.
+    alt_text: A chart comparing safety gap closed over 60 hours of automated research with the released model's score.
+    anchor: On a production-grade model
+    layout: compact_band
+  opener_art:
+    path: editions/008/art/rounds/2026-08-30T18-03-42/researchers-opener-the-clouded-flasks-v3.png
+    alt_text: At a long workroom bench Maro adds a single drop to the first clouded flask in a row while Pedro holds the next one up to the window light and Flopaz stands beside a nearly finished sand timer.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/researchers-tail-the-beetle-crosses-v3.png
+- id: running-a-software-factory-efficiently-at-uber-scale
+  title: A Software Factory at Uber Scale
+  short_title: A Software Factory at Uber Scale
+  display_emphasis: Uber Scale
+  opener_variant: stepped_title
+  author: Uday Kiran Medisetty
+  author_note: From the Uber Engineering blog.
+  content_mode: article
+  source_ids:
+  - running-a-software-factory-efficiently-at-uber-s-36ff06c6
+  manuscript: editions/008/articles/running-a-software-factory-efficiently-at-uber-scale.md
+  figures:
+  - id: cost-equation
+    source_id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
+    path: media/005.jpg
+    credit: 'Diagram by Uber Engineering; source: Running a Software Factory Efficiently at Uber Scale.'
+    caption: Total spend decomposed into six terms that multiply; the middle three are where the optimization
+      effort goes.
+    alt_text: A formula, total spend equals users times sessions per user times turns per session times requests
+      per turn times tokens per request times price per token.
+    anchor: The equation
+    layout: evidence_band_prose
+  - id: pareto-frontier
+    source_id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
+    path: media/006.jpg
+    credit: 'Chart by Uber Engineering; source: Running a Software Factory Efficiently at Uber Scale.'
+    caption: Every model configuration tested for uReview, cost per review against F1; the dashed line is the
+      Pareto frontier.
+    alt_text: A scatter plot of ten model configurations by cost per review and F1 score with a dashed Pareto
+      frontier.
+    anchor: Price per token
+    layout: compact_band
+  - id: graph-grounding
+    source_id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
+    path: media/011.jpg
+    credit: 'Diagram by Uber Engineering; source: Running a Software Factory Efficiently at Uber Scale.'
+    caption: The same prompt to the same model, with and without the context graph; 38 seconds and correct
+      against 20 minutes and wrong.
+    alt_text: Two execution paths side by side, the graph-grounded one short and correct, the other long with
+      errors and a wrong conclusion.
+    anchor: Requests per turn
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/008/art/rounds/2026-08-30T18-03-42/uber-opener-the-lighter-belt-v3.png
+    alt_text: A factory conveyor crosses the frame loaded with crates at the left and carrying single small parcels at the right, as Pedro lifts a crate off the belt, Maro holds up a smaller drive motor, and Flopaz watches a wall dial's needle sink.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/uber-tail-closing-time-v3.png
+- id: inference-will-eat-the-world
+  title: Inference Will Eat the World
+  short_title: Inference Will Eat the World
+  display_emphasis: Inference
+  opener_variant: stepped_title
+  author: David Ondrej
+  author_note: David Ondrej published this essay on X.
+  content_mode: article
+  source_ids:
+  - inference-will-eat-the-world-053ed26b
+  manuscript: editions/008/articles/inference-will-eat-the-world.md
+  opener_art:
+    path: editions/008/art/rounds/2026-08-30T18-03-42/inference-opener-one-wheel-turns-the-valley-v3.png
+    alt_text: In a valley village one big mill wheel drives leather belts running out to three open workshops down the street, with Pedro hauling the sluice gate lever, Maro greasing the axle, and Flopaz watching the belts take up.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/inference-tail-every-window-lit-v4.png
+- id: the-instinct-thesis-why-memory-is-becoming-the-moat
+  title: 'The Instinct Thesis: Why Memory Is Becoming the Moat'
+  short_title: Why Memory Is Becoming the Moat
+  display_emphasis: Memory
+  opener_variant: split_axis
+  author: Ashwin Gopinath
+  author_note: Ashwin Gopinath is CEO of Sentra and co-author of Reflexion; published on X.
+  content_mode: article
+  source_ids:
+  - the-instinct-thesis-why-memory-is-becoming-the-m-14970672
+  manuscript: editions/008/articles/the-instinct-thesis-why-memory-is-becoming-the-moat.md
+  opener_art:
+    path: editions/008/art/rounds/2026-08-30T18-03-42/memory-opener-what-the-pan-keeps-v2.png
+    alt_text: In river shallows Pedro tips a sheet of grit and water off a broad pan while Flopaz kneels at the right holding a tin lid with three bright specks and Maro steadies a wooden sluice box in the current.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/memory-tail-what-the-water-keeps-v1.png
+- id: the-rise-and-fall-of-agent-civilizations
+  title: The Rise and Fall of Agent Civilizations
+  short_title: Agent Civilizations
+  display_emphasis: Civilizations
+  opener_variant: stepped_title
+  author: Dwarkesh Patel
+  author_note: Dwarkesh Patel hosts the Dwarkesh Podcast; from his newsletter.
+  content_mode: article
+  source_ids:
+  - the-rise-and-fall-of-agent-civilizations-b74188c7
+  manuscript: editions/008/articles/the-rise-and-fall-of-agent-civilizations.md
+  opener_art:
+    path: editions/008/art/rounds/2026-08-30T18-03-42/civilizations-opener-the-flame-handed-on-v2.png
+    alt_text: In a dim room Pedro carries a flame on a wooden splint from a guttering candle toward the fresh one Flopaz holds ready, while Maro shields the flame with a glass chimney and a burnt out stub sits at the far end of the table.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/008/art/rounds/2026-08-30T15-07-58/civilizations-tail-carrying-the-blocks-home-v3.png
+- id: previewing-the-model-hardware-standard
+  title: Previewing the Model Hardware Standard
+  short_title: The Model Hardware Standard
+  display_emphasis: Hardware
+  opener_variant: edge_medallion
+  author: Anthropic
+  author_note: From Anthropic's announcement, with partner reports from Genentech, UW, CMU, Janelia, QuEra,
+    and Tetsuwan.
+  content_mode: article
+  source_ids:
+  - previewing-the-model-hardware-standard-35305757
+  manuscript: editions/008/articles/previewing-the-model-hardware-standard.md
+  figures:
+  - id: three-labs
+    source_id: previewing-the-model-hardware-standard-35305757
+    path: media/003.png
+    credit: 'Diagram by Anthropic; source: Previewing the Model Hardware Standard.'
+    caption: An academic lab, an automated lab, and an MHS-based lab; only the last gives agents one interface
+      to every instrument.
+    alt_text: Three lab diagrams side by side, traditional instruments without a hub, an automated lab with
+      bespoke integrations, and an MHS lab with a shared interface.
+    anchor: How it works
+    layout: evidence_band_prose
+  - id: overnight-loop
+    source_id: previewing-the-model-hardware-standard-35305757
+    path: media/014.png
+    credit: 'Diagram by QuEra; source: Previewing the Model Hardware Standard.'
+    caption: The loop the agent ran overnight to relock the laser.
+    alt_text: A flow diagram of the agent's overnight loop, adjust, measure, evaluate, repeat.
+    anchor: What our partners found
+    layout: column_plate
+  opener_art:
+    path: editions/008/art/rounds/2026-08-30T18-03-42/mhs-opener-one-shaft-turns-them-all-v3.png
+    alt_text: In a workshop laboratory a single overhead line shaft drives three different instruments, as Pedro turns the crank wheel at the left, Maro loops the newest machine's belt over a pulley at the right, and Flopaz watches them all start.
+    credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
+  tail_art_path: editions/008/art/rounds/2026-08-30T14-06-08/mhs-tail-locked-by-morning-v2.png
+editorial: manuscript/editorial.md
+tail_art_fit: contain
+closing_plates:
+- title: The Bell Rope
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-bell-rope-v2.png
+- title: The Climbing Vine
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-climbing-vine-v3.png
+- title: The Fly Line
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-fly-line-v2.png
+- title: The Sack Hoist
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-sack-hoist-v2.png
+- title: The Speaking Tube
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-speaking-tube-v2.png
+- title: The Weight Chain
+  art_path: editions/008/art/rounds/2026-08-30T18-03-42/closing-plate-the-weight-chain-v3.png

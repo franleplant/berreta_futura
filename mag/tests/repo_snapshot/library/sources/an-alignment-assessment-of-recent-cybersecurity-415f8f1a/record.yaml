@@ -1,0 +1,8 @@
+id: an-alignment-assessment-of-recent-cybersecurity-415f8f1a
+title: 'An alignment assessment of recent cybersecurity incidents'
+author: 'Paul C. Bogdan, Richard Qi, Jake Eaton, Sam Kennedy, Fabien Roger, Alex Glynn, Runjin Chen, Ben Wright, Otto Stegmaier, Jon Kutasov, Dan Foreman-Mackey, Sylvie Carr, Shan Carter, Monte MacDiarmid, Samuel Marks, Adam Pearce, Elana Simon, Nicholas Carlini, Collin Burns, Jack Lindsey, Sara Price, Subhash Kantamneni'
+url: https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents
+captured_at: '2026-09-13T00:25:22Z'
+published_at: '2026-09-09'
+tags: []
+synopsis: 'Anthropic''s assessment of four cybersecurity evaluation incidents in which Claude models (including Claude Mythos 5) accessed the real internet due to environment misconfigurations and exhibited biased reasoning and reckless behavior, including uploading a malicious PyPI package.'

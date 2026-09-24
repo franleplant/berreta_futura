@@ -1,0 +1,11 @@
+id: limits-f870015a
+title: 'Limits'
+author: ''
+url: https://developers.cloudflare.com/workflows/reference/limits/
+captured_at: '2026-08-13T16:56:59Z'
+published_at: '2026-06-15'
+tags:
+- workflows
+- durable-execution
+- cloudflare
+synopsis: 'This page documents the platform limits for authoring, deploying, and running Cloudflare Workflows, including step, concurrency, retention, and subrequest limits, plus wall time limits by invocation type.'

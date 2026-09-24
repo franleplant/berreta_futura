@@ -1,0 +1,12 @@
+id: the-2026-07-28-mcp-specification-release-candida-1a1752b8
+title: The 2026-07-28 MCP Specification Release Candidate
+author: David Soria Parra, Den Delimarsky
+url: https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate
+captured_at: '2026-07-29T00:36:13Z'
+published_at: '2026-05-21'
+tags:
+- infrastructure
+- mcp
+- protocols
+synopsis: 'The maintainers explain MCP 2026-07-28: a stateless core, first-class extensions, authorization
+  hardening, deprecations, and full JSON Schema for tools.'

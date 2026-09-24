@@ -1,0 +1,8 @@
+id: announcing-the-monetization-gateway-charge-for-a-cb51fdc1
+title: 'Announcing the Monetization Gateway: charge for any resource behind Cloudflare via x402'
+author: 'Rohin Lohe, Justin Ridgely, Will Papper'
+url: https://blog.cloudflare.com/monetization-gateway/
+captured_at: '2026-08-10T23:22:00Z'
+published_at: '2026-07-01'
+tags: [x402, payments, monetization]
+synopsis: 'Cloudflare announces the Monetization Gateway, a control plane that lets customers charge any caller for web pages, datasets, APIs, or MCP tools using the x402 protocol and stablecoin settlement at the edge.'

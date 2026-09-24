@@ -1,0 +1,14 @@
+id: why-harness-engineering-is-so-hard-fe732038
+title: Why Harness Engineering Is So Hard
+author: Winter
+url: https://x.com/WinterArc2125/status/2081042507471696318
+captured_at: '2026-07-26T22:12:26Z'
+published_at: '2026-07-25'
+tags:
+- ai-agents
+- evaluation
+- harness-engineering
+- prompt-engineering
+synopsis: 'A field account of why production LLM harnesses resist ordinary testing and debugging: failures
+  are graded and silent, prose behaves like code, prompt rules interact unpredictably, examples dominate
+  instructions, and model updates move the foundation.'

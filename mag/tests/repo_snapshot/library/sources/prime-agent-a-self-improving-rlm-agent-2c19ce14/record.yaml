@@ -1,0 +1,14 @@
+id: prime-agent-a-self-improving-rlm-agent-2c19ce14
+title: 'Prime Agent: A self-improving RLM agent'
+author: Seth Karten, Alex L. Zhang, Kevin Thomas, Sebastian Müller, Prime Intellect Team
+url: https://www.primeintellect.ai/blog/prime-agent
+captured_at: '2026-08-06T21:05:28Z'
+published_at: '2026-08-05'
+tags:
+- agents
+- harnesses
+- evaluations
+- open-source
+synopsis: Prime Intellect launches Prime Agent, an open-source self-improving coding harness built on
+  the Recursive Language Model and Continual Harness abstractions, with results on ARC-AGI-3, long-context
+  benchmarks, and games.

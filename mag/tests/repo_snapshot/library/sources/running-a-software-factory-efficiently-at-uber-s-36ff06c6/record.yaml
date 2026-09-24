@@ -1,0 +1,8 @@
+id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
+title: 'Running a Software Factory Efficiently at Uber Scale'
+author: 'Uday Kiran Medisetty'
+url: https://www.uber.com/us/en/blog/efficient-software-factory/
+captured_at: '2026-08-30T00:30:33Z'
+published_at: '2026-08-27'
+tags: []
+synopsis: 'The article explains how Uber''s Distinguished Engineer Uday Kiran Medisetty describes the company''s software factory model, cost equation, and the specific engineering levers (model selection, prompt caching, MCP tool optimization, context graphs, and spend visibility tooling) it used to scale AI agent usage 7x while cutting cost per 1,000 requests 34% and cost per session 52% from peak.'

@@ -1,3 +1,5 @@
+#[allow(dead_code)]
+mod oracle;
 #[path = "../src/model/records.rs"]
 mod records;
 #[path = "../src/model/shared.rs"]
@@ -13,13 +15,6 @@ use serde_json::{json, Map, Value as Json};
 use serde_yaml::Value;
 use shared::ValidationError;
 use std::path::{Path, PathBuf};
-
-fn repository() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("mag sits inside the repository")
-        .to_path_buf()
-}
 
 fn fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/model_records_fixtures")
@@ -235,7 +230,7 @@ fn run_case(case: &serde_yaml::Mapping, root: &Path) -> Json {
 
 #[test]
 fn library_sources_match_the_python_dump() {
-    let produced: Vec<Json> = load_records(&repository().join("library/sources"))
+    let produced: Vec<Json> = load_records(&oracle::snapshot().join("library/sources"))
         .expect("the corpus loads")
         .iter()
         .map(SourceRecord::to_json)
@@ -249,7 +244,7 @@ fn library_sources_match_the_python_dump() {
 
 #[test]
 fn a_changed_field_fails_the_corpus_comparison() {
-    let mut produced: Vec<Json> = load_records(&repository().join("library/sources"))
+    let mut produced: Vec<Json> = load_records(&oracle::snapshot().join("library/sources"))
         .expect("the corpus loads")
         .iter()
         .map(SourceRecord::to_json)
@@ -264,7 +259,8 @@ fn a_changed_field_fails_the_corpus_comparison() {
 
 #[test]
 fn to_dict_key_order_matches_python() {
-    let records = load_records(&repository().join("library/sources")).expect("the corpus loads");
+    let records =
+        load_records(&oracle::snapshot().join("library/sources")).expect("the corpus loads");
     let plain = records
         .iter()
         .find(|record| record.notes.as_deref().unwrap_or_default().is_empty())

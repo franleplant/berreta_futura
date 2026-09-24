@@ -1,0 +1,10 @@
+id: ownership-and-fencing-dd43dd4a
+title: 'Ownership and fencing'
+author: ''
+url: https://celld.dev/docs/fencing
+captured_at: '2026-08-13T13:53:02Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'celld documents how it enforces single-node ownership of cells and durable (RPO=0) acknowledgements through conditional writes, epoch-prefixed replication, an acknowledgement rule, an epoch seal, self-fencing, and specific object-store guarantees.'

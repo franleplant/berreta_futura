@@ -1,5 +1,7 @@
 #[path = "../src/critic/metrics.rs"]
 pub mod metrics;
+#[allow(dead_code)]
+mod oracle;
 
 mod critic {
     pub use super::metrics;
@@ -103,8 +105,10 @@ fn edition_010_text() -> CoverText {
 }
 
 fn cover_art() -> PathBuf {
-    repository()
-        .join("editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png")
+    oracle::pinned(
+        "cover_footer_caption",
+        "editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png",
+    )
 }
 
 fn build_svg() -> String {

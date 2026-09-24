@@ -1,0 +1,12 @@
+id: architecture-overview-ce5cb1d1
+title: Architecture overview
+author: Model Context Protocol
+url: https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture
+captured_at: '2026-07-29T00:36:21Z'
+published_at: '2026-07-28'
+tags:
+- architecture
+- documentation
+- mcp
+synopsis: The versioned official explanation of MCP hosts, clients, servers, data and transport layers,
+  primitives, discovery, tool calls, and notifications.

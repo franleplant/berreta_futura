@@ -1,0 +1,13 @@
+id: how-we-built-our-knowledge-base-e986baa0
+title: How We Built Our Knowledge Base
+author: Isaac Tai, Daniel Kim, and Mike Gao
+url: https://www.cerebras.ai/blog/how-we-built-our-knowledge-base
+captured_at: '2026-07-17T19:45:07Z'
+published_at: '2026-07-15'
+tags:
+- enterprise-search
+- hybrid-retrieval
+- knowledge-management
+- llm-agents
+synopsis: How Cerebras built an internal knowledge system over Slack, code, documentation, and custom
+  sources using distillation, hybrid retrieval, reranking, and scoped agent interfaces.

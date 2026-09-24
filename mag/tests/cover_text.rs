@@ -4,6 +4,8 @@ pub mod doc;
 #[path = "../src/model/manifest.rs"]
 #[allow(dead_code)]
 pub mod manifest;
+#[allow(dead_code)]
+mod oracle;
 #[path = "../src/model/records.rs"]
 #[allow(dead_code)]
 pub mod records;
@@ -95,7 +97,7 @@ fn with_deck(value: Option<Value>) -> Edition {
 }
 
 fn live_010() -> Edition {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../editions/010/edition.yaml");
+    let path = oracle::snapshot().join("editions/010/edition.yaml");
     let raw: Value = serde_yaml::from_str(&std::fs::read_to_string(&path).expect("edition.yaml"))
         .expect("edition.yaml parses");
     let authors: Vec<String> = raw["articles"]

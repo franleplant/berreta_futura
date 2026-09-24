@@ -1,0 +1,11 @@
+id: sleeping-and-retrying-8cbd7233
+title: 'Sleeping and retrying'
+author: ''
+url: https://developers.cloudflare.com/workflows/build/sleeping-and-retrying/
+captured_at: '2026-08-13T16:51:20Z'
+published_at: '2026-07-09'
+tags:
+- workflows
+- durable-execution
+- cloudflare
+synopsis: 'This guide explains how to configure a Workflow to sleep for a relative period or until a fixed date, how to configure step retries (limit, delay, backoff, timeout), how to force a Workflow instance to fail immediately with NonRetryableError, how to register rollback handlers for saga-style compensation, and how to catch Workflow errors with try...catch.'

@@ -1,0 +1,12 @@
+id: 22580-from-gpt2-to-kimi3-explained-8f01b0fe
+title: '22580: From GPT2 to Kimi3, Explained'
+author: ali
+url: https://x.com/waterloo_intern/status/2081762065392541951
+captured_at: '2026-07-29T00:35:54Z'
+published_at: '2026-07-27'
+tags:
+- inference
+- model-architecture
+- transformers
+synopsis: A code-led lineage from GPT-2 through linear attention, DeltaNet, Kimi Linear, and the KimiK3
+  architecture.

@@ -1,0 +1,8 @@
+id: automated-researchers-can-reliably-mitigate-alig-a9acbff7
+title: 'Automated researchers can reliably mitigate alignment failures'
+author: ''
+url: https://www.anthropic.com/research/automated-researchers-mitigate-alignment-failures
+captured_at: '2026-08-28T19:40:35Z'
+published_at: '2026-08-28'
+tags: []
+synopsis: 'Anthropic reports that Claude, working autonomously, can propose and train effective mitigations for 10 categories of alignment failure, outperforming human researchers on some benchmarks and successfully improving an early Claude Opus 4.8 checkpoint''s alignment.'

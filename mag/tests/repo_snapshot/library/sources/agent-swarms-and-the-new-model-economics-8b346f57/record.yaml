@@ -1,0 +1,13 @@
+id: agent-swarms-and-the-new-model-economics-8b346f57
+title: Agent Swarms and the New Model Economics
+author: Wilson Lin
+url: https://cursor.com/blog/agent-swarm-model-economics
+captured_at: '2026-07-21T14:47:44Z'
+published_at: '2026-07-20'
+tags:
+- agent-swarms
+- model-economics
+- multi-agent-systems
+- software-engineering
+synopsis: Cursor compares old and new agent-swarm harnesses on rebuilding SQLite, detailing tree decomposition,
+  coordination mechanisms, model mixes, and the cost advantage of frontier planners with cheaper workers.

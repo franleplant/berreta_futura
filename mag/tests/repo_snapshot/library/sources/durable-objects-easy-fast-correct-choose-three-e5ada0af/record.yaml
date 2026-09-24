@@ -1,0 +1,13 @@
+id: durable-objects-easy-fast-correct-choose-three-e5ada0af
+title: 'Durable Objects: Easy, Fast, Correct — Choose three'
+author: Kenton Varda
+url: https://blog.cloudflare.com/durable-objects-easy-fast-correct-choose-three/
+captured_at: '2026-08-08T15:23:53Z'
+published_at: '2021-08-03'
+tags:
+- durable-objects
+- consistency
+- distributed-systems
+synopsis: Kenton Varda explains how Durable Objects gained input gates, output gates,
+  and automatic in-memory caching so that intuitive single-threaded storage code
+  is race-free and fast by default, with explicit bypass flags for tuning.

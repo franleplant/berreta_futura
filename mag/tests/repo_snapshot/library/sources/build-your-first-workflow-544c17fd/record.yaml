@@ -1,0 +1,11 @@
+id: build-your-first-workflow-544c17fd
+title: 'Build your first Workflow'
+author: ''
+url: https://developers.cloudflare.com/workflows/get-started/guide/
+captured_at: '2026-08-13T16:49:41Z'
+published_at: '2026-06-09'
+tags:
+- workflows
+- durable-execution
+- cloudflare
+synopsis: 'The article walks through creating, configuring, running locally, and deploying a Cloudflare Workflow that fetches data, sleeps, and processes results using the Workflows API.'

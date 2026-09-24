@@ -1,0 +1,13 @@
+id: why-software-factories-fail-benchmarking-the-new-f1d9c04a
+title: 'Why Software Factories Fail: Benchmarking the New Frontier'
+author: Dex Horthy
+url: https://x.com/dexhorthy/status/2081797628552270027
+captured_at: '2026-07-27T21:49:48Z'
+published_at: '2026-07-27'
+tags:
+- ai-coding
+- benchmarks
+- software-factories
+synopsis: Part 3 tests frontier Claude models on a 17-checkpoint SlopCodeBench subset and argues that
+  incrementally revealed specifications provide a better signal for long-term maintainability than one-shot
+  coding benchmarks.
