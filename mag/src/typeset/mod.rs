@@ -65,6 +65,7 @@ pub(crate) fn run_request(
         allow_missing_art: false,
         allow_unanchored_figures: false,
     })?;
+    let (tree, document) = template::paginate(tree, &fonts)?;
     let typ_dir = render_dir.join("typst");
     for file in &tree.files {
         let path = typ_dir.join(&file.path);
@@ -80,7 +81,6 @@ pub(crate) fn run_request(
         tree.files.len(),
         projection.text.chars().count()
     );
-    let document = template::document(&template::world(&tree, &fonts)?)?;
     layout::report(
         &layout::Request {
             operation: field(&request, "operation")?,

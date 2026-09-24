@@ -922,14 +922,14 @@ mod tests {
         let (tree, document, edition, root) = fixture("900");
         let measured = measure(&document).expect("the fixture measures");
         let layout = manifest_layout(&edition, &measured, &tree, &root).expect("the layout builds");
-        assert_eq!(measured.total_pages, 13);
+        assert_eq!(measured.total_pages, 11);
         assert_eq!(
             layout["toc"],
-            json!({"editorial": 4, "plain-opener-article": 6, "second-fixture-article": 8, "section-0": 10})
+            json!({"editorial": 4, "plain-opener-article": 5, "second-fixture-article": 8, "section-0": 9})
         );
         assert_eq!(
             layout["article_pages"],
-            json!({"plain-opener-article": 2, "second-fixture-article": 1})
+            json!({"plain-opener-article": 3, "second-fixture-article": 1})
         );
         assert_eq!(layout["editorial_pages"], json!(1));
         assert_eq!(layout["article_opener_fits"], json!({}));
@@ -955,7 +955,7 @@ mod tests {
         assert_eq!(layout["tail_arts"][1]["printed"], true);
         assert_eq!(layout["tail_arts"][1]["height_points"], json!(108.3333));
         let row = measured.row("en", 1, "not_run");
-        assert_eq!(row["totalPages"], 13);
+        assert_eq!(row["totalPages"], 11);
         assert_eq!(row["editorialPages"], 1);
     }
 

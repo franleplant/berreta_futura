@@ -24,6 +24,21 @@ const COMPACT_META_PAD: f64 = 7.0;
 const STANDFIRST_SIZE: f64 = 9.6;
 const STANDFIRST_LEADING: f64 = 13.2;
 
+const PLAIN_MEASURE: f64 = 325.0;
+const PLAIN_TITLE_TOP: f64 = 10.0046 + 25.0 + 12.0;
+const PLAIN_FIELD_GAP: f64 = 305.2756 - 264.5208;
+const CODE_SIDE: f64 = 55.5;
+const CREDIT_GAP: f64 = 4.5 * 3.15;
+const INTER_CAP: f64 = 1490.0 / 2048.0;
+const FIGURE_FIELD_BASE: f64 = 25.0 + 12.0 + 10.0 + 12.0;
+
+pub struct PlainOpener {
+    pub size: f64,
+    pub field: f64,
+    pub tracking: f64,
+    pub trim: f64,
+}
+
 pub struct Metrics(BTreeMap<&'static str, BTreeMap<char, f64>>);
 
 pub struct Opener<'a> {
@@ -100,16 +115,104 @@ impl Metrics {
         lines
     }
 
-    fn compact_title(&self, title: &str) -> Option<(f64, usize)> {
-        let mut size = COMPACT_TITLE_MAX;
-        while size >= TITLE_MIN {
-            let lines = self.wrap(title, "serif-display", size, RAIL).len();
-            if lines <= 2 && size + (lines as f64 - 1.0) * size * TITLE_LEADING <= TITLE_BOX {
-                return Some((size, lines));
+    fn fitted(
+        &self,
+        title: &str,
+        width: f64,
+        box_height: f64,
+        max: f64,
+        min: f64,
+        lines: usize,
+    ) -> Option<(f64, usize)> {
+        let mut size = max;
+        while size >= min {
+            let count = self.wrap(title, "serif-display", size, width).len();
+            if count <= lines && size + (count as f64 - 1.0) * size * TITLE_LEADING <= box_height {
+                return Some((size, count));
             }
             size -= 0.5;
         }
         None
+    }
+
+    fn compact_title(&self, title: &str) -> Option<(f64, usize)> {
+        self.fitted(title, RAIL, TITLE_BOX, COMPACT_TITLE_MAX, TITLE_MIN, 2)
+    }
+
+    pub fn plain_opener(
+        &self,
+        title: &str,
+        byline: &str,
+        note: &str,
+        code: Option<usize>,
+        figure: bool,
+    ) -> Result<PlainOpener> {
+        let maximum = if figure { 30.0 } else { 35.0 };
+        let (size, lines) = self
+            .fitted(title, PLAIN_MEASURE, 165.0, maximum, 24.0, 4)
+            .ok_or_else(|| {
+                ValidationError::one(format!(
+                    "Title cannot fit the Quiet Standard display box: {title}"
+                ))
+            })?;
+        let flow = size * (1.0 + TITLE_LEADING * lines as f64);
+        let baseline = PLAIN_TITLE_TOP + flow + 10.0;
+        let (column, symbol) = match code {
+            Some(rows) => {
+                let quiet = 4.0 * CODE_SIDE / (rows as f64 + 8.0);
+                let symbol = baseline - 7.4 * INTER_CAP + CODE_SIDE - 2.0 * quiet;
+                (
+                    PLAIN_MEASURE - (CODE_SIDE - 2.0 * quiet + CREDIT_GAP),
+                    Some(symbol),
+                )
+            }
+            None => (PLAIN_MEASURE, None),
+        };
+        let tracking = match code {
+            Some(_) => self.byline_tracking(byline, column)?,
+            None => 0.0,
+        };
+        let title_field = FIGURE_FIELD_BASE + flow;
+        let floor = symbol.map_or(0.0, |bottom| bottom + 12.0);
+        let (field, trim) = match figure {
+            true => (title_field.max(floor), (floor - title_field).max(0.0)),
+            false => {
+                let foot = symbol.unwrap_or(baseline).max(baseline);
+                (self.credit_foot(baseline, foot, note, column), 0.0)
+            }
+        };
+        Ok(PlainOpener {
+            size,
+            field,
+            tracking,
+            trim,
+        })
+    }
+
+    fn byline_tracking(&self, byline: &str, column: f64) -> Result<f64> {
+        let text = byline.trim().to_uppercase();
+        let width = self.width("sans-semibold", &text, 7.4);
+        if width > 0.0 && column / width < 0.78 {
+            return Err(ValidationError::one(format!(
+                "Article byline {text:?} reaches past the {column:.2}pt credit column beside its \
+                 own source code and would require excessive horizontal compression; shorten \
+                 the captured byline or redesign the credit row."
+            )));
+        }
+        Ok(match width > column {
+            true => (column - width) / (text.chars().count().max(2) - 1) as f64,
+            false => 0.0,
+        })
+    }
+
+    fn credit_foot(&self, baseline: f64, foot: f64, note: &str, column: f64) -> f64 {
+        let note_lines = self.wrap(note, "sans-medium", 6.8, column).len() as f64;
+        let note_foot = baseline + 12.0 + (note_lines - 1.0) * 9.45 + 6.8 * 0.2412109375;
+        (if note.trim().is_empty() {
+            foot
+        } else {
+            foot.max(note_foot)
+        }) + PLAIN_FIELD_GAP
     }
 
     pub fn standfirst_keep_words(&self, opener: &Opener) -> usize {

@@ -1,6 +1,6 @@
-use crate::typeset::content::Tree;
+use crate::typeset::content::{File, Tree};
 use crate::typeset::world::Sources;
-use anyhow::{bail, Result};
+use anyhow::{bail, ensure, Result};
 use std::path::Path;
 use typst::foundations::Smart;
 use typst::layout::{Frame, FrameItem, Point, Size};
@@ -18,6 +18,44 @@ pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
     Sources::new(tree, TEMPLATE_TYP, ROOT_TYP, font_dir)
 }
 
+const PLATE_CONTENT: &str = "#closing-signature(none)\n";
+
+pub fn paginate(tree: Tree, font_dir: &Path) -> Result<(Tree, PagedDocument)> {
+    let content = document(&world(&tree, font_dir)?)?.pages().len() - 2;
+    let files = tree.files.into_iter().map(|file| File {
+        source: file.source.replacen(
+            PLATE_CONTENT,
+            &format!("#closing-signature({content})\n"),
+            1,
+        ),
+        ..file
+    });
+    let tree = Tree {
+        files: files.collect(),
+    };
+    let plated = document(&world(&tree, font_dir)?)?;
+    let plates = plated
+        .introspector()
+        .elements()
+        .all()
+        .filter(|c| {
+            c.label()
+                .is_some_and(|l| l.resolve().as_str() == "mag-plate")
+        })
+        .count();
+    let pages = plated.pages().len();
+    ensure!(
+        pages == content + 2 + plates,
+        "the closing plates moved the reader's pagination: {content} content pages without \
+         them, {pages} pages with {plates} plates"
+    );
+    ensure!(
+        plates == 0 || pages % 4 == 0,
+        "the Typst reader is {pages} pages, which is not an A4-fold signature"
+    );
+    Ok((tree, plated))
+}
+
 fn joined(messages: Vec<String>) -> String {
     messages.join("\n  ")
 }
@@ -28,7 +66,18 @@ pub fn compile(world: &Sources) -> Result<Vec<u8>> {
 }
 
 pub fn document(world: &Sources) -> Result<PagedDocument> {
-    match typst::compile::<PagedDocument>(world).output {
+    let compiled = typst::compile::<PagedDocument>(world);
+    if let Some(warning) = compiled
+        .warnings
+        .iter()
+        .find(|w| w.message.contains("did not converge"))
+    {
+        eprintln!(
+            "warning: the Typst reader did not settle: {}",
+            warning.message
+        );
+    }
+    match compiled.output {
         Ok(document) => Ok(document),
         Err(errors) => bail!(
             "the Typst reader template did not compile:\n  {}",
@@ -596,37 +645,63 @@ mod tests {
         let pieces: String = (1..=articles)
             .map(|n| {
                 format!(
-                    "#piece(id: \"p{n}\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
-                     #doc-paragraph(standfirst: false, roster: false)[Piece {n}.]\n]\n"
+                    "#piece(id: \"article-p{n}\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+                     #doc-paragraph(standfirst: false, roster: false)[Piece {n}.]\n]\n\
+                     #plates-after({n}, of: {articles})\n"
                 )
             })
             .collect();
         let plates: String = (1..=plates)
             .map(|n| {
+                let art = if n == 1 { "landscape.png" } else { "portrait.jpg" };
                 format!(
-                    "#closing-plate(index: {n}, alt: \"Plate {n}\", path: \"{}\")\n",
-                    fixture_png()
+                    "#closing-plate(index: {n}, alt: \"Plate {n}\", path: \"{}/tests/typeset_fixtures/media/{art}\")\n",
+                    env!("CARGO_MANIFEST_DIR")
                 )
             })
             .collect();
-        synthetic(pieces + &plates)
+        synthetic(plates + "#closing-signature(none)\n" + &pieces)
+    }
+
+    fn first_plate_page(pdf: &[u8]) -> Vec<usize> {
+        let doc = Document::load_mem(pdf).expect("the emitted bytes are a PDF");
+        doc.get_pages()
+            .into_iter()
+            .filter(|(_, id)| {
+                doc.get_page_images(*id)
+                    .expect("page images")
+                    .iter()
+                    .any(|image| image.width == 40)
+            })
+            .map(|(number, _)| number as usize)
+            .collect()
     }
 
     #[test]
-    fn closing_plates_interleave_after_the_articles_the_adapter_names() {
+    fn closing_plates_close_the_signature_in_the_adapter_s_slots_and_order() {
         let (_, font_dir) = roots();
-        let pdf = compile(&Sources::new(&plated(9, 6), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
-            .expect("the plated run compiles");
-        let bankers = vec![5, 7, 9, 12, 15, 17];
-        let half_up = vec![5, 7, 10, 12, 15, 17];
-        assert_ne!(bankers, half_up);
-        assert_eq!(plate_pages(&pdf), bankers);
-        assert_eq!(blank_pages(&pdf), vec![1, 2, 18, 19]);
-        let trailing =
-            compile(&Sources::new(&plated(9, 5), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
-                .expect("five plates compile");
-        assert_eq!(plate_pages(&trailing), vec![5, 8, 10, 13, 16]);
-        assert_eq!(blank_pages(&trailing), vec![1, 2, 17, 18]);
+        let paged = |articles, plates| {
+            paginate(plated(articles, plates), font_dir).map(|(_, doc)| pdf(&doc).expect("a PDF"))
+        };
+        let pdf = paged(2, 7).expect("the plated run compiles");
+        assert_eq!(plate_pages(&pdf), vec![4, 5, 6, 8, 9, 10]);
+        assert_eq!(first_plate_page(&pdf), vec![10]);
+        assert_eq!(blank_pages(&pdf), vec![1, 2, 11, 12]);
+        let nine = paged(9, 7).expect("seven plates compile");
+        assert_eq!(plate_pages(&nine), vec![4, 7, 9, 11, 13, 16, 18]);
+        assert_eq!(blank_pages(&nine), vec![1, 2, 19, 20]);
+        let short = paged(9, 6).expect_err("six plates cannot close a nine-article signature");
+        assert!(
+            format!("{short:#}").contains("needs 7 closing plates"),
+            "{short:#}"
+        );
+        let unpaged =
+            compile(&Sources::new(&plated(2, 7), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
+                .expect("the bare run compiles");
+        assert!(
+            plate_pages(&unpaged).is_empty(),
+            "plates print before the content is measured"
+        );
     }
 
     fn straddling_run(before: usize) -> Tree {
@@ -678,7 +753,6 @@ mod tests {
             ("CONTENTS-TITLE-TOP", 32.54098),
             ("CONTENTS-BAND-TOP", 74.2802),
             ("CONTENTS-BAND", 393.0),
-            ("CONTENTS-ROW-MAX", 65.5),
             ("CONTENTS-RULE", 0.7),
             ("CONTENTS-ENTRY-LEFT", 47.0),
             ("OPENER-RAIL", 348.0),
@@ -884,6 +958,7 @@ mod tests {
                 };
                 if let Some(rest) = line.strip_prefix("#doc-heading(level: ") {
                     let (level, rest) = rest.split_once(')').expect("a heading call closes");
+                    let level = level.split(',').next().unwrap_or(level);
                     Some((level.parse::<usize>().expect("a numeric level"), text(rest)))
                 } else if let Some(rest) = line.strip_prefix("#piece-title") {
                     Some((1, text(rest)))
@@ -930,6 +1005,7 @@ mod tests {
         x: f64,
         y: f64,
         size: f64,
+        width: f64,
         fill: [u8; 4],
     }
 
@@ -946,6 +1022,7 @@ mod tests {
                     x: origin.x.to_pt(),
                     y: origin.y.to_pt(),
                     size: text.size.to_pt(),
+                    width: text.width().to_pt(),
                     fill: match &text.fill {
                         Paint::Solid(color) => color.to_vec4_u8(),
                         _ => [0; 4],
@@ -959,6 +1036,7 @@ mod tests {
                             x: origin.x.to_pt(),
                             y: origin.y.to_pt(),
                             size: 0.0,
+                            width: size.x.to_pt(),
                             fill: color.to_vec4_u8(),
                         });
                     }
@@ -1141,6 +1219,163 @@ mod tests {
         assert!(
             page_marks(&bare, with_code).is_empty(),
             "the control still draws a code"
+        );
+    }
+
+    fn opener_page(tree: &Tree, title: &str) -> Vec<Mark> {
+        page_marks(tree, |m| {
+            m.iter().any(|m| m.text.starts_with(title) && m.size > 20.0)
+        })
+        .into_iter()
+        .next()
+        .expect("the opener page carries its title")
+    }
+
+    fn mark(page: &[Mark], keep: impl Fn(&Mark) -> bool) -> &Mark {
+        page.iter()
+            .find(|m| keep(m))
+            .expect("the mark is on the page")
+    }
+
+    #[test]
+    fn a_plain_opener_pins_its_label_title_credit_and_standfirst_as_the_adapter_does() {
+        let page = opener_page(&fixture_tree("903"), "A Code Fixture Article");
+        let top = 42.0004;
+        let title = mark(&page, |m| {
+            m.text == "A Code Fixture Article" && m.size > 20.0
+        });
+        assert!(
+            (title.size - 35.0).abs() < 1e-9 && (title.y - (top + 47.0046 + 35.0)).abs() < 1e-3,
+            "{} {}",
+            title.size,
+            title.y
+        );
+        let byline_y = top + 47.0046 + 35.0 * 1.96 + 10.0;
+        let byline = mark(&page, |m| m.text.starts_with("BY"));
+        assert!((byline.y - byline_y).abs() < 1e-3, "{}", byline.y);
+        let note = mark(&page, |m| m.text.starts_with("A fixture author note"));
+        assert!((note.y - (byline_y + 12.0)).abs() < 1e-3, "{}", note.y);
+        let quiet = 4.0 * 55.5 / 29.0;
+        let symbol = byline_y - top - 7.4 * 1490.0 / 2048.0 + 55.5 - 2.0 * quiet;
+        let field = symbol + 305.2756 - 264.5208;
+        let first = mark(&page, |m| m.text.starts_with("The standfirst"));
+        assert!(
+            (first.y - (top + field + 10.0046)).abs() < 1e-3,
+            "{}",
+            first.y
+        );
+        let second = mark(&page, |m| m.text.starts_with("names"));
+        assert!(
+            (second.y - first.y - 16.4).abs() < 1e-3,
+            "inline code grows the standfirst line"
+        );
+        let setup = mark(&page, |m| m.text == "Setup");
+        let code_descent = 0.3505 * 12.0 - 0.355 * 0.82 * 12.0;
+        assert!(
+            (setup.y - (second.y + 16.4 + code_descent + 28.0)).abs() < 1e-3,
+            "{}",
+            setup.y
+        );
+        let label: Vec<&Mark> = page
+            .iter()
+            .filter(|m| (m.size - 6.8).abs() < 1e-9 && m.y < top + 12.0)
+            .collect();
+        let texts: Vec<&str> = label.iter().map(|m| m.text.as_str()).collect();
+        assert_eq!(texts, ["FEATURE 01", "ARTICLE", "/", "2026 08"]);
+        let left = label[0].x;
+        let tracked: Vec<(f64, f64)> = label
+            .iter()
+            .enumerate()
+            .map(|(i, m)| (m.x - if i == 1 { 0.45 } else { 0.0 }, m.width + 0.45))
+            .collect();
+        let gaps: Vec<f64> = tracked
+            .windows(2)
+            .map(|w| w[1].0 - w[0].0 - w[0].1)
+            .collect();
+        assert!(gaps.iter().all(|g| (g - gaps[0]).abs() < 1e-3), "{gaps:?}");
+        let (x, width) = tracked[3];
+        assert!(
+            (x + width - left - 325.025).abs() < 1e-3,
+            "the date is flush with the column"
+        );
+    }
+
+    #[test]
+    fn a_byline_past_its_credit_column_is_tracked_in_as_the_adapter_does() {
+        let tree = fixture_tree("905");
+        let byline = |tree: &Tree| {
+            let page = opener_page(tree, "The Compressed");
+            let left = mark(&page, |m| m.text == "FEATURE 01").x;
+            let marks: Vec<(f64, f64)> = page
+                .iter()
+                .filter(|m| (m.size - 7.4).abs() < 1e-9)
+                .map(|m| (m.y, m.x + m.width - left))
+                .collect();
+            marks
+        };
+        let one_line = |marks: &[(f64, f64)]| marks.windows(2).all(|w| w[1].1 > w[0].1);
+        let tracked = byline(&tree);
+        assert!(one_line(&tracked), "{tracked:?}");
+        let right = tracked.iter().map(|(_, r)| *r).fold(0.0, f64::max);
+        assert!(
+            right <= 325.025 && right > 315.0,
+            "the tracked byline stays in its column: {right}"
+        );
+        let mut loose = tree.clone();
+        for file in &mut loose.files {
+            if let Some(start) = file.source.find("tracking: -") {
+                let end = start + file.source[start..].find("pt").expect("a length");
+                file.source.replace_range(start..end, "tracking: 0");
+            }
+        }
+        let wrapped = byline(&loose);
+        assert!(
+            !one_line(&wrapped),
+            "the control stays on one line: {wrapped:?}"
+        );
+    }
+
+    #[test]
+    fn a_heading_that_opens_the_body_after_an_illustrated_opener_keeps_its_margin() {
+        let tree = fixture_tree("904");
+        let notes = |tree: &Tree| {
+            let pages = page_marks(tree, |m| {
+                m.iter()
+                    .any(|m| m.text == "Notes" && (m.size - 18.5).abs() < 1e-9)
+            });
+            mark(&pages[0], |m| m.text == "Notes").y
+        };
+        assert!(
+            (notes(&tree) - (42.0004 + 20.4 + 10.0046)).abs() < 1e-3,
+            "{}",
+            notes(&tree)
+        );
+        let mut dropped = tree.clone();
+        for file in &mut dropped.files {
+            file.source = file.source.replace("lead: true", "lead: false");
+        }
+        assert!(
+            (notes(&dropped) - (42.0004 + 10.0046)).abs() < 1e-3,
+            "{}",
+            notes(&dropped)
+        );
+    }
+
+    #[test]
+    fn a_four_entry_contents_divides_its_band_into_four_rows() {
+        let page = opener_page(&fixture_tree("903"), "Contents");
+        assert!(page.iter().any(|m| m.text == "Contents"));
+        let titles: Vec<f64> = page
+            .iter()
+            .filter(|m| (m.size - 9.8).abs() < 1e-9)
+            .map(|m| m.y)
+            .collect();
+        assert_eq!(titles.len(), 4);
+        assert!(
+            titles
+                .windows(2)
+                .all(|w| (w[1] - w[0] - 393.0 / 4.0).abs() < 1e-3),
+            "{titles:?}"
         );
     }
 

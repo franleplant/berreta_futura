@@ -1,0 +1,58 @@
+id: '905'
+issue_number: 905
+title: Plain Byline Fixture
+publication_date: '2026-09-03'
+status: draft
+cover:
+  layout: footer_caption
+  headline: Byline Fixture
+  deck: A fixture deck.
+  back_text: A fixture back cover paragraph.
+  art_path: editions/905/art/cover.png
+articles:
+- id: compressed-byline-article
+  title: The Compressed Byline Article
+  short_title: Compressed Byline
+  display_emphasis: Compressed
+  opener_variant: stepped_title
+  author: Dee Fixture, Eve Fixture, Fay Fixture, Gil Fixture, Hal Fixture, Ida
+  author_note: A fixture author note that runs long enough to wrap onto a second line beside the plain opener code, so the field reaches its second baseline.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/905/articles/compressed-byline-article.md
+- id: opener-figure-article
+  title: The Second Plain Opener Carries Its Own Figure
+  short_title: Its Own Figure
+  display_emphasis: Figure
+  opener_variant: stepped_title
+  author: Ada Fixture
+  author_note: A fixture author note the opener figure suppresses.
+  content_mode: article
+  source_ids:
+  - fixture-source-a
+  manuscript: editions/905/articles/opener-figure-article.md
+  figures:
+  - id: opener-diagram
+    source_id: fixture-source-a
+    path: media/diagram.png
+    caption: A fixture opener figure caption.
+    credit: Fixture credit.
+    alt_text: A fixture diagram under the opener.
+    anchor: __opener__
+    layout: column_plate
+closing_plates:
+- title: The first byline plate.
+  art_path: editions/905/art/plate-1.png
+- title: The second byline plate.
+  art_path: editions/905/art/plate-2.png
+- title: The third byline plate.
+  art_path: editions/905/art/plate-3.png
+- title: The fourth byline plate.
+  art_path: editions/905/art/plate-4.png
+- title: The fifth byline plate.
+  art_path: editions/905/art/plate-5.png
+- title: The sixth byline plate.
+  art_path: editions/905/art/plate-6.png
+- title: The seventh byline plate.
+  art_path: editions/905/art/plate-7.png

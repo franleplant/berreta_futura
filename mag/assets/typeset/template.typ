@@ -94,8 +94,6 @@
 #let CONTENTS-TITLE-SIZE = 27pt
 #let CONTENTS-BAND-TOP = 74.2802pt
 #let CONTENTS-BAND = 393pt
-#let CONTENTS-ROW-MAX = 65.5pt
-#let CONTENTS-ROWS-MIN = 6
 #let CONTENTS-RULE = 0.7pt
 #let CONTENTS-ENTRY-LEFT = 47pt
 #let CONTENTS-STANDARD = (label: 8.6pt, folio: 17.7pt, title: 17.5pt, author: 32.2pt)
@@ -403,7 +401,7 @@
   let rows = parts(body)
   let entries = rows.filter(r => r.tag == "entry")
   let offsets = if tight { CONTENTS-TIGHT } else { CONTENTS-STANDARD }
-  let height = calc.min(CONTENTS-BAND / calc.max(CONTENTS-ROWS-MIN, entries.len()), CONTENTS-ROW-MAX)
+  let height = CONTENTS-BAND / calc.max(1, entries.len())
   block(height: PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM, width: 100%, context {
     let kicker = part(rows, "kicker")
     let label = part(rows, "label")
@@ -431,6 +429,40 @@
 
 #let opener-parts = state("opener-parts", none)
 #let opener-end() = [#metadata(none)<mag-opener-end>]
+
+#let plain-head = state("plain-head", none)
+#let PLAIN-TITLE-TOP = DATUM + 37pt
+#let PLAIN-LABEL-TOP = 7.53085pt
+#let LABEL-TRACKING = 0.45pt
+#let PLAIN-NOTE-DROP = 12pt
+#let NOTE-LEADING = 9.45pt
+
+#let plain-opener(size: 35pt, field: 0pt, tracking: 0pt, title: "", body) = {
+  plain-head.update((size: size, tracking: tracking, title: title))
+  block(height: field, width: 100%, above: 0pt, below: 0pt, breakable: false, body)
+  plain-head.update(none)
+}
+
+#let plain-title-text(size, body) = text(
+  font: DISPLAY,
+  size: size,
+  weight: 600,
+  hyphenate: false,
+  ..edges(size, size * OPENER-TITLE-LEADING-RATIO, HALF-SERIF),
+  body,
+)
+
+#let plain-title-block(size, body) = block(width: MEASURE + MEASURE-DELTA, plain-title-text(size, body))
+
+#let plain-byline-baseline(head) = {
+  let leading = head.size * OPENER-TITLE-LEADING-RATIO
+  let lines = calc.round(measure(plain-title-block(head.size, head.title)).height / leading)
+  PLAIN-TITLE-TOP + head.size + lines * leading + 10pt
+}
+
+#let unspaced(body) = if body.has("children") {
+  body.children.filter(c => c != [ ]).join()
+} else { body }
 
 #let escaped(body) = pad(left: -OPENER-ESCAPE, right: -OPENER-ESCAPE, body)
 
@@ -478,7 +510,14 @@
   }
 }
 
-#let content-label(body) = context if opener-parts.get() == none {
+#let content-label(body) = context if plain-head.get() != none {
+  let items = body.children.enumerate().map(((i, item)) => {
+    (if i == 1 { box(move(dx: LABEL-TRACKING, item)) } else { unspaced(item) }) + h(LABEL-TRACKING)
+  })
+  place(top + left, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, box(width: 100%, text(
+    font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(LABEL-TRACKING), upper(items.intersperse(h(1fr)).join()),
+  )))
+} else if opener-parts.get() == none {
   block(
     text(font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(0.45pt), upper(body)),
     spacing: 7.53085pt,
@@ -529,7 +568,11 @@
   (size: size, lines: OPENER-TITLE-MAX-LINES)
 }
 
-#let piece-title(body) = context if opener-parts.get() == none {
+#let piece-title(body) = context if plain-head.get() != none {
+  let size = plain-head.get().size
+  let leading = size * OPENER-TITLE-LEADING-RATIO
+  place(top + left, dy: PLAIN-TITLE-TOP + size - (leading / 2 + HALF-SERIF * size), bookmark(1, body) + plain-title-block(size, body))
+} else if opener-parts.get() == none {
   block(
     bookmark(1, body) + text(font: DISPLAY, size: 24pt, weight: 600, ..edges(24pt, 24pt * 1.08, HALF-SERIF), body),
     spacing: 8pt,
@@ -568,36 +611,37 @@
 #let code-quiet(code) = OPENER-QR-QUIET * PLAIN-QR / (code.len() + 2 * OPENER-QR-QUIET)
 #let credit-inset(code) = if code == none { 0pt } else { PLAIN-QR - 2 * code-quiet(code) + CODE-CREDIT-GAP }
 #let byline(code: none, body) = context if opener-parts.get() == none {
-  let line = text(font: SANS, size: OPENER-BYLINE-SIZE, weight: 600, ..flat, upper(body))
-  let room = MEASURE - credit-inset(code)
-  assert(
-    code == none or measure(line).width <= room,
-    message: "the byline reaches past the credit column beside its source code; the oracle's letter-spacing compression is not ported",
-  )
-  block(above: 12pt, below: 0pt, {
+  let head = plain-head.get()
+  let tracking = if head == none { 0pt } else { head.tracking }
+  let line = text(font: SANS, size: OPENER-BYLINE-SIZE, weight: 600, ..flat, tracking: tracking, upper(body))
+  let credit = {
     if code != none {
       let quiet = code-quiet(code)
       place(top + left, dx: -quiet, dy: -OPENER-BYLINE-SIZE * INTER-CAP - quiet, qr-symbol(code, side: PLAIN-QR))
     }
     pad(left: credit-inset(code), line)
-  })
+  }
+  if head == none {
+    block(above: 12pt, below: 0pt, credit)
+  } else {
+    place(top + left, dy: plain-byline-baseline(head), block(width: 100%, credit))
+  }
 } else {
   collect("byline", body)
 }
 #let author-note(code: none, body) = context if opener-parts.get() == none {
-  block(
+  let head = plain-head.get()
+  let note = block(
+    width: 100%,
     inset: (left: credit-inset(code)),
-    text(
-      font: SANS,
-      size: CAPTION-SIZE,
-      weight: 400,
-      fill: SLATE,
-      ..edges(CAPTION-SIZE, 9.45pt, HALF-SANS),
-      body,
-    ),
     above: 7.49326pt,
     below: 0pt,
+    text(font: SANS, size: CAPTION-SIZE, weight: 400, fill: SLATE, ..edges(CAPTION-SIZE, NOTE-LEADING, HALF-SANS), body),
   )
+  if head == none { note } else {
+    let baseline = plain-byline-baseline(head) + PLAIN-NOTE-DROP
+    place(top + left, dy: baseline - NOTE-LEADING / 2 - HALF-SANS * CAPTION-SIZE, note)
+  }
 } else {
   collect("note", body)
 }
@@ -759,6 +803,8 @@
 #let inline-code(body) = context {
   let size = CODE-SIZE * text.size
   let leading = (text.top-edge - text.bottom-edge).to-absolute()
+  let lift = calc.min(0pt, text.top-edge.to-absolute() - leading / 2 - HALF-SERIF * text.size)
+  let (top-edge, bottom-edge) = edges(size, leading, HALF-MONO)
   code-pad
   highlight(
     fill: PALE-VIOLET,
@@ -772,7 +818,8 @@
       weight: 500,
       fill: VIOLET,
       hyphenate: false,
-      ..edges(size, leading, HALF-MONO),
+      top-edge: top-edge + lift,
+      bottom-edge: bottom-edge + lift,
       body,
     ),
   )
@@ -801,13 +848,14 @@
 }
 
 #let HEADINGS = (
-  (font: DISPLAY, size: 22pt, leading: 25pt, above: 23.4pt, below: 13pt, fill: INK, caps: false),
-  (font: DISPLAY, size: 18.5pt, leading: 21.5pt, above: 20.4pt, below: 11pt, fill: INK, caps: false, drop: 15pt),
-  (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, below: 8pt, fill: VIOLET, caps: true, drop: 10pt),
+  (font: DISPLAY, size: 22pt, leading: 25pt, above: 23.4pt, after-standfirst: 31pt, below: 13pt, fill: INK, caps: false),
+  (font: DISPLAY, size: 18.5pt, leading: 21.5pt, above: 20.4pt, after-standfirst: 28pt, below: 11pt, fill: INK, caps: false, drop: 15pt),
+  (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, after-standfirst: 23pt, below: 8pt, fill: VIOLET, caps: true, drop: 10pt),
 )
 
-#let heading-stack(level, spec, above, escape, drop, body) = {
-  block(above: above, below: 0pt, breakable: false, width: 100%, inset: escape, {
+#let heading-stack(level, spec, above, escape, drop, body, lead: false) = {
+  block(above: if lead { 0pt } else { above }, below: 0pt, breakable: false, width: 100%, inset: escape, {
+    if lead { v(above, weak: false) }
     bookmark(level, body)
     move(dy: drop, text(
       font: spec.font,
@@ -823,7 +871,7 @@
   v(-HEADING-CLEARANCE)
 }
 
-#let doc-heading(level: 1, body) = {
+#let doc-heading(level: 1, lead: false, standfirst: false, body) = {
   let spec = HEADINGS.at(calc.min(level, 3) - 1)
   flow-mark("heading", none, index => {
     let anchor = level >= 2 and level <= 3 and band-anchored(index)
@@ -831,10 +879,11 @@
     heading-stack(
       level,
       spec,
-      if anchor { auto } else { spec.above },
+      if anchor { auto } else if standfirst { spec.after-standfirst } else { spec.above },
       if anchor { BAND-ESCAPE } else { NO-ESCAPE },
       if midpage { spec.drop } else { 0pt },
       body,
+      lead: lead and not anchor,
     )
   })
 }
@@ -1057,11 +1106,13 @@
   alt: none,
   path: none,
   pixels: none,
+  trim: 0pt,
   body,
 ) = {
   assert(pixels != none, message: "figure " + id + " carries no pixel size; the emitter must state it")
   figure-counter.step()
   let spec = figure-spec(layout, anchor)
+  spec.max-height -= trim
   flow-mark("figure", layout, _ => block(
     above: 0pt,
     below: spec.gap,
@@ -1115,7 +1166,6 @@
 
 
 #let plates = state("mag-plates", ())
-#let piece-counter = counter("mag-piece-ordinal")
 
 #let py-round(value) = {
   let whole = calc.floor(value)
@@ -1123,38 +1173,39 @@
   if rest > 0.5 or (rest == 0.5 and calc.odd(whole)) { whole + 1 } else { whole }
 }
 
-#let plate-slots(articles, count) = range(1, count + 1).map(j => py-round(j * articles / count))
+#let signature-plates(content, target) = {
+  let minimum = content + 2
+  let pages = calc.ceil(calc.max(if target == none { minimum } else { target }, minimum) / 4) * 4
+  let count = pages - 2 - content
+  if count < 4 { count + 4 } else { count }
+}
 
 #let plate-page(plate) = page(
   foreground: none,
-  place(top + left, dy: -MARGIN-TOP, image(plate.path, width: LIVE-WIDTH, height: PAGE-HEIGHT, fit: "contain")),
+  [#metadata(none)<mag-plate>] + place(top + left, dy: -MARGIN-TOP, image(plate.path, width: LIVE-WIDTH, height: PAGE-HEIGHT, fit: "contain")),
 )
 
-#let plate-plan() = {
-  let all = plates.final()
-  let articles = query(<mag-piece>).len()
-  if all.len() == 0 or articles == 0 { (none, 0, ()) } else {
-    (all, articles, plate-slots(articles, all.len()))
+#let plate-content = state("mag-plate-content", none)
+#let closing-signature(content) = plate-content.update(content)
+
+#let plates-after(ordinal, of: 1) = context {
+  let all = plates.get()
+  let content = plate-content.get()
+  if all.len() == 0 or content == none { return }
+  let count = signature-plates(content, all.first().target)
+  assert(
+    count <= all.len(),
+    message: "Edition needs " + str(count) + " closing plates to close the signature but configures "
+      + str(all.len()) + "; add " + str(count - all.len())
+      + " more to closing_plates (mag art <edition> --only closing, then pick in art/showcase.html)",
+  )
+  let slots = range(1, count + 1).map(j => py-round(j * of / count))
+  for j in range(count).rev() {
+    if slots.at(j) == ordinal or (slots.at(j) == 0 and ordinal == of) { plate-page(all.at(j)) }
   }
 }
 
-#let plates-before(ordinal) = context {
-  let (all, articles, slots) = plate-plan()
-  if all == none { return }
-  for (j, slot) in slots.enumerate() {
-    if slot == ordinal - 1 { plate-page(all.at(j)) }
-  }
-}
-
-#let closing-plate(index: 1, alt: none, path: none) = {
-  plates.update(p => p + ((index: index, alt: alt, path: path),))
-  context {
-    let (all, articles, slots) = plate-plan()
-    if all == none { return }
-    let j = all.position(p => p.index == index)
-    if slots.at(j) == articles { plate-page(all.at(j)) }
-  }
-}
+#let closing-plate(index: 1, alt: none, path: none, target: none) = plates.update(p => p + ((index: index, alt: alt, path: path, target: target),))
 
 #let page-cap(id, kind) = context {
   let head = query(<mag-piece>).find(m => m.value.id == id)
@@ -1177,8 +1228,6 @@
   art: none,
   body,
 ) = {
-  piece-counter.step()
-  context plates-before(piece-counter.get().first())
   pagebreak(weak: true)
   figure-counter.update(0)
   let plate = figure-layouts.any(l => l.starts-with("landscape_plate"))
