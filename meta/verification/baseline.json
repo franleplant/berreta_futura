@@ -1,5 +1,5 @@
 {
-  "schema_note": "per page of edition 010 (en) reader.pdf: the best parity tier the ENGINE PAIR has achieved and the Tier S clauses passing on that page, bound to the staged-input digest they were measured from. mag parity refuses to run at all when the current staged-input digest differs from this one, and refuses to run when the working tree lowers any entry committed at HEAD; raises are written only by verifiers (protocol rule 3) from the baseline-proposed.json a run writes beside its verdict. The tier ladder is CUMULATIVE: a page holds a tier only when every lower rung also holds. Seeded by WP-0.2k at `seeded_at_commit`, which every later ratchet comparison inherits as its base, at tier none for all 54 interior pages, because no typst leg exists yet and a WeasyPrint-versus-itself run measures nothing about the pair; mag parity therefore proposes no entries from a self-comparison. Ratcheted by WP-3.0g to tier E on all 54 pages from the staged run's baseline-proposed.json, once parity.yaml ratchet.target_tier became E. WP-5.4g extended the compared domain to reader.pdf pages 1..n and seeded the two cover pages, 1 and 56, at tier none with no clauses, the seed rule WP-0.2k used; raising them from a measured run's baseline-proposed.json is a verifier's.",
+  "schema_note": "per page of edition 010 (en) reader.pdf: the best parity tier the ENGINE PAIR has achieved and the Tier S clauses passing on that page, bound to the staged-input digest they were measured from. mag parity refuses to run at all when the current staged-input digest differs from this one, and refuses to run when the working tree lowers any entry committed at HEAD; raises are written only by verifiers (protocol rule 3) from the baseline-proposed.json a run writes beside its verdict. The tier ladder is CUMULATIVE: a page holds a tier only when every lower rung also holds. Seeded by WP-0.2k at `seeded_at_commit`, which every later ratchet comparison inherits as its base, at tier none for all 54 interior pages, because no typst leg exists yet and a WeasyPrint-versus-itself run measures nothing about the pair; mag parity therefore proposes no entries from a self-comparison. Ratcheted by WP-3.0g to tier E on all 54 pages from the staged run's baseline-proposed.json, once parity.yaml ratchet.target_tier became E. WP-5.4g extended the compared domain to reader.pdf pages 1..n and seeded the two cover pages, 1 and 56, at tier none with no clauses, the seed rule WP-0.2k used; raising them from a measured run's baseline-proposed.json is a verifier's. WP-4.1's verifier raised pages 1 and 56 to tier E and added the critic clause to every page, from two clean-checkout staged runs whose baseline-proposed.json files were byte-identical.",
   "page_entry_shape": {
     "tier": "none | G1 | G2 | V1 | V2 | E",
     "s_clauses_passing": [
@@ -16,8 +16,15 @@
   "staged_input_digest": "bc49b2aaad8844155a2e5496d135360534771b57c9a87a690b4e9243ae5fed5b",
   "pages": {
     "1": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation",
+        "critic"
+      ]
     },
     "2": {
       "tier": "E",
@@ -26,7 +33,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "3": {
@@ -36,7 +44,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "4": {
@@ -46,7 +55,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "5": {
@@ -56,7 +66,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "6": {
@@ -66,7 +77,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "7": {
@@ -76,7 +88,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "8": {
@@ -86,7 +99,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "9": {
@@ -96,7 +110,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "10": {
@@ -106,7 +121,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "11": {
@@ -116,7 +132,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "12": {
@@ -126,7 +143,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "13": {
@@ -136,7 +154,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "14": {
@@ -146,7 +165,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "15": {
@@ -156,7 +176,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "16": {
@@ -166,7 +187,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "17": {
@@ -176,7 +198,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "18": {
@@ -186,7 +209,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "19": {
@@ -196,7 +220,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "20": {
@@ -206,7 +231,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "21": {
@@ -216,7 +242,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "22": {
@@ -226,7 +253,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "23": {
@@ -236,7 +264,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "24": {
@@ -246,7 +275,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "25": {
@@ -256,7 +286,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "26": {
@@ -266,7 +297,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "27": {
@@ -276,7 +308,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "28": {
@@ -286,7 +319,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "29": {
@@ -296,7 +330,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "30": {
@@ -306,7 +341,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "31": {
@@ -316,7 +352,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "32": {
@@ -326,7 +363,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "33": {
@@ -336,7 +374,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "34": {
@@ -346,7 +385,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "35": {
@@ -356,7 +396,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "36": {
@@ -366,7 +407,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "37": {
@@ -376,7 +418,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "38": {
@@ -386,7 +429,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "39": {
@@ -396,7 +440,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "40": {
@@ -406,7 +451,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "41": {
@@ -416,7 +462,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "42": {
@@ -426,7 +473,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "43": {
@@ -436,7 +484,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "44": {
@@ -446,7 +495,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "45": {
@@ -456,7 +506,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "46": {
@@ -466,7 +517,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "47": {
@@ -476,7 +528,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "48": {
@@ -486,7 +539,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "49": {
@@ -496,7 +550,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "50": {
@@ -506,7 +561,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "51": {
@@ -516,7 +572,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "52": {
@@ -526,7 +583,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "53": {
@@ -536,7 +594,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "54": {
@@ -546,7 +605,8 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "55": {
@@ -556,12 +616,20 @@
         "boxes",
         "text",
         "color",
-        "navigation"
+        "navigation",
+        "critic"
       ]
     },
     "56": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation",
+        "critic"
+      ]
     }
   }
 }
