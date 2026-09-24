@@ -1,11 +1,12 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Landed, awaiting a verifier: WP-0.0d, WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
-Running: WP-0.0d (rule colour oracle change, re-seed), WP-5.5c package,
-adversarial verifier for the comparator WPs 0.2m-0.2r.
-Next: WP-3.5 furniture (running-head paint order), WP-3.2 follow-up.
+Running: WP-3.5 furniture, WP-5.5c package, adversarial verifier for
+the comparator WPs 0.2m-0.2r.
+Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
+3.7.
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -24,9 +25,8 @@ evidence file records it):
   critic (class C: Python has the same defect; WP-5.3c pins it as a
   declared gap). Landed 7d652a3; Python keeps the defect until WP-6.1
   deletes it.
-- WP-0.0d sanctioned oracle change: rule-colour token 0.9 -> 230/255
-  exact (WP-0.2o.md: typst can only write 230, pixels differ 229 vs 230).
-  Queued after WP-3.4 lands (re-seeds the baseline digest).
+- WP-0.0d rule-colour token 230/255 exact (landed 0870773; baseline
+  digest now 12c24234...).
 - WP-5.5d: fenced code with a language refuses in the Rust web port
   (pygments not reproduced); needed before WP-6.1 deletes Python.
   Also JPEG closing plates, and a start-0 ordered list row in the wfx
