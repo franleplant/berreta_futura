@@ -1,48 +1,35 @@
 # Renderer transition record
 
-The old Python pipeline, CLI, tests, and source bridge are deleted. Python
-survives only as an isolated PDF/web renderer implementation seam. It is not a
-contributor workflow, a release procedure, or an acceptance oracle for the
-TypeScript engine.
+This record supersedes the earlier one, which described a TypeScript engine
+that no longer exists.
 
-## Current authority
+## Current state (WP-4.2, 2026-09-24)
 
-`RenderMachine` coordinates rendering through `RunEngine`. The TypeScript
-`RendererExecutor` invokes the renderer through a versioned adapter. It receives
-only an immutable render manifest and a caller-owned destination, then returns a
-structured result. It does not read production records, choose a workflow state,
-validate an edition, export a publication, or write a canonical output directory.
+`mag render` typesets through Typst, in Rust (`mag/src/typeset/`). The
+`magazine.toml` key `[render] engine = "typst"` selects it. The typst leg
+stages the edition, lays out the A5 reader, runs the render critic, and
+writes the reader, booklet, preflight, web, and package outputs.
 
-Use `npm run engine -- worker <run-id> <worker-config.json>` to execute a
-claimed renderer offer. Lifecycle work, including retries, decisions, and
-approval, must use the corresponding `RunEngine` operation through
-`npm run engine -- ...`; never use a filesystem operation to advance a run. Do
-not invoke the renderer directly or use a Python CLI.
+WeasyPrint (`src/magazine/`, Python, run through `uv`) is the rollback. It
+stays selectable per run with `mag render NNN --engine weasyprint`, or for
+every run by setting `engine = "weasyprint"`. It also remains the oracle
+that `mag parity` compares the typst leg against. Rolling back is a config
+change only; no code change is needed.
 
-`measureArticle` is per-draft feedback and reports actual opener fit and source
-article page count. `measureEdition` is a separate full-issue gate. Rendering
-requires current approved content, every configured translation, selected art,
-and a printer profile. It produces exact per-language reader, web, booklet,
-package, inspection, and preflight artifacts.
+## Why the flip was allowed
 
-An independent visual reviewer must approve the exact current render artifact
-IDs at original resolution. A later render has new IDs and cannot inherit that
-approval. No edition is press-ready until each configured language has passing
-preflight artifacts and explicit studio readiness.
+The gate is WP-4.1 (`meta/verification/evidence/WP-4.1.md`): `mag parity 010`
+at Tier E exited 0 twice from a clean checkout, every evaluated clause
+passing on reader pages 1..56, normalized verdict sha256
+`172444721bb321f4d0a55a7b6431ec425c4a283760dae518bb830d580313c3ab` on both
+runs. WP-4.2's own render and ad hoc parity run are in
+`meta/verification/evidence/WP-4.2.md`.
 
-## Repository boundary
+Parity was proven for edition 010 in English, with hyphenation configured
+for parity. WP-4.3 measures the shipping hyphenation setting.
 
-The manifest may name only artifacts authorized by the claimed render offer and
-is materialized into an owned workspace under `.magazine/`. Renderer files return
-to `RunEngine` as immutable engine artifacts. `inputs/` and `durable/` hold
-Git-tracked immutable revisions; `output/` is an ignored, ephemeral export
-projection. For edition `004`, each runtime and matching export root is named
-`<UTC timestamp>--<RunId>`. Renderer output paths never define workflow state.
+## What comes next
 
-Routine checks stay Node-only:
-
-```sh
-npm run typecheck
-npm run test:engine
-npm run build:viewer
-```
+WP-6.1 deletes the Python renderer once one real edition has shipped on
+the Typst engine. Deleting it removes the rollback and the only way to
+re-render editions 001-009 byte-faithfully, so that is Fran's call.
