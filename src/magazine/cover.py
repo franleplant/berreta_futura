@@ -1425,11 +1425,14 @@ def replace_outer_pages(
         box = cover.pages[0].mediabox
         if abs(float(box.width) - PAGE_WIDTH) > 0.02 or abs(float(box.height) - PAGE_HEIGHT) > 0.02:
             raise CoverPdfError(f"{name.title()} cover PDF must be A5")
-    writer = PdfWriter()
-    writer.add_page(front.pages[0])
-    for page in source.pages[1:-1]:
-        writer.add_page(page)
-    writer.add_page(back.pages[0])
+    writer = PdfWriter(clone_from=source)
+    writer.pdf_header = max(reader.pdf_header for reader in (source, front, back))
+    for page, cover in ((writer.pages[0], front), (writer.pages[-1], back)):
+        face = cover.pages[0].clone(writer)
+        for key in [key for key in page if key != "/Parent"]:
+            del page[key]
+        page.update({key: value for key, value in face.items() if key != "/Parent"})
+    writer.compress_identical_objects(remove_identicals=False, remove_orphans=True)
     writer.add_metadata({"/Creator": "magazine-compiler", "/Producer": "magazine-compiler"})
     temporary = target.with_suffix(target.suffix + ".cover-tmp")
     with temporary.open("wb") as stream:
