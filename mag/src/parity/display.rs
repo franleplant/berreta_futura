@@ -607,7 +607,7 @@ fn drift(
 
 const ADVANCE_QUANTA: f64 = 10.0;
 
-pub const MIN_ADVANCE_PT: f64 = 0.5;
+pub const MIN_ADVANCE_PT: f64 = 1.25;
 
 fn gap_step(a: &canon::Glyph, b: &canon::Glyph, pa: &canon::Glyph, pb: &canon::Glyph) -> usize {
     let moves = |v: [i64; 2]| v != [0, 0];
@@ -631,11 +631,6 @@ fn advance_miss(a: &canon::Glyph, b: &canon::Glyph) -> Option<f64> {
 fn steps(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<usize> {
     let reach =
         |g: &canon::Glyph| ((g.at[0] - g.start[0]) as f64).hypot((g.at[1] - g.start[1]) as f64);
-    let mut span: HashMap<(usize, usize), f64> = HashMap::new();
-    for (a, b) in ga.iter().zip(gb) {
-        let s = span.entry((a.line, b.line)).or_default();
-        *s = s.max(reach(a)).max(reach(b));
-    }
     let mut last: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
     (0..ga.len())
         .map(|j| {
@@ -643,7 +638,7 @@ fn steps(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<usize> {
             let prev = last.get(&(a.line, b.line));
             let k = prev.map_or(0, |&(k, i)| k + gap_step(a, b, &ga[i], &gb[i]));
             last.insert((a.line, b.line), (k, j));
-            let held = span[&(a.line, b.line)] * streams::GLYPH_QUANTUM / MIN_ADVANCE_PT;
+            let held = reach(a).max(reach(b)) * streams::GLYPH_QUANTUM / MIN_ADVANCE_PT;
             k.min(held as usize + 1)
         })
         .collect()
@@ -1391,14 +1386,14 @@ mod colour_tests {
         let status = |a: &[i64], b: &str, at: &[i64]| {
             compare_glyphs(&line("a    b", a), &line(b, at), 1).status
         };
-        let base = spread(10_000, 0);
+        let base = spread(20_000, 0);
         let cases = [
-            ("a    b", spread(10_000, 8), "pass"),
-            ("a    b", with_last(spread(10_000, 8), 1), "fail"),
+            ("a    b", spread(20_000, 8), "pass"),
+            ("a    b", with_last(spread(20_000, 8), 1), "fail"),
             ("a    b", with_last(base.clone(), 10), "pass"),
             ("a    b", with_last(base.clone(), 11), "fail"),
-            ("ab", vec![0, 50_000 + 2 * 8], "pass"),
-            ("ab", vec![0, 50_000 + 2 * 8 + 1], "fail"),
+            ("ab", vec![0, 100_000 + 2 * 8], "pass"),
+            ("ab", vec![0, 100_000 + 2 * 8 + 1], "fail"),
         ];
         for (text, at, verdict) in cases {
             assert_eq!(status(&base, text, &at), verdict, "{text} {at:?}");
@@ -1467,7 +1462,6 @@ mod colour_tests {
     }
 
     #[test]
-    #[ignore = "WP-0.2j verify: glyphs off the page widen the span cap of a word on it"]
     fn a_glyph_off_the_page_buys_no_steps_for_a_word_on_it() {
         let far = |tick: i64| {
             let mut d = ladder(&vec![streams::qo(0.0015) + tick; 6944]);
