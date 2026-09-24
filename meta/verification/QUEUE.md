@@ -9,12 +9,11 @@ Landed, awaiting a verifier: WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, 
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
-Running: WP-3.8 fixture-exposed divergences (plain opener, closing-plate
-order/count, 4-entry contents, heading after opener, baseline rebase),
-adversarial verify of 0.2r/0.2s/0.2t/0.2j (WP-0.2j landed d68b309).
-Queued behind it: WP-4.0g ad hoc mode. Behind WP-3.8 (typeset owner): WP-5.1h helpers,
-WP-3.0g, WP-3.7.
-Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.4, 3.5, 0.0d, 0.0e)
+Running: WP-3.7a burn-down structure items, WP-3.7b glyph-drift spike
+(evidence only), adversarial verify of 0.2r/0.2s/0.2t/0.2j (WP-0.2j landed d68b309).
+Queued behind it: WP-4.0g ad hoc mode. Behind WP-3.7a (typeset owner): WP-3.7 drift fix, WP-5.1h helpers,
+then WP-3.0g, WP-5.6, WP-4.1.
+Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
 Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
 Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
@@ -102,6 +101,9 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- Oracle quirks Typst now reproduces (WP-3.8): contents rows 98.25 pt
+  apart although the stylesheet comment wants the six-row cap (WeasyPrint
+  ignores max-height there); plates sharing a slot print in reverse order.
 - The Python render critic falsely fails booklet page order on some
   highlighted code lines (its paint-order defect, fixed in Rust by
   WP-5.3h), which blocks oracle renders of such fixtures.
