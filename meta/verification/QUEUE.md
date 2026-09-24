@@ -25,7 +25,11 @@
 - WP-6.0 landed fddd676: translation oracle ran (3 Rust mismatches
   fixed; 56 refusal messages fire on both); 906 es renders with no
   python/uv; inventory in WP-6.0.md.
-- Running: WP-4.2b, WP-6.0b (port tools/sourcecodes.py, which both
+- WP-4.2b landed f7f3606 (fallback engine typst; both engines print the
+  translate next step; engine lines in two docs). WP-6.1 also clears the
+  retired npm viewer / RunEngine / inputs-durable text in
+  docs/DESIGN_SYSTEM.md and docs/WEB_DEPLOY.md.
+- Running: WP-6.0b (port tools/sourcecodes.py, which both
   engines need), WP-6.0c (cargo test without uv/python; nocomments in
   Rust).
 - Then: WP-6.1 is Fran-gated (a shipped Typst edition, tools/ keep/delete,
