@@ -16,7 +16,10 @@
   0.2u, 0.2w, 0.2x, 3.0g, and the typeset set.
 - Awaiting the WP-4.1 gate verifier: WP-5.6, 0.2y, 5.4g, 5.3g, 3.10,
   5.11, 5.12; it also raises cover rows 1 and 56 to E.
-- Running: WP-3.11 editorial opener port. WP-5.12 landed 0973a8a
+- Running: WP-4.1 full gate from a clean checkout + verification of
+  WP-5.6, 0.2y, 5.4g, 5.3g, 3.10, 5.11, 5.12, 3.11 + cover-row raise.
+- WP-3.11 landed 540bbe8: `--adhoc 008` exit 0, every page equal incl.
+  the editorial. WP-5.12 landed 0973a8a
   (`mag parity --lang`, 906 es green without aliases; manifest figure
   paths source-relative on typst). WP-5.11 landed d320995 (critic JPEG via zune within a
   pinned tolerance, decisions equal to Python on 43 JPEGs; pen-end word
@@ -140,6 +143,11 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- Every edition before 010 except 008 is refused by the current Python
+  renderer (004 pending anchors; 005-007 too few closing plates; 009
+  repeated plate art; 001-003 no edition.yaml), so 008 is the only
+  editorial parity can check. Both engines fit titles on unkerned
+  advance widths (matches, not correct).
 - No current edition can be published in Spanish on EITHER engine:
   nothing writes editions/NNN/translations/es/edition.yaml or its
   source-codes/ (`mag translate` writes only the run's article files).

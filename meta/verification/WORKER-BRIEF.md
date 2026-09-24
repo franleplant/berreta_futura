@@ -24,7 +24,8 @@ whole large files.
    evidence file and report it. Do not widen scope to make it pass.
 7. Repo rules: no code comments (tools/nocomments.py), no U+2014, fewest
    readable lines.
-8. Run long commands in the foreground. Never `rm -rf`, never `git
+8. Run long commands in the foreground. Never run two `mag parity` in
+   the same tree at once (they collide on the run lock). Never `rm -rf`, never `git
    checkout --` on paths you don't own. Use your worktree's own target dir.
 
 ## Working and landing
