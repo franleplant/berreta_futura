@@ -189,7 +189,11 @@ enum Cmd {
     Render(render::RenderArgs),
     /// Compare two engines' renders of an edition against the parity ladder
     Parity {
-        edition: String,
+        #[arg(required_unless_present = "adhoc")]
+        edition: Option<String>,
+        /// Render any edition fresh on both engines; only tier S gates, no baseline
+        #[arg(long, value_name = "NNN", conflicts_with_all = ["edition", "pre_rendered", "oracle_only"])]
+        adhoc: Option<String>,
         /// Two pre-rendered output trees to compare instead of rendering
         #[arg(long = "pre-rendered", num_args = 2, value_names = ["DIR_A", "DIR_B"])]
         pre_rendered: Option<Vec<PathBuf>>,
@@ -350,6 +354,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
         Cmd::Render(args) => render::run(&args),
         Cmd::Parity {
             edition,
+            adhoc,
             pre_rendered,
             run,
             oracle_only,
@@ -361,12 +366,13 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
                 (a, b)
             });
             parity::run(
-                &edition,
+                &adhoc.clone().or(edition).expect("clap requires one"),
                 parity::Options {
                     pre_rendered: pair,
                     run_dir: run,
                     oracle_only,
                     set,
+                    adhoc: adhoc.is_some(),
                 },
             )
         }
@@ -388,5 +394,31 @@ mod parity_text_seam_is_reachable {
         };
         assert!(format!("{err:#}").contains("does-not-exist.pdf"));
         let _: fn(&Element) -> bool = |e| matches!(e, Element::Text { .. });
+    }
+}
+
+#[cfg(test)]
+mod parity_adhoc_flag {
+    use super::{Cli, Cmd};
+    use clap::Parser;
+
+    fn parse(args: &[&str]) -> Result<Cli, clap::Error> {
+        Cli::try_parse_from([&["mag", "parity"], args].concat())
+    }
+
+    #[test]
+    fn adhoc_stands_in_for_the_edition_and_refuses_the_baseline_modes() {
+        let Ok(Cli {
+            cmd: Cmd::Parity { edition, adhoc, .. },
+            ..
+        }) = parse(&["--adhoc", "009", "--run", "r"])
+        else {
+            panic!("--adhoc NNN --run dir must parse");
+        };
+        assert_eq!((edition, adhoc.as_deref()), (None, Some("009")));
+        assert!(parse(&[]).is_err());
+        assert!(parse(&["010", "--adhoc", "009"]).is_err());
+        assert!(parse(&["--adhoc", "009", "--oracle-only"]).is_err());
+        assert!(parse(&["--adhoc", "009", "--pre-rendered", "a", "b"]).is_err());
     }
 }
