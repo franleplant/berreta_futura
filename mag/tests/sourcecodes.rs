@@ -1,4 +1,6 @@
 #[allow(dead_code)]
+mod oracle;
+#[allow(dead_code)]
 #[path = "../src/sourcecodes.rs"]
 mod sourcecodes;
 
@@ -8,9 +10,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 const CORPUS: &str = "tests/typeset_fixtures/corpus";
+const SNAPSHOT: &str = "tests/repo_snapshot";
 const EDITIONS: [(&str, &str); 9] = [
-    ("..", "008"),
-    ("..", "010"),
+    (SNAPSHOT, "008"),
+    (SNAPSHOT, "010"),
     (CORPUS, "900"),
     (CORPUS, "901"),
     (CORPUS, "902"),
@@ -36,7 +39,7 @@ fn rust_writes_every_committed_expected_file_byte_for_byte() {
 
 #[test]
 fn committed_expected_files_are_what_the_python_tool_writes() {
-    if !Path::new("../tools/sourcecodes.py").exists() {
+    if !oracle::live() {
         return;
     }
     let scratch = std::env::temp_dir().join(format!("mag-sourcecodes-{}", std::process::id()));

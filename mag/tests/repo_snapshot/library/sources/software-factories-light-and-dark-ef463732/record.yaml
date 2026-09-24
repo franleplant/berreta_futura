@@ -1,0 +1,14 @@
+id: software-factories-light-and-dark-ef463732
+title: Software Factories, Light and Dark
+author: Addy Osmani
+url: https://x.com/addyosmani/status/2079442194449232227
+captured_at: '2026-07-21T14:51:59Z'
+published_at: '2026-07-21'
+tags:
+- agent-loops
+- comprehension-debt
+- software-engineering
+- software-factories
+synopsis: A framework for software factories built from harnessed agent loops, contrasting human-supervised
+  light factories with dark factories where code ships unread, and arguing that review judgment, comprehension,
+  and carefully designed checks remain the real constraints.

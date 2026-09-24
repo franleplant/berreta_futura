@@ -1,0 +1,10 @@
+id: celld-documentation-eae4dcbc
+title: 'celld documentation'
+author: ''
+url: https://celld.dev/docs
+captured_at: '2026-08-13T13:40:49Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'celld is a stateful distributed system that runs server-side JavaScript with the same API as Cloudflare Workers and Durable Objects, keeping shared data in an S3-compatible or Google Cloud Storage bucket you own.'

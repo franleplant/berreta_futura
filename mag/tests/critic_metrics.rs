@@ -1,5 +1,7 @@
 #[path = "../src/critic/metrics.rs"]
 mod metrics;
+#[allow(dead_code)]
+mod oracle;
 
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -13,6 +15,14 @@ fn repository() -> PathBuf {
         .parent()
         .expect("mag sits inside the repository")
         .to_path_buf()
+}
+
+fn input(path: &str) -> PathBuf {
+    match oracle::snapshot().join(path) {
+        copy if copy.exists() => copy,
+        _ if path.starts_with("library/") => oracle::pinned("critic_metrics", path),
+        _ => repository().join(path),
+    }
 }
 
 fn expected() -> Value {
@@ -37,8 +47,8 @@ fn number(value: &Value, key: &str) -> f64 {
 
 fn check(row: &Value, pixel_exact: bool) -> Vec<String> {
     let path = row["path"].as_str().expect("path is a string");
-    let source = metrics::decode_rgb(&repository().join(path))
-        .unwrap_or_else(|error| panic!("{path} decodes: {error}"));
+    let source =
+        metrics::decode_rgb(&input(path)).unwrap_or_else(|error| panic!("{path} decodes: {error}"));
     let mut failures = Vec::new();
     let expected_source = row["source_sha256"].as_str().expect("sha is a string");
     if pixel_exact && digest(&source.data) != expected_source {
@@ -71,7 +81,7 @@ fn check(row: &Value, pixel_exact: bool) -> Vec<String> {
         )
     };
     let analysis = metrics::analyze_print_contrast(&source);
-    let prepared = metrics::prepare_print_image(&repository().join(path))
+    let prepared = metrics::prepare_print_image(&input(path))
         .unwrap_or_else(|error| panic!("{path} prepares: {error}"));
     for (stage, measured) in [("analysis", analysis), ("after", prepared.after)] {
         let oracle = &row[stage];

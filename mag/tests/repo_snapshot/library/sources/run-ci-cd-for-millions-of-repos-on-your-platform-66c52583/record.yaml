@@ -1,0 +1,8 @@
+id: run-ci-cd-for-millions-of-repos-on-your-platform-66c52583
+title: 'Run CI/CD for millions of repos — on your platform, on Cloudflare'
+author: 'André Venceslau, Mia Malden, Tomáš Hobza'
+url: https://blog.cloudflare.com/ci-workflows/
+captured_at: '2026-08-10T20:03:29Z'
+published_at: '2026-08-04'
+tags: [ci-cd, workflows, serverless]
+synopsis: 'The article announces Cloudflare''s CI SDK, built on Cloudflare Workflows, which lets platforms and their customers run CI/CD pipelines (build, lint, test, typecheck, deploy, and optional AI-driven self-healing) directly on Cloudflare using TypeScript instead of YAML.'

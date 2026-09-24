@@ -1,0 +1,8 @@
+id: launching-the-x402-foundation-with-coinbase-and-25f85626
+title: 'Launching the x402 Foundation with Coinbase, and support for x402 transactions'
+author: 'Will Allen, Cam Whiteside, Rohin Lohe, Steve James'
+url: https://blog.cloudflare.com/x402/
+captured_at: '2026-08-10T23:24:34Z'
+published_at: '2025-09-23'
+tags: [x402, payments, agents]
+synopsis: 'Cloudflare and Coinbase are launching the x402 Foundation to promote the x402 protocol for machine-to-machine payments, and Cloudflare is shipping x402 support in its Agents SDK and MCP integrations along with a proposed deferred payment scheme.'

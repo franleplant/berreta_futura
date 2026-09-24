@@ -1,0 +1,8 @@
+id: how-to-run-a-gauntlet-loop-c259d9f4
+title: 'How to Run a Gauntlet Loop'
+author: 'Matt Shumer'
+url: https://somethingbig.ai/gauntlet-loop
+captured_at: '2026-08-17T13:08:46Z'
+published_at: '2026-07-27'
+tags: []
+synopsis: 'The article explains the "Gauntlet Loop" prompting method, where an agent splits work into pieces, has separate builder and critic agents compare each piece against a concrete reference bar, and repeats the loop until the result reaches or approaches that bar.'

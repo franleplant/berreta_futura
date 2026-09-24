@@ -1,0 +1,13 @@
+id: how-enabling-two-settings-tripled-our-scores-on--265c6a01
+title: How enabling two settings tripled our scores on the ARC-AGI-3 benchmark
+author: Ilan Bigio, Ted Sanders
+url: https://openai.com/index/how-two-settings-tripled-our-arc-agi-3-scores
+captured_at: '2026-07-31T13:49:42Z'
+published_at: '2026-07-29'
+tags:
+- agents
+- evaluations
+- harnesses
+- reasoning
+synopsis: An OpenAI benchmark analysis showing how retained reasoning and compaction improved ARC-AGI-3
+  performance while reducing output tokens.

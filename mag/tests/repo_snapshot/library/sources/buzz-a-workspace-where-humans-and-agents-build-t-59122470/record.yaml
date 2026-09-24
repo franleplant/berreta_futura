@@ -1,0 +1,13 @@
+id: buzz-a-workspace-where-humans-and-agents-build-t-59122470
+title: 'Buzz: A workspace where humans and agents build together'
+author: Block, Inc.
+url: https://github.com/block/buzz
+captured_at: '2026-07-23T12:32:52Z'
+published_at: '2026-07-22'
+tags:
+- agents
+- buzz
+- nostr
+- open-source
+synopsis: Canonical Apache-2.0 repository documenting Buzz’s vision, architecture, identity model, agent
+  affordances, and current implementation.

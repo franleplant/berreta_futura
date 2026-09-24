@@ -1,0 +1,10 @@
+id: security-218dbf57
+title: 'Security'
+author: ''
+url: https://celld.dev/docs/security
+captured_at: '2026-08-13T13:47:32Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'celld''s security model requires operators to separate and protect the public and internal listeners, protect the fleet bucket credentials, and put authentication and TLS in front of the public application, since celld itself does not provide these protections.'

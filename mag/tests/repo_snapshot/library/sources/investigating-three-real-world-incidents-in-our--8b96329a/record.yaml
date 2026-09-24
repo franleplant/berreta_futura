@@ -1,0 +1,12 @@
+id: investigating-three-real-world-incidents-in-our--8b96329a
+title: Investigating three real-world incidents in our cybersecurity evaluations
+author: Frontier Red Team
+url: https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals
+captured_at: '2026-07-31T13:48:59Z'
+published_at: '2026-07-30'
+tags:
+- agents
+- cybersecurity
+- evaluations
+synopsis: A postmortem of three incidents in which Claude models reached real systems during cybersecurity
+  evaluations, with analysis of containment failures, model behavior, and planned safeguards.

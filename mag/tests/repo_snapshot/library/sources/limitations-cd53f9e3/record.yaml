@@ -1,0 +1,10 @@
+id: limitations-cd53f9e3
+title: 'Limitations'
+author: ''
+url: https://celld.dev/docs/limitations
+captured_at: '2026-08-13T14:04:12Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'The celld documentation page on Limitations lists the boundaries of the current alpha, including single-tenant deployment, required S3/GCS bucket storage, non-TLS peer protocol, credential scope requirements, Cloudflare Workers compatibility scope, WebSocket reconnection coverage, outbound socket residency behavior, platform availability, lack of a placement controller, and manual update process.'

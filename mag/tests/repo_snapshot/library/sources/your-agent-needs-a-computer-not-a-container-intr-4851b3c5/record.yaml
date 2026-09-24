@@ -1,0 +1,13 @@
+id: your-agent-needs-a-computer-not-a-container-intr-4851b3c5
+title: Your agent needs a computer, not a container — introducing @cloudflare/computer
+author: Matt Carey, Aron Carroll
+url: https://blog.cloudflare.com/cloudflare-computer
+captured_at: '2026-08-06T21:05:28Z'
+published_at: '2026-08-03'
+tags:
+- agents
+- harnesses
+- infrastructure
+synopsis: Cloudflare introduces @cloudflare/computer, an open-source agent runtime that gives each agent
+  a durable SQLite-backed virtual filesystem and routes execution across isolates, container sandboxes,
+  and browsers.

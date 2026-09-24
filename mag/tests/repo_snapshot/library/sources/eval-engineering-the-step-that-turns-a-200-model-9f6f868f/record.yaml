@@ -1,0 +1,12 @@
+id: eval-engineering-the-step-that-turns-a-200-model-9f6f868f
+title: 'Eval Engineering: the step that turns a $200 model into a $200,000 system'
+author: Argona
+url: https://x.com/argona0x/status/2082127026538868839
+captured_at: '2026-07-29T00:36:02Z'
+published_at: '2026-07-28'
+tags:
+- agents
+- engineering
+- evaluations
+synopsis: A practical argument for turning evaluations into routing, retry, quarantine, review, and merge
+  decisions inside agent systems.

@@ -1,0 +1,12 @@
+id: how-the-actor-model-meets-the-needs-of-modern-di-ebf5a52d
+title: How the Actor Model Meets the Needs of Modern, Distributed Systems
+author: Akka
+url: https://doc.akka.io/libraries/akka-core/current/typed/guide/actors-intro.html
+captured_at: '2026-08-08T15:23:52Z'
+tags:
+- actor-model
+- concurrency
+- distributed-systems
+synopsis: Akka's getting-started guide explains how the actor model replaces method
+  calls with asynchronous message passing to preserve encapsulation without locks,
+  and how parent-child supervision hierarchies handle actor failures.

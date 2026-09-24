@@ -1,0 +1,13 @@
+id: loop-engineering-f0ddfd76
+title: Loop Engineering
+author: Addy Osmani
+url: https://addyosmani.com/blog/loop-engineering
+captured_at: '2026-07-26T22:11:38Z'
+published_at: '2026-06-07'
+tags:
+- ai-agents
+- automation
+- loop-engineering
+- software-engineering
+synopsis: A practical account of moving from direct prompting to designed agent loops built from automations,
+  worktrees, skills, connectors, sub-agents, durable state, verification, and human review.

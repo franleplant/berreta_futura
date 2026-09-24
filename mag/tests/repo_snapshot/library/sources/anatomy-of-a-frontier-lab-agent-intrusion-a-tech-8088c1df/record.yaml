@@ -1,0 +1,12 @@
+id: anatomy-of-a-frontier-lab-agent-intrusion-a-tech-8088c1df
+title: 'Anatomy of a Frontier Lab Agent Intrusion: A Technical Timeline of the July 2026 Incident'
+author: Hugo Larcher, Adrien Carreira, raphael g, Christophe Rannou
+url: https://huggingface.co/blog/agent-intrusion-technical-timeline
+captured_at: '2026-07-29T00:35:45Z'
+published_at: '2026-07-27'
+tags:
+- agents
+- incident-response
+- security
+synopsis: A forensic reconstruction of an autonomous agent intrusion across evaluation, cloud, cluster,
+  and software-supply-chain trust boundaries.

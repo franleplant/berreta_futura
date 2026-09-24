@@ -1,0 +1,13 @@
+id: workers-durable-objects-beta-a-new-approach-to-s-1a040568
+title: 'Workers Durable Objects Beta: A New Approach to Stateful Serverless'
+author: Kenton Varda
+url: https://blog.cloudflare.com/introducing-workers-durable-objects/
+captured_at: '2026-08-08T15:23:53Z'
+published_at: '2020-09-28'
+tags:
+- durable-objects
+- serverless
+- state
+synopsis: Cloudflare opens a closed beta of Durable Objects, single-instance JavaScript
+  classes with private transactional storage and WebSocket coordination that bring
+  strongly consistent state to serverless Workers at the edge.

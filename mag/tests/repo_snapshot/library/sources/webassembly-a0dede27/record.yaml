@@ -1,0 +1,10 @@
+id: webassembly-a0dede27
+title: 'WebAssembly'
+author: ''
+url: https://celld.dev/docs/wasm
+captured_at: '2026-08-13T13:48:41Z'
+tags:
+- durable-objects
+- distributed-systems
+- celld
+synopsis: 'The celld documentation page on WebAssembly explains how Worker bundles import compiled wasm modules, how celld deploy handles wasm files including compatibility checks with Rust workers-rs and the Worker Loader, and the size and compile-error limits that apply.'

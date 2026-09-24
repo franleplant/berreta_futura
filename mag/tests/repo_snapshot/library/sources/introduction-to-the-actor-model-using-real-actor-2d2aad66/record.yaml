@@ -1,0 +1,12 @@
+id: introduction-to-the-actor-model-using-real-actor-2d2aad66
+title: Introduction to the Actor Model, Using “Real” Actors
+author: John Palgut
+url: https://blog.grio.com/2021/03/introduction-to-the-actor-model-using-real-actors.html
+captured_at: '2026-08-08T15:23:51Z'
+published_at: '2021-03-04'
+tags:
+- actor-model
+- concurrency
+synopsis: Grio's John Palgut explains the Actor Model through Hollywood-actor analogies, covering
+  actor primitives, mailboxes, local state, the three actor capabilities, per-language libraries,
+  and Elixir's Erlang-based language-level support for concurrency.

@@ -57,7 +57,6 @@ use std::process::Command;
 use std::sync::OnceLock;
 
 const PUBLICATION: &str = "Berreta Futura";
-const RUN: &str = "editions/010/run-2026-09-13T01-34-51";
 
 const PYTHON: &str = r#"
 import dataclasses, json, sys
@@ -118,41 +117,19 @@ fn write_png(path: &Path, width: u32, height: u32) {
 }
 
 fn build_stage() -> PathBuf {
-    let repo = repository();
     let stage = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("web-port-stage");
     if stage.exists() {
         std::fs::remove_dir_all(&stage).expect("the previous stage is removable");
     }
-    link_tree(
-        &repo.join("library/sources"),
-        &stage.join("library/sources"),
-    );
-    link_tree(
-        &repo.join("editions/010/art"),
-        &stage.join("editions/010/art"),
-    );
-    link_tree(
-        &repo.join("editions/010/source-codes"),
-        &stage.join("editions/010/source-codes"),
-    );
+    link_tree(&oracle::snapshot(), &stage);
     link_tree(
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/web_port_fixtures/wfx"),
         &stage.join("editions/wfx"),
     );
-    let manifest = repo.join("editions/010/edition.yaml");
-    std::fs::copy(&manifest, stage.join("editions/010/edition.yaml")).expect("the manifest copies");
-    let data: serde_yaml::Value =
-        serde_yaml::from_str(&std::fs::read_to_string(&manifest).expect("the manifest reads"))
-            .expect("the manifest parses");
-    for article in data["articles"].as_sequence().expect("articles") {
-        let target = stage.join(article["manuscript"].as_str().expect("a manuscript"));
+    for path in oracle::pinned_paths().filter(|path| path.starts_with("editions/010/art/")) {
+        let target = stage.join(path);
         std::fs::create_dir_all(target.parent().expect("a parent")).expect("mkdir");
-        let id = article["id"].as_str().expect("an id");
-        std::fs::copy(
-            repo.join(RUN).join("articles").join(id).join("final.md"),
-            target,
-        )
-        .expect("the manuscript stages");
+        std::fs::hard_link(oracle::pinned("web_port", path), target).expect("the art stages");
     }
     for (name, height) in [
         ("wide.png", 584),

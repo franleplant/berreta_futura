@@ -1,0 +1,16 @@
+id: why-software-factories-fail-turning-the-lights-b-1312d1ad
+title: 'Why Software Factories Fail: Turning the lights back on'
+author: Dex Horthy
+url: https://x.com/dexhorthy/status/2081058573556306030
+captured_at: '2026-07-27T14:14:22Z'
+published_at: '2026-07-25'
+tags:
+- ai-agents
+- architecture
+- code-review
+- maintainability
+- planning
+- software-factories
+synopsis: 'Part two of Dex Horthy’s software-factories argument: restore human judgment through product
+  review, system architecture, program design, vertical slices, and incremental code review, accepting
+  constraint-aware 2–3× gains rather than unsafe 10–100× promises.'
