@@ -35,6 +35,7 @@ usvg = "=0.47.0"
 tiny-skia = "=0.12.0"
 base64 = "0.22"
 pdf_encoding = "0.4"
+fancy-regex = "0.16"
 
 [lints.clippy]
 cognitive_complexity = "warn"
