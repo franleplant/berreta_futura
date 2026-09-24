@@ -1,4 +1,5 @@
 use crate::typeset::content::{File, Tree};
+use crate::typeset::text_shim;
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
 use lopdf::{Object, ObjectId};
@@ -19,6 +20,7 @@ const IDENT: &str = "mag-typeset-reader";
 const INLINE_LINK: &str = " mag-inline-link";
 const TYPST_DEST_LIFT: f64 = 10.0;
 const CHIP_KAPPA: f64 = 0.55;
+const CHIP_PAD_X: f64 = 3.0;
 const LAYER: &str = "mag-layer";
 const BACKDROP: &str = "mag-backdrop";
 const CHIP_FILL: [u8; 4] = [244, 241, 249, 255];
@@ -157,7 +159,10 @@ fn weasyprint_links(frame: &mut Frame, at: &dyn Fn(Location) -> Option<PagedPosi
         };
         match &mut open {
             Some((d, (p, s), _))
-                if *d == dest && p.y == pos.y && s.y == size.y && p.x + s.x == pos.x =>
+                if *d == dest
+                    && p.y == pos.y
+                    && s.y == size.y
+                    && (p.x + s.x - pos.x).abs() < Abs::pt(1e-6) =>
             {
                 s.x += size.x
             }
@@ -244,17 +249,14 @@ fn weasyprint_chips(frame: &mut Frame) {
                         _ => Abs::zero(),
                     };
                     let (mut left, mut right) = (pos.x, pos.x + bbox.x);
-                    let inside = runs.iter().filter(|(a, b)| *a >= left && *b <= right);
+                    let inside = runs.iter().filter(|(a, _)| *a >= left && *a < right);
                     let start = inside.clone().map(|r| r.0).fold(right, Abs::min);
                     let end = inside.map(|r| r.1).fold(left, Abs::max);
                     let opens = pads.iter().any(|(_, b)| near(*b, start));
                     let closes = pads.iter().any(|(a, _)| near(*a, end));
-                    if !opens {
-                        left = start;
-                    }
-                    if !closes {
-                        right = end;
-                    }
+                    let pad = |on: bool| if on { Abs::pt(CHIP_PAD_X) } else { Abs::zero() };
+                    left = start - pad(opens);
+                    right = end + pad(closes);
                     let (l, r) = (
                         if opens { radius } else { Abs::zero() },
                         if closes { radius } else { Abs::zero() },
@@ -399,6 +401,9 @@ pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
     let mut pages = document.pages().to_vec();
     let at = |loc| document.introspector().position(loc);
     for page in &mut pages {
+        if text_shim::WEASYPRINT_69 {
+            text_shim::weasyprint_text(&mut page.frame);
+        }
         weasyprint_links(&mut page.frame, &at);
         weasyprint_chips(&mut page.frame);
         weasyprint_paint_order(&mut page.frame);
@@ -1935,7 +1940,7 @@ mod tests {
         assert!(gaps.iter().all(|g| (g - gaps[0]).abs() < 1e-3), "{gaps:?}");
         let (x, width) = tracked[3];
         assert!(
-            (x + width - left - 325.025).abs() < 1e-3,
+            (x + width - left - 325.0).abs() < 1e-3,
             "the date is flush with the column"
         );
     }

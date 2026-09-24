@@ -4,6 +4,7 @@ pub(crate) mod layout;
 pub(crate) mod media;
 pub(crate) mod runt;
 pub(crate) mod template;
+pub(crate) mod text_shim;
 pub(crate) mod world;
 
 use anyhow::{Context, Result};
