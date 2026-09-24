@@ -93,11 +93,52 @@ pub fn split_frontmatter(markdown: &str) -> Result<(Mapping, String)> {
             continue;
         }
         let header: String = lines[1..index].concat();
-        let parsed: Value = serde_yaml::from_str(&header)
-            .map_err(|exc| anyhow::anyhow!("Invalid YAML frontmatter: {exc}"))?;
-        return Ok((frontmatter_mapping(parsed)?, lines[index + 1..].concat()));
+        return Ok((
+            frontmatter_mapping(load_header(&header)?)?,
+            lines[index + 1..].concat(),
+        ));
     }
     Ok((Mapping::new(), markdown.to_string()))
+}
+
+const NULL_TAGS: [&str; 2] = ["!!null", "!<tag:yaml.org,2002:null>"];
+
+fn load_header(header: &str) -> Result<Value> {
+    let invalid = |exc: serde_yaml::Error| anyhow::anyhow!("Invalid YAML frontmatter: {exc}");
+    let exc = match serde_yaml::from_str(header) {
+        Ok(parsed) => return Ok(parsed),
+        Err(exc) => exc,
+    };
+    if !NULL_TAGS.iter().any(|tag| header.contains(tag)) {
+        return Err(invalid(exc));
+    }
+    let local = NULL_TAGS.iter().fold(header.to_string(), |text, tag| {
+        text.replace(tag, "!magazine-null")
+    });
+    untag_nulls(serde_yaml::from_str(&local).map_err(|_| invalid(exc))?)
+}
+
+fn untag_nulls(value: Value) -> Result<Value> {
+    Ok(match value {
+        Value::Tagged(tagged) if tagged.tag == "magazine-null" => match tagged.value {
+            Value::Sequence(_) | Value::Mapping(_) => bail!(
+                "Invalid YAML frontmatter: expected a scalar node for !!null, but found a collection"
+            ),
+            _ => Value::Null,
+        },
+        Value::Tagged(mut tagged) => {
+            tagged.value = untag_nulls(tagged.value)?;
+            Value::Tagged(tagged)
+        }
+        Value::Sequence(items) => Value::Sequence(items.into_iter().map(untag_nulls).collect::<Result<_>>()?),
+        Value::Mapping(mapping) => Value::Mapping(
+            mapping
+                .into_iter()
+                .map(|(k, v)| Ok((k, untag_nulls(v)?)))
+                .collect::<Result<_>>()?,
+        ),
+        other => other,
+    })
 }
 
 fn frontmatter_mapping(parsed: Value) -> Result<Mapping> {
@@ -567,5 +608,52 @@ fn platform_id(platform: ttf_parser::PlatformId) -> u16 {
         ttf_parser::PlatformId::Iso => 2,
         ttf_parser::PlatformId::Windows => 3,
         ttf_parser::PlatformId::Custom => 4,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::shared::content_label;
+    use super::*;
+
+    #[test]
+    fn every_null_spelling_of_a_label_loads_as_null_and_falls_back_like_python() {
+        for spelling in [
+            "~",
+            "null",
+            "!!null",
+            "!!null ''",
+            "!!null \"\"",
+            "!!null foo",
+            "!<tag:yaml.org,2002:null> x",
+        ] {
+            let (meta, body) =
+                split_frontmatter(&format!("---\nlabel: {spelling}\ntitle: T\n---\nBody\n"))
+                    .unwrap_or_else(|e| panic!("{spelling}: {e:#}"));
+            assert_eq!(meta.get("label"), Some(&Value::Null), "{spelling}");
+            assert_eq!(meta.get("title"), Some(&Value::from("T")), "{spelling}");
+            assert_eq!(body, "Body\n");
+            assert_eq!(
+                content_label("en", &meta, "verbatim"),
+                content_label("en", &Mapping::new(), "verbatim")
+            );
+        }
+    }
+
+    #[test]
+    fn a_null_tag_on_a_collection_or_a_broken_header_is_refused_like_python() {
+        for (header, needle) in [
+            ("label: !!null [a]\nnote: !!null", "expected a scalar node"),
+            ("label: [!!null,!!null]", "Invalid YAML frontmatter: "),
+            ("label: !!null\n  - : [", "Invalid YAML frontmatter: "),
+        ] {
+            let e = split_frontmatter(&format!("---\n{header}\n---\n"))
+                .unwrap_err()
+                .to_string();
+            assert!(
+                e.starts_with("Invalid YAML frontmatter: ") && e.contains(needle),
+                "{header}: {e}"
+            );
+        }
     }
 }
