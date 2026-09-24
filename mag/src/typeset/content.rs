@@ -9,7 +9,7 @@ use crate::model::shared::{
     is_reference_heading, py_repr, py_str, scalar_label, ui, Result, ValidationError,
 };
 use crate::typeset::estimate::{Metrics, Opener};
-use crate::typeset::hyphen::Hyphenator;
+use crate::typeset::hyphen::{Hyphenation, Hyphenator};
 use crate::typeset::media::pixels;
 use crate::web::edition::source_code_directory;
 use std::collections::BTreeSet;
@@ -85,20 +85,26 @@ pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
             allow_unanchored_figures: inputs.allow_unanchored_figures,
         },
     )?;
-    compose(&edition, inputs.fonts)
+    compose(&edition, inputs.fonts, Hyphenation::PARITY)
 }
 
-pub fn compose(edition: &Edition, fonts: &Path) -> Result<Tree> {
+pub fn compose(edition: &Edition, fonts: &Path, hyphenation: Hyphenation) -> Result<Tree> {
     let settable = settable_codepoints(fonts).map_err(refusal)?;
-    build(edition, &settable, &Metrics::load(fonts)?)
+    build(edition, &settable, &Metrics::load(fonts)?, hyphenation)
 }
 
-pub fn build(edition: &Edition, settable: &BTreeSet<u32>, metrics: &Metrics) -> Result<Tree> {
+pub fn build(
+    edition: &Edition,
+    settable: &BTreeSet<u32>,
+    metrics: &Metrics,
+    hyphenation: Hyphenation,
+) -> Result<Tree> {
     Writer {
         edition,
         settable,
         metrics,
         illustrated: article_opener_format(&edition.raw) == ILLUSTRATED,
+        native: hyphenation.native(&edition.locale),
         hyphenator: Hyphenator::for_locale(&edition.locale)
             .transpose()
             .map_err(ValidationError::one)?,
@@ -115,6 +121,7 @@ struct Writer<'a> {
     settable: &'a BTreeSet<u32>,
     metrics: &'a Metrics,
     illustrated: bool,
+    native: bool,
     hyphenator: Option<Hyphenator>,
 }
 
@@ -138,11 +145,18 @@ impl Writer<'_> {
     }
 
     fn hyphenated(&self, value: &str) -> String {
-        let folded = fold_reader_characters(&educate_reader_quotes(value), self.settable);
-        escape_markup(&match &self.hyphenator {
-            Some(hyphenator) => hyphenator.text(&folded),
-            None => folded,
-        })
+        self.hyphenable(fold_reader_characters(
+            &educate_reader_quotes(value),
+            self.settable,
+        ))
+    }
+
+    fn hyphenable(&self, folded: String) -> String {
+        match (&self.hyphenator, self.native) {
+            (Some(hyphenator), _) => escape_markup(&hyphenator.text(&folded)),
+            (None, true) => format!("#text(hyphenate: true)[{}]", escape_markup(&folded)),
+            (None, false) => escape_markup(&folded),
+        }
     }
 
     fn body(&self, value: &str) -> String {
@@ -150,13 +164,9 @@ impl Writer<'_> {
     }
 
     fn verbatim_body(&self, value: &str) -> String {
-        let folded = fold_reader_characters(value, self.settable);
         format!(
             "[{}]",
-            escape_markup(&match &self.hyphenator {
-                Some(hyphenator) => hyphenator.text(&folded),
-                None => folded,
-            })
+            self.hyphenable(fold_reader_characters(value, self.settable))
         )
     }
 
@@ -1531,15 +1541,30 @@ mod tests {
         let root = corpus();
         let base = crate::typeset::layout::edition(&root, "906", PUBLICATION).expect("906 loads");
         let es = crate::model::manifest::load_translation(&root, &base, "es").expect("es loads");
-        let tree = compose(&es, &fonts()).expect("the Spanish edition composes");
+        let tree =
+            compose(&es, &fonts(), Hyphenation::PARITY).expect("the Spanish edition composes");
         let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#set text(lang: \"es\", region: \"AR\")"));
         assert!(text.contains("[Artículo 01]"));
         assert!(text.contains("res\u{ad}pon\u{ad}sa\u{ad}bi\u{ad}li\u{ad}dad"));
         assert!(text.contains("level: 2)[Dónde se dividen las palabras]"));
         assert!(text.contains("Una columna justificada corta las palabras"));
-        let english = compose(&base, &fonts()).expect("the English edition composes");
+        let english =
+            compose(&base, &fonts(), Hyphenation::PARITY).expect("the English edition composes");
         assert!(english.files.iter().all(|f| !f.source.contains('\u{ad}')));
+        let native = Hyphenation {
+            english: true,
+            ..Hyphenation::PARITY
+        };
+        let hyphenated = compose(&base, &fonts(), native).expect("it composes");
+        let text: String = hyphenated.files.iter().map(|f| f.source.as_str()).collect();
+        assert!(text.contains("#text(hyphenate: true)[A cache budget limits"));
+        assert!(text.contains("level: 2)[Budgets]"));
+        assert!(!text.contains('\u{ad}'));
+        assert!(!english
+            .files
+            .iter()
+            .any(|f| f.source.contains("hyphenate: true")));
     }
 
     #[test]
