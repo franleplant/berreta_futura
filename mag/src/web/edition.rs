@@ -954,7 +954,7 @@ impl Web<'_> {
                 following.short_title
             ));
         }
-        let title = format!("{} \u{2014} {}", document.publication, piece.heading);
+        let title = format!("{}: {}", document.publication, piece.heading);
         let mut lines = self.shared_head(document, &title, favicon);
         lines.push(masthead.to_string());
         lines.extend(piece.lines.iter().cloned());
