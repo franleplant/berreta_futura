@@ -855,6 +855,36 @@ mod tests {
     }
 
     #[test]
+    fn a_figure_carries_what_follows_to_the_next_page_when_four_lines_do_not_fit_under_it() {
+        let bare = TEMPLATE_TYP.replace("  band-clearance()\n", "");
+        assert_ne!(bare, TEMPLATE_TYP, "the clearance call moved");
+        let tail = |n: usize| {
+            let (paragraphs, lift) = phase(n);
+            synthetic(format!(
+                "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+                 {}#v({lift}pt)\n#figure-block(id: \"f\", source-id: \"s\", anchor: \"A\", \
+                 layout: \"evidence_band\", word: \"Figure\", alt: \"a\", path: \"{}\", \
+                 pixels: (2400, 1350))[#figure-caption[Cap.]]\n#doc-paragraph[Tail words.]\n]\n",
+                prose(paragraphs),
+                fixture_png()
+            ))
+        };
+        let carried: Vec<usize> = (0..64)
+            .filter(|&n| {
+                let with = pages_of(&tail(n), TEMPLATE_TYP).expect("it compiles");
+                let without = pages_of(&tail(n), &bare).expect("it compiles");
+                assert!(with >= without, "step {n}: the clearance saved a page");
+                with > without
+            })
+            .collect();
+        assert!(!carried.is_empty(), "the clearance never carried the tail");
+        assert!(
+            carried.len() < 64,
+            "the clearance carried the tail every time"
+        );
+    }
+
+    #[test]
     fn a_figure_reserves_the_image_height_its_pixel_ratio_fits() {
         let wide = Some(", pixels: (2400, 1350)");
         let tall = Some(", pixels: (2000, 1418)");

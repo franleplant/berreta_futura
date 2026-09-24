@@ -80,6 +80,7 @@
 #let TAIL-MAX-HEIGHT = 214pt
 #let TAIL-FRAME-BOTTOM = 45pt
 #let TAIL-CLEARANCE = 12pt
+#let BAND-CLEARANCE-LINES = 4
 #let TAIL-FOOT-F32-LIFT = 0.0001pt
 #let PAGE-TOP-EPSILON = 0.01pt
 #let BAND-LAYOUTS = ("evidence_band", "evidence_band_prose", "adaptive_band")
@@ -240,7 +241,8 @@
 
 #let NO-ESCAPE = (left: 0pt, right: 0pt)
 #let BAND-ESCAPE = (left: -RAIL, right: MEASURE-DELTA - RAIL)
-#let COMPACT-ESCAPE = (left: COMPACT-BAND-INSET, right: COMPACT-BAND-INSET)
+#let COMPACT-ESCAPE = (left: COMPACT-BAND-INSET, right: COMPACT-BAND-INSET + MEASURE-DELTA)
+#let FIGURE-ESCAPE = (left: 0pt, right: MEASURE-DELTA)
 
 #let flow-counter = counter("mag-flow")
 
@@ -260,7 +262,7 @@
   (
     escape: if BAND-LAYOUTS.contains(layout) {
       BAND-ESCAPE
-    } else if compact { COMPACT-ESCAPE } else { NO-ESCAPE },
+    } else if compact { COMPACT-ESCAPE } else { FIGURE-ESCAPE },
     gap: if opener { 0pt } else if compact { COMPACT-FIGURE-GAP } else { FIGURE-GAP },
     max-height: if opener {
       OPENER-FIGURE-MAX-HEIGHT
@@ -630,7 +632,7 @@
   let credit = {
     if code != none {
       let quiet = code-quiet(code)
-      place(top + left, dx: -quiet, dy: -OPENER-BYLINE-SIZE * INTER-CAP - quiet, qr-symbol(code, side: PLAIN-QR))
+      layer(place(top + left, dx: -quiet, dy: -OPENER-BYLINE-SIZE * INTER-CAP - quiet, qr-symbol(code, side: PLAIN-QR)))
     }
     pad(left: credit-inset(code), line)
   }
@@ -850,7 +852,7 @@
     context {
       let rows = opener-parts.get()
       if rows == none {
-        block(text(size: 12pt, ..pinned(16.4pt), body), below: 13pt)
+        layer(block(prose(par(text(size: 12pt, ..pinned(16.4pt), body))), below: 13pt))
       } else {
         opener-standfirst(rows, body, split)
       }
@@ -1110,6 +1112,12 @@
   },
 )
 
+#let band-clearance() = context {
+  let room = BAND-CLEARANCE-LINES * (text.top-edge - text.bottom-edge).to-absolute()
+  block(height: room, width: 100%, breakable: false, above: 0pt, below: 0pt)
+  v(-room)
+}
+
 #let figure-block(
   id: none,
   source-id: none,
@@ -1138,6 +1146,7 @@
       body
     }),
   )))
+  band-clearance()
 }
 
 #let quote-line(body) = par(body)
