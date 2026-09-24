@@ -171,6 +171,27 @@ impl Outliner {
         Ok(width)
     }
 
+    pub fn wrap(&mut self, text: &str, size: f64, width: f64) -> Result<Vec<String>> {
+        let mut lines = Vec::new();
+        let mut current = String::new();
+        for word in text.split_whitespace() {
+            let candidate = if current.is_empty() {
+                word.to_string()
+            } else {
+                format!("{current} {word}")
+            };
+            if !current.is_empty() && self.measure(&candidate, size, 0.0, 100.0)? > width {
+                lines.push(std::mem::replace(&mut current, word.to_string()));
+            } else {
+                current = candidate;
+            }
+        }
+        if !current.is_empty() {
+            lines.push(current);
+        }
+        Ok(lines)
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn outline(
         &mut self,
