@@ -42,6 +42,7 @@ pub(crate) fn run_request(
     repo_root: &Path,
     render_dir: &Path,
     request_json: &str,
+    parity: bool,
 ) -> Result<Value> {
     let request: Value =
         serde_json::from_str(request_json).context("parsing the render request as JSON")?;
@@ -72,10 +73,13 @@ pub(crate) fn run_request(
         field(&request, "editionId")?,
         field(&request, "publicationName")?,
     )?;
-    let hyphenation = hyphen::Hyphenation::from_settings(|key| {
-        crate::render::toml_value(repo_root, "render", key)
-    })
-    .map_err(anyhow::Error::msg)?;
+    let hyphenation = match parity {
+        true => hyphen::Hyphenation::PARITY,
+        false => hyphen::Hyphenation::from_settings(|key| {
+            crate::render::toml_value(repo_root, "render", key)
+        })
+        .map_err(anyhow::Error::msg)?,
+    };
     let mut result = serde_json::json!({"layouts": [], "files": [], "warnings": []});
     for language in languages {
         let edition = if language == primary {
@@ -133,7 +137,7 @@ fn render_language(
         tree.files.len(),
         projection.text.chars().count()
     );
-    layout::report(
+    let mut one = layout::report(
         &layout::Request {
             operation: field(request, "operation")?,
             article: request.get("articleId").and_then(Value::as_str),
@@ -147,7 +151,12 @@ fn render_language(
         },
         &document,
         &tree,
-    )
+    )?;
+    let ladders = runt::ladder_warnings(&document, &edition.id);
+    if let Some(warnings) = one["warnings"].as_array_mut() {
+        warnings.extend(ladders.into_iter().map(Value::from));
+    }
+    Ok(one)
 }
 
 #[cfg(test)]

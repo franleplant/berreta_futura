@@ -501,6 +501,7 @@ fn render_leg(edition: &str, run: Option<&str>, engine: &str, lang: &str) -> Res
         anchor_model: "haiku".into(),
         no_model: true,
         engine: Some(engine.to_string()),
+        parity: true,
     };
     crate::render::run(&args)?;
     let fresh: Vec<PathBuf> = render_dirs()?

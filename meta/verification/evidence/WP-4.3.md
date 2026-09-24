@@ -144,4 +144,4 @@ so a Spanish page-count change from option 3 on a long edition is not
 excluded. The WeasyPrint leg was not rendered with English hyphenation, so
 option 2's cross-engine gap is not quantified.
 
-Status: awaiting-fran
+Status: done (Fran chose option 2, 2026-09-24; shipped by WP-4.3b)
