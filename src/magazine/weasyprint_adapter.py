@@ -740,6 +740,7 @@ def _lay_out(
     _apply_source_codes(tree, plan.codes_by_article)
 
     _apply_figure_rules(tree, figure_rules or {})
+    _keep_jpeg_bytes(tree)
     try:
         return source.render(stylesheets=[stylesheet], font_config=font_config)
     except Exception as exc:
@@ -1472,6 +1473,27 @@ def _apply_adaptive_images(tree: Element, heights: Mapping[str, float]) -> None:
         for image in figure.iter("img"):
             style = (image.get("style") or "").strip().rstrip(";")
             image.set("style", f"{style + '; ' if style else ''}max-height: {height:.4f}pt")
+
+
+def _keep_jpeg_bytes(tree: Element) -> None:
+    from PIL import Image
+
+    for image in tree.iter("img"):
+        source = image.get("src") or ""
+        if not source.startswith("file:"):
+            continue
+        path = Path(_path_from_uri(source))
+        with Image.open(path) as pillow:
+            if pillow.format != "JPEG":
+                continue
+            orientation = pillow.getexif().get(0x0112, 1)
+        if orientation != 1:
+            raise ValidationError(
+                f"{path}: EXIF orientation {orientation} would be rotated by re-encoding; "
+                "rotate the file losslessly (jpegtran) to orientation 1"
+            )
+        style = (image.get("style") or "").strip().rstrip(";")
+        image.set("style", f"{style + '; ' if style else ''}image-orientation: none")
 
 
 def _apply_figure_rules(tree: Element, rules: Mapping[str, MeasuredRule]) -> None:
