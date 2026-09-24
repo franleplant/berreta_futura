@@ -29,8 +29,12 @@
   translate next step; engine lines in two docs). WP-6.1 also clears the
   retired npm viewer / RunEngine / inputs-durable text in
   docs/DESIGN_SYSTEM.md and docs/WEB_DEPLOY.md.
-- Running: WP-6.0b (port tools/sourcecodes.py, which both
-  engines need), WP-6.0c (cargo test without uv/python; nocomments in
+- WP-6.0b landed 56d4a45: `mag source-codes NNN [--check]`, byte-identical
+  to tools/sourcecodes.py on 008, 010, fixtures 900-906 (36 files); art
+  and produce print it as the step before render. Follow-up: fixture
+  906's committed source-codes/ is stale (code order swapped), regenerate
+  after WP-6.0c.
+- Running: WP-6.0c (cargo test without uv/python; nocomments in
   Rust).
 - Then: WP-6.1 is Fran-gated (a shipped Typst edition, tools/ keep/delete,
   rollback loss).
