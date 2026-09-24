@@ -31,6 +31,7 @@ const SPEC_PATH: &str = "meta/verification/parity.yaml";
 struct Verdict {
     edition: String,
     mode: String,
+    gate: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     staged_input_digest: Option<String>,
     staleness: Staleness,
@@ -808,6 +809,7 @@ pub struct Options {
     pub run_dir: Option<String>,
     pub oracle_only: bool,
     pub set: Option<String>,
+    pub adhoc: bool,
 }
 
 struct Legs {
@@ -818,11 +820,14 @@ struct Legs {
     typst_leg: Option<LegFailure>,
 }
 
-fn out_dir(edition: &str) -> PathBuf {
-    std::env::var_os("MAG_PARITY_OUT_DIR").map_or_else(
-        || PathBuf::from("output/parity").join(edition),
-        PathBuf::from,
-    )
+fn out_dir(edition: &str, adhoc: bool) -> PathBuf {
+    let name = if adhoc {
+        format!("{edition}-adhoc")
+    } else {
+        edition.to_string()
+    };
+    std::env::var_os("MAG_PARITY_OUT_DIR")
+        .map_or_else(|| PathBuf::from("output/parity").join(name), PathBuf::from)
 }
 
 fn hold(out_dir: &Path) -> Result<PathBuf> {
@@ -877,7 +882,8 @@ fn stage_legs(edition: &str, opts: &Options, out_dir: &Path) -> Result<Legs> {
         });
     }
     let run = opts.run_dir.as_deref();
-    let (oracle, digest) = match cached_oracle(out_dir) {
+    let cached = cached_oracle(out_dir).filter(|_| !opts.adhoc);
+    let (oracle, digest) = match cached {
         Some(hit) => {
             println!("oracle leg: cached {}", hit.0.display());
             hit
@@ -954,12 +960,27 @@ fn guard_baseline() -> Result<(BTreeMap<u32, PageEntry>, Ratchet)> {
     ))
 }
 
+fn adhoc_ratchet() -> Ratchet {
+    Ratchet {
+        status: "adhoc".into(),
+        committed_check: "not read: ad hoc mode has no baseline".into(),
+        pages_committed: 0,
+        pages_recorded: 0,
+        pages_measured: 0,
+        regressions: vec![],
+    }
+}
+
 pub fn run(edition: &str, opts: Options) -> Result<i32> {
     let spec = spec()?;
     assert_poppler(&spec)?;
     assert_tracer(&spec)?;
-    let (recorded, ratchet) = guard_baseline()?;
-    let out_dir = out_dir(edition);
+    let (recorded, ratchet) = if opts.adhoc {
+        (BTreeMap::new(), adhoc_ratchet())
+    } else {
+        guard_baseline()?
+    };
+    let out_dir = out_dir(edition, opts.adhoc);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     let lock = hold(&out_dir)?;
     let outcome = compare(edition, &opts, &spec, &out_dir, &recorded, ratchet);
@@ -976,7 +997,7 @@ fn compare(
     ratchet: Ratchet,
 ) -> Result<i32> {
     let legs = stage_legs(edition, opts, out_dir)?;
-    if let Some(digest) = &legs.digest {
+    if let Some(digest) = legs.digest.as_ref().filter(|_| !opts.adhoc) {
         let guard = staleness(digest)?;
         anyhow::ensure!(
             guard.status != "stale",
@@ -995,10 +1016,19 @@ fn compare(
     inputs.insert("b_reader_sha256".into(), sha256_file(&pdf_b)?);
     let mut verdict = build_verdict(spec, edition, inputs, &pdf_a, &pdf_b, out_dir)?;
     verdict.mode = legs.mode.into();
+    verdict.gate = if opts.adhoc { "tier_s" } else { "all_tiers" }.into();
     verdict.typst_leg = legs.typst_leg;
     verdict.ratchet = ratchet;
     if let Some(digest) = legs.digest {
-        let guard = staleness(&digest)?;
+        let guard = if opts.adhoc {
+            Staleness {
+                status: "adhoc".into(),
+                current: Some(digest.clone()),
+                ..not_staged()
+            }
+        } else {
+            staleness(&digest)?
+        };
         let unseeded = guard.status == "unseeded";
         let entries = digest_entries(&dir_a.join("request.json"))?;
         let renderer = entries
@@ -1027,21 +1057,9 @@ fn compare(
         if let Some(name) = &opts.set {
             verdict.scored_set = Some(score_set(&verdict, name)?);
         }
-        let measured = measure_pages(&verdict, spec)?;
-        if let Some(measured) = &measured {
-            verdict.ratchet.pages_measured = measured.len();
-            verdict.ratchet.regressions = regressions(measured, recorded)?;
-            let proposal = write_proposal(out_dir, &raised(measured, recorded), &digest)?;
-            println!("proposed baseline: {}", proposal.display());
+        if !opts.adhoc {
+            ratchet_pages(&mut verdict, spec, out_dir, recorded, &digest, unseeded)?;
         }
-        verdict.ratchet.status = match (&measured, unseeded) {
-            (_, true) => "unseeded",
-            (None, _) if verdict.self_comparison => "self_comparison",
-            (None, _) => "not_measured",
-            (Some(_), _) if verdict.ratchet.regressions.is_empty() => "pass",
-            (Some(_), _) => "fail",
-        }
-        .into();
     }
     write_verdict(out_dir, &verdict)?;
     summarize(&verdict);
@@ -1059,7 +1077,38 @@ fn compare(
         g2,
     )?;
     println!("report: {}", report.display());
-    Ok(i32::from(!all_evaluated_pass(&verdict)))
+    let pass = if opts.adhoc {
+        tier_s_pass(&verdict)
+    } else {
+        all_evaluated_pass(&verdict)
+    };
+    Ok(i32::from(!pass))
+}
+
+fn ratchet_pages(
+    verdict: &mut Verdict,
+    spec: &serde_yaml::Value,
+    out_dir: &Path,
+    recorded: &BTreeMap<u32, PageEntry>,
+    digest: &str,
+    unseeded: bool,
+) -> Result<()> {
+    let measured = measure_pages(verdict, spec)?;
+    if let Some(measured) = &measured {
+        verdict.ratchet.pages_measured = measured.len();
+        verdict.ratchet.regressions = regressions(measured, recorded)?;
+        let proposal = write_proposal(out_dir, &raised(measured, recorded), digest)?;
+        println!("proposed baseline: {}", proposal.display());
+    }
+    verdict.ratchet.status = match (&measured, unseeded) {
+        (_, true) => "unseeded",
+        (None, _) if verdict.self_comparison => "self_comparison",
+        (None, _) => "not_measured",
+        (Some(_), _) if verdict.ratchet.regressions.is_empty() => "pass",
+        (Some(_), _) => "fail",
+    }
+    .into();
+    Ok(())
 }
 
 fn build_verdict(
@@ -1076,6 +1125,7 @@ fn build_verdict(
     let mut verdict = Verdict {
         edition: edition.into(),
         mode: "pre_rendered".into(),
+        gate: "all_tiers".into(),
         staged_input_digest: None,
         staleness: not_staged(),
         typst_leg: None,
@@ -1181,11 +1231,8 @@ fn raster_bound(spec: &serde_yaml::Value) -> Result<Option<u8>> {
     }
 }
 
-fn all_evaluated_pass(v: &Verdict) -> bool {
-    matches!(
-        v.ratchet.status.as_str(),
-        "pass" | "not_evaluated" | "self_comparison"
-    ) && v.typst_leg.is_none()
+fn tier_s_pass(v: &Verdict) -> bool {
+    v.typst_leg.is_none()
         && v.tier_s.page_count.status == "pass"
         && v.tier_s.boxes.as_ref().is_some_and(|c| c.status == "pass")
         && v.tier_s.text.as_ref().is_some_and(|c| c.status == "pass")
@@ -1194,6 +1241,13 @@ fn all_evaluated_pass(v: &Verdict) -> bool {
             .navigation
             .as_ref()
             .is_some_and(|c| c.status == "pass")
+}
+
+fn all_evaluated_pass(v: &Verdict) -> bool {
+    matches!(
+        v.ratchet.status.as_str(),
+        "pass" | "not_evaluated" | "self_comparison"
+    ) && tier_s_pass(v)
         && v.tier_e
             .display_list
             .as_ref()
@@ -1219,6 +1273,9 @@ fn write_verdict(dir: &Path, verdict: &Verdict) -> Result<()> {
 
 fn summarize_run(v: &Verdict) {
     println!("mode: {}", v.mode);
+    if v.gate == "tier_s" {
+        println!("gate: tier S only (ad hoc: tier E, G and V are informational, no baseline)");
+    }
     if v.self_comparison {
         let note = if v.mode == "oracle_only" {
             "deliberate for this mode"
@@ -1503,6 +1560,7 @@ mod measured_pages {
         Verdict {
             edition: "010".into(),
             mode: "render".into(),
+            gate: "all_tiers".into(),
             staged_input_digest: None,
             staleness: not_staged(),
             typst_leg: None,
@@ -1552,6 +1610,39 @@ mod measured_pages {
         measure_pages(v, &thresholds())
             .expect("thresholds")
             .expect("measurable")
+    }
+
+    #[test]
+    fn the_adhoc_gate_is_tier_s_alone_so_tier_e_and_v_failures_only_inform() {
+        let mut v = verdict();
+        assert!(tier_s_pass(&v) && all_evaluated_pass(&v));
+        if let Some(c) = v.tier_e.display_list.as_mut() {
+            c.status = "fail".into();
+        }
+        if let Some(r) = v.tier_v.as_mut() {
+            r.status = "fail".into();
+        }
+        assert!(tier_s_pass(&v) && !all_evaluated_pass(&v));
+        if let Some(c) = v.tier_s.text.as_mut() {
+            c.status = "fail".into();
+        }
+        assert!(!tier_s_pass(&v));
+        let mut v = verdict();
+        v.typst_leg = Some(LegFailure {
+            status: "fail".into(),
+            engine: "typst".into(),
+            error: "boom".into(),
+        });
+        assert!(!tier_s_pass(&v));
+    }
+
+    #[test]
+    fn an_adhoc_run_writes_beside_the_baseline_run_never_over_it() {
+        if std::env::var_os("MAG_PARITY_OUT_DIR").is_none() {
+            assert_eq!(out_dir("009", true), Path::new("output/parity/009-adhoc"));
+            assert_eq!(out_dir("010", false), Path::new("output/parity/010"));
+        }
+        assert_eq!(adhoc_ratchet().status, "adhoc");
     }
 
     #[test]
