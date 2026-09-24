@@ -11,7 +11,8 @@ pub struct Glyph {
     pub line: usize,
     pub at: [i64; 2],
     pub start: [i64; 2],
-    pub step: [usize; 3],
+    pub gap: Vec<[i64; 2]>,
+    pub opens: bool,
 }
 
 pub const GAP_EM: f64 = 3.0;
@@ -550,8 +551,10 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
                 offs: vec![[0, 0]],
                 units: vec![unit.clone()],
             };
-            let blanks = last.map_or(k, |j| k - j - 1);
-            let step = [1, blanks, usize::from(blanks > 0)];
+            let gap = (last.unwrap_or(0)..k)
+                .map(|i| [0, 1].map(|c| offs[i + 1][c] - offs[i][c]))
+                .collect();
+            let opens = last.is_none();
             last = Some(k);
             items.push(Item {
                 e,
@@ -560,7 +563,8 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
                     line: 0,
                     at,
                     start: at,
-                    step,
+                    gap,
+                    opens,
                 }),
                 ink: ink.and_then(|v| v.get(k).copied().flatten()),
                 id,
@@ -593,19 +597,15 @@ fn lines(run: &mut [Item], next: &mut usize) -> Vec<usize> {
     let mut order = vec![];
     for mut band in bands {
         band.sort_by_key(|&i| at(run, i)[0]);
-        let (mut start, mut step, mut prev) = ([0, 0], [0; 3], None);
+        let (mut start, mut prev) = ([0, 0], None);
         for i in band {
             let p = at(run, i);
-            match prev {
-                Some(j) if p[0] - at(run, j)[0] <= gap(&run[j].e) => {
-                    let add = run[i].glyph.as_ref().map_or([0; 3], |g| g.step);
-                    (0..3).for_each(|n| step[n] += add[n]);
-                }
-                _ => (start, step, *next) = (p, [0; 3], *next + 1),
+            if prev.is_none_or(|j| p[0] - at(run, j)[0] > gap(&run[j].e)) {
+                (start, *next) = (p, *next + 1);
             }
             prev = Some(i);
             if let Some(g) = run[i].glyph.as_mut() {
-                (g.line, g.start, g.step) = (*next, start, step);
+                (g.line, g.start) = (*next, start);
             }
             if let Element::Text { m, .. } = &mut run[i].e {
                 (m[4], m[5]) = (
