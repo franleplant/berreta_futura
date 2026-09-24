@@ -9,7 +9,8 @@ WP-0.2t landed 3efaf3c. Verify WP-0.2j.verify.md: 0.2r, 0.2s, 0.2t and
 glyphs; 0.477 pt in-page); plus two older tracer holes. Rework WP-0.2u
 landed fe1bd56 (MIN_ADVANCE_PT 1.25, strict decode, operand counts, no
 #[ignore] left). Final adversarial comparator verify runs with WP-3.0g.
-Landed, awaiting a verifier: WP-5.6.
+Landed, awaiting a verifier: WP-5.6, WP-0.2y (both go to the WP-4.1
+gate verifier).
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d, WP-4.0g, WP-5.10, WP-5.1h part 1.
@@ -23,10 +24,10 @@ transform) plus image-identity holes: rework WP-0.2y running.
 Typeset set verify (TYPESET-SET.verify.md): all 17 WPs ACCEPTED.
 WP-5.6 landed 2ea64da: `mag render --engine typst` runs natively (only
 poppler spawned), cover step included; parity 010 green without uv.
-Running: WP-0.2y, WP-3.10 (Spanish / non-primary languages on typst).
-Behind WP-0.2y (parity owner): WP-5.3g (critic comparator switch; the
-Rust critic counts 1-2.6% more text_characters on typst interiors),
-WP-5.4g (cover comparator switch; extend the domain to pages 1 and n). WP-3.9 landed 0508801 and WP-0.0f 38550f4: `--adhoc 008`
+WP-0.2y landed a5aadc9 (JPEG transform, image identity, target tier vs
+HEAD).
+Running: WP-3.10 (Spanish on typst), WP-5.4g + WP-5.3g (reader.pdf end
+to end incl. covers; Rust critic joins Tier S). WP-3.9 landed 0508801 and WP-0.0f 38550f4: `--adhoc 008`
 exits 0, display list differs only on p4 (editorial, out of scope).
 WP-3.7c landed cbe1629: 010 display list 0 pages, navigation 0; glyph
 clause 90 single-quantum blips (comparator artifact, WP-0.2x).
