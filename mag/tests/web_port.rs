@@ -326,6 +326,7 @@ fn the_fixture_edition_matches_html_edition_byte_for_byte() {
         "<blockquote><p>This is the entire prompt",
         "<ol start=\"3\" data-reference-list=\"true\">",
         "<ol><li>",
+        "<ol start=\"0\"><li><p>Zeroth.",
         "<ul data-reference-list=\"true\">",
         "<p class=\"standfirst\" data-name-roster=\"true\">",
         "<p data-name-roster=\"true\">",
