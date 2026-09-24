@@ -69,3 +69,43 @@ fn raw_or_falls_back_on_every_python_falsy_value() {
     assert_eq!(shared::raw_or(Some(&yaml("true")), "fallback"), "True");
     assert_eq!(shared::raw_or(Some(&yaml("Cover")), "fallback"), "Cover");
 }
+
+#[test]
+fn structured_files_load_null_tags_like_python_and_refuse_them_on_collections() {
+    let dir = std::env::temp_dir().join(format!("mag-load-structured-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("the scratch directory is writable");
+    let path = dir.join("case.yaml");
+    let load = |text: &str| {
+        std::fs::write(&path, text).expect("the case is writable");
+        shared::load_structured(&path)
+    };
+    for spelling in [
+        "~",
+        "!!null",
+        "!!null ''",
+        "!!null foo",
+        "!<tag:yaml.org,2002:null> x",
+    ] {
+        let data = load(&format!("label: {spelling}\ntitle: T\n")).expect(spelling);
+        assert_eq!(data.get("label"), Some(&Value::Null), "{spelling}");
+        assert_eq!(data.get("title"), Some(&Value::from("T")), "{spelling}");
+    }
+    let quoted = load("title: \"a !!null b\"\n").expect("a quoted tag is text");
+    assert_eq!(quoted.get("title"), Some(&Value::from("a !!null b")));
+    for header in [
+        "label: !!null [a]",
+        "label: !!null {a: 1}",
+        "x: !!null\ny: !!null [a]",
+    ] {
+        let error = load(header).expect_err(header).to_string();
+        assert!(
+            error.starts_with("Cannot read ")
+                && error.contains("expected a scalar node for !!null"),
+            "{header}: {error}"
+        );
+    }
+    assert!(
+        load("label: !custom x\n").is_err(),
+        "other tags stay refused"
+    );
+}

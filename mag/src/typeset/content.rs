@@ -1,14 +1,14 @@
 use crate::model::doc::{
-    educate_reader_quotes, fold_reader_characters, parse_publication_document, settable_codepoints,
-    Block, Document, Inline,
+    educate_reader_quotes, fold_reader_characters, inline_text, parse_publication_document,
+    settable_codepoints, Block, Document, Inline,
 };
 use crate::model::manifest::{
     load_edition, source_code_payload, Article, Edition, Editorial, LoadOptions, Records, Section,
 };
 use crate::model::records::{load_records, Extract, Figure};
 use crate::model::shared::{
-    clamp_roster, content_label, is_name_roster, py_casefold, py_repr, py_str, ui, Result,
-    ValidationError,
+    anchor_key, article_opener_format, clamp_roster, content_label, is_name_roster,
+    is_reference_heading, py_repr, py_str, scalar_label, ui, Result, ValidationError,
 };
 use crate::typeset::estimate::{Metrics, Opener};
 use crate::typeset::media::pixels;
@@ -22,7 +22,6 @@ pub const CONTENTS_TITLE_LIMIT: usize = 62;
 pub const CONTENTS_TIGHT_ABOVE: usize = 8;
 const ILLUSTRATED: &str = "illustrated_paper_spots_v1";
 const OPENER_ANCHOR: &str = "__opener__";
-const REFERENCE_HEADINGS: [&str; 2] = ["references", "referencias"];
 const MAIN: &str = "main.typ";
 const CODE_INKS: [(&str, &str); 7] = [
     ("k kc kd kn kp kr ow", "rgb(240 87 56)"),
@@ -92,31 +91,13 @@ pub fn build(edition: &Edition, settable: &BTreeSet<u32>, metrics: &Metrics) -> 
         edition,
         settable,
         metrics,
-        illustrated: article_opener_format(edition) == ILLUSTRATED,
+        illustrated: article_opener_format(&edition.raw) == ILLUSTRATED,
     }
     .tree()
 }
 
 fn refusal(error: anyhow::Error) -> ValidationError {
     ValidationError::one(format!("{error:#}"))
-}
-
-fn article_opener_format(edition: &Edition) -> String {
-    edition
-        .raw
-        .get("format")
-        .and_then(|value| value.get("article_opener"))
-        .map(py_str)
-        .map(|value| value.trim().to_string())
-        .unwrap_or_default()
-}
-
-fn anchor_key(value: &str) -> String {
-    py_casefold(value.trim())
-}
-
-fn is_reference_heading(text: &str) -> bool {
-    REFERENCE_HEADINGS.contains(&anchor_key(text).as_str())
 }
 
 struct Writer<'a> {
@@ -834,18 +815,6 @@ fn split_extracts(extracts: &[Extract]) -> (Vec<&Extract>, Vec<&Extract>) {
     extracts.iter().partition(|e| e.anchor == OPENER_ANCHOR)
 }
 
-fn inline_text(inlines: &[Inline]) -> String {
-    inlines
-        .iter()
-        .map(|inline| match inline {
-            Inline::Text(value) | Inline::Code(value) => value.clone(),
-            Inline::Emphasis(children) | Inline::Strong(children) => inline_text(children),
-            Inline::Link { children, .. } => inline_text(children),
-            Inline::LineBreak { .. } => "\n".to_string(),
-        })
-        .collect()
-}
-
 fn split_words(inlines: &[Inline], mut remaining: usize) -> Option<(Vec<Inline>, Vec<Inline>)> {
     if remaining == 0 {
         return None;
@@ -886,7 +855,9 @@ fn read_manuscript(path: &Path) -> Result<Document> {
     let text = std::fs::read_to_string(path).map_err(|error| {
         ValidationError::one(format!("Cannot read {}: {error}", path.display()))
     })?;
-    parse_publication_document(&text).map_err(refusal)
+    let document = parse_publication_document(&text).map_err(refusal)?;
+    scalar_label(&document.metadata)?;
+    Ok(document)
 }
 
 pub fn escape_markup(text: &str) -> String {
@@ -1645,6 +1616,34 @@ mod tests {
         );
         let message = refusal_of(&root, "900");
         assert!(message.contains("has unsafe path:"), "{message}");
+    }
+
+    #[test]
+    fn a_container_label_refuses_the_edition_instead_of_printing_brackets() {
+        for (label, refusal) in [
+            ("!!null", None),
+            ("[]", Some("Frontmatter label must be text, not []")),
+            (
+                "{a: 1}",
+                Some("Frontmatter label must be text, not {'a': 1}"),
+            ),
+            ("!!null [a]", Some("expected a scalar node for !!null")),
+        ] {
+            let root = mutated("container-label", "900", &[]);
+            let manuscript = root.join("editions/900/articles/plain-opener-article.md");
+            let text = std::fs::read_to_string(&manuscript).expect("the manuscript is readable");
+            assert!(text.contains("label: ARTICLE\n"), "the fixture label moved");
+            std::fs::write(
+                &manuscript,
+                text.replace("label: ARTICLE\n", &format!("label: {label}\n")),
+            )
+            .expect("the manuscript is writable");
+            match (pipeline(&inputs(&root, "900")), refusal) {
+                (Ok(_), None) => {}
+                (Err(error), Some(want)) => assert!(error.to_string().contains(want), "{error}"),
+                (outcome, _) => panic!("label {label}: {:?}", outcome.map(|_| ())),
+            }
+        }
     }
 
     #[test]

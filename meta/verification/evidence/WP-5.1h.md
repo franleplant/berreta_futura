@@ -188,3 +188,98 @@ delete those rows when it deletes the copies.
 - Not done: typeset still prints `[]` (part 2); `!!null` refusal left as is
   (doc.rs, unowned); exact-decimal reuse in impose needs a parity edit;
   `inline_text` needs doc.rs.
+
+# Part 2: typeset adopts the shared helpers, `inline_text` in doc.rs, null tags in `load_structured`
+
+Base `cbe1629` (art_directed), fresh worktree. Sources for the open items:
+this file's part 1 (sections 1 and 4), WP-5.1h.verify.md, WP-0.2w.md
+("Not proven / remaining divergence").
+
+## What changed
+
+1. `typeset/content.rs` deletes its `anchor_key`, `is_reference_heading`,
+   `article_opener_format` and `REFERENCE_HEADINGS` and imports the
+   `model/shared.rs` forms (Python `strip` instead of `str::trim`; the opener
+   format now reads `edition.raw`). `read_manuscript` calls
+   `shared::scalar_label` after parsing, so a list or mapping label refuses
+   the typeset edition with `Frontmatter label must be text, not []` as the
+   web one does, instead of printing `[]`. The 4 `ALLOWED` rows in
+   `tests/rust_helpers.rs` are gone (27 -> 23).
+2. `inline_text` lives in `model/doc.rs` beside `Inline`; typeset's copy and
+   web's identical `plain_text` are deleted and both import it. Scope note:
+   this edits `web/semantic.rs` (3 lines of import/rename plus the deleted
+   function), which the brief's "web and typeset share one copy" requires;
+   `tests/model_doc.rs` gains `#[allow(dead_code)]` on its `#[path]` include
+   of doc.rs, as it already had on shared.rs, because that binary does not
+   call `inline_text`.
+3. The null-tag loader moved from doc.rs into `shared::load_yaml`, now used
+   by both `doc.rs::load_header` and `shared::load_structured`. Change of
+   rule: when the text contains a null tag, the local-tag reparse runs even
+   if serde_yaml's first parse succeeded, and a null tag on a collection
+   refuses in either case. That closes WP-0.2w's residual: `label: !!null
+   [a]` alone (serde_yaml ignores a core tag on a collection, so the first
+   parse succeeded and the retry never ran) now refuses on both paths, as
+   Python's `ConstructorError: expected a scalar node, but found sequence`.
+   When the first parse succeeded and no collection is tagged, the first
+   parse is returned, so a quoted `"a !!null b"` stays text.
+
+Python reference (`uv run python`, `yaml.safe_load`, exit 0):
+`label: !!null {a: 1}` ConstructorError "expected a scalar node, but found
+mapping"; `label: !!null [a]` same with "sequence"; `t: "a !!null b"` loads
+the string unchanged; `x: !!null\nt: "a !!null b"` loads `x: None` and the
+string unchanged.
+
+## Tests (red where the old code was wrong)
+
+- `typeset::content::tests::a_container_label_refuses_the_edition_instead_of_printing_brackets`:
+  fixture 900's article label set to `!!null` (loads), `[]`, `{a: 1}`
+  (refused with the scalar_label message) and `!!null [a]` (refused, scalar
+  node). Mutant: `scalar_label` call removed from `read_manuscript` -> FAILS.
+- `model::doc::tests::a_null_tag_on_a_collection_or_a_broken_header_is_refused_like_python`
+  gains `label: !!null [a]` and `label: !!null {a: 1}` alone.
+- `tests/model_shared_helpers.rs::structured_files_load_null_tags_like_python_and_refuse_them_on_collections`:
+  `~`, `!!null`, `!!null ''`, `!!null foo`, `!<tag:yaml.org,2002:null> x`
+  load as Null through `load_structured`; a quoted `!!null` stays text;
+  three collection cases refuse; `!custom x` stays refused (positive control
+  for the tag check).
+- Mutant "old rule" (`parsed.or(untag_nulls(local))`, i.e. a successful first
+  parse wins): the doc test, the typeset test and the shared test all FAIL
+  (3 failures, 2 binaries). Both mutants restored; `git diff` rechecked.
+
+## Commands
+
+All in the worktree, `CARGO_TARGET_DIR` its own:
+
+```
+cargo fmt --check                                  # exit 0
+cargo clippy --all-targets -- -D warnings          # exit 0 (first run: dead_code on inline_text in the model_doc binary, fixed as above)
+cargo test                                         # exit 0: 32 binaries, 850 passed, 0 failed
+cargo test --test web_port                         # 18 passed (includes the WP-0.2w container-label refusal)
+mag parity 010 --run editions/010/run-2026-09-13T01-34-51   # exit 1 (glyph clause only), 202 s
+#   staged inputs fresh ae9d6daf..., ratchet: pass (54 checked, 54 recorded, 54 measured, 0 regressions)
+#   S page_count 56 vs 56, boxes/text/color/navigation pass, G max dx 0.000 dy 0.006
+#   E display list pass (58850 vs 58850), glyph positions fail (40, worst excess 0.000000), V1/V2 pass 0.000336
+#   typst reader.pdf sha256 6709dc15..., byte-identical to WP-3.7c.md's final leg
+uv run python mag/tests/typeset_oracle.py stage --request editions/010/render-2026-09-24T08-33-54/request.json --into $ST/live --artifact-root .   # exit 0, 57 inputs
+uv run python mag/tests/typeset_oracle.py project --root $ST/live --edition 010 --publication-name "Berreta Futura" --out $ST/oracle-010.json    # exit 0
+MAG_TYPESET_ROOT=$ST/live MAG_TYPESET_ORACLE=$ST/oracle-010.json MAG_TYPESET_PUBLICATION="Berreta Futura" cargo test --bin mag the_live_edition
+#   "68758 characters of reader text, 0 verbatim runs", ok (same count as WP-3.7c.md)
+```
+
+## What is and is not proven
+
+- Proven: typeset now refuses list and mapping labels (end-to-end through the
+  fixture pipeline, wiring mutant killed); `!!null [a]` / `!!null {..}`
+  refuse on the frontmatter path (web and typeset both parse through
+  doc.rs) and on `load_structured`; `load_structured` accepts every null
+  spelling doc.rs accepts. The 010 typst leg is byte-identical to the
+  WP-3.7c leg, so the helper swap moved nothing on the live edition; the
+  WP-2.1 projection equals the oracle at 68758 characters.
+- Equality note: the shared `anchor_key` differs from the deleted typeset copy
+  only on U+001C..U+001F at the ends of a heading (part 1); 010 carries none,
+  so the byte-identical leg does not exercise that difference. It is pinned
+  by `tests/model_shared_helpers.rs` against Python's `str.strip`.
+- Not fixed: in a header that carries both a real null tag and a quoted string
+  containing `!!null`, and whose first parse fails, the string is rewritten
+  to `!magazine-null` (WP-0.2w's disclosed limitation, unchanged; zero known
+  inputs).

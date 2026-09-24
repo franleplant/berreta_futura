@@ -110,6 +110,53 @@ fn first_tag(value: &Value) -> Option<String> {
     }
 }
 
+const NULL_TAGS: [&str; 2] = ["!!null", "!<tag:yaml.org,2002:null>"];
+
+pub(crate) fn load_yaml(text: &str) -> std::result::Result<Value, String> {
+    let parsed = serde_yaml::from_str::<Value>(text).map_err(|exc| exc.to_string());
+    if !NULL_TAGS.iter().any(|tag| text.contains(tag)) {
+        return parsed;
+    }
+    let local = NULL_TAGS.iter().fold(text.to_string(), |text, tag| {
+        text.replace(tag, "!magazine-null")
+    });
+    match serde_yaml::from_str(&local) {
+        Ok(local) => {
+            let untagged = untag_nulls(local)?;
+            parsed.or(Ok(untagged))
+        }
+        Err(_) => parsed,
+    }
+}
+
+fn untag_nulls(value: Value) -> std::result::Result<Value, String> {
+    Ok(match value {
+        Value::Tagged(tagged) if tagged.tag == "magazine-null" => match tagged.value {
+            Value::Sequence(_) | Value::Mapping(_) => {
+                return Err("expected a scalar node for !!null, but found a collection".to_string())
+            }
+            _ => Value::Null,
+        },
+        Value::Tagged(mut tagged) => {
+            tagged.value = untag_nulls(tagged.value)?;
+            Value::Tagged(tagged)
+        }
+        Value::Sequence(items) => Value::Sequence(
+            items
+                .into_iter()
+                .map(untag_nulls)
+                .collect::<std::result::Result<_, _>>()?,
+        ),
+        Value::Mapping(mapping) => Value::Mapping(
+            mapping
+                .into_iter()
+                .map(|(k, v)| Ok((k, untag_nulls(v)?)))
+                .collect::<std::result::Result<_, String>>()?,
+        ),
+        other => other,
+    })
+}
+
 pub(crate) fn load_structured(path: &Path) -> Result<Value> {
     let text = std::fs::read_to_string(path).map_err(|error| {
         ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
@@ -119,7 +166,7 @@ pub(crate) fn load_structured(path: &Path) -> Result<Value> {
             ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
         })?
     } else {
-        serde_yaml::from_str(&text).map_err(|error| {
+        load_yaml(&text).map_err(|error| {
             ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
         })?
     };
