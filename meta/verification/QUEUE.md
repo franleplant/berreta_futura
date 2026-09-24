@@ -16,12 +16,11 @@
   0.2u, 0.2w, 0.2x, 3.0g, and the typeset set.
 - Awaiting the WP-4.1 gate verifier: WP-5.6, 0.2y, 5.4g, 5.3g, 3.10,
   5.11; it also raises cover rows 1 and 56 to E.
-- Running: WP-5.11. WP-3.10 landed 3122610 (every language rendered;
+- Running: WP-3.11 editorial opener port, WP-5.12 (parity --lang,
+  manifest paths). WP-5.11 landed d320995 (critic JPEG via zune within a
+  pinned tolerance, decisions equal to Python on 43 JPEGs; pen-end word
+  gaps, text_characters gated; critic_text pin 1126). WP-3.10 landed 3122610 (every language rendered;
   Spanish hyphenation equal on 5348 words; fixture 906 en+es green).
-- Queued behind WP-5.11: WP-5.12 = `mag parity --lang <code>` for
-  --adhoc/--pre-rendered (parity.rs reads en only) + translated figure
-  paths in es edition-manifest.json are absolute staging paths on both
-  engines (fix in model/manifest.rs translation_raw; class C).
 - Next: WP-4.1 full gate, then WP-4.2 flip, WP-4.3 post-flip hyphenation,
   WP-6.1 delete Python.
 
@@ -82,6 +81,8 @@ evidence file records it):
   normalization. Decided at WP-3.0g, no change.
 
 Orchestrator decisions:
+- The editorial opener IS ported (WP-3.11), overriding the plan's scope
+  note: editions 001-009 carry editorials and WP-6.1 deletes Python.
 - Workers may rebase baseline.json's staged digest when their own oracle
   change moved it and they prove the delta; a verifier re-derives it
   (WP-3.0g.verify.md confirmed bc49b2aa).
@@ -150,9 +151,6 @@ For Fran (product questions, nothing blocks on them):
   at Pillow's default quality; WP-0.0f passes the source bytes through.
   JPEGs with EXIF orientation != 1 now refuse on both legs (rotate them
   losslessly with jpegtran); none exist today.
-- The editorial opener (editions 001-009 only) is a stub on the Typst
-  path, out of the plan's scope: after WP-6.1 those editions cannot be
-  re-rendered with their editorial.
 - 008's source-codes/ were generated locally for `--adhoc 008` and not
   committed (edition data: commit them if you want 008 reproducible).
 - Edition 009 no longer renders: one closing plate repeats another's art
