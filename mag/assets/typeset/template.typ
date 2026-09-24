@@ -12,7 +12,7 @@
 #let INK = rgb(5.5%, 7.5%, 8.5%)
 #let VIOLET = rgb(25%, 10%, 43%)
 #let SLATE = rgb(31%, 35%, 37%)
-#let COOL-GRAY = rgb(88%, 89%, 90%)
+#let COOL-GRAY = rgb(88%, 89%, 230)
 #let PALE-VIOLET = rgb(95.5%, 94.5%, 97.5%)
 #let SIGNAL-ORANGE = rgb(240, 87, 56)
 
