@@ -188,6 +188,13 @@ pub enum Element {
     },
 }
 
+pub struct Pose {
+    pub m: M,
+    pub offs: Vec<[f64; 2]>,
+}
+
+pub type Poses = HashMap<usize, Pose>;
+
 struct Font {
     name: String,
     two_byte: bool,
@@ -268,6 +275,7 @@ struct Tracer<'a> {
     font_map: &'a BTreeMap<String, Face>,
     caches: &'a mut Caches,
     out: Vec<Element>,
+    poses: Poses,
     gs: GState,
     stack: Vec<GState>,
     tm: M,
@@ -284,6 +292,15 @@ pub fn trace_page(
     font_map: &BTreeMap<String, Face>,
     caches: &mut Caches,
 ) -> Result<Vec<Element>> {
+    Ok(trace_posed(doc, page_id, font_map, caches)?.0)
+}
+
+pub fn trace_posed(
+    doc: &Document,
+    page_id: ObjectId,
+    font_map: &BTreeMap<String, Face>,
+    caches: &mut Caches,
+) -> Result<(Vec<Element>, Poses)> {
     let content = doc.get_page_content(page_id);
     let resources = page_resources(doc, page_id)?;
     let mut tracer = Tracer {
@@ -291,6 +308,7 @@ pub fn trace_page(
         font_map,
         caches,
         out: vec![],
+        poses: HashMap::new(),
         gs: GState::new(),
         stack: vec![],
         tm: ID,
@@ -301,7 +319,7 @@ pub fn trace_page(
         pending_clip: None,
     };
     tracer.run(&content, resources)?;
-    Ok(tracer.out)
+    Ok((tracer.out, tracer.poses))
 }
 
 fn arity(operator: &str) -> Option<usize> {
@@ -562,10 +580,13 @@ impl Tracer<'_> {
                 other => tx -= num(other)? / 1000.0 * self.gs.size * (self.gs.tz / 100.0),
             }
         }
-        let offs = starts
-            .iter()
-            .map(|v| [qo(v * base[0]), qo(v * base[1])])
-            .collect();
+        let exact: Vec<[f64; 2]> = starts.iter().map(|v| [v * base[0], v * base[1]]).collect();
+        let offs = exact.iter().map(|v| v.map(qo)).collect();
+        let pose = Pose {
+            m: trm,
+            offs: exact,
+        };
+        self.poses.insert(self.out.len(), pose);
         self.out.push(Element::Text {
             s: units.concat(),
             font: font.name.clone(),
@@ -686,7 +707,7 @@ impl Tracer<'_> {
     fn push_seg(&mut self, op: &str, points: &[(f64, f64)]) {
         self.path.push_str(op);
         for (x, y) in points {
-            self.path.push_str(&format!(" {} {}", qc(*x), qc(*y)));
+            self.path.push_str(&format!(" {} {}", x * 100.0, y * 100.0));
         }
         self.path.push(' ');
     }
@@ -752,6 +773,11 @@ impl Tracer<'_> {
             self.caches.images.insert(id, decoded);
         }
         let (hash, _, _) = self.caches.images[&id].clone();
+        let pose = Pose {
+            m: self.gs.ctm,
+            offs: vec![],
+        };
+        self.poses.insert(self.out.len(), pose);
         self.out.push(Element::Image {
             rgba_sha256: hash,
             m: self.gs.ctm.map(qc),
@@ -1633,7 +1659,7 @@ mod tests {
     }
 
     #[test]
-    fn a_coordinate_whose_f32_crosses_a_quantum_boundary_traces_at_its_authored_quantum() {
+    fn a_coordinate_whose_f32_crosses_a_quantum_boundary_traces_at_its_authored_value() {
         let paths: Vec<String> = trace("300.004999 0 1 1 re f", vec![])
             .unwrap()
             .into_iter()
@@ -1642,7 +1668,10 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert_eq!(paths, ["re 30000 0 30100 0 30100 100 30000 100"]);
+        assert_eq!(
+            paths,
+            ["re 30000.4999 0 30100.4999 0 30100.4999 100 30000.4999 100"]
+        );
     }
 
     #[test]
