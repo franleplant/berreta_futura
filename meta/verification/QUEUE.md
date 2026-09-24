@@ -15,9 +15,10 @@
   5.3h, 5.5a (1+2), 5.7b, 5.5c, 5.9, 3.3a, 5.5d, 4.0g, 5.10, 5.1h part 1,
   0.2u, 0.2w, 0.2x, 3.0g, and the typeset set.
 - Awaiting the WP-4.1 gate verifier: WP-5.6, 0.2y, 5.4g, 5.3g, 3.10,
-  5.11; it also raises cover rows 1 and 56 to E.
-- Running: WP-3.11 editorial opener port, WP-5.12 (parity --lang,
-  manifest paths). WP-5.11 landed d320995 (critic JPEG via zune within a
+  5.11, 5.12; it also raises cover rows 1 and 56 to E.
+- Running: WP-3.11 editorial opener port. WP-5.12 landed 0973a8a
+  (`mag parity --lang`, 906 es green without aliases; manifest figure
+  paths source-relative on typst). WP-5.11 landed d320995 (critic JPEG via zune within a
   pinned tolerance, decisions equal to Python on 43 JPEGs; pen-end word
   gaps, text_characters gated; critic_text pin 1126). WP-3.10 landed 3122610 (every language rendered;
   Spanish hyphenation equal on 5348 words; fixture 906 en+es green).
