@@ -74,7 +74,7 @@ impl Metrics {
         Ok(Metrics(faces))
     }
 
-    fn width(&self, face: &str, text: &str, size: f64) -> f64 {
+    pub fn width(&self, face: &str, text: &str, size: f64) -> f64 {
         let widths = &self.0[face];
         text.chars()
             .map(|c| widths.get(&c).unwrap_or(&0.0))

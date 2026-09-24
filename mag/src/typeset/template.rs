@@ -30,7 +30,8 @@ pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
 const PLATE_CONTENT: &str = "#closing-signature(none)\n";
 
 pub fn paginate(tree: Tree, font_dir: &Path) -> Result<(Tree, PagedDocument)> {
-    let content = document(&world(&tree, font_dir)?)?.pages().len() - 2;
+    let (tree, bare) = crate::typeset::runt::bound(tree, font_dir)?;
+    let content = bare.pages().len() - 2;
     let files = tree.files.into_iter().map(|file| File {
         source: file.source.replacen(
             PLATE_CONTENT,
@@ -1546,6 +1547,66 @@ mod tests {
             order(&page.frame),
             want,
             "typst already paints in WeasyPrint's order"
+        );
+    }
+
+    #[test]
+    fn the_fixture_with_tail_art_settles_and_draws_the_end_tick_where_the_oracle_does() {
+        let tree = fixture_tree("900");
+        let compiled =
+            typst::compile::<PagedDocument>(&world(&tree, roots().1).expect("the world builds"));
+        let unsettled: Vec<_> = compiled
+            .warnings
+            .iter()
+            .map(|w| w.message.to_string())
+            .collect();
+        assert!(unsettled.is_empty(), "{unsettled:?}");
+        let doc = compiled.output.expect("it compiles");
+        let ticks: Vec<f64> = doc
+            .pages()
+            .iter()
+            .filter_map(|page| {
+                let mut found = vec![];
+                marks(&page.frame, Point::zero(), &mut found);
+                let tick = found
+                    .iter()
+                    .find(|m| m.fill[..3] == [240, 87, 56] && (m.width - 17.0).abs() < 1e-6)?;
+                let end = found.iter().find(|m| m.text.starts_with("END"))?;
+                Some(end.y - tick.y)
+            })
+            .collect();
+        assert!(!ticks.is_empty());
+        assert!(ticks.iter().all(|d| (d - 2.55).abs() < 1e-6), "{ticks:?}");
+    }
+
+    fn clipped_images(frame: &Frame, clip: Option<Size>, out: &mut Vec<(Size, Option<Size>)>) {
+        for (_, item) in frame.items() {
+            match item {
+                FrameItem::Group(group) => clipped_images(
+                    &group.frame,
+                    group.clip.as_ref().map(|c| c.bbox(None).size()).or(clip),
+                    out,
+                ),
+                FrameItem::Image(_, size, _) => out.push((*size, clip)),
+                _ => {}
+            }
+        }
+    }
+
+    #[test]
+    fn every_body_image_is_clipped_to_its_own_box_as_weasyprint_clips_it() {
+        let doc = document(&world(&fixture_tree("900"), roots().1).expect("the world builds"))
+            .expect("it compiles");
+        let mut found = vec![];
+        for page in doc.pages() {
+            clipped_images(&page.frame, None, &mut found);
+        }
+        assert!(found.len() >= 2, "{found:?}");
+        assert!(
+            found
+                .iter()
+                .all(|(image, clip)| clip.is_some_and(|c| (c.x - image.x).abs() < Abs::pt(1e-6))),
+            "{found:?}"
         );
     }
 
