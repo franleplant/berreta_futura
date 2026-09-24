@@ -32,6 +32,9 @@ mod shared;
 #[allow(dead_code)]
 mod text;
 
+#[allow(dead_code)]
+mod oracle;
+
 mod model {
     pub(crate) use super::{doc, manifest, records, shared};
 }
@@ -208,6 +211,31 @@ fn python() -> &'static Value {
     })
 }
 
+fn portable(text: &str) -> String {
+    text.replace(&*stage().to_string_lossy(), "$STAGE")
+}
+
+fn compact(entry: &Value) -> Value {
+    let mut entry: Value = serde_json::from_str(&portable(&entry.to_string())).expect("json");
+    if let Some(html) = entry["html"].as_str() {
+        entry["html"] = json!(oracle::sha256(html.as_bytes()));
+    }
+    entry
+}
+
+fn html_expected() -> &'static Value {
+    static EXPECTED: OnceLock<Value> = OnceLock::new();
+    EXPECTED.get_or_init(|| {
+        let text = oracle::expectation("web_port_html_expected.json", || {
+            let entries = python().as_object().expect("an object");
+            let compacted: BTreeMap<&String, Value> =
+                entries.iter().map(|(k, v)| (k, compact(v))).collect();
+            serde_json::to_string_pretty(&compacted).expect("json") + "\n"
+        });
+        serde_json::from_str(&text).expect("the expectation parses")
+    })
+}
+
 fn settable() -> BTreeSet<u32> {
     doc::settable_codepoints(&repository().join("src/magazine/assets/fonts"))
         .expect("the vendored faces are readable")
@@ -296,15 +324,22 @@ fn compare(name: &str) -> Value {
         .expect("the spec exists")
         .clone();
     let got = rust(&spec);
-    let want = &python()[name];
-    if let (Some(left), Some(right)) = (got["html"].as_str(), want["html"].as_str()) {
-        assert!(
-            left == right,
-            "{name} html differs\n{}",
-            first_difference(left, right)
-        );
+    if oracle::live() {
+        let want = &python()[name];
+        if let (Some(left), Some(right)) = (got["html"].as_str(), want["html"].as_str()) {
+            assert!(
+                left == right,
+                "{name} html differs\n{}",
+                first_difference(left, right)
+            );
+        }
+        assert_eq!(&got, want, "{name} differs from html_edition");
     }
-    assert_eq!(&got, want, "{name} differs from html_edition");
+    assert_eq!(
+        compact(&got),
+        html_expected()[name],
+        "{name} differs from the committed html_edition expectation"
+    );
     got
 }
 
@@ -509,6 +544,42 @@ fn python_web() -> &'static Path {
     })
 }
 
+fn digests(files: &BTreeMap<String, Vec<u8>>) -> BTreeMap<String, String> {
+    let digest = |bytes: &Vec<u8>| match std::str::from_utf8(bytes) {
+        Ok(text) => oracle::sha256(portable(text).as_bytes()),
+        Err(_) => oracle::sha256(bytes),
+    };
+    files
+        .iter()
+        .map(|(path, bytes)| (path.clone(), digest(bytes)))
+        .collect()
+}
+
+fn web_expected() -> &'static Value {
+    static EXPECTED: OnceLock<Value> = OnceLock::new();
+    EXPECTED.get_or_init(|| {
+        let text = oracle::expectation("web_port_web_expected.json", || {
+            let specs = web_specs();
+            let entries: BTreeMap<&str, Value> = specs
+                .as_array()
+                .expect("specs")
+                .iter()
+                .map(|spec| {
+                    let name = spec["name"].as_str().expect("a name");
+                    let error = std::fs::read_to_string(python_web().join(format!("{name}.error")));
+                    let entry = match error {
+                        Ok(error) => json!({"error": portable(&error)}),
+                        Err(_) => json!({"files": digests(&tree(&python_web().join(name)))}),
+                    };
+                    (name, entry)
+                })
+                .collect();
+            serde_json::to_string_pretty(&entries).expect("json") + "\n"
+        });
+        serde_json::from_str(&text).expect("the expectation parses")
+    })
+}
+
 fn tree(root: &Path) -> BTreeMap<String, Vec<u8>> {
     fn walk(root: &Path, directory: &Path, into: &mut BTreeMap<String, Vec<u8>>) {
         for entry in std::fs::read_dir(directory).expect("the tree is readable") {
@@ -596,8 +667,16 @@ fn rust_web(name: &str) -> Result<PathBuf, String> {
 }
 
 fn compare_tree(name: &str) -> BTreeMap<String, Vec<u8>> {
-    let want = tree(&python_web().join(name));
     let got = tree(&rust_web(name).unwrap_or_else(|error| panic!("{name} writes: {error}")));
+    assert_eq!(
+        json!({"files": digests(&got)}),
+        web_expected()[name],
+        "{name} differs from the committed web_edition expectation"
+    );
+    if !oracle::live() {
+        return got;
+    }
+    let want = tree(&python_web().join(name));
     assert_eq!(
         got.keys().collect::<Vec<_>>(),
         want.keys().collect::<Vec<_>>(),
@@ -712,10 +791,11 @@ fn a_source_without_an_address_is_numbered_but_not_linked() {
 }
 
 fn compare_refusal(name: &str) -> String {
-    let want = std::fs::read_to_string(python_web().join(format!("{name}.error")))
-        .unwrap_or_else(|_| panic!("{name}: Python did not refuse"));
+    let want = web_expected()[name]["error"]
+        .as_str()
+        .unwrap_or_else(|| panic!("{name}: Python did not refuse"));
     let got = rust_web(name).expect_err("the port refuses too");
-    assert_eq!(got, want, "{name}: the refusals differ");
+    assert_eq!(portable(&got), want, "{name}: the refusals differ");
     got
 }
 

@@ -1,6 +1,8 @@
 #[path = "../src/highlight/mod.rs"]
 #[allow(dead_code)]
 mod highlight;
+#[allow(dead_code)]
+mod oracle;
 
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -61,25 +63,59 @@ fn colours(
         .collect()
 }
 
-fn pairs(value: &Value) -> Vec<(String, String)> {
-    let rows = value.as_array().unwrap().iter();
-    rows.map(|p| {
-        (
-            p[0].as_str().unwrap().to_owned(),
-            p[1].as_str().unwrap().to_owned(),
-        )
-    })
-    .collect()
-}
+const TABLES_SHA256: &str = "adbcb031afe2e6bb90a999abd0041dc901010ccf911a455cd093b3fcc49aa3a9";
 
 #[test]
 fn tables_are_generated_from_the_locked_pygments() {
-    let fresh = uv("mag/tests/highlight_tables.py");
     let committed = std::fs::read_to_string(repo().join("mag/src/highlight/tables.json")).unwrap();
-    assert!(
-        fresh == committed,
-        "regenerate mag/src/highlight/tables.json"
+    if oracle::live() {
+        let fresh = uv("mag/tests/highlight_tables.py");
+        assert!(
+            fresh == committed,
+            "regenerate mag/src/highlight/tables.json"
+        );
+    }
+    assert_eq!(
+        oracle::sha256(committed.as_bytes()),
+        TABLES_SHA256,
+        "tables.json moved off the digest the live pygments run recorded"
     );
+}
+
+fn corpus() -> Vec<Value> {
+    let text = oracle::expectation("highlight_corpus_expected.json", || {
+        let live: Vec<Value> = serde_json::from_str(&uv("mag/tests/highlight_corpus.py")).unwrap();
+        let rows = live.iter().map(|block| {
+            let runs = block["tokens"].as_array().map(|tokens| {
+                let run = |t: &Value| (t[0].as_str().unwrap().chars().count(), t[1].clone());
+                tokens.iter().map(run).collect::<Vec<_>>()
+            });
+            let text: Option<String> = block["tokens"]
+                .as_array()
+                .map(|tokens| tokens.iter().map(|t| t[0].as_str().unwrap()).collect());
+            assert!(
+                text.is_none_or(|text| text == block["code"]),
+                "tokens cover the code"
+            );
+            let html = oracle::sha256(block["html"].as_str().unwrap().as_bytes());
+            let mut row = block.clone();
+            row["html"] = serde_json::json!(html);
+            row["tokens"] = serde_json::json!(runs);
+            row.to_string()
+        });
+        format!("[\n{}\n]\n", rows.collect::<Vec<_>>().join(",\n"))
+    });
+    serde_json::from_str(&text).unwrap()
+}
+
+fn oracle_pairs(block: &Value) -> Vec<(String, String)> {
+    let mut chars = block["code"].as_str().unwrap().chars();
+    let runs = block["tokens"].as_array().unwrap().iter();
+    runs.map(|run| {
+        let text = chars.by_ref().take(run[0].as_u64().unwrap() as usize);
+        (text.collect(), run[1].as_str().unwrap().to_owned())
+    })
+    .collect()
 }
 
 #[test]
@@ -97,7 +133,7 @@ fn print_colours_group_the_token_classes_into_seven_inks() {
 #[test]
 fn every_corpus_block_matches_pygments() {
     let rules = colour_rules();
-    let corpus: Vec<Value> = serde_json::from_str(&uv("mag/tests/highlight_corpus.py")).unwrap();
+    let corpus = corpus();
     let mut stats: BTreeMap<String, (usize, usize)> = BTreeMap::new();
     let (mut spans_total, mut classes, mut refused) = (0, BTreeSet::new(), Vec::new());
     for block in &corpus {
@@ -130,12 +166,12 @@ fn every_corpus_block_matches_pygments() {
         );
         let html = highlight::html(code, language).unwrap();
         assert_eq!(
-            html,
+            oracle::sha256(html.as_bytes()),
             block["html"].as_str().unwrap(),
-            "{language} html in {files}"
+            "{language} html in {files}: {html}"
         );
         let Some(spans) = spans else { continue };
-        let oracle = pairs(&block["tokens"]);
+        let oracle = oracle_pairs(block);
         assert_eq!(
             colours(&rules, &spans),
             colours(&rules, &oracle),

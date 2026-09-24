@@ -1,0 +1,419 @@
+{
+  "half-swaps": {
+    "inputs": {
+      "booklet-a4-cover.pdf": "fa7ce29e8b1d3767069c0b1655688a51dfe14a6642fa4e511afd8b6b946d0912",
+      "booklet-a4-interior.pdf": "9f911a2e97d93f2d95468d4c54d90eb3f954cfba9e23fa6f5cd89e289d736634",
+      "booklet-a4.pdf": "c64ad0cdb61dca9144e606bdf010dbfa2898f49861d75998b7caf4709d80c226",
+      "edition-manifest.json": "0935d19c3f3b996121f76e38ad3066cc82e49e87685f24cf4bbff351d8dbb6b3",
+      "reader.pdf": "a882586859a9725bbc724d950f6fbf5f27f67c84b211fe85678bfab1820de024"
+    },
+    "python": {
+      "issues": [
+        {
+          "code": "interior-booklet-page-order",
+          "message": "One or more interior booklet sides do not contain the expected left/right reader page pair.",
+          "severity": "error"
+        },
+        {
+          "code": "whitespace-void",
+          "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+          "page": 17,
+          "severity": "review"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'dario-amodei-we-must-pace-the-frontier' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 29,
+          "severity": "review"
+        },
+        {
+          "code": "tail-art-dropped",
+          "message": "Tail art declared for 'government-rails-site-hit-hours-after-cve-patch' was not printed (the article's last page leaves -15.7pt of open tail room below the end mark's 12pt clearance; the strip prints at its one 108.3pt size or not at all); confirm the drop is intentional.",
+          "severity": "review"
+        },
+        {
+          "code": "article-page-cap",
+          "message": "Article dario-amodei-we-must-pace-the-frontier exceeds its reader page cap (verbatim: warning only).",
+          "severity": "review"
+        }
+      ],
+      "probes": {
+        "cover_spreads 1 text_order_matches": true,
+        "interior_spreads 3 text_order_matches": false,
+        "spreads 5 text_order_matches": true
+      },
+      "result": "fail"
+    }
+  },
+  "low-ppi-figure": {
+    "inputs": {
+      "booklet-a4-cover.pdf": "78126f728438fab4f554163553d556ceba6edecb7ec77e66420776017e249ce4",
+      "booklet-a4-interior.pdf": "acea4a5ea536ba3ad8458aae68d83714dd48a18f30a0228767e7ccff0fffcabb",
+      "booklet-a4.pdf": "d38821109fc10c5ebd05ad335da7183b4fcf6fc509cf200cc23132b747510560",
+      "edition-manifest.json": "9f7c32da7ce26937e72c871def8670ffdeab3f8769d3c746a239da43eebeb1ba",
+      "reader.pdf": "056d452ea068b5bbaf1678d324a2fe9e946d8a54dd40d2b58fffe6349b56085d"
+    },
+    "python": {
+      "issues": [
+        {
+          "code": "whitespace-void",
+          "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+          "page": 17,
+          "severity": "review"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'dario-amodei-we-must-pace-the-frontier' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 29,
+          "severity": "review"
+        },
+        {
+          "code": "tail-art-dropped",
+          "message": "Tail art declared for 'government-rails-site-hit-hours-after-cve-patch' was not printed (the article's last page leaves -15.7pt of open tail room below the end mark's 12pt clearance; the strip prints at its one 108.3pt size or not at all); confirm the drop is intentional.",
+          "severity": "review"
+        },
+        {
+          "code": "article-page-cap",
+          "message": "Article dario-amodei-we-must-pace-the-frontier exceeds its reader page cap (verbatim: warning only).",
+          "severity": "review"
+        }
+      ],
+      "probes": {},
+      "result": "pass"
+    }
+  },
+  "missing-tail-band": {
+    "inputs": {
+      "booklet-a4-cover.pdf": "78126f728438fab4f554163553d556ceba6edecb7ec77e66420776017e249ce4",
+      "booklet-a4-interior.pdf": "acea4a5ea536ba3ad8458aae68d83714dd48a18f30a0228767e7ccff0fffcabb",
+      "booklet-a4.pdf": "d38821109fc10c5ebd05ad335da7183b4fcf6fc509cf200cc23132b747510560",
+      "edition-manifest.json": "0935d19c3f3b996121f76e38ad3066cc82e49e87685f24cf4bbff351d8dbb6b3",
+      "reader.pdf": "9f281dbaaa9ececcd25aaba04fc1111535b7179d038377e8576621d8677ecc47"
+    },
+    "python": {
+      "issues": [
+        {
+          "code": "whitespace-void",
+          "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+          "page": 17,
+          "severity": "review"
+        },
+        {
+          "code": "article-tail-gap",
+          "message": "'towards-self-driving-codebases' ends leaving a 232 pt trailing blank (41% of the live area) with no tail art printed; consider approving tail art for this article.",
+          "page": 44,
+          "severity": "review"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'dario-amodei-we-must-pace-the-frontier' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 29,
+          "severity": "review"
+        },
+        {
+          "code": "tail-art-dropped",
+          "message": "Tail art declared for 'government-rails-site-hit-hours-after-cve-patch' was not printed (the article's last page leaves -15.7pt of open tail room below the end mark's 12pt clearance; the strip prints at its one 108.3pt size or not at all); confirm the drop is intentional.",
+          "severity": "review"
+        },
+        {
+          "code": "article-page-cap",
+          "message": "Article dario-amodei-we-must-pace-the-frontier exceeds its reader page cap (verbatim: warning only).",
+          "severity": "review"
+        }
+      ],
+      "probes": {
+        "reader 44 body_text_lines": 18,
+        "reader 44 tail_band": null
+      },
+      "result": "pass"
+    }
+  },
+  "raster-halves": {
+    "inputs": {
+      "booklet-a4-cover.pdf": "f064d8197e1b4e807d869fee546b1c88932c741e0e498f11b15a18f5e7081745",
+      "booklet-a4-interior.pdf": "acea4a5ea536ba3ad8458aae68d83714dd48a18f30a0228767e7ccff0fffcabb",
+      "booklet-a4.pdf": "f40a46337798165028a8def3ad107de492546296f8a359c7e5f2a7059894254b",
+      "edition-manifest.json": "0935d19c3f3b996121f76e38ad3066cc82e49e87685f24cf4bbff351d8dbb6b3",
+      "reader.pdf": "a882586859a9725bbc724d950f6fbf5f27f67c84b211fe85678bfab1820de024"
+    },
+    "python": {
+      "issues": [
+        {
+          "code": "cover-booklet-page-order",
+          "message": "The cover booklet must impose the back cover beside the front cover on its single outside side.",
+          "severity": "error"
+        },
+        {
+          "code": "whitespace-void",
+          "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+          "page": 17,
+          "severity": "review"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'dario-amodei-we-must-pace-the-frontier' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 29,
+          "severity": "review"
+        },
+        {
+          "code": "tail-art-dropped",
+          "message": "Tail art declared for 'government-rails-site-hit-hours-after-cve-patch' was not printed (the article's last page leaves -15.7pt of open tail room below the end mark's 12pt clearance; the strip prints at its one 108.3pt size or not at all); confirm the drop is intentional.",
+          "severity": "review"
+        },
+        {
+          "code": "inside-cover-booklet-not-blank",
+          "message": "The imposed side containing both inside covers must be completely blank (a pure-white raster with no extractable text).",
+          "page": 2,
+          "severity": "error"
+        },
+        {
+          "code": "article-page-cap",
+          "message": "Article dario-amodei-we-must-pace-the-frontier exceeds its reader page cap (verbatim: warning only).",
+          "severity": "review"
+        }
+      ],
+      "probes": {
+        "booklet 2 blank": false,
+        "booklet 2 text_characters": 0,
+        "cover 1 ink_free": false,
+        "cover 1 ink_ratio": 0.0,
+        "cover 1 text_characters": 6
+      },
+      "result": "fail"
+    }
+  },
+  "resaved": {
+    "inputs": {
+      "booklet-a4-cover.pdf": "78126f728438fab4f554163553d556ceba6edecb7ec77e66420776017e249ce4",
+      "booklet-a4-interior.pdf": "acea4a5ea536ba3ad8458aae68d83714dd48a18f30a0228767e7ccff0fffcabb",
+      "booklet-a4.pdf": "d38821109fc10c5ebd05ad335da7183b4fcf6fc509cf200cc23132b747510560",
+      "edition-manifest.json": "0935d19c3f3b996121f76e38ad3066cc82e49e87685f24cf4bbff351d8dbb6b3",
+      "reader.pdf": "a882586859a9725bbc724d950f6fbf5f27f67c84b211fe85678bfab1820de024"
+    },
+    "python": {
+      "issues": [
+        {
+          "code": "whitespace-void",
+          "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+          "page": 17,
+          "severity": "review"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'dario-amodei-we-must-pace-the-frontier' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 29,
+          "severity": "review"
+        },
+        {
+          "code": "tail-art-dropped",
+          "message": "Tail art declared for 'government-rails-site-hit-hours-after-cve-patch' was not printed (the article's last page leaves -15.7pt of open tail room below the end mark's 12pt clearance; the strip prints at its one 108.3pt size or not at all); confirm the drop is intentional.",
+          "severity": "review"
+        },
+        {
+          "code": "article-page-cap",
+          "message": "Article dario-amodei-we-must-pace-the-frontier exceeds its reader page cap (verbatim: warning only).",
+          "severity": "review"
+        }
+      ],
+      "probes": {
+        "booklet 2 blank": true,
+        "cover 1 ink_free": false,
+        "reader 13 ink_free": false,
+        "reader 2 blank": true,
+        "reader 44 body_text_lines": 18,
+        "reader 49 body_text_lines": 18,
+        "spreads 5 text_order_matches": true
+      },
+      "result": "pass"
+    }
+  },
+  "swapped-sheets": {
+    "inputs": {
+      "booklet-a4-cover.pdf": "329f4ea3e099729ee1c522bbef751c9689d2f076f9d75f2517cbc5c565d105ea",
+      "booklet-a4-interior.pdf": "2caf90af59fd427f314dedc6942b4d74c1e590d9f4217768569673fb5abe7726",
+      "booklet-a4.pdf": "ff0f1d02a6e4a8b30ad3d65a68d194e073c43859ec73ec13283ea3c549299aae",
+      "edition-manifest.json": "0935d19c3f3b996121f76e38ad3066cc82e49e87685f24cf4bbff351d8dbb6b3",
+      "reader.pdf": "a882586859a9725bbc724d950f6fbf5f27f67c84b211fe85678bfab1820de024"
+    },
+    "python": {
+      "issues": [
+        {
+          "code": "booklet-page-order",
+          "message": "One or more booklet sides do not contain the expected left/right reader page pair.",
+          "severity": "error"
+        },
+        {
+          "code": "interior-booklet-page-order",
+          "message": "One or more interior booklet sides do not contain the expected left/right reader page pair.",
+          "severity": "error"
+        },
+        {
+          "code": "cover-booklet-page-order",
+          "message": "The cover booklet must impose the back cover beside the front cover on its single outside side.",
+          "severity": "error"
+        },
+        {
+          "code": "whitespace-void",
+          "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+          "page": 17,
+          "severity": "review"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'dario-amodei-we-must-pace-the-frontier' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 29,
+          "severity": "review"
+        },
+        {
+          "code": "tail-art-dropped",
+          "message": "Tail art declared for 'government-rails-site-hit-hours-after-cve-patch' was not printed (the article's last page leaves -15.7pt of open tail room below the end mark's 12pt clearance; the strip prints at its one 108.3pt size or not at all); confirm the drop is intentional.",
+          "severity": "review"
+        },
+        {
+          "code": "article-page-cap",
+          "message": "Article dario-amodei-we-must-pace-the-frontier exceeds its reader page cap (verbatim: warning only).",
+          "severity": "review"
+        }
+      ],
+      "probes": {
+        "cover_spreads 1 text_order_matches": false,
+        "interior_spreads 3 text_order_matches": false,
+        "interior_spreads 5 text_order_matches": false,
+        "spreads 5 text_order_matches": false,
+        "spreads 6 text_order_matches": true,
+        "spreads 7 text_order_matches": false
+      },
+      "result": "fail"
+    }
+  },
+  "text-fields": {
+    "inputs": {
+      "booklet-a4-cover.pdf": "872353b7af5a015d22ee75009b9dab94c1583ffc8efa3d1a3e727350d323dda9",
+      "booklet-a4-interior.pdf": "acea4a5ea536ba3ad8458aae68d83714dd48a18f30a0228767e7ccff0fffcabb",
+      "booklet-a4.pdf": "e99420c0d35da9f69d5d8ca5ffd81737ea3c2d3fa0bd0d7262a72fbfaa284488",
+      "edition-manifest.json": "0935d19c3f3b996121f76e38ad3066cc82e49e87685f24cf4bbff351d8dbb6b3",
+      "reader.pdf": "8c56515129acf686f7b1da9c104dd441761d25bd0a8c9a5c7f098824d46112ca"
+    },
+    "python": {
+      "issues": [
+        {
+          "code": "booklet-page-order",
+          "message": "One or more booklet sides do not contain the expected left/right reader page pair.",
+          "severity": "error"
+        },
+        {
+          "code": "interior-booklet-page-order",
+          "message": "One or more interior booklet sides do not contain the expected left/right reader page pair.",
+          "severity": "error"
+        },
+        {
+          "code": "cover-booklet-page-order",
+          "message": "The cover booklet must impose the back cover beside the front cover on its single outside side.",
+          "severity": "error"
+        },
+        {
+          "code": "inside-cover-reader-not-blank",
+          "message": "Inside front and inside back covers must be completely blank (a pure-white raster with no extractable text).",
+          "page": 2,
+          "severity": "error"
+        },
+        {
+          "code": "blank-page",
+          "message": "Rendered page is completely blank.",
+          "page": 13,
+          "severity": "error"
+        },
+        {
+          "code": "whitespace-void",
+          "message": "A 354x128 pt white void starts 442 pt down the live area; confirm the whitespace is doing design work.",
+          "page": 17,
+          "severity": "review"
+        },
+        {
+          "code": "orphan-punctuation",
+          "message": "A line contains only punctuation, which usually indicates a broken display title.",
+          "page": 19,
+          "severity": "error"
+        },
+        {
+          "code": "orphan-punctuation",
+          "message": "A line contains only punctuation, which usually indicates a broken display title.",
+          "page": 21,
+          "severity": "error"
+        },
+        {
+          "code": "inside-cover-reader-not-blank",
+          "message": "Inside front and inside back covers must be completely blank (a pure-white raster with no extractable text).",
+          "page": 55,
+          "severity": "error"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'dario-amodei-we-must-pace-the-frontier' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 29,
+          "severity": "review"
+        },
+        {
+          "code": "article-stub-last-page",
+          "message": "The final page of 'deepseek-v4-1-flash-pushing-the-limits-of-kv-cac' carries only 4 line(s) of running text; consider re-cutting the break so the article does not end on a stub.",
+          "page": 49,
+          "severity": "review"
+        },
+        {
+          "code": "tail-art-dropped",
+          "message": "Tail art declared for 'government-rails-site-hit-hours-after-cve-patch' was not printed (the article's last page leaves -15.7pt of open tail room below the end mark's 12pt clearance; the strip prints at its one 108.3pt size or not at all); confirm the drop is intentional.",
+          "severity": "review"
+        },
+        {
+          "code": "inside-cover-booklet-not-blank",
+          "message": "The imposed side containing both inside covers must be completely blank (a pure-white raster with no extractable text).",
+          "page": 2,
+          "severity": "error"
+        },
+        {
+          "code": "blank-booklet-side",
+          "message": "Rendered home-booklet side is completely blank.",
+          "page": 9,
+          "severity": "error"
+        },
+        {
+          "code": "blank-cover-booklet-side",
+          "message": "The cover booklet's outer side carries no ink; it must print the back cover beside the front cover.",
+          "page": 1,
+          "severity": "error"
+        },
+        {
+          "code": "article-page-cap",
+          "message": "Article dario-amodei-we-must-pace-the-frontier exceeds its reader page cap (verbatim: warning only).",
+          "severity": "review"
+        }
+      ],
+      "probes": {
+        "booklet 11 ink_free": false,
+        "booklet 11 ink_ratio": 0.0,
+        "booklet 2 blank": false,
+        "booklet 2 ink_ratio": 0.0,
+        "booklet 9 ink_free": true,
+        "cover 1 ink_free": true,
+        "reader 13 ink_free": true,
+        "reader 14 ink_free": false,
+        "reader 14 ink_ratio": 0.0,
+        "reader 14 text_characters": 6,
+        "reader 19 standalone_punctuation_lines": [
+          "."
+        ],
+        "reader 2 ink_ratio": 0.0,
+        "reader 2 text_characters": 12,
+        "reader 20 standalone_punctuation_lines": [],
+        "reader 21 standalone_punctuation_lines": [
+          "…"
+        ],
+        "reader 44 body_text_lines": 5,
+        "reader 49 body_text_lines": 4,
+        "reader 55 blank": false,
+        "reader 55 text_characters": 0
+      },
+      "result": "fail"
+    }
+  }
+}
