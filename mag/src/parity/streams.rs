@@ -1,5 +1,5 @@
 use super::exact::{self, num};
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use flate2::read::ZlibDecoder;
 use lopdf::content::Content;
 use lopdf::{Dictionary, Document, Object, ObjectId};
@@ -8,6 +8,10 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 use std::io::Read;
 use std::rc::Rc;
+use zune_core::bytestream::ZCursor;
+use zune_core::colorspace::ColorSpace;
+use zune_core::options::DecoderOptions;
+use zune_jpeg::JpegDecoder;
 
 pub type M = [f64; 6];
 
@@ -1253,10 +1257,51 @@ pub fn decode_stream(doc: &Document, stream: &lopdf::Stream) -> Result<Vec<u8>> 
         data = match filter.as_str() {
             "FlateDecode" => inflate(&data)?,
             "ASCII85Decode" => ascii85(&data)?,
+            "DCTDecode" => dct(&data)?,
             other => bail!("filter {other} unsupported"),
         };
     }
     Ok(data)
+}
+
+fn dct(data: &[u8]) -> Result<Vec<u8>> {
+    let mut jpeg = JpegDecoder::new(ZCursor::new(data));
+    jpeg.decode_headers()
+        .map_err(|e| anyhow!("jpeg headers: {e:?}"))?;
+    let input = jpeg.input_colorspace().context("jpeg colour space")?;
+    jpeg.set_options(
+        DecoderOptions::default()
+            .set_strict_mode(true)
+            .set_use_unsafe(false)
+            .jpeg_set_out_colorspace(input),
+    );
+    let raw = jpeg.decode().map_err(|e| anyhow!("jpeg decode: {e:?}"))?;
+    Ok(match input {
+        ColorSpace::YCbCr => raw.chunks_exact(3).flat_map(ycc_rgb).collect(),
+        ColorSpace::YCCK => raw
+            .chunks_exact(4)
+            .flat_map(|p| {
+                let [r, g, b] = ycc_rgb(p);
+                [r, g, b, p[3]]
+            })
+            .collect(),
+        ColorSpace::Luma | ColorSpace::RGB | ColorSpace::CMYK => raw,
+        other => bail!("jpeg colour space {other:?} unsupported"),
+    })
+}
+
+fn ycc_rgb(p: &[u8]) -> [u8; 3] {
+    let (y, cb, cr) = (
+        f64::from(p[0]),
+        f64::from(p[1]) - 128.0,
+        f64::from(p[2]) - 128.0,
+    );
+    [
+        y + 1.402 * cr,
+        y - 0.344_136 * cb - 0.714_136 * cr,
+        y + 1.772 * cb,
+    ]
+    .map(|v| v.round().clamp(0.0, 255.0) as u8)
 }
 
 fn inflate(data: &[u8]) -> Result<Vec<u8>> {
@@ -1375,18 +1420,33 @@ fn image_pixels(doc: &Document, stream: &lopdf::Stream) -> Result<(Vec<u8>, u32,
         _ => match name_str(cso)?.as_str() {
             "DeviceRGB" => ("DeviceRGB".to_string(), 3),
             "DeviceGray" => ("DeviceGray".to_string(), 1),
+            "DeviceCMYK" => ("DeviceCMYK".to_string(), 4),
             other => bail!("image color space {other} unsupported"),
         },
     };
-    if let Ok(obj) = dict.get(b"Decode") {
-        let arr = resolve(doc, obj)?.as_array()?;
-        let values: Result<Vec<f64>> = arr.iter().map(|o| num(resolve(doc, o)?)).collect();
-        let identity: Vec<f64> = (0..channels).flat_map(|_| [0.0, 1.0]).collect();
-        anyhow::ensure!(
-            values? == identity,
-            "image Decode array is not the identity for {cs}, which would remap samples"
-        );
-    }
+    let invert = match dict.get(b"Decode") {
+        Ok(obj) => {
+            let arr = resolve(doc, obj)?.as_array()?;
+            let values: Vec<f64> = arr
+                .iter()
+                .map(|o| num(resolve(doc, o)?))
+                .collect::<Result<_>>()?;
+            anyhow::ensure!(
+                values.len() == 2 * channels,
+                "image Decode array length {} for {cs}",
+                values.len()
+            );
+            values
+                .chunks(2)
+                .map(|d| match d {
+                    [0.0, 1.0] => Ok(false),
+                    [1.0, 0.0] => Ok(true),
+                    _ => bail!("image Decode pair {d:?} for {cs} is neither identity nor inversion, which would remap samples"),
+                })
+                .collect::<Result<Vec<bool>>>()?
+        }
+        Err(_) => vec![false; channels],
+    };
     let mut data = decode_stream(doc, stream)?;
     if let Ok(parms) = dict.get(b"DecodeParms") {
         let parms = resolve(doc, parms)?;
@@ -1394,7 +1454,16 @@ fn image_pixels(doc: &Document, stream: &lopdf::Stream) -> Result<(Vec<u8>, u32,
             Object::Array(a) => resolve(doc, a.last().context("empty DecodeParms")?)?.as_dict()?,
             other => other.as_dict()?,
         };
+        anyhow::ensure!(
+            !parms.has(b"ColorTransform"),
+            "DCTDecode ColorTransform override unsupported"
+        );
         data = predictor_undo(&data, parms, doc)?;
+    }
+    for (i, v) in data.iter_mut().enumerate() {
+        if invert[i % channels] {
+            *v = 255 - *v;
+        }
     }
     let expected = width as usize * height as usize * channels;
     anyhow::ensure!(
@@ -1419,16 +1488,17 @@ fn decode_image(doc: &Document, stream: &lopdf::Stream) -> Result<(String, u32, 
         }
         Err(_) => None,
     };
-    let pixels = width as usize * height as usize;
-    let mut rgba = Vec::with_capacity(pixels * 4);
-    for i in 0..pixels {
-        let (r, g, b) = if channels == 3 {
-            (data[i * 3], data[i * 3 + 1], data[i * 3 + 2])
-        } else {
-            (data[i], data[i], data[i])
-        };
-        let a = alpha.as_ref().map_or(255, |s| s[i]);
-        rgba.extend_from_slice(&[r, g, b, a]);
+    let mut rgba = if channels == 4 {
+        b"DeviceCMYK".to_vec()
+    } else {
+        vec![]
+    };
+    for (i, s) in data.chunks_exact(channels).enumerate() {
+        match s {
+            [g] => rgba.extend_from_slice(&[*g, *g, *g]),
+            _ => rgba.extend_from_slice(s),
+        }
+        rgba.push(alpha.as_ref().map_or(255, |a| a[i]));
     }
     Ok((hex::encode(Sha256::digest(&rgba)), width, height))
 }
@@ -1782,5 +1852,109 @@ mod tests {
             image_hash(Some(SRGB), "", 1, &[7, 200]).unwrap_err()
         );
         assert!(e.contains("does not match its profile"), "{e}");
+    }
+
+    fn jpeg(name: &str) -> Vec<u8> {
+        std::fs::read(format!(
+            "{}/tests/parity_jpeg/{name}",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap()
+    }
+
+    fn sampled(filter: Option<&str>, cs: &str, decode: &[i64], bytes: Vec<u8>) -> Stream {
+        let mut dict = dictionary! {
+            "Width" => 16, "Height" => 16, "BitsPerComponent" => 8, "ColorSpace" => cs,
+        };
+        if let Some(f) = filter {
+            dict.set("Filter", f);
+        }
+        if !decode.is_empty() {
+            dict.set(
+                "Decode",
+                decode
+                    .iter()
+                    .map(|v| Object::Integer(*v))
+                    .collect::<Vec<_>>(),
+            );
+        }
+        Stream::new(dict, bytes)
+    }
+
+    fn dct_image(name: &str, cs: &str, decode: &[i64]) -> Result<(Vec<u8>, String)> {
+        let doc = Document::with_version("1.7");
+        let image = sampled(Some("DCTDecode"), cs, decode, jpeg(name));
+        Ok((image_pixels(&doc, &image)?.0, decode_image(&doc, &image)?.0))
+    }
+
+    fn max_diff(a: &[u8], b: &[u8]) -> u8 {
+        assert_eq!(a.len(), b.len());
+        a.iter().zip(b).map(|(x, y)| x.abs_diff(*y)).max().unwrap()
+    }
+
+    #[test]
+    fn a_jpeg_decodes_to_libjpeg_samples_and_hashes_as_those_pixels_under_any_filter() {
+        let doc = Document::with_version("1.7");
+        for (name, reference, cs, tol) in [
+            ("rgb444.jpg", "rgb444.ppm", "DeviceRGB", 2),
+            ("grey.jpg", "grey.pgm", "DeviceGray", 1),
+        ] {
+            let (px, hash) = dct_image(name, cs, &[]).unwrap();
+            let libjpeg = jpeg(reference);
+            let d = max_diff(&px, &libjpeg[libjpeg.len() - px.len()..]);
+            assert!(d <= tol, "{name} {d}");
+            let raw = decode_image(&doc, &sampled(None, cs, &[], px)).unwrap().0;
+            assert_eq!(hash, raw, "{name}");
+        }
+    }
+
+    #[test]
+    fn one_picture_compares_equal_across_encodings_of_its_pixels_and_unequal_otherwise() {
+        let hash = |n: &str| dct_image(n, "DeviceRGB", &[]).unwrap().1;
+        assert_eq!(hash("rgb.jpg"), hash("rgb-prog.jpg"));
+        assert_ne!(hash("rgb.jpg"), hash("rgb-q60.jpg"));
+        assert_ne!(hash("rgb.jpg"), hash("rgb-alt.jpg"));
+        assert_ne!(hash("rgb.jpg"), hash("rgb444.jpg"));
+    }
+
+    #[test]
+    fn adobe_inverted_cmyk_and_ycck_read_as_cmyk_through_an_inverting_decode_array() {
+        let cmyk: Vec<u8> = (0..16u8)
+            .flat_map(|y| (0..16u8).flat_map(move |x| [x * 16, y * 16, 40, 200 - x * 8]))
+            .collect();
+        let inv = [1, 0, 1, 0, 1, 0, 1, 0];
+        let (plain, plain_hash) = dct_image("cmyk.jpg", "DeviceCMYK", &inv).unwrap();
+        assert!(max_diff(&plain, &cmyk) <= 2);
+        let (ycck, _) = dct_image("ycck.jpg", "DeviceCMYK", &inv).unwrap();
+        assert!(max_diff(&ycck, &cmyk) <= 3);
+        let (stored, stored_hash) = dct_image("cmyk.jpg", "DeviceCMYK", &[]).unwrap();
+        let flipped: Vec<u8> = stored.iter().map(|v| 255 - v).collect();
+        assert_eq!(flipped, plain);
+        assert_ne!(stored_hash, plain_hash);
+        let doc = Document::with_version("1.7");
+        let raw = sampled(None, "DeviceCMYK", &[], plain);
+        assert_eq!(decode_image(&doc, &raw).unwrap().0, plain_hash);
+    }
+
+    #[test]
+    fn a_jpeg_outside_the_accepted_colour_spaces_or_decode_arrays_fails_loud() {
+        let err = |r: Result<(Vec<u8>, String)>| format!("{:#}", r.unwrap_err());
+        let e = err(dct_image("cmyk.jpg", "DeviceRGB", &[]));
+        assert!(e.contains("!= expected"), "{e}");
+        let e = err(dct_image("rgb.jpg", "Lab", &[]));
+        assert!(e.contains("image color space Lab unsupported"), "{e}");
+        let e = err(dct_image("rgb.jpg", "DeviceRGB", &[0, 2, 0, 1, 0, 1]));
+        assert!(e.contains("neither identity nor inversion"), "{e}");
+        let doc = Document::with_version("1.7");
+        let mut image = sampled(Some("DCTDecode"), "DeviceRGB", &[], jpeg("rgb.jpg"));
+        image
+            .dict
+            .set("DecodeParms", dictionary! { "ColorTransform" => 0 });
+        let e = format!("{:#}", image_pixels(&doc, &image).unwrap_err());
+        assert!(e.contains("ColorTransform override unsupported"), "{e}");
+        let mut truncated = jpeg("rgb.jpg");
+        truncated.truncate(300);
+        let image = sampled(Some("DCTDecode"), "DeviceRGB", &[], truncated);
+        assert!(image_pixels(&doc, &image).is_err());
     }
 }
