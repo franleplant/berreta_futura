@@ -11,7 +11,11 @@ use typst::{World, WorldExt};
 use typst_layout::PagedDocument;
 use typst_syntax::{FileId, Span};
 
-const PROSE: &str = "mag-prose";
+const PROSE: [(&str, f64); 3] = [
+    ("mag-prose", 0.0),
+    ("mag-prose-band", 4.00395),
+    ("mag-prose-compact", -32.5),
+];
 const COLUMN_RIGHT: f64 = 4.00395 + 325.0;
 const RUNT_MEASURE_FRACTION: f64 = 0.15;
 const RUNT_MAX_RAG_FRACTION: f64 = 0.33;
@@ -97,15 +101,21 @@ fn walk(
     for (pos, item) in items {
         let here = at + *pos;
         match item {
-            FrameItem::Tag(Tag::Start(content, _))
-                if content
+            FrameItem::Tag(Tag::Start(content, _)) => {
+                let edge = content
                     .label()
-                    .is_some_and(|l| l.resolve().as_str() == PROSE) =>
-            {
-                if let Some(loc) = content.location() {
+                    .and_then(|l| PROSE.iter().find(|(name, _)| *name == l.resolve().as_str()));
+                if let (Some((_, shift)), Some(loc)) = (edge, content.location()) {
                     open.push(loc);
                     if !blocks.iter().any(|(l, _)| *l == loc) {
-                        blocks.push((loc, Block::default()));
+                        let right = right + shift;
+                        blocks.push((
+                            loc,
+                            Block {
+                                right,
+                                ..Block::default()
+                            },
+                        ));
                     }
                 }
             }
@@ -135,7 +145,6 @@ fn walk(
                     .last()
                     .and_then(|loc| blocks.iter_mut().find(|(l, _)| l == loc))
                 {
-                    block.1.right = right;
                     take(&mut block.1, page, here, text);
                 }
             }
@@ -319,6 +328,52 @@ mod tests {
                 words(&lines.last().expect("a line").2).join(" ")
             })
             .collect()
+    }
+
+    const CAPTION: &str =
+        "Total spend decomposed into six terms that multiply\\; the middle three \
+        are where the optimization effort goes\\.";
+
+    fn captioned(layout: &str) -> Tree {
+        let image = format!(
+            "{}/tests/typeset_fixtures/media/landscape.png",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        Tree {
+            files: vec![File {
+                path: "main.typ".into(),
+                source: format!(
+                    "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+                     #doc-heading(level: 3)[Anchor]\n#figure-block(id: \"f\", source-id: \"s\", \
+                     anchor: \"Anchor\", layout: \"{layout}\", word: \"Figure\", alt: \"a\", \
+                     path: \"{image}\", pixels: (40, 25))[#figure-caption[{CAPTION}]#figure-credit[Chart by Uber\\.]]\n]\n"
+                ),
+            }],
+        }
+    }
+
+    #[test]
+    fn a_band_caption_is_bound_on_the_band_s_own_measure() {
+        let fonts = reader_fonts();
+        let (band, _) = bound(captioned("evidence_band_prose"), &fonts).expect("the binds settle");
+        assert!(
+            !band.files[0].source.contains("effort goes\\.")
+                && band.files[0]
+                    .source
+                    .contains(&format!("effort{NO_BREAK}goes")),
+            "{}",
+            band.files[0].source
+        );
+        assert!(
+            band.files[0].source.contains("Chart by Uber"),
+            "the one-line credit was bound"
+        );
+        let (column, _) = bound(captioned("column_plate"), &fonts).expect("the binds settle");
+        assert!(
+            column.files[0].source.contains("effort goes\\."),
+            "{}",
+            column.files[0].source
+        );
     }
 
     #[test]

@@ -763,7 +763,8 @@ mod tests {
                 path: "main.typ".to_string(),
                 source: format!(
                     "#piece(id: \"article-a\", kind: \"article\", short-title: \"A\", \
-                     opener: \"illustrated_paper_spots_v1\")[\n\
+                     opener: \"illustrated_paper_spots_v1\", \
+                     titles: ((size: 32.5pt, lines: 1), (size: 30pt, lines: 1)))[\n\
                      #content-label[#label-primary[Feature 01]]\n\
                      #piece-title[A Fixture Title]\n\
                      #byline[#byline-prefix[By]#byline-name[ Ada]]\n\
@@ -948,7 +949,7 @@ mod tests {
         );
         assert_eq!(layout["tail_arts"][1]["declared"], true);
         let figure = &layout["figures"][0];
-        assert_eq!(figure["box_points"][0], json!(86.024));
+        assert_eq!(figure["box_points"][0], json!(87.504));
         assert_eq!(figure["box_points"][2], json!(246.0));
         assert_eq!(figure["box_points"][3], json!(205.0));
         assert_eq!(figure["effective_ppi"], json!(351.2));

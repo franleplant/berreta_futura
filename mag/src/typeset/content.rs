@@ -475,13 +475,21 @@ impl Writer<'_> {
             }
             _ => "none".to_string(),
         };
+        let titles = match illustrated {
+            true => {
+                let [(size, lines), (compact, rows)] =
+                    self.metrics.illustrated_titles(&article.title)?;
+                format!("((size: {size}pt, lines: {lines}), (size: {compact}pt, lines: {rows}))")
+            }
+            false => "none".to_string(),
+        };
         let (head, foot, trim) = match illustrated {
             true => (String::new(), "", 0.0),
             false => self.plain_head(article, rows.as_ref().map(Vec::len), figure)?,
         };
         let head = format!(
             "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n  source-ids: {},\n  \
-             figure-layouts: {},\n  opener: {},\n  art: {art},\n)[\n{head}{label}  #piece-title{}\n  {}\n\
+             figure-layouts: {},\n  opener: {},\n  art: {art},\n  titles: {titles},\n)[\n{head}{label}  #piece-title{}\n  {}\n\
              {note}{provenance}{foot}",
             string_literal(&format!("article-{}", article.id)),
             string_literal(&article.content_mode),
