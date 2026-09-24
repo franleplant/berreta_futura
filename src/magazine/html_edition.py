@@ -80,7 +80,7 @@ def render_html_edition(edition: Edition) -> HtmlEdition:
     body.extend(_render_closing_plates(edition, assets))
     _add_cover_asset(edition, assets)
 
-    title = f"{edition.publication_name} — {edition.title}"
+    title = f"{edition.publication_name}: {edition.title}"
     article_opener_format = _article_opener_format(edition)
     opener_format_attribute = (
         ' data-article-opener-format="illustrated_paper_spots_v1"'

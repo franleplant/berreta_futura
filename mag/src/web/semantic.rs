@@ -201,7 +201,7 @@ impl Renderer<'_> {
             let alt = raw_or(edition.cover.get("headline"), &edition.title);
             assets.push(asset("cover-art".to_string(), "cover_art", cover_art, &alt));
         }
-        let title = format!("{} \u{2014} {}", edition.publication_name, edition.title);
+        let title = format!("{}: {}", edition.publication_name, edition.title);
         let format_attribute = if py_article_opener_format(edition) == ILLUSTRATED {
             format!(" data-article-opener-format=\"{ILLUSTRATED}\"")
         } else {
