@@ -22,9 +22,12 @@
 - WP-4.3 landed 511a9fb, awaiting-fran: magazine.toml [render]
   `hyphenate_english` (default false) and `weasyprint69_hyphen_skip`
   (default true); review PDFs in output/hyphenation-review/.
-- Running: WP-4.2b (fallback engine typst, translate next-step on the
-  typst leg, two docs), WP-4.3 hyphenation measurement (ends
-  awaiting-fran), WP-6.0 pre-deletion oracles + WP-6.1 inventory.
+- WP-6.0 landed fddd676: translation oracle ran (3 Rust mismatches
+  fixed; 56 refusal messages fire on both); 906 es renders with no
+  python/uv; inventory in WP-6.0.md.
+- Running: WP-4.2b, WP-6.0b (port tools/sourcecodes.py, which both
+  engines need), WP-6.0c (cargo test without uv/python; nocomments in
+  Rust).
 - Then: WP-6.1 is Fran-gated (a shipped Typst edition, tools/ keep/delete,
   rollback loss).
 
@@ -143,6 +146,10 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- Unicode pin (WP-6.0.md): recommendation is unpin upper/islower to Rust
+  std (55/53 codepoints differ, none in magazine text) and keep the
+  casefold table (std has none; U+00B5 occurs in 2 sources).
+- tools/*.py keep/delete list for WP-6.1 is in WP-6.0.md.
 - HYPHENATION (WP-4.3.md): (1) keep parity; (2) English hyphenation on:
   010 stays 56 pp, 227 hyphens, 11 fewer lines, line ends move on 36 pp,
   Typst allows up to 4 consecutive hyphenated lines; (3) drop the copied
