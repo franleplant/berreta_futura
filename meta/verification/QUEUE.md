@@ -18,11 +18,13 @@ evaluated Tier E clause green (raster not_evaluated, WP-0.2f withdrawn).
 WP-3.0g landed 4c3697b: ratchet target E, all 54 pages at E, two clean
 staged runs identical.
 Running: final adversarial comparator verify (+ baseline raise
-re-derivation), WP-3.9 (generalize to 008).
+re-derivation), WP-0.0f (oracle passes JPEG bytes through; WP-3.9
+landed 0508801: `--adhoc 008` exits 0, display list differs only on p4
+editorial + the oracle's JPEG re-encodes).
 WP-3.7c landed cbe1629: 010 display list 0 pages, navigation 0; glyph
 clause 90 single-quantum blips (comparator artifact, WP-0.2x).
 Next: typeset-set verifier, WP-5.6, WP-4.1, WP-4.2, WP-4.3, WP-6.1.
-Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.7a, 3.7c, 3.4, 3.5, 0.0d, 0.0e)
+Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.7a, 3.7c, 3.9, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
 Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
 Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
@@ -138,6 +140,14 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- The printed edition has been re-encoding every EXIF-carrying figure
+  JPEG at Pillow's default quality (WeasyPrint exif_transpose); WP-0.0f
+  makes it pass the source bytes through.
+- The editorial opener (editions 001-009 only) is a stub on the Typst
+  path, out of the plan's scope: after WP-6.1 those editions cannot be
+  re-rendered with their editorial.
+- 008's source-codes/ were generated locally for `--adhoc 008` and not
+  committed (edition data: commit them if you want 008 reproducible).
 - Edition 009 no longer renders: one closing plate repeats another's art
   (the no-repeat rule). Editions before 010 have no committed
   source-codes/.
