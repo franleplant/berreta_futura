@@ -34,7 +34,12 @@
   and produce print it as the step before render. Follow-up: fixture
   906's committed source-codes/ is stale (code order swapped), regenerate
   after WP-6.0c.
-- Running: WP-6.0c (cargo test without uv/python; nocomments in
+- WP-6.0c 03771ac + WP-6.0d 923a80f: `cargo test` passes with python3 and
+  uv unreachable (965); oracle tests read committed expectations and a
+  repo_snapshot/ + sha256 pins, never live library/editions (except
+  typeset/cover.rs:684, for WP-6.1). Fixture 906 source-codes regenerated.
+- Running: verifier for WP-4.2, 4.2b, 4.3, 6.0, 6.0b, 6.0c, 6.0d.
+- Was running: WP-6.0c (cargo test without uv/python; nocomments in
   Rust).
 - Then: WP-6.1 is Fran-gated (a shipped Typst edition, tools/ keep/delete,
   rollback loss).
