@@ -1,10 +1,10 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-0.0d, WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Landed, awaiting a verifier: WP-5.5c, WP-0.0d, WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
-Running: WP-3.5 furniture, WP-5.5c package, adversarial verifier for
-the comparator WPs 0.2m-0.2r.
+Running: WP-3.5 furniture, WP-5.9 Phase 5 cleanup batch, adversarial
+verifier for the comparator WPs 0.2m-0.2r.
 Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
 3.7.
 
@@ -53,6 +53,13 @@ Orchestrator decisions:
   pass: the display list pins which glyphs appear, their order and each
   line's start; positions within a line belong to the glyph-position
   clause and its drift allowance.
+- WP-5.5c package oracle (rule 6c, not comparable is not divergent):
+  byte-equal SHA256SUMS is unattainable across PNG encoders (Pillow
+  zlib-ng vs png crate) and PDF serializers (pypdf vs lopdf). The package
+  is equal when JSON/text entries are byte-equal, PNGs pixel-equal, PDFs
+  page-count and page-raster equal, archives per entry, and SHA256SUMS
+  lists the same files in the same order. Measured on 010: met.
+- WP-5.6 uses package::archive::archive_tree for package.zip.
 - WP-5.7b: Type3 with ToUnicode read (accepted); skipping invisible text
   beside printed text REJECTED by the verifier (hides scans).
 - WP-6.1 also deletes tools/pdf2md.py (unused since WP-5.7b, 4727939).
