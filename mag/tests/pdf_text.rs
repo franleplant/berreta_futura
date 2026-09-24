@@ -318,6 +318,18 @@ fn a_scan_with_a_printed_footer_and_an_ocr_layer_fails_loud() {
 }
 
 #[test]
+fn a_scan_drawn_as_an_inline_image_fails_loud() {
+    let page = "q 612 0 0 792 0 0 cm BI /W 1 /H 1 /CS /G /BPC 8 ID A EI Q \
+        BT /F1 8 Tf 72 30 Td (Downloaded from a library) Tj ET \
+        BT 3 Tr /F1 12 Tf 72 700 Td (Body) Tj ET";
+    fails(
+        helvetica(),
+        page,
+        "4 invisible glyphs, 22 printed, 1 images",
+    );
+}
+
+#[test]
 fn a_missing_xobject_fails_loud() {
     fails(
         helvetica(),
