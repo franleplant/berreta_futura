@@ -2,8 +2,8 @@ use crate::cover::back::{back_svg, Back, BackText, Serif};
 use crate::cover::pdf::{self, Face, Line};
 use crate::cover::raster;
 use crate::cover::svg::{
-    Art, Builder, CoverText, Deck, Design, Fonts, Footer, FooterCaption, Headline, HonoredPlate,
-    Palette, Tab, Wordmark, PAGE_HEIGHT, PAGE_WIDTH,
+    pyf, Art, Builder, CoverText, Deck, Design, Fonts, Footer, FooterCaption, Headline,
+    HonoredPlate, Palette, Tab, Wordmark, PAGE_HEIGHT, PAGE_WIDTH,
 };
 use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cover_tab_issue};
 use crate::model::manifest::Edition;
@@ -13,6 +13,68 @@ use lopdf::{Document, Object, StringFormat};
 use std::path::Path;
 
 pub const DESIGN_TOML: &str = "design/covers/canto-vivo/design.toml";
+const BUILT_IN: &str = r##"id = "canto-vivo/1"
+[color]
+paper = "#ffffff"
+ink = "#0a0b0d"
+violet = "#4b21c0"
+orange = "#f05738"
+[tab]
+width = 21.0
+overdraw = 1.5
+issue_top = 26.5
+identity_top = 433.5
+edge_reveal = 1.4
+[wordmark]
+x = 38.0
+top = 53.0
+right_reserve = 78.0
+[headline]
+x = 44.0
+top = 122.0
+width = 302.0
+[art]
+x = 85.25
+top = 221.85
+width = 249.35
+height = 248.65
+[deck]
+top = 493.0
+size = 5.5
+wrap_size = 6.7
+leading = 8.4
+horizontal_scale = 108.0
+tracking = 0.35
+[footer]
+x = 44.0
+bottom = 20.0
+size = 7.0
+tracking = 1.85
+[back]
+overdraw = 1.5
+rail_width = 42.0
+rail_top = 32.0
+rail_size = 8.0
+rail_tracking = 1.6
+mass_x = 6.0
+mass_top = 38.0
+mass_size = 116.0
+mass_leading = 84.68
+mass_tracking = -12.18
+panel_x = 38.0
+panel_top = 242.0
+panel_right = 62.0
+panel_bottom = 52.0
+panel_padding = 30.0
+statement_max_size = 24.0
+statement_min_size = 18.0
+statement_leading_ratio = 1.05
+slug_x = 38.0
+slug_bottom = 26.0
+slug_size = 7.0
+slug_tracking = 1.6
+"##;
+const NO_TABLE: toml::Value = toml::Value::Boolean(false);
 
 struct Table<'a>(&'a toml::Value, &'a str);
 
@@ -25,6 +87,17 @@ impl Table<'_> {
                 .with_context(|| format!("{DESIGN_TOML} has no [{path}] table"))?;
         }
         Ok(Table(node, path))
+    }
+
+    fn optional<'b>(root: &'b toml::Value, path: &'b str) -> Table<'b> {
+        Table::at(root, path).unwrap_or(Table(&NO_TABLE, path))
+    }
+
+    fn or(&self, key: &str, default: f64) -> Result<f64> {
+        match self.0.get(key) {
+            None => Ok(default),
+            Some(_) => self.f(key),
+        }
     }
 
     fn f(&self, key: &str) -> Result<f64> {
@@ -46,17 +119,23 @@ impl Table<'_> {
 
 pub fn design(root: &Path) -> Result<(Design, Back)> {
     let path = root.join(DESIGN_TOML);
-    let text =
-        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let text = match path.is_file() {
+        true => {
+            std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?
+        }
+        false => BUILT_IN.to_string(),
+    };
     let doc: toml::Value =
         toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
     let t = |name| Table::at(&doc, name);
     let (color, tab, wordmark) = (t("color")?, t("tab")?, t("wordmark")?);
-    let (caption, headline, art) = (t("layout.footer_caption")?, t("headline")?, t("art")?);
-    let (deck, footer, plate, back) = (
+    let caption = Table::optional(&doc, "layout.footer_caption");
+    let plate = Table::optional(&doc, "layout.honored_plate");
+    let (headline, art, deck, footer, back) = (
+        t("headline")?,
+        t("art")?,
         t("deck")?,
         t("footer")?,
-        t("layout.honored_plate")?,
         t("back")?,
     );
     let design = Design {
@@ -84,10 +163,10 @@ pub fn design(root: &Path) -> Result<(Design, Back)> {
             right_reserve: wordmark.f("right_reserve")?,
         },
         footer_caption: FooterCaption {
-            margin: caption.f("margin")?,
-            wordmark_scale: caption.f("wordmark_scale")?,
-            wordmark_dy: caption.f("wordmark_dy")?,
-            title_size: caption.f("title_size")?,
+            margin: caption.or("margin", 25.0)?,
+            wordmark_scale: caption.or("wordmark_scale", 0.8)?,
+            wordmark_dy: caption.or("wordmark_dy", 6.0)?,
+            title_size: caption.or("title_size", 26.0)?,
         },
         headline: Headline {
             x: headline.f("x")?,
@@ -115,10 +194,10 @@ pub fn design(root: &Path) -> Result<(Design, Back)> {
             tracking: footer.f("tracking")?,
         },
         honored_plate: HonoredPlate {
-            margin: plate.f("margin")?,
-            footer: plate.f("footer")?,
-            wordmark_scale: plate.f("wordmark_scale")?,
-            title_size: plate.f("title_size")?,
+            margin: plate.or("margin", 17.0)?,
+            footer: plate.or("footer", 64.0)?,
+            wordmark_scale: plate.or("wordmark_scale", 0.5)?,
+            title_size: plate.or("title_size", 19.0)?,
         },
     };
     Ok((design, back_design(&back)?))
@@ -211,11 +290,28 @@ fn line(
     }
 }
 
+fn placeholder(design: &Design) -> String {
+    let (x, y, w, h) = (
+        design.art.x,
+        design.art.top,
+        design.art.width,
+        design.art.height,
+    );
+    format!(
+        "<g data-slot=\"art\"><rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"{}\"/>\
+         <circle cx=\"{}\" cy=\"{}\" r=\"56\" fill=\"none\" stroke=\"{}\"/></g>",
+        pyf(x),
+        pyf(y),
+        pyf(w),
+        pyf(h),
+        design.colors.violet,
+        pyf(x + w / 2.0),
+        pyf(y + h / 2.0),
+        design.colors.paper
+    )
+}
+
 fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(String, Face)> {
-    let art = edition
-        .cover_art
-        .as_deref()
-        .context("the typst cover step needs cover art; the edition names none")?;
     let headline = cover_field(edition, "headline", &edition.title);
     let text = CoverText {
         publication_name: edition.publication_name.clone(),
@@ -226,7 +322,14 @@ fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(Strin
         tab_identity: cover_tab_identity(edition),
     };
     let layout = raw_or(edition.cover.get("layout"), "framed");
-    let svg = Builder { design, fonts }.materialize(&layout, &text, art)?;
+    let mut builder = Builder { design, fonts };
+    let svg = match (edition.cover_art.as_deref(), layout.as_str()) {
+        (Some(art), _) => builder.materialize(&layout, &text, art)?,
+        (None, "framed") => builder.framed_with(&text, placeholder(design))?,
+        (None, _) => {
+            bail!("Cover art is missing: the {layout} cover places art and the edition names none")
+        }
+    };
     let (deck, footer) = (&design.deck, &design.footer);
     let mut lines = vec![
         line(
@@ -456,6 +559,75 @@ mod tests {
             closing_plates: vec![],
             raw: serde_yaml::Value::Null,
         }
+    }
+
+    #[test]
+    fn a_missing_design_toml_or_layout_table_takes_the_python_compilers_defaults() {
+        let bare = std::env::temp_dir().join(format!("mag-no-design-{}", std::process::id()));
+        let (design, back) = super::design(&bare).expect("the built-in design loads");
+        let art = (
+            design.art.x,
+            design.art.top,
+            design.art.width,
+            design.art.height,
+        );
+        assert_eq!(art, (85.25, 221.85, 249.35, 248.65));
+        assert_eq!(
+            (design.colors.violet.as_str(), back.mass_leading),
+            ("#4b21c0", 84.68)
+        );
+        let partial = bare.join(DESIGN_TOML);
+        std::fs::create_dir_all(partial.parent().expect("nested")).expect("temp dir");
+        let text = std::fs::read_to_string(root().join(DESIGN_TOML)).expect("design.toml");
+        let cut = text
+            .find("[layout.footer_caption]")
+            .expect("the layout tables");
+        std::fs::write(
+            &partial,
+            format!("{}[layout.honored_plate]\nfooter = 60.0\n", &text[..cut]),
+        )
+        .expect("write");
+        let (design, _) = super::design(&bare).expect("a partial design loads");
+        let caption = &design.footer_caption;
+        let caption = (
+            caption.margin,
+            caption.wordmark_scale,
+            caption.wordmark_dy,
+            caption.title_size,
+        );
+        assert_eq!(caption, (25.0, 0.8, 6.0, 26.0));
+        let plate = &design.honored_plate;
+        let plate = (
+            plate.margin,
+            plate.footer,
+            plate.wordmark_scale,
+            plate.title_size,
+        );
+        assert_eq!(plate, (17.0, 60.0, 0.5, 19.0));
+        std::fs::remove_file(&partial).expect("clean up");
+    }
+
+    #[test]
+    fn a_framed_cover_without_art_draws_the_violet_placeholder_and_other_layouts_refuse() {
+        let assets = root().join("src/magazine/assets");
+        let (design, _) = super::design(&root()).expect("design.toml loads");
+        let framed = |layout: &str| {
+            let mut cover = serde_yaml::Mapping::new();
+            cover.insert("layout".into(), layout.into());
+            let edition = Edition {
+                cover,
+                ..edition("es")
+            };
+            let mut fonts = Fonts::load(&assets).expect("cover faces load");
+            front(&design, &mut fonts, &edition).map(|(svg, _)| svg)
+        };
+        let svg = framed("framed").expect("a framed cover needs no art");
+        assert!(svg.contains(
+            "<g data-slot=\"art\"><rect x=\"85.25\" y=\"221.85\" width=\"249.35\" \
+             height=\"248.65\" fill=\"#4b21c0\"/><circle cx=\"209.925\" cy=\"346.175\" r=\"56\" \
+             fill=\"none\" stroke=\"#ffffff\"/></g>"
+        ));
+        assert!(framed("footer_caption").is_err() && framed("honored_plate").is_err());
     }
 
     fn back_face(language: &str, cover: serde_yaml::Mapping) -> (String, Face) {

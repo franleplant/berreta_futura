@@ -1,6 +1,7 @@
 pub(crate) mod content;
 pub(crate) mod cover;
 pub(crate) mod estimate;
+pub(crate) mod hyphen;
 pub(crate) mod layout;
 pub(crate) mod media;
 pub(crate) mod release;
@@ -44,21 +45,18 @@ pub(crate) fn run_request(
 ) -> Result<Value> {
     let request: Value =
         serde_json::from_str(request_json).context("parsing the render request as JSON")?;
-    let language = field(&request, "primaryLanguage")?.to_string();
-    let others: Vec<&str> = request["languages"]
+    let primary = field(&request, "primaryLanguage")?;
+    let languages: Vec<&str> = request["languages"]
         .as_array()
-        .into_iter()
-        .flatten()
+        .context("the render request has no languages array")?
+        .iter()
         .filter_map(Value::as_str)
-        .filter(|code| *code != language)
         .collect();
     anyhow::ensure!(
-        others.is_empty() || field(&request, "operation")? != "render_edition",
-        "the typst engine renders the primary language only; drop {} with `--langs {language}`",
-        others.join(", ")
+        languages.contains(&primary),
+        "languages must include primaryLanguage"
     );
-    let out_dir = render_dir.join(&language);
-    fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
+    fs::create_dir_all(render_dir).with_context(|| format!("creating {}", render_dir.display()))?;
     let request_path = render_dir.join("request.json");
     fs::write(
         &request_path,
@@ -66,49 +64,75 @@ pub(crate) fn run_request(
     )
     .with_context(|| format!("writing {}", request_path.display()))?;
     println!("request: {}", request_path.display());
-    println!("out dir: {}", out_dir.display());
-
     let staged = render_dir.join("staged");
     let rows = stage(&request, &staged)?;
     println!("staged {rows} inputs into {}", staged.display());
+    let base = layout::edition(
+        &staged,
+        field(&request, "editionId")?,
+        field(&request, "publicationName")?,
+    )?;
+    let mut result = serde_json::json!({"layouts": [], "files": []});
+    for language in languages {
+        let edition = if language == primary {
+            base.clone()
+        } else {
+            crate::model::manifest::load_translation(&staged, &base, language)?
+        };
+        let work = match language == primary {
+            true => render_dir.join("typst"),
+            false => render_dir.join(format!("typst-{language}")),
+        };
+        let one = render_language(repo_root, render_dir, &request, &staged, &edition, &work)?;
+        for key in ["layouts", "files"] {
+            let rows = one[key].as_array().cloned().unwrap_or_default();
+            result[key].as_array_mut().expect("seeded").extend(rows);
+        }
+        result["operation"] = one["operation"].clone();
+    }
+    Ok(result)
+}
 
+fn render_language(
+    repo_root: &Path,
+    render_dir: &Path,
+    request: &Value,
+    staged: &Path,
+    edition: &crate::model::manifest::Edition,
+    work: &Path,
+) -> Result<Value> {
+    let out_dir = render_dir.join(&edition.language);
+    fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
+    println!("out dir: {}", out_dir.display());
     let fonts = repo_root.join(template::FONT_DIR);
-    let tree = content::pipeline(&content::Inputs {
-        root: &staged,
-        edition_id: field(&request, "editionId")?,
-        publication_name: field(&request, "publicationName")?,
-        fonts: &fonts,
-        allow_missing_art: false,
-        allow_unanchored_figures: false,
-    })?;
+    let tree = content::compose(edition, &fonts)?;
     let (tree, document) = template::paginate(tree, &fonts)?;
-    let typ_dir = render_dir.join("typst");
     for file in &tree.files {
-        let path = typ_dir.join(&file.path);
+        let path = work.join(&file.path);
         let parent = path.parent().context("a tree file has no parent")?;
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
         fs::write(&path, &file.source).with_context(|| format!("writing {}", path.display()))?;
     }
-    fs::write(typ_dir.join("template.typ"), template::TEMPLATE_TYP)?;
-    fs::write(typ_dir.join("root.typ"), template::ROOT_TYP)?;
+    fs::write(work.join("template.typ"), template::TEMPLATE_TYP)?;
+    fs::write(work.join("root.typ"), template::ROOT_TYP)?;
     let projection = content::project(&tree)?;
     println!(
-        "typst source tree: {} files, {} characters of reader text",
+        "typst source tree ({}): {} files, {} characters of reader text",
+        edition.language,
         tree.files.len(),
         projection.text.chars().count()
     );
     layout::report(
         &layout::Request {
-            operation: field(&request, "operation")?,
+            operation: field(request, "operation")?,
             article: request.get("articleId").and_then(Value::as_str),
-            edition_id: field(&request, "editionId")?,
-            publication_name: field(&request, "publicationName")?,
-            language: &language,
-            staged: &staged,
+            edition,
+            staged,
             out_dir: &out_dir,
             render_dir,
+            work,
             assets: &repo_root.join("src/magazine/assets"),
-            raw: &request,
+            raw: request,
         },
         &document,
         &tree,

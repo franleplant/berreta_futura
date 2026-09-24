@@ -21,6 +21,7 @@ pub struct Publish<'a> {
     pub staged: &'a Path,
     pub assets: &'a Path,
     pub render_dir: &'a Path,
+    pub work: &'a Path,
     pub out_dir: &'a Path,
 }
 
@@ -115,8 +116,8 @@ fn manifest(p: &Publish) -> Result<Value> {
 }
 
 pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
-    let work = p.render_dir.join("typst");
-    let (front, back) = super::cover::faces(p.staged, p.assets, p.edition, &work)?;
+    let work = p.work;
+    let (front, back) = super::cover::faces(p.staged, p.assets, p.edition, work)?;
     let reader = work.join("reader.pdf");
     std::fs::write(work.join("interior.pdf"), &p.interior)?;
     std::fs::write(
@@ -153,8 +154,17 @@ pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
         .map(|record| (record.id, record.url))
         .collect();
     let settable = settable_codepoints(&p.assets.join("fonts"))?;
+    let alternates = p.request["languages"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .filter(|other| *other != p.edition.language)
+        .map(|other| (other.to_string(), format!("../../{other}/web/")))
+        .collect();
     let options = WebOptions {
         source_urls: urls,
+        alternates,
         ..WebOptions::default()
     };
     write_web_edition(

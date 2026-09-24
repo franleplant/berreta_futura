@@ -24,6 +24,7 @@ lopdf = "0.45.0"
 flate2 = "1.1.10"
 pulldown-cmark = { version = "0.13", default-features = false }
 ttf-parser = "0.25"
+rustybuzz = "0.20"
 png = "0.18"
 zune-jpeg = "0.5"
 zune-core = "0.5"

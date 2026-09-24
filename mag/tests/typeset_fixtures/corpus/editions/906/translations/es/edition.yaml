@@ -1,0 +1,37 @@
+schema_version: 1
+language: es
+source_language: en
+locale: es-AR
+title: Edición de idiomas
+cover:
+  headline: Edición de idiomas
+  deck: Dos informes compuestos en dos idiomas.
+  back_text: La misma edición, compuesta una vez por idioma, con su propia partición silábica y sus rótulos.
+closing_plate_titles:
+- La primera lámina de idiomas.
+- La segunda lámina de idiomas.
+- La tercera lámina de idiomas.
+- La cuarta lámina de idiomas.
+- La quinta lámina de idiomas.
+- La sexta lámina de idiomas.
+- La séptima lámina de idiomas.
+- La octava lámina de idiomas.
+articles:
+- id: hyphenation-article
+  title: El artículo de la partición silábica
+  short_title: Partición silábica
+  display_emphasis: Partición
+  author_note: Una nota de autoría de prueba para la apertura ilustrada.
+  manuscript: articles/hyphenation-article.md
+- id: figure-article
+  title: El artículo de la figura localizada
+  short_title: Figura localizada
+  display_emphasis: Figura
+  author_note: Una nota de autoría de prueba para la segunda apertura.
+  manuscript: articles/figure-article.md
+  figures:
+  - id: budget-diagram
+    caption: El diagrama del presupuesto, con su epígrafe en el idioma de la edición.
+    alt_text: Un diagrama de prueba.
+    anchor: Presupuestos
+sections: []

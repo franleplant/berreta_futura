@@ -477,12 +477,11 @@ pub fn manifest_layout(
 pub struct Request<'a> {
     pub operation: &'a str,
     pub article: Option<&'a str>,
-    pub edition_id: &'a str,
-    pub publication_name: &'a str,
-    pub language: &'a str,
+    pub edition: &'a Edition,
     pub staged: &'a Path,
     pub out_dir: &'a Path,
     pub render_dir: &'a Path,
+    pub work: &'a Path,
     pub assets: &'a Path,
     pub raw: &'a Value,
 }
@@ -507,10 +506,10 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
             "unknown measured article: {article}"
         );
     }
-    let edition = edition(request.staged, request.edition_id, request.publication_name)?;
-    let layout = manifest_layout(&edition, &measured, tree, request.staged)?;
+    let edition = request.edition;
+    let layout = manifest_layout(edition, &measured, tree, request.staged)?;
     let figures = layout["figures"].as_array().map_or(0, Vec::len);
-    let row = |critic: &str| measured.row(request.language, figures, critic);
+    let row = |critic: &str| measured.row(&edition.language, figures, critic);
     if request.operation != "render_edition" {
         let file = written(
             &request.out_dir.join("layout.json"),
@@ -523,12 +522,13 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
     }
     let (files, critic) = super::release::publish(super::release::Publish {
         request: request.raw,
-        edition: &edition,
+        edition,
         layout,
         interior: crate::typeset::template::pdf(document)?,
         staged: request.staged,
         assets: request.assets,
         render_dir: request.render_dir,
+        work: request.work,
         out_dir: request.out_dir,
     })?;
     Ok(json!({"operation": request.operation, "layouts": [row(&critic)], "files": files}))
