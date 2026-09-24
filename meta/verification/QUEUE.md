@@ -15,11 +15,13 @@ WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.
 WP-5.5d, WP-4.0g, WP-5.10, WP-5.1h part 1.
 MILESTONE: WP-0.2x landed e1822cf; `mag parity 010` exits 0, every
 evaluated Tier E clause green (raster not_evaluated, WP-0.2f withdrawn).
-Running: WP-3.0g enforcement flip, WP-3.9 (generalize to 008).
+WP-3.0g landed 4c3697b: ratchet target E, all 54 pages at E, two clean
+staged runs identical.
+Running: final adversarial comparator verify (+ baseline raise
+re-derivation), WP-3.9 (generalize to 008).
 WP-3.7c landed cbe1629: 010 display list 0 pages, navigation 0; glyph
 clause 90 single-quantum blips (comparator artifact, WP-0.2x).
-Next: final adversarial comparator verify (all 0.2 WPs at the tip),
-typeset-set verifier, WP-5.6, WP-4.1, WP-4.2, WP-4.3, WP-6.1.
+Next: typeset-set verifier, WP-5.6, WP-4.1, WP-4.2, WP-4.3, WP-6.1.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.7a, 3.7c, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
 Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
@@ -78,8 +80,9 @@ evidence file records it):
   runs 3 pt past the text at the break; chip corner radius 0.0046 pt off)
   per WP-3.1.md.
 
-- Tier V never fails on pixels, so nothing outside Tier S/E backs up a
-  normalization (WP-0.2m-r.verify.md); decide at WP-3.0g.
+- Tier V stays a meter, as the plan says (rasters are Tier V meters only,
+  plan ~3917); the adversarial verifiers' pixel diffs are what back each
+  normalization. Decided at WP-3.0g, no change.
 
 Orchestrator decisions:
 - `cap_dots_125pt_100_tick` (one tick per step, inside the k-step bound)
