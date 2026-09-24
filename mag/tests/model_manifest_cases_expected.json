@@ -463,6 +463,16 @@
    "Translation 'es' article a1 must omit author_note because the source article omits it"
   ]
  },
+ "translation_author_note_too_long": {
+  "errors": [
+   "Translation 'es' article a1 author_note must be a single line of at most 160 characters"
+  ]
+ },
+ "translation_casefold_sharp_s": {
+  "errors": [
+   "Translation 'es' closing_plate_titles must be unique"
+  ]
+ },
  "translation_closing_plate_count": {
   "errors": [
    "Translation 'es' requires exactly 3 closing_plate_titles"
@@ -492,6 +502,22 @@
    "Translation 'es' section 1 must preserve kind 'glossary' and provide title and path"
   ]
  },
+ "translation_editorial_blank_title": {
+  "errors": [
+   "Editorial requires a non-empty title: <ROOT>/editions/010/translations/es/editorial.md"
+  ]
+ },
+ "translation_editorial_frontmatter_unparseable": {
+  "errors": [
+   "Translation 'es' editorial translation <ROOT>/editions/010/translations/es/editorial.md cannot be parsed as a publication document: Invalid YAML frontmatter: while parsing a flow sequence\n  in \"<unicode string>\", line 1, column 8:\n    title: [unclosed\n           ^\nexpected ',' or ']', but got '<stream end>'\n  in \"<unicode string>\", line 2, column 1:\n    \n    ^",
+   "Cannot parse editorial frontmatter <ROOT>/editions/010/translations/es/editorial.md: while parsing a flow sequence\n  in \"<unicode string>\", line 1, column 8:\n    title: [unclosed\n           ^\nexpected ',' or ']', but got '<stream end>'\n  in \"<unicode string>\", line 1, column 17:\n    title: [unclosed\n                    ^"
+  ]
+ },
+ "translation_editorial_no_frontmatter": {
+  "errors": [
+   "Editorial requires YAML frontmatter with a title: <ROOT>/editions/010/translations/es/editorial.md"
+  ]
+ },
  "translation_header_and_cover": {
   "errors": [
    "Translation language 'fr' does not match directory 'es'",
@@ -502,6 +528,121 @@
    "Translation 'es' sections must be a list"
   ]
  },
+ "translation_heading_split_at_separator": {
+  "ok": {
+   "articles": [
+    {
+     "author": "Writer",
+     "author_note": "",
+     "content_mode": "article",
+     "dateline": null,
+     "display_emphasis": "",
+     "extracts": [
+      {
+       "anchor": "Presupuestos",
+       "caption": "El epigrafe del extracto.",
+       "id": "x1",
+       "source_id": "s1",
+       "style": "quote"
+      }
+     ],
+     "figures": [
+      {
+       "alt_text": "Alternativo.",
+       "anchor": "Presupuestos",
+       "caption": "El epigrafe.",
+       "credit": "Credit.",
+       "id": "f1",
+       "layout": "evidence_band",
+       "path": "library/sources/s1/media/d.png",
+       "source_id": "s1"
+      }
+     ],
+     "id": "a1",
+     "key_ideas": [],
+     "manuscript": "editions/010/translations/es/a1.md",
+     "minimum_reader_pages": 1,
+     "opener_art": null,
+     "opener_variant": "split_axis",
+     "short_title": "Alfa",
+     "source_ids": [
+      "s1"
+     ],
+     "source_url": null,
+     "tail_art": null,
+     "title": "Alfa"
+    }
+   ],
+   "closing_plates": [],
+   "cover": {},
+   "cover_art": null,
+   "editorial": null,
+   "id": "010",
+   "issue_number": "1",
+   "language": "es",
+   "locale": "es",
+   "publication_date": "2026-01-01",
+   "publication_name": "Magazine",
+   "raw": {
+    "articles": [
+     {
+      "author": "Writer",
+      "author_note": "",
+      "content_mode": "article",
+      "display_emphasis": "",
+      "extracts": [
+       {
+        "anchor": "Presupuestos",
+        "caption": "El epigrafe del extracto.",
+        "id": "x1",
+        "source_id": "s1",
+        "style": "quote"
+       }
+      ],
+      "figures": [
+       {
+        "alt_text": "Alternativo.",
+        "anchor": "Presupuestos",
+        "caption": "El epigrafe.",
+        "credit": "Credit.",
+        "id": "f1",
+        "layout": "evidence_band",
+        "path": "<ROOT>/library/sources/s1/media/d.png",
+        "source_id": "s1"
+       }
+      ],
+      "id": "a1",
+      "manuscript": "editions/010/translations/es/a1.md",
+      "opener_variant": "split_axis",
+      "short_title": "Alfa",
+      "source_ids": [
+       "s1"
+      ],
+      "tail_art_path": null,
+      "title": "Alfa"
+     }
+    ],
+    "closing_plates": [],
+    "cover": {},
+    "editorial": null,
+    "id": "010",
+    "issue_number": 1,
+    "language": "es",
+    "locale": "es",
+    "publication_date": "2026-01-01",
+    "sections": [],
+    "subtitle": "",
+    "title": "Base Title",
+    "translation": {
+     "fallback_locale": null,
+     "policy": null,
+     "source_language": "en"
+    }
+   },
+   "sections": [],
+   "title": "Base Title"
+  }
+ },
  "translation_key_ideas_absent_in_source": {
   "errors": [
    "Translation 'es' article a1 must omit key_ideas because the source article omits them"
@@ -510,6 +651,12 @@
  "translation_key_ideas_missing": {
   "errors": [
    "Translation 'es' article a1 key_ideas must be a non-empty list of single-line strings",
+   "Translation 'es' article a1 requires key_ideas because the source article has them"
+  ]
+ },
+ "translation_key_ideas_over_budget": {
+  "errors": [
+   "Translation 'es' article a1 key_ideas run to 91 words; the budget is 90. State the claims a reader needs to use the thing, not a summary of the piece",
    "Translation 'es' article a1 requires key_ideas because the source article has them"
   ]
  },
@@ -636,9 +783,44 @@
    "title": "Titulo Base"
   }
  },
+ "translation_manifest_not_a_mapping": {
+  "errors": [
+   "<ROOT>/editions/010/translations/es/edition.yaml must contain a mapping"
+  ]
+ },
  "translation_manifest_not_found": {
   "errors": [
    "Required 'es' translation manifest not found: editions/010/translations/es/edition.yaml"
+  ]
+ },
+ "translation_manifest_unparseable": {
+  "errors": [
+   "Cannot read <ROOT>/editions/010/translations/es/edition.yaml: while parsing a flow sequence\n  in \"<unicode string>\", line 2, column 11:\n    articles: [unclosed\n              ^\nexpected ',' or ']', but got '<stream end>'\n  in \"<unicode string>\", line 3, column 1:\n    \n    ^"
+  ]
+ },
+ "translation_manuscript_escapes_root": {
+  "errors": [
+   "Path escapes project root: ../../../../../outside.md"
+  ]
+ },
+ "translation_manuscript_missing": {
+  "errors": [
+   "Referenced file does not exist: editions/010/translations/es/missing.md"
+  ]
+ },
+ "translation_manuscript_not_a_string": {
+  "errors": [
+   "Referenced path must be a non-empty string, got 7"
+  ]
+ },
+ "translation_manuscript_project_path_escapes": {
+  "errors": [
+   "Path escapes project root: editions/../../outside.md"
+  ]
+ },
+ "translation_manuscript_project_path_missing": {
+  "errors": [
+   "Referenced file does not exist: editions/010/translations/es/missing.md"
   ]
  },
  "translation_manuscripts_unparseable": {
@@ -647,9 +829,163 @@
    "Translation 'es' article a1 translation <ROOT>/editions/010/translations/es/a1.md cannot be parsed as a publication document: YAML frontmatter must be a mapping with string keys"
   ]
  },
+ "translation_media_absent_from_english": {
+  "errors": [
+   "Translation 'es' article a1 has figures absent from English",
+   "Translation 'es' article a1 has extracts absent from English"
+  ]
+ },
+ "translation_media_fields": {
+  "errors": [
+   "Translation 'es' figure f1 requires caption, alt_text, and anchor",
+   "Translation 'es' figure f1 anchor does not match a translated heading",
+   "Translation 'es' extract x1 requires caption and anchor",
+   "Translation 'es' extract x1 anchor does not match a translated heading"
+  ]
+ },
+ "translation_media_loads_cleanly": {
+  "ok": {
+   "articles": [
+    {
+     "author": "Writer",
+     "author_note": "",
+     "content_mode": "article",
+     "dateline": null,
+     "display_emphasis": "",
+     "extracts": [
+      {
+       "anchor": "Presupuestos",
+       "caption": "El epigrafe del extracto.",
+       "id": "x1",
+       "source_id": "s1",
+       "style": "quote"
+      }
+     ],
+     "figures": [
+      {
+       "alt_text": "Alternativo.",
+       "anchor": "Presupuestos",
+       "caption": "El epigrafe.",
+       "credit": "Credit.",
+       "id": "f1",
+       "layout": "evidence_band",
+       "path": "library/sources/s1/media/d.png",
+       "source_id": "s1"
+      }
+     ],
+     "id": "a1",
+     "key_ideas": [],
+     "manuscript": "editions/010/translations/es/a1.md",
+     "minimum_reader_pages": 1,
+     "opener_art": null,
+     "opener_variant": "split_axis",
+     "short_title": "Alfa",
+     "source_ids": [
+      "s1"
+     ],
+     "source_url": null,
+     "tail_art": null,
+     "title": "Alfa"
+    }
+   ],
+   "closing_plates": [],
+   "cover": {},
+   "cover_art": null,
+   "editorial": null,
+   "id": "010",
+   "issue_number": "1",
+   "language": "es",
+   "locale": "es",
+   "publication_date": "2026-01-01",
+   "publication_name": "Magazine",
+   "raw": {
+    "articles": [
+     {
+      "author": "Writer",
+      "author_note": "",
+      "content_mode": "article",
+      "display_emphasis": "",
+      "extracts": [
+       {
+        "anchor": "Presupuestos",
+        "caption": "El epigrafe del extracto.",
+        "id": "x1",
+        "source_id": "s1",
+        "style": "quote"
+       }
+      ],
+      "figures": [
+       {
+        "alt_text": "Alternativo.",
+        "anchor": "Presupuestos",
+        "caption": "El epigrafe.",
+        "credit": "Credit.",
+        "id": "f1",
+        "layout": "evidence_band",
+        "path": "<ROOT>/library/sources/s1/media/d.png",
+        "source_id": "s1"
+       }
+      ],
+      "id": "a1",
+      "manuscript": "editions/010/translations/es/a1.md",
+      "opener_variant": "split_axis",
+      "short_title": "Alfa",
+      "source_ids": [
+       "s1"
+      ],
+      "tail_art_path": null,
+      "title": "Alfa"
+     }
+    ],
+    "closing_plates": [],
+    "cover": {},
+    "editorial": null,
+    "id": "010",
+    "issue_number": 1,
+    "language": "es",
+    "locale": "es",
+    "publication_date": "2026-01-01",
+    "sections": [],
+    "subtitle": "",
+    "title": "Base Title",
+    "translation": {
+     "fallback_locale": null,
+     "policy": null,
+     "source_language": "en"
+    }
+   },
+   "sections": [],
+   "title": "Base Title"
+  }
+ },
+ "translation_media_membership": {
+  "errors": [
+   "Translation 'es' article a1 is missing figures: f1",
+   "Translation 'es' article a1 has unknown figures: f2",
+   "Translation 'es' article a1 is missing extracts: x1",
+   "Translation 'es' article a1 has unknown extracts: x2"
+  ]
+ },
+ "translation_media_not_lists": {
+  "errors": [
+   "Translation 'es' article a1 figures must be a list",
+   "Translation 'es' article a1 extracts must be a list"
+  ]
+ },
  "translation_section_count_mismatch": {
   "errors": [
    "Translation 'es' must contain exactly 1 sections"
+  ]
+ },
+ "translation_short_title_too_long": {
+  "errors": [
+   "Translation 'es' article a1 short_title must be a single line of at most 40 characters"
+  ]
+ },
+ "translation_strip_information_separators": {
+  "errors": [
+   "Translation 'es' article a1 author cannot be blank",
+   "Translation 'es' closing_plate_titles cannot be blank"
   ]
  },
  "translation_structure_invariants": {

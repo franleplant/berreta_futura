@@ -1802,3 +1802,958 @@
       publication_date: '2026-01-01'
       articles: []
       sections: []
+
+- name: translation_author_note_too_long
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+        author_note: Source note.
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        author_note: nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+        manuscript: a1.md
+      sections: []
+
+- name: translation_short_title_too_long
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa con un titulo localizado que es bastante largo
+        short_title: Alfa con un titulo localizado que es bastante
+        manuscript: a1.md
+      sections: []
+
+- name: translation_manuscript_not_a_string
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: 7
+      sections: []
+
+- name: translation_manuscript_escapes_root
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: ../../../../../outside.md
+      sections: []
+
+- name: translation_manuscript_missing
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: missing.md
+      sections: []
+
+- name: translation_manuscript_project_path_missing
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/010/translations/es/missing.md
+      sections: []
+
+- name: translation_manuscript_project_path_escapes
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: editions/../../outside.md
+      sections: []
+
+- name: translation_key_ideas_over_budget
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+        key_ideas: [One claim]
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        key_ideas: [palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra palabra]
+        manuscript: a1.md
+      sections: []
+
+- name: translation_editorial_no_frontmatter
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/editorial.md: |
+      ---
+      title: The Last Meter
+      ---
+
+      Body.
+    editions/010/translations/es/editorial.md: |
+      Body without frontmatter.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      editorial: editions/010/editorial.md
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      editorial:
+        path: editorial.md
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+      sections: []
+
+- name: translation_editorial_frontmatter_unparseable
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/editorial.md: |
+      ---
+      title: The Last Meter
+      ---
+
+      Body.
+    editions/010/translations/es/editorial.md: |
+      ---
+      title: [unclosed
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      editorial: editions/010/editorial.md
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      editorial:
+        path: editorial.md
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+      sections: []
+
+- name: translation_editorial_blank_title
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/editorial.md: |
+      ---
+      title: The Last Meter
+      ---
+
+      Body.
+    editions/010/translations/es/editorial.md: |
+      ---
+      title: '  '
+      ---
+
+      Body.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      editorial: editions/010/editorial.md
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      editorial:
+        path: editorial.md
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+      sections: []
+
+- name: translation_manifest_unparseable
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      articles: [unclosed
+
+- name: translation_manifest_not_a_mapping
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      - just
+      - a list
+
+- name: translation_media_loads_cleanly
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    library/sources/s1/media/d.png: |
+      not really a png
+    library/sources/s1/article.md: |
+      Source text with a MARK run of words END here.
+    editions/010/a1.md: |
+      ## Budgets
+
+      Body paragraph.
+    editions/010/translations/es/a1.md: |
+      ## Presupuestos
+
+      Parrafo.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+        figures:
+        - id: f1
+          source_id: s1
+          path: media/d.png
+          caption: The caption.
+          credit: Credit.
+          alt_text: Alt.
+          anchor: Budgets
+          layout: evidence_band
+        extracts:
+        - id: x1
+          source_id: s1
+          begin: MARK
+          end: END
+          style: quote
+          caption: The extract caption.
+          anchor: Budgets
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+        figures:
+        - id: f1
+          caption: El epigrafe.
+          alt_text: Alternativo.
+          anchor: Presupuestos
+        extracts:
+        - id: x1
+          caption: El epigrafe del extracto.
+          anchor: Presupuestos
+      sections: []
+
+- name: translation_media_absent_from_english
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    library/sources/s1/media/d.png: |
+      not really a png
+    library/sources/s1/article.md: |
+      Source text with a MARK run of words END here.
+    editions/010/a1.md: |
+      ## Budgets
+
+      Body paragraph.
+    editions/010/translations/es/a1.md: |
+      ## Presupuestos
+
+      Parrafo.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+        figures:
+        - id: f1
+        extracts:
+        - id: x1
+      sections: []
+
+- name: translation_media_not_lists
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    library/sources/s1/media/d.png: |
+      not really a png
+    library/sources/s1/article.md: |
+      Source text with a MARK run of words END here.
+    editions/010/a1.md: |
+      ## Budgets
+
+      Body paragraph.
+    editions/010/translations/es/a1.md: |
+      ## Presupuestos
+
+      Parrafo.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+        figures:
+        - id: f1
+          source_id: s1
+          path: media/d.png
+          caption: The caption.
+          credit: Credit.
+          alt_text: Alt.
+          anchor: Budgets
+          layout: evidence_band
+        extracts:
+        - id: x1
+          source_id: s1
+          begin: MARK
+          end: END
+          style: quote
+          caption: The extract caption.
+          anchor: Budgets
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+        figures: {}
+        extracts: nope
+      sections: []
+
+- name: translation_media_membership
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    library/sources/s1/media/d.png: |
+      not really a png
+    library/sources/s1/article.md: |
+      Source text with a MARK run of words END here.
+    editions/010/a1.md: |
+      ## Budgets
+
+      Body paragraph.
+    editions/010/translations/es/a1.md: |
+      ## Presupuestos
+
+      Parrafo.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+        figures:
+        - id: f1
+          source_id: s1
+          path: media/d.png
+          caption: The caption.
+          credit: Credit.
+          alt_text: Alt.
+          anchor: Budgets
+          layout: evidence_band
+        extracts:
+        - id: x1
+          source_id: s1
+          begin: MARK
+          end: END
+          style: quote
+          caption: The extract caption.
+          anchor: Budgets
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+        figures:
+        - id: f2
+          caption: C
+          alt_text: A
+          anchor: Presupuestos
+        extracts:
+        - id: x2
+          caption: C
+          anchor: Presupuestos
+      sections: []
+
+- name: translation_media_fields
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    library/sources/s1/media/d.png: |
+      not really a png
+    library/sources/s1/article.md: |
+      Source text with a MARK run of words END here.
+    editions/010/a1.md: |
+      ## Budgets
+
+      Body paragraph.
+    editions/010/translations/es/a1.md: |
+      ## Presupuestos
+
+      Parrafo.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+        figures:
+        - id: f1
+          source_id: s1
+          path: media/d.png
+          caption: The caption.
+          credit: Credit.
+          alt_text: Alt.
+          anchor: Budgets
+          layout: evidence_band
+        extracts:
+        - id: x1
+          source_id: s1
+          begin: MARK
+          end: END
+          style: quote
+          caption: The extract caption.
+          anchor: Budgets
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+        figures:
+        - id: f1
+          anchor: Budgets
+        extracts:
+        - id: x1
+          caption: '  '
+          anchor: Nowhere
+      sections: []
+
+- name: translation_casefold_sharp_s
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      closing_plates:
+      - title: One
+        art_path: editions/010/p1.png
+      - title: Two
+        art_path: editions/010/p2.png
+      - title: Three
+        art_path: editions/010/p3.png
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      closing_plate_titles: ["Stra\u00dfe", STRASSE, Drei]
+      articles:
+      - id: a1
+        title: "Die Stra\u00dfe"
+        short_title: STRASSE
+        display_emphasis: strasse
+        manuscript: a1.md
+      sections: []
+
+- name: translation_strip_information_separators
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/a1.md: |
+      Opening paragraph.
+    editions/010/translations/es/a1.md: |
+      Parrafo inicial.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+      closing_plates:
+      - title: One
+        art_path: editions/010/p1.png
+      - title: Two
+        art_path: editions/010/p2.png
+      - title: Three
+        art_path: editions/010/p3.png
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      closing_plate_titles: ["\x1c", Dos, Tres]
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: "Alfa\x1f"
+        author: "\x1d"
+        author_note: "\x1e"
+        manuscript: a1.md
+      sections: []
+
+- name: translation_heading_split_at_separator
+  edition_id: '010'
+  known_sources: [s1]
+  allow_missing_art: true
+  translation: es
+  files:
+    editions/010/translations/es/a1.md: "## Presupuestos\x1cfin\n\nParrafo.\n"
+    library/sources/s1/media/d.png: |
+      not really a png
+    library/sources/s1/article.md: |
+      Source text with a MARK run of words END here.
+    editions/010/a1.md: |
+      ## Budgets
+
+      Body paragraph.
+    editions/010/edition.yaml: |
+      id: '010'
+      issue_number: 1
+      title: Base Title
+      publication_date: '2026-01-01'
+      articles:
+      - id: a1
+        title: Alpha
+        short_title: Alpha
+        opener_variant: split_axis
+        author: Writer
+        content_mode: article
+        source_ids: [s1]
+        manuscript: editions/010/a1.md
+        figures:
+        - id: f1
+          source_id: s1
+          path: media/d.png
+          caption: The caption.
+          credit: Credit.
+          alt_text: Alt.
+          anchor: Budgets
+          layout: evidence_band
+        extracts:
+        - id: x1
+          source_id: s1
+          begin: MARK
+          end: END
+          style: quote
+          caption: The extract caption.
+          anchor: Budgets
+    editions/010/translations/es/edition.yaml: |
+      language: es
+      source_language: en
+      cover: {}
+      articles:
+      - id: a1
+        title: Alfa
+        short_title: Alfa
+        manuscript: a1.md
+        figures:
+        - id: f1
+          caption: El epigrafe.
+          alt_text: Alternativo.
+          anchor: Presupuestos
+        extracts:
+        - id: x1
+          caption: El epigrafe del extracto.
+          anchor: Presupuestos
+      sections: []
