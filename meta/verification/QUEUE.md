@@ -16,7 +16,11 @@
   twice at Tier E, pages 1..56, critic both sides, normalized verdict
   172444721bb321f4...; covers raised to E. WP-5.6, 0.2y, 5.4g/5.3g, 3.10,
   5.11, 5.12, 3.11 ACCEPTED.
-- Running: WP-4.2 flip, WP-4.3 hyphenation measurement (ends
+- FLIP: WP-4.2 landed 2316f2c: `[render] engine = "typst"` default,
+  `--engine weasyprint` rollback works, CLAUDE.md/docs updated; in-flight
+  edition is 010, `--adhoc 010` exit 0.
+- Running: WP-4.2b (fallback engine typst, translate next-step on the
+  typst leg, two docs), WP-4.3 hyphenation measurement (ends
   awaiting-fran), WP-6.0 pre-deletion oracles + WP-6.1 inventory.
 - Then: WP-6.1 is Fran-gated (a shipped Typst edition, tools/ keep/delete,
   rollback loss).
