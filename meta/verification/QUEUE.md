@@ -4,12 +4,10 @@
 
 - `mag parity 010` staged: exit 0, ratchet target E, pages 1..56, critic
   clause passing (WP-5.4g/5.3g e7c7670). `mag render --engine typst` runs
-  natively without uv (WP-5.6 2ea64da). `--adhoc 008`: display list equal
-  except p4 (editorial, out of scope); exit 1 until WP-5.11 (critic JPEG
-  decode).
+  natively without uv (WP-5.6 2ea64da). `--adhoc 008` exit 0 with every
+  page equal incl. the editorial (WP-3.11); `--adhoc 906 --lang es` exit 0.
 - Comparator: every 0.2 WP accepted after adversarial rounds
-  (WP-0.2m-r, 0.2s, 0.2j, 3.0g verify files) except WP-0.2y (rework of
-  0.2v, landed a5aadc9, verified at the WP-4.1 gate).
+  (WP-0.2m-r, 0.2s, 0.2j, 3.0g verify files), WP-0.2y at the WP-4.1 gate.
 - Typeset set (17 WPs): accepted, TYPESET-SET.verify.md.
 - Accepted since the restart: WP-5.4c, 5.4b-i, 5.4b-ii, 0.2l, 5.3c, 5.7a,
   5.3h, 5.5a (1+2), 5.7b, 5.5c, 5.9, 3.3a, 5.5d, 4.0g, 5.10, 5.1h part 1,
