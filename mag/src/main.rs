@@ -206,6 +206,9 @@ enum Cmd {
         /// Score one page set from parity.yaml page_sets
         #[arg(long)]
         set: Option<String>,
+        /// Language whose outputs are compared (with --adhoc or --pre-rendered)
+        #[arg(long, default_value = "en")]
+        lang: String,
     },
 }
 
@@ -359,6 +362,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             run,
             oracle_only,
             set,
+            lang,
         } => {
             let pair = pre_rendered.map(|mut dirs| {
                 let b = dirs.pop().expect("clap enforces two dirs");
@@ -373,6 +377,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
                     oracle_only,
                     set,
                     adhoc: adhoc.is_some(),
+                    lang,
                 },
             )
         }
