@@ -1,5 +1,9 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use std::path::Path;
+use zune_core::bytestream::ZCursor;
+use zune_core::colorspace::ColorSpace;
+use zune_core::options::DecoderOptions;
+use zune_jpeg::JpegDecoder;
 
 pub const MIN_PRINT_CONTRAST_RATIO: f64 = 2.0;
 pub const MIN_MARK_PIXEL_RATIO: f64 = 0.001;
@@ -117,27 +121,56 @@ fn exif_orientation(blob: &[u8]) -> Option<u16> {
     })
 }
 
+fn check_orientation(exif: Option<&[u8]>, path: &Path) -> Result<()> {
+    match exif.and_then(exif_orientation) {
+        Some(orientation) if orientation != 1 => bail!(
+            "unsupported exif orientation {orientation} in {}: orientation handling not ported",
+            path.display()
+        ),
+        _ => Ok(()),
+    }
+}
+
+fn decode_jpeg(bytes: &[u8], path: &Path) -> Result<Rgb> {
+    let mut decoder = JpegDecoder::new(ZCursor::new(bytes));
+    decoder
+        .decode_headers()
+        .map_err(|e| anyhow!("cannot read jpeg header {}: {e:?}", path.display()))?;
+    check_orientation(decoder.exif().map(Vec::as_slice), path)?;
+    let input = decoder.input_colorspace().context("jpeg colour space")?;
+    if !matches!(
+        input,
+        ColorSpace::YCbCr | ColorSpace::RGB | ColorSpace::Luma
+    ) {
+        bail!(
+            "unsupported jpeg colour space {input:?} in {}",
+            path.display()
+        );
+    }
+    decoder.set_options(DecoderOptions::default().jpeg_set_out_colorspace(ColorSpace::RGB));
+    let data = decoder
+        .decode()
+        .map_err(|e| anyhow!("cannot decode jpeg {}: {e:?}", path.display()))?;
+    let (width, height) = decoder.dimensions().context("jpeg dimensions")?;
+    Ok(Rgb {
+        width: width as u32,
+        height: height as u32,
+        data,
+    })
+}
+
 pub fn decode_rgb(path: &Path) -> Result<Rgb> {
-    let file = std::fs::File::open(path)
-        .with_context(|| format!("cannot open image {}", path.display()))?;
-    let mut decoder = png::Decoder::new(std::io::BufReader::new(file));
+    let bytes =
+        std::fs::read(path).with_context(|| format!("cannot open image {}", path.display()))?;
+    if bytes.starts_with(b"\xff\xd8") {
+        return decode_jpeg(&bytes, path);
+    }
+    let mut decoder = png::Decoder::new(std::io::Cursor::new(&bytes));
     decoder.set_transformations(png::Transformations::EXPAND);
     let mut reader = decoder
         .read_info()
         .with_context(|| format!("cannot read png header {}", path.display()))?;
-    if let Some(orientation) = reader
-        .info()
-        .exif_metadata
-        .as_deref()
-        .and_then(exif_orientation)
-    {
-        if orientation != 1 {
-            bail!(
-                "unsupported exif orientation {orientation} in {}: orientation handling not ported",
-                path.display()
-            );
-        }
-    }
+    check_orientation(reader.info().exif_metadata.as_deref(), path)?;
     let mut buffer = vec![0; reader.output_buffer_size().unwrap_or(0)];
     let frame = reader
         .next_frame(&mut buffer)

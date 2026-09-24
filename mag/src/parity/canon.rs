@@ -577,6 +577,7 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink], poses: &Poses) -> Vec<It
             origin,
             offs,
             units,
+            pen,
             ..
         } = &e
         else {
@@ -624,6 +625,7 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink], poses: &Poses) -> Vec<It
                 origin: at,
                 offs: vec![[0, 0]],
                 units: vec![unit.clone()],
+                pen: [0, 1].map(|i| offs.get(k + 1).unwrap_or(pen)[i] - off[i]),
             };
             let gap = (last.unwrap_or(0)..k)
                 .map(|i| [0, 1].map(|c| streams::qo(exact[i + 1][c] - exact[i][c])))
@@ -929,6 +931,7 @@ mod tests {
             origin: [streams::qo(50.0); 2],
             offs: vec![[0, 0]],
             units: vec!["a".into()],
+            pen: [streams::qo(5.0), 0],
         }
     }
 

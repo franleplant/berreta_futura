@@ -167,17 +167,13 @@ tiers:
           booklet-a4-cover.pdf, every page, through critic::rules::read_leg
         compared: body_text_lines, standalone_punctuation_lines and text
           emptiness (which blank and ink_free read), the three text-derived
-          fields that feed issue sites
-        reported_not_gated: text_characters, which feeds no issue site. It counts
-          space characters, and whether a word space is a space glyph or a
-          positioning gap is the writer's choice. The critic joins two shows with
-          a space only when the gap exceeds 0.25 em past an extrapolated run
-          width, and a Source Serif word space is 0.235 em, so a gap-encoded
-          space is invisible to it. On 010 the typst leg ends five paragraphs
-          with two-word last lines set as two shows with no space glyph, so the
-          count differs by one on those pages (reader 20, 26, 38, 41, 52 and
-          their booklet sides). Closing it needs each run's pen end from the
-          tracer, a field Element::Text does not carry
+          fields that feed issue sites, and text_characters (WP-5.11). A word
+          space may be a space glyph or a positioning gap, the writer's choice;
+          the critic now measures each gap from the previous run's pen end
+          (Element::Text pen, from the tracer) and joins with a space past
+          0.15 em. On 010 the same-line gaps between non-space shows fall below
+          0.055 em (drop caps) or above 0.217 em (word spaces), none between,
+          so the count no longer depends on how a leg encodes its spaces
   g:
     g1_pt: 2.0
     g2_pt: 0.5

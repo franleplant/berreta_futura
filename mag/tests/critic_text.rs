@@ -138,7 +138,7 @@ fn reconstructs_edition_010_text() {
         .collect();
     assert_eq!(body[3], 10, "page 4 body lines");
     assert_eq!(body[35], 4, "page 36 body lines");
-    assert_eq!(body.iter().sum::<usize>(), 1117, "total body lines");
+    assert_eq!(body.iter().sum::<usize>(), 1126, "total body lines");
 }
 
 fn text_show(s: &str, x_pt: f64, y_pt: f64, size_pt: f64, advance_pt: f64) -> streams::Element {
@@ -170,6 +170,7 @@ fn text_show(s: &str, x_pt: f64, y_pt: f64, size_pt: f64, advance_pt: f64) -> st
         origin: [streams::qo(x_pt), streams::qo(y_pt)],
         offs,
         units: s.chars().map(String::from).collect(),
+        pen: [streams::qo(step * glyphs as f64), 0],
     }
 }
 

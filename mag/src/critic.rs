@@ -30,6 +30,7 @@ mod parity_seam_is_reachable_from_critic {
             origin: [qo(x_pt), qo(y_pt)],
             offs,
             units: s.chars().map(String::from).collect(),
+            pen: [qo(step * glyphs as f64), 0],
         }
     }
 

@@ -1032,6 +1032,7 @@ mod colour_tests {
             clip: vec![],
             origin: [streams::qo(x as f64 / 100.0), streams::qo(y as f64 / 100.0)],
             offs: (0..units.len() as i64).map(|k| [k * 10_000, 0]).collect(),
+            pen: [units.len() as i64 * 10_000, 0],
             units,
         }
     }

@@ -1497,12 +1497,16 @@ fn summarize_critic(c: &critic::CriticClause) {
             text_characters_differing,
         } => {
             println!(
-                "tier S critic: {status} (results {result_a} vs {result_b}, {issues} issues; {leaves_compared} report leaves compared, {leaves_excluded} excluded, {} differ; Rust text fields on {text_pages_compared} pages, {} differ; text_characters excluded, {} pages differ)",
+                "tier S critic: {status} (results {result_a} vs {result_b}, {issues} issues; {leaves_compared} report leaves compared, {leaves_excluded} excluded, {} differ; Rust text fields on {text_pages_compared} pages, {} differ; text_characters {} pages differ)",
                 leaves_differing.len(),
                 text_fields_differing.len(),
                 text_characters_differing.len()
             );
-            for line in leaves_differing.iter().chain(text_fields_differing) {
+            for line in leaves_differing
+                .iter()
+                .chain(text_fields_differing)
+                .chain(text_characters_differing)
+            {
                 println!("  critic: {line}");
             }
         }

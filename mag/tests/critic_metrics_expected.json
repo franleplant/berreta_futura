@@ -422,5 +422,1211 @@
    ],
    "unresolved": false
   }
+ ],
+ "jpeg_figures": [
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.961461,
+    "minimum_mark_contrast_ratio": 21.0,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.032021
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.961461,
+    "minimum_mark_contrast_ratio": 21.0,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.032021
+   },
+   "path": "library/sources/22580-from-gpt2-to-kimi3-explained-8f01b0fe/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "be14f143981dcdffdc88b5e64e5b2e66f746bafbc8738d8c49685c74e82e0ea0",
+   "source_size": [
+    4096,
+    2778
+   ],
+   "thumb_sha256": "1747a14ce77a8042d9628a8b9d0974e3081248f12da34e99388551f45f68c573",
+   "thumb_size": [
+    512,
+    347
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.264749,
+    "minimum_mark_contrast_ratio": 1.867,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.539945
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.264749,
+    "minimum_mark_contrast_ratio": 1.867,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.539945
+   },
+   "path": "library/sources/22580-from-gpt2-to-kimi3-explained-8f01b0fe/media/003.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "a5ae6a9a756078a21a161c7a3aa86175a0dd0337c16022369ebd5cb96690cc69",
+   "source_size": [
+    4096,
+    2407
+   ],
+   "thumb_sha256": "2070e84613f85e433b6648668665dcbc870e611727cc2e13d450a641cb910b71",
+   "thumb_size": [
+    512,
+    301
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.1154,
+    "minimum_mark_contrast_ratio": 2.813,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.852983
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.1154,
+    "minimum_mark_contrast_ratio": 2.813,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.852983
+   },
+   "path": "library/sources/22580-from-gpt2-to-kimi3-explained-8f01b0fe/media/004.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "8f94a4df1cb6aacfb585e24a262b58dd8c15945f7366aebfedbb3e52b997dce5",
+   "source_size": [
+    3343,
+    3538
+   ],
+   "thumb_sha256": "aa0b29bec50ff8ad95eadc3d975d0264cda6df89e1c5a922c81672c79455238f",
+   "thumb_size": [
+    484,
+    512
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.140436,
+    "minimum_mark_contrast_ratio": 15.956,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.854492
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.140436,
+    "minimum_mark_contrast_ratio": 15.956,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.854492
+   },
+   "path": "library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "ff4f45963d031b1caf2232f3ebd880d826cca8aa3026fd29368646913c9fd719",
+   "source_size": [
+    2688,
+    1520
+   ],
+   "thumb_sha256": "595d9fcba8e2473f67ef5053d1808dacc67686d31bc6cab8ca56402413e4c0e8",
+   "thumb_size": [
+    512,
+    290
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.101502,
+    "minimum_mark_contrast_ratio": 3.242,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.877775
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.101502,
+    "minimum_mark_contrast_ratio": 3.242,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.877775
+   },
+   "path": "library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/003.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "b0752811e78893b5bb37f246418297bccc148593140e1d7b29842c4b02acf89b",
+   "source_size": [
+    2688,
+    1520
+   ],
+   "thumb_sha256": "625e195ffd19b660513abde5fba9f0d59ddd0a1b80b367029ed3fb224e102731",
+   "thumb_size": [
+    512,
+    290
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.059139,
+    "minimum_mark_contrast_ratio": 2.163,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.524929
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.059139,
+    "minimum_mark_contrast_ratio": 2.163,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.524929
+   },
+   "path": "library/sources/eval-engineering-the-step-that-turns-a-200-model-9f6f868f/media/004.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "f55213fc5fd7d1635ee2b2fdfe32122e1e27d9cabb60e1d819a3d46dfabbd4f6",
+   "source_size": [
+    3720,
+    3720
+   ],
+   "thumb_sha256": "1dd5ac8e858b66a18c6ebfcdf9cf4af5e4a4ea4e90747e6892dbcf703d1ba3d8",
+   "thumb_size": [
+    512,
+    512
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.609174,
+    "minimum_mark_contrast_ratio": 1.325,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.299051
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.609174,
+    "minimum_mark_contrast_ratio": 1.325,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.299051
+   },
+   "path": "library/sources/how-warp-builds-self-improving-agents-on-claude-9e96ce55/media/001.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "a03671e130889f11ce5ec5871c4bcec9a9385647f2eb2dee179eeddec0595178",
+   "source_size": [
+    3600,
+    2526
+   ],
+   "thumb_sha256": "3b156e18bc213c99e7137f454a809ec9408b61138bdfb714061a74732b3d3dff",
+   "thumb_size": [
+    512,
+    359
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.577941,
+    "minimum_mark_contrast_ratio": 4.902,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.383474
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.577941,
+    "minimum_mark_contrast_ratio": 4.902,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.383474
+   },
+   "path": "library/sources/introduction-to-the-actor-model-using-real-actor-2d2aad66/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "e700d3be006dc4b0f413d83e13b8e0fa1ae0af26684e480595a1b637e1039137",
+   "source_size": [
+    1227,
+    715
+   ],
+   "thumb_sha256": "2ee3d3d397a151dd5e37d0eb5a915915743b90892db17b7e63348ad5c6ad3f2a",
+   "thumb_size": [
+    512,
+    298
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.995074,
+    "minimum_mark_contrast_ratio": 6.822,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.000218
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.995074,
+    "minimum_mark_contrast_ratio": 6.822,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.000218
+   },
+   "path": "library/sources/introduction-to-the-actor-model-using-real-actor-2d2aad66/media/003.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "a684ac12092cc0753c52f157d821993f55cf9e58d55f66519ad307f4d9470fd7",
+   "source_size": [
+    720,
+    480
+   ],
+   "thumb_sha256": "29b18a855c1aece238462c437c7d9919260aa1c0d8ad59abdfb0ffbb138700b6",
+   "thumb_size": [
+    512,
+    341
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.822681,
+    "minimum_mark_contrast_ratio": 4.088,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.087032
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.822681,
+    "minimum_mark_contrast_ratio": 4.088,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.087032
+   },
+   "path": "library/sources/introduction-to-the-actor-model-using-real-actor-2d2aad66/media/004.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "af011685872c6299b663eb66a0064b4ce8aadad4e3ef1e820e635ee54da48a28",
+   "source_size": [
+    1333,
+    1333
+   ],
+   "thumb_sha256": "b049871ce0fc7efa6de042681e1163521791e448c25f0af702f9c557a14ea8b7",
+   "thumb_size": [
+    512,
+    512
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.995565,
+    "minimum_mark_contrast_ratio": 19.528,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.002652
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.995565,
+    "minimum_mark_contrast_ratio": 19.528,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.002652
+   },
+   "path": "library/sources/introduction-to-the-actor-model-using-real-actor-2d2aad66/media/005.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "df7c03d8574f58175d9f7a4739c60cce8d18c634787804db8b1b5e1b9715dd21",
+   "source_size": [
+    1280,
+    720
+   ],
+   "thumb_sha256": "fba3d64cd990062f3e779134c60daae7b1a1b850e9b13b91c8df4216a90184dd",
+   "thumb_size": [
+    512,
+    288
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.473658,
+    "minimum_mark_contrast_ratio": 19.635,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.464394
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.473658,
+    "minimum_mark_contrast_ratio": 19.635,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.464394
+   },
+   "path": "library/sources/introduction-to-the-actor-model-using-real-actor-2d2aad66/media/006.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "ff95e9d04ac6ffafe7077e590c285722835ec82f48d5b4735875fd733b0fbec3",
+   "source_size": [
+    1324,
+    594
+   ],
+   "thumb_sha256": "324d6fbd490c78f9a49551bc453d829c3199ee04c307b95a34496c82bd14e529",
+   "thumb_size": [
+    512,
+    230
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.797266,
+    "minimum_mark_contrast_ratio": 13.05,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.797266,
+    "minimum_mark_contrast_ratio": 13.05,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "library/sources/introduction-to-the-actor-model-using-real-actor-2d2aad66/media/007.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "917d9c90d98f8c6e3336e07da389014a93c39f21c34381d20c67051da2232433",
+   "source_size": [
+    2000,
+    1270
+   ],
+   "thumb_sha256": "7924b6552a41daaa3f0d3c992282523f068e75b521ce4dd51df01011049b42b1",
+   "thumb_size": [
+    512,
+    325
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 10.14,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 1.0,
+    "minimum_mark_contrast_ratio": 10.14,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "library/sources/introduction-to-the-actor-model-using-real-actor-2d2aad66/media/008.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "e76379b0e4b567f86b8c07bdb314a70367c1f4f0daad063ae544d3919d5fc1d3",
+   "source_size": [
+    1069,
+    710
+   ],
+   "thumb_sha256": "25424a40c66126792ef67874b2adb93eed08e94214569626775ebe6347175482",
+   "thumb_size": [
+    512,
+    340
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.049441,
+    "minimum_mark_contrast_ratio": 2.583,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.925887
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.049441,
+    "minimum_mark_contrast_ratio": 2.583,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.925887
+   },
+   "path": "library/sources/pragmatic-leverage-in-the-software-factory-09879736/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "066366cd0828d0c671f353eabb8654d969dfdf84fc9e7238b2aeca9676074c6d",
+   "source_size": [
+    2736,
+    1378
+   ],
+   "thumb_sha256": "ab7ff4e7e0c14caaea71ca3ea1c682708024c4dca5b706686dd027b0cbfe2d4f",
+   "thumb_size": [
+    512,
+    258
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.048539,
+    "minimum_mark_contrast_ratio": 2.401,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.922257
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.048539,
+    "minimum_mark_contrast_ratio": 2.401,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.922257
+   },
+   "path": "library/sources/pragmatic-leverage-in-the-software-factory-09879736/media/003.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "a68f6288b976e6087d98e5026e92a52993b6305d455fb777a37b105ccba1f345",
+   "source_size": [
+    2744,
+    1234
+   ],
+   "thumb_sha256": "287d2069242dca41b879604e979f43db98fcdd4233ca6ff65db9fa36e772dbd7",
+   "thumb_size": [
+    512,
+    230
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.030563,
+    "minimum_mark_contrast_ratio": 4.606,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.95332
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.030563,
+    "minimum_mark_contrast_ratio": 4.606,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.95332
+   },
+   "path": "library/sources/pragmatic-leverage-in-the-software-factory-09879736/media/005.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "a2f064d66c9d4cfe4de8c0f72b5178d3cf7139908a28e6d2644fda5edf8031cc",
+   "source_size": [
+    2472,
+    1592
+   ],
+   "thumb_sha256": "2c949f28130242df7241b5fc397fa7353edbdae310840acedd842123f146fd5a",
+   "thumb_size": [
+    512,
+    330
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.977641,
+    "minimum_mark_contrast_ratio": 3.153,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.977641,
+    "minimum_mark_contrast_ratio": 3.153,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.0
+   },
+   "path": "library/sources/previewing-the-model-hardware-standard-35305757/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "c7628493ebbe9f4ae2a4ba643f9c08fcb704f635705113a558f74ee3cdc44c5d",
+   "source_size": [
+    1999,
+    1125
+   ],
+   "thumb_sha256": "ba2c4ca37d1613d0c873df3efc1fd638b2a5da84d0b12da50b62cac758dc2178",
+   "thumb_size": [
+    512,
+    288
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.992981,
+    "minimum_mark_contrast_ratio": 17.126,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.001099
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.992981,
+    "minimum_mark_contrast_ratio": 17.126,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.001099
+   },
+   "path": "library/sources/previewing-the-model-hardware-standard-35305757/media/011.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "db009aa20cf91c98d452eb040331bf0436151c013946cf492938c8dea22d8ee9",
+   "source_size": [
+    1819,
+    1366
+   ],
+   "thumb_sha256": "1a8b1dfe614fb6437320efd3f92fd283d584f4ba6d727a68a50730f5f3c3ad4e",
+   "thumb_size": [
+    512,
+    384
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.97156,
+    "minimum_mark_contrast_ratio": 8.448,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.005288
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.97156,
+    "minimum_mark_contrast_ratio": 8.448,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.005288
+   },
+   "path": "library/sources/previewing-the-model-hardware-standard-35305757/media/012.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "d8c2a3edf3875120f7405aca38c5d9ff166cd66078a10064712418bb9a783362",
+   "source_size": [
+    2048,
+    1366
+   ],
+   "thumb_sha256": "2a637e085c75767cec10d83b9f1ed01bc37c32698221532f01018cbc42b7a673",
+   "thumb_size": [
+    512,
+    342
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.303643,
+    "minimum_mark_contrast_ratio": 20.998,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.504252
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.303643,
+    "minimum_mark_contrast_ratio": 20.998,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.504252
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/001.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "999f0aa78a916287ad024ef343181516444023fd8bc6448c55916a095e5ec0da",
+   "source_size": [
+    2304,
+    1296
+   ],
+   "thumb_sha256": "474f9bf3eca160f7c2a1deab776471eb964d1dd8f282040d73d1d453b41427af",
+   "thumb_size": [
+    512,
+    288
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.042318,
+    "minimum_mark_contrast_ratio": 2.563,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.632996
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.042318,
+    "minimum_mark_contrast_ratio": 2.563,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.632996
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "26c7279d8c99d507f6a0c14a3853328300c6a3a43e1fb3d2ead60de4096b4e0b",
+   "source_size": [
+    2280,
+    855
+   ],
+   "thumb_sha256": "f1af85842655f53a7f0220f589488766eaef1c2f4b737e49bac28e0c53637e78",
+   "thumb_size": [
+    512,
+    192
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.037282,
+    "minimum_mark_contrast_ratio": 2.813,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.579
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.037282,
+    "minimum_mark_contrast_ratio": 2.813,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.579
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/003.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "12da3ee28e8cdbd11fb97902be5f8f13fed15a59c4db27dd7a4c80ff3438fe93",
+   "source_size": [
+    2280,
+    855
+   ],
+   "thumb_sha256": "55bf649040a415c9090f93cbf33cb53383ac1a9f6d2ded5c77036ce6f92f10b6",
+   "thumb_size": [
+    512,
+    192
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.082715,
+    "minimum_mark_contrast_ratio": 2.498,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.639648
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.082715,
+    "minimum_mark_contrast_ratio": 2.498,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.639648
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/004.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "7b933d7c23cee01acf4bc59a321758ff2a60b177655abeb131bc58eeb025cb10",
+   "source_size": [
+    2400,
+    1596
+   ],
+   "thumb_sha256": "81bde88eaffc98931ebbe9820ae34ace39564c528314d579a1a2d5bdefe1f2ab",
+   "thumb_size": [
+    512,
+    340
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.039249,
+    "minimum_mark_contrast_ratio": 2.711,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.917185
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.039249,
+    "minimum_mark_contrast_ratio": 2.711,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.917185
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/005.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "42eef2f07cd091d6ae921f0fb90fff5f33be33e11ae2196e1a23bf8bf5bee270",
+   "source_size": [
+    2280,
+    654
+   ],
+   "thumb_sha256": "08038686ac921ac66e3fce201636d7fb2e1e18c010ca5c1b24d6f28f8d8aa8c9",
+   "thumb_size": [
+    512,
+    147
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.075508,
+    "minimum_mark_contrast_ratio": 2.848,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.89948
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.075508,
+    "minimum_mark_contrast_ratio": 2.848,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.89948
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/006.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "5859237f1747a5da59d107fc90b6545c61be895a9d7636c9aaaa126ae91feb0a",
+   "source_size": [
+    2280,
+    1125
+   ],
+   "thumb_sha256": "ad9ed0d3e76dc67fabef0577ed5da535fde57364c6999cca67e0479a160f624e",
+   "thumb_size": [
+    512,
+    253
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.078887,
+    "minimum_mark_contrast_ratio": 2.325,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.881832
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.078887,
+    "minimum_mark_contrast_ratio": 2.325,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.881832
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/007.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "f793d3e41ccd29556c96fc9fb5c86d463e7ac85fe877a7c12d5052c0ad630719",
+   "source_size": [
+    2280,
+    1200
+   ],
+   "thumb_sha256": "49d03267adccf188eddb9ef29c6409e3602115de978cc70ff50d96f28e8c30ec",
+   "thumb_size": [
+    512,
+    269
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": true,
+   "after": {
+    "mark_pixel_ratio": 0.154521,
+    "minimum_mark_contrast_ratio": 1.971,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.833676
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.135261,
+    "minimum_mark_contrast_ratio": 1.309,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.83976
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/008.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "928dda76971a9760066280450b7fc5146f65b316946108881c54c348389bc12a",
+   "source_size": [
+    2280,
+    930
+   ],
+   "thumb_sha256": "2690f7a55cf952747c9484fc9882d850f1fb2a02a86de6b9dcf23f15e947b350",
+   "thumb_size": [
+    512,
+    209
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.110443,
+    "minimum_mark_contrast_ratio": 2.848,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.745949
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.110443,
+    "minimum_mark_contrast_ratio": 2.848,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.745949
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/009.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "1a9392781dafe9e56047aec4d18d310e4db847338673f27993bf5404e2eff72b",
+   "source_size": [
+    2280,
+    1140
+   ],
+   "thumb_sha256": "fff29a490c4e40e0d297225dbc0a88c7c8df8472a6b0fa686694100514ba263d",
+   "thumb_size": [
+    512,
+    256
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.06041,
+    "minimum_mark_contrast_ratio": 2.37,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.741839
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.06041,
+    "minimum_mark_contrast_ratio": 2.37,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.741839
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/010.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "30606273de6e1610adc087a272dda1380e31d5e2ce6b2e72414933de361808db",
+   "source_size": [
+    2280,
+    825
+   ],
+   "thumb_sha256": "9f22f6ff70091b47277e0d4687d732148566552ff4cfe4c34fbdb4fc628ec899",
+   "thumb_size": [
+    512,
+    185
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.129778,
+    "minimum_mark_contrast_ratio": 4.22,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.848528
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.129778,
+    "minimum_mark_contrast_ratio": 4.22,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.848528
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/011.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "682ceb12cffc54e2512b9244e74180fce88524b565e575fa20d17910d1797c06",
+   "source_size": [
+    2280,
+    870
+   ],
+   "thumb_sha256": "4fafd5c6c7f78d06c284b0cbc1e9f04289c790e97441d8b34f3a1e82f6dfae01",
+   "thumb_size": [
+    512,
+    195
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.082366,
+    "minimum_mark_contrast_ratio": 1.646,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.846903
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.082366,
+    "minimum_mark_contrast_ratio": 1.646,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.846903
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/012.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "95dd742f4aea017f0898b653c5b366b007f47fced7afd069dd542f72f2e51f08",
+   "source_size": [
+    2280,
+    312
+   ],
+   "thumb_sha256": "5a996a5174b4357e658325f6c8587d9210b52023265fd053f9eeed9e9630d4c0",
+   "thumb_size": [
+    512,
+    70
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.060646,
+    "minimum_mark_contrast_ratio": 2.269,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.8918
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.060646,
+    "minimum_mark_contrast_ratio": 2.269,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.8918
+   },
+   "path": "library/sources/running-a-software-factory-efficiently-at-uber-s-36ff06c6/media/013.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "8a9924647cd6e73c21d780ca68c2531cd55c6584e1abf0c319997d1fbd908f4d",
+   "source_size": [
+    1290,
+    348
+   ],
+   "thumb_sha256": "97782c538096261a1db1d5658de62295b9e330e3a92bc4a95db6a5764f7c10ba",
+   "thumb_size": [
+    512,
+    138
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.078751,
+    "minimum_mark_contrast_ratio": 2.116,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.80319
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.078751,
+    "minimum_mark_contrast_ratio": 2.116,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.80319
+   },
+   "path": "library/sources/software-factories-light-and-dark-ef463732/02-harness-engineering-talk.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "30150388ae598fa5095646afbcc20a961e456574128a1f74c216af9544bf91fb",
+   "source_size": [
+    2048,
+    1146
+   ],
+   "thumb_sha256": "66203043a385e21bec545d1300bf8397b63b0dc4856100e572944d07bd688491",
+   "thumb_size": [
+    512,
+    287
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.045511,
+    "minimum_mark_contrast_ratio": 1.927,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.860588
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.045511,
+    "minimum_mark_contrast_ratio": 1.927,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.860588
+   },
+   "path": "library/sources/software-factories-light-and-dark-ef463732/03-loop-harness-factory.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "ac2281c79a73be494f976a349079aa028c9c3297f2060d35260451b4f9624133",
+   "source_size": [
+    2048,
+    677
+   ],
+   "thumb_sha256": "39e7392e85f61f5bb5b33946510c8e191cc8a1cf54f56fd1076205bdeefdd88b",
+   "thumb_size": [
+    512,
+    169
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.058261,
+    "minimum_mark_contrast_ratio": 1.984,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.834832
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.058261,
+    "minimum_mark_contrast_ratio": 1.984,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.834832
+   },
+   "path": "library/sources/software-factories-light-and-dark-ef463732/04-factory-closed-loop.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "55ab28cfda7d73b7b7af15faaeef7b72d086b3466f5a63f7b7c2aca14f245474",
+   "source_size": [
+    2048,
+    1030
+   ],
+   "thumb_sha256": "f63994a7bb4733ec7469563e3d4a11c7d977ffbbb5a8e398b33d55367cfa3874",
+   "thumb_size": [
+    512,
+    258
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.076844,
+    "minimum_mark_contrast_ratio": 1.598,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.834405
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.076844,
+    "minimum_mark_contrast_ratio": 1.598,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.834405
+   },
+   "path": "library/sources/the-new-rules-of-context-engineering-for-claude--aa1b1ea8/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "9c89d901f3a96d0c7df423c5f62fe8251a824456d7f50d157173cfff4820ca8e",
+   "source_size": [
+    1999,
+    1667
+   ],
+   "thumb_sha256": "f7b8047dbdbc549505f4e051d6f7bcdf33e55dcd91c1702a2942e3a1e552453e",
+   "thumb_size": [
+    512,
+    427
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.091153,
+    "minimum_mark_contrast_ratio": 1.426,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.724264
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.091153,
+    "minimum_mark_contrast_ratio": 1.426,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.724264
+   },
+   "path": "library/sources/the-persona-selection-model-8defd9b5/media/001.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "3b0a554fa15d0e160d4e1356838b8116db29943fe74c36801468fd02aa6e924a",
+   "source_size": [
+    2292,
+    1290
+   ],
+   "thumb_sha256": "d89c0debaf918642734d2eb0b0f943c0f6a7445de5d0674d2f993ca12eacbf90",
+   "thumb_size": [
+    512,
+    288
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.054077,
+    "minimum_mark_contrast_ratio": 3.766,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.936455
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.054077,
+    "minimum_mark_contrast_ratio": 3.766,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.936455
+   },
+   "path": "library/sources/why-harness-engineering-is-so-hard-fe732038/media/002.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "ca07a7ad5cb8c20f297630c9a5a2e83431a63739e9c2f9ab3555e279d0911327",
+   "source_size": [
+    1254,
+    1254
+   ],
+   "thumb_sha256": "df9a90c869bc05d23bce62f1053489d0b09788a196519375cf7dca5694bef9a5",
+   "thumb_size": [
+    512,
+    512
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.072703,
+    "minimum_mark_contrast_ratio": 4.078,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.921163
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.072703,
+    "minimum_mark_contrast_ratio": 4.078,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.921163
+   },
+   "path": "library/sources/why-harness-engineering-is-so-hard-fe732038/media/003.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "205f722e7e0617d296d58ae48bbb1629423ff7e0747b141e8a4bdfb6ab63b262",
+   "source_size": [
+    1448,
+    1086
+   ],
+   "thumb_sha256": "454ac2caf4f1e635fe77426dbc745361bd4bd2353e9727cce34501c25805c4b7",
+   "thumb_size": [
+    512,
+    384
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.959649,
+    "minimum_mark_contrast_ratio": 16.742,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.034213
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.959649,
+    "minimum_mark_contrast_ratio": 16.742,
+    "needs_treatment": false,
+    "paper_pixel_ratio": 0.034213
+   },
+   "path": "library/sources/why-software-factories-fail-benchmarking-the-new-f1d9c04a/media/strict-pass-rate.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "bd803b7f9512d0722fac9e7dea9d617b6589298fe72b327a9ed9baa11a2c94cf",
+   "source_size": [
+    1200,
+    544
+   ],
+   "thumb_sha256": "f8dfef550d591376aa783d631f990fc3cd3ef5f447f64212cec40169d31a1649",
+   "thumb_size": [
+    512,
+    232
+   ],
+   "unresolved": false
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.101632,
+    "minimum_mark_contrast_ratio": 1.97,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.752498
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.101632,
+    "minimum_mark_contrast_ratio": 1.97,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.752498
+   },
+   "path": "library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/02-lights-on-factory.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "436b1bf18cdfb59461244b405dc1dcbc34ea16dfcd9fdcb534efa1e76b1bd519",
+   "source_size": [
+    4096,
+    1805
+   ],
+   "thumb_sha256": "1222a41830311def6eca03fb18865805bff8688e32bda79034718041a415f799",
+   "thumb_size": [
+    512,
+    226
+   ],
+   "unresolved": true
+  },
+  {
+   "adjusted": false,
+   "after": {
+    "mark_pixel_ratio": 0.101632,
+    "minimum_mark_contrast_ratio": 1.97,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.752498
+   },
+   "analysis": {
+    "mark_pixel_ratio": 0.101632,
+    "minimum_mark_contrast_ratio": 1.97,
+    "needs_treatment": true,
+    "paper_pixel_ratio": 0.752498
+   },
+   "path": "library/sources/why-software-factories-fail-turning-the-lights-b-1312d1ad/media/02-lights-on-factory.jpg",
+   "source_mode": "RGB",
+   "source_sha256": "436b1bf18cdfb59461244b405dc1dcbc34ea16dfcd9fdcb534efa1e76b1bd519",
+   "source_size": [
+    4096,
+    1805
+   ],
+   "thumb_sha256": "1222a41830311def6eca03fb18865805bff8688e32bda79034718041a415f799",
+   "thumb_size": [
+    512,
+    226
+   ],
+   "unresolved": true
+  }
  ]
 }

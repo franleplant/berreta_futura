@@ -5,6 +5,9 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
+const JPEG_PIXEL_FLIPS: f64 = 100.0;
+const JPEG_CONTRAST_TOLERANCE: f64 = 0.01;
+
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -32,13 +35,13 @@ fn number(value: &Value, key: &str) -> f64 {
         .unwrap_or_else(|| panic!("{key} is a number"))
 }
 
-fn check(row: &Value) -> Vec<String> {
+fn check(row: &Value, pixel_exact: bool) -> Vec<String> {
     let path = row["path"].as_str().expect("path is a string");
     let source = metrics::decode_rgb(&repository().join(path))
         .unwrap_or_else(|error| panic!("{path} decodes: {error}"));
     let mut failures = Vec::new();
     let expected_source = row["source_sha256"].as_str().expect("sha is a string");
-    if digest(&source.data) != expected_source {
+    if pixel_exact && digest(&source.data) != expected_source {
         failures.push(format!(
             "{path}: decoded pixels differ from PIL convert(RGB)"
         ));
@@ -55,50 +58,56 @@ fn check(row: &Value) -> Vec<String> {
             expected_size
         ));
     }
-    if digest(&thumb.data) != row["thumb_sha256"].as_str().expect("sha is a string") {
+    if pixel_exact && digest(&thumb.data) != row["thumb_sha256"].as_str().expect("sha is a string")
+    {
         failures.push(format!("{path}: thumbnail pixels differ from PIL LANCZOS"));
     }
+    let (ratio_tolerance, contrast_tolerance) = if pixel_exact {
+        (0.0, 0.0)
+    } else {
+        (
+            JPEG_PIXEL_FLIPS / f64::from(expected_size.0 * expected_size.1),
+            JPEG_CONTRAST_TOLERANCE,
+        )
+    };
     let analysis = metrics::analyze_print_contrast(&source);
-    let oracle = &row["analysis"];
-    for (label, actual, wanted) in [
-        (
-            "paper_pixel_ratio",
-            analysis.paper_pixel_ratio,
-            number(oracle, "paper_pixel_ratio"),
-        ),
-        (
-            "mark_pixel_ratio",
-            analysis.mark_pixel_ratio,
-            number(oracle, "mark_pixel_ratio"),
-        ),
-        (
-            "minimum_mark_contrast_ratio",
-            analysis.minimum_mark_contrast_ratio,
-            number(oracle, "minimum_mark_contrast_ratio"),
-        ),
-    ] {
-        if actual != wanted {
-            failures.push(format!("{path}: {label} {actual} expected {wanted}"));
-        }
-    }
-    if analysis.needs_treatment != oracle["needs_treatment"].as_bool().expect("bool") {
-        failures.push(format!("{path}: needs_treatment differs"));
-    }
     let prepared = metrics::prepare_print_image(&repository().join(path))
         .unwrap_or_else(|error| panic!("{path} prepares: {error}"));
+    for (stage, measured) in [("analysis", analysis), ("after", prepared.after)] {
+        let oracle = &row[stage];
+        for (label, actual, tolerance) in [
+            (
+                "paper_pixel_ratio",
+                measured.paper_pixel_ratio,
+                ratio_tolerance,
+            ),
+            (
+                "mark_pixel_ratio",
+                measured.mark_pixel_ratio,
+                ratio_tolerance,
+            ),
+            (
+                "minimum_mark_contrast_ratio",
+                measured.minimum_mark_contrast_ratio,
+                contrast_tolerance,
+            ),
+        ] {
+            let wanted = number(oracle, label);
+            if (actual - wanted).abs() > tolerance {
+                failures.push(format!(
+                    "{path}: {stage} {label} {actual} expected {wanted}"
+                ));
+            }
+        }
+        if measured.needs_treatment != oracle["needs_treatment"].as_bool().expect("bool") {
+            failures.push(format!("{path}: {stage} needs_treatment differs"));
+        }
+    }
     if prepared.adjusted != row["adjusted"].as_bool().expect("bool") {
         failures.push(format!(
             "{path}: adjusted {} expected {}",
             prepared.adjusted, row["adjusted"]
         ));
-    }
-    let after = &row["after"];
-    if prepared.after.minimum_mark_contrast_ratio != number(after, "minimum_mark_contrast_ratio")
-        || prepared.after.mark_pixel_ratio != number(after, "mark_pixel_ratio")
-        || prepared.after.paper_pixel_ratio != number(after, "paper_pixel_ratio")
-        || prepared.after.needs_treatment != after["needs_treatment"].as_bool().expect("bool")
-    {
-        failures.push(format!("{path}: post-treatment analysis differs"));
     }
     if prepared.unresolved() != row["unresolved"].as_bool().expect("bool") {
         failures.push(format!("{path}: unresolved differs"));
@@ -127,22 +136,30 @@ fn analysis_of(image: &metrics::Rgb) -> metrics::PrintContrastAnalysis {
     metrics::analyze_print_contrast(image)
 }
 
-fn run(group: &str) {
+fn run(group: &str, pixel_exact: bool) {
     let oracle = expected();
     let rows = oracle[group].as_array().expect("group is an array");
     assert!(!rows.is_empty(), "{group} is not empty");
-    let failures: Vec<String> = rows.iter().flat_map(check).collect();
+    let failures: Vec<String> = rows
+        .iter()
+        .flat_map(|row| check(row, pixel_exact))
+        .collect();
     assert!(failures.is_empty(), "{}", failures.join("\n"));
 }
 
 #[test]
 fn edition_010_figures_match_the_python_metrics() {
-    run("figures");
+    run("figures", true);
 }
 
 #[test]
 fn fixtures_match_the_python_metrics() {
-    run("fixtures");
+    run("fixtures", true);
+}
+
+#[test]
+fn library_jpegs_match_the_python_metrics() {
+    run("jpeg_figures", false);
 }
 
 #[test]
