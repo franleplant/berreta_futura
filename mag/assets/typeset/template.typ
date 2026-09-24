@@ -277,6 +277,7 @@
 
 #let layer(body) = [#body<mag-layer>]
 #let backdrop(body) = [#body<mag-backdrop>]
+#let prose(body) = [#body<mag-prose>]
 #let clipped(width, height, body) = box(width: width, height: height, clip: true, body)
 
 #let tail-baseline(at) = query(selector(<mag-end-baseline>).before(at)).last().location().position()
@@ -855,7 +856,7 @@
       }
     }
   } else {
-    par(body)
+    prose(par(body))
   }
 }
 
@@ -974,12 +975,12 @@
 
 #let doc-item(body) = context {
   if reference-list.get() {
-    block(move(dy: DATUM - REFERENCE-LEADING / 2 - HALF-SERIF * REFERENCE-SIZE, body), above: 0pt, below: REFERENCE-AFTER)
+    block(prose(move(dy: DATUM - REFERENCE-LEADING / 2 - HALF-SERIF * REFERENCE-SIZE, body)), above: 0pt, below: REFERENCE-AFTER)
   } else {
     layer(block(
       {
         layer(place(top + left, dy: 3.505pt, disc))
-        pad(left: LIST-INDENT, body)
+        prose(pad(left: LIST-INDENT, body))
       },
       above: 0pt,
       below: ITEM-AFTER,
