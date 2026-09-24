@@ -562,6 +562,13 @@ impl Builder<'_> {
     }
 
     pub fn framed(&mut self, text: &CoverText, cover_art: &Path) -> Result<String> {
+        let (ax, ay) = (self.design.art.x, self.design.art.top);
+        let (aw, ah) = (self.design.art.width, self.design.art.height);
+        let art = self.full_art(cover_art, ax, ay, aw, ah)?;
+        self.framed_with(text, art)
+    }
+
+    pub fn framed_with(&mut self, text: &CoverText, art: String) -> Result<String> {
         let (band_x, band_width) = self.tab_band();
         let overdraw = self.design.tab.overdraw;
         let paper = self.design.colors.paper.clone();
@@ -581,7 +588,7 @@ impl Builder<'_> {
         parts.push(self.headline(&text.headline)?);
         let (ax, ay) = (self.design.art.x, self.design.art.top);
         let (aw, ah) = (self.design.art.width, self.design.art.height);
-        parts.push(self.full_art(cover_art, ax, ay, aw, ah)?);
+        parts.push(art);
         parts.push(format!(
             "<rect data-slot=\"art-border\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"none\" stroke=\"{ink}\" stroke-width=\".7\"/>",
             pyf(ax),

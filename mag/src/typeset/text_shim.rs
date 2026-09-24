@@ -1,6 +1,6 @@
 use typst::introspection::{Location, Tag};
 use typst::layout::{Abs, Em, Frame, FrameItem, Point};
-use typst::text::TextItem;
+use typst::text::{Glyph, TextItem};
 
 pub const WEASYPRINT_69: bool = true;
 const TRACK: &str = "mag-track:";
@@ -82,6 +82,7 @@ fn measured(
             point
         }
         FrameItem::Text(text) => {
+            soft_hyphens(text);
             let width = text.width();
             let flow = matches!(flex, Flex::Flow(_));
             let delta = written(text, state.tracks.last().map(|t| t.1), flow);
@@ -105,8 +106,52 @@ fn measured(
     }
 }
 
+fn hyphen_kern(word: &TextItem) -> Option<(usize, Em)> {
+    let index = word
+        .glyphs
+        .iter()
+        .rposition(|g| !word.text[g.range()].trim_matches('\u{ad}').is_empty())?;
+    let c = word.text[word.glyphs[index].range()]
+        .chars()
+        .rfind(|c| *c != '\u{ad}')?;
+    let face = word.font.rusty();
+    let mut buffer = rustybuzz::UnicodeBuffer::new();
+    buffer.push_str(&format!("{c}\u{2010}"));
+    let shaped = rustybuzz::shape(face, &[], buffer);
+    let (info, position) = (
+        shaped.glyph_infos().first()?,
+        shaped.glyph_positions().first()?,
+    );
+    let nominal = face.glyph_hor_advance(ttf_parser::GlyphId(info.glyph_id as u16))?;
+    let kern = f64::from(position.x_advance) - f64::from(nominal);
+    Some((index, Em::new(kern / f64::from(face.units_per_em()))))
+}
+
+fn merge_hyphens(items: Vec<(Point, FrameItem)>) -> Vec<(Point, FrameItem)> {
+    let mut out: Vec<(Point, FrameItem)> = Vec::with_capacity(items.len());
+    for (pos, item) in items {
+        if let (Some((_, FrameItem::Text(word))), FrameItem::Text(hyphen)) = (out.last_mut(), &item)
+        {
+            if hyphen.text.as_str() == "\u{ad}" && word.font == hyphen.font {
+                if let Some((index, kern)) = hyphen_kern(word) {
+                    word.glyphs[index].x_advance += kern;
+                    let at = word.text.len() as u16;
+                    word.glyphs.extend(hyphen.glyphs.iter().map(|g| Glyph {
+                        range: at + g.range.start..at + g.range.end,
+                        ..g.clone()
+                    }));
+                    word.text.push_str(&hyphen.text);
+                    continue;
+                }
+            }
+        }
+        out.push((pos, item));
+    }
+    out
+}
+
 fn walk(frame: &mut Frame, state: &mut Open) -> Abs {
-    let items: Vec<_> = frame.items().cloned().collect();
+    let items = merge_hyphens(frame.items().cloned().collect());
     frame.clear();
     let mut placed = Vec::with_capacity(items.len());
     for (pos, mut item) in items {
@@ -218,6 +263,33 @@ fn spacing(ls: i64) -> (i64, i64) {
     (left, ls - left)
 }
 
+fn soft_hyphens(text: &mut TextItem) {
+    if !text.text.contains('\u{ad}') {
+        return;
+    }
+    let drawn: Vec<usize> = text
+        .glyphs
+        .iter()
+        .filter(|g| &text.text[g.range()] == "\u{ad}")
+        .map(|g| g.range().start)
+        .collect();
+    let mut map = vec![0u16; text.text.len() + 1];
+    let mut out = String::with_capacity(text.text.len() + drawn.len());
+    for (at, c) in text.text.char_indices() {
+        map[at] = out.len() as u16;
+        match c {
+            '\u{ad}' if drawn.contains(&at) => out.push('\u{2010}'),
+            '\u{ad}' => {}
+            _ => out.push(c),
+        }
+    }
+    map[text.text.len()] = out.len() as u16;
+    for glyph in &mut text.glyphs {
+        glyph.range = map[glyph.range().start]..map[glyph.range().end];
+    }
+    text.text = out.into();
+}
+
 fn written(text: &mut TextItem, tracking: Option<f64>, flow: bool) -> Abs {
     let size = text.size.to_pt();
     let units = (size * 4.0 / 3.0 * 1024.0) as i64;
@@ -317,6 +389,46 @@ mod tests {
 
     fn per_mille(em: Em) -> f64 {
         (em.get() * 1000.0 * 1e6).round() / 1e6
+    }
+
+    #[test]
+    fn a_soft_hyphen_break_is_one_run_ending_in_a_kerned_u2010_as_pango_sets_it() {
+        let body = "#set text(font: SERIF, size: 10pt, lang: \"es\")\n\
+                    #block(width: 25pt)[#set par(linebreaks: \"simple\", justify: false)\n\
+                    ser\u{ad}vicio servicio]";
+        let (before, after) = shimmed(body);
+        assert!(before.iter().any(|(_, t)| t.text.as_str() == "\u{ad}"));
+        assert!(after.iter().all(|(_, t)| !t.text.contains('\u{ad}')));
+        let (_, word) = after
+            .iter()
+            .find(|(_, t)| t.text.ends_with('\u{2010}'))
+            .expect("the broken word carries its hyphen");
+        assert_eq!(word.text.as_str(), "ser\u{2010}");
+        let r = &word.glyphs[2];
+        let nominal = word.font.x_advance(r.id).expect("r has an advance");
+        let kerned = hyphen_kern(&TextItem {
+            text: "r".into(),
+            glyphs: vec![Glyph {
+                range: 0..1,
+                ..r.clone()
+            }],
+            ..word.clone()
+        })
+        .expect("r shapes before the hyphen")
+        .1;
+        assert!(
+            kerned.get() < -0.01,
+            "Source Serif kerns r against the hyphen"
+        );
+        let (drawn, expected) = (per_mille(r.x_advance), per_mille(nominal + kerned));
+        assert!(
+            (drawn - expected).abs() <= 1.0,
+            "r is drawn {drawn}, kerned {expected}"
+        );
+        assert!(
+            drawn < per_mille(nominal) - 20.0,
+            "the kern reaches the drawn advance"
+        );
     }
 
     #[test]

@@ -1,0 +1,71 @@
+id: '906'
+issue_number: 906
+title: Language Fixture
+publication_date: '2026-09-05'
+status: draft
+art_direction_path: art-directions/fixture.yaml
+format:
+  article_opener: illustrated_paper_spots_v1
+cover:
+  layout: footer_caption
+  headline: Language Fixture
+  deck: Two reports set in two languages.
+  back_text: The same edition, set once per language, with its own hyphenation and labels.
+  art_path: editions/906/art/cover.png
+articles:
+- id: hyphenation-article
+  title: The Hyphenation Article
+  short_title: Hyphenation
+  display_emphasis: Hyphenation
+  opener_variant: stepped_title
+  author: Dee Fixture
+  author_note: A fixture author note for the illustrated opener.
+  content_mode: article
+  source_ids:
+  - fixture-source-d
+  manuscript: editions/906/articles/hyphenation-article.md
+  opener_art:
+    path: editions/906/art/opener.png
+    alt_text: A fixture opener illustration.
+    credit: Illustration generated for this fixture.
+- id: figure-article
+  title: The Localized Figure Article
+  short_title: Localized Figure
+  display_emphasis: Figure
+  opener_variant: stepped_title
+  author: Ada Fixture
+  author_note: A fixture author note for the second opener.
+  content_mode: article
+  source_ids:
+  - fixture-source-a
+  manuscript: editions/906/articles/figure-article.md
+  opener_art:
+    path: editions/906/art/opener-2.png
+    alt_text: A second fixture opener illustration.
+    credit: Illustration generated for this fixture.
+  figures:
+  - id: budget-diagram
+    source_id: fixture-source-a
+    path: media/diagram.png
+    caption: The budget diagram, captioned in the edition's language.
+    credit: Fixture credit.
+    alt_text: A fixture diagram.
+    anchor: Budgets
+    layout: evidence_band
+closing_plates:
+- title: The first language plate.
+  art_path: editions/906/art/plate-1.png
+- title: The second language plate.
+  art_path: editions/906/art/plate-2.png
+- title: The third language plate.
+  art_path: editions/906/art/plate-3.png
+- title: The fourth language plate.
+  art_path: editions/906/art/plate-4.png
+- title: The fifth language plate.
+  art_path: editions/906/art/plate-5.png
+- title: The sixth language plate.
+  art_path: editions/906/art/plate-6.png
+- title: The seventh language plate.
+  art_path: editions/906/art/plate-7.png
+- title: The eighth language plate.
+  art_path: editions/906/art/plate-8.png

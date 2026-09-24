@@ -2,15 +2,14 @@ use crate::model::doc::{
     educate_reader_quotes, fold_reader_characters, inline_text, parse_publication_document,
     settable_codepoints, Block, Document, Inline,
 };
-use crate::model::manifest::{
-    load_edition, source_code_payload, Article, Edition, Editorial, LoadOptions, Records, Section,
-};
-use crate::model::records::{load_records, Extract, Figure};
+use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, Section};
+use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
     anchor_key, article_opener_format, clamp_roster, content_label, is_name_roster,
     is_reference_heading, py_repr, py_str, scalar_label, ui, Result, ValidationError,
 };
 use crate::typeset::estimate::{Metrics, Opener};
+use crate::typeset::hyphen::Hyphenator;
 use crate::typeset::media::pixels;
 use crate::web::edition::source_code_directory;
 use std::collections::BTreeSet;
@@ -56,6 +55,7 @@ pub struct Projection {
     pub verbatim: Vec<String>,
 }
 
+#[cfg(test)]
 pub struct Inputs<'a> {
     pub root: &'a Path,
     pub edition_id: &'a str,
@@ -65,11 +65,14 @@ pub struct Inputs<'a> {
     pub allow_unanchored_figures: bool,
 }
 
+#[cfg(test)]
 pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
-    let records: Records = load_records(&inputs.root.join("library").join("sources"))?
-        .into_iter()
-        .map(|record| (record.id.clone(), record))
-        .collect();
+    use crate::model::manifest::{load_edition, LoadOptions, Records};
+    let records: Records =
+        crate::model::records::load_records(&inputs.root.join("library").join("sources"))?
+            .into_iter()
+            .map(|record| (record.id.clone(), record))
+            .collect();
     let known: BTreeSet<String> = records.keys().cloned().collect();
     let edition = load_edition(
         inputs.root,
@@ -82,8 +85,12 @@ pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
             allow_unanchored_figures: inputs.allow_unanchored_figures,
         },
     )?;
-    let settable = settable_codepoints(inputs.fonts).map_err(refusal)?;
-    build(&edition, &settable, &Metrics::load(inputs.fonts)?)
+    compose(&edition, inputs.fonts)
+}
+
+pub fn compose(edition: &Edition, fonts: &Path) -> Result<Tree> {
+    let settable = settable_codepoints(fonts).map_err(refusal)?;
+    build(edition, &settable, &Metrics::load(fonts)?)
 }
 
 pub fn build(edition: &Edition, settable: &BTreeSet<u32>, metrics: &Metrics) -> Result<Tree> {
@@ -92,6 +99,9 @@ pub fn build(edition: &Edition, settable: &BTreeSet<u32>, metrics: &Metrics) -> 
         settable,
         metrics,
         illustrated: article_opener_format(&edition.raw) == ILLUSTRATED,
+        hyphenator: Hyphenator::for_locale(&edition.locale)
+            .transpose()
+            .map_err(ValidationError::one)?,
     }
     .tree()
 }
@@ -105,6 +115,7 @@ struct Writer<'a> {
     settable: &'a BTreeSet<u32>,
     metrics: &'a Metrics,
     illustrated: bool,
+    hyphenator: Option<Hyphenator>,
 }
 
 struct ContentsEntry {
@@ -124,6 +135,29 @@ impl Writer<'_> {
             &educate_reader_quotes(value),
             self.settable,
         ))
+    }
+
+    fn hyphenated(&self, value: &str) -> String {
+        let folded = fold_reader_characters(&educate_reader_quotes(value), self.settable);
+        escape_markup(&match &self.hyphenator {
+            Some(hyphenator) => hyphenator.text(&folded),
+            None => folded,
+        })
+    }
+
+    fn body(&self, value: &str) -> String {
+        format!("[{}]", self.hyphenated(value))
+    }
+
+    fn verbatim_body(&self, value: &str) -> String {
+        let folded = fold_reader_characters(value, self.settable);
+        format!(
+            "[{}]",
+            escape_markup(&match &self.hyphenator {
+                Some(hyphenator) => hyphenator.text(&folded),
+                None => folded,
+            })
+        )
     }
 
     fn literal(&self, value: &str) -> String {
@@ -294,7 +328,7 @@ impl Writer<'_> {
             self.said(&editorial.label),
             self.said(&editorial.title),
             self.byline(&editorial.byline),
-            self.blocks(&document.blocks, true)?,
+            self.blocks(&document.blocks, true, false)?,
         ))
     }
 
@@ -312,7 +346,7 @@ impl Writer<'_> {
             string_literal(&section.title),
             self.said(&self.ui(&section.kind)),
             self.said(&section.title),
-            self.blocks(&document.blocks, true)?,
+            self.blocks(&document.blocks, true, false)?,
         ))
     }
 
@@ -368,7 +402,7 @@ impl Writer<'_> {
 
     fn standfirst(&self, article: &Article, block: &Block) -> Result<String> {
         let Block::Paragraph(children) = block else {
-            return self.markup_block(block, true, false);
+            return self.markup_block(block, true, false, false);
         };
         let plain = |value: &str| fold_reader_characters(value, self.settable);
         let keep = self.metrics.standfirst_keep_words(&Opener {
@@ -378,14 +412,14 @@ impl Writer<'_> {
             intro: &self.plain_text(children),
         });
         let Some((kept, moved)) = split_words(children, keep) else {
-            return self.markup_block(block, true, false);
+            return self.markup_block(block, true, false, false);
         };
         Ok(format!(
             "#doc-paragraph(standfirst: true, roster: {}, split: true)[{}]\n\n\
              #doc-paragraph(standfirst: false, roster: false)[{}]\n\n",
             is_name_roster(&inline_text(children)),
             self.inlines(&kept),
-            self.inlines(&moved),
+            self.flowing(&moved, true),
         ))
     }
 
@@ -563,7 +597,7 @@ impl Writer<'_> {
                     "#doc-heading(level: {level}, {follows}: true)[{}]\n\n",
                     self.inlines(children)
                 ),
-                _ => self.markup_block(block, skip == 0 && position == 0, references)?,
+                _ => self.markup_block(block, skip == 0 && position == 0, references, false)?,
             });
             let Block::Heading { children, .. } = block else {
                 continue;
@@ -592,11 +626,11 @@ impl Writer<'_> {
         let items: String = article
             .key_ideas
             .iter()
-            .map(|idea| format!("  #key-idea{}\n", self.said(idea)))
+            .map(|idea| format!("  #key-idea{}\n", self.body(idea)))
             .collect();
         format!(
             "#key-ideas[\n  #key-ideas-label{}\n{items}]\n\n",
-            self.said(&self.ui("key_ideas"))
+            self.body(&self.ui("key_ideas"))
         )
     }
 
@@ -665,7 +699,7 @@ impl Writer<'_> {
                 .split("\n\n")
                 .map(str::trim)
                 .filter(|paragraph| !paragraph.is_empty())
-                .map(|paragraph| format!("  #quote-line{}\n", self.verbatim(paragraph)))
+                .map(|paragraph| format!("  #quote-line{}\n", self.verbatim_body(paragraph)))
                 .collect()
         };
         format!(
@@ -676,29 +710,37 @@ impl Writer<'_> {
             string_literal(&extract.anchor),
             string_literal(&extract.style),
             string_literal(&self.ui("verbatim")),
-            self.said(&extract.caption),
+            self.body(&extract.caption),
         )
     }
 
-    fn blocks(&self, blocks: &[Block], standfirst: bool) -> Result<String> {
+    fn blocks(&self, blocks: &[Block], standfirst: bool, manual: bool) -> Result<String> {
         blocks
             .iter()
             .enumerate()
-            .map(|(index, block)| self.markup_block(block, standfirst && index == 0, false))
+            .map(|(index, block)| self.markup_block(block, standfirst && index == 0, false, manual))
             .collect()
     }
 
-    fn markup_block(&self, block: &Block, standfirst: bool, references: bool) -> Result<String> {
+    fn markup_block(
+        &self,
+        block: &Block,
+        standfirst: bool,
+        references: bool,
+        manual: bool,
+    ) -> Result<String> {
         Ok(match block {
             Block::Heading { level, children } => format!(
                 "#doc-heading(level: {level})[{}]\n\n",
                 self.inlines(children)
             ),
-            Block::Paragraph(children) => format!(
-                "#doc-paragraph(standfirst: {standfirst}, roster: {})[{}]\n\n",
-                is_name_roster(&inline_text(children)),
-                self.inlines(children)
-            ),
+            Block::Paragraph(children) => {
+                let roster = is_name_roster(&inline_text(children));
+                format!(
+                    "#doc-paragraph(standfirst: {standfirst}, roster: {roster})[{}]\n\n",
+                    self.flowing(children, !(standfirst || roster || manual))
+                )
+            }
             Block::FencedCode { code, info } => {
                 let language = info.split_whitespace().next().unwrap_or("");
                 let folded = fold_reader_characters(code, self.settable);
@@ -711,32 +753,48 @@ impl Writer<'_> {
                 )
             }
             Block::Quote(children) => {
-                format!("#doc-quote[\n{}]\n\n", self.blocks(children, false)?)
+                format!(
+                    "#doc-quote[\n{}]\n\n",
+                    self.blocks(children, false, manual)?
+                )
             }
             Block::List {
                 ordered,
                 start,
                 items,
-            } => format!(
+            } => {
+                format!(
                 "#doc-list(ordered: {ordered}, start: {start}, references: {references})[\n{}]\n\n",
                 items
                     .iter()
-                    .map(|item| Ok(format!("  #doc-item[\n{}]\n", self.blocks(item, false)?)))
+                    .map(|item| {
+                        let manual = manual || (references && !ordered);
+                        Ok(format!("  #doc-item[\n{}]\n", self.blocks(item, false, manual)?))
+                    })
                     .collect::<Result<String>>()?
-            ),
+            )
+            }
             Block::HorizontalRule => "#doc-rule()\n\n".to_string(),
         })
     }
 
     fn inlines(&self, inlines: &[Inline]) -> String {
-        inlines.iter().map(|inline| self.inline(inline)).collect()
+        self.flowing(inlines, false)
     }
 
-    fn inline(&self, inline: &Inline) -> String {
+    fn flowing(&self, inlines: &[Inline], hyphens: bool) -> String {
+        inlines
+            .iter()
+            .map(|inline| self.inline(inline, hyphens))
+            .collect()
+    }
+
+    fn inline(&self, inline: &Inline, hyphens: bool) -> String {
         match inline {
+            Inline::Text(value) if hyphens => self.hyphenated(value),
             Inline::Text(value) => self.prose(value),
-            Inline::Emphasis(children) => format!("#emph[{}]", self.inlines(children)),
-            Inline::Strong(children) => format!("#strong[{}]", self.inlines(children)),
+            Inline::Emphasis(children) => format!("#emph[{}]", self.flowing(children, hyphens)),
+            Inline::Strong(children) => format!("#strong[{}]", self.flowing(children, hyphens)),
             Inline::Code(value) => format!("#inline-code{}", self.verbatim(value)),
             Inline::Link {
                 destination,
@@ -749,7 +807,7 @@ impl Writer<'_> {
                     .as_deref()
                     .map(string_literal)
                     .unwrap_or_else(|| "none".to_string()),
-                self.inlines(children)
+                self.flowing(children, hyphens)
             ),
             Inline::LineBreak { hard } => {
                 if *hard {
@@ -1196,6 +1254,8 @@ fn rejoin_hyphenated_words(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::manifest::{load_edition, LoadOptions, Records};
+    use crate::model::records::load_records;
     use crate::model::shared::ROSTER_CLAMP_LIMIT;
     use std::path::PathBuf;
 
@@ -1460,6 +1520,22 @@ mod tests {
             "{}",
             main.source
         );
+    }
+
+    #[test]
+    fn a_translation_sets_its_locale_and_labels_and_breaks_only_body_prose_at_pyphen_points() {
+        let root = corpus();
+        let base = crate::typeset::layout::edition(&root, "906", PUBLICATION).expect("906 loads");
+        let es = crate::model::manifest::load_translation(&root, &base, "es").expect("es loads");
+        let tree = compose(&es, &fonts()).expect("the Spanish edition composes");
+        let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
+        assert!(text.contains("#set text(lang: \"es\", region: \"AR\")"));
+        assert!(text.contains("[Artículo 01]"));
+        assert!(text.contains("res\u{ad}pon\u{ad}sa\u{ad}bi\u{ad}li\u{ad}dad"));
+        assert!(text.contains("level: 2)[Dónde se dividen las palabras]"));
+        assert!(text.contains("Una columna justificada corta las palabras"));
+        let english = compose(&base, &fonts()).expect("the English edition composes");
+        assert!(english.files.iter().all(|f| !f.source.contains('\u{ad}')));
     }
 
     #[test]

@@ -622,7 +622,7 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
     if repo_root.join(&design_toml).exists() {
         staging.add(&design_toml);
     }
-    let languages = stage_translation(&mut staging, &edition_dir, langs)?;
+    let languages = stage_translation(&mut staging, &edition_dir, &repo_root, langs)?;
     stage_source_records(&mut staging, &edition_yaml, &repo_root);
     for article in &articles {
         stage_article_figures(&mut staging, article)?;
@@ -865,6 +865,7 @@ fn stage_art(staging: &mut Staging, edition_yaml: &serde_yaml::Value, edition_di
 fn stage_translation(
     staging: &mut Staging,
     edition_dir: &Path,
+    repo_root: &Path,
     langs: Option<&str>,
 ) -> Result<Vec<String>> {
     let translation_dir = edition_dir.join("translations/es");
@@ -878,6 +879,7 @@ fn stage_translation(
     }
     let translation_yaml = read_yaml(&translation_yaml_path)?;
     staging.add(&translation_yaml_path);
+    stage_source_codes(staging, &translation_dir, repo_root);
     if let Some(editorial_path) = translation_yaml
         .get("editorial")
         .and_then(|e| str_field(e, "path"))

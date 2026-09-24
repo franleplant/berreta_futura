@@ -16,12 +16,14 @@ const PROSE: [(&str, f64); 3] = [
     ("mag-prose-band", 4.00395),
     ("mag-prose-compact", -32.5),
 ];
-const COLUMN_RIGHT: f64 = 4.00395 + 325.0;
+const MEASURE: f64 = 325.0;
+const COLUMN_RIGHT: f64 = 4.00395 + MEASURE;
 const RUNT_MEASURE_FRACTION: f64 = 0.15;
 const RUNT_MAX_RAG_FRACTION: f64 = 0.33;
 const PASSES: usize = 3;
 const LINE_SLACK: f64 = 4.0;
 const NO_BREAK: &str = "\\u{a0}";
+const SHY: &str = "\u{ad}";
 
 type Anchor = (Span, usize);
 
@@ -29,7 +31,7 @@ type Anchor = (Span, usize);
 struct Line {
     x0: f64,
     x1: f64,
-    words: Vec<(f64, String)>,
+    words: Vec<(f64, String, String)>,
     first: Option<(f64, Anchor)>,
     last: Option<(f64, Anchor)>,
 }
@@ -68,7 +70,8 @@ fn take(block: &mut Block, page: usize, at: Point, text: &TextItem) {
     let end = x + text.width().to_pt();
     line.x0 = line.x0.min(x);
     line.x1 = line.x1.max(end);
-    line.words.push((x, text.text.to_string()));
+    let style = format!("{:?}/{}/{:?}", text.font, text.size.to_pt(), text.fill);
+    line.words.push((x, text.text.to_string(), style));
     if !text.glyphs.is_empty() && line.first.as_ref().is_none_or(|(fx, _)| x < *fx) {
         line.first = Some((x, glyph_anchor(text, 0)));
     }
@@ -158,7 +161,7 @@ fn words(line: &Line) -> Vec<String> {
     parts.sort_by(|a, b| a.0.total_cmp(&b.0));
     parts
         .iter()
-        .map(|(_, t)| t.as_str())
+        .map(|(_, t, _)| t.as_str())
         .collect::<String>()
         .split_whitespace()
         .map(str::to_string)
@@ -180,7 +183,7 @@ fn runt(block: &Block, metrics: &Metrics) -> Option<(Anchor, Anchor)> {
     let measure = block.right - lines.iter().map(|l| l.x0).fold(f64::MAX, f64::min);
     let size = block.size;
     let prior = before.last()?;
-    let hyphen = block.hyphenates && prior.ends_with(['-', '\u{2010}']);
+    let hyphen = block.hyphenates && prior.ends_with(['-', '\u{2010}', '\u{ad}']);
     let width = last.x1 - last.x0;
     let pair = metrics.width("serif", &format!("{prior}\u{a0}{}", runt.first()?), size);
     let opened =
@@ -207,11 +210,7 @@ fn gap(sources: &dyn World, (from, to): (Anchor, Anchor)) -> Option<(FileId, usi
     Some((file, start + open, start + open + run))
 }
 
-fn binds(
-    doc: &PagedDocument,
-    sources: &dyn World,
-    metrics: &Metrics,
-) -> Vec<(FileId, usize, usize)> {
+fn prose_blocks(doc: &PagedDocument) -> Vec<(Location, Block)> {
     let mut blocks = vec![];
     let mut open = vec![];
     for (page, p) in doc.pages().iter().enumerate() {
@@ -234,24 +233,156 @@ fn binds(
         );
     }
     blocks
+}
+
+fn binds(
+    doc: &PagedDocument,
+    sources: &dyn World,
+    metrics: &Metrics,
+) -> Vec<(FileId, usize, usize)> {
+    prose_blocks(doc)
         .iter()
         .filter_map(|(_, block)| runt(block, metrics))
         .filter_map(|anchors| gap(sources, anchors))
         .collect()
 }
 
-fn bind(tree: Tree, found: &[(FileId, usize, usize)]) -> Tree {
+type Row = (f64, Vec<(f64, String, String)>, Option<Anchor>);
+
+fn ordered(block: &Block) -> Vec<Row> {
+    let mut lines: Vec<_> = block.lines.iter().collect();
+    lines.sort_by(|a, b| {
+        (a.0, a.1)
+            .partial_cmp(&(b.0, b.1))
+            .expect("finite baselines")
+    });
+    lines
+        .into_iter()
+        .map(|(_, _, line)| {
+            let mut items = line.words.clone();
+            items.sort_by(|a, b| a.0.total_cmp(&b.0));
+            (
+                line.x0,
+                items,
+                line.last.as_ref().map(|(_, anchor)| *anchor),
+            )
+        })
+        .collect()
+}
+
+fn attempted(text: &[char], first: usize, room: f64, size: f64) -> bool {
+    let cut = (room / size * 4.0 + 1e-6).floor() as usize;
+    let opens = |p: &usize| text[*p - 1] == ' ' && text[*p] != ' ';
+    let within = |end: usize| (first + 1..end).find(opens);
+    let n = match text.len() > cut && within(cut).is_some() {
+        true => cut,
+        false => text.len(),
+    };
+    let Some(bp) = within(n).map(|p| p - first - 1) else {
+        return true;
+    };
+    let e = bp as isize - first as isize - 1;
+    let end = if e >= 0 { e } else { (n - first) as isize + e };
+    end > 0
+}
+
+fn box_text(rows: &[Row], line: usize, style: &str, run: usize) -> String {
+    let items = &rows[line].1;
+    let mut text: String = items[items.len() - run..]
+        .iter()
+        .map(|(_, t, _)| t.as_str())
+        .collect();
+    for (_, next, _) in &rows[line + 1..] {
+        match text.strip_suffix(SHY) {
+            Some(joined) => text.truncate(joined.len()),
+            None if !text.ends_with(' ') => text.push(' '),
+            None => {}
+        }
+        let same = next.iter().take_while(|(_, _, k)| k == style);
+        text.extend(same.clone().map(|(_, t, _)| t.as_str()));
+        if same.count() < next.len() {
+            break;
+        }
+    }
+    text
+}
+
+fn weasyprint_hyphenates(block: &Block, rows: &[Row], line: usize) -> bool {
+    let items = &rows[line].1;
+    let Some((_, _, style)) = items.iter().rev().find(|(_, t, _)| t.as_str() != SHY) else {
+        return true;
+    };
+    let run = items
+        .iter()
+        .rev()
+        .take_while(|(_, t, k)| k == style || t.as_str() == SHY)
+        .count();
+    let start = match run == items.len() {
+        true => rows[line].0,
+        false => items[items.len() - run].0,
+    };
+    let own: String = items[items.len() - run..]
+        .iter()
+        .map(|(_, t, _)| t.as_str())
+        .collect();
+    let first = own
+        .rfind(' ')
+        .map_or(0, |i| own[..=i].chars().filter(|c| *c != '\u{ad}').count());
+    let text: Vec<char> = box_text(rows, line, style, run)
+        .chars()
+        .filter(|c| *c != '\u{ad}')
+        .collect();
+    let room = block.right - start - (COLUMN_RIGHT - MEASURE);
+    attempted(&text, first, room, block.size)
+}
+
+fn unhyphenated(sources: &dyn World, (span, offset): Anchor) -> Vec<(FileId, usize, usize)> {
+    let Some(file) = span.id() else {
+        return vec![];
+    };
+    let (Ok(source), Some(range)) = (sources.source(file), sources.range(span)) else {
+        return vec![];
+    };
+    let text = source.text();
+    let at = (range.start + offset).min(text.len());
+    let bound = |c: char| c.is_whitespace() || "[]#\\".contains(c);
+    let from = text[..at].rfind(bound).map_or(0, |i| i + 1);
+    let to = text[at..].find(bound).map_or(text.len(), |i| at + i);
+    text[from..to]
+        .match_indices(SHY)
+        .map(|(i, m)| (file, from + i, from + i + m.len()))
+        .collect()
+}
+
+fn suppressed(doc: &PagedDocument, sources: &dyn World) -> Vec<(FileId, usize, usize)> {
+    prose_blocks(doc)
+        .iter()
+        .flat_map(|(_, block)| {
+            let rows = ordered(block);
+            (0..rows.len().saturating_sub(1))
+                .filter(|&i| rows[i].1.last().is_some_and(|(_, t, _)| t.ends_with(SHY)))
+                .filter(|&i| !weasyprint_hyphenates(block, &rows, i))
+                .filter_map(|i| rows[i].2)
+                .flat_map(|anchor| unhyphenated(sources, anchor))
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+type Edit = (FileId, usize, usize, &'static str);
+
+fn bind(tree: Tree, found: &[Edit]) -> Tree {
     let files = tree.files.into_iter().map(|file| {
         let path = format!("/{}", file.path);
         let mut source = file.source;
         let mut here: Vec<_> = found
             .iter()
             .filter(|(id, ..)| id.vpath().get_with_slash() == path)
-            .map(|(_, a, b)| (a - PRELUDE.len(), b - PRELUDE.len()))
+            .map(|(_, a, b, with)| (a - PRELUDE.len(), b - PRELUDE.len(), *with))
             .collect();
         here.sort_unstable_by(|a, b| b.cmp(a));
-        for (a, b) in here {
-            source.replace_range(a..b, NO_BREAK);
+        for (a, b, with) in here {
+            source.replace_range(a..b, with);
         }
         File { source, ..file }
     });
@@ -265,11 +396,16 @@ pub fn bound(mut tree: Tree, font_dir: &Path) -> Result<(Tree, PagedDocument)> {
     for _ in 0..PASSES {
         let sources = world(&tree, font_dir)?;
         let doc = document(&sources)?;
-        let found = binds(&doc, &sources, &metrics);
-        if found.is_empty() {
+        let runts = binds(&doc, &sources, &metrics).into_iter();
+        let shy = suppressed(&doc, &sources).into_iter();
+        let edits: Vec<Edit> = runts
+            .map(|(f, a, b)| (f, a, b, NO_BREAK))
+            .chain(shy.map(|(f, a, b)| (f, a, b, "")))
+            .collect();
+        if edits.is_empty() {
             return Ok((tree, doc));
         }
-        tree = bind(tree, &found);
+        tree = bind(tree, &edits);
     }
     bail!("the Typst reader's runt binds did not settle within {PASSES} passes")
 }
@@ -350,6 +486,45 @@ mod tests {
                 ),
             }],
         }
+    }
+
+    #[test]
+    fn weasyprint_tries_a_hyphen_only_while_its_negative_word_slice_is_not_empty() {
+        let tail = "bajan por la página; cortar solamente deja una columna llena de guiones. Una \
+                    buena composición equilibra ambas cosas, renglón tras renglón, y ese equilibrio \
+                    depende de saber dónde puede dividirse legítimamente cada palabra.";
+        let from = |at: &str| &tail[tail.find(at).expect("in the paragraph")..];
+        let cases = [
+            (
+                tail,
+                "bajan por la página; cortar solamente deja una columna llena de ",
+                true,
+            ),
+            (
+                from("nes. Una"),
+                "nes. Una buena composición equilibra ambas cosas, renglón tras ",
+                true,
+            ),
+            (
+                from("glón, y"),
+                "glón, y ese equilibrio depende de saber dónde puede dividirse ",
+                false,
+            ),
+        ];
+        for (text, first, tried) in cases {
+            let chars: Vec<char> = text.chars().collect();
+            assert_eq!(
+                attempted(&chars, first.chars().count(), 325.0, 10.0),
+                tried,
+                "{text}"
+            );
+        }
+        let short: Vec<char> = "glón, y ese equilibrio depende de saber dónde puede dividirse \
+                                legítimamente cada palabra. Otra oración larga sigue aquí para \
+                                que el texto pase de los ciento treinta caracteres."
+            .chars()
+            .collect();
+        assert!(attempted(&short, 62, 325.0, 10.0));
     }
 
     #[test]
