@@ -6,6 +6,8 @@ mod cover;
 #[allow(dead_code)]
 mod critic;
 #[allow(dead_code)]
+mod highlight;
+#[allow(dead_code)]
 mod impose;
 #[allow(dead_code)]
 mod model;

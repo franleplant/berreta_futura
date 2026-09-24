@@ -1712,6 +1712,7 @@ dependencies = [
  "base64 0.22.1",
  "clap",
  "ego-tree",
+ "fancy-regex",
  "flate2",
  "hex",
  "lopdf",
