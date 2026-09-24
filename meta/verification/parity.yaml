@@ -40,7 +40,11 @@ normalization:
       the typst leg embeds from the same file; each pair proven by the shared
       file digest below; typst-side names provisional until a typst PDF exists
     cover_faces_note: Helvetica, Inter-Regular aliases and Archivo appear only
-      on cover pages 1 and n, outside the compared domain until WP-5.4g
+      on cover pages 1 and n, inside the compared domain since WP-5.4g. On 010
+      the oracle's faces declare an unembedded Helvetica that shows no glyph
+      and a subset Inter-Regular; the typst leg's embed the whole Inter-Regular
+      file. Both show the same glyphs, so no entry is needed (display list and
+      glyph positions equal on pages 1 and 56)
     entries:
       Magazine-Serif:
         face: SourceSerif4SmText-Regular
@@ -104,6 +108,76 @@ tiers:
       - color
       - navigation
       - critic
+    critic:
+      authored_by: WP-5.3g
+      compares: en/render-critic.json on both legs. The oracle leg's report is the
+        PYTHON critic's (the bridge runs package_release), the typst leg's the
+        RUST critic's, so the report comparison is Python against Rust and the
+        text check below is Rust against Rust on both legs' PDFs
+      decisions: every report leaf outside excluded_leaves is compared exactly,
+        which covers result, summary, every issue (code, page, severity,
+        message), every check flag and per-page decision (blank, ink_free,
+        sparse, voids, tail bands), and the booklet structure; a leaf present on
+        one side only differs
+      excluded_leaves:
+        raster:
+          argument: measured from pdftoppm rasters of each leg's own PDF. The
+            interior rasters differ legitimately between engines (a Tier V
+            meter, worst page fraction 0.000336 on 010, max channel delta 241 from
+            glyph grid-fitting), so a pixel count, bbox or crop error moves with
+            them. Every DECISION taken from these (sparse, the opener crop pass
+            flag, voids, tail bands) stays compared
+          leaves:
+            - .pages[*].ink_ratio
+            - .pages[*].presence_ratio
+            - .pages[*].ink_bbox
+            - .pages[*].presence_bbox
+            - .home_booklet.pages[*].ink_ratio
+            - .home_booklet.pages[*].presence_ratio
+            - .home_booklet.pages[*].ink_bbox
+            - .home_booklet.pages[*].presence_bbox
+            - .home_booklet_cover.pages[*].ink_ratio
+            - .home_booklet_cover.pages[*].presence_ratio
+            - .home_booklet_cover.pages[*].ink_bbox
+            - .home_booklet_cover.pages[*].presence_bbox
+            - .checks.article_opener_crop_fidelity[*].rgb_mae
+            - .checks.article_opener_crop_fidelity[*].message
+        text_source:
+          argument: the oracle report reads text through pypdf and the typst
+            report through the Rust tracer, which WP-5.3d chose over matching
+            pypdf (path B) because pypdf merges two-line headlines and injects
+            synthetic spaces into letter-spaced runs. These two counts measure
+            the extractor, not the PDF. The Rust critic's own fields are compared
+            on BOTH legs' PDFs by text_check instead
+          leaves:
+            - .pages[*].body_text_lines
+            - .pages[*].text_characters
+            - .home_booklet.pages[*].body_text_lines
+            - .home_booklet.pages[*].text_characters
+            - .home_booklet_cover.pages[*].body_text_lines
+            - .home_booklet_cover.pages[*].text_characters
+        pdf_bytes:
+          argument: hashes of each leg's own PDF bytes (see
+            strip_pdf_keys.json_leaves)
+          leaves:
+            - .visual_review.booklet_sha256
+            - .visual_review.reader_sha256
+      text_check:
+        pdfs: reader.pdf, booklet-a4.pdf, booklet-a4-interior.pdf and
+          booklet-a4-cover.pdf, every page, through critic::rules::read_leg
+        compared: body_text_lines, standalone_punctuation_lines and text
+          emptiness (which blank and ink_free read), the three text-derived
+          fields that feed issue sites
+        reported_not_gated: text_characters, which feeds no issue site. It counts
+          space characters, and whether a word space is a space glyph or a
+          positioning gap is the writer's choice. The critic joins two shows with
+          a space only when the gap exceeds 0.25 em past an extrapolated run
+          width, and a Source Serif word space is 0.235 em, so a gap-encoded
+          space is invisible to it. On 010 the typst leg ends five paragraphs
+          with two-word last lines set as two shows with no space glyph, so the
+          count differs by one on those pages (reader 20, 26, 38, 41, 52 and
+          their booklet sides). Closing it needs each run's pen end from the
+          tracer, a field Element::Text does not carry
   g:
     g1_pt: 2.0
     g2_pt: 0.5
