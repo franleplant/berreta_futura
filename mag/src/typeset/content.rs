@@ -161,6 +161,7 @@ impl Writer<'_> {
         let mut files = Vec::new();
         let mut main = String::from("#import \"/template.typ\": *\n\n");
         main.push_str(&self.header());
+        main.push_str(&self.closing_plates()?);
         main.push_str(&self.contents()?);
         if let Some(editorial) = &self.edition.editorial {
             let document = read_manuscript(&editorial.path)?;
@@ -177,6 +178,11 @@ impl Writer<'_> {
                 format!("pieces/article-{:02}-{}.typ", index + 1, article.id),
                 self.article(article, &document, index + 1)?,
             ));
+            main.push_str(&format!(
+                "#plates-after({}, of: {})\n",
+                index + 1,
+                self.edition.articles.len()
+            ));
         }
         for (index, section) in self.edition.sections.iter().enumerate() {
             let document = read_manuscript(&section.path)?;
@@ -186,7 +192,6 @@ impl Writer<'_> {
                 self.section_piece(index, section, &document)?,
             ));
         }
-        main.push_str(&self.closing_plates());
         files.insert(
             0,
             File {
@@ -349,14 +354,22 @@ impl Writer<'_> {
                 "{ILLUSTRATED} requires a paragraph as the first manuscript block"
             )));
         }
-        let mut out = self.article_head(article, document, index, illustrated)?;
+        let (mut out, trim) = self.article_head(article, document, index, illustrated)?;
         if !illustrated {
             out.push_str("  #opener-end()\n");
         }
+        let mut lead = false;
         if let (true, Some(block)) = (illustrated, document.blocks.first()) {
-            out.push_str(&self.standfirst(article, block)?);
+            let standfirst = self.standfirst(article, block)?;
+            lead = !standfirst.contains("split: true");
+            out.push_str(&standfirst);
         }
-        out.push_str(&self.article_body(article, document, usize::from(illustrated))?);
+        out.push_str(&self.article_body(
+            article,
+            document,
+            (usize::from(illustrated), trim),
+            lead,
+        )?);
         out.push_str(&self.key_ideas(article));
         out.push_str(&format!(
             "#end-mark{}\n\n",
@@ -416,7 +429,7 @@ impl Writer<'_> {
         document: &Document,
         index: usize,
         illustrated: bool,
-    ) -> Result<String> {
+    ) -> Result<(String, f64)> {
         let mut label = format!(
             "  #content-label[#label-primary{}",
             self.said(&format!("{} {index:02}", self.ui("feature")))
@@ -440,11 +453,13 @@ impl Writer<'_> {
             ));
         }
         label.push_str("]\n");
-        let code = match (&article.source_url, illustrated) {
-            (Some(url), false) => source_code(article, url)?,
-            _ => "none".to_string(),
+        let rows = match (&article.source_url, illustrated) {
+            (Some(url), false) => Some(source_rows(article, url)?),
+            _ => None,
         };
-        let note = match article.author_note.is_empty() {
+        let code = rows.as_deref().map_or("none".to_string(), string_array);
+        let figure = !split_figures(&article.figures).0.is_empty();
+        let note = match article.author_note.is_empty() || (figure && !illustrated) {
             true => String::new(),
             false => format!(
                 "  #author-note(code: {code}){}\n",
@@ -479,10 +494,14 @@ impl Writer<'_> {
             }
             _ => "none".to_string(),
         };
-        Ok(format!(
+        let (head, foot, trim) = match illustrated {
+            true => (String::new(), "", 0.0),
+            false => self.plain_head(article, rows.as_ref().map(Vec::len), figure)?,
+        };
+        let head = format!(
             "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n  source-ids: {},\n  \
-             figure-layouts: {},\n  opener: {},\n  art: {art},\n)[\n{label}  #piece-title{}\n  {}\n\
-             {note}{provenance}",
+             figure-layouts: {},\n  opener: {},\n  art: {art},\n)[\n{head}{label}  #piece-title{}\n  {}\n\
+             {note}{provenance}{foot}",
             string_literal(&format!("article-{}", article.id)),
             string_literal(&article.content_mode),
             string_literal(&article.short_title),
@@ -491,25 +510,72 @@ impl Writer<'_> {
             string_literal(if illustrated { ILLUSTRATED } else { "plain" }),
             self.said(&article.title),
             self.coded_byline(&article.author, &code),
+        );
+        Ok((head, trim))
+    }
+
+    fn plain_head(
+        &self,
+        article: &Article,
+        rows: Option<usize>,
+        figure: bool,
+    ) -> Result<(String, &'static str, f64)> {
+        let opener = self.metrics.plain_opener(
+            &article.title,
+            &format!("{} {}", self.ui("by"), article.author),
+            &article.author_note,
+            rows,
+            figure,
+        )?;
+        let title = fold_reader_characters(&educate_reader_quotes(&article.title), self.settable);
+        Ok((
+            format!(
+                "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, title: {})[\n",
+                opener.size,
+                opener.field,
+                opener.tracking,
+                string_literal(&title)
+            ),
+            "]\n",
+            opener.trim,
         ))
     }
 
-    fn article_body(&self, article: &Article, document: &Document, skip: usize) -> Result<String> {
+    fn article_body(
+        &self,
+        article: &Article,
+        document: &Document,
+        (skip, trim): (usize, f64),
+        lead: bool,
+    ) -> Result<String> {
         let (opener_figures, anchored_figures) = split_figures(&article.figures);
         let (opener_extracts, anchored_extracts) = split_extracts(&article.extracts);
+        let lead = lead && opener_figures.is_empty() && opener_extracts.is_empty();
         let mut out = String::new();
         for figure in &opener_figures {
-            out.push_str(&self.figure(figure)?);
+            out.push_str(&self.figure(figure, trim)?);
         }
         for extract in &opener_extracts {
             out.push_str(&self.extract(extract));
         }
         let mut references = false;
+        let standfirst = skip == 0 && matches!(document.blocks.first(), Some(Block::Paragraph(_)));
         for (position, block) in document.blocks.iter().enumerate().skip(skip) {
             if let Block::Heading { children, .. } = block {
                 references = is_reference_heading(&inline_text(children));
             }
-            out.push_str(&self.markup_block(block, skip == 0 && position == 0, references)?);
+            let follows = match position {
+                1 if standfirst => "standfirst",
+                _ if lead && position == skip => "lead",
+                _ => "",
+            };
+            out.push_str(&match block {
+                Block::Heading { level, children } if !follows.is_empty() => format!(
+                    "#doc-heading(level: {level}, {follows}: true)[{}]\n\n",
+                    self.inlines(children)
+                ),
+                _ => self.markup_block(block, skip == 0 && position == 0, references)?,
+            });
             let Block::Heading { children, .. } = block else {
                 continue;
             };
@@ -518,7 +584,7 @@ impl Writer<'_> {
                 .iter()
                 .filter(|figure| anchor_key(&figure.anchor) == key)
             {
-                out.push_str(&self.figure(figure)?);
+                out.push_str(&self.figure(figure, 0.0)?);
             }
             for extract in anchored_extracts
                 .iter()
@@ -561,11 +627,15 @@ impl Writer<'_> {
         )
     }
 
-    fn figure(&self, figure: &Figure) -> Result<String> {
+    fn figure(&self, figure: &Figure, trim: f64) -> Result<String> {
         let (width, height) = pixels(&figure.path)?;
+        let trim = match trim > 0.0 {
+            true => format!("  trim: {trim}pt,\n"),
+            false => String::new(),
+        };
         Ok(format!(
             "#figure-block(\n  id: {},\n  source-id: {},\n  anchor: {},\n  layout: {},\n  \
-             word: {},\n  alt: {},\n  path: {},\n  pixels: ({width}, {height}),\n\
+             word: {},\n  alt: {},\n  path: {},\n  pixels: ({width}, {height}),\n{trim}\
              )[#figure-caption{}#figure-credit{}]\n\n",
             string_literal(&figure.id),
             string_literal(&figure.source_id),
@@ -702,20 +772,40 @@ impl Writer<'_> {
         }
     }
 
-    fn closing_plates(&self) -> String {
-        self.edition
+    fn closing_plates(&self) -> Result<String> {
+        let target = match self
+            .edition
+            .raw
+            .get("format")
+            .and_then(|value| value.get("target_pages"))
+            .map(py_str)
+            .filter(|value| !matches!(value.trim(), "" | "None" | "False"))
+        {
+            Some(value) => value.trim().parse::<i64>().map_err(|_| {
+                ValidationError::one(format!("format.target_pages {value:?} is not an integer"))
+            })?,
+            None => 0,
+        };
+        let target = if target == 0 {
+            "none".to_string()
+        } else {
+            target.to_string()
+        };
+        Ok(self
+            .edition
             .closing_plates
             .iter()
             .enumerate()
             .map(|(index, plate)| {
                 format!(
-                    "#closing-plate(index: {}, alt: {}, path: {})\n",
+                    "#closing-plate(index: {}, alt: {}, path: {}, target: {target})\n",
                     index + 1,
                     string_literal(&plate.title),
                     path_literal(&plate.art_path)
                 )
             })
-            .collect()
+            .chain(["#closing-signature(none)\n".to_string()])
+            .collect())
     }
 }
 
@@ -811,6 +901,10 @@ pub fn escape_markup(text: &str) -> String {
 }
 
 fn source_code(article: &Article, url: &str) -> Result<String> {
+    Ok(string_array(&source_rows(article, url)?))
+}
+
+fn source_rows(article: &Article, url: &str) -> Result<Vec<String>> {
     let refuse = |why: &str| {
         ValidationError::one(format!(
             "No committed source code for article {}: {why}; regenerate editions/<id>/source-codes",
@@ -843,7 +937,7 @@ fn source_code(article: &Article, url: &str) -> Result<String> {
     if rows.is_empty() {
         return Err(refuse("its matrix is empty"));
     }
-    Ok(string_array(&rows))
+    Ok(rows)
 }
 
 fn text_locale(locale: &str) -> String {
