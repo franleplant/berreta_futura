@@ -1,5 +1,5 @@
 {
-  "schema_note": "per interior page of edition 010 (en) reader.pdf: the best parity tier the ENGINE PAIR has achieved and the Tier S clauses passing on that page, bound to the staged-input digest they were measured from. mag parity refuses to run at all when the current staged-input digest differs from this one, and refuses to run when the working tree lowers any entry committed at HEAD; raises are written only by verifiers (protocol rule 3) from the baseline-proposed.json a run writes beside its verdict. The tier ladder is CUMULATIVE: a page holds a tier only when every lower rung also holds. Seeded by WP-0.2k at `seeded_at_commit`, which every later ratchet comparison inherits as its base, at tier none for all 54 interior pages, because no typst leg exists yet and a WeasyPrint-versus-itself run measures nothing about the pair; mag parity therefore proposes no entries from a self-comparison.",
+  "schema_note": "per interior page of edition 010 (en) reader.pdf: the best parity tier the ENGINE PAIR has achieved and the Tier S clauses passing on that page, bound to the staged-input digest they were measured from. mag parity refuses to run at all when the current staged-input digest differs from this one, and refuses to run when the working tree lowers any entry committed at HEAD; raises are written only by verifiers (protocol rule 3) from the baseline-proposed.json a run writes beside its verdict. The tier ladder is CUMULATIVE: a page holds a tier only when every lower rung also holds. Seeded by WP-0.2k at `seeded_at_commit`, which every later ratchet comparison inherits as its base, at tier none for all 54 interior pages, because no typst leg exists yet and a WeasyPrint-versus-itself run measures nothing about the pair; mag parity therefore proposes no entries from a self-comparison. Ratcheted by WP-3.0g to tier E on all 54 pages from the staged run's baseline-proposed.json, once parity.yaml ratchet.target_tier became E.",
   "page_entry_shape": {
     "tier": "none | G1 | G2 | V1 | V2 | E",
     "s_clauses_passing": [
@@ -16,220 +16,544 @@
   "staged_input_digest": "ae9d6dafbdb5a5870fe5fbd3fa2a6122b242caeb7aaf7548b20cd84db0ba7d1f",
   "pages": {
     "2": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "3": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "4": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "5": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "6": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "7": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "8": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "9": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "10": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "11": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "12": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "13": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "14": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "15": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "16": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "17": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "18": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "19": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "20": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "21": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "22": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "23": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "24": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "25": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "26": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "27": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "28": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "29": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "30": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "31": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "32": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "33": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "34": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "35": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "36": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "37": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "38": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "39": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "40": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "41": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "42": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "43": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "44": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "45": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "46": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "47": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "48": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "49": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "50": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "51": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "52": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "53": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "54": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     },
     "55": {
-      "tier": "none",
-      "s_clauses_passing": []
+      "tier": "E",
+      "s_clauses_passing": [
+        "page_count",
+        "boxes",
+        "text",
+        "color",
+        "navigation"
+      ]
     }
   }
 }

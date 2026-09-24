@@ -127,6 +127,7 @@ struct ScoredSet {
 #[derive(Serialize)]
 struct Ratchet {
     status: String,
+    target_tier: String,
     committed_check: String,
     pages_committed: usize,
     pages_recorded: usize,
@@ -242,6 +243,20 @@ fn regressions(
             out.push(format!(
                 "page {page}: Tier S clauses dropped: {}",
                 lost.join(", ")
+            ));
+        }
+    }
+    Ok(out)
+}
+
+fn below_target(have: &BTreeMap<u32, PageEntry>, target: &str) -> Result<Vec<String>> {
+    let want = tier_rank(target).context("parity.yaml ratchet.target_tier")?;
+    let mut out = Vec::new();
+    for (page, held) in have {
+        if tier_rank(&held.tier)? < want {
+            out.push(format!(
+                "page {page}: tier {} is below the ratchet target {target}",
+                held.tier
             ));
         }
     }
@@ -957,6 +972,7 @@ fn guard_baseline() -> Result<(BTreeMap<u32, PageEntry>, Ratchet)> {
             pages_recorded: working.len(),
             pages_measured: 0,
             regressions: vec![],
+            target_tier: String::new(),
         },
     ))
 }
@@ -969,6 +985,7 @@ fn adhoc_ratchet() -> Ratchet {
         pages_recorded: 0,
         pages_measured: 0,
         regressions: vec![],
+        target_tier: String::new(),
     }
 }
 
@@ -1095,9 +1112,19 @@ fn ratchet_pages(
     unseeded: bool,
 ) -> Result<()> {
     let measured = measure_pages(verdict, spec)?;
+    let target = spec
+        .get("ratchet")
+        .and_then(|r| r.get("target_tier"))
+        .and_then(|t| t.as_str())
+        .context("parity.yaml ratchet.target_tier missing")?;
+    verdict.ratchet.target_tier = target.into();
     if let Some(measured) = &measured {
         verdict.ratchet.pages_measured = measured.len();
         verdict.ratchet.regressions = regressions(measured, recorded)?;
+        verdict
+            .ratchet
+            .regressions
+            .extend(below_target(measured, target)?);
         let proposal = write_proposal(out_dir, &raised(measured, recorded), digest)?;
         println!("proposed baseline: {}", proposal.display());
     }
@@ -1139,6 +1166,7 @@ fn build_verdict(
             pages_recorded: 0,
             pages_measured: 0,
             regressions: vec![],
+            target_tier: String::new(),
         },
         self_comparison: inputs.get("a_reader_sha256") == inputs.get("b_reader_sha256"),
         inputs,
@@ -1305,8 +1333,9 @@ fn summarize_run(v: &Verdict) {
     }
     let r = &v.ratchet;
     println!(
-        "ratchet: {} ({} committed entries {}, {} recorded, {} measured, {} regressions)",
+        "ratchet: {} (target {}, {} committed entries {}, {} recorded, {} measured, {} regressions)",
         r.status,
+        r.target_tier,
         r.pages_committed,
         r.committed_check,
         r.pages_recorded,
@@ -1451,7 +1480,7 @@ fn summarize_e(v: &Verdict) {
         ),
         Some(raster::RasterGuard::NotEvaluated { owner, .. }) => {
             println!(
-                "tier E raster: not_evaluated (parity.yaml tiers.e.raster_bound has no value; owner {owner})"
+                "tier E raster: not_evaluated (rasters are Tier V meters only; owner {owner})"
             );
         }
         None => {}
@@ -1574,6 +1603,7 @@ mod measured_pages {
                 pages_recorded: 0,
                 pages_measured: 0,
                 regressions: vec![],
+                target_tier: String::new(),
             },
             self_comparison: false,
             inputs: BTreeMap::new(),
@@ -1859,6 +1889,17 @@ mod ratchet_rules {
             regressions(&removed, &committed).expect("ranks"),
             vec!["page 2: entry removed (was E)".to_string()]
         );
+    }
+
+    #[test]
+    fn a_page_below_the_ratchet_target_is_a_regression_and_an_unknown_target_fails_loud() {
+        let measured = entries(&[(2, "E", &["text"]), (3, "V2", &["text"])]);
+        assert_eq!(
+            below_target(&measured, "E").expect("ranks"),
+            vec!["page 3: tier V2 is below the ratchet target E".to_string()]
+        );
+        assert!(below_target(&measured, "V2").expect("ranks").is_empty());
+        assert!(below_target(&measured, "X").is_err());
     }
 
     #[test]

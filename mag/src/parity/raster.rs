@@ -103,7 +103,9 @@ pub fn compare(
     let guard = match bound {
         None => RasterGuard::NotEvaluated {
             status: "not_evaluated".into(),
-            owner: "WP-0.2d raster_bound derivation".into(),
+            owner:
+                "nobody: withdrawn in plan revisions 15 and 39, superseded by per-glyph positions"
+                    .into(),
         },
         Some(bound) => RasterGuard::Evaluated {
             status: if pages_beyond.is_empty() && tier.dimension_mismatches.is_empty() {

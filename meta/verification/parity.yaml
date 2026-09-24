@@ -257,6 +257,29 @@ tiers:
         blocking_fix: WP-0.2g's tightening of the linear text-matrix quantum, after
           which the floor is re-derived; the re-derivation should perturb in device
           space through the Rust tracer rather than through pypdf on raw operands
+ratchet:
+  authored_by: WP-3.0g
+  target_tier: E
+  rule: every measured interior page must hold target_tier, or the ratchet fails
+    and the run exits nonzero; a page below it is reported beside the
+    regressions against baseline.json. Raising the target from none to E is a
+    pure tightening (plan rule 4), taken after the real pair measured inside
+    WP-0.2i's synthetic floor (evidence/WP-3.0g.md)
+  real_pair_floor:
+    measured_on: edition 010 (en), staged run of run-2026-09-13T01-34-51,
+      digest ae9d6dafbdb5a5870fe5fbd3fa2a6122b242caeb7aaf7548b20cd84db0ba7d1f
+    glyphs: 58623
+    shows: 1514
+    worst_ratio_of_bound: 0.0
+    worst_ratio_unquantized: 0.002389
+    worst_drift_pt: 1.75e-05
+    advance_gap_quanta_max: 0
+    shape_violations: 0
+    against_synthetic_floor: inside; stairdrift records 0.25 because it models
+      WP-1.6's pre-shim 0.000173 pt per glyph, while the WEASYPRINT_69 shim now
+      writes WeasyPrint's advances on the typst leg, so the real drift is f64
+      noise below one quantum. The bound stays derived from the mechanism, and
+      stairdrift stays the floor that must pass
 tools:
   measured_at: WP-0.1
   os: macOS 26.6.2
