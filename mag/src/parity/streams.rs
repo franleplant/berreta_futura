@@ -1516,6 +1516,32 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "WP-0.2j verify: lopdf's lenient decode drops content poppler paints, and extra operands are read first where poppler reads last"]
+    fn what_poppler_paints_is_traced_or_fails_loud() {
+        let json = |ops: &str| trace(ops, vec![]).map(|e| serde_json::to_string(&e).unwrap());
+        for (written, painted) in [
+            (
+                "] 0 0 0 rg 100 100 200 100 re f",
+                "0 0 0 rg 100 100 200 100 re f",
+            ),
+            (
+                "@ 0 0 0 rg 100 100 200 100 re f",
+                "0 0 0 rg 100 100 200 100 re f",
+            ),
+            ("1 8 w 100 100 m 300 100 l S", "8 w 100 100 m 300 100 l S"),
+            ("100 100 200 100 50 50 re f", "200 100 50 50 re f"),
+            (
+                "BT /F1 12 Tf 0 3 Tc 60 500 Td (ab) Tj ET",
+                "BT /F1 12 Tf 3 Tc 60 500 Td (ab) Tj ET",
+            ),
+        ] {
+            if let Ok(got) = json(written) {
+                assert_eq!(got, json(painted).unwrap(), "{written}");
+            }
+        }
+    }
+
+    #[test]
     fn a_coordinate_whose_f32_crosses_a_quantum_boundary_traces_at_its_authored_quantum() {
         let paths: Vec<String> = trace("300.004999 0 1 1 re f", vec![])
             .unwrap()

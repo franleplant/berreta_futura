@@ -1467,6 +1467,30 @@ mod colour_tests {
     }
 
     #[test]
+    #[ignore = "WP-0.2j verify: glyphs off the page widen the span cap of a word on it"]
+    fn a_glyph_off_the_page_buys_no_steps_for_a_word_on_it() {
+        let far = |tick: i64| {
+            let mut d = ladder(&vec![streams::qo(0.0015) + tick; 6944]);
+            if let Element::Text {
+                offs, gids, units, ..
+            } = &mut d.pages[0].elements[0]
+            {
+                let x = offs.last().unwrap()[0];
+                offs.extend((1..=360).map(|k| [x + k * streams::qo(20.0), 0]));
+                gids.extend(std::iter::repeat_n(3, 360));
+                units.extend(std::iter::repeat_n(".".to_string(), 360));
+            }
+            d
+        };
+        assert_eq!(compare_glyphs(&far(0), &far(0), 1).status, "pass");
+        assert_eq!(
+            compare_glyphs(&far(0), &far(8), 1).status,
+            "fail",
+            "world moves 5.08 pt on a 7200 pt line"
+        );
+    }
+
+    #[test]
     fn a_line_is_one_baseline_within_a_quantum_split_at_a_gap_of_three_em() {
         let em = streams::qo(10.0);
         let q = streams::qo(0.01);
