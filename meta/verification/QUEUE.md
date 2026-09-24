@@ -16,7 +16,12 @@
   0.2u, 0.2w, 0.2x, 3.0g, and the typeset set.
 - Awaiting the WP-4.1 gate verifier: WP-5.6, 0.2y, 5.4g, 5.3g, 3.10,
   5.11; it also raises cover rows 1 and 56 to E.
-- Running: WP-3.10 (Spanish on typst), WP-5.11.
+- Running: WP-5.11. WP-3.10 landed 3122610 (every language rendered;
+  Spanish hyphenation equal on 5348 words; fixture 906 en+es green).
+- Queued behind WP-5.11: WP-5.12 = `mag parity --lang <code>` for
+  --adhoc/--pre-rendered (parity.rs reads en only) + translated figure
+  paths in es edition-manifest.json are absolute staging paths on both
+  engines (fix in model/manifest.rs translation_raw; class C).
 - Next: WP-4.1 full gate, then WP-4.2 flip, WP-4.3 post-flip hyphenation,
   WP-6.1 delete Python.
 
@@ -133,6 +138,12 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- No current edition can be published in Spanish on EITHER engine:
+  nothing writes editions/NNN/translations/es/edition.yaml or its
+  source-codes/ (`mag translate` writes only the run's article files).
+  Only 004 has a translation, and it no longer loads. WP-3.10.md.
+- WP-4.3 decides whether to keep WeasyPrint 69's skip of hyphenation near
+  paragraph ends, which the typst leg copies for parity (WP-3.10.md).
 - `cover_art_size_points` is null on both legs, so preflight never checks
   cover-art size (WP-5.6.md).
 - The printed edition re-encoded EXIF-carrying figure JPEGs (3 in 008)
