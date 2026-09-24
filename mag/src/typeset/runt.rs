@@ -1,5 +1,6 @@
 use crate::typeset::content::{File, Tree};
 use crate::typeset::estimate::Metrics;
+use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::template::{document, world};
 use crate::typeset::world::PRELUDE;
 use anyhow::{bail, Result};
@@ -168,7 +169,7 @@ fn words(line: &Line) -> Vec<String> {
         .collect()
 }
 
-fn runt(block: &Block, metrics: &Metrics) -> Option<(Anchor, Anchor)> {
+fn runt(block: &Block, metrics: &Metrics, english: bool) -> Option<(Anchor, Anchor)> {
     let mut lines: Vec<_> = block.lines.iter().collect();
     lines.sort_by(|a, b| {
         (a.0, a.1)
@@ -183,7 +184,7 @@ fn runt(block: &Block, metrics: &Metrics) -> Option<(Anchor, Anchor)> {
     let measure = block.right - lines.iter().map(|l| l.x0).fold(f64::MAX, f64::min);
     let size = block.size;
     let prior = before.last()?;
-    let hyphen = block.hyphenates && prior.ends_with(['-', '\u{2010}', '\u{ad}']);
+    let hyphen = (block.hyphenates || english) && prior.ends_with(['-', '\u{2010}', '\u{ad}']);
     let width = last.x1 - last.x0;
     let pair = metrics.width("serif", &format!("{prior}\u{a0}{}", runt.first()?), size);
     let opened =
@@ -239,10 +240,11 @@ fn binds(
     doc: &PagedDocument,
     sources: &dyn World,
     metrics: &Metrics,
+    english: bool,
 ) -> Vec<(FileId, usize, usize)> {
     prose_blocks(doc)
         .iter()
-        .filter_map(|(_, block)| runt(block, metrics))
+        .filter_map(|(_, block)| runt(block, metrics, english))
         .filter_map(|anchors| gap(sources, anchors))
         .collect()
 }
@@ -391,13 +393,21 @@ fn bind(tree: Tree, found: &[Edit]) -> Tree {
     }
 }
 
-pub fn bound(mut tree: Tree, font_dir: &Path) -> Result<(Tree, PagedDocument)> {
+pub fn bound(
+    mut tree: Tree,
+    font_dir: &Path,
+    hyphenation: Hyphenation,
+) -> Result<(Tree, PagedDocument)> {
     let metrics = Metrics::load(font_dir).map_err(|e| anyhow::anyhow!("{e}"))?;
     for _ in 0..PASSES {
         let sources = world(&tree, font_dir)?;
         let doc = document(&sources)?;
-        let runts = binds(&doc, &sources, &metrics).into_iter();
-        let shy = suppressed(&doc, &sources).into_iter();
+        let runts = binds(&doc, &sources, &metrics, hyphenation.english).into_iter();
+        let shy = match hyphenation.weasyprint69_skip {
+            true => suppressed(&doc, &sources),
+            false => Vec::new(),
+        }
+        .into_iter();
         let edits: Vec<Edit> = runts
             .map(|(f, a, b)| (f, a, b, NO_BREAK))
             .chain(shy.map(|(f, a, b)| (f, a, b, "")))
@@ -530,7 +540,12 @@ mod tests {
     #[test]
     fn a_band_caption_is_bound_on_the_band_s_own_measure() {
         let fonts = reader_fonts();
-        let (band, _) = bound(captioned("evidence_band_prose"), &fonts).expect("the binds settle");
+        let (band, _) = bound(
+            captioned("evidence_band_prose"),
+            &fonts,
+            Hyphenation::PARITY,
+        )
+        .expect("the binds settle");
         assert!(
             !band.files[0].source.contains("effort goes\\.")
                 && band.files[0]
@@ -543,7 +558,8 @@ mod tests {
             band.files[0].source.contains("Chart by Uber"),
             "the one-line credit was bound"
         );
-        let (column, _) = bound(captioned("column_plate"), &fonts).expect("the binds settle");
+        let (column, _) = bound(captioned("column_plate"), &fonts, Hyphenation::PARITY)
+            .expect("the binds settle");
         assert!(
             column.files[0].source.contains("effort goes\\."),
             "{}",
@@ -560,7 +576,7 @@ mod tests {
             last_lines(&bare),
             ["BMP.", "A closing line that ends well inside the measure."]
         );
-        let (tree, doc) = bound(piece(), &fonts).expect("the binds settle");
+        let (tree, doc) = bound(piece(), &fonts, Hyphenation::PARITY).expect("the binds settle");
         let source = &tree.files[0].source;
         assert!(source.contains("malformed\\u{a0}BMP\\."), "{source}");
         assert_eq!(source.matches(NO_BREAK).count(), 1, "{source}");

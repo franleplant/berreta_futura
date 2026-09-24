@@ -191,7 +191,7 @@ fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     }
 }
 
-fn toml_value(repo_root: &Path, section: &str, key: &str) -> Option<String> {
+pub(crate) fn toml_value(repo_root: &Path, section: &str, key: &str) -> Option<String> {
     let text = fs::read_to_string(repo_root.join("magazine.toml")).ok()?;
     let header = format!("[{section}]");
     let mut inside = false;

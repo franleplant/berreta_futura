@@ -1,4 +1,5 @@
 use crate::typeset::content::{File, Tree};
+use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::text_shim;
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
@@ -31,8 +32,12 @@ pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
 
 const PLATE_CONTENT: &str = "#closing-signature(none)\n";
 
-pub fn paginate(tree: Tree, font_dir: &Path) -> Result<(Tree, PagedDocument)> {
-    let (tree, bare) = crate::typeset::runt::bound(tree, font_dir)?;
+pub fn paginate(
+    tree: Tree,
+    font_dir: &Path,
+    hyphenation: Hyphenation,
+) -> Result<(Tree, PagedDocument)> {
+    let (tree, bare) = crate::typeset::runt::bound(tree, font_dir, hyphenation)?;
     let content = bare.pages().len() - 2;
     let files = tree.files.into_iter().map(|file| File {
         source: file.source.replacen(
@@ -1172,7 +1177,8 @@ mod tests {
     fn closing_plates_close_the_signature_in_the_adapter_s_slots_and_order() {
         let (_, font_dir) = roots();
         let paged = |articles, plates| {
-            paginate(plated(articles, plates), font_dir).map(|(_, doc)| pdf(&doc).expect("a PDF"))
+            paginate(plated(articles, plates), font_dir, Hyphenation::PARITY)
+                .map(|(_, doc)| pdf(&doc).expect("a PDF"))
         };
         let pdf = paged(2, 7).expect("the plated run compiles");
         assert_eq!(plate_pages(&pdf), vec![4, 5, 6, 8, 9, 10]);

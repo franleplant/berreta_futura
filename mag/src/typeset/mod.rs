@@ -72,6 +72,10 @@ pub(crate) fn run_request(
         field(&request, "editionId")?,
         field(&request, "publicationName")?,
     )?;
+    let hyphenation = hyphen::Hyphenation::from_settings(|key| {
+        crate::render::toml_value(repo_root, "render", key)
+    })
+    .map_err(anyhow::Error::msg)?;
     let mut result = serde_json::json!({"layouts": [], "files": []});
     for language in languages {
         let edition = if language == primary {
@@ -83,7 +87,14 @@ pub(crate) fn run_request(
             true => render_dir.join("typst"),
             false => render_dir.join(format!("typst-{language}")),
         };
-        let one = render_language(repo_root, render_dir, &request, &staged, &edition, &work)?;
+        let one = render_language(
+            (repo_root, render_dir),
+            &request,
+            &staged,
+            &edition,
+            &work,
+            hyphenation,
+        )?;
         for key in ["layouts", "files"] {
             let rows = one[key].as_array().cloned().unwrap_or_default();
             result[key].as_array_mut().expect("seeded").extend(rows);
@@ -94,19 +105,19 @@ pub(crate) fn run_request(
 }
 
 fn render_language(
-    repo_root: &Path,
-    render_dir: &Path,
+    (repo_root, render_dir): (&Path, &Path),
     request: &Value,
     staged: &Path,
     edition: &crate::model::manifest::Edition,
     work: &Path,
+    hyphenation: hyphen::Hyphenation,
 ) -> Result<Value> {
     let out_dir = render_dir.join(&edition.language);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     println!("out dir: {}", out_dir.display());
     let fonts = repo_root.join(template::FONT_DIR);
-    let tree = content::compose(edition, &fonts)?;
-    let (tree, document) = template::paginate(tree, &fonts)?;
+    let tree = content::compose(edition, &fonts, hyphenation)?;
+    let (tree, document) = template::paginate(tree, &fonts, hyphenation)?;
     for file in &tree.files {
         let path = work.join(&file.path);
         let parent = path.parent().context("a tree file has no parent")?;
@@ -117,7 +128,7 @@ fn render_language(
     fs::write(work.join("root.typ"), template::ROOT_TYP)?;
     let projection = content::project(&tree)?;
     println!(
-        "typst source tree ({}): {} files, {} characters of reader text",
+        "typst source tree ({}, hyphenation {hyphenation:?}): {} files, {} characters of reader text",
         edition.language,
         tree.files.len(),
         projection.text.chars().count()

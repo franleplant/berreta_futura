@@ -14,6 +14,43 @@ const LEFT: usize = 3;
 const RIGHT: usize = 3;
 pub const SHY: char = '\u{ad}';
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Hyphenation {
+    pub english: bool,
+    pub weasyprint69_skip: bool,
+}
+
+impl Hyphenation {
+    pub const PARITY: Self = Self {
+        english: false,
+        weasyprint69_skip: true,
+    };
+
+    pub fn from_settings(setting: impl Fn(&str) -> Option<String>) -> Result<Self, String> {
+        let flag = |key: &str, default: bool| match setting(key).as_deref() {
+            None => Ok(default),
+            Some("true") => Ok(true),
+            Some("false") => Ok(false),
+            Some(other) => Err(format!(
+                "magazine.toml [render] {key} = {other}: expected true or false"
+            )),
+        };
+        let parity = Self::PARITY;
+        Ok(Self {
+            english: flag("hyphenate_english", parity.english)?,
+            weasyprint69_skip: flag("weasyprint69_hyphen_skip", parity.weasyprint69_skip)?,
+        })
+    }
+
+    pub fn native(&self, locale: &str) -> bool {
+        self.english && language(locale) == "en"
+    }
+}
+
+fn language(locale: &str) -> String {
+    locale.split(['-', '_']).next().unwrap_or("").to_lowercase()
+}
+
 pub struct Hyphenator {
     patterns: HashMap<Vec<char>, (usize, Vec<u8>)>,
     maxlen: usize,
@@ -21,8 +58,7 @@ pub struct Hyphenator {
 
 impl Hyphenator {
     pub fn for_locale(locale: &str) -> Option<Result<Self, String>> {
-        let language = locale.split(['-', '_']).next().unwrap_or("").to_lowercase();
-        match language.as_str() {
+        match language(locale).as_str() {
             "en" => None,
             "es" => Some(Ok(Self::parse(SPANISH))),
             _ => Some(Err(format!(
@@ -148,6 +184,18 @@ mod tests {
             syllables("«responsabilidad» y renglón,"),
             "«res-pon-sa-bi-li-dad» y ren-glón,"
         );
+    }
+
+    #[test]
+    fn the_parity_configuration_is_the_default_and_a_bad_value_is_refused() {
+        let unset = Hyphenation::from_settings(|_| None).expect("defaults");
+        assert_eq!(unset, Hyphenation::PARITY);
+        assert!(!unset.native("en") && unset.weasyprint69_skip);
+        let on = Hyphenation::from_settings(|key| Some((key == "hyphenate_english").to_string()))
+            .expect("booleans");
+        assert!(on.native("en-GB") && !on.native("es-AR") && !on.weasyprint69_skip);
+        let refused = Hyphenation::from_settings(|_| Some("yes".into())).expect_err("not a bool");
+        assert!(refused.contains("hyphenate_english"), "{refused}");
     }
 
     #[test]
