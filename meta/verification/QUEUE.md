@@ -9,10 +9,11 @@ Landed, awaiting a verifier: WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, 
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
-Running: WP-3.3b code/extracts/bibliography fixture + highlight wiring,
+Running: WP-3.8 fixture-exposed divergences (plain opener, closing-plate
+order/count, 4-entry contents, heading after opener, baseline rebase),
 WP-0.2j (exact decimals + physical drift cap).
 Queued behind WP-0.2j (parity owner): adversarial re-verify of
-0.2r/0.2s/0.2t/0.2j together, then WP-4.0g ad hoc mode. Behind WP-3.3b (typeset owner): WP-5.1h helpers,
+0.2r/0.2s/0.2t/0.2j together, then WP-4.0g ad hoc mode. Behind WP-3.8 (typeset owner): WP-5.1h helpers,
 WP-3.0g, WP-3.7.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
@@ -100,6 +101,9 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- The Python render critic falsely fails booklet page order on some
+  highlighted code lines (its paint-order defect, fixed in Rust by
+  WP-5.3h), which blocks oracle renders of such fixtures.
 - PDF document title separator changed from U+2014 to ": " (repo rule
   forbids authoring U+2014 in copy); WP-0.0e.
 - tools/pdf2md.py's ". . ." paragraph filter silently drops real text
