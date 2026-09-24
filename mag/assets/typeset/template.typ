@@ -80,6 +80,7 @@
 #let TAIL-MAX-HEIGHT = 214pt
 #let TAIL-FRAME-BOTTOM = 45pt
 #let TAIL-CLEARANCE = 12pt
+#let TAIL-FOOT-F32-LIFT = 0.0001pt
 #let PAGE-TOP-EPSILON = 0.01pt
 #let BAND-LAYOUTS = ("evidence_band", "evidence_band_prose", "adaptive_band")
 #let COMPACT-BAND = "compact_band"
@@ -274,12 +275,22 @@
   next.len() > 0 and next.first().value.kind == "figure" and is-band(next.first().value.layout)
 }
 
+#let layer(body) = [#body<mag-layer>]
+#let backdrop(body) = [#body<mag-backdrop>]
+#let clipped(width, height, body) = box(width: width, height: height, clip: true, body)
+
+#let tail-baseline(at) = query(selector(<mag-end-baseline>).before(at)).last().location().position()
+#let tail-room(baseline) = PAGE-HEIGHT - baseline.y - TAIL-FRAME-BOTTOM - TAIL-CLEARANCE
+
 #let tail-layer() = context {
   let page = here().page()
-  for tail in query(<mag-tail>).map(m => m.value).filter(t => t.printed and t.page == page) {
-    let x = if calc.odd(page) { MARGIN-INNER } else { MARGIN-OUTER }
-    let y = PAGE-HEIGHT - MARGIN-BOTTOM + DATUM - tail.height
-    place(top + left, dx: x + RAIL, dy: y, image(tail.path, width: MEASURE, height: tail.height, fit: tail.fit))
+  for mark in query(<mag-tail-art>) {
+    let (tail, baseline) = (mark.value, tail-baseline(mark.location()))
+    if baseline.page == page and tail-room(baseline) >= tail.height {
+      let x = if calc.odd(page) { MARGIN-INNER } else { MARGIN-OUTER }
+      let y = PAGE-HEIGHT - MARGIN-BOTTOM + DATUM - tail.height - TAIL-FOOT-F32-LIFT
+      place(top + left, dx: x + RAIL, dy: y, clipped(MEASURE, tail.height, image(tail.path, width: MEASURE, height: tail.height, fit: tail.fit)))
+    }
   }
 }
 
@@ -855,7 +866,7 @@
 )
 
 #let heading-stack(level, spec, above, escape, drop, body, lead: false) = {
-  block(above: if lead { 0pt } else { above }, below: 0pt, breakable: false, width: 100%, inset: escape, {
+  layer(block(above: if lead { 0pt } else { above }, below: 0pt, breakable: false, width: 100%, inset: escape, {
     if lead { v(above, weak: false) }
     bookmark(level, body)
     move(dy: drop, text(
@@ -868,7 +879,7 @@
     ))
     v(spec.below)
     block(height: HEADING-CLEARANCE, width: 100%, spacing: 0pt, [])
-  })
+  }))
   v(-HEADING-CLEARANCE)
 }
 
@@ -889,7 +900,7 @@
   })
 }
 
-#let ruled(pad-left, pad-rest, fill-color, body) = block(fill: fill-color, width: 100%, spacing: 0pt, pad(
+#let ruled(pad-left, pad-rest, fill-color, body) = backdrop(block(fill: fill-color, outset: (right: -MEASURE-DELTA), width: 100%, spacing: 0pt, pad(
   left: QUOTE-RULE / 2,
   block(
     stroke: (left: QUOTE-RULE + VIOLET),
@@ -899,7 +910,7 @@
     below: 0pt,
     body,
   ),
-))
+)))
 
 #let doc-quote(body) = block(
   {
@@ -965,14 +976,14 @@
   if reference-list.get() {
     block(move(dy: DATUM - REFERENCE-LEADING / 2 - HALF-SERIF * REFERENCE-SIZE, body), above: 0pt, below: REFERENCE-AFTER)
   } else {
-    block(
+    layer(block(
       {
-        place(top + left, dy: 3.505pt, disc)
+        layer(place(top + left, dy: 3.505pt, disc))
         pad(left: LIST-INDENT, body)
       },
       above: 0pt,
       below: ITEM-AFTER,
-    )
+    ))
   }
 }
 
@@ -1016,17 +1027,12 @@
 #let end-mark(body) = {
   set par(spacing: 0pt)
   v(-20pt)
-  block(
+  layer(block(
     height: 0pt,
     width: 100%,
     above: auto,
     below: 0pt,
     {
-      place(
-        top + left,
-        dy: 28.53085pt - 0.07625pt - 2.47375pt,
-        rect(width: 17pt, height: 1.1pt, fill: SIGNAL-ORANGE, stroke: none),
-      )
       place(top + left, dy: 28.53085pt + 2.47375pt, [#metadata(none)<mag-end-baseline>])
       place(
         top + left,
@@ -1042,8 +1048,13 @@
           upper(body),
         ),
       )
+      place(
+        top + left,
+        dy: 28.53085pt - 0.07625pt,
+        rect(width: 17pt, height: 1.1pt, fill: SIGNAL-ORANGE, stroke: none),
+      )
     },
-  )
+  ))
 }
 
 #let figure-caption(body) = block(
@@ -1075,8 +1086,8 @@
   let width = pixels.at(0) * height / pixels.at(1)
   block(height: height, width: 100%, spacing: 0pt, align(center, block(width: width, height: height, {
     place(top + left, [#metadata((id: id, width: width, height: height))<mag-figure-box>])
-    place(top + left, image(path, width: width, height: height, fit: "stretch"))
-    place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK))
+    place(top + left, clipped(width, height, image(path, width: width, height: height, fit: "stretch")))
+    layer(place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK)))
   })))
 })
 
@@ -1114,7 +1125,7 @@
   figure-counter.step()
   let spec = figure-spec(layout, anchor)
   spec.max-height -= trim
-  flow-mark("figure", layout, _ => block(
+  flow-mark("figure", layout, _ => layer(block(
     above: 0pt,
     below: spec.gap,
     breakable: false,
@@ -1125,7 +1136,7 @@
       figure-image(id, path, pixels, spec)
       body
     }),
-  ))
+  )))
 }
 
 #let quote-line(body) = par(body)
@@ -1156,13 +1167,14 @@
   ))
 }
 
-#let tail-art(article: none, path: none, pixels: none, fit: "cover") = context {
-  let baseline = query(selector(<mag-end-baseline>).before(here())).last().location().position()
+#let tail-art(article: none, path: none, pixels: none, fit: "cover") = {
   let height = calc.min(MEASURE * pixels.at(1) / pixels.at(0), TAIL-MAX-HEIGHT)
-  let room = PAGE-HEIGHT - baseline.y - TAIL-FRAME-BOTTOM - TAIL-CLEARANCE
-  let printed = room >= height
-  let tail = (article: article, printed: printed, height: height, room: room, page: baseline.page)
-  [#metadata(tail + (path: path, fit: fit))<mag-tail>]
+  [#metadata((height: height, path: path, fit: fit))<mag-tail-art>]
+  context {
+    let baseline = tail-baseline(here())
+    let room = tail-room(baseline)
+    [#metadata((article: article, printed: room >= height, height: height, room: room, page: baseline.page))<mag-tail>]
+  }
 }
 
 
@@ -1183,7 +1195,7 @@
 
 #let plate-page(plate) = page(
   foreground: none,
-  [#metadata(none)<mag-plate>] + place(top + left, dy: -MARGIN-TOP, image(plate.path, width: LIVE-WIDTH, height: PAGE-HEIGHT, fit: "contain")),
+  [#metadata(none)<mag-plate>] + place(top + left, dy: -MARGIN-TOP, clipped(LIVE-WIDTH, PAGE-HEIGHT, image(plate.path, width: LIVE-WIDTH, height: PAGE-HEIGHT, fit: "contain"))),
 )
 
 #let plate-content = state("mag-plate-content", none)
