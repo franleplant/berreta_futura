@@ -300,6 +300,20 @@ pub fn trace_page(
     Ok(tracer.out)
 }
 
+fn arity(operator: &str) -> Option<usize> {
+    Some(match operator {
+        "q" | "Q" | "h" | "S" | "s" | "f" | "F" | "f*" | "B" | "B*" | "b" | "b*" | "n" | "W"
+        | "W*" | "BT" | "ET" | "T*" | "EMC" => 0,
+        "w" | "J" | "j" | "M" | "gs" | "i" | "ri" | "BMC" | "MP" | "g" | "G" | "cs" | "CS"
+        | "TL" | "Tc" | "Tw" | "Tz" | "Ts" | "Tr" | "Tj" | "'" | "TJ" | "Do" => 1,
+        "d" | "BDC" | "DP" | "m" | "l" | "Tf" | "Td" | "TD" => 2,
+        "\"" | "rg" | "RG" => 3,
+        "v" | "y" | "re" | "k" | "K" => 4,
+        "c" | "cm" | "Tm" => 6,
+        _ => return None,
+    })
+}
+
 fn page_resources(doc: &Document, page_id: ObjectId) -> Result<&Dictionary> {
     let (maybe, ids) = doc.get_page_resources(page_id)?;
     if let Some(d) = maybe {
@@ -325,11 +339,20 @@ fn resolve<'a>(doc: &'a Document, o: &'a Object) -> Result<&'a Object> {
 
 impl Tracer<'_> {
     fn run(&mut self, content: &[u8], res: &Dictionary) -> Result<()> {
-        let ops = Content::decode(content).context("decoding content stream")?;
+        let ops = Content::decode_strict(content)
+            .context("content stream holds a token lopdf cannot parse (fail loud per Tier E)")?;
         let _exact = exact::content(&ops.operations, content)?;
         for op in &ops.operations {
-            self.op(op.operator.as_str(), &op.operands, res)
-                .with_context(|| format!("operator {}", op.operator))?;
+            let name = op.operator.as_str();
+            if let Some(n) = arity(name) {
+                anyhow::ensure!(
+                    op.operands.len() == n,
+                    "{name} takes {n} operands, got {} (fail loud per Tier E)",
+                    op.operands.len()
+                );
+            }
+            self.op(name, &op.operands, res)
+                .with_context(|| format!("operator {name}"))?;
         }
         Ok(())
     }
@@ -1516,7 +1539,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "WP-0.2j verify: lopdf's lenient decode drops content poppler paints, and extra operands are read first where poppler reads last"]
     fn what_poppler_paints_is_traced_or_fails_loud() {
         let json = |ops: &str| trace(ops, vec![]).map(|e| serde_json::to_string(&e).unwrap());
         for (written, painted) in [
@@ -1535,9 +1557,8 @@ mod tests {
                 "BT /F1 12 Tf 3 Tc 60 500 Td (ab) Tj ET",
             ),
         ] {
-            if let Ok(got) = json(written) {
-                assert_eq!(got, json(painted).unwrap(), "{written}");
-            }
+            assert!(json(painted).is_ok(), "{painted}");
+            assert!(json(written).is_err(), "{written}");
         }
     }
 
@@ -1710,7 +1731,7 @@ mod tests {
         let e = error("/c0 cs 0.5 scn", typst_spaces());
         assert!(e.contains("1 components for a 3-component"), "{e}");
         let e = error("0.5 0.5 rg", vec![]);
-        assert!(e.contains("operator rg"), "{e}");
+        assert!(e.contains("rg takes 3 operands, got 2"), "{e}");
     }
 
     #[test]
