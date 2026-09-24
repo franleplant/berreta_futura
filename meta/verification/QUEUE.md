@@ -14,19 +14,14 @@
 - Accepted since the restart: WP-5.4c, 5.4b-i, 5.4b-ii, 0.2l, 5.3c, 5.7a,
   5.3h, 5.5a (1+2), 5.7b, 5.5c, 5.9, 3.3a, 5.5d, 4.0g, 5.10, 5.1h part 1,
   0.2u, 0.2w, 0.2x, 3.0g, and the typeset set.
-- Awaiting the WP-4.1 gate verifier: WP-5.6, 0.2y, 5.4g, 5.3g, 3.10,
-  5.11, 5.12; it also raises cover rows 1 and 56 to E.
-- Running: WP-4.1 full gate from a clean checkout + verification of
-  WP-5.6, 0.2y, 5.4g, 5.3g, 3.10, 5.11, 5.12, 3.11 + cover-row raise.
-- WP-3.11 landed 540bbe8: `--adhoc 008` exit 0, every page equal incl.
-  the editorial. WP-5.12 landed 0973a8a
-  (`mag parity --lang`, 906 es green without aliases; manifest figure
-  paths source-relative on typst). WP-5.11 landed d320995 (critic JPEG via zune within a
-  pinned tolerance, decisions equal to Python on 43 JPEGs; pen-end word
-  gaps, text_characters gated; critic_text pin 1126). WP-3.10 landed 3122610 (every language rendered;
-  Spanish hyphenation equal on 5348 words; fixture 906 en+es green).
-- Next: WP-4.1 full gate, then WP-4.2 flip, WP-4.3 post-flip hyphenation,
-  WP-6.1 delete Python.
+- GATE: WP-4.1 passed (5e54891): clean checkout, `mag parity 010` exit 0
+  twice at Tier E, pages 1..56, critic both sides, normalized verdict
+  172444721bb321f4...; covers raised to E. WP-5.6, 0.2y, 5.4g/5.3g, 3.10,
+  5.11, 5.12, 3.11 ACCEPTED.
+- Running: WP-4.2 flip, WP-4.3 hyphenation measurement (ends
+  awaiting-fran), WP-6.0 pre-deletion oracles + WP-6.1 inventory.
+- Then: WP-6.1 is Fran-gated (a shipped Typst edition, tools/ keep/delete,
+  rollback loss).
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
