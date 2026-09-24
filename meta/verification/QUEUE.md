@@ -4,15 +4,15 @@ Comparator verify (WP-0.2m-r.verify.md): 0.2m/n/o ACCEPTED; 0.2p, 0.2q,
 0.2r REJECTED (adversarial pairs pass); rework WP-0.2s landed d7c970c.
 Re-verify (WP-0.2s.verify.md): 0.2p, 0.2q ACCEPTED; 0.2r, 0.2s REJECTED
 (blank counts on both legs buy drift; link /C and /F defaults). Rework
-WP-0.2t running, then re-verify.
+WP-0.2t landed 3efaf3c; re-verify after WP-0.2j.
 Landed, awaiting a verifier: WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
 Running: WP-3.3b code/extracts/bibliography fixture + highlight wiring,
-WP-0.2t (glyph bound, link raw keys).
-Queued, serial behind WP-0.2t (parity owner): WP-0.2j exact number path,
-WP-4.0g ad hoc mode. Behind WP-3.3b (typeset owner): WP-5.1h helpers,
+WP-0.2j (exact decimals + physical drift cap).
+Queued behind WP-0.2j (parity owner): adversarial re-verify of
+0.2r/0.2s/0.2t/0.2j together, then WP-4.0g ad hoc mode. Behind WP-3.3b (typeset owner): WP-5.1h helpers,
 WP-3.0g, WP-3.7.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
@@ -55,6 +55,8 @@ evidence file records it):
   paint 1 on 9 opener pages (WP-3.5.md); typst document /Title ("<pub>:
   <title>", matching WP-0.0e) and outline to match the oracle.
 - WP-3.5 carries: running-head paint order via `page.foreground`.
+- WP-3.7 carries: typst links must write the oracle's `/BS <</W 0>>`
+  (typst writes `/Border [0 0 0]`; raw link keys since WP-0.2t).
 - WP-3.7 carries: outline entries open collapsed on typst (krilla 0.8.2
   hard-codes it; WeasyPrint opens them expanded): post-process /Count in
   template::pdf like the link-rect pass.
