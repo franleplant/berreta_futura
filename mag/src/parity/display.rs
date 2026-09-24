@@ -1093,6 +1093,37 @@ mod colour_tests {
     }
 
     #[test]
+    #[ignore = "WP-0.2m-r.verify.md: blanks on one leg raise the glyph bound (WP-0.2r rejected)"]
+    fn blanks_on_one_leg_buy_no_drift_allowance() {
+        let blanks = 7000;
+        let shift = streams::qo(5.0);
+        let mut padded = run("Helloworld", 0, 0, INK, 0);
+        if let Element::Text {
+            origin,
+            gids,
+            offs,
+            units,
+            ..
+        } = &mut padded
+        {
+            *origin = O;
+            let head = (0..5).map(|k| [k * 10_000, 0]);
+            let pad = std::iter::repeat_n([50_000, 0], blanks);
+            let tail = (6..11).map(|k| [k * 10_000 + shift, 0]);
+            *offs = head.chain(pad).chain(tail).collect();
+            *gids = [ids(0..5), vec![streams::BLANK_GID; blanks], ids(6..11)].concat();
+            let chars = "Helloworld".chars().map(String::from);
+            *units = chars.clone().take(5).collect();
+            units.extend(std::iter::repeat_n(" ".to_string(), blanks));
+            units.extend(chars.skip(5));
+        }
+        assert_eq!(
+            both(&whole(), &dump(vec![padded])),
+            pass_fail("pass", "fail")
+        );
+    }
+
+    #[test]
     fn a_line_is_one_baseline_within_a_quantum_split_at_a_gap_of_three_em() {
         let em = streams::qo(10.0);
         let q = streams::qo(0.01);

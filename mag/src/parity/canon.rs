@@ -978,4 +978,31 @@ mod tests {
         }
         assert_eq!(canonical(&ring, &[]).elements.len(), 2);
     }
+
+    #[test]
+    #[ignore = "WP-0.2m-r.verify.md: rect() accepts a zero-area out-and-back loop (WP-0.2p, WP-0.2q rejected)"]
+    fn a_zero_area_loop_with_rect_corners_is_not_a_rect_region() {
+        let flat = "m 100 100 l 300 100 l 300 200 l 300 100 l 100 100";
+        let hidden = [clip(flat, &[]), text(&[0])];
+        let round = "m 100 150 c 100 200 200 200 200 150 c 200 100 100 100 100 150";
+        let cover = "m 50 50 l 250 50 l 250 250 l 250 50 l 50 50";
+        let nothing = [clip(round, &[]), fill(cover, INK, &[0])];
+        let mut bar = fill(
+            "m 100 100 l 300 100 l 300 120 l 100 120 l 100 100 \
+             m 100 100 l 200 100 l 200 120 l 200 100 l 100 100",
+            INK,
+            &[0],
+        );
+        if let Element::Path { paint, .. } = &mut bar {
+            *paint = "eofill".into();
+        }
+        let whole = [clip("re 100 105 300 105 300 115 100 115", &[]), bar];
+        let half = [fill("re 200 105 300 105 300 115 200 115", INK, &[])];
+        let equal = [
+            same_ink(&hidden, Some([120, 120, 180, 180]), &[text(&[])]),
+            same(&nothing, &[fill(round, INK, &[])]),
+            same(&whole, &half),
+        ];
+        assert_eq!(equal, [false; 3]);
+    }
 }

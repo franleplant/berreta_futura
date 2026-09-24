@@ -1472,6 +1472,15 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "WP-0.2m-r.verify.md: lw is scaled by sqrt|det|, so the WP-0.2p stroke reach misses an anisotropic stroke"]
+    fn an_anisotropic_stroke_is_not_the_isotropic_one_of_mean_width() {
+        let tall = trace("1 0 0 16 0 0 cm 1 w 1 J 1 j 100 20 m 300 20 l S", vec![]).unwrap();
+        let thin = trace("4 w 1 J 1 j 100 320 m 300 320 l S", vec![]).unwrap();
+        let json = |e: &[Element]| serde_json::to_string(e).unwrap();
+        assert_ne!(json(&tall), json(&thin));
+    }
+
+    #[test]
     fn a_face_resolves_by_its_alias_or_by_its_postscript_name_and_nothing_else() {
         let map = BTreeMap::from([(
             "Magazine-Sans-Medium".to_string(),
