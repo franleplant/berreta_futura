@@ -486,6 +486,23 @@ pub struct Request<'a> {
     pub raw: &'a Value,
 }
 
+pub fn cap_warnings(layout: &Value) -> Vec<String> {
+    let pages = layout["article_pages"]
+        .as_object()
+        .cloned()
+        .unwrap_or_default();
+    pages
+        .iter()
+        .filter(|(id, _)| layout["article_content_modes"][id.as_str()] == "verbatim")
+        .filter_map(|(id, count)| {
+            let (count, cap) = (count.as_u64()?, layout["article_page_caps"][id].as_u64()?);
+            (count > cap).then(|| {
+                format!("WARNING: verbatim article past the page cap, rendering anyway: {id} ({count} pages, cap {cap})")
+            })
+        })
+        .collect()
+}
+
 fn written(path: &Path, bytes: &[u8], kind: &str) -> Result<Value> {
     std::fs::write(path, bytes).with_context(|| format!("writing {}", path.display()))?;
     Ok(json!({"kind": kind, "path": path.display().to_string()}))
@@ -510,6 +527,7 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
     let layout = manifest_layout(edition, &measured, tree, request.staged)?;
     let figures = layout["figures"].as_array().map_or(0, Vec::len);
     let row = |critic: &str| measured.row(&edition.language, figures, critic);
+    let warnings = cap_warnings(&layout);
     if request.operation != "render_edition" {
         let file = written(
             &request.out_dir.join("layout.json"),
@@ -517,7 +535,7 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
             "render_layout",
         )?;
         return Ok(
-            json!({"operation": request.operation, "layouts": [row("not_run")], "files": [file]}),
+            json!({"operation": request.operation, "layouts": [row("not_run")], "files": [file], "warnings": warnings}),
         );
     }
     let (files, critic) = super::release::publish(super::release::Publish {
@@ -531,7 +549,9 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
         work: request.work,
         out_dir: request.out_dir,
     })?;
-    Ok(json!({"operation": request.operation, "layouts": [row(&critic)], "files": files}))
+    Ok(
+        json!({"operation": request.operation, "layouts": [row(&critic)], "files": files, "warnings": warnings}),
+    )
 }
 
 #[cfg(test)]
@@ -1087,6 +1107,19 @@ mod tests {
             bottom < measured.content_bottom,
             "{bottom} against {}",
             measured.content_bottom
+        );
+    }
+
+    #[test]
+    fn only_a_verbatim_article_past_its_cap_warns() {
+        let layout = json!({
+            "article_pages": {"long": 13, "fits": 10, "prose": 9},
+            "article_page_caps": {"long": 10, "fits": 10, "prose": 7},
+            "article_content_modes": {"long": "verbatim", "fits": "verbatim", "prose": "article"},
+        });
+        assert_eq!(
+            super::cap_warnings(&layout),
+            vec!["WARNING: verbatim article past the page cap, rendering anyway: long (13 pages, cap 10)"]
         );
     }
 

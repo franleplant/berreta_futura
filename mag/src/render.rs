@@ -3,7 +3,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -671,8 +671,25 @@ fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i
         .with_context(|| format!("writing {}", result.display()))?;
     let out_dir = render_dir.join(&request.primary_language);
     print_summary(&value, &out_dir);
-    println!("{}", next_step(&out_dir));
+    close_typst(
+        &value,
+        &out_dir,
+        &mut std::io::stdout(),
+        &mut std::io::stderr(),
+    )?;
     Ok(0)
+}
+
+fn close_typst(
+    value: &serde_json::Value,
+    out_dir: &Path,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> std::io::Result<()> {
+    for warning in value["warnings"].as_array().into_iter().flatten() {
+        writeln!(err, "{}", warning.as_str().unwrap_or_default())?;
+    }
+    writeln!(out, "{}", next_step(out_dir))
 }
 
 fn pick_content_run(
@@ -966,7 +983,7 @@ fn next_step(pdf_dir: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{next_step, parse_anchor_reply, select_engine, Engine};
+    use super::{close_typst, next_step, parse_anchor_reply, select_engine, Engine};
     use std::path::Path;
 
     #[test]
@@ -990,6 +1007,22 @@ mod tests {
         let line = next_step(Path::new("editions/010/render-x/en"));
         assert!(line.contains("editions/010/render-x/en"));
         assert!(line.contains("`mag translate <run dir>`"));
+    }
+
+    #[test]
+    fn the_typst_leg_prints_its_warnings_and_the_next_step() {
+        let value =
+            serde_json::json!({"warnings": ["WARNING: verbatim article past the page cap"]});
+        let (mut out, mut err) = (Vec::new(), Vec::new());
+        close_typst(&value, Path::new("r/en"), &mut out, &mut err).unwrap();
+        assert_eq!(
+            String::from_utf8(out).unwrap(),
+            next_step(Path::new("r/en")) + "\n"
+        );
+        assert_eq!(
+            String::from_utf8(err).unwrap(),
+            "WARNING: verbatim article past the page cap\n"
+        );
     }
 
     #[test]

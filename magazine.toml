@@ -20,8 +20,8 @@ editorial_additions_must_be_labeled = true
 # Which renderer typesets the A5 reader, read by mag's Rust dispatch and
 # overridable per run with `mag render --engine`. "typst" is the native Rust
 # engine and the default since WP-4.2. "weasyprint" is the Python HTML/CSS
-# path, kept selectable as the rollback until WP-6.1 deletes it; it is also
-# what mag picks when this key is absent. Anything else fails at load.
+# path, kept selectable as the rollback until WP-6.1 deletes it. "typst" is
+# also what mag picks when this key is absent. Anything else fails at load.
 engine = "typst"
 # Design direction of the reportlab engine. Read only when that engine is
 # selected; the weasyprint engine has one design and names it itself.
