@@ -1,16 +1,52 @@
-use super::streams::{self, Element, Face};
+use super::streams::{self, Element, Face, Poses, M};
 use anyhow::{Context, Result};
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 
 pub type Rect = [i64; 4];
 pub type Ink = Option<Vec<Option<Rect>>>;
-type P = (i64, i64);
+type P = (C, C);
+
+#[derive(Clone, Copy, Debug)]
+struct C {
+    k: i64,
+    v: f64,
+}
+
+impl PartialEq for C {
+    fn eq(&self, o: &Self) -> bool {
+        self.k == o.k
+    }
+}
+
+impl Eq for C {}
+
+impl PartialOrd for C {
+    fn partial_cmp(&self, o: &Self) -> Option<Ordering> {
+        Some(self.cmp(o))
+    }
+}
+
+impl Ord for C {
+    fn cmp(&self, o: &Self) -> Ordering {
+        self.k.cmp(&o.k)
+    }
+}
+
+fn c(v: f64) -> C {
+    C {
+        k: v.round() as i64,
+        v,
+    }
+}
 
 pub struct Glyph {
     pub show: usize,
     pub line: usize,
     pub at: [i64; 2],
     pub start: [i64; 2],
+    pub x: [f64; 2],
+    pub sx: [f64; 2],
     pub gap: Vec<[i64; 2]>,
     pub opens: bool,
 }
@@ -19,6 +55,7 @@ pub const GAP_EM: f64 = 3.0;
 
 pub struct Canon {
     pub elements: Vec<Element>,
+    pub exact: Vec<Option<M>>,
     pub glyphs: Vec<Option<Glyph>>,
     pub paint_order_runs: usize,
 }
@@ -46,7 +83,7 @@ struct Sub {
 
 fn parse(d: &str) -> Vec<Sub> {
     let t: Vec<&str> = d.split_whitespace().collect();
-    let n = |i: usize| t.get(i).and_then(|v| v.parse::<i64>().ok()).unwrap_or(0);
+    let n = |i: usize| c(t.get(i).and_then(|v| v.parse::<f64>().ok()).unwrap_or(0.0));
     let pt = |i: usize| (n(i), n(i + 1));
     let mut subs: Vec<Sub> = vec![];
     let mut i = 0;
@@ -54,7 +91,7 @@ fn parse(d: &str) -> Vec<Sub> {
         let op = t[i];
         let open = |subs: &mut Vec<Sub>| {
             if subs.last().is_none_or(|s| s.closed) {
-                let start = subs.last().map_or((0, 0), |s| s.start);
+                let start = subs.last().map_or((c(0.0), c(0.0)), |s| s.start);
                 subs.push(Sub {
                     start,
                     segs: vec![],
@@ -100,8 +137,20 @@ fn parse(d: &str) -> Vec<Sub> {
 }
 
 fn render(subs: &[Sub]) -> String {
+    written(subs, |v| v.v.to_string())
+}
+
+fn key(subs: &[Sub]) -> String {
+    written(subs, |v| v.k.to_string())
+}
+
+pub fn coarse(d: &str) -> String {
+    key(&parse(d))
+}
+
+fn written(subs: &[Sub], f: fn(C) -> String) -> String {
     let mut out = vec![];
-    let p = |q: P| format!("{} {}", q.0, q.1);
+    let p = |q: P| format!("{} {}", f(q.0), f(q.1));
     for s in subs {
         out.push(format!("m {}", p(s.start)));
         for seg in &s.segs {
@@ -152,7 +201,7 @@ fn loop_of(s: &Sub) -> Option<Sub> {
     (0..n)
         .filter(|&j| vertex(j) == low)
         .map(from)
-        .min_by_key(|r| render(std::slice::from_ref(r)))
+        .min_by_key(|r| key(std::slice::from_ref(r)))
 }
 
 fn reversed(s: &Sub) -> Sub {
@@ -177,14 +226,18 @@ pub fn fill_region(d: &str) -> String {
         [one] => [Some(one.clone()), loop_of(&reversed(one))]
             .into_iter()
             .flatten()
+            .min_by_key(|l| key(std::slice::from_ref(l)))
             .map(|l| render(&[l]))
-            .min()
             .unwrap_or_default(),
         _ => render(&loops),
     }
 }
 
 pub fn rect(d: &str) -> Option<Rect> {
+    rect_c(d).map(|r| r.map(|v| v.k))
+}
+
+fn rect_c(d: &str) -> Option<[C; 4]> {
     let subs = parse(d);
     let [s] = subs.as_slice() else { return None };
     let mut pts = vec![s.start];
@@ -203,7 +256,7 @@ pub fn rect(d: &str) -> Option<Rect> {
     (pts.len() == 5 && pts[0] == pts[4] && axis && four && area).then_some(r)
 }
 
-fn bounds(pts: &[P]) -> Option<Rect> {
+fn bounds<T: Ord + Copy>(pts: &[(T, T)]) -> Option<[T; 4]> {
     let xs = pts.iter().map(|p| p.0);
     let ys = pts.iter().map(|p| p.1);
     Some([xs.clone().min()?, ys.clone().min()?, xs.max()?, ys.max()?])
@@ -220,10 +273,10 @@ fn control_box(d: &str) -> Option<Rect> {
             }
         }
     }
-    bounds(&pts)
+    bounds(&pts).map(|r| r.map(|v| v.k))
 }
 
-fn inside(inner: Rect, outer: Rect) -> bool {
+fn inside<T: Ord>(inner: [T; 4], outer: [T; 4]) -> bool {
     inner[0] >= outer[0] && inner[1] >= outer[1] && inner[2] <= outer[2] && inner[3] <= outer[3]
 }
 
@@ -377,7 +430,7 @@ fn fill_the_clip(elements: &mut [Element]) {
     }
 }
 
-fn meet(a: Rect, b: Rect) -> Option<Rect> {
+fn meet<T: Ord + Copy>(a: [T; 4], b: [T; 4]) -> Option<[T; 4]> {
     let k = [
         a[0].max(b[0]),
         a[1].max(b[1]),
@@ -387,7 +440,7 @@ fn meet(a: Rect, b: Rect) -> Option<Rect> {
     (k[0] < k[2] && k[1] < k[3]).then_some(k)
 }
 
-fn cut(r: Rect, hole: Rect) -> Option<Rect> {
+fn cut<T: Ord + Copy>(r: [T; 4], hole: [T; 4]) -> Option<[T; 4]> {
     let Some(k) = meet(r, hole) else {
         return Some(r);
     };
@@ -401,10 +454,10 @@ fn cut(r: Rect, hole: Rect) -> Option<Rect> {
     }
 }
 
-fn frame(d: &str) -> Option<(Rect, Rect)> {
-    let rects: Vec<Rect> = parse(d)
+fn frame(d: &str) -> Option<([C; 4], [C; 4])> {
+    let rects: Vec<[C; 4]> = parse(d)
         .iter()
-        .map(|s| rect(&render(std::slice::from_ref(s))))
+        .map(|s| rect_c(&render(std::slice::from_ref(s))))
         .collect::<Option<_>>()?;
     match rects[..] {
         [a, b] if inside(b, a) => Some((a, b)),
@@ -414,11 +467,11 @@ fn frame(d: &str) -> Option<(Rect, Rect)> {
 }
 
 fn strip_fill(elements: &mut [Element]) {
-    let clips: HashMap<u32, Rect> = elements
+    let clips: HashMap<u32, [C; 4]> = elements
         .iter()
         .enumerate()
         .filter_map(|(i, e)| match e {
-            Element::Clip { d, .. } => Some((i as u32, rect(d)?)),
+            Element::Clip { d, .. } => Some((i as u32, rect_c(d)?)),
             _ => None,
         })
         .collect();
@@ -435,7 +488,7 @@ fn strip_fill(elements: &mut [Element]) {
         let Some(r) = meet(outer, clips[&clip[at]]).and_then(|r| cut(r, inner)) else {
             continue;
         };
-        let [x0, y0, x1, y1] = r;
+        let [x0, y0, x1, y1] = r.map(|v| v.v);
         *d = fill_region(&format!("re {x0} {y0} {x1} {y0} {x1} {y1} {x0} {y1}"));
         *paint = "fill".into();
         clip.remove(at);
@@ -456,7 +509,7 @@ fn leading_white(elements: &[Element]) -> Vec<bool> {
     drop
 }
 
-pub fn canonical(elements: &[Element], text_ink: &[Ink]) -> Canon {
+pub fn canonical(elements: &[Element], text_ink: &[Ink], poses: &Poses) -> Canon {
     let mut out = elements.to_vec();
     canon_paths(&mut out);
     contained_clips(&mut out, text_ink);
@@ -485,14 +538,19 @@ pub fn canonical(elements: &[Element], text_ink: &[Ink]) -> Canon {
             (i, e)
         })
         .collect();
-    ordered(split(kept, text_ink))
+    ordered(split(kept, text_ink, poses))
 }
 
 struct Item {
     e: Element,
+    exact: Option<M>,
     glyph: Option<Glyph>,
     ink: Option<Rect>,
     id: u32,
+}
+
+fn hundredths(m: &[i64; 6]) -> M {
+    m.map(|v| v as f64 / 100.0)
 }
 
 fn inked(gid: Option<u32>, unit: &str) -> bool {
@@ -503,10 +561,11 @@ fn inked(gid: Option<u32>, unit: &str) -> bool {
     }
 }
 
-fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
+fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink], poses: &Poses) -> Vec<Item> {
     let mut items = vec![];
     for (show, (orig, e)) in kept.into_iter().enumerate() {
         let id = show as u32;
+        let pose = poses.get(&orig);
         let Element::Text {
             font,
             size,
@@ -521,8 +580,13 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
             ..
         } = &e
         else {
+            let exact = match &e {
+                Element::Image { m, .. } => Some(pose.map_or_else(|| hundredths(m), |p| p.m)),
+                _ => None,
+            };
             items.push(Item {
                 e,
+                exact,
                 glyph: None,
                 ink: None,
                 id,
@@ -530,6 +594,15 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
             continue;
         };
         let ink = text_ink.get(orig).and_then(Option::as_ref);
+        let trm = pose.map_or_else(|| hundredths(m), |p| p.m);
+        let quantized = || -> Vec<[f64; 2]> {
+            let o = origin.map(|v| v as f64 * streams::GLYPH_QUANTUM);
+            let g = |v: [i64; 2]| v.map(|x| x as f64 * streams::GLYPH_QUANTUM);
+            offs.iter()
+                .map(|v| [0, 1].map(|i| g(*v)[i] + o[i] - trm[4 + i]))
+                .collect()
+        };
+        let exact = pose.map_or_else(quantized, |p| p.offs.clone());
         let mut last = None;
         for (k, (unit, off)) in units.iter().zip(offs).enumerate() {
             let gid = gids.get(k).copied();
@@ -537,6 +610,7 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
                 continue;
             }
             let at = [0, 1].map(|i| origin[i] + off[i]);
+            let x = [0, 1].map(|i| trm[4 + i] + exact[k][i]);
             let e = Element::Text {
                 s: unit.clone(),
                 font: font.clone(),
@@ -552,17 +626,20 @@ fn split(kept: Vec<(usize, Element)>, text_ink: &[Ink]) -> Vec<Item> {
                 units: vec![unit.clone()],
             };
             let gap = (last.unwrap_or(0)..k)
-                .map(|i| [0, 1].map(|c| offs[i + 1][c] - offs[i][c]))
+                .map(|i| [0, 1].map(|c| streams::qo(exact[i + 1][c] - exact[i][c])))
                 .collect();
             let opens = last.is_none();
             last = Some(k);
             items.push(Item {
                 e,
+                exact: Some(trm),
                 glyph: Some(Glyph {
                     show,
                     line: 0,
                     at,
                     start: at,
+                    x,
+                    sx: x,
                     gap,
                     opens,
                 }),
@@ -584,6 +661,7 @@ fn gap(e: &Element) -> i64 {
 
 fn lines(run: &mut [Item], next: &mut usize) -> Vec<usize> {
     let at = |r: &[Item], i: usize| r[i].glyph.as_ref().map_or([0, 0], |g| g.at);
+    let x = |r: &[Item], i: usize| r[i].glyph.as_ref().map_or([0.0; 2], |g| g.x);
     let baseline = streams::qo(0.01);
     let mut order: Vec<usize> = (0..run.len()).collect();
     order.sort_by_key(|&i| (-at(run, i)[1], at(run, i)[0]));
@@ -597,15 +675,18 @@ fn lines(run: &mut [Item], next: &mut usize) -> Vec<usize> {
     let mut order = vec![];
     for mut band in bands {
         band.sort_by_key(|&i| at(run, i)[0]);
-        let (mut start, mut prev) = ([0, 0], None);
+        let (mut start, mut sx, mut prev) = ([0, 0], [0.0; 2], None);
         for i in band {
             let p = at(run, i);
             if prev.is_none_or(|j| p[0] - at(run, j)[0] > gap(&run[j].e)) {
-                (start, *next) = (p, *next + 1);
+                (start, sx, *next) = (p, x(run, i), *next + 1);
             }
             prev = Some(i);
             if let Some(g) = run[i].glyph.as_mut() {
-                (g.line, g.start) = (*next, start);
+                (g.line, g.start, g.sx) = (*next, start, sx);
+            }
+            if let Some(m) = run[i].exact.as_mut() {
+                (m[4], m[5]) = (sx[0], sx[1]);
             }
             if let Element::Text { m, .. } = &mut run[i].e {
                 (m[4], m[5]) = (
@@ -668,15 +749,23 @@ fn ordered(items: Vec<Item>) -> Canon {
         .filter(|(_, x)| x.glyph.is_none())
         .map(|(n, x)| (x.id, n as u32))
         .collect();
-    let (mut elements, mut glyphs) = (vec![], vec![]);
-    for Item { mut e, glyph, .. } in out {
+    let (mut elements, mut exact, mut glyphs) = (vec![], vec![], vec![]);
+    for Item {
+        mut e,
+        glyph,
+        exact: m,
+        ..
+    } in out
+    {
         let s = stack(&mut e);
         *s = s.iter().filter_map(|k| at.get(k).copied()).collect();
         elements.push(e);
+        exact.push(m);
         glyphs.push(glyph);
     }
     Canon {
         elements,
+        exact,
         glyphs,
         paint_order_runs,
     }
@@ -844,7 +933,7 @@ mod tests {
     }
 
     fn json(e: &[Element], ink: &[Ink]) -> String {
-        serde_json::to_string(&canonical(e, ink).elements).unwrap()
+        serde_json::to_string(&canonical(e, ink, &Poses::new()).elements).unwrap()
     }
 
     fn same(a: &[Element], b: &[Element]) -> bool {
@@ -984,7 +1073,7 @@ mod tests {
         if let Element::Path { d, .. } = &mut ring[1] {
             *d = format!("{} {inner}", expand_rects(hole));
         }
-        assert_eq!(canonical(&ring, &[]).elements.len(), 2);
+        assert_eq!(canonical(&ring, &[], &Poses::new()).elements.len(), 2);
     }
 
     #[test]

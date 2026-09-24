@@ -1,4 +1,4 @@
-use super::streams::{self, qc, Caches, Color, Element, Face};
+use super::streams::{self, qc, Caches, Color, Element, Face, Poses};
 use anyhow::{bail, Context, Result};
 use lopdf::{Document, Object};
 use serde::Serialize;
@@ -13,24 +13,66 @@ mod canon;
 pub struct PageDump {
     pub elements: Vec<Element>,
     pub annots: Vec<Annot>,
-    pub boxes: BTreeMap<String, [i64; 4]>,
+    pub boxes: BTreeMap<String, [f64; 4]>,
     #[serde(skip)]
     pub ink: Vec<canon::Ink>,
+    #[serde(skip)]
+    pub poses: Poses,
 }
 
 impl PageDump {
     fn canonical(&self) -> canon::Canon {
-        canon::canonical(&self.elements, &self.ink)
+        canon::canonical(&self.elements, &self.ink, &self.poses)
     }
 }
 
-#[derive(Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub const HALF_QUANTUM_PT: f64 = 0.005;
+
+pub const LINK_HALF_QUANTUM_PT: f64 = 0.25;
+
+fn within(x: f64, y: f64, tolerance: f64) -> bool {
+    x == y || (x - y).abs() <= tolerance
+}
+
+fn near(a: &[f64], b: &[f64], tolerance: f64) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(x, y)| within(*x, *y, tolerance))
+}
+
+#[derive(Serialize, Clone)]
 pub struct Annot {
     pub subtype: String,
-    pub rect: [i64; 4],
+    pub rect: [f64; 4],
     pub dest: String,
     pub border: String,
     pub appearance: Option<String>,
+}
+
+impl Annot {
+    fn key(&self) -> (String, [i64; 4], String, String, Option<String>) {
+        let rect = self.rect.map(|v| (v * 2.0).round() as i64);
+        let (s, d, b) = (&self.subtype, &self.dest, &self.border);
+        (
+            s.clone(),
+            rect,
+            d.clone(),
+            b.clone(),
+            self.appearance.clone(),
+        )
+    }
+
+    fn same(&self, o: &Annot) -> bool {
+        let rest = (&self.subtype, &self.dest, &self.border, &self.appearance);
+        rest == (&o.subtype, &o.dest, &o.border, &o.appearance)
+            && near(&self.rect, &o.rect, LINK_HALF_QUANTUM_PT)
+    }
+}
+
+fn same_annots<'a>(
+    a: impl IntoIterator<Item = &'a Annot>,
+    b: impl IntoIterator<Item = &'a Annot>,
+) -> bool {
+    let (a, b): (Vec<_>, Vec<_>) = (a.into_iter().collect(), b.into_iter().collect());
+    a.len() == b.len() && a.iter().zip(&b).all(|(x, y)| x.same(y))
 }
 
 #[derive(Serialize, PartialEq, Eq)]
@@ -87,7 +129,7 @@ pub fn extract(
         let id = *page_ids
             .get(&number)
             .with_context(|| format!("page {number} missing"))?;
-        let elements = streams::trace_page(&doc, id, font_map, &mut caches)
+        let (elements, poses) = streams::trace_posed(&doc, id, font_map, &mut caches)
             .with_context(|| format!("tracing page {number} of {}", pdf.display()))?;
         let annots = page_annots(&doc, id, &page_ids)
             .with_context(|| format!("annotations page {number}"))?;
@@ -98,18 +140,15 @@ pub fn extract(
             annots,
             boxes,
             ink,
+            poses,
         });
     }
     let nav = doc_nav(&doc, &page_ids, first, last)?;
     Ok(Dump { pages, nav })
 }
 
-fn qr(v: f64) -> i64 {
-    (v * 2.0).round() as i64
-}
-
-fn link_rect(n: &[f64]) -> [i64; 4] {
-    let (x, y) = ((qr(n[0]), qr(n[2])), (qr(n[1]), qr(n[3])));
+fn link_rect(n: &[f64]) -> [f64; 4] {
+    let (x, y) = ((n[0], n[2]), (n[1], n[3]));
     [x.0.min(x.1), y.0.min(y.1), x.0.max(x.1), y.0.max(y.1)]
 }
 
@@ -302,7 +341,7 @@ fn named_dest(doc: &Document, name: &[u8]) -> Result<Vec<Object>> {
     )
 }
 
-fn page_boxes(doc: &Document, page_id: lopdf::ObjectId) -> Result<BTreeMap<String, [i64; 4]>> {
+fn page_boxes(doc: &Document, page_id: lopdf::ObjectId) -> Result<BTreeMap<String, [f64; 4]>> {
     let mut out = BTreeMap::new();
     let mut effective = None;
     for key in ["MediaBox", "CropBox", "TrimBox"] {
@@ -310,7 +349,7 @@ fn page_boxes(doc: &Document, page_id: lopdf::ObjectId) -> Result<BTreeMap<Strin
             let arr = deref(doc, obj)?.as_array()?;
             let nums: Result<Vec<f64>> = arr.iter().map(|o| number(doc, o)).collect();
             let nums = nums?;
-            effective = Some([qc(nums[0]), qc(nums[1]), qc(nums[2]), qc(nums[3])]);
+            effective = Some([nums[0], nums[1], nums[2], nums[3]]);
         }
         let value = effective.with_context(|| format!("page has no {key} and no default"))?;
         out.insert(key.to_string(), value);
@@ -430,20 +469,15 @@ pub fn compare_display(a: &Dump, b: &Dump, first: u32) -> Result<DisplayClause> 
     let mut pages_differing = vec![];
     for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
         let page = first + i as u32;
-        let others = |p: &PageDump| {
-            p.annots
-                .iter()
-                .filter(|x| x.subtype != "Link")
-                .cloned()
-                .collect::<Vec<_>>()
-        };
+        let link = |x: &&Annot| x.subtype != "Link";
         anyhow::ensure!(
-            others(pa) == others(pb),
+            same_annots(pa.annots.iter().filter(link), pb.annots.iter().filter(link)),
             "page {page}: an annotation other than Link differs between legs; only byte-equal appearance streams are compared (fail loud per Tier E)"
         );
-        let (ea, eb) = (pa.canonical().elements, pb.canonical().elements);
-        if let Some(detail) = page_diff(pa, pb, &ea, &eb)? {
-            let classes = differing_classes(pa, pb, &ea, &eb)?;
+        let (ca, cb) = (pa.canonical(), pb.canonical());
+        let (ea, eb) = (&ca.elements, &cb.elements);
+        if let Some(detail) = page_diff(pa, pb, &ca, &cb)? {
+            let classes = differing_classes(pa, pb, ea, eb)?;
             pages_differing.push(PageDiff {
                 page,
                 detail,
@@ -462,24 +496,86 @@ pub fn compare_display(a: &Dump, b: &Dump, first: u32) -> Result<DisplayClause> 
     })
 }
 
-fn page_diff(a: &PageDump, b: &PageDump, ea: &[Element], eb: &[Element]) -> Result<Option<String>> {
-    if a.boxes != b.boxes {
+fn same_boxes(a: &PageDump, b: &PageDump) -> bool {
+    let keys = |p: &PageDump| p.boxes.keys().cloned().collect::<Vec<_>>();
+    keys(a) == keys(b)
+        && a.boxes
+            .iter()
+            .all(|(k, v)| near(v, &b.boxes[k], HALF_QUANTUM_PT))
+}
+
+fn exact_value(e: &Element, m: Option<&streams::M>) -> Result<serde_json::Value> {
+    let mut v = serde_json::to_value(e)?;
+    if let Some(m) = m {
+        v["m"] = m.map(|x| x * 100.0).to_vec().into();
+        if matches!(e, Element::Text { .. }) {
+            v["size"] = (m[2].hypot(m[3]) * 100.0).into();
+        }
+    }
+    Ok(v)
+}
+
+fn close(a: &serde_json::Value, b: &serde_json::Value) -> bool {
+    use serde_json::Value::{Array, Number, Object, String as Text};
+    let half = HALF_QUANTUM_PT * 100.0;
+    match (a, b) {
+        (Number(x), Number(y)) if x.is_f64() || y.is_f64() => x
+            .as_f64()
+            .zip(y.as_f64())
+            .is_some_and(|(x, y)| within(x, y, half)),
+        (Array(x), Array(y)) => x.len() == y.len() && x.iter().zip(y).all(|(p, q)| close(p, q)),
+        (Object(x), Object(y)) => {
+            x.len() == y.len()
+                && x.iter().all(|(k, p)| match (k.as_str(), p, y.get(k)) {
+                    ("d", Text(p), Some(Text(q))) => path_close(p, q, half),
+                    (_, p, Some(q)) => close(p, q),
+                    _ => false,
+                })
+        }
+        _ => a == b,
+    }
+}
+
+fn path_close(a: &str, b: &str, half: f64) -> bool {
+    let (ta, tb): (Vec<&str>, Vec<&str>) = (
+        a.split_whitespace().collect(),
+        b.split_whitespace().collect(),
+    );
+    ta.len() == tb.len()
+        && ta.iter().zip(&tb).all(|(p, q)| {
+            p == q
+                || match (p.parse::<f64>(), q.parse::<f64>()) {
+                    (Ok(x), Ok(y)) => within(x, y, half),
+                    _ => false,
+                }
+        })
+}
+
+fn page_diff(
+    a: &PageDump,
+    b: &PageDump,
+    ca: &canon::Canon,
+    cb: &canon::Canon,
+) -> Result<Option<String>> {
+    if !same_boxes(a, b) {
         return Ok(Some("page boxes differ".into()));
     }
-    if a.annots != b.annots {
+    if !same_annots(&a.annots, &b.annots) {
         return Ok(Some(format!(
             "annotations differ ({} vs {})",
             a.annots.len(),
             b.annots.len()
         )));
     }
+    let (ea, eb) = (&ca.elements, &cb.elements);
     for (i, (x, y)) in ea.iter().zip(eb).enumerate() {
-        let (sa, sb) = (serde_json::to_string(x)?, serde_json::to_string(y)?);
-        if sa != sb {
+        let va = exact_value(x, ca.exact[i].as_ref())?;
+        let vb = exact_value(y, cb.exact[i].as_ref())?;
+        if !close(&va, &vb) {
             return Ok(Some(format!(
                 "element {i}: {} vs {}",
-                clipped(&sa),
-                clipped(&sb)
+                clipped(&va.to_string()),
+                clipped(&vb.to_string())
             )));
         }
     }
@@ -490,19 +586,27 @@ fn class_keys(elements: &[Element]) -> Result<Vec<(String, String)>> {
     elements
         .iter()
         .map(|e| {
-            let mut v = serde_json::to_value(e)?;
+            let mut v = coarse_value(e)?;
             let clips: Vec<serde_json::Value> = v["clip"]
                 .as_array()
                 .into_iter()
                 .flatten()
                 .filter_map(|k| elements.get(k.as_u64()? as usize))
-                .map(|c| serde_json::to_value(c).map(|c| c["d"].clone()))
-                .collect::<serde_json::Result<_>>()?;
+                .map(|c| coarse_value(c).map(|c| c["d"].clone()))
+                .collect::<Result<_>>()?;
             v["clip"] = clips.into();
             let kind = v["kind"].as_str().unwrap_or("element").to_lowercase();
             Ok((kind, v.to_string()))
         })
         .collect()
+}
+
+fn coarse_value(e: &Element) -> Result<serde_json::Value> {
+    let mut v = serde_json::to_value(e)?;
+    if let Some(d) = v["d"].as_str() {
+        v["d"] = canon::coarse(d).into();
+    }
+    Ok(v)
 }
 
 fn unmatched<T: Ord + Clone>(a: &[T], b: &[T]) -> usize {
@@ -522,8 +626,9 @@ fn differing_classes(
 ) -> Result<BTreeMap<String, usize>> {
     let (ka, kb) = (class_keys(ea)?, class_keys(eb)?);
     let mut out = BTreeMap::new();
-    out.insert("boxes".to_string(), usize::from(a.boxes != b.boxes));
-    out.insert("annotations".to_string(), unmatched(&a.annots, &b.annots));
+    out.insert("boxes".to_string(), usize::from(!same_boxes(a, b)));
+    let keys = |p: &PageDump| p.annots.iter().map(Annot::key).collect::<Vec<_>>();
+    out.insert("annotations".to_string(), unmatched(&keys(a), &keys(b)));
     for kind in ["text", "path", "clip", "image"] {
         let of = |k: &[(String, String)]| -> Vec<String> {
             k.iter()
@@ -599,7 +704,7 @@ fn drift(
         let (a, b) = (&ga[j], &gb[j]);
         (
             ks[j],
-            [0, 1].map(|i| (a.at[i] - a.start[i]) - (b.at[i] - b.start[i])),
+            [0, 1].map(|i| streams::qo((a.x[i] - a.sx[i]) - (b.x[i] - b.sx[i]))),
         )
     })
     .collect()
@@ -615,7 +720,7 @@ fn gap_step(a: &canon::Glyph, b: &canon::Glyph, pa: &canon::Glyph, pb: &canon::G
         let pairs = a.gap.iter().zip(&b.gap);
         return pairs.filter(|(x, y)| moves(**x) || moves(**y)).count();
     }
-    let travel = |g: &canon::Glyph, p: &canon::Glyph| [0, 1].map(|i| g.at[i] - p.at[i]);
+    let travel = |g: &canon::Glyph, p: &canon::Glyph| [0, 1].map(|i| streams::qo(g.x[i] - p.x[i]));
     let blanks = |g: &canon::Glyph| g.gap.len() > usize::from(!g.opens);
     let moved = moves(travel(a, pa)) || moves(travel(b, pb));
     usize::from(moved) * (1 + usize::from(blanks(a) || blanks(b)))
@@ -629,8 +734,7 @@ fn advance_miss(a: &canon::Glyph, b: &canon::Glyph) -> Option<f64> {
 }
 
 fn steps(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<usize> {
-    let reach =
-        |g: &canon::Glyph| ((g.at[0] - g.start[0]) as f64).hypot((g.at[1] - g.start[1]) as f64);
+    let reach = |g: &canon::Glyph| (g.x[0] - g.sx[0]).hypot(g.x[1] - g.sx[1]);
     let mut last: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
     (0..ga.len())
         .map(|j| {
@@ -638,7 +742,7 @@ fn steps(ga: &[canon::Glyph], gb: &[canon::Glyph]) -> Vec<usize> {
             let prev = last.get(&(a.line, b.line));
             let k = prev.map_or(0, |&(k, i)| k + gap_step(a, b, &ga[i], &gb[i]));
             last.insert((a.line, b.line), (k, j));
-            let held = reach(a).max(reach(b)) * streams::GLYPH_QUANTUM / MIN_ADVANCE_PT;
+            let held = reach(a).max(reach(b)) / MIN_ADVANCE_PT;
             k.min(held as usize + 1)
         })
         .collect()
@@ -818,7 +922,7 @@ pub struct NavClause {
 pub fn compare_navigation(a: &Dump, b: &Dump, first: u32) -> NavClause {
     let mut mismatches = vec![];
     for (i, (pa, pb)) in a.pages.iter().zip(&b.pages).enumerate() {
-        if pa.annots != pb.annots {
+        if !same_annots(&pa.annots, &pb.annots) {
             mismatches.push(format!(
                 "page {}: annotations {} vs {}",
                 first + i as u32,
@@ -847,7 +951,7 @@ mod box_tests {
     use super::*;
     use lopdf::dictionary;
 
-    fn boxes(page: lopdf::Dictionary) -> Result<BTreeMap<String, [i64; 4]>> {
+    fn boxes(page: lopdf::Dictionary) -> Result<BTreeMap<String, [f64; 4]>> {
         let mut doc = Document::with_version("1.7");
         let id = doc.add_object(page);
         let mut raw = vec![];
@@ -880,7 +984,7 @@ mod box_tests {
         let crop = [10.0, 10.0, 409.53, 585.28];
         let cropped = boxes(a5(&[("CropBox", crop)])).unwrap();
         assert_eq!(cropped["TrimBox"], cropped["CropBox"]);
-        assert_eq!(cropped["TrimBox"], [1000, 1000, 40953, 58528]);
+        assert_eq!(cropped["TrimBox"], [10.0, 10.0, 409.53, 585.28]);
     }
 
     #[test]
@@ -939,6 +1043,7 @@ mod colour_tests {
                 annots: vec![],
                 boxes: BTreeMap::new(),
                 ink: vec![],
+                poses: Poses::new(),
             }],
             nav: DocNav {
                 title: None,
@@ -1067,7 +1172,7 @@ mod colour_tests {
         );
         assert_eq!(
             link_rect(&[100.0, 520.5, 44.0, 510.0]),
-            [88, 1020, 200, 1041]
+            [44.0, 510.0, 100.0, 520.5]
         );
         assert_ne!(
             link_rect(&[44.0, 520.5, 100.0, 510.0]),
@@ -1157,6 +1262,7 @@ mod colour_tests {
                 annots,
                 boxes: BTreeMap::new(),
                 ink: vec![],
+                poses: Poses::new(),
             }],
             nav: DocNav {
                 title: None,
@@ -1541,5 +1647,87 @@ mod colour_tests {
                 (want, kept)
             );
         }
+    }
+
+    fn rule_at(y: f64) -> Element {
+        let mut e = rule(INK);
+        if let Element::Path { d, .. } = &mut e {
+            let (lo, hi) = (y * 100.0, (y + 10.0) * 100.0);
+            *d = format!("re 0 {lo} 10000 {lo} 10000 {hi} 0 {hi}");
+        }
+        e
+    }
+
+    fn rules(y: f64) -> Dump {
+        dump(vec![rule_at(y)])
+    }
+
+    #[test]
+    fn coordinates_agree_within_half_a_hundredth_of_a_point_and_not_beyond() {
+        let status = |a: f64, b: f64| compare_display(&rules(a), &rules(b), 1).unwrap().status;
+        assert_eq!(status(392.86, 392.86 + 0.004), "pass");
+        assert_eq!(status(392.86, 392.86 + 0.006), "fail");
+        assert_eq!(status(392.86, 392.86 - 0.006), "fail");
+        assert_eq!(status(392.86498, 392.865103), "pass");
+        assert_eq!(status(392.864, 392.8739), "fail");
+    }
+
+    fn posed_line(start: [f64; 2], advances: &[f64]) -> Dump {
+        let text: String = (0..advances.len()).map(|_| 'x').collect();
+        let mut e = run(&text, 0, 0, INK, 0);
+        let offs: Vec<[f64; 2]> = advances
+            .iter()
+            .scan(0.0, |x, a| Some([std::mem::replace(x, *x + a), 0.0]))
+            .collect();
+        if let Element::Text {
+            m, origin, offs: o, ..
+        } = &mut e
+        {
+            (m[4], m[5]) = (streams::qc(start[0]), streams::qc(start[1]));
+            *origin = start.map(streams::qo);
+            *o = offs.iter().map(|v| v.map(streams::qo)).collect();
+        }
+        let mut d = dump(vec![e]);
+        let m = [10.0, 0.0, 0.0, 10.0, start[0], start[1]];
+        d.pages[0].poses.insert(0, streams::Pose { m, offs });
+        d
+    }
+
+    #[test]
+    fn a_sub_quantum_line_start_or_offset_difference_is_not_a_blip() {
+        let q = streams::GLYPH_QUANTUM;
+        let mut advances = [2.304190456, 4.84051761, 4.84051761, 5.479699388, 6.80471773];
+        let edge = (((44.0 + 7.1447) / q).floor() + 0.5) * q - 1e-7;
+        advances[1] = edge - 44.0 - advances[0];
+        let a = posed_line([44.0, 500.0], &advances);
+        for start in [
+            [44.0000005, 500.0],
+            [44.0000205, 500.0],
+            [44.0000002, 500.0],
+        ] {
+            let b = posed_line(start, &advances);
+            let g = compare_glyphs(&a, &b, 1);
+            assert_eq!(
+                (g.status.as_str(), g.worst_ratio),
+                ("pass", 0.0),
+                "{start:?} {:?}",
+                g.violations
+            );
+            assert_eq!(compare_display(&a, &b, 1).unwrap().status, "pass");
+        }
+        let mut drifting = advances;
+        drifting.iter_mut().for_each(|v| *v -= 4.2e-7);
+        let g = compare_glyphs(&a, &posed_line([44.0000005, 500.0], &drifting), 1);
+        assert_eq!(
+            (g.status.as_str(), g.worst_ratio),
+            ("pass", 0.0),
+            "{:?}",
+            g.violations
+        );
+        let mut blip = advances;
+        blip[2] += 0.6 * q;
+        blip[3] -= 0.6 * q;
+        let g = compare_glyphs(&a, &posed_line([44.0, 500.0], &blip), 1);
+        assert_eq!(g.status, "fail");
     }
 }
