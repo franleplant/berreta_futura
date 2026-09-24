@@ -1,4 +1,4 @@
-use super::shared::is_python_space;
+use super::shared::{is_python_space, load_yaml};
 use anyhow::{bail, Result};
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde_yaml::{Mapping, Value};
@@ -60,6 +60,19 @@ enum Until {
     Link,
 }
 
+pub fn inline_text(inlines: &[Inline]) -> String {
+    inlines
+        .iter()
+        .map(|inline| match inline {
+            Inline::Text(value) | Inline::Code(value) => value.clone(),
+            Inline::Emphasis(children)
+            | Inline::Strong(children)
+            | Inline::Link { children, .. } => inline_text(children),
+            Inline::LineBreak { .. } => "\n".to_string(),
+        })
+        .collect()
+}
+
 pub fn parse_publication_document(markdown: &str) -> Result<Document> {
     let (metadata, body) = split_frontmatter(markdown)?;
     let body = fallback_glyphs(&body);
@@ -101,44 +114,8 @@ pub fn split_frontmatter(markdown: &str) -> Result<(Mapping, String)> {
     Ok((Mapping::new(), markdown.to_string()))
 }
 
-const NULL_TAGS: [&str; 2] = ["!!null", "!<tag:yaml.org,2002:null>"];
-
 fn load_header(header: &str) -> Result<Value> {
-    let invalid = |exc: serde_yaml::Error| anyhow::anyhow!("Invalid YAML frontmatter: {exc}");
-    let exc = match serde_yaml::from_str(header) {
-        Ok(parsed) => return Ok(parsed),
-        Err(exc) => exc,
-    };
-    if !NULL_TAGS.iter().any(|tag| header.contains(tag)) {
-        return Err(invalid(exc));
-    }
-    let local = NULL_TAGS.iter().fold(header.to_string(), |text, tag| {
-        text.replace(tag, "!magazine-null")
-    });
-    untag_nulls(serde_yaml::from_str(&local).map_err(|_| invalid(exc))?)
-}
-
-fn untag_nulls(value: Value) -> Result<Value> {
-    Ok(match value {
-        Value::Tagged(tagged) if tagged.tag == "magazine-null" => match tagged.value {
-            Value::Sequence(_) | Value::Mapping(_) => bail!(
-                "Invalid YAML frontmatter: expected a scalar node for !!null, but found a collection"
-            ),
-            _ => Value::Null,
-        },
-        Value::Tagged(mut tagged) => {
-            tagged.value = untag_nulls(tagged.value)?;
-            Value::Tagged(tagged)
-        }
-        Value::Sequence(items) => Value::Sequence(items.into_iter().map(untag_nulls).collect::<Result<_>>()?),
-        Value::Mapping(mapping) => Value::Mapping(
-            mapping
-                .into_iter()
-                .map(|(k, v)| Ok((k, untag_nulls(v)?)))
-                .collect::<Result<_>>()?,
-        ),
-        other => other,
-    })
+    load_yaml(header).map_err(|exc| anyhow::anyhow!("Invalid YAML frontmatter: {exc}"))
 }
 
 fn frontmatter_mapping(parsed: Value) -> Result<Mapping> {
@@ -644,6 +621,8 @@ mod tests {
     fn a_null_tag_on_a_collection_or_a_broken_header_is_refused_like_python() {
         for (header, needle) in [
             ("label: !!null [a]\nnote: !!null", "expected a scalar node"),
+            ("label: !!null [a]", "expected a scalar node"),
+            ("label: !!null {a: 1}", "expected a scalar node"),
             ("label: [!!null,!!null]", "Invalid YAML frontmatter: "),
             ("label: !!null\n  - : [", "Invalid YAML frontmatter: "),
         ] {

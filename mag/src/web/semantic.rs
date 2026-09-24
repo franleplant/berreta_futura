@@ -1,6 +1,6 @@
 use super::text::Escaper;
 use crate::model::doc::{
-    fold_reader_characters, parse_publication_document, Block, Document, Inline,
+    fold_reader_characters, inline_text, parse_publication_document, Block, Document, Inline,
 };
 use crate::model::manifest::{Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
@@ -63,19 +63,6 @@ pub fn file_uri(path: &Path) -> String {
 fn indent(lines: &[String], spaces: usize) -> Vec<String> {
     let prefix = " ".repeat(spaces);
     lines.iter().map(|line| format!("{prefix}{line}")).collect()
-}
-
-fn plain_text(inlines: &[Inline]) -> String {
-    inlines
-        .iter()
-        .map(|inline| match inline {
-            Inline::Text(value) | Inline::Code(value) => value.clone(),
-            Inline::Emphasis(children)
-            | Inline::Strong(children)
-            | Inline::Link { children, .. } => plain_text(children),
-            Inline::LineBreak { .. } => "\n".to_string(),
-        })
-        .collect()
 }
 
 fn read_document(path: &Path) -> Result<Document> {
@@ -496,7 +483,7 @@ impl Renderer<'_> {
         let mut references = false;
         for (position, block) in rest.iter().enumerate() {
             let heading = match block {
-                Block::Heading { children, .. } => Some(plain_text(children)),
+                Block::Heading { children, .. } => Some(inline_text(children)),
                 _ => None,
             };
             if let Some(heading) = &heading {
@@ -792,7 +779,7 @@ impl Renderer<'_> {
                 } else {
                     ""
                 };
-                let roster = if is_name_roster(&plain_text(children)) {
+                let roster = if is_name_roster(&inline_text(children)) {
                     " data-name-roster=\"true\""
                 } else {
                     ""

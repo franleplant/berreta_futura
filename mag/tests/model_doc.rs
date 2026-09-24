@@ -1,4 +1,5 @@
 #[path = "../src/model/doc.rs"]
+#[allow(dead_code)]
 mod doc;
 #[path = "../src/model/shared.rs"]
 #[allow(dead_code)]

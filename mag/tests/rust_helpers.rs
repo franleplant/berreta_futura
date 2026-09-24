@@ -1,27 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
-const ALLOWED: [(&str, &str, &str); 27] = [
-    (
-        "model/shared.rs",
-        "anchor_key",
-        "the Python-exact form; typeset/content.rs keeps its copy until WP-5.1h part 2",
-    ),
-    (
-        "model/shared.rs",
-        "is_reference_heading",
-        "the Python-exact form; typeset/content.rs keeps its copy until WP-5.1h part 2",
-    ),
-    (
-        "typeset/content.rs",
-        "anchor_key",
-        "str::trim copy that disagrees with Python strip on U+001C..U+001F; WP-5.1h part 2 replaces it with model/shared.rs",
-    ),
-    (
-        "typeset/content.rs",
-        "is_reference_heading",
-        "calls the str::trim anchor_key; WP-5.1h part 2 replaces it with model/shared.rs",
-    ),
+const ALLOWED: [(&str, &str, &str); 23] = [
     (
         "cover/outline.rs",
         "move_to",
