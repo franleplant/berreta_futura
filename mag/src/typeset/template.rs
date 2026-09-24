@@ -3,6 +3,8 @@ use crate::typeset::world::Sources;
 use anyhow::{bail, Result};
 use std::path::Path;
 use typst::foundations::Smart;
+use typst::layout::{Frame, FrameItem, Point, Size};
+use typst::model::{Destination, Document, Url};
 use typst_layout::PagedDocument;
 use typst_pdf::{PdfOptions, PdfStandards};
 
@@ -10,6 +12,7 @@ pub const TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template.typ")
 pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
 pub const FONT_DIR: &str = "src/magazine/assets/fonts";
 const IDENT: &str = "mag-typeset-reader";
+const INLINE_LINK: &str = " mag-inline-link";
 
 pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
     Sources::new(tree, TEMPLATE_TYP, ROOT_TYP, font_dir)
@@ -50,7 +53,64 @@ pub fn document(world: &Sources) -> Result<PagedDocument> {
     }
 }
 
+type Run = (Point, Size);
+
+fn flush(frame: &mut Frame, open: &mut Option<(Destination, Run, Vec<Run>)>) {
+    if let Some((dest, (pos, size), inner)) = open.take() {
+        frame.push(pos, FrameItem::Link(dest.clone(), size));
+        for (pos, size) in inner {
+            frame.push(pos, FrameItem::Link(dest.clone(), size));
+        }
+    }
+}
+
+fn weasyprint_links(frame: &mut Frame) {
+    let items: Vec<_> = frame.items().cloned().collect();
+    frame.clear();
+    let mut open = None;
+    for (pos, mut item) in items {
+        let FrameItem::Link(dest, size) = &item else {
+            if let FrameItem::Group(group) = &mut item {
+                flush(frame, &mut open);
+                weasyprint_links(&mut group.frame);
+            }
+            frame.push(pos, item);
+            continue;
+        };
+        let (dest, inner) = match dest {
+            Destination::Url(url) if url.ends_with(INLINE_LINK) => {
+                let clean = url.trim_end_matches(INLINE_LINK);
+                (
+                    Destination::Url(Url::new(clean).expect("a url stays a url")),
+                    true,
+                )
+            }
+            other => (other.clone(), false),
+        };
+        match &mut open {
+            Some((d, (p, s), _))
+                if *d == dest && p.y == pos.y && s.y == size.y && p.x + s.x == pos.x =>
+            {
+                s.x += size.x
+            }
+            _ => {
+                flush(frame, &mut open);
+                open = Some((dest, (pos, *size), vec![]));
+            }
+        }
+        if inner {
+            open.as_mut().expect("a run is open").2.push((pos, *size));
+        }
+    }
+    flush(frame, &mut open);
+}
+
 pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
+    let mut pages = document.pages().to_vec();
+    for page in &mut pages {
+        weasyprint_links(&mut page.frame);
+    }
+    let document = PagedDocument::new(pages.into(), document.info().clone());
     let options = PdfOptions {
         ident: Smart::Custom(IDENT.to_string()),
         creator: Smart::Custom(Some(IDENT.to_string())),
@@ -60,7 +120,7 @@ pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
         tagged: false,
         pretty: false,
     };
-    typst_pdf::pdf(document, &options).map_err(|errors| {
+    typst_pdf::pdf(&document, &options).map_err(|errors| {
         anyhow::anyhow!(
             "PDF export failed:\n  {}",
             joined(errors.iter().map(|e| e.message.to_string()).collect())
