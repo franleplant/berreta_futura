@@ -2130,7 +2130,8 @@ fn generate_and_finish(
         "\nnext:\n  1. mag cast-check {edition_label}        (optional: badge off-model candidates in the showcase)\n  \
          2. open editions/{edition_label}/art/showcase.html and pick; clicking writes the paths to copy into edition.yaml \
          (cover.art_path / opener_art.path / tail_art_path / closing_plates); historic images are never deleted\n  \
-         3. mag render {edition_label}"
+         3. mag source-codes {edition_label}   (opener QR codes; reads the picked opener art)\n  \
+         4. mag render {edition_label}"
     );
 
     let all_failed = !generated.is_empty() && failures == generated.len();

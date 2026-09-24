@@ -712,7 +712,8 @@ fn print_next_steps(
         "\nnext:\n  1. read the finals under {}/articles/*/final.md\n  \
          2. edit {}: TODO fields (title, cover copy), article order, figures\n  \
          3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
-         4. mag render {edition_id}",
+         4. mag source-codes {edition_id}   (after picking opener art)\n  \
+         5. mag render {edition_id}",
         run_dir.display(),
         edition_yaml.display()
     );

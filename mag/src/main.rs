@@ -18,6 +18,7 @@ mod plan_cmd;
 mod print_cmd;
 mod produce;
 mod render;
+mod sourcecodes;
 mod translate;
 mod typeset;
 mod web;
@@ -184,6 +185,14 @@ enum Cmd {
         /// Vision-capable judge model
         #[arg(long, default_value = "sonnet")]
         model: String,
+    },
+    /// Write editions/<edition>/source-codes: one QR SVG per source for the web
+    /// edition and codes.json with the print fit (run after picking opener art, before render)
+    SourceCodes {
+        edition: String,
+        /// Regenerate in memory and compare with the committed files instead of writing
+        #[arg(long)]
+        check: bool,
     },
     /// Render an edition: weasyprint via the Python seam, typst natively
     Render(render::RenderArgs),
@@ -355,6 +364,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             layout,
         }),
         Cmd::Render(args) => render::run(&args),
+        Cmd::SourceCodes { edition, check } => sourcecodes::run(&edition, check),
         Cmd::Parity {
             edition,
             adhoc,
