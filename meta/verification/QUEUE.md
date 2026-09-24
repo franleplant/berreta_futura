@@ -5,13 +5,15 @@ Comparator verify (WP-0.2m-r.verify.md): 0.2m/n/o ACCEPTED; 0.2p, 0.2q,
 Re-verify (WP-0.2s.verify.md): 0.2p, 0.2q ACCEPTED; 0.2r, 0.2s REJECTED
 (blank counts on both legs buy drift; link /C and /F defaults). Rework
 WP-0.2t running, then re-verify.
-Landed, awaiting a verifier: WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
+Landed, awaiting a verifier: WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
 Running: WP-3.3b code/extracts/bibliography fixture + highlight wiring,
-WP-0.2t (glyph bound, link raw keys), WP-5.10
-(package raster pins, fold fixture, U+001C lexing, per-piece titles).
+WP-0.2t (glyph bound, link raw keys).
+Queued, serial behind WP-0.2t (parity owner): WP-0.2j exact number path,
+WP-4.0g ad hoc mode. Behind WP-3.3b (typeset owner): WP-5.1h helpers,
+WP-3.0g, WP-3.7.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
 Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
@@ -66,6 +68,12 @@ evidence file records it):
   normalization (WP-0.2m-r.verify.md); decide at WP-3.0g.
 
 Orchestrator decisions:
+- WP-0.3 (absence-check helper) WITHDRAWN: it served the four landing
+  checks, which the ff-only landing in WORKER-BRIEF.md removed; the
+  brief's rule 5 carries the absence discipline.
+- The live package test depends on an uncommitted oracle (tmp/v4, and
+  preflight.json records absolute paths); WP-4.1 regenerates the package
+  oracle fresh instead of relying on it.
 - Colours compare at 8-bit resolution on both legs (typst-pdf rounds).
 - `design_direction` is an engine label, excluded from layout comparison.
 - What renders is the glyph (face, size, id, position, fill), not the
