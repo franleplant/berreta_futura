@@ -1,14 +1,10 @@
 # BERRETA FUTURA design system
 
-This document defines visual policy. The TypeScript/XState engine owns all
-lifecycle work. Art creation, selection, measurement, rendering, visual review,
-and release are durable offers and decisions through `RunEngine`, normally
-driven from the CLI with `npm run engine -- ...`.
-
-The retained Python renderer, old configuration fields, historical layout
-measurements, and prototype generators are not a contributor workflow. They may
-remain behind versioned TypeScript adapter interfaces while the seam exists, but
-they do not decide readiness, layout approval, or release.
+This document defines visual policy. `mag` (Rust) runs the pipeline, and
+`mag render` typesets editions with the native typst engine, the default in
+`magazine.toml [render] engine`. The Python WeasyPrint renderer stays behind
+`mag render --engine weasyprint` as the rollback; it does not decide layout
+approval or release.
 
 ## Design position
 

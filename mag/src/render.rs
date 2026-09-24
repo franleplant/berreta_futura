@@ -242,7 +242,7 @@ pub(crate) fn select_engine(repo_root: &Path, flag: Option<&str>) -> Result<Engi
         Some(value) => parse_engine(value, "--engine"),
         None => match toml_value(repo_root, "render", "engine") {
             Some(value) => parse_engine(&value, "magazine.toml [render] engine"),
-            None => Ok(Engine::Weasyprint),
+            None => Ok(Engine::Typst),
         },
     }
 }
@@ -669,20 +669,9 @@ fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i
     let result = render_dir.join("result.json");
     fs::write(&result, serde_json::to_string_pretty(&value)? + "\n")
         .with_context(|| format!("writing {}", result.display()))?;
-    print_summary(&value, &render_dir.join(&request.primary_language));
-    if request.operation == "render_edition" {
-        println!(
-            "\nnext: read the PDF in {}; fix copy in the run finals or picks in edition.yaml and re-render; \
-             `mag parity {}` compares this leg against weasyprint",
-            render_dir.join(&request.primary_language).display(),
-            request.edition_id
-        );
-    } else {
-        println!(
-            "\nnext: `mag render {} --engine typst` renders the reader this measure describes",
-            request.edition_id
-        );
-    }
+    let out_dir = render_dir.join(&request.primary_language);
+    print_summary(&value, &out_dir);
+    println!("{}", next_step(&out_dir));
     Ok(0)
 }
 
@@ -963,18 +952,45 @@ fn run_adapter(repo_root: &Path, run_dir: &Path, request: &Request) -> Result<i3
     let value: serde_json::Value = serde_json::from_str(&stdout_buf)
         .with_context(|| format!("parsing mag-render-adapter stdout as JSON: {stdout_buf}"))?;
     print_summary(&value, &out_dir);
-    println!(
+    println!("{}", next_step(&out_dir));
+    Ok(0)
+}
+
+fn next_step(pdf_dir: &Path) -> String {
+    format!(
         "\nnext: read the PDF in {}; fix copy in the run finals or picks in edition.yaml and re-render; \
          `mag translate <run dir>` for the Spanish edition",
-        out_dir.display()
-    );
-
-    Ok(0)
+        pdf_dir.display()
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use super::parse_anchor_reply;
+    use super::{next_step, parse_anchor_reply, select_engine, Engine};
+    use std::path::Path;
+
+    #[test]
+    fn engine_defaults_to_typst_without_a_config_key() {
+        let dir = std::env::temp_dir().join(format!("mag-engine-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("magazine.toml"), "[render]\ndesign = \"x\"\n").unwrap();
+        assert_eq!(select_engine(&dir, None).unwrap(), Engine::Typst);
+        std::fs::write(
+            dir.join("magazine.toml"),
+            "[render]\nengine = \"weasyprint\"\n",
+        )
+        .unwrap();
+        assert_eq!(select_engine(&dir, None).unwrap(), Engine::Weasyprint);
+        assert_eq!(select_engine(&dir, Some("typst")).unwrap(), Engine::Typst);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn next_step_points_to_translate() {
+        let line = next_step(Path::new("editions/010/render-x/en"));
+        assert!(line.contains("editions/010/render-x/en"));
+        assert!(line.contains("`mag translate <run dir>`"));
+    }
 
     #[test]
     fn anchor_reply_matches_headings_exactly_and_case_insensitively() {
