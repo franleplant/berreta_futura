@@ -36,6 +36,9 @@ for name in files.stdout.split():
             language = info.split(maxsplit=1)[0] if info else ""
             row = blocks.setdefault((token.content, language), {"files": []})
             row["files"].append(name)
+for path in sorted((root / "mag/tests/highlight_snippets").iterdir()):
+    code = path.read_text(encoding="utf-8")
+    blocks.setdefault((code, path.suffix[1:]), {"files": []})["files"].append(path.name)
 out = []
 for (code, language), row in blocks.items():
     folded = fold_reader_characters(code)

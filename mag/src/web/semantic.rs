@@ -1,4 +1,4 @@
-use super::text::{escape, Escaper};
+use super::text::Escaper;
 use crate::model::doc::{
     fold_reader_characters, parse_publication_document, Block, Document, Inline,
 };
@@ -153,16 +153,6 @@ fn by_anchor<T>(rows: &[T], anchor: impl Fn(&T) -> &str) -> (Vec<&T>, BTreeMap<S
         }
     }
     (opener, anchored)
-}
-
-fn png_dimensions(path: &Path) -> Option<(u32, u32)> {
-    let bytes = std::fs::read(path).ok()?;
-    if bytes.get(..8)? != b"\x89PNG\r\n\x1a\n" || bytes.get(12..16)? != b"IHDR" {
-        return None;
-    }
-    let width = u32::from_be_bytes(bytes.get(16..20)?.try_into().ok()?);
-    let height = u32::from_be_bytes(bytes.get(20..24)?.try_into().ok()?);
-    Some((width, height))
 }
 
 struct Anchored<'a> {
@@ -724,9 +714,9 @@ impl Renderer<'_> {
         for (position, plate) in self.edition.closing_plates.iter().enumerate() {
             let index = position + 1;
             let path = &plate.art_path;
-            let aspect = match png_dimensions(path) {
-                Some((width, height)) if height > 0 => f64::from(width) / f64::from(height),
-                _ => bail!(
+            let aspect = match crate::typeset::media::pixels(path) {
+                Ok((width, height)) => f64::from(width) / f64::from(height),
+                Err(_) => bail!(
                     "Closing plate {index} needs a readable raster source: {}",
                     path.display()
                 ),
@@ -888,14 +878,9 @@ impl Renderer<'_> {
         } else {
             format!(" class=\"language-{}\"", self.escape.attr(language))
         };
-        if !language.is_empty() {
-            bail!(
-                "fenced code in {language:?} needs pygments highlighting, which the web port does \
-                 not reproduce yet"
-            );
-        }
-        let folded = escape(&fold_reader_characters(code, self.settable), false);
-        Ok(format!("<pre><code{class}>{folded}</code></pre>"))
+        let folded = fold_reader_characters(code, self.settable);
+        let body = crate::highlight::html(&folded, language)?;
+        Ok(format!("<pre><code{class}>{body}</code></pre>"))
     }
 
     fn inline_html(&self, inlines: &[Inline]) -> String {

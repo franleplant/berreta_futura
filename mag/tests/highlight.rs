@@ -343,5 +343,78 @@ fn unknown_languages_fall_back_and_unimplemented_ones_refuse() {
     assert_eq!(highlight::spans("x", "").unwrap(), None);
     assert_eq!(highlight::html("a < b\n", "txt").unwrap(), "a &lt; b\n");
     assert_eq!(highlight::html("a < b\n", "TEXT").unwrap(), "a &lt; b");
-    assert!(highlight::spans("x = 1", "python").is_err());
+    assert!(highlight::spans("x := 1", "go").is_err());
+    let html_body = "GET / HTTP/1.1\nContent-Type: text/html\n\n<p>";
+    assert!(highlight::spans(html_body, "http").is_err());
+}
+
+#[test]
+fn python_fstring_and_keywords() {
+    expect(
+        "def f(x):\n    return f\"{x}\"\n",
+        "python",
+        &[
+            ("def", "k"),
+            (" ", "w"),
+            ("f", "nf"),
+            ("(", "p"),
+            ("x", "n"),
+            ("):", "p"),
+            ("\n", "w"),
+            ("    ", ""),
+            ("return", "k"),
+            (" ", ""),
+            ("f", "sa"),
+            ("\"", "s2"),
+            ("{", "si"),
+            ("x", "n"),
+            ("}", "si"),
+            ("\"", "s2"),
+            ("\n", "w"),
+        ],
+    );
+}
+
+#[test]
+fn c_standard_types_become_keyword_types() {
+    expect(
+        "size_t n = 0;",
+        "c",
+        &[
+            ("size_t", "kt"),
+            (" ", "w"),
+            ("n", "n"),
+            (" ", "w"),
+            ("=", "o"),
+            (" ", "w"),
+            ("0", "mi"),
+            (";", "p"),
+        ],
+    );
+}
+
+#[test]
+fn http_body_is_lexed_by_its_content_type() {
+    expect(
+        "GET / HTTP/1.1\nContent-Type: application/json\n\n[1]",
+        "http",
+        &[
+            ("GET", "nf"),
+            (" ", ""),
+            ("/", "nn"),
+            (" ", ""),
+            ("HTTP", "kr"),
+            ("/", "o"),
+            ("1.1", "m"),
+            ("\n", ""),
+            ("Content-Type", "na"),
+            (":", "o"),
+            (" ", ""),
+            ("application/json", "l"),
+            ("\n\n", ""),
+            ("[", "p"),
+            ("1", "mi"),
+            ("]", "p"),
+        ],
+    );
 }

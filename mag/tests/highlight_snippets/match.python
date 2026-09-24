@@ -1,0 +1,25 @@
+def handle(command):
+    match command.split():
+        case ["go", direction]:
+            return move(direction)
+        case ["quit" | "exit"]:
+            raise SystemExit(0)
+        case [Point(x=0, y=0)]:
+            print("origin")
+        case _:
+            print(f"unknown: {command}")
+
+
+class Node(Base, metaclass=Meta):
+    __slots__ = ("left", "right")
+
+    def __repr__(self):
+        return f"Node({self.left!r}, {self.right!r})"
+
+
+type Pair = tuple[int, int]
+global counter
+assert isinstance(counter, int), "counter"
+del counter
+yield_from = [x async for x in aiter()]
+print(__name__, __file__, Ellipsis, ...)

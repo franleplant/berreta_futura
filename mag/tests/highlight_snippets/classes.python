@@ -1,0 +1,35 @@
+from __future__ import annotations
+
+import asyncio
+from dataclasses import dataclass, field
+from typing import Any, Callable
+
+
+@dataclass(frozen=True)
+class Budget:
+    """Token budget for one request.
+
+    Tracks spend in cents.
+    """
+
+    limit: int = 1_000_000
+    spent: float = 0.0
+    tags: list[str] = field(default_factory=list)
+
+    def remaining(self) -> int:
+        return self.limit - int(self.spent)
+
+    @property
+    def exhausted(self) -> bool:
+        return self.remaining() <= 0
+
+
+async def fetch(url: str, *, retries: int = 3, **kw: Any) -> bytes | None:
+    for attempt in range(retries):
+        try:
+            async with session.get(url, timeout=kw.get("timeout", 10)) as resp:
+                return await resp.read()
+        except (TimeoutError, ConnectionError) as exc:
+            print(f"retry {attempt + 1}/{retries}: {exc!r:>20}")
+            await asyncio.sleep(2 ** attempt)
+    return None

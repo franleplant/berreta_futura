@@ -1,0 +1,13 @@
+name = 'world'
+raw = r"C:\path\n"
+data = b"\x00\xff" + rb'\d+'
+multi = f"""
+Hello {name.upper()!s}, {{literal}} {3.14:.2f}
+"""
+pct = "%s has %d items, %(key)r" % (name, 3)
+fmt = "{0} and {name}".format(1, name=name)
+esc = "tab\there\u00e9\N{BULLET}"
+nums = [0x1F, 0o17, 0b1010, 1e-9, 3j, 1_000.5, 42]
+if (n := len(nums)) > 3 and not False or None is None:
+    squares = {k: v ** 2 for k, v in enumerate(nums) if k % 2 == 0}
+lam = lambda x, /, y=2: x @ y
