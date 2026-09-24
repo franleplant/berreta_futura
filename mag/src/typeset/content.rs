@@ -3,7 +3,7 @@ use crate::model::doc::{
     Block, Document, Inline,
 };
 use crate::model::manifest::{
-    load_edition, Article, Edition, Editorial, LoadOptions, Records, Section,
+    load_edition, source_code_payload, Article, Edition, Editorial, LoadOptions, Records, Section,
 };
 use crate::model::records::{load_records, Extract, Figure};
 use crate::model::shared::{
@@ -12,6 +12,7 @@ use crate::model::shared::{
 };
 use crate::typeset::estimate::{Metrics, Opener};
 use crate::typeset::media::pixels;
+use crate::web::edition::source_code_directory;
 use std::collections::BTreeSet;
 use std::path::Path;
 use typst_syntax::{SyntaxKind, SyntaxNode};
@@ -196,8 +197,9 @@ impl Writer<'_> {
             .map(|value| value.trim().to_string())
             .unwrap_or_default();
         format!(
-            "#edition-header[\n  #publication-name{}\n  #issue-line{}\n  #edition-title{}\n{}  \
+            "#set document(title: {})\n\n#edition-header[\n  #publication-name{}\n  #issue-line{}\n  #edition-title{}\n{}  \
              #edition-date{}\n]\n\n",
+            string_literal(&format!("{}: {}", edition.publication_name, edition.title)),
             self.said(&edition.publication_name),
             self.said(&format!("{} {}", self.ui("issue"), edition.issue_number)),
             self.said(&edition.title),
@@ -328,7 +330,7 @@ impl Writer<'_> {
                 "{ILLUSTRATED} requires a paragraph as the first manuscript block"
             )));
         }
-        let mut out = self.article_head(article, document, index, illustrated);
+        let mut out = self.article_head(article, document, index, illustrated)?;
         if !illustrated {
             out.push_str("  #opener-end()\n");
         }
@@ -395,7 +397,7 @@ impl Writer<'_> {
         document: &Document,
         index: usize,
         illustrated: bool,
-    ) -> String {
+    ) -> Result<String> {
         let mut label = format!(
             "  #content-label[#label-primary{}",
             self.said(&format!("{} {index:02}", self.ui("feature")))
@@ -425,7 +427,10 @@ impl Writer<'_> {
         };
         let provenance = if illustrated {
             match &article.source_url {
-                Some(url) => format!("  #{}\n", self.source_link_call(article, url)),
+                Some(url) => format!(
+                    "  #{}\n",
+                    self.source_link_call(article, url, &source_code(article, url)?)
+                ),
                 None => String::new(),
             }
         } else {
@@ -438,10 +443,20 @@ impl Writer<'_> {
                 ))
             )
         };
-        format!(
+        let art = match (&article.opener_art, illustrated) {
+            (Some(art), true) => {
+                let (width, height) = pixels(&art.path)?;
+                format!(
+                    "(path: {}, pixels: ({width}, {height}))",
+                    path_literal(&art.path)
+                )
+            }
+            _ => "none".to_string(),
+        };
+        Ok(format!(
             "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n  source-ids: {},\n  \
-             figure-layouts: {},\n  opener: {},\n)[\n{label}  #piece-title{}\n  {}\n{note}\
-             {provenance}",
+             figure-layouts: {},\n  opener: {},\n  art: {art},\n)[\n{label}  #piece-title{}\n  {}\n\
+             {note}{provenance}",
             string_literal(&format!("article-{}", article.id)),
             string_literal(&article.content_mode),
             string_literal(&article.short_title),
@@ -450,7 +465,7 @@ impl Writer<'_> {
             string_literal(if illustrated { ILLUSTRATED } else { "plain" }),
             self.said(&article.title),
             self.byline(&article.author),
-        )
+        ))
     }
 
     fn article_body(&self, article: &Article, document: &Document, skip: usize) -> Result<String> {
@@ -507,13 +522,13 @@ impl Writer<'_> {
     fn source_link(&self, article: &Article) -> String {
         match &article.source_url {
             None => String::new(),
-            Some(url) => format!("#{}\n\n", self.source_link_call(article, url)),
+            Some(url) => format!("#{}\n\n", self.source_link_call(article, url, "none")),
         }
     }
 
-    fn source_link_call(&self, article: &Article, url: &str) -> String {
+    fn source_link_call(&self, article: &Article, url: &str, code: &str) -> String {
         format!(
-            "source-link(destination: {}, source-id: {}){}",
+            "source-link(destination: {}, source-id: {}, code: {code}){}",
             string_literal(url),
             string_literal(article.source_ids.first().map(String::as_str).unwrap_or("")),
             self.verbatim(url),
@@ -760,6 +775,42 @@ pub fn escape_markup(text: &str) -> String {
     out
 }
 
+fn source_code(article: &Article, url: &str) -> Result<String> {
+    let refuse = |why: &str| {
+        ValidationError::one(format!(
+            "No committed source code for article {}: {why}; regenerate editions/<id>/source-codes",
+            article.id
+        ))
+    };
+    let index = source_code_directory(&article.manuscript)
+        .map(|directory| directory.join("codes.json"))
+        .ok_or_else(|| refuse("no edition directory"))?;
+    let text = std::fs::read_to_string(&index).map_err(|error| refuse(&error.to_string()))?;
+    let codes: serde_json::Value =
+        serde_json::from_str(&text).map_err(|error| refuse(&error.to_string()))?;
+    let payload = source_code_payload(url);
+    let print = codes["codes"]
+        .as_array()
+        .and_then(|rows| {
+            rows.iter()
+                .rev()
+                .find(|row| row["payload"] == payload.as_str())
+        })
+        .map(|row| &row["print"])
+        .filter(|print| !print["error"].is_null())
+        .ok_or_else(|| refuse(&format!("codes.json has no printable code for {payload}")))?;
+    let rows: Vec<String> = print["matrix"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|row| row.as_str().map(str::to_string))
+        .collect();
+    if rows.is_empty() {
+        return Err(refuse("its matrix is empty"));
+    }
+    Ok(string_array(&rows))
+}
+
 fn path_literal(path: &Path) -> String {
     let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
     string_literal(&absolute.to_string_lossy())
@@ -875,6 +926,7 @@ impl Walker<'_> {
             | SyntaxKind::Dict
             | SyntaxKind::Named
             | SyntaxKind::FuncCall
+            | SyntaxKind::SetRule
             | SyntaxKind::ModuleImport
             | SyntaxKind::ImportItems
             | SyntaxKind::Parenthesized => false,
@@ -1096,6 +1148,43 @@ mod tests {
             .map(|run| run.trim_end_matches('\n').to_string())
             .collect();
         assert_eq!(got, want, "edition {edition_id} verbatim runs differ");
+    }
+
+    #[test]
+    fn an_illustrated_source_code_is_read_from_the_committed_matrix_or_refused() {
+        let root = corpus();
+        let records: Records = load_records(&root.join("library/sources"))
+            .expect("the fixture records load")
+            .into_iter()
+            .map(|record| (record.id.clone(), record))
+            .collect();
+        let known: BTreeSet<String> = records.keys().cloned().collect();
+        let edition = load_edition(
+            &root,
+            "901",
+            &known,
+            &LoadOptions {
+                publication_name: PUBLICATION,
+                source_records: Some(&records),
+                allow_missing_art: false,
+                allow_unanchored_figures: false,
+            },
+        )
+        .expect("the fixture edition loads");
+        let article = &edition.articles[0];
+        let url = article
+            .source_url
+            .as_deref()
+            .expect("the fixture article has a source");
+        let code = source_code(article, url).expect("the committed code reads");
+        assert_eq!(code.matches('"').count(), 2 * 21, "{code}");
+        assert!(code.starts_with("(\"1111111"), "{code}");
+        let refused = source_code(article, "https://example.invalid/uncommitted")
+            .expect_err("an uncommitted payload is refused");
+        assert!(
+            refused.to_string().contains("No committed source code"),
+            "{refused}"
+        );
     }
 
     #[test]

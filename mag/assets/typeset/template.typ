@@ -112,6 +112,8 @@
 #let OPENER-FRAME-HEIGHT = 203pt
 #let OPENER-OFFSET = 4.1pt
 #let OPENER-BORDER = 2.4pt
+#let OPENER-FOCUS = (49%, 47%)
+#let OPENER-QR-QUIET = 4
 #let OPENER-QR = 41pt
 #let OPENER-GAP = 14pt
 #let OPENER-TICK-WIDTH = 14.5pt
@@ -274,6 +276,8 @@
   }
 }
 
+#let bookmark(level, body) = place(hide(heading(level: level, bookmarked: true, outlined: false, numbering: none, body)))
+
 #let reader(body) = {
   set page(
     width: PAGE-WIDTH,
@@ -400,6 +404,7 @@
     }
     if label != none {
       place(top + left, dy: CONTENTS-TITLE-TOP + CONTENTS-TITLE-SIZE * HALF-SERIF, {
+        bookmark(1, label)
         text(font: DISPLAY, size: CONTENTS-TITLE-SIZE, weight: 600, ..flat, label)
       })
     }
@@ -427,25 +432,43 @@
   p + ((tag: name, body: body),)
 })
 
-#let opener-art() = block(
-  width: 100%,
-  height: OPENER-ART-HEIGHT - OPENER-ART-LIFT,
-  above: 0pt,
-  below: 0pt,
-  place(top + left, dx: -OPENER-ESCAPE, dy: -OPENER-ART-LIFT, {
-    place(top + left, dx: OPENER-OFFSET, dy: OPENER-OFFSET, {
-      rect(width: OPENER-RAIL, height: OPENER-FRAME-HEIGHT, fill: SIGNAL-ORANGE, stroke: none)
-    })
-    place(top + left, dx: OPENER-BORDER / 2, dy: OPENER-BORDER / 2, {
-      rect(
-        width: OPENER-RAIL - OPENER-BORDER,
-        height: OPENER-FRAME-HEIGHT - OPENER-BORDER,
-        fill: white,
-        stroke: OPENER-BORDER + PAPER-INK,
-      )
-    })
-  }),
+#let frame-ring(width, height, border) = curve(
+  fill: PAPER-INK,
+  fill-rule: "even-odd",
+  stroke: none,
+  curve.move((border, border)),
+  curve.line((width - border, border)),
+  curve.line((width - border, height - border)),
+  curve.line((border, height - border)),
+  curve.close(mode: "straight"),
+  curve.move((0pt, 0pt)),
+  curve.line((width, 0pt)),
+  curve.line((width, height)),
+  curve.line((0pt, height)),
+  curve.close(mode: "straight"),
 )
+
+#let covered(art, width, height) = {
+  let scale = calc.max(width / art.pixels.at(0), height / art.pixels.at(1))
+  let (w, h) = (art.pixels.at(0) * scale, art.pixels.at(1) * scale)
+  box(width: width, height: height, clip: true, place(
+    top + left,
+    dx: (width - w) * OPENER-FOCUS.at(0),
+    dy: (height - h) * OPENER-FOCUS.at(1),
+    image(art.path, width: w, height: h, fit: "stretch"),
+  ))
+}
+
+#let opener-art(art) = {
+  place(top + left, frame-ring(OPENER-RAIL, OPENER-FRAME-HEIGHT, OPENER-BORDER))
+  if art != none {
+    place(top + left, dx: OPENER-BORDER, dy: OPENER-BORDER, covered(
+      art,
+      OPENER-RAIL - 2 * OPENER-BORDER,
+      OPENER-FRAME-HEIGHT - 2 * OPENER-BORDER,
+    ))
+  }
+}
 
 #let content-label(body) = context if opener-parts.get() == none {
   block(
@@ -500,7 +523,7 @@
 
 #let piece-title(body) = context if opener-parts.get() == none {
   block(
-    text(font: DISPLAY, size: 24pt, weight: 600, ..edges(24pt, 24pt * 1.08, HALF-SERIF), body),
+    bookmark(1, body) + text(font: DISPLAY, size: 24pt, weight: 600, ..edges(24pt, 24pt * 1.08, HALF-SERIF), body),
     spacing: 8pt,
   )
 } else {
@@ -545,8 +568,8 @@
   collect("note", body)
 }
 #let provenance(body) = none
-#let source-link(destination: none, source-id: none, body) = context if opener-parts.get() != none {
-  collect("source", destination)
+#let source-link(destination: none, source-id: none, code: none, body) = context if opener-parts.get() != none {
+  collect("source", (destination: destination, code: code))
 }
 
 #let opener-part(rows, name) = {
@@ -561,7 +584,8 @@
     size: OPENER-BYLINE-SIZE,
     weight: 700,
     fill: PAPER-INK,
-    ..edges(OPENER-BYLINE-SIZE, OPENER-BYLINE-LEADING, HALF-SANS),
+    top-edge: edges(OPENER-BYLINE-SIZE, OPENER-BYLINE-LEADING, HALF-SANS).top-edge,
+    bottom-edge: edges(OPENER-PREFIX-SIZE, OPENER-BYLINE-LEADING, HALF-SANS).bottom-edge,
     ..tracked(OPENER-BYLINE-TRACKING * OPENER-BYLINE-SIZE),
     upper(opener-part(rows, "byline")),
   ))
@@ -622,11 +646,26 @@
   )
 }
 
-#let source-code(destination) = {
+#let qr-symbol(rows) = {
+  let unit = OPENER-QR / (rows.len() + 2 * OPENER-QR-QUIET)
+  let svg(length) = calc.round(length / 1pt, digits: 4) * 1pt
+  let runs = ()
+  for (y, row) in rows.enumerate() {
+    for run in row.matches(regex("1+")) {
+      let (x0, y0) = (svg((run.start + OPENER-QR-QUIET) * unit), svg((y + OPENER-QR-QUIET) * unit))
+      let (x1, y1) = (x0 + svg(run.text.len() * unit), y0 + svg(unit))
+      runs += (curve.move((x0, y0)), curve.line((x1, y0)), curve.line((x1, y1)), curve.line((x0, y1)), curve.close(mode: "straight"))
+    }
+  }
+  place(top + left, rect(width: OPENER-QR, height: OPENER-QR, fill: white, stroke: none))
+  place(top + left, curve(fill: INK, stroke: none, ..runs))
+}
+
+#let source-code(source) = {
   let code = rect(width: OPENER-QR, height: OPENER-QR, fill: none, stroke: none)
-  if destination == none { return code }
-  place(top + left, link(destination, box(width: OPENER-QR, height: OPENER-QR)))
-  link(destination, code)
+  if source == none { return code }
+  place(top + left, link(source.destination, box(width: OPENER-QR, height: OPENER-QR)))
+  link(source.destination, box(width: OPENER-QR, height: OPENER-QR, if source.code != none { qr-symbol(source.code) }))
 }
 
 #let opener-page(rows, body, split) = {
@@ -637,40 +676,50 @@
     density = OPENER-COMPACT
     fit = fitted-title(title, OPENER-COMPACT-TITLE-MAX)
   }
-  block(breakable: false, above: 0pt, below: 0pt, {
-    opener-art()
-    block(above: density.label, below: 0pt, escaped(text(
-      font: SANS,
-      size: OPENER-LABEL-SIZE,
-      weight: 600,
-      fill: PAPER-BLUE,
-      ..edges(OPENER-LABEL-SIZE, OPENER-LABEL-LEADING, HALF-SANS),
-      ..tracked(OPENER-LABEL-TRACKING * OPENER-LABEL-SIZE),
-      upper(opener-part(rows, "label")),
-    )))
-    block(above: density.title-gap, below: 0pt, escaped({
-      set par(leading: 0pt, spacing: 0pt)
-      text(..tracked(OPENER-TITLE-TRACKING * fit.size), opener-title-text(fit.size, title))
-    }))
-    block(
-      above: density.tick,
-      below: 0pt,
-      escaped(block(width: OPENER-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, spacing: 0pt)),
-    )
-    v(density.meta-pad)
-    block(above: 0pt, below: 0pt, escaped(grid(
-      columns: (1fr, OPENER-QR),
-      column-gutter: OPENER-GAP,
-      align: horizon,
-      credit-column(rows),
-      source-code(opener-part(rows, "source")),
-    )))
-    v(density.meta-pad)
-    escaped(block(width: 100%, height: OPENER-META-RULE, fill: PAPER-RULE, spacing: 0pt))
-    block(above: density.standfirst-gap, below: 0pt, escaped({
-      set par(leading: 0pt, spacing: 0pt)
-      standfirst-text(density, body)
-    }))
+  let rail(body) = block(width: OPENER-RAIL, above: 0pt, below: 0pt, body)
+  let label = rail(text(
+    font: SANS,
+    size: OPENER-LABEL-SIZE,
+    weight: 600,
+    fill: PAPER-BLUE,
+    ..edges(OPENER-LABEL-SIZE, OPENER-LABEL-LEADING, HALF-SANS),
+    ..tracked(OPENER-LABEL-TRACKING * OPENER-LABEL-SIZE),
+    upper(opener-part(rows, "label")),
+  ))
+  let heading = rail({
+    set par(leading: 0pt, spacing: 0pt)
+    text(..tracked(OPENER-TITLE-TRACKING * fit.size), opener-title-text(fit.size, title))
+  })
+  let meta = rail(grid(
+    columns: (1fr, OPENER-QR),
+    column-gutter: OPENER-GAP,
+    align: horizon,
+    credit-column(rows),
+    source-code(opener-part(rows, "source")),
+  ))
+  let standfirst = rail({
+    set par(leading: 0pt, spacing: 0pt)
+    standfirst-text(density, body)
+  })
+  let y-label = OPENER-ART-HEIGHT - OPENER-ART-LIFT + density.label
+  let y-title = y-label + measure(label).height + density.title-gap
+  let y-tick = y-title + measure(heading).height + density.tick
+  let y-meta = y-tick + OPENER-TICK + density.meta-pad
+  let y-rule = y-meta + measure(meta).height + density.meta-pad
+  let y-standfirst = y-rule + OPENER-META-RULE + density.standfirst-gap
+  let at(y, body) = place(top + left, dx: -OPENER-ESCAPE, dy: y, body)
+  block(breakable: false, above: 0pt, below: 0pt, width: 100%, height: y-standfirst + measure(standfirst).height, {
+    at(y-tick, rect(width: OPENER-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, stroke: none))
+    at(y-label, label)
+    at(y-title, heading)
+    at(y-title, bookmark(1, title))
+    at(y-standfirst, standfirst)
+    place(top + left, dx: OPENER-OFFSET - OPENER-ESCAPE, dy: OPENER-OFFSET - OPENER-ART-LIFT, {
+      rect(width: OPENER-RAIL, height: OPENER-FRAME-HEIGHT, fill: SIGNAL-ORANGE, stroke: none)
+    })
+    at(y-rule, rect(width: OPENER-RAIL, height: OPENER-META-RULE, fill: PAPER-RULE, stroke: none))
+    at(y-meta, meta)
+    at(-OPENER-ART-LIFT, opener-art(opener-part(rows, "art")))
   })
 }
 
@@ -738,8 +787,9 @@
   (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, below: 8pt, fill: VIOLET, caps: true, drop: 10pt),
 )
 
-#let heading-stack(spec, above, escape, drop, body) = {
+#let heading-stack(level, spec, above, escape, drop, body) = {
   block(above: above, below: 0pt, breakable: false, width: 100%, inset: escape, {
+    bookmark(level, body)
     move(dy: drop, text(
       font: spec.font,
       size: spec.size,
@@ -760,6 +810,7 @@
     let anchor = level >= 2 and level <= 3 and band-anchored(index)
     let midpage = anchor and here().position().y > MARGIN-TOP + PAGE-TOP-EPSILON
     heading-stack(
+      level,
       spec,
       if anchor { auto } else { spec.above },
       if anchor { BAND-ESCAPE } else { NO-ESCAPE },
@@ -1081,6 +1132,7 @@
   source-ids: (),
   figure-layouts: (),
   opener: "plain",
+  art: none,
   body,
 ) = {
   piece-counter.step()
@@ -1100,7 +1152,7 @@
   column({
     [#metadata((id: id, head: short-title))<mag-piece>]
     if opener == ILLUSTRATED {
-      opener-parts.update(_ => ())
+      opener-parts.update(_ => ((tag: "art", body: art),))
     }
     body
     [#metadata(id)<mag-piece-end>]
