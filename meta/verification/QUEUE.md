@@ -45,6 +45,9 @@ evidence file records it):
   runs 3 pt past the text at the break; chip corner radius 0.0046 pt off)
   per WP-3.1.md.
 
+- Tier V never fails on pixels, so nothing outside Tier S/E backs up a
+  normalization (WP-0.2m-r.verify.md); decide at WP-3.0g.
+
 Orchestrator decisions:
 - Colours compare at 8-bit resolution on both legs (typst-pdf rounds).
 - `design_direction` is an engine label, excluded from layout comparison.
