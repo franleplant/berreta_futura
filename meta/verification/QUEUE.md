@@ -9,15 +9,15 @@ WP-0.2t landed 3efaf3c. Verify WP-0.2j.verify.md: 0.2r, 0.2s, 0.2t and
 glyphs; 0.477 pt in-page); plus two older tracer holes. Rework WP-0.2u
 landed fe1bd56 (MIN_ADVANCE_PT 1.25, strict decode, operand counts, no
 #[ignore] left). Final adversarial comparator verify runs with WP-3.0g.
-Landed, awaiting a verifier: WP-0.2w; WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-3.2 (typeset set: one verifier after WP-3.7).
+Landed, awaiting a verifier: WP-0.2w, WP-5.1h part 2; WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-3.2 (typeset set: one verifier after WP-3.7).
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d, WP-4.0g, WP-5.10, WP-5.1h part 1.
 Running: WP-0.2x (quantize at-start in f64; half-quantum tolerance
-instead of bucket equality), WP-5.1h part 2.
+instead of bucket equality), WP-3.9 (generalize to 008).
 WP-3.7c landed cbe1629: 010 display list 0 pages, navigation 0; glyph
 clause 90 single-quantum blips (comparator artifact, WP-0.2x).
-Next: WP-3.9 (generalize past 010), then WP-3.0g, WP-5.6, WP-4.1.
+Next: WP-3.0g, WP-5.6, WP-4.1.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.7a, 3.7c, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
 Next: WP-3.3b, WP-3.0g, WP-3.7; WP-5.1h helpers; verifier batches.
