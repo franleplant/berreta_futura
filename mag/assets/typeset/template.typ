@@ -57,6 +57,7 @@
 #let RUNNING-TICK-TOP = 27.425pt
 #let ARTICLE-PAGE-CAP = 7
 #let VERBATIM-PAGE-CAP = 10
+#let INLINE-LINK = " mag-inline-link"
 
 #let FIGURE-LABEL-ZONE = 13.1pt
 #let FIGURE-LABEL-PAD = 4.32625pt
@@ -219,11 +220,11 @@
 
 #let furniture() = context {
   let index = counter(page).at(here()).first()
-  folio(index)
   running-head(index)
+  folio(index)
 }
 
-#let plain-page() = page(margin: 0pt, background: none, [])
+#let plain-page() = page(margin: 0pt, foreground: none, [])
 
 #let column(body) = pad(left: RAIL, right: RAIL - MEASURE-DELTA, body)
 
@@ -284,8 +285,10 @@
       outside: MARGIN-OUTER,
     ),
     binding: left,
-    background: furniture(),
-    foreground: tail-layer(),
+    foreground: {
+      tail-layer()
+      furniture()
+    },
   )
   set text(
     font: SERIF,
@@ -677,7 +680,11 @@
   context v(PAGE-HEIGHT - MARGIN-BOTTOM - here().position().y)
 }
 
-#let doc-link(destination: none, title: none, body) = link(destination, body)
+#let doc-link(destination: none, title: none, body) = {
+  show emph: it => link(destination + INLINE-LINK, it)
+  show strong: it => link(destination + INLINE-LINK, it)
+  link(destination, body)
+}
 
 #let code-pad = text(font: MONO, size: CODE-PAD-X / MONO-ADVANCE, ..flat, "\u{a0}")
 
@@ -1026,7 +1033,7 @@
 #let plate-slots(articles, count) = range(1, count + 1).map(j => py-round(j * articles / count))
 
 #let plate-page(plate) = page(
-  background: none,
+  foreground: none,
   place(top + left, dy: -MARGIN-TOP, image(plate.path, width: LIVE-WIDTH, height: PAGE-HEIGHT, fit: "contain")),
 )
 

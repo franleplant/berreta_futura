@@ -863,6 +863,54 @@ mod tests {
         assert!(links(&compiled(&opener_run(10))).is_empty());
     }
 
+    fn link_rects(body: &str) -> Vec<Vec<f32>> {
+        let tree = Tree {
+            files: vec![File {
+                path: "main.typ".to_string(),
+                source: format!(
+                    "#piece(id: \"a\", kind: \"article\", short-title: \"A\")[\n\
+                     #piece-title[A Fixture Title]\n\
+                     #opener-end()\n\
+                     #doc-paragraph(standfirst: false, roster: false)[#doc-link(destination: \
+                     \"https://x.org/\", title: none)[{body}]]\n]\n"
+                ),
+            }],
+        };
+        let pdf = template::pdf(&compiled(&tree)).expect("the pdf exports");
+        let doc = lopdf::Document::load_mem(&pdf).expect("the pdf parses");
+        let mut out = Vec::new();
+        for (_, id) in doc.get_pages() {
+            for annot in doc.get_page_annotations(id).expect("annotations read") {
+                let rect = annot.get(b"Rect").and_then(lopdf::Object::as_array);
+                let rect = rect.expect("a link has a rect").iter();
+                out.push(rect.map(|v| v.as_float().expect("a number")).collect());
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn an_inline_inside_a_link_carries_its_own_link_as_weasyprint_does() {
+        assert_eq!(link_rects("plain").len(), 1);
+        let whole = link_rects("#emph[pacing the frontier]");
+        assert_eq!(whole.len(), 2);
+        assert_eq!(whole[0], whole[1]);
+        let part = link_rects("a #strong[bold] b");
+        assert_eq!(part.len(), 2);
+        assert!(
+            part[1][0] > part[0][0] && part[1][2] < part[0][2],
+            "{part:?}"
+        );
+        let wrapped = link_rects(&format!("#emph[{}]", vec!["frontier"; 20].join(" ")));
+        assert_eq!(
+            wrapped.len(),
+            6,
+            "outer and inner per line over three lines"
+        );
+        assert!(wrapped.chunks(2).all(|pair| pair[0] == pair[1]));
+        assert!(wrapped[0][1] > wrapped[2][1] && wrapped[2][1] > wrapped[4][1]);
+    }
+
     #[test]
     fn the_plain_opener_fit_is_read_from_its_end_mark() {
         assert!(plain_fits(10));
@@ -1156,6 +1204,40 @@ mod tests {
             gap(bullets("Beta.") + mark, "Beta.", "END / 01"),
             to_mark + 6.0,
         );
+    }
+
+    #[test]
+    fn the_running_furniture_paints_after_the_body_as_the_oracle_margin_boxes_do() {
+        let items = laid(para(&vec!["words"; 900].join(" ")));
+        let page = |y: f64| (y / 1e4).floor();
+        let rules: Vec<usize> = (0..items.len())
+            .filter(|&i| match &items[i].2 {
+                FrameItem::Shape(shape, _) => (bounds(&shape.geometry).3 - 0.55).abs() < 1e-6,
+                _ => false,
+            })
+            .collect();
+        assert!(
+            !rules.is_empty(),
+            "the piece runs onto a page with a running head"
+        );
+        for rule in rules {
+            let texts = |range: std::ops::Range<usize>| {
+                items[range]
+                    .iter()
+                    .filter(|(_, y, item)| {
+                        page(*y) == page(items[rule].1) && matches!(item, FrameItem::Text(_))
+                    })
+                    .map(|(_, y, _)| y - 1e4 * page(*y))
+                    .collect::<Vec<_>>()
+            };
+            let (before, after) = (texts(0..rule), texts(rule..items.len()));
+            assert!(
+                before.iter().any(|y| *y > 100.0),
+                "body text precedes the running rule"
+            );
+            assert!(!after.is_empty(), "the folio follows the running rule");
+            after.iter().for_each(|y| near(*y, 595.2756 - 19.5));
+        }
     }
 
     #[test]
