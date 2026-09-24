@@ -13,8 +13,10 @@ Landed, awaiting a verifier: WP-5.10, WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, 
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
-Running: WP-3.7a burn-down structure items, WP-3.7b glyph-drift spike
-(evidence only), WP-4.0g ad hoc parity mode. Behind WP-3.7a (typeset owner): WP-3.7 drift fix, WP-5.1h helpers,
+Running: WP-3.7a burn-down structure items, WP-4.0g ad hoc parity mode,
+WP-5.1h part 1 (strict decode in pdf_text/impose, exact decimals,
+shared helpers).
+Next after WP-3.7a: WP-3.7c advance post-pass (decision below). Behind WP-3.7a (typeset owner): WP-3.7 drift fix, WP-5.1h helpers,
 then WP-3.0g, WP-5.6, WP-4.1.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.4, 3.5, 0.0d, 0.0e)
 get one verifier after WP-3.7, since each later WP re-measures them.
@@ -76,6 +78,14 @@ evidence file records it):
   normalization (WP-0.2m-r.verify.md); decide at WP-3.0g.
 
 Orchestrator decisions:
+- Glyph advances (WP-3.7b.md): WeasyPrint 69 truncates each kern to an
+  integer 1/1000 em (`int(kerning)`), writes Inter widths as integers and
+  sets 10 pt text at 9.999756 pt; Typst writes harfbuzz's exact values.
+  To keep the claim "renders the same" exact rather than loosening Tier
+  E, the Typst leg reproduces WeasyPrint's written advances in a
+  template::pdf post-pass (option 1), letter-spacing term included. It is
+  a declared compatibility shim: the flip keeps it, and removing it later
+  is an intended output change like WP-4.3, not a regression.
 - Glyph drift residual accepted as the Tier E allowance's limit: a word at
   reach R may move R/1.25 ticks (0.186 pt at 318 pt), and only when every
   advance errs one tick the same way (WP-0.2u.md). MIN_ADVANCE_PT is
