@@ -13,8 +13,7 @@ Landed, awaiting a verifier: WP-0.0e, WP-3.5, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, 
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework), WP-5.5c, WP-5.9, WP-3.3a,
 WP-5.5d.
-Running: WP-3.7a burn-down structure items, WP-0.2v JPEG in the tracer,
-verifier for WP-4.0g + WP-5.10 + WP-5.1h part 1.
+Running: WP-3.7a burn-down structure items, verifier for WP-4.0g + WP-5.10 + WP-5.1h part 1.
 Next after WP-3.7a: WP-3.7c advance post-pass (decision below). Behind WP-3.7a (typeset owner): WP-3.7 drift fix, WP-5.1h helpers,
 then WP-3.0g, WP-5.6, WP-4.1.
 Phase 2/3 typeset WPs (2.2c, 2.3, 3.1, 3.2, 3.2b, 3.3b, 3.8, 3.4, 3.5, 0.0d, 0.0e)
@@ -48,7 +47,8 @@ evidence file records it):
 - cover.py replace_first_page is dead (WP-6.1 deletes it anyway).
 - WP-3.9 (after WP-3.7): generalize past 010 with `--adhoc 008`
   (WP-4.0g.md: headings break at different words, text order differs on
-  pp. 16-20). Pre-010 editions lack committed source-codes/; 009 refuses
+  pp. 16-20; figure JPEGs on pp. 16/17/19 are re-encoded by one leg,
+  7-13% of samples differ, WP-0.2v.md). Pre-010 editions lack committed source-codes/; 009 refuses
   on a repeated closing-plate art (edition data, for Fran).
 - WP-5.6 must add the cover step to the typst path (it has none; the
   parity domain excludes cover pages today).
