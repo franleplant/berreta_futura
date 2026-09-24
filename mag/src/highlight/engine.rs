@@ -1,11 +1,12 @@
 use anyhow::{anyhow, bail, Result};
 use fancy_regex::{Captures, Regex};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct Lexer {
     states: HashMap<String, Vec<Rule>>,
     extended: bool,
+    retype: HashSet<String>,
 }
 
 struct Rule {
@@ -19,6 +20,8 @@ enum Action {
     Token(String),
     Groups(Vec<Action>),
     Call(Call),
+    Using(Vec<String>),
+    Http(String, Vec<String>),
 }
 
 struct Call {
@@ -44,6 +47,7 @@ struct Context {
     indent: i64,
     next_indent: i64,
     block_scalar_indent: Option<i64>,
+    content_type: Option<String>,
 }
 
 impl Lexer {
@@ -64,12 +68,17 @@ impl Lexer {
         Ok(Self {
             states,
             extended: table["extended"].as_bool().unwrap_or(false),
+            retype: serde_json::from_value(table["retype"].clone()).unwrap_or_default(),
         })
     }
 
     pub fn tokens(&self, text: &str) -> Result<Vec<(String, String)>> {
+        self.tokens_from(text, vec!["root".into()])
+    }
+
+    fn tokens_from(&self, text: &str, stack: Vec<String>) -> Result<Vec<(String, String)>> {
         let mut ctx = Context {
-            stack: vec!["root".into()],
+            stack,
             indent: -1,
             ..Context::default()
         };
@@ -79,7 +88,7 @@ impl Lexer {
             let rules = self.states.get(ctx.stack.last().unwrap());
             let rules = rules.ok_or_else(|| anyhow!("unknown lexer state"))?;
             if !self.step(rules, text, &mut ctx)? && !self.fallback(text, &mut ctx) {
-                return Ok(ctx.out);
+                return Ok(self.retyped(ctx.out));
             }
             idle = if (ctx.pos, ctx.stack.len()) == before {
                 idle + 1
@@ -90,6 +99,15 @@ impl Lexer {
                 bail!("lexer stopped advancing at byte {}", ctx.pos);
             }
         }
+    }
+
+    fn retyped(&self, tokens: Vec<(String, String)>) -> Vec<(String, String)> {
+        let retype =
+            |(class, text): (String, String)| match class == "n" && self.retype.contains(&text) {
+                true => ("kt".to_owned(), text),
+                false => (class, text),
+            };
+        tokens.into_iter().map(retype).collect()
     }
 
     fn step(&self, rules: &[Rule], text: &str, ctx: &mut Context) -> Result<bool> {
@@ -106,7 +124,15 @@ impl Lexer {
                     ctx.pos = end;
                 }
                 Action::Groups(groups) => {
-                    groups_(groups, &m, ctx)?;
+                    self.groups(groups, &m, ctx)?;
+                    ctx.pos = end;
+                }
+                Action::Using(stack) => {
+                    ctx.out.extend(self.tokens_from(&m[0], stack.clone())?);
+                    ctx.pos = end;
+                }
+                Action::Http(kind, classes) => {
+                    http(kind, classes, &m, ctx)?;
                     ctx.pos = end;
                 }
                 Action::Call(call) => call.run(&m[0], m.get(0).unwrap().start(), &m, ctx),
@@ -131,23 +157,56 @@ impl Lexer {
         ctx.pos += c.len_utf8();
         true
     }
+
+    fn groups(&self, groups: &[Action], m: &Captures, ctx: &mut Context) -> Result<()> {
+        for (index, action) in groups.iter().enumerate() {
+            let group = m.get(index + 1);
+            match (action, group) {
+                (Action::Token(class), Some(g)) if !g.as_str().is_empty() => {
+                    ctx.out.push((class.clone(), g.as_str().to_owned()))
+                }
+                (Action::Call(call), Some(g)) => {
+                    ctx.pos = g.start();
+                    call.run(g.as_str(), g.start(), m, ctx);
+                }
+                (Action::Using(stack), Some(g)) => {
+                    ctx.out.extend(self.tokens_from(g.as_str(), stack.clone())?)
+                }
+                (Action::Groups(_) | Action::Http(..), _) => bail!("unsupported group action"),
+                _ => {}
+            }
+        }
+        Ok(())
+    }
 }
 
-fn groups_(groups: &[Action], m: &Captures, ctx: &mut Context) -> Result<()> {
-    for (index, action) in groups.iter().enumerate() {
-        let group = m.get(index + 1);
-        match (action, group) {
-            (Action::Token(class), Some(g)) if !g.as_str().is_empty() => {
-                ctx.out.push((class.clone(), g.as_str().to_owned()))
-            }
-            (Action::Call(call), Some(g)) => {
-                ctx.pos = g.start();
-                call.run(g.as_str(), g.start(), m, ctx);
-            }
-            (Action::Groups(_), _) => bail!("nested bygroups are not supported"),
-            _ => {}
+fn http(kind: &str, classes: &[String], m: &Captures, ctx: &mut Context) -> Result<()> {
+    if kind == "header_callback" && m[1].to_lowercase() == "content-type" {
+        let value = m[5].trim();
+        let value = value.find(';').map_or(value, |cut| value[..cut].trim());
+        ctx.content_type = Some(value.to_owned());
+    }
+    for (index, class) in classes.iter().enumerate() {
+        let text = m.get(index + 1).map_or("", |g| g.as_str());
+        ctx.out.push((class.clone(), text.to_owned()));
+    }
+    if kind != "content_callback" {
+        return Ok(());
+    }
+    let content = m[0].to_owned();
+    let content_type = ctx.content_type.clone().unwrap_or_default();
+    let general = Regex::new(r"^(.*)/.*\+(.*)$")?.replace(&content_type, "$1/$2");
+    let mut candidates = vec![content_type.clone()];
+    if content_type.contains('+') {
+        candidates.push(general.into_owned());
+    }
+    for candidate in candidates.iter().filter(|_| !content_type.is_empty()) {
+        if let Some(tokens) = super::by_mime(candidate, &content)? {
+            ctx.out.extend(tokens);
+            return Ok(());
         }
     }
+    ctx.out.push((String::new(), content));
     Ok(())
 }
 
@@ -221,6 +280,16 @@ fn action(value: &Value) -> Result<Action> {
         return Ok(Action::Groups(
             groups.iter().map(action).collect::<Result<_>>()?,
         ));
+    }
+    if let Some(stack) = value["u"].as_array() {
+        let stack = stack
+            .iter()
+            .map(|s| s.as_str().unwrap_or_default().to_owned());
+        return Ok(Action::Using(stack.collect()));
+    }
+    if let Some(kind) = value["h"].as_str() {
+        let classes = serde_json::from_value(value["classes"].clone())?;
+        return Ok(Action::Http(kind.to_owned(), classes));
     }
     if value["f"].is_string() {
         return Ok(Action::Call(Call {

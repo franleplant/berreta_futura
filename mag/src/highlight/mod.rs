@@ -11,6 +11,7 @@ pub type Span = (String, String);
 struct Tables {
     aliases: Vec<String>,
     names: HashMap<String, String>,
+    mimetypes: HashMap<String, String>,
     lexers: HashMap<String, engine::Lexer>,
     classes: HashMap<String, String>,
 }
@@ -42,6 +43,7 @@ fn load(raw: &str) -> Result<Tables> {
     Ok(Tables {
         aliases: serde_json::from_value(data["aliases"].clone())?,
         names: strings("names"),
+        mimetypes: strings("mimetypes"),
         lexers,
         classes: strings("classes"),
     })
@@ -61,12 +63,24 @@ pub fn spans(code: &str, language: &str) -> Result<Option<Vec<Span>>> {
         .unwrap_or(code)
         .replace("\r\n", "\n")
         .replace('\r', "\n");
-    let tokens = match name.as_str() {
-        "json" => json::tokens(&text, &tables.classes),
-        "text" => vec![(String::new(), text.clone())],
-        lexer => tables.lexers[lexer].tokens(&text)?,
-    };
-    Ok(Some(merge(tokens)))
+    Ok(Some(merge(lex(tables, name, &text)?)))
+}
+
+fn lex(tables: &Tables, name: &str, text: &str) -> Result<Vec<(String, String)>> {
+    Ok(match name {
+        "json" => json::tokens(text, &tables.classes),
+        "text" => vec![(String::new(), text.to_owned())],
+        lexer => tables.lexers[lexer].tokens(text)?,
+    })
+}
+
+fn by_mime(mimetype: &str, text: &str) -> Result<Option<Vec<(String, String)>>> {
+    let tables = tables()?;
+    match tables.mimetypes.get(mimetype).map(String::as_str) {
+        None => Ok(None),
+        Some("") => bail!("pygments highlights {mimetype:?} with a lexer mag does not implement"),
+        Some(name) => lex(tables, name, text).map(Some),
+    }
 }
 
 fn merge(tokens: Vec<(String, String)>) -> Vec<Span> {

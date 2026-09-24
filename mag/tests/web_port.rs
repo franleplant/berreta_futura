@@ -7,12 +7,18 @@ mod doc;
 #[path = "../src/web/edition.rs"]
 #[allow(dead_code)]
 mod edition;
+#[path = "../src/highlight/mod.rs"]
+#[allow(dead_code)]
+mod highlight;
 #[path = "../src/model/manifest.rs"]
 #[allow(dead_code)]
 mod manifest;
 #[path = "../src/web/markup.rs"]
 #[allow(dead_code)]
 mod markup;
+#[path = "../src/typeset/media.rs"]
+#[allow(dead_code)]
+mod media;
 #[path = "../src/model/records.rs"]
 #[allow(dead_code)]
 mod records;
@@ -28,6 +34,10 @@ mod text;
 
 mod model {
     pub(crate) use super::{doc, manifest, records, shared};
+}
+
+mod typeset {
+    pub(crate) use super::media;
 }
 
 mod cover {
@@ -172,6 +182,9 @@ fn specs() -> Value {
         {"name": "plate_tall", "edition": "wfx", "plate": "tall.png"},
         {"name": "plate_narrow", "edition": "wfx", "plate": "narrow.png"},
         {"name": "plate_missing", "edition": "wfx", "plate": "absent.png"},
+        {"name": "plate_jpeg", "edition": "wfx", "plate": "editions/wfx/plate-baseline.jpg"},
+        {"name": "plate_progressive", "edition": "wfx", "plate": "editions/wfx/plate-progressive.jpg"},
+        {"name": "plate_sliver", "edition": "wfx", "plate": "editions/wfx/plate-sliver.jpg"},
     ])
 }
 
@@ -331,6 +344,14 @@ fn the_fixture_edition_matches_html_edition_byte_for_byte() {
         "<p class=\"standfirst\" data-name-roster=\"true\">",
         "<p data-name-roster=\"true\">",
         "<pre><code>plain fenced &lt;code&gt; &amp; \"quotes\"",
+        "<pre><code class=\"language-python\"><span class=\"nd\">@dataclass</span>",
+        "<pre><code class=\"language-c\"><span class=\"cp\">#include</span>",
+        "<span class=\"kt\">size_t</span>",
+        "<pre><code class=\"language-http\"><span class=\"nf\">POST</span>",
+        "<span class=\"nt\">\"jsonrpc\"</span>",
+        "<pre><code class=\"language-ts\"><span class=\"kd\">const</span>",
+        "<pre><code class=\"language-YAML\"><span class=\"nt\">steps</span>",
+        "<pre><code class=\"language-jsonc\">{ \"a\": 1 /* unknown",
         "title=\"Link title\"",
         "<br>",
         "<hr>",
@@ -382,6 +403,12 @@ fn the_plate_aspect_window_straddles_both_bounds() {
             "{name}: {message:?}"
         );
     }
+    assert!(compare("plate_jpeg").get("html").is_some());
+    assert!(compare("plate_progressive").get("html").is_some());
+    let sliver = compare("plate_sliver");
+    assert!(sliver["error"]
+        .as_str()
+        .is_some_and(|message| message.contains("has aspect 0.40")));
     let missing = compare("plate_missing");
     assert!(missing["error"]
         .as_str()
@@ -401,17 +428,17 @@ fn file_uris_percent_encode_like_pathlib() {
 }
 
 #[test]
-fn fenced_code_with_a_language_refuses_rather_than_diverging() {
+fn fenced_code_in_an_unported_lexer_refuses_rather_than_diverging() {
     let mut edition = load("wfx");
     let editorial = edition
         .editorial
         .as_mut()
         .expect("the fixture has an editorial");
     let path = stage().join("editions/wfx/editorial-rust.md");
-    std::fs::write(&path, "---\ntitle: T\n---\n\n```python\nx = 1\n```\n").expect("write");
+    std::fs::write(&path, "---\ntitle: T\n---\n\n```go\nx := 1\n```\n").expect("write");
     editorial.path = path;
-    let error = render_html_edition(&edition, &settable()).expect_err("pygments is not ported");
-    assert!(error.to_string().contains("\"python\""), "{error}");
+    let error = render_html_edition(&edition, &settable()).expect_err("go is not ported");
+    assert!(error.to_string().contains("\"go\""), "{error}");
 }
 
 const WEB_PYTHON: &str = r#"
@@ -640,6 +667,9 @@ fn fixture_web_tree_is_byte_identical() {
     assert!(keyed.contains("rel=\"next\" href=\"article-tailed.html\""));
     assert!(!page(&files, "editorial.html").contains("rel=\"prev\""));
     assert!(!page(&files, "section-1.html").contains("rel=\"next\""));
+    let try_it = page(&files, "section-1.html");
+    assert!(try_it.contains("<span class=\"kt\">size_t</span>"));
+    assert!(try_it.contains("<span class=\"sa\">f</span><span class=\"s2\">\"</span>"));
 }
 
 #[test]

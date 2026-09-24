@@ -1,0 +1,10 @@
+>>> import torch
+>>> x = torch.randn(3, 4)
+>>> x.shape
+torch.Size([3, 4])
+@decorator.with_args(1)
+def f(a: "Forward", b=None) -> "Ret":
+    pass  # nothing
+x = y if z else w
+# ünïcode identifiers
+café = 1; naïve = café + 1
