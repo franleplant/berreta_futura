@@ -43,8 +43,10 @@
   leg, next-step test, cover.rs reads the snapshot.
 - 2026-09-24 Fran: hyphenation option 2 (English on); WP-6.1 WAITS (no
   deletion yet); OK with every other decision and product note listed
-  below. Running: WP-4.3b (English hyphenation default, consecutive-hyphen
-  limit or ladder warning, parity keeps the parity configuration).
+  below. WP-4.3b landed ab8d4f6: English hyphenation shipped, at most 2
+  consecutive hyphenated lines enforced (010: 9 ladders -> 0), parity
+  forces the parity configuration; the weasyprint rollback prints English
+  unhyphenated. NOTHING RUNNING; only WP-6.1 remains, waiting on Fran.
 - WP-6.1 must also: move fonts out of src/magazine/assets/fonts; snapshot
   or drop critic_rules.rs's reads of render_critic.py (:1098, :1396,
   :1525) and highlight.rs:32's read of weasyprint-a5.css; keep the pinned
