@@ -12,7 +12,7 @@ use crate::critic::rules::read_leg;
 use crate::critic::text::body_text_lines;
 use crate::model::shared::py_strip;
 
-const REPORT: &str = "en/render-critic.json";
+const REPORT: &str = "render-critic.json";
 const PDFS: [&str; 4] = [
     "reader.pdf",
     "booklet-a4.pdf",
@@ -94,8 +94,8 @@ fn compare_text(
 ) -> Result<(usize, Vec<String>, Vec<String>)> {
     let (mut compared, mut fields, mut characters) = (0, vec![], vec![]);
     for name in PDFS {
-        let a = read_leg(&dir_a.join("en").join(name), fonts)?.raw;
-        let b = read_leg(&dir_b.join("en").join(name), fonts)?.raw;
+        let a = read_leg(&dir_a.join(name), fonts)?.raw;
+        let b = read_leg(&dir_b.join(name), fonts)?.raw;
         if a.len() != b.len() {
             fields.push(format!("{name}: {} pages vs {}", a.len(), b.len()));
             continue;

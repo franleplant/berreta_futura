@@ -571,3 +571,38 @@ fn tagged_values_are_refused_as_pyyaml_refuses_them() {
         error.0
     );
 }
+
+#[test]
+fn a_translated_figure_path_stays_source_relative_as_in_the_base_edition() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/typeset_fixtures/corpus");
+    let records: Records = records::load_records(&root.join("library/sources"))
+        .expect("the fixture records load")
+        .into_iter()
+        .map(|record| (record.id.clone(), record))
+        .collect();
+    let known: BTreeSet<String> = records.keys().cloned().collect();
+    let options = LoadOptions {
+        publication_name: "Magazine",
+        source_records: Some(&records),
+        allow_missing_art: false,
+        allow_unanchored_figures: false,
+    };
+    let base = load_edition(&root, "906", &known, &options).expect("906 loads");
+    let es = load_translation(&root, &base, "es").expect("906 es loads");
+    let paths = |edition: &Edition| -> Vec<Json> {
+        yaml_to_json(&edition.raw)["articles"]
+            .as_array()
+            .expect("articles")
+            .iter()
+            .flat_map(|article| article["figures"].as_array().cloned().unwrap_or_default())
+            .map(|figure| figure["path"].clone())
+            .collect()
+    };
+    assert_eq!(paths(&es), vec![json!("media/diagram.png")]);
+    assert_eq!(paths(&es), paths(&base));
+    assert!(es
+        .articles
+        .iter()
+        .flat_map(|a| &a.figures)
+        .all(|f| f.path.is_absolute()));
+}

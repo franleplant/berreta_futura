@@ -490,13 +490,13 @@ fn render_dirs() -> Result<Vec<PathBuf>> {
     Ok(dirs)
 }
 
-fn render_leg(edition: &str, run: Option<&str>, engine: &str) -> Result<PathBuf> {
+fn render_leg(edition: &str, run: Option<&str>, engine: &str, lang: &str) -> Result<PathBuf> {
     let before = render_dirs()?;
     let args = crate::render::RenderArgs {
         edition: edition.to_string(),
         operation: "render_edition".into(),
         article: None,
-        langs: Some("en".into()),
+        langs: Some(leg_langs(lang)),
         run: run.map(str::to_string),
         anchor_model: "haiku".into(),
         no_model: true,
@@ -510,6 +510,14 @@ fn render_leg(edition: &str, run: Option<&str>, engine: &str) -> Result<PathBuf>
     match fresh.len() {
         1 => Ok(fresh.into_iter().next().expect("length checked")),
         n => anyhow::bail!("{engine} leg produced {n} new render directories, expected exactly 1"),
+    }
+}
+
+fn leg_langs(lang: &str) -> String {
+    if lang == "en" {
+        lang.into()
+    } else {
+        format!("en,{lang}")
     }
 }
 
@@ -851,6 +859,7 @@ pub struct Options {
     pub oracle_only: bool,
     pub set: Option<String>,
     pub adhoc: bool,
+    pub lang: String,
 }
 
 struct Legs {
@@ -861,12 +870,15 @@ struct Legs {
     typst_leg: Option<LegFailure>,
 }
 
-fn out_dir(edition: &str, adhoc: bool) -> PathBuf {
-    let name = if adhoc {
+fn out_dir(edition: &str, adhoc: bool, lang: &str) -> PathBuf {
+    let mut name = if adhoc {
         format!("{edition}-adhoc")
     } else {
         edition.to_string()
     };
+    if lang != "en" {
+        name = format!("{name}-{lang}");
+    }
     std::env::var_os("MAG_PARITY_OUT_DIR")
         .map_or_else(|| PathBuf::from("output/parity").join(name), PathBuf::from)
 }
@@ -891,13 +903,13 @@ fn oracle_cache_path(out_dir: &Path) -> PathBuf {
     out_dir.join("oracle-cache.json")
 }
 
-fn cached_oracle(out_dir: &Path) -> Option<(PathBuf, String)> {
+fn cached_oracle(out_dir: &Path, lang: &str) -> Option<(PathBuf, String)> {
     let raw = fs::read_to_string(oracle_cache_path(out_dir)).ok()?;
     let doc: serde_json::Value = serde_json::from_str(&raw).ok()?;
     let dir = PathBuf::from(doc.get("render_dir")?.as_str()?);
     let recorded = doc.get("staged_input_digest")?.as_str()?.to_string();
     let current = staged_digest(&dir.join("request.json")).ok()?;
-    (current == recorded && dir.join("en/reader.pdf").exists()).then_some((dir, recorded))
+    (current == recorded && dir.join(lang).join("reader.pdf").exists()).then_some((dir, recorded))
 }
 
 fn store_oracle(out_dir: &Path, dir: &Path, digest: &str) -> Result<()> {
@@ -923,14 +935,14 @@ fn stage_legs(edition: &str, opts: &Options, out_dir: &Path) -> Result<Legs> {
         });
     }
     let run = opts.run_dir.as_deref();
-    let cached = cached_oracle(out_dir).filter(|_| !opts.adhoc);
+    let cached = cached_oracle(out_dir, &opts.lang).filter(|_| !opts.adhoc);
     let (oracle, digest) = match cached {
         Some(hit) => {
             println!("oracle leg: cached {}", hit.0.display());
             hit
         }
         None => {
-            let dir = render_leg(edition, run, "weasyprint")?;
+            let dir = render_leg(edition, run, "weasyprint", &opts.lang)?;
             let digest = staged_digest(&dir.join("request.json"))?;
             store_oracle(out_dir, &dir, &digest)?;
             (dir, digest)
@@ -945,7 +957,7 @@ fn stage_legs(edition: &str, opts: &Options, out_dir: &Path) -> Result<Legs> {
             typst_leg: None,
         });
     }
-    match render_leg(edition, run, "typst") {
+    match render_leg(edition, run, "typst", &opts.lang) {
         Ok(typst) => {
             let after = staged_digest(&typst.join("request.json"))?;
             anyhow::ensure!(
@@ -1016,6 +1028,11 @@ fn adhoc_ratchet() -> Ratchet {
 }
 
 pub fn run(edition: &str, opts: Options) -> Result<i32> {
+    anyhow::ensure!(
+        opts.lang == "en" || opts.adhoc || opts.pre_rendered.is_some(),
+        "--lang {} needs --adhoc or --pre-rendered: the staged baseline covers English only",
+        opts.lang
+    );
     let spec = spec()?;
     assert_poppler(&spec)?;
     assert_tracer(&spec)?;
@@ -1024,7 +1041,7 @@ pub fn run(edition: &str, opts: Options) -> Result<i32> {
     } else {
         guard_baseline(&spec)?
     };
-    let out_dir = out_dir(edition, opts.adhoc);
+    let out_dir = out_dir(edition, opts.adhoc, &opts.lang);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     let lock = hold(&out_dir)?;
     let outcome = compare(edition, &opts, &spec, &out_dir, &recorded, ratchet);
@@ -1051,7 +1068,8 @@ fn compare(
         );
     }
     let (dir_a, dir_b) = (legs.dir_a, legs.dir_b);
-    let (pdf_a, pdf_b) = (dir_a.join("en/reader.pdf"), dir_b.join("en/reader.pdf"));
+    let (lang_a, lang_b) = (dir_a.join(&opts.lang), dir_b.join(&opts.lang));
+    let (pdf_a, pdf_b) = (lang_a.join("reader.pdf"), lang_b.join("reader.pdf"));
     if let Some(failure) = &legs.typst_leg {
         println!("typst leg: {} ({})", failure.status, failure.error);
     }
@@ -1060,8 +1078,8 @@ fn compare(
     inputs.insert("b_reader_sha256".into(), sha256_file(&pdf_b)?);
     let mut verdict = build_verdict(spec, edition, inputs, &pdf_a, &pdf_b, out_dir)?;
     verdict.tier_s.critic = critic::compare(
-        &dir_a,
-        &dir_b,
+        &lang_a,
+        &lang_b,
         &critic_exclusions(spec)?,
         &font_name_map(spec)?,
     )?;
@@ -1091,7 +1109,7 @@ fn compare(
             renderer_inputs: renderer,
             ..guard
         };
-        let manifest = dir_a.join("en/edition-manifest.json");
+        let manifest = lang_a.join("edition-manifest.json");
         let (first, last) = (2, verdict.domain.last_page.saturating_sub(1));
         let texts = text::page_texts(&pdf_a, first, last)?;
         let code = code_pages(&dir_a.join("request.json"), &texts, first)?;
@@ -1775,10 +1793,39 @@ mod measured_pages {
     #[test]
     fn an_adhoc_run_writes_beside_the_baseline_run_never_over_it() {
         if std::env::var_os("MAG_PARITY_OUT_DIR").is_none() {
-            assert_eq!(out_dir("009", true), Path::new("output/parity/009-adhoc"));
-            assert_eq!(out_dir("010", false), Path::new("output/parity/010"));
+            assert_eq!(
+                out_dir("009", true, "en"),
+                Path::new("output/parity/009-adhoc")
+            );
+            assert_eq!(out_dir("010", false, "en"), Path::new("output/parity/010"));
+            assert_eq!(
+                out_dir("906", true, "es"),
+                Path::new("output/parity/906-adhoc-es")
+            );
+            assert_eq!(
+                out_dir("906", false, "es"),
+                Path::new("output/parity/906-es")
+            );
         }
         assert_eq!(adhoc_ratchet().status, "adhoc");
+    }
+
+    #[test]
+    fn a_non_english_comparison_renders_both_languages_and_never_touches_the_english_baseline() {
+        assert_eq!(leg_langs("en"), "en");
+        assert_eq!(leg_langs("es"), "en,es");
+        let staged = Options {
+            pre_rendered: None,
+            run_dir: None,
+            oracle_only: false,
+            set: None,
+            adhoc: false,
+            lang: "es".into(),
+        };
+        let refused = run("010", staged).expect_err("a staged es run is refused");
+        assert!(refused
+            .to_string()
+            .contains("--lang es needs --adhoc or --pre-rendered"));
     }
 
     #[test]

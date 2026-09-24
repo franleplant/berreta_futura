@@ -1648,7 +1648,13 @@ fn translation_article_raw(root: &Path, article: &Article) -> Value {
     insert(
         &mut row,
         "figures",
-        Value::Sequence(article.figures.iter().map(figure_raw).collect()),
+        Value::Sequence(
+            article
+                .figures
+                .iter()
+                .map(|figure| figure_raw(root, figure))
+                .collect(),
+        ),
     );
     if !article.extracts.is_empty() {
         insert(
@@ -1660,7 +1666,8 @@ fn translation_article_raw(root: &Path, article: &Article) -> Value {
     Value::Mapping(row)
 }
 
-fn figure_raw(figure: &Figure) -> Value {
+fn figure_raw(root: &Path, figure: &Figure) -> Value {
+    let source = root.join("library").join("sources").join(&figure.source_id);
     let mut row = Mapping::new();
     insert(&mut row, "id", Value::String(figure.id.clone()));
     insert(
@@ -1671,7 +1678,7 @@ fn figure_raw(figure: &Figure) -> Value {
     insert(
         &mut row,
         "path",
-        Value::String(figure.path.to_string_lossy().replace('\\', "/")),
+        Value::String(relative_posix(&figure.path, &source)),
     );
     insert(&mut row, "caption", Value::String(figure.caption.clone()));
     insert(&mut row, "credit", Value::String(figure.credit.clone()));
