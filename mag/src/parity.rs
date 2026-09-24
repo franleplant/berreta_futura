@@ -16,6 +16,7 @@ use std::process::Command;
 use streams::Face;
 
 pub(crate) use display::trace_elements;
+pub(crate) use exact::{authored, num};
 #[allow(unused_imports)]
 pub(crate) use streams::{qc, qo, Color};
 pub(crate) use streams::{Element, Face as TextFace, GLYPH_QUANTUM};
@@ -1634,6 +1635,31 @@ mod measured_pages {
             error: "boom".into(),
         });
         assert!(!tier_s_pass(&v));
+    }
+
+    #[test]
+    fn the_tier_s_gate_fails_on_each_clause_failing_or_missing_alone() {
+        let breaks: [fn(&mut TierS); 9] = [
+            |t| t.page_count.status = "fail".into(),
+            |t| t.boxes.iter_mut().for_each(|c| c.status = "fail".into()),
+            |t| t.text.iter_mut().for_each(|c| c.status = "fail".into()),
+            |t| t.color.iter_mut().for_each(|c| c.status = "fail".into()),
+            |t| {
+                t.navigation
+                    .iter_mut()
+                    .for_each(|c| c.status = "fail".into())
+            },
+            |t| t.boxes = None,
+            |t| t.text = None,
+            |t| t.color = None,
+            |t| t.navigation = None,
+        ];
+        assert!(tier_s_pass(&verdict()));
+        for (i, broken) in breaks.iter().enumerate() {
+            let mut v = verdict();
+            broken(&mut v.tier_s);
+            assert!(!tier_s_pass(&v), "tier S clause {i} did not gate");
+        }
     }
 
     #[test]

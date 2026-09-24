@@ -732,3 +732,18 @@ fn filename_collisions_refuse_like_web_edition() {
         "{page}"
     );
 }
+
+#[test]
+fn a_container_label_refuses_the_web_edition_instead_of_printing_brackets() {
+    let mut edition = load("wfx");
+    edition.articles[0].manuscript = stage().join("editions/wfx/articles/container-label.md");
+    let error = write_web_edition(
+        &edition,
+        &settable(),
+        &repository().join("src/magazine/assets"),
+        &stage().join("rust-web/container-label"),
+        &WebOptions::default(),
+    )
+    .expect_err("a list label is not text");
+    assert_eq!(error.to_string(), "Frontmatter label must be text, not []");
+}

@@ -19,6 +19,7 @@ pub mod display;
 
 mod parity {
     pub use super::display::trace_elements;
+    pub use super::exact::{authored, num};
     #[allow(unused_imports)]
     pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};
 }

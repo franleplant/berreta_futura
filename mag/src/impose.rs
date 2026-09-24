@@ -1,8 +1,8 @@
 use super::model::shared::py_repr;
+use super::parity::{authored, num};
 use anyhow::{bail, Context, Result};
 use lopdf::content::Content;
 use lopdf::{Dictionary, Document, Object, ObjectId};
-use regex::Regex;
 use std::path::{Path, PathBuf};
 
 pub const A4_LANDSCAPE_POINTS: (f64, f64) = (841.8898, 595.2756);
@@ -82,68 +82,24 @@ struct SourcePage {
     crop: [f64; 4],
 }
 
-type Authored = std::collections::BTreeMap<ObjectId, std::collections::BTreeMap<Vec<u8>, [f64; 4]>>;
-
-fn authored_boxes(bytes: &[u8]) -> Result<Authored> {
-    let header = Regex::new(r"(\d+)\s+(\d+)\s+obj\b").expect("the pattern compiles");
-    let boxes = Regex::new(r"/(MediaBox|CropBox)\s*\[([^\]]*)\]").expect("the pattern compiles");
-    let text = String::from_utf8_lossy(bytes);
-    let mut headers: Vec<(usize, ObjectId)> = header
-        .captures_iter(&text)
-        .filter_map(|caps| {
-            let at = caps.get(0)?.start();
-            let id = caps.get(1)?.as_str().parse().ok()?;
-            let generation = caps.get(2)?.as_str().parse().ok()?;
-            Some((at, (id, generation)))
-        })
-        .collect();
-    headers.sort_by_key(|(at, _)| *at);
-    let mut out: Authored = Authored::new();
-    for caps in boxes.captures_iter(&text) {
-        let at = caps.get(0).expect("the whole match").start();
-        let Some(index) = headers
-            .partition_point(|(start, _)| *start <= at)
-            .checked_sub(1)
-        else {
-            continue;
-        };
-        let numbers: Vec<f64> = caps
-            .get(2)
-            .expect("the operand list")
-            .as_str()
-            .split_whitespace()
-            .filter_map(|token| token.parse().ok())
-            .collect();
-        if numbers.len() != 4 {
-            continue;
-        }
-        let key = caps
-            .get(1)
-            .expect("the box name")
-            .as_str()
-            .as_bytes()
-            .to_vec();
-        out.entry(headers[index].1)
-            .or_default()
-            .insert(key, [numbers[0], numbers[1], numbers[2], numbers[3]]);
-    }
-    Ok(out)
-}
-
 pub fn impose_a5_on_a4(reader_pdf: &Path, output: &Path, section: &str) -> Result<PathBuf> {
+    let raw =
+        std::fs::read(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
     let mut doc =
-        Document::load(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
+        Document::load_mem(&raw).with_context(|| format!("reading {}", reader_pdf.display()))?;
     let page_ids: Vec<ObjectId> = doc.get_pages().into_values().collect();
     let plan = if section == "cover" {
         cover_wrap_plan(page_ids.len())?
     } else {
         imposed_reader_page_plan(&section_reader_pages(page_ids.len(), section)?)
     };
-    let authored = authored_boxes(&std::fs::read(reader_pdf)?)?;
-    let sources = page_ids
-        .iter()
-        .map(|id| source_page(&doc, *id, &authored))
-        .collect::<Result<Vec<_>>>()?;
+    let sources = {
+        let _exact = authored(&doc, &raw)?;
+        page_ids
+            .iter()
+            .map(|id| source_page(&doc, *id))
+            .collect::<Result<Vec<_>>>()?
+    };
     let sheets = plan
         .iter()
         .map(|spread| sheet(&sources, *spread))
@@ -152,9 +108,9 @@ pub fn impose_a5_on_a4(reader_pdf: &Path, output: &Path, section: &str) -> Resul
     Ok(output.to_path_buf())
 }
 
-fn source_page(doc: &Document, id: ObjectId, authored: &Authored) -> Result<SourcePage> {
-    let media = page_box(doc, id, b"MediaBox", authored)?.context("page has no MediaBox")?;
-    let crop = page_box(doc, id, b"CropBox", authored)?.unwrap_or(media);
+fn source_page(doc: &Document, id: ObjectId) -> Result<SourcePage> {
+    let media = page_box(doc, id, b"MediaBox")?.context("page has no MediaBox")?;
+    let crop = page_box(doc, id, b"CropBox")?.unwrap_or(media);
     Ok(SourcePage {
         content: doc.get_page_content(id),
         resources: page_resources(doc, id)?,
@@ -163,29 +119,17 @@ fn source_page(doc: &Document, id: ObjectId, authored: &Authored) -> Result<Sour
     })
 }
 
-fn page_box(
-    doc: &Document,
-    id: ObjectId,
-    key: &[u8],
-    authored: &Authored,
-) -> Result<Option<[f64; 4]>> {
+fn page_box(doc: &Document, id: ObjectId, key: &[u8]) -> Result<Option<[f64; 4]>> {
     let mut current = id;
     loop {
         let dict = doc.get_dictionary(current)?;
         if let Ok(value) = dict.get(key) {
-            if let Some(exact) = authored.get(&current).and_then(|boxes| boxes.get(key)) {
-                return Ok(Some(*exact));
-            }
             let array = doc.dereference(value)?.1.as_array()?;
             let mut out = [0.0; 4];
             for (slot, item) in out.iter_mut().zip(array) {
-                *slot = number(doc.dereference(item)?.1)?;
-                if matches!(doc.dereference(item)?.1, Object::Real(_)) {
-                    bail!(
-                        "{} on object {current:?} carries a real that lopdf parsed as f32 and no authored text was recoverable; imposition would place it at reduced precision",
-                        String::from_utf8_lossy(key)
-                    );
-                }
+                *slot = num(doc.dereference(item)?.1).with_context(|| {
+                    format!("{} on object {current:?}", String::from_utf8_lossy(key))
+                })?;
             }
             return Ok(Some(out));
         }
@@ -193,16 +137,6 @@ fn page_box(
             Ok(Object::Reference(parent)) => current = *parent,
             _ => return Ok(None),
         }
-    }
-}
-
-fn number(object: &Object) -> Result<f64> {
-    match object {
-        Object::Integer(value) => Ok(*value as f64),
-        Object::Real(value) => format!("{value}")
-            .parse()
-            .context("a real that round-trips through its shortest decimal"),
-        other => bail!("expected a number, found {other:?}"),
     }
 }
 
