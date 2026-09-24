@@ -1,11 +1,11 @@
 # Orchestration queue (since the 2026-09-23 restart)
 
-Landed, awaiting a verifier: WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
+Landed, awaiting a verifier: WP-3.1, WP-0.2q, WP-0.2r, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-0.2o, WP-0.2p, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
-Running: WP-3.1 body text, WP-5.5c package, adversarial verifier for
-the comparator WPs 0.2m-0.2r.
-Next after WP-3.1 lands: WP-0.0d (rule colour oracle change, re-seed).
+Running: WP-0.0d (rule colour oracle change, re-seed), WP-5.5c package,
+adversarial verifier for the comparator WPs 0.2m-0.2r.
+Next: WP-3.5 furniture (running-head paint order), WP-3.2 follow-up.
 
 New WPs opened outside the plan text (each brief is its section, the
 evidence file records it):
@@ -40,8 +40,9 @@ evidence file records it):
 - WP-3.2 follow-up: draw opener art rasters; opener-art border typst
   strokes (23,25,28) where WeasyPrint fills.
 - WP-3.5 carries: running-head paint order via `page.foreground`.
-- WP-3.1 carries: inline `code` padding/background (page 4, 6), `END / NN`
-  marks 5.4 pt off (WP-3.2.md).
+- WP-3.7 carries: page 6 inline-code chip that breaks across lines (bg
+  runs 3 pt past the text at the break; chip corner radius 0.0046 pt off)
+  per WP-3.1.md.
 
 Orchestrator decisions:
 - Colours compare at 8-bit resolution on both legs (typst-pdf rounds).
