@@ -3,11 +3,13 @@
 Comparator verify (WP-0.2m-r.verify.md): 0.2m/n/o ACCEPTED; 0.2p, 0.2q,
 0.2r REJECTED (adversarial pairs pass); rework is WP-0.2s, then
 re-verify adversarially.
-Landed, awaiting a verifier: WP-3.3a, WP-5.9, WP-5.5c, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
+Landed, awaiting a verifier: WP-3.5, WP-3.3a, WP-5.9, WP-5.5c, WP-0.0d, WP-3.1, WP-3.4, WP-2.2c, WP-2.3, WP-0.2m, WP-0.2n, WP-3.2, WP-5.3h.
 Accepted since the restart: WP-5.4c, WP-5.4b-i, WP-5.4b-ii, WP-0.2l,
 WP-5.3c, WP-5.7a, WP-5.3h, WP-5.5a (1+2), WP-5.7b (after rework).
-Running: WP-3.5 furniture, WP-5.5d web highlighting + python/c/http
-lexers + JPEG plates, WP-0.2s comparator rework.
+Running: WP-0.0e oracle keeps /Lang /Title outline, WP-5.5d web
+highlighting + python/c/http lexers + JPEG plates, WP-0.2s comparator
+rework.
+Next: WP-3.2b, then WP-3.3b, WP-3.0g, WP-3.7.
 Next: WP-3.2 follow-up (opener art rasters, border), then WP-3.3, 3.0g,
 3.7.
 
@@ -38,9 +40,13 @@ evidence file records it):
   typeset/content.rs) into model/shared.rs; typeset's `anchor_key` uses
   str::trim, wrong on U+001C..U+001F.
 - WP-5.6 wires the Rust web port into render.rs.
-- WP-3.2 follow-up: draw opener art rasters; opener-art border typst
-  strokes (23,25,28) where WeasyPrint fills.
+- WP-3.2b: draw opener art rasters; opener-art border typst strokes
+  (23,25,28) where WeasyPrint fills; opener QR/credit block colour at
+  paint 1 on 9 opener pages (WP-3.5.md); typst document /Title ("<pub>:
+  <title>", matching WP-0.0e) and outline to match the oracle.
 - WP-3.5 carries: running-head paint order via `page.foreground`.
+- WP-3.7 carries: pages 21/27 link x off ~0.01 pt (glyph-advance drift,
+  WP-3.5.md names the test).
 - WP-3.7 carries: page 6 inline-code chip that breaks across lines (bg
   runs 3 pt past the text at the break; chip corner radius 0.0046 pt off)
   per WP-3.1.md.
@@ -73,6 +79,8 @@ Orchestrator decisions:
   not normalizable within the quantum). Owner WP-3.1.
 
 For Fran (product questions, nothing blocks on them):
+- PDF document title separator changed from U+2014 to ": " (repo rule
+  forbids authoring U+2014 in copy); WP-0.0e.
 - tools/pdf2md.py's ". . ." paragraph filter silently drops real text
   (WP-5.7a.md, tarpit fixture); may affect article.md files captured from
   PDFs. WP-5.7b replaces it.
