@@ -120,6 +120,42 @@ fn sums(path: &Path) -> Vec<(String, String)> {
         .collect()
 }
 
+fn rasters(pdf: &Path) -> Vec<Vec<u8>> {
+    let dir = scratch("raster");
+    let status = std::process::Command::new("pdftoppm")
+        .args(["-r", "110"])
+        .arg(pdf)
+        .arg(dir.join("page"))
+        .status()
+        .expect("pdftoppm runs");
+    assert!(status.success(), "pdftoppm rasterized {}", pdf.display());
+    let mut pages: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .collect();
+    pages.sort();
+    pages
+        .iter()
+        .map(|page| std::fs::read(page).unwrap())
+        .collect()
+}
+
+fn pdf_pages_match(ours: &Path, oracle: &Path) {
+    let name = ours.file_name().unwrap().to_string_lossy();
+    let pages = |pdf: &Path| lopdf::Document::load(pdf).unwrap().get_pages().len();
+    assert_eq!(pages(ours), pages(oracle), "{name} page count");
+    let (mine, theirs) = (rasters(ours), rasters(oracle));
+    assert_eq!(
+        (mine.len(), theirs.len()),
+        (pages(ours), pages(oracle)),
+        "{name} rasterized every page"
+    );
+    for (page, (a, b)) in mine.iter().zip(&theirs).enumerate() {
+        assert!(a == b, "{name} page {} raster", page + 1);
+    }
+    println!("RASTER {name}: {} pages equal at 110 dpi", mine.len());
+}
+
 fn pixels(path: &Path) -> Vec<u8> {
     let image = metrics::decode_rgb(path).expect("a png");
     let mut out = vec![];
@@ -270,13 +306,7 @@ fn edition_010_package_matches_python_per_entry() {
             );
             "pixels"
         } else if PDFS.contains(&name.as_str()) {
-            let pages = |root: &Path| {
-                lopdf::Document::load(root.join(name))
-                    .unwrap()
-                    .get_pages()
-                    .len()
-            };
-            assert_eq!(pages(&ours), pages(&oracle), "{name} page count");
+            pdf_pages_match(&ours.join(name), &oracle.join(name));
             "pdf"
         } else {
             assert_eq!(

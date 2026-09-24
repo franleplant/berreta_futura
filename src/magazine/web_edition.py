@@ -688,7 +688,7 @@ def _piece_page(
         '    <nav class="page-turn" data-web-chrome="page-turn">' + "".join(turns) + "</nav>",
     )
     lines = (
-        *_shared_head(document, f"{document.publication} — {piece.heading}", favicon_href),
+        *_shared_head(document, f"{document.publication}: {piece.heading}", favicon_href),
         masthead,
         *piece.lines,
         *page_turn,

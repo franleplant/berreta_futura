@@ -240,6 +240,8 @@ fn translate(pattern: &str) -> String {
                 let escaped = chars.next().unwrap_or('\\');
                 match escaped {
                     'Z' => out.push_str("\\z"),
+                    's' => out.push_str("[\\s\\x1c-\\x1f]"),
+                    'S' => out.push_str("[^\\s\\x1c-\\x1f]"),
                     _ => {
                         out.push('\\');
                         out.push(escaped);

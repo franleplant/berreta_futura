@@ -7,6 +7,7 @@ Try the following steps.
 @dataclass
 class Budget:
     limit: int = 1_000  # “cap”
+    unit: str = "k ☃"
     def left(self, spent: float) -> str:
         return f"{self.limit - spent:.2f} left…"
 ```
