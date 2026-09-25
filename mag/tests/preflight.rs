@@ -6,14 +6,14 @@ mod model {
     pub use super::shared;
 }
 
-#[path = "../src/parity/exact.rs"]
+#[path = "../src/trace/exact.rs"]
 #[allow(dead_code)]
 pub mod exact;
-#[path = "../src/parity/streams.rs"]
+#[path = "../src/trace/streams.rs"]
 #[allow(dead_code, clippy::new_without_default)]
 pub mod streams;
 
-mod parity {
+mod trace {
     pub use super::exact::{authored, num};
 }
 

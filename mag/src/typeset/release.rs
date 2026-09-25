@@ -132,7 +132,7 @@ pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
         .map(Path::canonicalize)
         .transpose()?;
     let (toc, article_pages) = (pages(&p.layout, "toc")?, pages(&p.layout, "article_pages")?);
-    let fonts = crate::parity::text_font_map()?;
+    let fonts = crate::trace::text_font_map();
     let written = package_release(Release {
         reader_pdf: &reader,
         destination: p.out_dir,

@@ -47,7 +47,15 @@
   consecutive hyphenated lines enforced (010: 9 ladders -> 0), parity
   forces the parity configuration; the weasyprint rollback prints English
   unhyphenated. NOTHING RUNNING; only WP-6.1 remains, waiting on Fran.
-- WP-6.1 must also: move fonts out of src/magazine/assets/fonts; snapshot
+- 2026-09-25 Fran: "forget about the old renderer, we can remove it".
+  WP-6.1 LANDED (this commit): src/magazine, pyproject.toml, uv.lock,
+  --engine weasyprint, mag parity and its ladder/oracles deleted; fonts and
+  screen-edition.css moved to mag/assets; the tracer the critic uses is
+  mag/src/trace (exact, streams, elements); oracle expectations are Rust
+  regression snapshots (MAG_BLESS=1 for the web port); tools/letter,
+  coverproof, compare, read kept as standalone uv scripts; 011 renders
+  byte-identical before/after; cargo test 721 pass. The queue is closed.
+- (historical) WP-6.1 must also: move fonts out of src/magazine/assets/fonts; snapshot
   or drop critic_rules.rs's reads of render_critic.py (:1098, :1396,
   :1525) and highlight.rs:32's read of weasyprint-a5.css; keep the pinned
   art/JPEGs byte-stable.

@@ -3,9 +3,8 @@ mod oracle;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
-const TARGETS: [&str; 3] = ["mag/src", "src/magazine", "tools"];
+const TARGETS: [&str; 2] = ["mag/src", "tools"];
 const COMPOUND: [&str; 14] = [
     "if", "elif", "else", "for", "while", "with", "try", "except", "finally", "def", "class",
     "async", "match", "case",
@@ -349,24 +348,6 @@ fn repo() -> PathBuf {
     PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/.."))
 }
 
-fn python(root: &Path, targets: &[&str]) -> String {
-    let script = "import pathlib, sys; sys.path.insert(0, sys.argv[1]); import nocomments as n; \
-                  n.ROOT = pathlib.Path(sys.argv[2]); n.TARGETS = sys.argv[3:]; n.main()";
-    let out = Command::new("python3")
-        .args(["-c", script])
-        .arg(repo().join("tools"))
-        .arg(root)
-        .args(targets)
-        .output()
-        .expect("python3 runs");
-    let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(out.status.code().is_some_and(|c| c < 2), "{stderr}");
-    String::from_utf8(out.stdout)
-        .unwrap()
-        .trim_end()
-        .to_string()
-}
-
 fn stage_cases() -> PathBuf {
     let root = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("nocomments-cases");
     if root.exists() {
@@ -394,39 +375,12 @@ fn stage_cases() -> PathBuf {
 #[test]
 fn no_comments_in_codebase() {
     let found = scan(&repo(), &TARGETS);
-    if oracle::live() {
-        let wide = [
-            "mag/src",
-            "mag/tests",
-            "src/magazine",
-            "tools",
-            "deploy",
-            ".githooks",
-            "meta",
-        ];
-        assert_eq!(
-            found,
-            python(&repo(), &TARGETS),
-            "the port and the script disagree"
-        );
-        let other = std::env::var("MAG_NOCOMMENTS_ROOT").map(PathBuf::from);
-        for root in [repo()].into_iter().chain(other) {
-            let (port, script) = (scan(&root, &wide), python(&root, &wide));
-            assert_eq!(port, script, "they disagree on {wide:?} under {root:?}");
-            eprintln!(
-                "ORACLE CHECK: {} lines agree under {root:?}",
-                port.lines().count()
-            );
-        }
-    }
     assert_eq!(found, "no comments");
 }
 
 #[test]
 fn crafted_cases_flag_what_the_script_flags() {
     let root = stage_cases();
-    let want = oracle::expectation("nocomments_cases_expected.txt", || {
-        python(&root, &TARGETS) + "\n"
-    });
+    let want = oracle::expectation("nocomments_cases_expected.txt");
     assert_eq!(scan(&root, &TARGETS) + "\n", want);
 }

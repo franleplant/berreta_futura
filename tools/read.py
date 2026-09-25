@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """read.py — read a produce run's articles in a browser before rendering the PDF.
 
-    uv run python tools/read.py editions/004/run-<ts> [--out path.html]
+    uv run --with pyyaml tools/read.py editions/004/run-<ts> [--out path.html]
 
 Lays each piece out in a column sized to roughly A5 page proportions, with
 faint page-break guide lines every ~page height, so density and length are

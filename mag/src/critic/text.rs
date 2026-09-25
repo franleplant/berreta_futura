@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::OnceLock;
 
 use crate::model::shared::py_strip;
-use crate::parity::{trace_elements, Element, TextFace, GLYPH_QUANTUM};
+use crate::trace::{trace_elements, Element, TextFace, GLYPH_QUANTUM};
 
 const SAME_LINE_TOLERANCE: i64 = 100;
 const WORD_GAP_FRACTION: f64 = 0.15;
@@ -137,7 +137,7 @@ pub(crate) fn trace_text(
 #[cfg(test)]
 mod writer_independent {
     use super::page_text;
-    use crate::parity::{Color, Element, GLYPH_QUANTUM};
+    use crate::trace::{Color, Element, GLYPH_QUANTUM};
 
     fn show(s: &str, x_pt: f64, y_pt: f64, advance_pt: f64) -> Element {
         let glyphs = s.chars().count();

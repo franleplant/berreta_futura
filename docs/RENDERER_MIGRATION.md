@@ -3,18 +3,11 @@
 This record supersedes the earlier one, which described a TypeScript engine
 that no longer exists.
 
-## Current state (WP-4.2, 2026-09-24)
+## Current state (WP-6.1, 2026-09-25)
 
-`mag render` typesets through Typst, in Rust (`mag/src/typeset/`). The
-`magazine.toml` key `[render] engine = "typst"` selects it. The typst leg
-stages the edition, lays out the A5 reader, runs the render critic, and
+`mag render` typesets through Typst, in Rust (`mag/src/typeset/`); it is the
+only engine. It stages the edition, lays out the A5 reader, runs the render critic, and
 writes the reader, booklet, preflight, web, and package outputs.
-
-WeasyPrint (`src/magazine/`, Python, run through `uv`) is the rollback. It
-stays selectable per run with `mag render NNN --engine weasyprint`, or for
-every run by setting `engine = "weasyprint"`. It also remains the oracle
-that `mag parity` compares the typst leg against. Rolling back is a config
-change only; no code change is needed.
 
 ## Why the flip was allowed
 
@@ -28,8 +21,12 @@ runs. WP-4.2's own render and ad hoc parity run are in
 Parity was proven for edition 010 in English, with hyphenation configured
 for parity. WP-4.3 measures the shipping hyphenation setting.
 
-## What comes next
+## The deletion (WP-6.1)
 
-WP-6.1 deletes the Python renderer once one real edition has shipped on
-the Typst engine. Deleting it removes the rollback and the only way to
-re-render editions 001-009 byte-faithfully, so that is Fran's call.
+Edition 011 shipped on Typst, and on 2026-09-25 Fran retired the Python
+renderer: `src/magazine/`, `--engine weasyprint`, `mag parity`, the parity
+ladder, the Python oracles, `pyproject.toml`, and `uv.lock` are gone. The
+tracer the render critic reads PDFs with survives as `mag/src/trace/`.
+Editions 001-009 can no longer be re-rendered byte-faithfully; their
+committed PDFs are the record. Committed test expectations are now
+regression snapshots of the Rust output.

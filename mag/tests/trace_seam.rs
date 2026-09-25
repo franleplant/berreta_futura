@@ -1,10 +1,10 @@
-#[path = "../src/parity/display.rs"]
+#[path = "../src/trace/elements.rs"]
 #[allow(dead_code)]
-mod display;
-#[path = "../src/parity/exact.rs"]
+mod elements;
+#[path = "../src/trace/exact.rs"]
 #[allow(dead_code)]
 mod exact;
-#[path = "../src/parity/streams.rs"]
+#[path = "../src/trace/streams.rs"]
 #[allow(dead_code)]
 mod streams;
 
@@ -64,7 +64,7 @@ fn build(dir: &Path, name: &str, text: &str, mode: i64, named_dest: bool) -> Pat
 }
 
 fn elements(pdf: &Path) -> Vec<streams::Element> {
-    display::trace_elements(pdf, 1, 1, &BTreeMap::new())
+    elements::trace_elements(pdf, 1, 1, &BTreeMap::new())
         .unwrap()
         .remove(0)
 }
@@ -118,10 +118,5 @@ fn standard_14_decodes_without_tounicode() {
 fn text_seam_reads_a_document_whose_navigation_is_broken() {
     let dir = tmp("seam");
     let pdf = build(&dir, "broken.pdf", "Hello", 0, true);
-    let err = match display::extract(&pdf, 1, 1, &BTreeMap::new()) {
-        Err(e) => format!("{e:#}"),
-        Ok(_) => panic!("named destination without a Names tree must fail"),
-    };
-    assert!(err.contains("Names"), "got {err}");
     assert_eq!(shown(&pdf), vec![("Hello".to_string(), 0)]);
 }

@@ -53,38 +53,9 @@ use semantic::{file_uri, render_html_edition, HtmlAsset};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::OnceLock;
 
 const PUBLICATION: &str = "Berreta Futura";
-
-const PYTHON: &str = r#"
-import dataclasses, json, sys
-from pathlib import Path
-from magazine.manifest import load_edition
-from magazine.records import load_records
-from magazine.html_edition import render_html_edition
-root = Path(sys.argv[1]).resolve()
-records = {record.id: record for record in load_records(root / "library" / "sources")}
-out = {}
-for spec in json.loads(sys.argv[2]):
-    try:
-        edition = load_edition(root, spec["edition"], set(records), publication_name=sys.argv[3], source_records=records)
-        if "title" in spec:
-            first = dataclasses.replace(edition.articles[0], title=spec["title"])
-            edition = dataclasses.replace(edition, articles=(first, *edition.articles[1:]))
-        if "extra" in spec:
-            edition = dataclasses.replace(edition, articles=(*edition.articles, *[edition.articles[-1]] * spec["extra"]))
-        if "plate" in spec:
-            plate = dataclasses.replace(edition.closing_plates[0], art_path=root / spec["plate"])
-            edition = dataclasses.replace(edition, closing_plates=(plate,))
-        semantic = render_html_edition(edition)
-        assets = [{field.name: None if getattr(asset, field.name) is None else str(getattr(asset, field.name)) for field in dataclasses.fields(asset)} for asset in semantic.assets]
-        out[spec["name"]] = {"html": semantic.html, "assets": assets}
-    except Exception as error:
-        out[spec["name"]] = {"error": str(error)}
-print(json.dumps(out))
-"#;
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -168,26 +139,6 @@ fn specs() -> Value {
     ])
 }
 
-fn python() -> &'static Value {
-    static ORACLE: OnceLock<Value> = OnceLock::new();
-    ORACLE.get_or_init(|| {
-        let output = Command::new("uv")
-            .args(["run", "python", "-c", PYTHON])
-            .arg(stage())
-            .arg(specs().to_string())
-            .arg(PUBLICATION)
-            .current_dir(repository())
-            .output()
-            .expect("uv runs");
-        assert!(
-            output.status.success(),
-            "the Python oracle failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        serde_json::from_slice(&output.stdout).expect("the oracle prints JSON")
-    })
-}
-
 fn portable(text: &str) -> String {
     text.replace(&*stage().to_string_lossy(), "$STAGE")
 }
@@ -222,18 +173,13 @@ fn compact(entry: &Value) -> Value {
 fn html_expected() -> &'static Value {
     static EXPECTED: OnceLock<Value> = OnceLock::new();
     EXPECTED.get_or_init(|| {
-        let text = oracle::expectation("web_port_html_expected.json", || {
-            let entries = python().as_object().expect("an object");
-            let compacted: BTreeMap<&String, Value> =
-                entries.iter().map(|(k, v)| (k, compact(v))).collect();
-            serde_json::to_string_pretty(&compacted).expect("json") + "\n"
-        });
+        let text = oracle::expectation("web_port_html_expected.json");
         serde_json::from_str(&text).expect("the expectation parses")
     })
 }
 
 fn settable() -> BTreeSet<u32> {
-    doc::settable_codepoints(&repository().join("src/magazine/assets/fonts"))
+    doc::settable_codepoints(&repository().join("mag/assets/fonts"))
         .expect("the vendored faces are readable")
 }
 
@@ -297,20 +243,6 @@ fn rust(spec: &Value) -> Value {
     }
 }
 
-fn first_difference(left: &str, right: &str) -> String {
-    let at = left
-        .char_indices()
-        .zip(right.chars())
-        .find(|((_, a), b)| a != b)
-        .map_or(left.len().min(right.len()), |((index, _), _)| index);
-    let start = left[..at].rfind('\n').map_or(0, |index| index + 1);
-    format!(
-        "rust: {:?}\npython: {:?}",
-        &left[start..(at + 120).min(left.len())],
-        right.get(start..(at + 120).min(right.len())).unwrap_or("")
-    )
-}
-
 fn compare(name: &str) -> Value {
     let spec = specs()
         .as_array()
@@ -320,17 +252,6 @@ fn compare(name: &str) -> Value {
         .expect("the spec exists")
         .clone();
     let got = rust(&spec);
-    if oracle::live() {
-        let want = &python()[name];
-        if let (Some(left), Some(right)) = (got["html"].as_str(), want["html"].as_str()) {
-            assert!(
-                left == right,
-                "{name} html differs\n{}",
-                first_difference(left, right)
-            );
-        }
-        assert_eq!(&got, want, "{name} differs from html_edition");
-    }
     bless("web_port_html_expected.json", name, &compact(&got));
     if std::env::var_os("MAG_BLESS").is_some() {
         return got;
@@ -476,33 +397,6 @@ fn fenced_code_in_an_unported_lexer_refuses_rather_than_diverging() {
     assert!(error.to_string().contains("\"go\""), "{error}");
 }
 
-const WEB_PYTHON: &str = r#"
-import dataclasses, json, sys
-from pathlib import Path
-from magazine.manifest import load_edition
-from magazine.records import load_records
-from magazine.web_edition import write_web_edition
-root = Path(sys.argv[1]).resolve()
-records = {record.id: record for record in load_records(root / "library" / "sources")}
-urls = {record.id: record.url for record in records.values() if record.url}
-for spec in json.loads(sys.argv[2]):
-    edition = load_edition(root, spec["edition"], set(records), publication_name=sys.argv[3], source_records=records)
-    if "strip_opener" in spec:
-        index = spec["strip_opener"]
-        stripped = dataclasses.replace(edition.articles[index], opener_art=None)
-        edition = dataclasses.replace(edition, articles=(*edition.articles[:index], stripped, *edition.articles[index + 1:]))
-    optional = {key: root / spec[key] for key in ("wordmark", "favicon") if key in spec}
-    if "headline" in spec:
-        optional["headline_lines"] = tuple(spec["headline"])
-    if "duplicate" in spec:
-        edition = dataclasses.replace(edition, articles=(*edition.articles, edition.articles[spec["duplicate"]]))
-    kept = {key: value for key, value in urls.items() if key not in spec.get("drop_urls", [])}
-    try:
-        write_web_edition(edition, root / "python-web" / spec["name"], source_urls=kept, alternates=dict(spec.get("alternates", [])), **optional)
-    except Exception as error:
-        (root / "python-web" / f"{spec['name']}.error").write_text(str(error))
-"#;
-
 const WORDMARK: &str =
     "editions/010/source-codes/source-code-an-alignment-assessment-of-recent-cybersecurity-415f8f1a.svg";
 const FAVICON: &str =
@@ -524,26 +418,6 @@ fn web_specs() -> Value {
     ])
 }
 
-fn python_web() -> &'static Path {
-    static WRITTEN: OnceLock<PathBuf> = OnceLock::new();
-    WRITTEN.get_or_init(|| {
-        let output = Command::new("uv")
-            .args(["run", "python", "-c", WEB_PYTHON])
-            .arg(stage())
-            .arg(web_specs().to_string())
-            .arg(PUBLICATION)
-            .current_dir(repository())
-            .output()
-            .expect("uv runs");
-        assert!(
-            output.status.success(),
-            "the Python web oracle failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        stage().join("python-web")
-    })
-}
-
 fn digests(files: &BTreeMap<String, Vec<u8>>) -> BTreeMap<String, String> {
     let digest = |bytes: &Vec<u8>| match std::str::from_utf8(bytes) {
         Ok(text) => oracle::sha256(portable(text).as_bytes()),
@@ -558,24 +432,7 @@ fn digests(files: &BTreeMap<String, Vec<u8>>) -> BTreeMap<String, String> {
 fn web_expected() -> &'static Value {
     static EXPECTED: OnceLock<Value> = OnceLock::new();
     EXPECTED.get_or_init(|| {
-        let text = oracle::expectation("web_port_web_expected.json", || {
-            let specs = web_specs();
-            let entries: BTreeMap<&str, Value> = specs
-                .as_array()
-                .expect("specs")
-                .iter()
-                .map(|spec| {
-                    let name = spec["name"].as_str().expect("a name");
-                    let error = std::fs::read_to_string(python_web().join(format!("{name}.error")));
-                    let entry = match error {
-                        Ok(error) => json!({"error": portable(&error)}),
-                        Err(_) => json!({"files": digests(&tree(&python_web().join(name)))}),
-                    };
-                    (name, entry)
-                })
-                .collect();
-            serde_json::to_string_pretty(&entries).expect("json") + "\n"
-        });
+        let text = oracle::expectation("web_port_web_expected.json");
         serde_json::from_str(&text).expect("the expectation parses")
     })
 }
@@ -658,7 +515,7 @@ fn rust_web(name: &str) -> Result<PathBuf, String> {
     write_web_edition(
         &edition,
         &settable(),
-        &repository().join("src/magazine/assets"),
+        &repository().join("mag/assets"),
         &destination,
         &options,
     )
@@ -681,25 +538,6 @@ fn compare_tree(name: &str) -> BTreeMap<String, Vec<u8>> {
         web_expected()[name],
         "{name} differs from the committed web_edition expectation"
     );
-    if !oracle::live() {
-        return got;
-    }
-    let want = tree(&python_web().join(name));
-    assert_eq!(
-        got.keys().collect::<Vec<_>>(),
-        want.keys().collect::<Vec<_>>(),
-        "{name}: the file sets differ"
-    );
-    for (path, bytes) in &want {
-        let mine = &got[path];
-        if mine != bytes {
-            let (left, right) = (
-                String::from_utf8_lossy(mine),
-                String::from_utf8_lossy(bytes),
-            );
-            panic!("{name}/{path} differs\n{}", first_difference(&left, &right));
-        }
-    }
     got
 }
 
@@ -828,7 +666,7 @@ fn a_container_label_refuses_the_web_edition_instead_of_printing_brackets() {
     let error = write_web_edition(
         &edition,
         &settable(),
-        &repository().join("src/magazine/assets"),
+        &repository().join("mag/assets"),
         &stage().join("rust-web/container-label"),
         &WebOptions::default(),
     )

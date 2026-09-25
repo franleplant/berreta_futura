@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Typeset dialog balloons onto wordless panels.
 
-Usage: python3 tools/letter.py <spec.json>
+Usage: uv run --with pillow tools/letter.py <spec.json>
 
 The spec lists panels; image/out paths are relative to the spec file:
   [{"image": "panel-1.png", "out": "panel-1-lettered.png",

@@ -180,7 +180,7 @@ struct Cli {
 === mag/src/nested/deep.rs
 fn z() {} // nested dir comment
 
-=== src/magazine/pkg.py
+=== tools/pkg.py
 def f():
     """package docstring"""
     return 1

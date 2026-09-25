@@ -6,19 +6,19 @@ mod model {
     pub use super::shared;
 }
 
-#[path = "../src/parity/exact.rs"]
+#[path = "../src/trace/exact.rs"]
 #[allow(dead_code)]
 pub mod exact;
-#[path = "../src/parity/streams.rs"]
+#[path = "../src/trace/streams.rs"]
 #[allow(dead_code, clippy::new_without_default)]
 pub mod streams;
 
-#[path = "../src/parity/display.rs"]
+#[path = "../src/trace/elements.rs"]
 #[allow(dead_code)]
-pub mod display;
+pub mod elements;
 
-mod parity {
-    pub use super::display::trace_elements;
+mod trace {
+    pub use super::elements::trace_elements;
     pub use super::exact::{authored, num};
     #[allow(unused_imports)]
     pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};
@@ -1062,78 +1062,6 @@ fn opener_crop_fidelity_checks_match_python_on_the_fixtures() {
     }
 }
 
-fn issue_sites(source: &str) -> Vec<String> {
-    let mut found = vec![];
-    for (at, _) in source.match_indices("issue(") {
-        let tail = source[at + "issue(".len()..].trim_start();
-        let Some(rest) = tail.strip_prefix('"') else {
-            continue;
-        };
-        if let Some(end) = rest.find('"') {
-            found.push(rest[..end].to_string());
-        }
-    }
-    found
-}
-
-#[test]
-fn every_issue_code_in_the_python_critic_is_exercised_by_a_fixture() {
-    let expected = oracle("critic_rules_expected.json");
-    let mut seen = std::collections::BTreeSet::new();
-    for group in [
-        "imposition",
-        "page_rows",
-        "stub_and_tail",
-        "booklet_sides",
-        "contents",
-        "opener_offset_checks",
-        "opener_crop_fidelity_checks",
-    ] {
-        for case in expected[group].as_array().expect("cases") {
-            for issue in case["issues"].as_array().expect("issues") {
-                seen.insert(issue["code"].as_str().expect("a code").to_string());
-            }
-        }
-    }
-    let source = std::fs::read_to_string(manifest_dir().join("../src/magazine/render_critic.py"))
-        .expect("the python critic is readable");
-    let sites = issue_sites(&source);
-    let parsed = oracle("critic_rules_expected.json")["issue_sites"]
-        .as_array()
-        .expect("the oracle carries the ast-parsed issue sites")
-        .clone();
-    assert_eq!(
-        sites,
-        parsed
-            .iter()
-            .map(|row| row["code"].as_str().expect("a code").to_string())
-            .collect::<Vec<String>>(),
-        "the string scan disagrees with python's own ast parse of the issue sites"
-    );
-    let declared: std::collections::BTreeSet<String> = sites.iter().cloned().collect();
-    assert_eq!(
-        declared.len(),
-        30,
-        "found {} distinct codes in the python",
-        declared.len()
-    );
-    assert_eq!(
-        sites.len(),
-        31,
-        "the python critic must still have 31 issue sites"
-    );
-    assert_eq!(
-        declared.difference(&seen).cloned().collect::<Vec<String>>(),
-        Vec::<String>::new(),
-        "python issue codes with no fixture"
-    );
-    assert_eq!(
-        seen.difference(&declared).cloned().collect::<Vec<String>>(),
-        Vec::<String>::new(),
-        "fixture issue codes the python does not emit"
-    );
-}
-
 fn spec_rows(specs: &[rules::CropSpec]) -> Value {
     canon(&Value::Array(
         specs
@@ -1389,148 +1317,6 @@ fn whitespace_normalisation_matches_python() {
     assert!(
         collapsed > 0,
         "a normalisation fixture must actually collapse whitespace"
-    );
-}
-
-fn python_constants() -> BTreeMap<String, String> {
-    let source = std::fs::read_to_string(manifest_dir().join("../src/magazine/render_critic.py"))
-        .expect("the python critic is readable");
-    source
-        .lines()
-        .filter_map(|line| line.split_once(" = "))
-        .filter(|(name, _)| {
-            !name.starts_with(' ') && name.chars().all(|c| c.is_ascii_uppercase() || c == '_')
-        })
-        .map(|(name, value)| (name.to_string(), value.trim().to_string()))
-        .collect()
-}
-
-fn rust_constants() -> Vec<(&'static str, String)> {
-    vec![
-        (
-            "GEOMETRY_TOLERANCE",
-            format!("{:?}", rules::GEOMETRY_TOLERANCE),
-        ),
-        ("VOID_DOWNSAMPLE", rules::VOID_DOWNSAMPLE.to_string()),
-        (
-            "VOID_MIN_HEIGHT_POINTS",
-            format!("{:?}", rules::VOID_MIN_HEIGHT_POINTS),
-        ),
-        (
-            "VOID_MIN_WIDTH_FRACTION",
-            format!("{:?}", rules::VOID_MIN_WIDTH_FRACTION),
-        ),
-        ("VOID_REPORT_LIMIT", rules::VOID_REPORT_LIMIT.to_string()),
-        (
-            "VOID_TRAILING_TOLERANCE_POINTS",
-            format!("{:?}", rules::VOID_TRAILING_TOLERANCE_POINTS),
-        ),
-        (
-            "TAIL_GAP_MIN_LIVE_FRACTION",
-            format!("{:?}", rules::TAIL_GAP_MIN_LIVE_FRACTION),
-        ),
-        (
-            "TAIL_BAND_HEIGHT_TOLERANCE_POINTS",
-            format!("{:?}", rules::TAIL_BAND_HEIGHT_TOLERANCE_POINTS),
-        ),
-        (
-            "TAIL_BAND_ADJACENCY_TOLERANCE_POINTS",
-            format!("{:?}", rules::TAIL_BAND_ADJACENCY_TOLERANCE_POINTS),
-        ),
-        (
-            "TAIL_BAND_SYMMETRY_TOLERANCE_POINTS",
-            format!("{:?}", rules::TAIL_BAND_SYMMETRY_TOLERANCE_POINTS),
-        ),
-        (
-            "STUB_BODY_LINE_MINIMUM",
-            rules::STUB_BODY_LINE_MINIMUM.to_string(),
-        ),
-        (
-            "DEFAULT_EDITORIAL_PAGE_CAP",
-            rules::DEFAULT_EDITORIAL_PAGE_CAP.to_string(),
-        ),
-        ("CROP_DPI", rules::CROP_DPI.to_string()),
-        (
-            "OPENER_OFFSET_POINTS",
-            format!("{:?}", rules::OPENER_OFFSET_POINTS),
-        ),
-        (
-            "OPENER_OFFSET_TOLERANCE_PIXELS",
-            format!("{:?}", rules::OPENER_OFFSET_TOLERANCE_PIXELS),
-        ),
-        (
-            "OPENER_FRAME_MIN_RUN_FRACTION",
-            format!("{:?}", rules::OPENER_FRAME_MIN_RUN_FRACTION),
-        ),
-        (
-            "OPENER_CROP_FIDELITY_MAX_RGB_MAE",
-            format!("{:?}", rules::OPENER_CROP_FIDELITY_MAX_RGB_MAE),
-        ),
-        (
-            "OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES",
-            format!("{:?}", rules::OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES),
-        ),
-        (
-            "CROP_MARGIN_POINTS",
-            format!("{:?}", rules::CROP_MARGIN_POINTS),
-        ),
-        (
-            "CROP_CAPTION_ALLOWANCE_POINTS",
-            format!("{:?}", rules::CROP_CAPTION_ALLOWANCE_POINTS),
-        ),
-        (
-            "STUB_CROP_HEIGHT_POINTS",
-            format!("{:?}", rules::STUB_CROP_HEIGHT_POINTS),
-        ),
-        (
-            "TAIL_FALLBACK_CROP_HEIGHT_POINTS",
-            format!("{:?}", rules::TAIL_FALLBACK_CROP_HEIGHT_POINTS),
-        ),
-        (
-            "OPENER_FRAME_RGB",
-            format!(
-                "({}, {}, {})",
-                rules::OPENER_FRAME_RGB[0],
-                rules::OPENER_FRAME_RGB[1],
-                rules::OPENER_FRAME_RGB[2]
-            ),
-        ),
-        (
-            "OPENER_OFFSET_RGB",
-            format!(
-                "({}, {}, {})",
-                rules::OPENER_OFFSET_RGB[0],
-                rules::OPENER_OFFSET_RGB[1],
-                rules::OPENER_OFFSET_RGB[2]
-            ),
-        ),
-    ]
-}
-
-#[test]
-fn every_threshold_is_read_from_the_python_source_not_from_an_oracle() {
-    let python = python_constants();
-    let mine = rust_constants();
-    assert_eq!(mine.len(), 24, "the constant list must not shrink silently");
-    for (name, value) in &mine {
-        let theirs = python
-            .get(*name)
-            .unwrap_or_else(|| panic!("{name} is no longer declared in render_critic.py"));
-        let normalised = theirs.trim_end_matches(".0");
-        assert!(
-            theirs == value || normalised == value.trim_end_matches(".0"),
-            "{name}: python says {theirs}, rust says {value}"
-        );
-    }
-    let source = std::fs::read_to_string(manifest_dir().join("../src/magazine/render_critic.py"))
-        .expect("the python critic is readable");
-    assert!(
-        source.contains(&format!(
-            "page_caps.get(slug, {})",
-            rules::DEFAULT_ARTICLE_PAGE_CAP
-        )),
-        "the default article page cap is no longer {} in the python",
-        rules::DEFAULT_ARTICLE_PAGE_CAP
     );
 }
 

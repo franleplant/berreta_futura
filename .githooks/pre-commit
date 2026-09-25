@@ -2,7 +2,6 @@
 set -eu
 cd "$(git rev-parse --show-toplevel)"
 (cd mag && cargo fmt --check && cargo clippy -q --all-targets -- -D warnings)
-uvx ruff format --check src/magazine tools
-uvx ruff check src/magazine tools
-python3 tools/nocomments.py
+uvx ruff format --check tools
+uvx ruff check tools
 (cd mag && cargo test -q --test nocomments)

@@ -13,12 +13,12 @@ mod impose;
 mod model;
 #[allow(dead_code)]
 mod package;
-mod parity;
 mod plan_cmd;
 mod print_cmd;
 mod produce;
 mod render;
 mod sourcecodes;
+mod trace;
 mod translate;
 mod typeset;
 mod web;
@@ -194,31 +194,8 @@ enum Cmd {
         #[arg(long)]
         check: bool,
     },
-    /// Render an edition: weasyprint via the Python seam, typst natively
+    /// Render an edition through Typst
     Render(render::RenderArgs),
-    /// Compare two engines' renders of an edition against the parity ladder
-    Parity {
-        #[arg(required_unless_present = "adhoc")]
-        edition: Option<String>,
-        /// Render any edition fresh on both engines; only tier S gates, no baseline
-        #[arg(long, value_name = "NNN", conflicts_with_all = ["edition", "pre_rendered", "oracle_only"])]
-        adhoc: Option<String>,
-        /// Two pre-rendered output trees to compare instead of rendering
-        #[arg(long = "pre-rendered", num_args = 2, value_names = ["DIR_A", "DIR_B"])]
-        pre_rendered: Option<Vec<PathBuf>>,
-        /// Run dir whose finals both legs render
-        #[arg(long)]
-        run: Option<String>,
-        /// Render only the weasyprint leg and compare it against itself
-        #[arg(long = "oracle-only")]
-        oracle_only: bool,
-        /// Score one page set from parity.yaml page_sets
-        #[arg(long)]
-        set: Option<String>,
-        /// Language whose outputs are compared (with --adhoc or --pre-rendered)
-        #[arg(long, default_value = "en")]
-        lang: String,
-    },
 }
 
 fn main() {
@@ -365,75 +342,23 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
         }),
         Cmd::Render(args) => render::run(&args),
         Cmd::SourceCodes { edition, check } => sourcecodes::run(&edition, check),
-        Cmd::Parity {
-            edition,
-            adhoc,
-            pre_rendered,
-            run,
-            oracle_only,
-            set,
-            lang,
-        } => {
-            let pair = pre_rendered.map(|mut dirs| {
-                let b = dirs.pop().expect("clap enforces two dirs");
-                let a = dirs.pop().expect("clap enforces two dirs");
-                (a, b)
-            });
-            parity::run(
-                &adhoc.clone().or(edition).expect("clap requires one"),
-                parity::Options {
-                    pre_rendered: pair,
-                    run_dir: run,
-                    oracle_only,
-                    set,
-                    adhoc: adhoc.is_some(),
-                    lang,
-                },
-            )
-        }
         _ => unreachable!(),
     }
 }
 
 #[cfg(test)]
-mod parity_text_seam_is_reachable {
-    use crate::parity::{trace_elements, Element, TextFace};
+mod trace_seam_is_reachable {
+    use crate::trace::{trace_elements, Element, TextFace};
     use std::collections::BTreeMap;
     use std::path::Path;
 
     #[test]
-    fn the_text_path_is_callable_from_outside_the_parity_module() {
+    fn the_text_path_is_callable_from_outside_the_trace_module() {
         let map: BTreeMap<String, TextFace> = BTreeMap::new();
         let Err(err) = trace_elements(Path::new("does-not-exist.pdf"), 1, 1, &map) else {
             panic!("a missing pdf must fail rather than succeed");
         };
         assert!(format!("{err:#}").contains("does-not-exist.pdf"));
         let _: fn(&Element) -> bool = |e| matches!(e, Element::Text { .. });
-    }
-}
-
-#[cfg(test)]
-mod parity_adhoc_flag {
-    use super::{Cli, Cmd};
-    use clap::Parser;
-
-    fn parse(args: &[&str]) -> Result<Cli, clap::Error> {
-        Cli::try_parse_from([&["mag", "parity"], args].concat())
-    }
-
-    #[test]
-    fn adhoc_stands_in_for_the_edition_and_refuses_the_baseline_modes() {
-        let Ok(Cli {
-            cmd: Cmd::Parity { edition, adhoc, .. },
-            ..
-        }) = parse(&["--adhoc", "009", "--run", "r"])
-        else {
-            panic!("--adhoc NNN --run dir must parse");
-        };
-        assert_eq!((edition, adhoc.as_deref()), (None, Some("009")));
-        assert!(parse(&[]).is_err());
-        assert!(parse(&["010", "--adhoc", "009"]).is_err());
-        assert!(parse(&["--adhoc", "009", "--oracle-only"]).is_err());
-        assert!(parse(&["--adhoc", "009", "--pre-rendered", "a", "b"]).is_err());
     }
 }

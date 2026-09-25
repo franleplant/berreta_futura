@@ -127,7 +127,7 @@ fn cover_art() -> PathBuf {
 }
 
 fn inter() -> Vec<u8> {
-    std::fs::read(repository().join("src/magazine/assets/fonts/inter/Inter-Regular.ttf"))
+    std::fs::read(repository().join("mag/assets/fonts/inter/Inter-Regular.ttf"))
         .expect("the vendored Inter face is readable")
 }
 
@@ -213,7 +213,7 @@ fn back_face() -> Face {
 }
 
 fn cover_pixmap(layout: &str) -> tiny_skia::Pixmap {
-    let assets = repository().join("src/magazine/assets");
+    let assets = repository().join("mag/assets");
     let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
     let design = design();
     let document = {

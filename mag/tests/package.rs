@@ -6,19 +6,19 @@ mod model {
     pub use super::shared;
 }
 
-#[path = "../src/parity/exact.rs"]
+#[path = "../src/trace/exact.rs"]
 #[allow(dead_code)]
 pub mod exact;
-#[path = "../src/parity/streams.rs"]
+#[path = "../src/trace/streams.rs"]
 #[allow(dead_code, clippy::new_without_default)]
 pub mod streams;
 
-#[path = "../src/parity/display.rs"]
+#[path = "../src/trace/elements.rs"]
 #[allow(dead_code)]
-pub mod display;
+pub mod elements;
 
-mod parity {
-    pub use super::display::trace_elements;
+mod trace {
+    pub use super::elements::trace_elements;
     pub use super::exact::{authored, num};
     #[allow(unused_imports)]
     pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};

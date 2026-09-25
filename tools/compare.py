@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """compare.py — read several produce runs side by side in a browser.
 
-    uv run python tools/compare.py editions/004/run-A editions/004/run-B [...]
-    uv run python tools/compare.py --out /tmp/x.html editions/004/run-*
+    uv run --with pyyaml tools/compare.py editions/004/run-A editions/004/run-B [...]
+    uv run --with pyyaml tools/compare.py --out /tmp/x.html editions/004/run-*
 
 Emits one self-contained HTML file: every piece from every run, its manuscript,
 the judge findings that survived, and what `worth` says the reader lost. No

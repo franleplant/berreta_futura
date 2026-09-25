@@ -16,7 +16,7 @@ use typst_pdf::{PdfOptions, PdfStandards};
 
 pub const TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template.typ");
 pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
-pub const FONT_DIR: &str = "src/magazine/assets/fonts";
+pub const FONT_DIR: &str = "mag/assets/fonts";
 const IDENT: &str = "mag-typeset-reader";
 const INLINE_LINK: &str = " mag-inline-link";
 const TYPST_DEST_LIFT: f64 = 10.0;
