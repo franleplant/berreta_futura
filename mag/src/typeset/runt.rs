@@ -583,7 +583,7 @@ mod tests {
                     "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
                      #doc-heading(level: 3)[Anchor]\n#figure-block(id: \"f\", source-id: \"s\", \
                      anchor: \"Anchor\", layout: \"{layout}\", word: \"Figure\", alt: \"a\", \
-                     path: \"{image}\", pixels: (40, 25))[#figure-caption[{CAPTION}]#figure-credit[Chart by Uber\\.]]\n]\n"
+                     path: \"{image}\", pixels: (40, 25))[#figure-caption[{CAPTION}]]\n]\n"
                 ),
             }],
         }
@@ -656,10 +656,6 @@ mod tests {
                     .contains(&format!("effort{NO_BREAK}goes")),
             "{}",
             band.files[0].source
-        );
-        assert!(
-            band.files[0].source.contains("Chart by Uber"),
-            "the one-line credit was bound"
         );
         let (column, _) = bound(captioned("column_plate"), &fonts, Hyphenation::PARITY)
             .expect("the binds settle");

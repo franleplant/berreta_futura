@@ -5,8 +5,6 @@ content_mode: verbatim
 label: VERBATIM
 ---
 
-By Sunil Pai · 19 September 2026
-
 *(a friend recently got a new job, a very senior role, very well paid, and pretty different from his previous gig. he was asking me how to do a 60 to 80-hour week, how to do well enough to get promoted, etc. and as we talked, I realised he was feeling a bit of imposter syndrome and really wanted to prove himself. I ended up giving him a bit of a monologue. this is more or less what I told him.)*
 
 ---

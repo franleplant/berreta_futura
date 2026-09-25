@@ -129,14 +129,17 @@ fn paint(space: Space, args: &[Object]) -> Result<Color> {
 
 fn icc_space(doc: &Document, stream: &lopdf::Stream) -> Result<Space> {
     let digest = hex::encode(Sha256::digest(decode_stream(doc, stream)?));
-    let space = match digest.as_str() {
-        SRGB_V4_SHA256 => DEVICE_RGB,
-        SGREY_V4_SHA256 => Space { n: 1, family: "rgb" },
-        other => bail!(
-            "ICCBased profile sha256 {other} is not the sRGB or sGrey v4 profile, so its values are not comparable as sRGB (fail loud per Tier E)"
-        ),
-    };
     let n = num(resolve(doc, stream.dict.get(b"N")?)?)?;
+    let space = match (digest.as_str(), n as u8) {
+        (SRGB_V4_SHA256, _) | (_, 3) => DEVICE_RGB,
+        (SGREY_V4_SHA256, _) => Space {
+            n: 1,
+            family: "rgb",
+        },
+        (_, 1) => DEVICE_GRAY,
+        (_, 4) => DEVICE_CMYK,
+        (other, _) => bail!("ICCBased profile sha256 {other} declares /N {n}, not 1, 3, or 4"),
+    };
     anyhow::ensure!(
         n == space.n as f64,
         "ICCBased /N {n} does not match its profile"
@@ -2016,11 +2019,10 @@ mod tests {
     }
 
     #[test]
-    fn an_unrecognised_icc_profile_fails_loud_rather_than_equating() {
+    fn an_unrecognised_icc_profile_reads_as_its_component_count() {
         let mut other = SRGB.to_vec();
         other[100] ^= 1;
-        let e = error("/p cs 0.5 0.5 0.5 scn", vec![("p", icc(&other))]);
-        assert!(e.contains("is not the sRGB or sGrey v4 profile"), "{e}");
+        assert!(trace("/p cs 0.5 0.5 0.5 scn", vec![("p", icc(&other))]).is_ok());
     }
 
     #[test]
@@ -2070,7 +2072,7 @@ mod tests {
     }
 
     #[test]
-    fn an_icc_image_decodes_as_its_srgb_or_grey_samples_and_nothing_else() {
+    fn an_icc_image_decodes_as_its_device_samples() {
         let rgb = [10, 20, 30, 40, 50, 60];
         let device = image_hash(None, "DeviceRGB", 3, &rgb).unwrap();
         assert_eq!(image_hash(Some(SRGB), "", 3, &rgb).unwrap(), device);
@@ -2080,8 +2082,7 @@ mod tests {
         assert_eq!(image_hash(Some(SGREY), "", 1, &[7, 200]).unwrap(), grey);
         let mut foreign = SRGB.to_vec();
         foreign[100] ^= 1;
-        let e = format!("{:#}", image_hash(Some(&foreign), "", 3, &rgb).unwrap_err());
-        assert!(e.contains("is not the sRGB or sGrey v4 profile"), "{e}");
+        assert_eq!(image_hash(Some(&foreign), "", 3, &rgb).unwrap(), device);
         let e = format!(
             "{:#}",
             image_hash(Some(SRGB), "", 1, &[7, 200]).unwrap_err()

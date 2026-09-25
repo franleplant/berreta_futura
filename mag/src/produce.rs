@@ -1,7 +1,7 @@
 use crate::caller::{Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -289,7 +289,10 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
         while lines.peek().is_some_and(|l| l.trim().is_empty()) {
             lines.next();
         }
-        if lines.peek().is_some_and(|l| l.starts_with("By:")) {
+        if lines
+            .peek()
+            .is_some_and(|l| (l.starts_with("By:") || l.starts_with("By ")) && l.len() < 240)
+        {
             lines.next();
         }
     }
@@ -468,7 +471,7 @@ fn scaffold_edition_yaml(
     let mut y = String::new();
     y += &format!(
         "# Edition {issue_number} spec, scaffolded by `mag produce` from plan.yaml.\n\
-         # TODO markers are the editor's: title, subtitle, cover copy, figure picks.\n\
+         # Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.\n\
          # Art paths are filled by picking in art/showcase.html after `mag art {edition_id}`.\n\
          # Article order here is the reading order; reorder freely.\n"
     );
@@ -586,7 +589,14 @@ pub fn run_edition(
     println!("{}", lines.join("\n"));
 
     if failures.is_empty() {
-        print_next_steps(&edition_dir, &edition_id, &scaffold_plan, &run_dir)?;
+        print_next_steps(
+            &caller,
+            writer_model,
+            &edition_dir,
+            &edition_id,
+            &scaffold_plan,
+            &run_dir,
+        )?;
     } else {
         println!(
             "\nnext: fix the failures above, then: mag produce {} --resume {}",
@@ -697,7 +707,73 @@ fn summary_lines(
     lines
 }
 
+const FRONT_TODOS: [(&str, &str); 5] = [
+    ("title: TODO", "title"),
+    ("subtitle: TODO", "subtitle"),
+    ("  headline: TODO", "title"),
+    ("  deck: TODO", "subtitle"),
+    ("  back_text: TODO", "back_text"),
+];
+
+fn parse_front_matter(reply: &str) -> Result<HashMap<String, String>> {
+    let yaml = reply.trim().trim_start_matches("```yaml").trim_matches('`');
+    let drafted: HashMap<String, String> =
+        serde_yaml::from_str(yaml).context("the front matter reply is not a YAML mapping")?;
+    for key in ["title", "subtitle", "back_text"] {
+        let value = drafted.get(key).map(|v| v.trim()).unwrap_or("");
+        if value.is_empty() || value.contains('\u{2014}') {
+            bail!("front matter {key} is missing, empty, or carries an em dash");
+        }
+    }
+    let words = drafted["back_text"].split_whitespace().count();
+    if words > 60 {
+        bail!("front matter back_text runs {words} words; the budget is 60");
+    }
+    Ok(drafted)
+}
+
+fn front_matter(
+    caller: &Caller,
+    model: &ModelSpec,
+    edition_yaml: &Path,
+    run_dir: &Path,
+) -> Result<bool> {
+    let text = read(edition_yaml)?;
+    let todo = |line: &str| FRONT_TODOS.iter().find(|(todo, _)| line == *todo);
+    if !text.lines().any(|line| todo(line).is_some()) {
+        return Ok(false);
+    }
+    let edition: serde_yaml::Value = serde_yaml::from_str(&text)?;
+    let finals = edition["articles"]
+        .as_sequence()
+        .into_iter()
+        .flatten()
+        .filter_map(|a| Some((a["id"].as_str()?, a["title"].as_str()?)))
+        .map(|(id, title)| {
+            let body = read(&run_dir.join("articles").join(id).join("final.md"))?;
+            Ok(section(title, strip_frontmatter(&body)))
+        })
+        .collect::<Result<Vec<_>>>()?
+        .join("\n");
+    let prompt = format!(
+        "{INLINE_PREAMBLE}\n\n{}\n\n{finals}",
+        read(&prompts_path("edition-front-matter.md"))?
+    );
+    let drafted = caller.call_with_parse("front-matter", model, &prompt, parse_front_matter)?;
+    let filled: Vec<String> = text
+        .lines()
+        .map(|line| match todo(line) {
+            Some((todo, key)) => format!("{}{}", &todo[..todo.len() - 4], yq(&drafted[*key])),
+            None => line.to_string(),
+        })
+        .collect();
+    fs::write(edition_yaml, filled.join("\n") + "\n")?;
+    Ok(true)
+}
+
 fn print_next_steps(
+    caller: &Caller,
+    model: &ModelSpec,
     edition_dir: &Path,
     edition_id: &str,
     plan: &Plan,
@@ -708,9 +784,15 @@ fn print_next_steps(
         Some(p) => println!("\nscaffolded {}", p.display()),
         None => println!("\n{} already exists; left as is", edition_yaml.display()),
     }
+    if front_matter(caller, model, &edition_yaml, run_dir)? {
+        println!(
+            "drafted title, deck, and back cover into {} (review them)",
+            edition_yaml.display()
+        );
+    }
     println!(
         "\nnext:\n  1. read the finals under {}/articles/*/final.md\n  \
-         2. edit {}: TODO fields (title, cover copy), article order, figures\n  \
+         2. edit {}: review the drafted title and cover copy; article order, figures\n  \
          3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
          4. mag source-codes {edition_id}   (after picking opener art)\n  \
          5. mag render {edition_id}",
@@ -795,6 +877,9 @@ mod tests {
         let body = verbatim_body(&[("s-1".to_string(), src.to_string())]).unwrap();
         assert_eq!(body, "First para.\n\n\n## Head\n\nSecond - para.\n");
         assert!(verbatim_body(&[]).is_err());
+        let dotted = "# Title\n\nBy Ann Lee & Bo Chen \u{b7} Sep 23, 2026\n\nBy design, first.\n";
+        let body = verbatim_body(&[("s-1".to_string(), dotted.to_string())]).unwrap();
+        assert_eq!(body, "By design, first.\n");
     }
 
     #[test]

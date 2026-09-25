@@ -64,9 +64,6 @@
 #let VERBATIM-PAGE-CAP = 10
 #let INLINE-LINK = " mag-inline-link"
 
-#let FIGURE-LABEL-ZONE = 13.1pt
-#let FIGURE-LABEL-PAD = 4.32625pt
-#let FIGURE-LABEL-TRACKING = 0.25pt
 #let FIGURE-CAPTION-ABOVE = 6.3pt
 #let FIGURE-GAP = 15.75pt
 #let COMPACT-FIGURE-GAP = 12pt
@@ -99,7 +96,7 @@
 #let CONTENTS-RULE = 0.7pt
 #let CONTENTS-ENTRY-LEFT = 47pt
 #let CONTENTS-STANDARD = (label: 8.6pt, folio: 17.7pt, title: 17.5pt, author: 32.2pt)
-#let CONTENTS-TIGHT = (label: 6.8pt, folio: 15.9pt, title: 15.8pt, author: 30.5pt)
+#let CONTENTS-TIGHT = (label: 0pt, folio: 9.5pt, title: 5.5pt, author: 19.5pt)
 
 #let ILLUSTRATED = "illustrated_paper_spots_v1"
 #let PAPER-INK = rgb(23, 25, 28)
@@ -1067,19 +1064,6 @@
   above: FIGURE-CAPTION-ABOVE,
   below: 0pt,
 )
-#let figure-credit(body) = block(
-  edge-prose(move(dy: CAPTION-NUDGE + CREDIT-NUDGE, text(
-    font: SANS,
-    size: CAPTION-SIZE,
-    weight: 500,
-    fill: SLATE,
-    ..edges(CAPTION-SIZE, 8.6pt, HALF-SANS),
-    body,
-  ))),
-  above: 0pt,
-  below: 0pt,
-)
-
 #let figure-counter = counter("mag-figure")
 
 #let fitted-image-height(width, pixels, max-height) = (
@@ -1095,24 +1079,6 @@
     layer(place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK)))
   })))
 })
-
-#let figure-label(word) = context block(
-  height: FIGURE-LABEL-ZONE,
-  width: 100%,
-  spacing: 0pt,
-  {
-    v(FIGURE-LABEL-PAD + ZERO-LEADING-SANS)
-    text(
-      font: SANS,
-      size: CAPTION-SIZE,
-      weight: 500,
-      fill: VIOLET,
-      ..flat,
-      ..tracked(FIGURE-LABEL-TRACKING),
-      tracked-body(FIGURE-LABEL-TRACKING, upper(word) + " " + leading-zero(figure-counter.get().first())),
-    )
-  },
-)
 
 #let band-clearance() = context {
   let room = BAND-CLEARANCE-LINES * (text.top-edge - text.bottom-edge).to-absolute()
@@ -1150,7 +1116,6 @@
     width: 100%,
     inset: spec.escape,
     move(dx: if is-band(layout) and anchor != OPENER-ANCHOR { carried-shift(index) } else { 0pt }, dy: DATUM, {
-      figure-label(word)
       figure-image(id, path, pixels, spec)
       body
     }),

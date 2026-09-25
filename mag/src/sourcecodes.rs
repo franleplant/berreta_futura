@@ -179,7 +179,7 @@ pub fn matrix(payload: &str, ecl: QrCodeEcc) -> Result<Vec<Vec<bool>>> {
 }
 
 pub fn fitted(payload: &str, room: f64) -> Result<Value> {
-    let min_module = 0.35 * 72.0 / 25.4;
+    let min_module = 0.32 * 72.0 / 25.4;
     let mut best: Option<(&str, usize, f64, Vec<Vec<bool>>)> = None;
     for (name, ecl) in LEVELS {
         let symbol = matrix(payload, ecl)?;

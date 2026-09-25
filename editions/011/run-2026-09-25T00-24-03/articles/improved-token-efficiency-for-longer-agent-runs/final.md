@@ -5,8 +5,6 @@ content_mode: verbatim
 label: VERBATIM
 ---
 
-By Jediah Katz, Connor O'Keefe & Calvin Yee · Sep 23, 2026
-
 As agents have matured and learned to tackle more ambitious tasks, token spend has shifted. Agents now work for longer and carry more context from one step to the next, making the way we assemble and manage that context increasingly important.
 
 Notes: System & tool defs includes compaction summaries. User text includes manually attached skills. Skills & plugins includes skill descriptions, MCP tool descriptions, and rules that go in static context.

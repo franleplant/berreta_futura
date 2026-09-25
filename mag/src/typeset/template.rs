@@ -833,7 +833,7 @@ mod tests {
         let figure = figure.map_or(String::new(), |pixels| {
             format!(
                 "#figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", layout: \"{layout}\", \
-                 word: \"Figure\", alt: \"a\", path: \"{}\"{pixels})[#figure-caption[Cap.]#figure-credit[Credit.]]\n",
+                 word: \"Figure\", alt: \"a\", path: \"{}\"{pixels})[#figure-caption[Cap.]]\n",
                 fixture_png()
             )
         });
@@ -962,7 +962,7 @@ mod tests {
         };
         [
             find(&|m| m.text == "Anchor" && (m.size - 18.5).abs() < 1e-6),
-            find(&|m| m.text.starts_with("FIGURE")),
+            find(&|m| m.text == "Cap." || m.text.starts_with("FIGURE")),
             find(&|m| m.text == "Line 0."),
         ]
     }
