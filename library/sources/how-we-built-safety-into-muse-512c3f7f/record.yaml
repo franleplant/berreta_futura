@@ -1,0 +1,8 @@
+id: how-we-built-safety-into-muse-512c3f7f
+title: 'How We Built Safety Into Muse'
+author: 'Tarek Sheasha'
+url: https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse
+captured_at: '2026-09-24T21:07:40Z'
+published_at: '2026-09-08'
+tags: []
+synopsis: 'The article explains how Meta built Muse, a personal AI agent, with layered safety systems including an isolated runtime cell, a Sentinel permission authority, privilege separation, and a public bug bounty program.'

@@ -14,6 +14,128 @@ _Collecting: `009` (7 queued)._
 
 _Collecting: `010` (9 queued)._
 
+_Collecting: `011` (12 queued)._
+
+## Towards Autonomous Product Development — MEGA
+
+- ID: `mega-megadevhq-on-x-b8963c9d`
+- Source: https://x.com/megadevhq/article/2102739376358711777
+- Published: 2026-09-23
+- Captured: 2026-09-25T00:23:40Z
+- Release: queued for `011`
+
+The article describes a workflow for autonomous product development where AI agents run in the cloud, coordinate each other via tools like Grok Bot, Pi, and Herdr, and manage specifications, documentation, and implementation with limited human oversight, illustrated by the author's five-day rebuild of a four-year-old side project.
+
+## What a task costs on Opus 5.5 — Addy Osmani
+
+- ID: `what-a-task-costs-on-opus-5-5-3d1eacfa`
+- Source: https://claude.com/blog/what-a-task-costs-on-opus-5-5
+- Published: 2026-09-22
+- Captured: 2026-09-24T21:13:06Z
+- Release: queued for `011`
+
+The article explains what drives the token cost of a Claude Code task (turns, cache reads, output tokens, model choice) and details the price and behavior changes in Opus 5.5 compared to Opus 5, along with tips for managing session costs.
+
+## Staff archetypes — Will Larson
+
+- ID: `staff-archetypes-c22d800c`
+- Source: https://staffeng.com/guides/staff-archetypes/
+- Published: 2020-06-21
+- Captured: 2026-09-24T21:11:43Z
+- Release: queued for `011`
+
+The article describes four common archetypes of Staff-plus engineering roles (Tech Lead, Architect, Solver, and Right Hand) and how they differ by organizational context.
+
+## How SpaceXAI is using Grok Bot to scale customer support
+
+- ID: `how-spacexai-is-using-grok-bot-to-scale-customer-03d2992c`
+- Source: https://x.ai/news/grok-bot-customer-support
+- Published: 2026-09-22
+- Captured: 2026-09-24T21:10:17Z
+- Release: queued for `011`
+
+SpaceXAI describes how it deployed Grok Bot across its combined SpaceXAI and Cursor customer support operation to handle a 175% increase in tickets without adding headcount, using it for ticket resolution, queue management, and operational analytics.
+
+## Improved token efficiency for longer agent runs — Jediah Katz, Connor O'Keefe & Calvin Yee
+
+- ID: `improved-token-efficiency-for-longer-agent-runs-14383ac7`
+- Source: https://cursor.com/blog/improved-token-efficiency
+- Published: 2026-09-23
+- Captured: 2026-09-24T21:09:55Z
+- Release: queued for `011`
+
+Cursor reduced token costs for users by 7% without reducing agent quality by trimming the system prompt, loading tools dynamically, improving prompt cache reuse, compressing file-read line numbering, and using subagents more strategically.
+
+## Agentic coding is straining CI. Here’s how we scaled test impact analysis at Anthropic — Sachin Malhotra
+
+- ID: `agentic-coding-is-straining-ci-here-s-how-we-sca-86abcc6f`
+- Source: https://claude.com/blog/agentic-coding-is-straining-ci-heres-how-we-scaled-test-impact-analysis-at-anthropic
+- Published: 2026-09-14
+- Captured: 2026-09-24T21:09:34Z
+- Release: queued for `011`
+
+The article describes how Anthropic redesigned its test impact analysis service from a single-process architecture to a stateless, horizontally scalable one after a 25x increase in CI jobs over six months caused repeated capacity failures, with three temporary patches (a bigger machine, sharding, and daily restarts) lasting progressively less time before a full redesign using an in-memory data store solved the problem.
+
+## Seats and Sunsets — Steve Yegge — Steve Yegge
+
+- ID: `seats-and-sunsets-steve-yegge-398a8326`
+- Source: https://yegge.ai/essays/seats-and-sunsets/
+- Published: 2026-09-15
+- Captured: 2026-09-24T21:09:00Z
+- Release: queued for `011`
+
+Steve Yegge describes how rising Claude Fable pricing has forced fuel-efficiency measures on his Wheelhouse agent orchestrator, and argues that agentic "seats" reduce token costs by caching trust and blame-diffusion so models don't have to re-derive safety and legality on every session.
+
+## How We Built Safety Into Muse — Tarek Sheasha
+
+- ID: `how-we-built-safety-into-muse-512c3f7f`
+- Source: https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse
+- Published: 2026-09-08
+- Captured: 2026-09-24T21:07:40Z
+- Release: queued for `011`
+
+The article explains how Meta built Muse, a personal AI agent, with layered safety systems including an isolated runtime cell, a Sentinel permission authority, privilege separation, and a public bug bounty program.
+
+## the senior engineer death spiral — Sunil Pai
+
+- ID: `the-senior-engineer-death-spiral-729d3e6c`
+- Source: https://sunilpai.dev/posts/the-senior-engineer-death-spiral/
+- Published: 2026-09-19
+- Captured: 2026-09-24T21:06:40Z
+- Release: queued for `011`
+
+The article argues that engineers who try to prove themselves through heroic overwork after a promotion or new job often spiral into burnout, and that the better path is to drop a level, become a reliable teammate, and build momentum through consistent small work rather than one big effort.
+
+## llm-wiki — karpathy
+
+- ID: `llm-wiki-91fc906a`
+- Source: https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
+- Published: 2026-04-04
+- Captured: 2026-09-24T21:06:25Z
+- Release: queued for `011`
+
+The gist describes a pattern where an LLM incrementally builds and maintains a persistent, interlinked markdown wiki from raw sources instead of re-deriving answers from scratch via RAG on every query.
+
+## Claude discovers a novel enzyme system
+
+- ID: `claude-discovers-a-novel-enzyme-system-ef1b3a47`
+- Source: https://www.anthropic.com/news/claude-discovers-novel-enzyme-system
+- Published: 2026-09-23
+- Captured: 2026-09-24T21:05:39Z
+- Release: queued for `011`
+
+Anthropic introduces a new life sciences research group whose Claude agents autonomously discovered a novel enzyme system (ART) associated with CRISPR-like DNA repeats in bacteriophages.
+
+## uReview: Scalable, Trustworthy GenAI for Code Review at Uber — Shauvik Roy Choudhary, Sonal Mahajan, Joseph Wang, Akshay Utture, Will Bond
+
+- ID: `ureview-scalable-trustworthy-genai-for-code-revi-296c0ee8`
+- Source: https://www.uber.com/us/en/blog/ureview/
+- Published: 2025-08-12
+- Captured: 2026-09-24T21:05:14Z
+- Release: queued for `011`
+
+The article describes uReview, Uber's in-house AI code review platform that uses a multi-stage GenAI pipeline (comment generation, filtering, validation, deduplication) to analyze over 90% of weekly diffs with a sustained usefulness rate above 75%.
+
 ## DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression — DeepSeek-AI
 
 - ID: `deepseek-v4-1-flash-pushing-the-limits-of-kv-cac-737d50c2`

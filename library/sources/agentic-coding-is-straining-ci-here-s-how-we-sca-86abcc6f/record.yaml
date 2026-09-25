@@ -1,0 +1,8 @@
+id: agentic-coding-is-straining-ci-here-s-how-we-sca-86abcc6f
+title: 'Agentic coding is straining CI. Here’s how we scaled test impact analysis at Anthropic'
+author: 'Sachin Malhotra'
+url: https://claude.com/blog/agentic-coding-is-straining-ci-heres-how-we-scaled-test-impact-analysis-at-anthropic
+captured_at: '2026-09-24T21:09:34Z'
+published_at: '2026-09-14'
+tags: []
+synopsis: 'The article describes how Anthropic redesigned its test impact analysis service from a single-process architecture to a stateless, horizontally scalable one after a 25x increase in CI jobs over six months caused repeated capacity failures, with three temporary patches (a bigger machine, sharding, and daily restarts) lasting progressively less time before a full redesign using an in-memory data store solved the problem.'
