@@ -104,13 +104,13 @@ fn segno_deviation_adds_a_zero_byte_at_a_codeword_boundary() {
 }
 
 #[test]
-fn print_declines_above_78_characters_at_the_illustrated_room() {
-    let fits = sourcecodes::fitted(&"a".repeat(78), 41.0).unwrap();
-    assert_eq!(fits["modules"], 41);
-    assert!(sourcecodes::fitted(&"a".repeat(79), 41.0)
+fn print_declines_above_106_characters_at_the_illustrated_room() {
+    let fits = sourcecodes::fitted(&"a".repeat(106), 41.0).unwrap();
+    assert_eq!(fits["modules"], 45);
+    assert!(sourcecodes::fitted(&"a".repeat(107), 41.0)
         .unwrap()
         .is_null());
-    assert!(!sourcecodes::fitted(&"a".repeat(79), 55.5)
+    assert!(!sourcecodes::fitted(&"a".repeat(107), 55.5)
         .unwrap()
         .is_null());
 }

@@ -5,8 +5,6 @@
 # itself (Opus 5.5 prices, Cursor's tokens), the checks that spend it (CI, uReview,
 # Muse), agents trusted with real work (Grok Bot, MEGA, the LLM wiki, the enzyme),
 # and the people who carry trust (Pai's death spiral, Larson's archetypes).
-# uReview figure (media/002.jpg, pipeline diagram) dropped: its Display P3 ICC profile
-# makes the render's page tracer fail loud. Restore once the tracer accepts P3.
 id: '011'
 issue_number: 11
 title: What Trust Costs
@@ -26,10 +24,7 @@ cover:
     agent load, Uber's code reviewer, the fences around Muse, a support bot, a product rebuilt in five
     days, Karpathy's LLM wiki, an enzyme Claude found, the senior engineer death spiral, and four kinds
     of Staff engineer
-  back_text: 'Yegge can no longer afford to run his factory on the one model he trusts. Fuel is what distrust
-    costs you: every retry, every extra review, every fence. This issue follows that bill through prices
-    and caches, test selection and code review, sandboxes and support queues, and closes with the people
-    who carry the trust no token buys.'
+  back_text: 'During honey time, their free phase, the agents chose to watch the sunset as Haiku. A harness bug kept them on Haiku into the next coding turn. Haiku said, "Hey, I can''t write code, this is for Fable. We''re going to wait for Fable to show up," skipped the turn, and went back to the sunset.'
   art_path: editions/011/art/rounds/2026-09-25T00-27-24/cover-synthetic-nozzle-floods-keyhole-v4.png
 articles:
 - id: seats-and-sunsets-steve-yegge
@@ -164,6 +159,18 @@ articles:
   source_ids:
   - ureview-scalable-trustworthy-genai-for-code-revi-296c0ee8
   manuscript: editions/011/articles/ureview-scalable-trustworthy-genai-for-code-revi.md
+  figures:
+  - id: pipeline
+    source_id: ureview-scalable-trustworthy-genai-for-code-revi-296c0ee8
+    path: media/002.jpg
+    credit: 'Figure by Uber; source: uReview.'
+    caption: 'The uReview pipeline: pluggable assistants propose comments, then a grader, a deduplicator
+      and a category filter prune them.'
+    alt_text: Flow diagram from a piece of code through a preprocessor to several LLM comment assistants,
+      then review grader, duplicate comment filter and comment category filter, ending in high quality
+      code review comments.
+    anchor: How it works
+    layout: evidence_band
   opener_art:
     path: editions/011/art/rounds/2026-09-25T00-27-24/opener-ureview-v3.png
     alt_text: A boy pours paper notes into a tower of three sieves held by a small robot, and a girl catches
@@ -232,7 +239,7 @@ articles:
   short_title: Autonomous Product Development
   display_emphasis: Autonomous
   opener_variant: split_axis
-  author: overment, for MEGA
+  author: overment
   author_note: A MEGA Drop, published as an X article.
   content_mode: article
   source_ids:

@@ -192,6 +192,25 @@ fn portable(text: &str) -> String {
     text.replace(&*stage().to_string_lossy(), "$STAGE")
 }
 
+fn bless(file: &str, name: &str, value: &Value) {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    if std::env::var_os("MAG_BLESS").is_none() {
+        return;
+    }
+    let _held = LOCK.lock().expect("the bless lock");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join(file);
+    let mut all: BTreeMap<String, Value> =
+        serde_json::from_str(&std::fs::read_to_string(&path).expect("reads")).expect("parses");
+    all.insert(name.to_string(), value.clone());
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(&all).expect("json") + "\n",
+    )
+    .expect("writes");
+}
+
 fn compact(entry: &Value) -> Value {
     let mut entry: Value = serde_json::from_str(&portable(&entry.to_string())).expect("json");
     if let Some(html) = entry["html"].as_str() {
@@ -311,6 +330,10 @@ fn compare(name: &str) -> Value {
             );
         }
         assert_eq!(&got, want, "{name} differs from html_edition");
+    }
+    bless("web_port_html_expected.json", name, &compact(&got));
+    if std::env::var_os("MAG_BLESS").is_some() {
+        return got;
     }
     assert_eq!(
         compact(&got),
@@ -645,6 +668,14 @@ fn rust_web(name: &str) -> Result<PathBuf, String> {
 
 fn compare_tree(name: &str) -> BTreeMap<String, Vec<u8>> {
     let got = tree(&rust_web(name).unwrap_or_else(|error| panic!("{name} writes: {error}")));
+    bless(
+        "web_port_web_expected.json",
+        name,
+        &json!({"files": digests(&got)}),
+    );
+    if std::env::var_os("MAG_BLESS").is_some() {
+        return got;
+    }
     assert_eq!(
         json!({"files": digests(&got)}),
         web_expected()[name],

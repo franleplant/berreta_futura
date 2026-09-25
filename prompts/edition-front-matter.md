@@ -28,22 +28,30 @@ inside, concretely, without theme-speak.
 
 ## The back cover
 
-`cover.back_text` is a freestanding piece of writing that a stranger could
-read with pleasure knowing nothing about the magazine. It is the last thing
-a browser reads before deciding; it is not a synopsis.
+`cover.back_text` is the hook on the back of the magazine: someone turns it
+over, reads it, and has to open it. Make it fun and make it about the
+content: a scene, a dare, a riddle, a tiny story, or a surprising fact lifted
+from one of the articles, told so the reader wants the rest.
 
-- Never reference "this issue", "these pages", the magazine, or the act of
-  reading; no inventory of contents.
-- Forms that work: a very short story, a scene, an aphorism argued in three
-  sentences, a claim with a cost attached, a question that stings. One idea
-  only.
-- It may share blood with the issue's material, but it must stand alone:
-  the test is whether it would be worth printing on the back of a blank
-  notebook.
-- Hard budget: it must fit the back-cover plate the renderer gives it
-  (roughly 60 words; the render fails loudly when it cannot fit).
+- Never reference "this issue", "these pages", "inside", the magazine, or
+  the act of reading; no inventory or synopsis of contents.
+- One idea only, taken from the articles' actual material: a real number, a
+  real scene, a real claim. Invent nothing the articles do not say.
+- Playful beats solemn. A grin or a raised eyebrow is the goal.
+- Hard budget: 60 words at most (the render fails loudly when it cannot fit).
 
 ## The cover deck
 
 One line under the headline, concrete inventory or a second punch; never a
 restatement of the title in different abstractions.
+
+## Output
+
+Reply with YAML only, no fences and no commentary, with exactly these keys,
+each a single-line string:
+
+title: the edition title
+subtitle: the deck (inventory line)
+back_text: the back cover
+
+Never use the em dash character (U+2014).

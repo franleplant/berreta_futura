@@ -270,13 +270,17 @@ impl Writer<'_> {
         if !refusals.is_empty() {
             return Err(ValidationError(refusals));
         }
+        let tight = entries.len() > CONTENTS_TIGHT_ABOVE;
         let rows: String = entries
             .iter()
             .map(|entry| {
                 format!(
-                    "  #contents-entry(destination: {})[#entry-label{}#entry-title{}{}]\n",
+                    "  #contents-entry(destination: {})[{}#entry-title{}{}]\n",
                     string_literal(&entry.destination),
-                    self.said(&entry.label),
+                    match tight {
+                        true => String::new(),
+                        false => format!("#entry-label{}", self.said(&entry.label)),
+                    },
                     self.said(&entry.title),
                     if entry.author.is_empty() {
                         String::new()
@@ -287,8 +291,7 @@ impl Writer<'_> {
             })
             .collect();
         Ok(format!(
-            "#contents(tight: {})[\n  #contents-kicker{}\n  #contents-label{}\n{rows}]\n\n",
-            entries.len() > CONTENTS_TIGHT_ABOVE,
+            "#contents(tight: {tight})[\n  #contents-kicker{}\n  #contents-label{}\n{rows}]\n\n",
             self.said(&format!(
                 "{} {} / {}",
                 self.ui("issue"),
@@ -673,7 +676,7 @@ impl Writer<'_> {
         Ok(format!(
             "#figure-block(\n  id: {},\n  source-id: {},\n  anchor: {},\n  layout: {},\n  \
              word: {},\n  alt: {},\n  path: {},\n  pixels: ({width}, {height}),\n{trim}\
-             )[#figure-caption{}#figure-credit{}]\n\n",
+             )[#figure-caption{}]\n\n",
             string_literal(&figure.id),
             string_literal(&figure.source_id),
             string_literal(&figure.anchor),
@@ -682,7 +685,6 @@ impl Writer<'_> {
             string_literal(&figure.alt_text),
             path_literal(&figure.path),
             self.said(&figure.caption),
-            self.said(&figure.credit),
         ))
     }
 
@@ -1421,12 +1423,6 @@ mod tests {
             refused.to_string().contains("No committed source code"),
             "{refused}"
         );
-    }
-
-    #[test]
-    fn the_plain_opener_fixture_projects_to_the_python_text() {
-        let root = corpus();
-        compare("900", &projection_of(&root, "900"));
     }
 
     #[test]

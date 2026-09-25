@@ -66,6 +66,48 @@ pub fn art_zones(path: &Path, band_x: f64, page_height: f64) -> Result<(Zone, Zo
     ))
 }
 
+pub fn luminance(rgb: [f64; 3]) -> f64 {
+    let linear = |c: f64| match c <= 0.04045 {
+        true => c / 12.92,
+        false => ((c + 0.055) / 1.055).powf(2.4),
+    };
+    0.2126 * linear(rgb[0]) + 0.7152 * linear(rgb[1]) + 0.0722 * linear(rgb[2])
+}
+
+pub fn extreme_pixels(
+    path: &Path,
+    band_x: f64,
+    page_height: f64,
+    area: [f64; 4],
+) -> Result<([f64; 3], [f64; 3])> {
+    let image = decode_rgb(path)?;
+    let ratio = (band_x / f64::from(image.width)).max(page_height / f64::from(image.height));
+    let ox = (f64::from(image.width) - band_x / ratio) / 2.0;
+    let oy = (f64::from(image.height) - page_height / ratio) / 2.0;
+    let pixel =
+        |value: f64, offset: f64, limit: u32| ((value / ratio + offset).max(0.0) as u32).min(limit);
+    let patch = crop(
+        &image,
+        pixel(area[0], ox, image.width),
+        pixel(area[1], oy, image.height),
+        pixel(area[2], ox, image.width),
+        pixel(area[3], oy, image.height),
+    );
+    let mut colours: Vec<[f64; 3]> = patch
+        .data
+        .chunks_exact(3)
+        .map(|p| [p[0], p[1], p[2]].map(|c| f64::from(c) / 255.0))
+        .collect();
+    colours.sort_by(|a, b| luminance(*a).total_cmp(&luminance(*b)));
+    let at = |fraction: f64| {
+        colours
+            .get(((colours.len().saturating_sub(1)) as f64 * fraction) as usize)
+            .copied()
+            .unwrap_or([0.5; 3])
+    };
+    Ok((at(0.02), at(0.98)))
+}
+
 pub fn graded_art(path: &Path) -> Result<Vec<u8>> {
     let image = decode_rgb(path)?;
     let mut graded = Vec::with_capacity(image.data.len());
