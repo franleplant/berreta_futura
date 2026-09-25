@@ -1,0 +1,8 @@
+id: what-a-task-costs-on-opus-5-5-3d1eacfa
+title: 'What a task costs on Opus 5.5'
+author: 'Addy Osmani'
+url: https://claude.com/blog/what-a-task-costs-on-opus-5-5
+captured_at: '2026-09-24T21:13:06Z'
+published_at: '2026-09-22'
+tags: []
+synopsis: 'The article explains what drives the token cost of a Claude Code task (turns, cache reads, output tokens, model choice) and details the price and behavior changes in Opus 5.5 compared to Opus 5, along with tips for managing session costs.'
