@@ -1285,7 +1285,7 @@ mod tests {
     }
 
     fn fonts() -> PathBuf {
-        repository().join("src/magazine/assets/fonts")
+        repository().join("mag/assets/fonts")
     }
 
     fn fixtures() -> PathBuf {
@@ -1484,9 +1484,8 @@ mod tests {
 
     #[test]
     fn the_code_inks_are_the_stylesheet_s_own() {
-        let css =
-            std::fs::read_to_string(repository().join("src/magazine/assets/weasyprint-a5.css"))
-                .expect("the stylesheet is readable");
+        let css = std::fs::read_to_string(repository().join("mag/tests/code-inks.css"))
+            .expect("the stylesheet is readable");
         let mut found: Vec<(String, String)> = vec![];
         for line in css.lines().filter(|l| l.starts_with("pre code .")) {
             let (selectors, rule) = line.split_once('{').expect("a rule opens");

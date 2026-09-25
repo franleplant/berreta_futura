@@ -119,7 +119,7 @@ fn raster_hash(document: &str) -> String {
 }
 
 fn build(layout: &str) -> String {
-    let assets = repository().join("src/magazine/assets");
+    let assets = repository().join("mag/assets");
     let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
     let design = design();
     let mut builder = Builder {
@@ -157,7 +157,7 @@ fn footer_caption_still_dispatches_through_materialize() {
 
 #[test]
 fn an_unknown_layout_is_refused_as_python_refuses_it() {
-    let assets = repository().join("src/magazine/assets");
+    let assets = repository().join("mag/assets");
     let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
     let design = design();
     let mut builder = Builder {
@@ -175,7 +175,7 @@ fn an_unknown_layout_is_refused_as_python_refuses_it() {
 
 #[test]
 fn missing_cover_art_is_refused_by_every_mode_that_places_it() {
-    let assets = repository().join("src/magazine/assets");
+    let assets = repository().join("mag/assets");
     let absent = repository().join("editions/010/art/does-not-exist.png");
     for layout in ["framed", "honored_plate"] {
         let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
@@ -196,7 +196,7 @@ fn missing_cover_art_is_refused_by_every_mode_that_places_it() {
 }
 
 fn compile(layout: &str, mutate: impl FnOnce(&mut CoverText)) -> Result<String, String> {
-    let assets = repository().join("src/magazine/assets");
+    let assets = repository().join("mag/assets");
     let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
     let design = design();
     let mut builder = Builder {

@@ -18,8 +18,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   documenting the gap here is the fallback, not the fix.
 - `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
   loads `edition.yaml`, lays out reader pages, and writes the PDF and web
-  output. `src/magazine/` (Python, WeasyPrint, run through `uv`) stays only
-  as the rollback (`--engine weasyprint`) until it is deleted.
+  output. There is no other engine and no Python in the render path.
+- `tools/letter.py`, `coverproof.py`, `compare.py`, and `read.py` are
+  standalone Python side scripts (`uv run --with <dep> tools/<name>.py`), not
+  pipeline steps; nothing in `mag` calls them.
 - `mag print <url> [--html file] [--out dir] [--chrome bin]` is a standalone
   side tool, not an edition step: it turns one blog post into
   `output/print/<slug>/print.pdf` ready to print (plus the self-contained
@@ -112,19 +114,20 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - Ship each feature complete in the fewest lines that stay readable, and
   keep cyclomatic complexity low. Style is enforced by tooling, not prose:
   `cargo fmt`, `cargo clippy` (complexity and length lints in Cargo.toml),
-  `uvx ruff format` and `uvx ruff check` (C901, ERA in pyproject.toml), and
-  `tools/nocomments.py` under `cargo test` for the one rule no linter has
-  (no comments; clap help text and `__doc__` usage strings excepted).
+  `uvx ruff format` and `uvx ruff check` on `tools/` (C901, ERA in ruff.toml),
+  and `mag/tests/nocomments.rs` under `cargo test` for the one rule no linter
+  has (no comments; clap help text and `__doc__` usage strings excepted).
 
 - Never author Unicode U+2014 in prose, comments, prompts, or copy. Preserve it
   only inside captured source text or an exact quotation.
 - Keep `.magazine/`, `output/`, run scratch, and credentials out of Git.
 - Setup, once per clone: `git config core.hooksPath .githooks`. The
   pre-commit hook then runs `cargo fmt --check`, `cargo clippy -D warnings`,
-  `ruff format --check`, `ruff check`, and `tools/nocomments.py`; a commit
-  that fails any of them does not land, and `cargo test` fails until the
-  hook is installed. Zero warnings is the standing state, not a goal.
+  `ruff format --check` and `ruff check` on `tools/`, and the no-comments
+  test; a commit that fails any of them does not land, and `cargo test`
+  fails until the hook is installed. Zero warnings is the standing state, not a goal.
 - Verification: `cargo test` in `mag/` (also runs the comment check and the
-  hook-install check); load the editions through
-  `magazine.manifest.load_edition` when the Python rollback changes.
+  hook-install check). Committed expectations are regression snapshots of the
+  Rust output; the web port re-blesses with `MAG_BLESS=1` after an intended
+  change.
 - Work on the branch the user asks for and commit coherent checkpoints.

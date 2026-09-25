@@ -1,0 +1,8 @@
+pre code .k, pre code .kc, pre code .kd, pre code .kn, pre code .kp, pre code .kr, pre code .ow { color: rgb(240 87 56); }
+pre code .kt { color: rgb(25% 10% 43%); }
+pre code .s, pre code .s1, pre code .s2, pre code .sb, pre code .sd, pre code .se, pre code .si, pre code .sr, pre code .ss, pre code .sa { color: rgb(9% 33% 20%); }
+pre code .c, pre code .c1, pre code .cm, pre code .cs, pre code .cp, pre code .cpf { color: rgb(46% 45% 48%); }
+pre code .m, pre code .mi, pre code .mf, pre code .mh, pre code .mo, pre code .mb, pre code .il { color: rgb(45% 12% 16%); }
+pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd { color: rgb(11% 22% 55%); }
+pre code .nb, pre code .bp, pre code .nt { color: rgb(11% 22% 55%); }
+pre code .o, pre code .p { color: inherit; }

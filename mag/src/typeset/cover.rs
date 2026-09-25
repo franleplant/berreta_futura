@@ -609,7 +609,7 @@ mod tests {
 
     #[test]
     fn a_framed_cover_without_art_draws_the_violet_placeholder_and_other_layouts_refuse() {
-        let assets = root().join("src/magazine/assets");
+        let assets = root().join("mag/assets");
         let (design, _) = super::design(&root()).expect("design.toml loads");
         let framed = |layout: &str| {
             let mut cover = serde_yaml::Mapping::new();
@@ -631,7 +631,7 @@ mod tests {
     }
 
     fn back_face(language: &str, cover: serde_yaml::Mapping) -> (String, Face) {
-        let assets = root().join("src/magazine/assets");
+        let assets = root().join("mag/assets");
         let (design, back_design) = design(&root()).expect("design.toml loads");
         let mut fonts = Fonts::load(&assets).expect("cover faces load");
         let mut serif = Serif::open(&assets).expect("serif loads");
@@ -748,8 +748,8 @@ mod tests {
     }
 
     fn face(title: &str) -> Vec<u8> {
-        let inter = std::fs::read(root().join("src/magazine/assets/fonts/inter/Inter-Regular.ttf"))
-            .expect("inter");
+        let inter =
+            std::fs::read(root().join("mag/assets/fonts/inter/Inter-Regular.ttf")).expect("inter");
         let face = Face {
             title: title.into(),
             fills: pdf::back_fills(1.5, (1.0, 0.0, 0.0)),

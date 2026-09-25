@@ -42,7 +42,6 @@ pub(crate) fn run_request(
     repo_root: &Path,
     render_dir: &Path,
     request_json: &str,
-    parity: bool,
 ) -> Result<Value> {
     let request: Value =
         serde_json::from_str(request_json).context("parsing the render request as JSON")?;
@@ -73,13 +72,10 @@ pub(crate) fn run_request(
         field(&request, "editionId")?,
         field(&request, "publicationName")?,
     )?;
-    let hyphenation = match parity {
-        true => hyphen::Hyphenation::PARITY,
-        false => hyphen::Hyphenation::from_settings(|key| {
-            crate::render::toml_value(repo_root, "render", key)
-        })
-        .map_err(anyhow::Error::msg)?,
-    };
+    let hyphenation = hyphen::Hyphenation::from_settings(|key| {
+        crate::render::toml_value(repo_root, "render", key)
+    })
+    .map_err(anyhow::Error::msg)?;
     let mut result = serde_json::json!({"layouts": [], "files": [], "warnings": []});
     for language in languages {
         let edition = if language == primary {
@@ -146,7 +142,7 @@ fn render_language(
             out_dir: &out_dir,
             render_dir,
             work,
-            assets: &repo_root.join("src/magazine/assets"),
+            assets: &repo_root.join("mag/assets"),
             raw: request,
         },
         &document,

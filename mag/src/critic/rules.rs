@@ -15,7 +15,7 @@ use crate::impose::{
     cover_wrap_plan, imposed_reader_page_plan, section_reader_pages, A4_LANDSCAPE_POINTS,
 };
 use crate::model::shared::is_python_space;
-use crate::parity::{trace_elements, Element, TextFace};
+use crate::trace::{trace_elements, Element, TextFace};
 
 pub const GEOMETRY_TOLERANCE: f64 = 0.75;
 pub const VOID_DOWNSAMPLE: u32 = 8;

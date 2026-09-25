@@ -10,11 +10,8 @@ prompts/                the hand-tested writer, plan, art, and translate prompts
 
 `mag` (Rust, `mag/`) drives the workflow: `plan` proposes an edition from
 unused sources, `produce` writes the articles, `art` and `translate` do what
-they say, and `render` stages an edition and calls the Python renderer.
-
-`src/magazine/` (Python, via `uv`) is the renderer seam: it validates
-`edition.yaml`, lays out A5 reader pages, and emits PDF and web output with
-WeasyPrint. It has no workflow authority.
+they say, and `render` stages an edition and typesets it through Typst
+(`mag/src/typeset/`), writing the PDF, booklet, and web outputs.
 
 `library/release-state.yaml` records which sources are queued for or released
 in each edition. `sources.md` is generated from the source records.

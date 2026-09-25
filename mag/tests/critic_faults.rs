@@ -6,19 +6,19 @@ mod model {
     pub use super::shared;
 }
 
-#[path = "../src/parity/exact.rs"]
+#[path = "../src/trace/exact.rs"]
 #[allow(dead_code)]
 pub mod exact;
-#[path = "../src/parity/streams.rs"]
+#[path = "../src/trace/streams.rs"]
 #[allow(dead_code, clippy::new_without_default)]
 pub mod streams;
 
-#[path = "../src/parity/display.rs"]
+#[path = "../src/trace/elements.rs"]
 #[allow(dead_code)]
-pub mod display;
+pub mod elements;
 
-mod parity {
-    pub use super::display::trace_elements;
+mod trace {
+    pub use super::elements::trace_elements;
     pub use super::exact::{authored, num};
     #[allow(unused_imports)]
     pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};
@@ -56,7 +56,6 @@ use lopdf::{dictionary, Dictionary, Document, Object, ObjectId, Stream};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
 
 type Row = (&'static str, &'static str, Option<usize>);
 type Probe = (&'static str, usize, &'static str, fn() -> Value);
@@ -80,30 +79,6 @@ const ORDER: [Row; 3] = [
     ("interior-booklet-page-order", "error", None),
     ("cover-booklet-page-order", "error", None),
 ];
-
-const PYTHON: &str = r#"
-import json, sys
-from pathlib import Path
-sys.path.insert(0, "src")
-import magazine.render_critic as critic
-d = Path(sys.argv[1])
-layout = json.loads((d / "edition-manifest.json").read_text())["layout"]
-report, _ = critic.inspect_render(
-    d / "reader.pdf", d / "booklet-a4.pdf", d,
-    interior_booklet_pdf=d / "booklet-a4-interior.pdf",
-    cover_booklet_pdf=d / "booklet-a4-cover.pdf",
-    language="en", toc=layout["toc"], article_pages=layout["article_pages"],
-    editorial_pages=layout.get("editorial_pages"), edition_id="010", recorded_review=None,
-)
-print(json.dumps({
-    "result": report["result"], "issues": report["issues"],
-    "reader": report["pages"], "booklet": report["home_booklet"]["pages"],
-    "cover": report["home_booklet_cover"]["pages"],
-    "spreads": report["home_booklet"]["spreads"],
-    "interior_spreads": report["home_booklet_interior"]["spreads"],
-    "cover_spreads": report["home_booklet_cover"]["spreads"],
-}))
-"#;
 
 struct Pdf {
     doc: Document,
@@ -749,44 +724,9 @@ fn probe_key((leg, number, field, _): &Probe) -> String {
     format!("{leg} {number} {field}")
 }
 
-fn committed_python(staged: &[[PathBuf; 2]]) -> Value {
-    let text = oracle::expectation("critic_faults_expected.json", || {
-        let children: Vec<Child> = staged.iter().map(|[py, _]| python(py)).collect();
-        let mut verdicts = BTreeMap::new();
-        for ((child, fault), [py, _]) in children.into_iter().zip(&FAULTS).zip(staged) {
-            let output = child.wait_with_output().expect("python finishes");
-            assert!(
-                output.status.success(),
-                "{}: python critic failed: {}",
-                fault.name,
-                String::from_utf8_lossy(&output.stderr)
-            );
-            let full: Value = serde_json::from_slice(&output.stdout).expect("python prints json");
-            let probes: BTreeMap<String, Value> = fault
-                .probes
-                .iter()
-                .map(|probe @ (leg, number, field, _)| {
-                    (probe_key(probe), full[*leg][number - 1][*field].clone())
-                })
-                .collect();
-            let python =
-                json!({"result": full["result"], "issues": full["issues"], "probes": probes});
-            verdicts.insert(fault.name, json!({"inputs": inputs(py), "python": python}));
-        }
-        serde_json::to_string_pretty(&verdicts).expect("json") + "\n"
-    });
+fn committed_python(_staged: &[[PathBuf; 2]]) -> Value {
+    let text = oracle::expectation("critic_faults_expected.json");
     serde_json::from_str(&text).expect("the expectation parses")
-}
-
-fn python(dir: &Path) -> Child {
-    Command::new("uv")
-        .args(["run", "python", "-c", PYTHON])
-        .arg(dir)
-        .current_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join(".."))
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("uv runs")
 }
 
 #[test]

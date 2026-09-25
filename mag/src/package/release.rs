@@ -12,7 +12,7 @@ use crate::impose::{
 };
 use crate::package::contact::write_contact_sheets;
 use crate::package::preflight::{inspect_package, FigurePlacement, Pdf};
-use crate::parity::TextFace;
+use crate::trace::TextFace;
 
 const RENDERED_TAIL_ARTS_KEY: &str = "_rendered_tail_arts";
 const REVIEW_INSTRUCTIONS: &str = "Inspect every page on the contact sheets, then reopen every crop from its exact file path at original resolution. Do not approve from a resized preview. Automated checks do not judge typographic rhythm, visual hierarchy, or aesthetic quality. For an illustrated opener, verify the orange rectangle begins down and right: white remains outside the black frame at the top-right before the shadow begins and at the bottom-left before it begins. The crops/ set enlarges every opener block, placed figure, printed tail band, and flagged region at 300 ppi so type quality and locked geometry are judged from source pixels rather than thumbnails.";

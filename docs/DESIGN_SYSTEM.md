@@ -1,10 +1,8 @@
 # BERRETA FUTURA design system
 
 This document defines visual policy. `mag` (Rust) runs the pipeline, and
-`mag render` typesets editions with the native typst engine, the default in
-`magazine.toml [render] engine`. The Python WeasyPrint renderer stays behind
-`mag render --engine weasyprint` as the rollback; it does not decide layout
-approval or release.
+`mag render` typesets editions with Typst, natively in Rust
+(`mag/src/typeset/`).
 
 ## Design position
 

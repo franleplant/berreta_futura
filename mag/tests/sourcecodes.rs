@@ -7,7 +7,6 @@ mod sourcecodes;
 use qrcodegen::{Mask, QrCode, QrCodeEcc, QrSegment, Version};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const CORPUS: &str = "tests/typeset_fixtures/corpus";
 const SNAPSHOT: &str = "tests/repo_snapshot";
@@ -35,44 +34,6 @@ fn rust_writes_every_committed_expected_file_byte_for_byte() {
         assert!(differences.is_empty(), "{edition}: {differences:?}");
         assert_eq!(declines, 0, "{edition}");
     }
-}
-
-#[test]
-fn committed_expected_files_are_what_the_python_tool_writes() {
-    if !oracle::live() {
-        return;
-    }
-    let scratch = std::env::temp_dir().join(format!("mag-sourcecodes-{}", std::process::id()));
-    for (root, edition) in EDITIONS {
-        let destination = scratch.join(edition);
-        let status = Command::new("uv")
-            .args([
-                "run",
-                "--quiet",
-                "python",
-                "mag/tests/sourcecodes_oracle.py",
-            ])
-            .arg(Path::new(root).canonicalize().unwrap())
-            .arg(edition)
-            .arg(&destination)
-            .current_dir("..")
-            .status()
-            .expect("uv runs");
-        assert!(status.success(), "{edition}: python oracle failed");
-        let files: sourcecodes::Files = std::fs::read_dir(&destination)
-            .unwrap()
-            .map(|entry| {
-                let path = entry.unwrap().path();
-                (
-                    path.file_name().unwrap().to_string_lossy().into_owned(),
-                    std::fs::read(path).unwrap(),
-                )
-            })
-            .collect();
-        let differences = sourcecodes::differences(&files, &expected(edition)).unwrap();
-        assert!(differences.is_empty(), "{edition}: {differences:?}");
-    }
-    std::fs::remove_dir_all(scratch).ok();
 }
 
 #[test]

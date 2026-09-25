@@ -6,7 +6,7 @@ pub mod text;
 #[cfg(test)]
 mod parity_seam_is_reachable_from_critic {
     use crate::critic::text::page_text;
-    use crate::parity::{qc, qo, trace_elements, Color, Element, TextFace, GLYPH_QUANTUM};
+    use crate::trace::{qc, qo, trace_elements, Color, Element, TextFace, GLYPH_QUANTUM};
     use std::collections::BTreeMap;
     use std::path::Path;
 

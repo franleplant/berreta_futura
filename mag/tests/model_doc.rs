@@ -17,7 +17,7 @@ fn repository() -> PathBuf {
 }
 
 fn settable() -> BTreeSet<u32> {
-    doc::settable_codepoints(&repository().join("src/magazine/assets/fonts"))
+    doc::settable_codepoints(&repository().join("mag/assets/fonts"))
         .expect("the vendored faces are readable")
 }
 

@@ -193,13 +193,6 @@ pub enum Element {
     },
 }
 
-pub struct Pose {
-    pub m: M,
-    pub offs: Vec<[f64; 2]>,
-}
-
-pub type Poses = HashMap<usize, Pose>;
-
 struct Font {
     name: String,
     two_byte: bool,
@@ -280,7 +273,6 @@ struct Tracer<'a> {
     font_map: &'a BTreeMap<String, Face>,
     caches: &'a mut Caches,
     out: Vec<Element>,
-    poses: Poses,
     gs: GState,
     stack: Vec<GState>,
     tm: M,
@@ -297,15 +289,6 @@ pub fn trace_page(
     font_map: &BTreeMap<String, Face>,
     caches: &mut Caches,
 ) -> Result<Vec<Element>> {
-    Ok(trace_posed(doc, page_id, font_map, caches)?.0)
-}
-
-pub fn trace_posed(
-    doc: &Document,
-    page_id: ObjectId,
-    font_map: &BTreeMap<String, Face>,
-    caches: &mut Caches,
-) -> Result<(Vec<Element>, Poses)> {
     let content = doc.get_page_content(page_id);
     let resources = page_resources(doc, page_id)?;
     let mut tracer = Tracer {
@@ -313,7 +296,6 @@ pub fn trace_posed(
         font_map,
         caches,
         out: vec![],
-        poses: HashMap::new(),
         gs: GState::new(),
         stack: vec![],
         tm: ID,
@@ -324,7 +306,7 @@ pub fn trace_posed(
         pending_clip: None,
     };
     tracer.run(&content, resources)?;
-    Ok((tracer.out, tracer.poses))
+    Ok(tracer.out)
 }
 
 fn arity(operator: &str) -> Option<usize> {
@@ -587,11 +569,6 @@ impl Tracer<'_> {
         }
         let exact: Vec<[f64; 2]> = starts.iter().map(|v| [v * base[0], v * base[1]]).collect();
         let offs = exact.iter().map(|v| v.map(qo)).collect();
-        let pose = Pose {
-            m: trm,
-            offs: exact,
-        };
-        self.poses.insert(self.out.len(), pose);
         self.out.push(Element::Text {
             s: units.concat(),
             font: font.name.clone(),
@@ -779,11 +756,6 @@ impl Tracer<'_> {
             self.caches.images.insert(id, decoded);
         }
         let hash = self.caches.images[&id].clone();
-        let pose = Pose {
-            m: self.gs.ctm,
-            offs: vec![],
-        };
-        self.poses.insert(self.out.len(), pose);
         self.out.push(Element::Image {
             paint_sha256: hash,
             m: self.gs.ctm.map(qc),
@@ -1759,8 +1731,8 @@ mod tests {
         }
     }
 
-    const SRGB: &[u8] = include_bytes!("../../tests/parity_icc/sRGB-v4.icc");
-    const SGREY: &[u8] = include_bytes!("../../tests/parity_icc/sGrey-v4.icc");
+    const SRGB: &[u8] = include_bytes!("../../tests/trace_icc/sRGB-v4.icc");
+    const SGREY: &[u8] = include_bytes!("../../tests/trace_icc/sGrey-v4.icc");
 
     fn trace(ops: &str, spaces: Vec<(&str, Object)>) -> Result<Vec<Element>> {
         trace_with(ops, spaces, None)
@@ -2092,7 +2064,7 @@ mod tests {
 
     fn jpeg(name: &str) -> Vec<u8> {
         std::fs::read(format!(
-            "{}/tests/parity_jpeg/{name}",
+            "{}/tests/trace_jpeg/{name}",
             env!("CARGO_MANIFEST_DIR")
         ))
         .unwrap()
