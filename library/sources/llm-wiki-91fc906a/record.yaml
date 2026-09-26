@@ -1,0 +1,8 @@
+id: llm-wiki-91fc906a
+title: 'llm-wiki'
+author: 'karpathy'
+url: https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
+captured_at: '2026-09-24T21:06:25Z'
+published_at: '2026-04-04'
+tags: []
+synopsis: 'The gist describes a pattern where an LLM incrementally builds and maintains a persistent, interlinked markdown wiki from raw sources instead of re-deriving answers from scratch via RAG on every query.'

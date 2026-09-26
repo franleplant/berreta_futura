@@ -1,0 +1,8 @@
+id: ureview-scalable-trustworthy-genai-for-code-revi-296c0ee8
+title: 'uReview: Scalable, Trustworthy GenAI for Code Review at Uber'
+author: 'Shauvik Roy Choudhary, Sonal Mahajan, Joseph Wang, Akshay Utture, Will Bond'
+url: https://www.uber.com/us/en/blog/ureview/
+captured_at: '2026-09-24T21:05:14Z'
+published_at: '2025-08-12'
+tags: []
+synopsis: 'The article describes uReview, Uber''s in-house AI code review platform that uses a multi-stage GenAI pipeline (comment generation, filtering, validation, deduplication) to analyze over 90% of weekly diffs with a sustained usefulness rate above 75%.'

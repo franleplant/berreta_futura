@@ -225,6 +225,16 @@ fn cover_date_matches_python() {
 }
 
 #[test]
+fn a_multi_author_article_collapses_to_its_lead_author() {
+    let roster = text::cover_contributors(&plain(&[
+        "Ann Lee, Bo Chen & Cy Dee",
+        "Ann Lee and Dan",
+        "Eve",
+    ]));
+    assert_eq!(roster, "ANN LEE ET AL. / EVE");
+}
+
+#[test]
 fn cover_contributors_matches_python() {
     check(
         "cover_contributors",

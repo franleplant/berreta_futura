@@ -6,19 +6,19 @@ mod model {
     pub use super::shared;
 }
 
-#[path = "../src/parity/exact.rs"]
+#[path = "../src/trace/exact.rs"]
 #[allow(dead_code)]
 pub mod exact;
-#[path = "../src/parity/streams.rs"]
+#[path = "../src/trace/streams.rs"]
 #[allow(dead_code, clippy::new_without_default)]
 pub mod streams;
 
-#[path = "../src/parity/display.rs"]
+#[path = "../src/trace/elements.rs"]
 #[allow(dead_code)]
-pub mod display;
+pub mod elements;
 
-mod parity {
-    pub use super::display::trace_elements;
+mod trace {
+    pub use super::elements::trace_elements;
     #[allow(unused_imports)]
     pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};
 }
@@ -120,7 +120,7 @@ fn reconstructs_edition_010_text() {
         pdf.display()
     );
     println!("MODE: full, tracing {}", pdf.display());
-    let pages = display::trace_elements(&pdf, 1, 56, &font_map()).expect("trace");
+    let pages = elements::trace_elements(&pdf, 1, 56, &font_map()).expect("trace");
     let empty: Vec<usize> = pages
         .iter()
         .enumerate()

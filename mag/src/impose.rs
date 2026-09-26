@@ -1,5 +1,5 @@
 use super::model::shared::py_repr;
-use super::parity::{authored, num};
+use super::trace::{authored, num};
 use anyhow::{bail, Context, Result};
 use lopdf::content::Content;
 use lopdf::{Dictionary, Document, Object, ObjectId};

@@ -1,14 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
-const ALLOWED: [(&str, &str, &str); 23] = [
+const ALLOWED: [(&str, &str, &str); 19] = [
     (
         "cover/outline.rs",
         "move_to",
         "ttf_parser::OutlineBuilder trait-required name on a distinct type",
     ),
     (
-        "parity/streams.rs",
+        "trace/streams.rs",
         "move_to",
         "ttf_parser::OutlineBuilder trait-required name on a distinct type",
     ),
@@ -18,7 +18,7 @@ const ALLOWED: [(&str, &str, &str); 23] = [
         "ttf_parser::OutlineBuilder trait-required name on a distinct type",
     ),
     (
-        "parity/streams.rs",
+        "trace/streams.rs",
         "line_to",
         "ttf_parser::OutlineBuilder trait-required name on a distinct type",
     ),
@@ -28,7 +28,7 @@ const ALLOWED: [(&str, &str, &str); 23] = [
         "ttf_parser::OutlineBuilder trait-required name on a distinct type",
     ),
     (
-        "parity/streams.rs",
+        "trace/streams.rs",
         "close",
         "ttf_parser::OutlineBuilder trait-required name on a distinct type",
     ),
@@ -38,19 +38,9 @@ const ALLOWED: [(&str, &str, &str); 23] = [
         "constructor convention on a distinct type",
     ),
     (
-        "parity/streams.rs",
+        "trace/streams.rs",
         "new",
         "constructor convention on a distinct type",
-    ),
-    (
-        "parity/display.rs",
-        "deref",
-        "genuine duplicate of parity/streams.rs resolve, renamed; WP-0.2h owns both",
-    ),
-    (
-        "parity/streams.rs",
-        "resolve",
-        "genuine duplicate of parity/display.rs deref, renamed; WP-0.2h owns both",
     ),
     (
         "caller.rs",
@@ -63,7 +53,7 @@ const ALLOWED: [(&str, &str, &str); 23] = [
         "Drop::drop is a trait-required name; the bodies differ",
     ),
     (
-        "parity/exact.rs",
+        "trace/exact.rs",
         "drop",
         "Drop::drop is a trait-required name; the bodies differ",
     ),
@@ -106,16 +96,6 @@ const ALLOWED: [(&str, &str, &str); 23] = [
         "render.rs",
         "resolve_edition_dir",
         "genuine duplicate of art.rs, differing only in local names",
-    ),
-    (
-        "parity/report.rs",
-        "esc",
-        "genuine duplicate of print_cmd.rs escape_text, renamed",
-    ),
-    (
-        "print_cmd.rs",
-        "escape_text",
-        "genuine duplicate of parity/report.rs esc, renamed",
     ),
 ];
 

@@ -744,6 +744,7 @@ pub struct FigureRequest<'a> {
     pub article_source_ids: &'a [String],
     pub manuscript: &'a Path,
     pub allow_unanchored: bool,
+    pub verbatim: bool,
 }
 
 pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<Vec<Figure>> {
@@ -756,7 +757,7 @@ pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<
             request.article_id
         )));
     };
-    if items.len() > 3 {
+    if items.len() > 3 && !request.verbatim {
         return Err(ValidationError::one(format!(
             "Article {} selects {} figures; maximum is 3",
             request.article_id,

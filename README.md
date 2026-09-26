@@ -11,7 +11,7 @@ cd mag && cargo build --release
 ```
 
 Run `mag` from the repository root. The pre-commit hook runs `cargo fmt`,
-`cargo clippy -D warnings`, `ruff`, and the no-comments check.
+`cargo clippy -D warnings`, `ruff` on `tools/`, and the no-comments check.
 
 ## Pipeline
 
@@ -27,9 +27,7 @@ mag render NNN                             # reader.pdf, booklets, web edition, 
 mag translate <run dir>                    # Spanish edition
 ```
 
-`mag render` typesets through Typst in Rust (`mag/src/typeset/`). The Python
-WeasyPrint renderer in `src/magazine/` stays only as the rollback
-(`mag render NNN --engine weasyprint`) until it is deleted.
+`mag render` typesets through Typst in Rust (`mag/src/typeset/`).
 
 `mag print <url>` is a standalone side tool that turns one blog post into a
 printable PDF; it is not an edition step.
@@ -49,8 +47,5 @@ printable PDF; it is not an edition step.
 ```sh
 cd mag && cargo test
 ```
-
-`mag parity NNN` compares the Typst and WeasyPrint renders of an edition
-(see `docs/RENDERER_MIGRATION.md`).
 
 Contributor rules live in `CLAUDE.md`.

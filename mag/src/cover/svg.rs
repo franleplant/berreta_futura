@@ -1,9 +1,9 @@
 use std::path::Path;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use base64::Engine as _;
 
-use super::art::{art_zones, graded_art, Zone};
+use super::art::{art_zones, extreme_pixels, graded_art, luminance, Zone};
 use super::outline::Outliner;
 
 pub const PAGE_WIDTH: f64 = 419.527559;
@@ -166,6 +166,44 @@ fn gradient(spec: Gradient<'_>) -> String {
         pyf(bottom),
         pyf(y),
         pyf(w)
+    )
+}
+
+fn hex(colour: &str) -> Result<[f64; 3]> {
+    let channel = |at: usize| {
+        u8::from_str_radix(colour.get(at..at + 2).unwrap_or(""), 16)
+            .map(|value| f64::from(value) / 255.0)
+            .with_context(|| format!("cover colour {colour} is not #rrggbb"))
+    };
+    Ok([channel(1)?, channel(3)?, channel(5)?])
+}
+
+fn scrim_alpha(text: [f64; 3], scrim: [f64; 3], pixel: [f64; 3]) -> f64 {
+    let ink = luminance(text);
+    (0..=50)
+        .map(|step| f64::from(step) / 50.0)
+        .find(|alpha| {
+            let ground = luminance([0, 1, 2].map(|c| alpha * scrim[c] + (1.0 - alpha) * pixel[c]));
+            (ink.max(ground) + 0.05) / (ink.min(ground) + 0.05) >= 7.0
+        })
+        .unwrap_or(1.0)
+}
+
+fn scrim_band(colour: &str, alpha: f64, top: f64, band: f64) -> String {
+    let height = PAGE_HEIGHT - top;
+    format!(
+        "<defs><linearGradient id=\"cap-b\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\
+<stop offset=\"0\" stop-color=\"{colour}\" stop-opacity=\"0\"/>\
+<stop offset=\"{}\" stop-color=\"{colour}\" stop-opacity=\"{}\"/>\
+<stop offset=\"1\" stop-color=\"{colour}\" stop-opacity=\"{}\"/>\
+</linearGradient></defs>\
+<rect x=\"0\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"url(#cap-b)\"/>",
+        pyf(60.0 / height),
+        pyf(alpha),
+        pyf(alpha),
+        pyf(top),
+        pyf(band),
+        pyf(height)
     )
 }
 
@@ -372,6 +410,20 @@ impl Builder<'_> {
             .regular
             .outline(text, x, baseline, size, fill, tracking, 100.0, None, "")?
             .markup)
+    }
+
+    fn fitted_roster(&mut self, roster: &str, size: f64, width: f64) -> Result<String> {
+        let names: Vec<&str> = roster.split(" / ").collect();
+        for keep in (1..=names.len()).rev() {
+            let line = match keep == names.len() {
+                true => roster.to_string(),
+                false => format!("{} / \u{2026}", names[..keep].join(" / ")),
+            };
+            if self.fonts.regular.measure(&line, size, 0.0, 100.0)? <= width {
+                return Ok(line);
+            }
+        }
+        Ok("\u{2026}".to_string())
     }
 
     fn right_line(
@@ -710,12 +762,16 @@ impl Builder<'_> {
         let scale = self.design.footer_caption.wordmark_scale;
         let band = self.band_x();
         let right_edge = band - spec_margin;
-        let (top, bottom) = art_zones(cover_art, band, PAGE_HEIGHT)?;
-        let dark_bottom = bottom.mean < 105.0;
-        let fill = if dark_bottom {
-            self.design.colors.paper.clone()
-        } else {
-            self.design.colors.ink.clone()
+        let (top, _) = art_zones(cover_art, band, PAGE_HEIGHT)?;
+        let title_top = PAGE_HEIGHT - 46.0 - self.design.footer_caption.title_size;
+        let area = [spec_margin, title_top, right_edge, PAGE_HEIGHT - 18.0];
+        let (darkest, brightest) = extreme_pixels(cover_art, band, PAGE_HEIGHT, area)?;
+        let (paper, ink) = (&self.design.colors.paper, &self.design.colors.ink);
+        let on_paper = scrim_alpha(hex(ink)?, hex(paper)?, darkest);
+        let on_ink = scrim_alpha(hex(paper)?, hex(ink)?, brightest);
+        let (fill, scrim, alpha) = match on_ink < on_paper {
+            true => (paper.clone(), ink.clone(), on_ink),
+            false => (ink.clone(), paper.clone(), on_paper),
         };
 
         let art_data = base64::engine::general_purpose::STANDARD.encode(graded_art(cover_art)?);
@@ -725,7 +781,8 @@ impl Builder<'_> {
             pyf(PAGE_HEIGHT)
         )];
 
-        parts.extend(self.caption_gradients(dark_bottom, &top, &bottom, band));
+        parts.push(scrim_band(&scrim, alpha, title_top - 60.0, band));
+        parts.extend(self.caption_gradients(&top, band));
         let mode = if top.mean < 118.0 { "light" } else { "dark" };
         let dy = self.design.footer_caption.wordmark_dy;
         parts.push(self.margin_locked_wordmark(
@@ -739,38 +796,8 @@ impl Builder<'_> {
         Ok(self.shell(&parts.join("\n    ")))
     }
 
-    fn caption_gradients(
-        &self,
-        dark_bottom: bool,
-        top: &Zone,
-        bottom: &Zone,
-        band: f64,
-    ) -> Vec<String> {
+    fn caption_gradients(&self, top: &Zone, band: f64) -> Vec<String> {
         let mut parts = Vec::new();
-        if dark_bottom && bottom.stddev > 46.0 {
-            parts.push(gradient(Gradient {
-                id: "cap-b",
-                x: "0",
-                y: PAGE_HEIGHT - 170.0,
-                w: band,
-                h: "170",
-                color: &self.design.colors.ink,
-                top: 0.0,
-                bottom: 0.72,
-            }));
-        }
-        if !dark_bottom {
-            parts.push(gradient(Gradient {
-                id: "cap-b",
-                x: "0",
-                y: PAGE_HEIGHT - 170.0,
-                w: band,
-                h: "170",
-                color: &self.design.colors.paper,
-                top: 0.0,
-                bottom: 0.7,
-            }));
-        }
         if top.stddev > 52.0 && top.mean < 150.0 {
             parts.push(gradient(Gradient {
                 id: "cap-t",
@@ -821,8 +848,9 @@ impl Builder<'_> {
         parts.push(self.right_line(&text.date_line, right_edge, PAGE_HEIGHT - 46.0, 7.0, fill)?);
 
         if !text.contributors.is_empty() {
+            let roster = self.fitted_roster(&text.contributors, 4.6, right_edge - spec_margin)?;
             let deck = self.justified_line(
-                &text.contributors,
+                &roster,
                 spec_margin,
                 PAGE_HEIGHT - 24.0,
                 4.6,

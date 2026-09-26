@@ -1,0 +1,52 @@
+edition: '011'
+dry_run: false
+generated:
+- brief: closing-orchard-ladder
+  variant: 1
+  file: closing-orchard-ladder-v1.png
+  ok: true
+- brief: closing-orchard-ladder
+  variant: 2
+  file: closing-orchard-ladder-v2.png
+  ok: true
+- brief: closing-orchard-ladder
+  variant: 3
+  file: closing-orchard-ladder-v3.png
+  ok: true
+- brief: closing-orchard-ladder
+  variant: 4
+  file: closing-orchard-ladder-v4.png
+  ok: true
+- brief: closing-toboggan-climb
+  variant: 1
+  file: closing-toboggan-climb-v1.png
+  ok: true
+- brief: closing-toboggan-climb
+  variant: 2
+  file: closing-toboggan-climb-v2.png
+  ok: true
+- brief: closing-toboggan-climb
+  variant: 3
+  file: closing-toboggan-climb-v3.png
+  ok: true
+- brief: closing-toboggan-climb
+  variant: 4
+  file: closing-toboggan-climb-v4.png
+  ok: true
+- brief: closing-dock-dive
+  variant: 1
+  file: closing-dock-dive-v1.png
+  ok: true
+- brief: closing-dock-dive
+  variant: 2
+  file: closing-dock-dive-v2.png
+  ok: true
+- brief: closing-dock-dive
+  variant: 3
+  file: closing-dock-dive-v3.png
+  ok: true
+- brief: closing-dock-dive
+  variant: 4
+  file: closing-dock-dive-v4.png
+  ok: true
+failures: 0

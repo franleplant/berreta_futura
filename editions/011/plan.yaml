@@ -1,0 +1,75 @@
+edition:
+  id: '011'
+articles:
+- id: ureview-scalable-trustworthy-genai-for-code-revi
+  title: 'uReview: Scalable, Trustworthy GenAI for Code Review at Uber'
+  author: Shauvik Roy Choudhary, Sonal Mahajan, Joseph Wang, Akshay Utture, Will Bond
+  content_mode: article
+  source_ids:
+  - ureview-scalable-trustworthy-genai-for-code-revi-296c0ee8
+- id: claude-discovers-a-novel-enzyme-system
+  title: Claude discovers a novel enzyme system
+  author: ''
+  content_mode: article
+  source_ids:
+  - claude-discovers-a-novel-enzyme-system-ef1b3a47
+- id: llm-wiki
+  title: llm-wiki
+  author: karpathy
+  content_mode: verbatim
+  source_ids:
+  - llm-wiki-91fc906a
+- id: the-senior-engineer-death-spiral
+  title: the senior engineer death spiral
+  author: Sunil Pai
+  content_mode: verbatim
+  source_ids:
+  - the-senior-engineer-death-spiral-729d3e6c
+- id: how-we-built-safety-into-muse
+  title: How We Built Safety Into Muse
+  author: Tarek Sheasha
+  content_mode: article
+  source_ids:
+  - how-we-built-safety-into-muse-512c3f7f
+- id: seats-and-sunsets-steve-yegge
+  title: Seats and Sunsets — Steve Yegge
+  author: Steve Yegge
+  content_mode: article
+  source_ids:
+  - seats-and-sunsets-steve-yegge-398a8326
+- id: agentic-coding-is-straining-ci-here-s-how-we-sca
+  title: Agentic coding is straining CI. Here’s how we scaled test impact analysis at Anthropic
+  author: Sachin Malhotra
+  content_mode: article
+  source_ids:
+  - agentic-coding-is-straining-ci-here-s-how-we-sca-86abcc6f
+- id: improved-token-efficiency-for-longer-agent-runs
+  title: Improved token efficiency for longer agent runs
+  author: Jediah Katz, Connor O'Keefe & Calvin Yee
+  content_mode: verbatim
+  source_ids:
+  - improved-token-efficiency-for-longer-agent-runs-14383ac7
+- id: how-spacexai-is-using-grok-bot-to-scale-customer
+  title: How SpaceXAI is using Grok Bot to scale customer support
+  author: ''
+  content_mode: article
+  source_ids:
+  - how-spacexai-is-using-grok-bot-to-scale-customer-03d2992c
+- id: staff-archetypes
+  title: Staff archetypes
+  author: Will Larson
+  content_mode: verbatim
+  source_ids:
+  - staff-archetypes-c22d800c
+- id: what-a-task-costs-on-opus-5-5
+  title: What a task costs on Opus 5.5
+  author: Addy Osmani
+  content_mode: article
+  source_ids:
+  - what-a-task-costs-on-opus-5-5-3d1eacfa
+- id: mega-megadevhq-on-x
+  title: Towards Autonomous Product Development
+  author: MEGA
+  content_mode: article
+  source_ids:
+  - mega-megadevhq-on-x-b8963c9d

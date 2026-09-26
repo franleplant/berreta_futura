@@ -1,0 +1,397 @@
+# Edition 11 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
+# TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
+# Claude on 2026-09-24 for the editor to revise; art picks too, in art/showcase.html.
+# Reading order: Yegge sets the theme (fuel is what distrust costs), then the bill
+# itself (Opus 5.5 prices, Cursor's tokens), the checks that spend it (CI, uReview,
+# Muse), agents trusted with real work (Grok Bot, MEGA, the LLM wiki, the enzyme),
+# and the people who carry trust (Pai's death spiral, Larson's archetypes).
+id: '011'
+issue_number: 11
+title: What Trust Costs
+subtitle: A factory idling on its fuel bill, the price of a task on Opus 5.5, Cursor's token diet, CI
+  under agent load, Uber's code reviewer, the fences around Muse, a support bot, a product rebuilt in
+  five days, Karpathy's LLM wiki, an enzyme Claude found, the senior engineer death spiral, and four kinds
+  of Staff engineer
+publication_date: '2026-09-25'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: What Trust Costs
+  deck: A factory idling on its fuel bill, the price of a task on Opus 5.5, Cursor's token diet, CI under
+    agent load, Uber's code reviewer, the fences around Muse, a support bot, a product rebuilt in five
+    days, Karpathy's LLM wiki, an enzyme Claude found, the senior engineer death spiral, and four kinds
+    of Staff engineer
+  back_text: During honey time, their free phase, the agents chose to watch the sunset as Haiku. A harness
+    bug kept them on Haiku into the next coding turn. Haiku said, "Hey, I can't write code, this is for
+    Fable. We're going to wait for Fable to show up," skipped the turn, and went back to the sunset.
+  art_path: editions/011/art/rounds/2026-09-25T00-27-24/cover-synthetic-nozzle-floods-keyhole-v4.png
+articles:
+- id: seats-and-sunsets-steve-yegge
+  title: Seats and Sunsets
+  short_title: Seats and Sunsets
+  display_emphasis: Sunsets
+  opener_variant: stepped_title
+  author: Steve Yegge
+  author_note: From yegge.ai, where Yegge writes about running Wheelhouse, his agent orchestrator.
+  content_mode: article
+  source_ids:
+  - seats-and-sunsets-steve-yegge-398a8326
+  manuscript: editions/011/articles/seats-and-sunsets-steve-yegge.md
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-seats-and-sunsets-v1.png
+    alt_text: A boy on a step stool pours a tiny can of fuel into a huge factory machine while a girl
+      points at its drooping gauge and a small robot shakes out an empty coin purse, sunset light streaming
+      through the windows.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-seats-and-sunsets-v2.png
+- id: what-a-task-costs-on-opus-5-5
+  title: What a Task Costs on Opus 5.5
+  short_title: What a Task Costs
+  display_emphasis: Costs
+  opener_variant: split_axis
+  author: Addy Osmani
+  author_note: From the Claude blog.
+  content_mode: article
+  source_ids:
+  - what-a-task-costs-on-opus-5-5-3d1eacfa
+  manuscript: editions/011/articles/what-a-task-costs-on-opus-5-5.md
+  figures:
+  - id: price-lines
+    source_id: what-a-task-costs-on-opus-5-5-3d1eacfa
+    path: media/001.png
+    credit: 'Figure by Anthropic; source: What a Task Costs on Opus 5.5.'
+    caption: 'Opus 5.5 list prices against Opus 5: input and output 20% lower, cache reads 60% lower.'
+    alt_text: 'Bar chart comparing Opus 5 and Opus 5.5 prices per million tokens: input $5.00 to $4.00,
+      output $25.00 to $20.00, cache read $0.50 to $0.20.'
+    anchor: What changed in Opus 5.5
+    layout: evidence_band_prose
+  - id: effort-accuracy
+    source_id: what-a-task-costs-on-opus-5-5-3d1eacfa
+    path: media/003.png
+    credit: 'Figure by Anthropic; source: What a Task Costs on Opus 5.5.'
+    caption: 'Decision accuracy against cost per ticket on 44 tickets: lower effort plus a prompt audit
+      beat the older default.'
+    alt_text: Scatter plot of decision accuracy against cost per ticket for Opus 4.8 at default effort,
+      Opus 5.5 at low effort, and Opus 5.5 at low effort with a prompt audit.
+    anchor: Effort before model
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-what-a-task-costs-v4.png
+    alt_text: At a market stall, a boy weighs a small parcel on a balance scale, a girl lifts a coin off
+      the other pan, and a small robot snips a long paper scroll shorter with scissors.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-what-a-task-costs-v2.png
+- id: improved-token-efficiency-for-longer-agent-runs
+  title: Improved token efficiency for longer agent runs
+  short_title: token efficiency
+  display_emphasis: efficiency
+  opener_variant: edge_medallion
+  author: Jediah Katz, Connor O'Keefe & Calvin Yee
+  author_note: From the Cursor blog.
+  content_mode: verbatim
+  source_ids:
+  - improved-token-efficiency-for-longer-agent-runs-14383ac7
+  manuscript: editions/011/articles/improved-token-efficiency-for-longer-agent-runs.md
+  figures:
+  - id: cache-breakpoints
+    source_id: improved-token-efficiency-for-longer-agent-runs-14383ac7
+    path: media/001.png
+    credit: 'Figure by Cursor; source: Improved token efficiency for longer agent runs.'
+    caption: Explicit cache breakpoints separate the stable prefix of a request from the part of the conversation
+      that keeps growing.
+    alt_text: Diagram comparing request layouts before and after explicit cache breakpoints, with tools,
+      system instructions, setup and conversation blocks separated by breakpoints.
+    anchor: Improving cache reuse
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-token-efficiency-v2.png
+    alt_text: A small robot couples carriages on a toy railway while a boy pushes a new carriage onto
+      the end and a girl plants a flag where the parked carriages end and the new one begins.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-token-efficiency-v2.png
+- id: agentic-coding-is-straining-ci-here-s-how-we-sca
+  title: Agentic Coding Is Straining CI
+  short_title: Straining CI
+  display_emphasis: CI
+  opener_variant: stepped_title
+  author: Sachin Malhotra
+  author_note: 'From the Claude blog: how Anthropic scaled test impact analysis.'
+  content_mode: article
+  source_ids:
+  - agentic-coding-is-straining-ci-here-s-how-we-sca-86abcc6f
+  manuscript: editions/011/articles/agentic-coding-is-straining-ci-here-s-how-we-sca.md
+  figures:
+  - id: bottleneck
+    source_id: agentic-coding-is-straining-ci-here-s-how-we-sca-86abcc6f
+    path: media/001.png
+    credit: 'Figure by Anthropic; source: Agentic Coding Is Straining CI.'
+    caption: When agents write most of the code and review keeps up, the bottleneck moves to CI.
+    alt_text: Three horizontal pipelines from plan to release, with the bottleneck marked at build before
+      agents, at PR review after agents, and at CI once agents review too.
+    anchor: The service
+    layout: evidence_band_prose
+  - id: selection-redesign
+    source_id: agentic-coding-is-straining-ci-here-s-how-we-sca-86abcc6f
+    path: media/006.png
+    credit: 'Figure by Anthropic; source: Agentic Coding Is Straining CI.'
+    caption: 'The test selection service before and after the redesign: one listener process replaced
+      by scaled listeners feeding a journal.'
+    alt_text: Before-and-after architecture of the CI test selection service, showing a single listener
+      holding every test history in memory replaced by several listeners writing to a journal read by
+      the selector.
+    anchor: The redesign
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-straining-ci-v2.png
+    alt_text: Paper boats pile up at a narrow wooden gate in a garden stream while a small robot digs
+      a new channel, a boy lifts one boat through, and a girl points out which boats can go around.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-straining-ci-v2.png
+- id: ureview-scalable-trustworthy-genai-for-code-revi
+  title: 'uReview: Scalable, Trustworthy GenAI for Code Review at Uber'
+  short_title: uReview
+  display_emphasis: Trustworthy
+  opener_variant: split_axis
+  author: Shauvik Roy Choudhary, Sonal Mahajan, Joseph Wang, Akshay Utture, Will Bond
+  author_note: From the Uber engineering blog.
+  content_mode: article
+  source_ids:
+  - ureview-scalable-trustworthy-genai-for-code-revi-296c0ee8
+  manuscript: editions/011/articles/ureview-scalable-trustworthy-genai-for-code-revi.md
+  figures:
+  - id: pipeline
+    source_id: ureview-scalable-trustworthy-genai-for-code-revi-296c0ee8
+    path: media/002.jpg
+    credit: 'Figure by Uber; source: uReview.'
+    caption: 'The uReview pipeline: pluggable assistants propose comments, then a grader, a deduplicator
+      and a category filter prune them.'
+    alt_text: Flow diagram from a piece of code through a preprocessor to several LLM comment assistants,
+      then review grader, duplicate comment filter and comment category filter, ending in high quality
+      code review comments.
+    anchor: How it works
+    layout: evidence_band
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-ureview-v3.png
+    alt_text: A boy pours paper notes into a tower of three sieves held by a small robot, and a girl catches
+      the few notes that make it through to the bottom.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-ureview-v4.png
+- id: how-we-built-safety-into-muse
+  title: How We Built Safety Into Muse
+  short_title: Safety Into Muse
+  display_emphasis: Safety
+  opener_variant: edge_medallion
+  author: Tarek Sheasha
+  author_note: From the Meta AI research blog.
+  content_mode: article
+  source_ids:
+  - how-we-built-safety-into-muse-512c3f7f
+  manuscript: editions/011/articles/how-we-built-safety-into-muse.md
+  figures:
+  - id: architecture
+    source_id: how-we-built-safety-into-muse-512c3f7f
+    path: media/001.png
+    credit: 'Figure by Meta; source: How We Built Safety Into Muse.'
+    caption: Muse keeps the agent in an isolated runtime cell; safety checks and credentials live on the
+      host side.
+    alt_text: Hand-drawn architecture diagram of Muse showing user controls, the isolated runtime cell,
+      and host-side safety and credential services.
+    anchor: Two domains on one box
+    layout: evidence_band
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-safety-into-muse-v3.png
+    alt_text: A small robot works at a bench inside a glass greenhouse while a boy outside holds the keys
+      and passes a trowel through a hatch that a girl is checking.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-safety-into-muse-v2.png
+- id: how-spacexai-is-using-grok-bot-to-scale-customer
+  title: How SpaceXAI Is Using Grok Bot to Scale Customer Support
+  short_title: Grok Bot
+  display_emphasis: Grok Bot
+  opener_variant: stepped_title
+  author: SpaceXAI
+  author_note: From the xAI news page.
+  content_mode: article
+  source_ids:
+  - how-spacexai-is-using-grok-bot-to-scale-customer-03d2992c
+  manuscript: editions/011/articles/how-spacexai-is-using-grok-bot-to-scale-customer.md
+  figures:
+  - id: phases
+    source_id: how-spacexai-is-using-grok-bot-to-scale-customer-03d2992c
+    path: media/001.jpg
+    credit: 'Figure by SpaceXAI; source: How SpaceXAI Is Using Grok Bot to Scale Customer Support.'
+    caption: 'Crawl, walk, run: each phase adds steps, from shadowing workflows read-only to automating
+      proven flows.'
+    alt_text: Three columns labeled Crawl, Walk and Run, listing cumulative steps from connecting core
+      systems and shadowing workflows to enabling writes with a human in the loop and fully automating
+      proven flows.
+    anchor: Crawl, walk, run
+    layout: column_plate
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-grok-bot-v3.png
+    alt_text: A small robot breaks into a run on a school track while a boy jogs beside it holding a slack
+      safety rope and a girl watches from a blanket at the start.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-grok-bot-v1.png
+- id: mega-megadevhq-on-x
+  title: Towards Autonomous Product Development
+  short_title: Autonomous Product Development
+  display_emphasis: Autonomous
+  opener_variant: split_axis
+  author: overment
+  author_note: A MEGA Drop, published as an X article.
+  content_mode: article
+  source_ids:
+  - mega-megadevhq-on-x-b8963c9d
+  manuscript: editions/011/articles/mega-megadevhq-on-x.md
+  figures:
+  - id: context-access
+    source_id: mega-megadevhq-on-x-b8963c9d
+    path: media/001.jpg
+    credit: 'Figure by MEGA; source: Towards Autonomous Product Development.'
+    caption: 'Context access is not unlimited access: agents read project knowledge and an observable
+      environment, and reach production data only indirectly.'
+    alt_text: 'Diagram of an agent''s self-service context: project knowledge and an observable environment
+      it consults directly, production data reached only through a controlled boundary, and direct production
+      access marked not permitted.'
+    anchor: Context, not intelligence
+    layout: evidence_band_prose
+  - id: event-driven
+    source_id: mega-megadevhq-on-x-b8963c9d
+    path: media/002.jpg
+    credit: 'Figure by MEGA; source: Towards Autonomous Product Development.'
+    caption: 'Work can start without a human dispatch: events and schedules wake cloud agents, and the
+      human sets direction.'
+    alt_text: 'Side-by-side flows: human-dispatched work where a person reads signals and starts each
+      agent, and event-driven work where signals trigger always-on cloud agents that call a human only
+      when needed.'
+    anchor: Work that doesn't wait for us
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-autonomous-product-development-v2.png
+    alt_text: At night in a workshop, a small robot hammers a model house roof as a wall bell rings, a
+      boy dozes in an armchair, and a girl pins an arrow on a map.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-autonomous-product-development-v2.png
+- id: llm-wiki
+  title: llm-wiki
+  short_title: llm-wiki
+  display_emphasis: wiki
+  opener_variant: edge_medallion
+  author: Andrej Karpathy
+  author_note: An idea file from Karpathy's GitHub gists, written to be pasted to an agent.
+  content_mode: verbatim
+  source_ids:
+  - llm-wiki-91fc906a
+  manuscript: editions/011/articles/llm-wiki.md
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-llm-wiki-v4.png
+    alt_text: In a cozy library, a boy drops paper clippings into a basket, a small robot on a ladder
+      ties ribbons between related books, and a girl reads a bound volume.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-llm-wiki-v3.png
+- id: claude-discovers-a-novel-enzyme-system
+  title: Claude Discovers a Novel Enzyme System
+  short_title: Novel Enzyme System
+  display_emphasis: Enzyme
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: 'From Anthropic''s news page: a first result from its life sciences lab.'
+  content_mode: article
+  source_ids:
+  - claude-discovers-a-novel-enzyme-system-ef1b3a47
+  manuscript: editions/011/articles/claude-discovers-a-novel-enzyme-system.md
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-novel-enzyme-system-v1.png
+    alt_text: In a school lab, a small robot peers through a magnifying glass at a glowing folded ribbon
+      shape in a flask while a girl holds a pipette and a boy leans in amazed.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-novel-enzyme-system-v2.png
+- id: the-senior-engineer-death-spiral
+  title: the senior engineer death spiral
+  short_title: death spiral
+  display_emphasis: death spiral
+  opener_variant: split_axis
+  author: Sunil Pai
+  author_note: 'From Sunil Pai''s blog: advice to a friend starting a senior role.'
+  content_mode: verbatim
+  source_ids:
+  - the-senior-engineer-death-spiral-729d3e6c
+  manuscript: editions/011/articles/the-senior-engineer-death-spiral.md
+  figures:
+  - id: figure-1
+    source_id: the-senior-engineer-death-spiral-729d3e6c
+    path: media/001.png
+    caption: A hand-drawn grid spiraling into a dense knot, with one loose line escaping to the edge.
+    alt_text: A hand-drawn grid spiraling into a dense knot, with one loose line escaping to the edge.
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-senior-engineer-death-spiral-v4.png
+    alt_text: A boy at his desk is caught in a swirl of paper tasks, clutching an overflowing armful,
+      while a girl throws him a rope and a small robot lifts a stack away.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-senior-engineer-death-spiral-v4.png
+- id: staff-archetypes
+  title: Staff archetypes
+  short_title: Staff archetypes
+  display_emphasis: archetypes
+  opener_variant: edge_medallion
+  author: Will Larson
+  author_note: From StaffEng, Will Larson's guide to the Staff engineer role.
+  content_mode: verbatim
+  source_ids:
+  - staff-archetypes-c22d800c
+  manuscript: editions/011/articles/staff-archetypes.md
+  figures:
+  - id: figure-1
+    source_id: staff-archetypes-c22d800c
+    path: media/001.png
+    caption: Example calendar for a Tech Lead archetype
+    alt_text: Example calendar for a Tech Lead archetype
+    anchor: Tech Lead
+    layout: evidence_band
+  - id: figure-2
+    source_id: staff-archetypes-c22d800c
+    path: media/002.png
+    caption: Example calendar for Architect archetype
+    alt_text: Example calendar for Architect archetype
+    anchor: Architect
+    layout: evidence_band
+  - id: figure-3
+    source_id: staff-archetypes-c22d800c
+    path: media/003.png
+    caption: Example calendar for Solver archetype
+    alt_text: Example calendar for Solver archetype
+    anchor: Solver
+    layout: evidence_band
+  - id: figure-4
+    source_id: staff-archetypes-c22d800c
+    path: media/004.png
+    caption: Example calendar for Right Hand archetype
+    alt_text: Example calendar for Right Hand archetype
+    anchor: Right Hand
+    layout: evidence_band
+  opener_art:
+    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-staff-archetypes-v2.png
+    alt_text: Three friends build a treehouse, a girl studying a blueprint, a small robot untangling a
+      knotted rope, and a boy on the ladder steadying a plank.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-staff-archetypes-v2.png
+tail_art_fit: contain
+closing_plates:
+- title: The Lighthouse Keepers
+  art_path: editions/011/art/rounds/2026-09-25T00-27-24/closing-lighthouse-keepers-v1.png
+- title: The Balloon Ascent
+  art_path: editions/011/art/rounds/2026-09-25T00-27-24/closing-balloon-ascent-v2.png
+- title: The Rope Bridge
+  art_path: editions/011/art/rounds/2026-09-25T00-27-24/closing-rope-bridge-v3.png
+- title: The Orchard Ladder
+  art_path: editions/011/art/rounds/2026-09-25T01-03-08/closing-orchard-ladder-v3.png
+- title: The Toboggan Climb
+  art_path: editions/011/art/rounds/2026-09-25T01-03-08/closing-toboggan-climb-v1.png
+- title: The Dock Dive
+  art_path: editions/011/art/rounds/2026-09-25T01-03-08/closing-dock-dive-v4.png

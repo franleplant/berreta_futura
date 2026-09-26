@@ -1,0 +1,8 @@
+id: seats-and-sunsets-steve-yegge-398a8326
+title: 'Seats and Sunsets — Steve Yegge'
+author: 'Steve Yegge'
+url: https://yegge.ai/essays/seats-and-sunsets/
+captured_at: '2026-09-24T21:09:00Z'
+published_at: '2026-09-15'
+tags: []
+synopsis: 'Steve Yegge describes how rising Claude Fable pricing has forced fuel-efficiency measures on his Wheelhouse agent orchestrator, and argues that agentic "seats" reduce token costs by caching trust and blame-diffusion so models don''t have to re-derive safety and legality on every session.'

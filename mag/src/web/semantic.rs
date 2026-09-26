@@ -719,8 +719,7 @@ impl Renderer<'_> {
         let html = format!(
             "<figure data-figure-id=\"{}\" data-article-id=\"{}\" data-source-id=\"{}\" \
              data-anchor=\"{}\" data-layout=\"{}\" data-figure-label=\"{}\"><img src=\"{}\" \
-             alt=\"{}\"><figcaption><span class=\"caption\">{}</span><span class=\"credit\">{}\
-             </span></figcaption></figure>",
+             alt=\"{}\"><figcaption><span class=\"caption\">{}</span></figcaption></figure>",
             self.escape.attr(&figure.id),
             self.escape.attr(&article.id),
             self.escape.attr(&figure.source_id),
@@ -729,8 +728,7 @@ impl Renderer<'_> {
             self.escape.attr(&ui(&self.edition.language, "figure")),
             self.escape.attr(&figure_asset.src),
             self.escape.attr(&figure.alt_text),
-            self.escape.text(&figure.caption),
-            self.escape.text(&figure.credit)
+            self.escape.text(&figure.caption)
         );
         assets.push(figure_asset);
         html

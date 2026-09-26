@@ -22,6 +22,7 @@ pub struct Hyphenation {
 }
 
 impl Hyphenation {
+    #[cfg(test)]
     pub const PARITY: Self = Self {
         english: false,
         weasyprint69_skip: true,
