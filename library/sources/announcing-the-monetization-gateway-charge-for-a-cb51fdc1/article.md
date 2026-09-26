@@ -28,7 +28,7 @@ Agents flip this dynamic. A single agent can do the work of an entire team aroun
 
 Here's where we can help. Cloudflare has spent years building usage-based accounting for our own billing systems and for our customers' analytics. We can dramatically simplify the implementation of usage-based billing for web-based assets thanks to our position as a proxy layer between buyers and sellers. As shown below, with Cloudflare supporting usage-based billing, the evidence of payment can move into the request itself, and the payment validation and the request paths merge.
 
-![](media/001.webp)
+![](media/001.png)
 
 And here's the benefit to you: the metering, the payment exchange, and the settlement move off your origin. What stays with you is what matters — your rules, your prices, and your revenue. You will not need to onboard the buyer or stand up a billing system. You will write a rule and agentic buyers will pay for what they use.
 
@@ -38,7 +38,7 @@ Last year on [Content Independence Day](https://blog.cloudflare.com/content-inde
 
 x402 is an open protocol that makes it possible to pay over HTTP, named for the 402 status code it finally puts to use. The x402 exchange is simple: a client requests a payment-gated resource. Instead of serving it, the server responds with 402 Payment Required and a small payload that states the price, the accepted asset, and where to pay. The client pays and repeats the request with proof of payment attached. A facilitator verifies, and the server returns the resource. It all happens inside ordinary HTTP requests and responses, with no redirect to a checkout page and no separate payment API to call. Settlement happens peer-to-peer, so any funds that a buyer sends to a seller are directly deposited to the seller's wallet. We are designing the Monetization Gateway to keep payment overhead low and are aiming for sub-second payment settlement.
 
-![](media/002.webp)
+![](media/002.png)
 
 *x402 Payment Flow: AI Agent ↔ APIServer ↔ Blockchain, Source: [x402 Readme on GitHub](https://github.com/coinbase/x402#typical-x402-flow) *
 
@@ -48,7 +48,7 @@ Two properties make x402 a good fit for machine payments. The payment amounts ca
 
 The Monetization Gateway will provide a flexible payment rules API that will allow you to express exactly when you want a caller to pay to access your digital resources.
 
-![](media/003.webp)
+![](media/003.png)
 
 Here's how it will work. Tokens, APIs, MCP tool calls, and data already flow through that path. You will decide, as precisely as you want, which of that traffic has to pay. And you will be able to enforce your decisions by writing expressions, similar to expressions that you already write for other Cloudflare rules, in a simple, dedicated product API. The Monetization Gateway will scale with Cloudflare's global network across 330+ cities, which means that the x402 handshake will occur in close proximity to your buyer. This will reduce request latency and protect your origin.
 
@@ -76,4 +76,4 @@ This is what we are building toward: an agent-first Internet with Internet-scale
 
 The Monetization Gateway waitlist is open now for Cloudflare customers. If you're interested in monetizing your web page, dataset, API, or MCP tool with usage-based pricing, [please join our early access list](https://docs.google.com/forms/d/e/1FAIpQLSfq6yaIgp57FCGFg7riXlSWTeD8d8Adur2c8tWaKY4SuzweiQ/viewform?usp=header).
 
-![](media/004.webp)
+![](media/004.png)

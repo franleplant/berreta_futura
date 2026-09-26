@@ -24,7 +24,9 @@ cover:
     agent load, Uber's code reviewer, the fences around Muse, a support bot, a product rebuilt in five
     days, Karpathy's LLM wiki, an enzyme Claude found, the senior engineer death spiral, and four kinds
     of Staff engineer
-  back_text: 'During honey time, their free phase, the agents chose to watch the sunset as Haiku. A harness bug kept them on Haiku into the next coding turn. Haiku said, "Hey, I can''t write code, this is for Fable. We''re going to wait for Fable to show up," skipped the turn, and went back to the sunset.'
+  back_text: During honey time, their free phase, the agents chose to watch the sunset as Haiku. A harness
+    bug kept them on Haiku into the next coding turn. Haiku said, "Hey, I can't write code, this is for
+    Fable. We're going to wait for Fable to show up," skipped the turn, and went back to the sunset.
   art_path: editions/011/art/rounds/2026-09-25T00-27-24/cover-synthetic-nozzle-floods-keyhole-v4.png
 articles:
 - id: seats-and-sunsets-steve-yegge
@@ -319,6 +321,14 @@ articles:
   source_ids:
   - the-senior-engineer-death-spiral-729d3e6c
   manuscript: editions/011/articles/the-senior-engineer-death-spiral.md
+  figures:
+  - id: figure-1
+    source_id: the-senior-engineer-death-spiral-729d3e6c
+    path: media/001.png
+    caption: A hand-drawn grid spiraling into a dense knot, with one loose line escaping to the edge.
+    alt_text: A hand-drawn grid spiraling into a dense knot, with one loose line escaping to the edge.
+    anchor: __opener__
+    layout: evidence_band
   opener_art:
     path: editions/011/art/rounds/2026-09-25T00-27-24/opener-senior-engineer-death-spiral-v4.png
     alt_text: A boy at his desk is caught in a swirl of paper tasks, clutching an overflowing armful,
@@ -337,14 +347,33 @@ articles:
   - staff-archetypes-c22d800c
   manuscript: editions/011/articles/staff-archetypes.md
   figures:
-  - id: tech-lead-week
+  - id: figure-1
     source_id: staff-archetypes-c22d800c
     path: media/001.png
-    credit: 'Figure by Will Larson; source: Staff archetypes.'
-    caption: An example week for the Tech Lead archetype.
-    alt_text: 'Weekly calendar for a Tech Lead: primary on-call, daily standups, one-on-ones, sprint planning,
-      architecture review, interviews and focus blocks for coding.'
+    caption: Example calendar for a Tech Lead archetype
+    alt_text: Example calendar for a Tech Lead archetype
     anchor: Tech Lead
+    layout: evidence_band
+  - id: figure-2
+    source_id: staff-archetypes-c22d800c
+    path: media/002.png
+    caption: Example calendar for Architect archetype
+    alt_text: Example calendar for Architect archetype
+    anchor: Architect
+    layout: evidence_band
+  - id: figure-3
+    source_id: staff-archetypes-c22d800c
+    path: media/003.png
+    caption: Example calendar for Solver archetype
+    alt_text: Example calendar for Solver archetype
+    anchor: Solver
+    layout: evidence_band
+  - id: figure-4
+    source_id: staff-archetypes-c22d800c
+    path: media/004.png
+    caption: Example calendar for Right Hand archetype
+    alt_text: Example calendar for Right Hand archetype
+    anchor: Right Hand
     layout: evidence_band
   opener_art:
     path: editions/011/art/rounds/2026-09-25T00-27-24/opener-staff-archetypes-v2.png

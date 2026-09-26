@@ -173,6 +173,7 @@ fn run_case(case: &serde_yaml::Mapping, root: &Path) -> Json {
                 article_source_ids: &source_ids,
                 manuscript: &manuscript,
                 allow_unanchored,
+                verbatim: false,
             };
             outcome(
                 resolve_figures(&request, rows),

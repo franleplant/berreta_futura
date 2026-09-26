@@ -72,7 +72,7 @@ articles:
   figures:
   - id: acme-shopping-agent
     source_id: building-commerce-agents-with-claude-4a77cb2e
-    path: media/001.webp
+    path: media/001.png
     credit: 'Screenshot by Anthropic; source: Building Commerce Agents with Claude.'
     caption: The shopping agent running in the ACME retail example, with products, comparisons,
       and the cart rendered inside the conversation.
@@ -174,7 +174,7 @@ articles:
   figures:
   - id: jalapeno-silicon
     source_id: jalape-o-s-first-results-show-industry-leading-s-9edfd1ae
-    path: media/001.webp
+    path: media/001.png
     credit: 'Photograph by OpenAI; source: Jalapeño’s first results.'
     caption: The Jalapeño inference chip on its board, rated at 700 watts and measured at or
       below 550 on the workloads tested.

@@ -57,11 +57,11 @@ The bucket is the coordinator — no membership protocol, no failure detector, n
 
 Durable Objects is a strong programming model. celld keeps that model while moving placement, state, and operational evidence into infrastructure you choose.
 
-![The Orange Cloud Report — Durable Objects review, scored 2 out of 10](media/001.webp)
+![The Orange Cloud Report — Durable Objects review, scored 2 out of 10](media/001.png)
 
 [orangecloud.report · 12 July 2026 ↗](https://orangecloud.report/products/durable-objects/)
 
-![Cloudflare status page — Durable Objects Increased Errors, Major Impact](media/002.webp)
+![Cloudflare status page — Durable Objects Increased Errors, Major Impact](media/002.png)
 
 [cloudflarestatus.com · 16 July 2026 ↗](https://new.cloudflarestatus.com/incidents/kdnfshk5vs51)
 

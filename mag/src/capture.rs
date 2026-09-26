@@ -75,9 +75,38 @@ pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
             bail!("image {url} came back as '{other}', not an image");
         }
     };
+    if ext == "webp" {
+        let dest = dest_stem.with_extension("png");
+        let png = webp_to_png(&fs::read(&tmp)?).with_context(|| format!("decoding {url}"))?;
+        fs::write(&dest, png).with_context(|| format!("writing {}", dest.display()))?;
+        fs::remove_file(&tmp)?;
+        return Ok(dest);
+    }
     let dest = dest_stem.with_extension(ext);
     fs::rename(&tmp, &dest).with_context(|| format!("writing {}", dest.display()))?;
     Ok(dest)
+}
+
+fn webp_to_png(bytes: &[u8]) -> Result<Vec<u8>> {
+    let mut decoder = image_webp::WebPDecoder::new(std::io::Cursor::new(bytes))?;
+    let (width, height) = decoder.dimensions();
+    let colour = match decoder.has_alpha() {
+        true => png::ColorType::Rgba,
+        false => png::ColorType::Rgb,
+    };
+    let mut pixels = vec![
+        0;
+        decoder
+            .output_buffer_size()
+            .context("the WebP is too large")?
+    ];
+    decoder.read_image(&mut pixels)?;
+    let mut out = Vec::new();
+    let mut encoder = png::Encoder::new(&mut out, width, height);
+    encoder.set_color(colour);
+    encoder.set_depth(png::BitDepth::Eight);
+    encoder.write_header()?.write_image_data(&pixels)?;
+    Ok(out)
 }
 
 fn decode_entities(s: &str) -> String {
@@ -860,6 +889,19 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_webp_becomes_a_png_of_the_same_pixels() {
+        let webp = include_bytes!("../tests/capture_fixtures/tiny.webp");
+        let png = webp_to_png(webp).expect("decodes");
+        let mut reader = png::Decoder::new(std::io::Cursor::new(png))
+            .read_info()
+            .expect("a PNG");
+        let mut pixels = vec![0; reader.output_buffer_size().expect("sized")];
+        reader.next_frame(&mut pixels).expect("a frame");
+        assert_eq!((reader.info().width, reader.info().height), (3, 2));
+        assert_eq!(&pixels[..6], &[255, 0, 0, 0, 255, 0]);
+    }
 
     #[test]
     fn source_id_matches_existing_scheme() {
