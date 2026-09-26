@@ -21,21 +21,9 @@ The magazine is produced by two programs and a pile of files.
   figure images, source records), typesets it through Typst
   (`mag/src/typeset/`), runs the render critic, and writes the reader,
   booklet, web, and package outputs, then reports page counts and critic
-  results. `--engine weasyprint` hands the same request to the Python
-  renderer instead (the rollback; see `RENDERER_MIGRATION.md`).
+  results.
 
 Model calls go through `caller.rs`, which takes `<backend>:<model>` specs.
-
-## The Python rollback renderer (`src/magazine/`)
-
-Kept only as the rollback and as the `mag parity` oracle until WP-6.1
-deletes it. Run through `uv`. It validates `edition.yaml` (`manifest.py`,
-`media_schema.py`), renders semantic HTML (`html_edition.py`), lays out A5
-reader pages and booklets through WeasyPrint (`render.py`,
-`weasyprint_adapter.py`, `booklet.py`), builds the web edition
-(`web_edition.py`), and runs the render critic (`render_critic.py`). It is a
-renderer, not an orchestrator: it receives paths, returns results, and owns no
-workflow state.
 
 ## The files
 
@@ -51,6 +39,5 @@ workflow state.
 ## Verification
 
 `cargo test` in `mag/` covers the CLI and the Typst renderer. Render the
-current edition after renderer changes; `mag parity NNN` compares it against
-the WeasyPrint leg. For Python rollback changes, load each edition through
-`magazine.manifest.load_edition`.
+current edition after renderer changes and read the PDF; the render critic's
+report sits beside it.

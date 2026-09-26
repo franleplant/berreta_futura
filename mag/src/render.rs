@@ -3,14 +3,13 @@ use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 
 const OPERATIONS: [&str; 3] = ["measure_article", "measure_edition", "render_edition"];
 const SCHEMA_VERSION: u32 = 1;
 const RENDERER_CONTRACT_VERSION: &str = "magazine-renderer/1";
-const RENDERER: &str = "weasyprint";
+const RENDERER: &str = "typst";
 const DESIGN_TOML_PATH: &str = "design/covers/canto-vivo/design.toml";
 
 #[derive(Serialize)]
@@ -219,32 +218,6 @@ pub(crate) fn toml_value(repo_root: &Path, section: &str, key: &str) -> Option<S
 
 pub(crate) fn publication_name(repo_root: &Path) -> String {
     toml_value(repo_root, "publication", "name").unwrap_or_else(|| "Magazine".to_string())
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub(crate) enum Engine {
-    Weasyprint,
-    Typst,
-}
-
-fn parse_engine(value: &str, origin: &str) -> Result<Engine> {
-    match value {
-        "weasyprint" => Ok(Engine::Weasyprint),
-        "typst" => Ok(Engine::Typst),
-        other => {
-            bail!("unknown render engine '{other}' from {origin}: expected weasyprint or typst")
-        }
-    }
-}
-
-pub(crate) fn select_engine(repo_root: &Path, flag: Option<&str>) -> Result<Engine> {
-    match flag {
-        Some(value) => parse_engine(value, "--engine"),
-        None => match toml_value(repo_root, "render", "engine") {
-            Some(value) => parse_engine(&value, "magazine.toml [render] engine"),
-            None => Ok(Engine::Typst),
-        },
-    }
 }
 
 fn stage_article_figures(staging: &mut Staging, article: &serde_yaml::Value) -> Result<()> {
@@ -517,13 +490,6 @@ pub(crate) struct RenderArgs {
         help = "Refuse model calls: abort listing pending figure anchors instead of patching them"
     )]
     pub no_model: bool,
-    #[arg(
-        long,
-        help = "Typesetting engine: weasyprint or typst (default: magazine.toml [render] engine)"
-    )]
-    pub engine: Option<String>,
-    #[arg(skip)]
-    pub parity: bool,
 }
 
 struct EditionInputs {
@@ -584,7 +550,6 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
         .context("resolving current directory")?
         .canonicalize()
         .context("canonicalizing repo root")?;
-    let engine = select_engine(&repo_root, args.engine.as_deref())?;
     let anchor_model = &ModelSpec::parse(&args.anchor_model)?;
     let EditionInputs {
         dir: edition_dir,
@@ -659,15 +624,12 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
         artifact_root: repo_root.to_string_lossy().to_string(),
         inputs: staging.rows,
     };
-    match engine {
-        Engine::Weasyprint => run_adapter(&repo_root, &render_dir, &request),
-        Engine::Typst => run_typst(&repo_root, &render_dir, &request, args.parity),
-    }
+    run_typst(&repo_root, &render_dir, &request)
 }
 
-fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request, parity: bool) -> Result<i32> {
+fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i32> {
     let json = serde_json::to_string(request)?;
-    let value = crate::typeset::run_request(repo_root, render_dir, &json, parity)?;
+    let value = crate::typeset::run_request(repo_root, render_dir, &json)?;
     let result = render_dir.join("result.json");
     fs::write(&result, serde_json::to_string_pretty(&value)? + "\n")
         .with_context(|| format!("writing {}", result.display()))?;
@@ -932,49 +894,6 @@ fn stage_source_records(staging: &mut Staging, edition_yaml: &serde_yaml::Value,
     }
 }
 
-fn run_adapter(repo_root: &Path, run_dir: &Path, request: &Request) -> Result<i32> {
-    let out_dir = run_dir.to_path_buf();
-    fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
-    let request_path = run_dir.join("request.json");
-    fs::write(&request_path, serde_json::to_string_pretty(request)?)
-        .with_context(|| format!("writing {}", request_path.display()))?;
-
-    println!("request: {}", request_path.display());
-    println!("out dir: {}", out_dir.display());
-
-    let mut child = Command::new("uv")
-        .args(["run", "mag-render-adapter"])
-        .arg(request_path.canonicalize()?)
-        .arg(out_dir.canonicalize()?)
-        .current_dir(repo_root)
-        .stdout(Stdio::piped())
-        .spawn()
-        .context("spawning `uv run mag-render-adapter`")?;
-
-    let mut stdout_buf = String::new();
-    child
-        .stdout
-        .take()
-        .expect("piped stdout")
-        .read_to_string(&mut stdout_buf)
-        .context("reading mag-render-adapter stdout")?;
-    let status = child.wait().context("waiting for mag-render-adapter")?;
-
-    if !status.success() {
-        bail!(
-            "mag-render-adapter exited with {status} (request: {}, out: {}); see stderr above",
-            request_path.display(),
-            out_dir.display()
-        );
-    }
-
-    let value: serde_json::Value = serde_json::from_str(&stdout_buf)
-        .with_context(|| format!("parsing mag-render-adapter stdout as JSON: {stdout_buf}"))?;
-    print_summary(&value, &out_dir);
-    println!("{}", next_step(&out_dir));
-    Ok(0)
-}
-
 fn next_step(pdf_dir: &Path) -> String {
     format!(
         "\nnext: read the PDF in {}; fix copy in the run finals or picks in edition.yaml and re-render; \
@@ -985,24 +904,8 @@ fn next_step(pdf_dir: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{close_typst, next_step, parse_anchor_reply, select_engine, Engine};
+    use super::{close_typst, next_step, parse_anchor_reply};
     use std::path::Path;
-
-    #[test]
-    fn engine_defaults_to_typst_without_a_config_key() {
-        let dir = std::env::temp_dir().join(format!("mag-engine-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("magazine.toml"), "[render]\ndesign = \"x\"\n").unwrap();
-        assert_eq!(select_engine(&dir, None).unwrap(), Engine::Typst);
-        std::fs::write(
-            dir.join("magazine.toml"),
-            "[render]\nengine = \"weasyprint\"\n",
-        )
-        .unwrap();
-        assert_eq!(select_engine(&dir, None).unwrap(), Engine::Weasyprint);
-        assert_eq!(select_engine(&dir, Some("typst")).unwrap(), Engine::Typst);
-        std::fs::remove_dir_all(&dir).unwrap();
-    }
 
     #[test]
     fn next_step_points_to_translate() {

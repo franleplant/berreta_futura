@@ -7,29 +7,13 @@ mod oracle;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
-use std::process::Command;
 
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..")
 }
 
-fn uv(script: &str) -> String {
-    let out = Command::new("uv")
-        .args(["run", "--quiet", "python", script, "."])
-        .current_dir(repo())
-        .output()
-        .expect("uv runs");
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    String::from_utf8(out.stdout).unwrap()
-}
-
 fn colour_rules() -> Vec<(BTreeSet<String>, String)> {
-    let css =
-        std::fs::read_to_string(repo().join("src/magazine/assets/weasyprint-a5.css")).unwrap();
+    let css = std::fs::read_to_string(repo().join("mag/tests/code-inks.css")).unwrap();
     let rule = regex::Regex::new(r"(?m)^(pre code \.[^{]+)\{\s*color:\s*([^;]+);").unwrap();
     rule.captures_iter(&css)
         .map(|c| {
@@ -68,13 +52,6 @@ const TABLES_SHA256: &str = "adbcb031afe2e6bb90a999abd0041dc901010ccf911a455cd09
 #[test]
 fn tables_are_generated_from_the_locked_pygments() {
     let committed = std::fs::read_to_string(repo().join("mag/src/highlight/tables.json")).unwrap();
-    if oracle::live() {
-        let fresh = uv("mag/tests/highlight_tables.py");
-        assert!(
-            fresh == committed,
-            "regenerate mag/src/highlight/tables.json"
-        );
-    }
     assert_eq!(
         oracle::sha256(committed.as_bytes()),
         TABLES_SHA256,
@@ -83,28 +60,7 @@ fn tables_are_generated_from_the_locked_pygments() {
 }
 
 fn corpus() -> Vec<Value> {
-    let text = oracle::expectation("highlight_corpus_expected.json", || {
-        let live: Vec<Value> = serde_json::from_str(&uv("mag/tests/highlight_corpus.py")).unwrap();
-        let rows = live.iter().map(|block| {
-            let runs = block["tokens"].as_array().map(|tokens| {
-                let run = |t: &Value| (t[0].as_str().unwrap().chars().count(), t[1].clone());
-                tokens.iter().map(run).collect::<Vec<_>>()
-            });
-            let text: Option<String> = block["tokens"]
-                .as_array()
-                .map(|tokens| tokens.iter().map(|t| t[0].as_str().unwrap()).collect());
-            assert!(
-                text.is_none_or(|text| text == block["code"]),
-                "tokens cover the code"
-            );
-            let html = oracle::sha256(block["html"].as_str().unwrap().as_bytes());
-            let mut row = block.clone();
-            row["html"] = serde_json::json!(html);
-            row["tokens"] = serde_json::json!(runs);
-            row.to_string()
-        });
-        format!("[\n{}\n]\n", rows.collect::<Vec<_>>().join(",\n"))
-    });
+    let text = oracle::expectation("highlight_corpus_expected.json");
     serde_json::from_str(&text).unwrap()
 }
 

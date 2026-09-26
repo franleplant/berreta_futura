@@ -2,7 +2,7 @@
 
 By OpenAI · August 25, 2026
 
-![Close-up of the Jalapeño inference chip mounted on a teal circuit board.](media/001.webp)
+![Close-up of the Jalapeño inference chip mounted on a teal circuit board.](media/001.png)
 
 Since announcing Jalapeño, OpenAI's first custom inference chip, we have been testing the chip and the system built around it. The results show a significant performance advance: Jalapeño can serve more AI work per unit of power while also returning responses more quickly. Jalapeño delivers both higher throughput and lower latency with one architecture, where existing hardware systems often have to make a tradeoff between the two.
 

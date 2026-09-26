@@ -16,7 +16,7 @@ use typst_pdf::{PdfOptions, PdfStandards};
 
 pub const TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template.typ");
 pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
-pub const FONT_DIR: &str = "src/magazine/assets/fonts";
+pub const FONT_DIR: &str = "mag/assets/fonts";
 const IDENT: &str = "mag-typeset-reader";
 const INLINE_LINK: &str = " mag-inline-link";
 const TYPST_DEST_LIFT: f64 = 10.0;
@@ -833,7 +833,7 @@ mod tests {
         let figure = figure.map_or(String::new(), |pixels| {
             format!(
                 "#figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", layout: \"{layout}\", \
-                 word: \"Figure\", alt: \"a\", path: \"{}\"{pixels})[#figure-caption[Cap.]#figure-credit[Credit.]]\n",
+                 word: \"Figure\", alt: \"a\", path: \"{}\"{pixels})[#figure-caption[Cap.]]\n",
                 fixture_png()
             )
         });
@@ -962,7 +962,7 @@ mod tests {
         };
         [
             find(&|m| m.text == "Anchor" && (m.size - 18.5).abs() < 1e-6),
-            find(&|m| m.text.starts_with("FIGURE")),
+            find(&|m| m.text == "Cap." || m.text.starts_with("FIGURE")),
             find(&|m| m.text == "Line 0."),
         ]
     }

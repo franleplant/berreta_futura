@@ -380,7 +380,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "bebda9dfc586efb7b2fa7332766332c5b55757875b1acffaf3d2b69b98e21ff9"
+    "html": "1cc7fc94850708b97d3c2bf1577268485a1d372f30b928d94770f0b75a582510"
   },
   "eight": {
     "assets": [
@@ -525,7 +525,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "9978d507ed9ddd299979003a550e62b3031e85771d90018d0263ba54f1cfee17"
+    "html": "7e1abfe707fcc70c9197e4df3face5914e6fffd78cb957309169f3249d5fd206"
   },
   "nine": {
     "assets": [
@@ -684,7 +684,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "ff0be3a042b6952af7324861b8a1a1f94b9498781dff26eec1b5d29cdc9a8ef4"
+    "html": "59165cd53b766eb46edd0cbd377c15c8f15bc985890c0794ad84409d6c839a2a"
   },
   "plate_fits": {
     "assets": [
@@ -759,7 +759,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "52372675a1595e5e789fba3816ffc7d723d3ae733cf0d0ebca6d870deb56361a"
+    "html": "535ec620766effb8d32ef9b8afcaa5d43efeb9f3a641ec62566bc17c6fda22b4"
   },
   "plate_jpeg": {
     "assets": [
@@ -834,7 +834,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "6efa6ea52cf211a03efab63bb826c41dc3a0ab5ce96d4624ffe4921d41fd80b4"
+    "html": "ca38ad8ef80dc55f8143f9520e326d8493ad0b6ba79fe03ee4f19caf7b64ea57"
   },
   "plate_missing": {
     "error": "Closing plate 1 needs a readable raster source: $STAGE/absent.png"
@@ -912,7 +912,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "c0f4b6203e07fd008be294dcc6b2b5e4afede2119e39d7d4b1b5e9ceadd0278e"
+    "html": "949fcb122a02eb9454007577f747652c15f2060ccc7366c01362741a80338bba"
   },
   "plate_progressive": {
     "assets": [
@@ -987,7 +987,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "d7e486a45b15e2b1c99caa86beaa5bbfbf09d57328d0293c10418ac4444d61e3"
+    "html": "0fbed55c6d11ada874945568c7abb4a3b1e1970508d03eb20ce8157f421fa1f3"
   },
   "plate_sliver": {
     "error": "Closing plate 1 art $STAGE/editions/wfx/plate-sliver.jpg has aspect 0.40; contained in the 0.85 plate window it would print as a sliver. Use art nearer the window's shape."
@@ -1099,7 +1099,7 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "568213f926a063835280d63cee3ccf65de3d515c94f02a2d5757b871407e42b2"
+    "html": "a846d35cb5c71d5506b63b340bc87cf6aa20b3bb8431fb0d06318fd7150607ab"
   },
   "title63": {
     "error": "Contents title 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT' (63 characters) would wrap onto the entry's author line; shorten the article title to 62 characters or fewer."
@@ -1205,6 +1205,6 @@
         "src": "file://$STAGE/editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png"
       }
     ],
-    "html": "7132811e3c7a2c3ddd6358af6578c2874daadc5155dec0f9866477304d917c36"
+    "html": "081cb72246cbd5c6136abbcd6938757929568bb4ce3d2c40b333601a8ec11ce5"
   }
 }

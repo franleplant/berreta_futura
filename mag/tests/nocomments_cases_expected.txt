@@ -7,11 +7,11 @@ mag/src/plain.rs:15: comment
 mag/src/plain.rs:16: comment
 mag/src/plain.rs:18: comment
 mag/src/plain.rs:21: comment
-src/magazine/pkg.py:2: docstring
 tools/.hidden:2: comment
 tools/crlf.py:2: comment
 tools/crlf.py:4: docstring
 tools/moduledoc.py:1: docstring
+tools/pkg.py:2: docstring
 tools/runner:2: comment
 tools/runner:4: comment
 tools/shapes.py:2: comment

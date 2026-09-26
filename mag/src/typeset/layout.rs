@@ -1060,7 +1060,7 @@ mod tests {
             "{lead}#doc-heading(level: 2)[Anchor]\n\
              #figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", \
              layout: \"evidence_band\", word: \"Figure\", alt: \"a\", \
-             path: \"{}\", pixels: (40, 25))[#figure-caption[Cap.]#figure-credit[Credit.]]\n",
+             path: \"{}\", pixels: (40, 25))[#figure-caption[Cap.]]\n",
             media("media/landscape.png")
         ));
         let document = compiled(&run);

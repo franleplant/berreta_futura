@@ -611,6 +611,7 @@ fn article_media(
             article_source_ids: source_ids,
             manuscript,
             allow_unanchored,
+            verbatim: matches!(row.get("content_mode"), Some(Value::String(mode)) if mode == "verbatim"),
         },
         row.get("figures"),
     ) {

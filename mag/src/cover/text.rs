@@ -13,11 +13,11 @@ pub fn cover_date(value: &str) -> String {
 }
 
 pub fn cover_contributors(edition: &Edition) -> String {
-    let mut authors: Vec<&str> = Vec::new();
+    let mut authors: Vec<String> = Vec::new();
     let mut seen: BTreeSet<String> = BTreeSet::new();
     for article in &edition.articles {
-        let author = py_strip(&article.author);
-        if !author.is_empty() && seen.insert(py_casefold(author)) {
+        let author = lead_author(py_strip(&article.author));
+        if !author.is_empty() && seen.insert(py_casefold(&author)) {
             authors.push(author);
         }
     }
@@ -25,6 +25,19 @@ pub fn cover_contributors(edition: &Edition) -> String {
         return py_upper(&authors.join(" / "));
     }
     py_strip(&deck(&edition.cover)).to_string()
+}
+
+fn lead_author(author: &str) -> String {
+    let names: Vec<&str> = author
+        .split([',', '&'])
+        .flat_map(|part| part.split(" and "))
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .collect();
+    match names.as_slice() {
+        [first, _, ..] => format!("{first} et al."),
+        _ => author.to_string(),
+    }
 }
 
 fn deck(cover: &Mapping) -> String {

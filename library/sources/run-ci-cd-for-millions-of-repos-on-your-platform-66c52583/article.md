@@ -15,13 +15,13 @@ Then, directly from the Workflow with [@cloudflare/ci](https://www.npmjs.com/pac
 - Self-heal: integrate an AI review agent to catch broken steps in your build and push commits to fix
 - Deploy conditionally: automatically deploy your code, only if your build step is successful
 
-![](media/001.webp)
+![](media/001.png)
 
 Today, everyone is building a platform, whether it’s an internal vibe coding platform or an extension of your customer-facing product via customization through code. [Platforms are now using millions of repos on Artifacts](https://x.com/dillon_mulroy/status/2077508376217452866) to store their code, and their customers’ code, and version control across the two. But every team has their own needs for a continuous integration and deployment pipeline. For platforms, they might want to define a CI job for their own code differently from that of their customers.
 
 Many of the end customers building on these platforms don’t want the extra headache of managing their continuous integration and continuous deployment (CI/CD) pipeline. Instead, the platform can manage the build process on their customers’ behalf: write the CI/CD pipeline once and share it across all the applications that their customers are building. Some of the platform’s customers might want to define their own CI; if so, they can write their own Workflow and run custom CI jobs on just their repo, facilitated by [dynamic workflows](https://blog.cloudflare.com/dynamic-workflows/). The beauty is, you don’t have to pick and choose: both platform-managed and custom CI can run at the same time, in the same namespace.
 
-![](media/002.webp)
+![](media/002.png)
 
 ## A CI/CD pipeline is just a Workflow
 
@@ -35,7 +35,7 @@ Previously, you’d have to call the Sandbox API directly and manage state yours
 
 You can also speed up your CI pipeline by caching step results — for example, your install step — so that you don’t need to reinstall for all subsequent operations. Dependency caching reduces the latency of your CI/CD pipeline since every CI step won’t need to rerun the install.
 
-![](media/003.webp)
+![](media/003.png)
 
 To define your CI job, all you need to do is:
 
@@ -68,7 +68,7 @@ await deps.runner({
 
 Writing your own CI pipeline in a Workflow allows you to customize as much as you want. For example, you could call an agent from your CI Workflow to give your CI jobs self-healing functionality: if a step in your build errors, the agent can fix it automatically, and push a commit for your approval.
 
-![](media/004.webp)
+![](media/004.png)
 
 Try an example of self-healing CI Workflows with Project Think: [https://github.com/cloudflare/ci/blob/main/examples/self-healing](https://github.com/cloudflare/ci/blob/main/examples/self-healing)
 
@@ -91,7 +91,7 @@ const deps = await ci.runner({
 
 Then define steps for the build and checks, each executed in its own safe, isolated sandbox environment.
 
-![](media/005.webp)
+![](media/005.png)
 
 By default, each step in a Workflow starts independently, meaning the steps will execute concurrently unless otherwise specified. Running each step in parallel reduces the latency of your CI run. To ensure that all checks complete before the CI pipeline continues (for example, finish `build`, `lint`, `test`, and `typecheck` before the deploy step starts), wrap in a `Promise.all()`:
 

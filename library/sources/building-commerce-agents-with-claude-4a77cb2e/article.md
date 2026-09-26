@@ -10,7 +10,7 @@ The code deploys where you already build with Claude, including the Claude API, 
 
 It's [available today](https://github.com/anthropics/commerce-agents), with [live demos](https://claude.com/solutions/commerce) for each vertical and an [engineering deep-dive](http://claude.com/blog/the-anatomy-of-effective-commerce-agents) on how it was built, just in time for holiday season planning.
 
-![The shopping agent running in the ACME retail example.](media/001.webp)
+![The shopping agent running in the ACME retail example.](media/001.png)
 
 ## What's in the blueprint
 
