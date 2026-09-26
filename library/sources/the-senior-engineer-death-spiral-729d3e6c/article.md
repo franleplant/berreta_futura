@@ -6,7 +6,7 @@ By Sunil Pai · 19 September 2026
 
 ---
 
-![A hand-drawn grid spiraling into a dense knot, with one loose line escaping to the edge.](media/001.webp)
+![A hand-drawn grid spiraling into a dense knot, with one loose line escaping to the edge.](media/001.png)
 
 okay, so this is the most common failure mode I’ve seen. I call it the senior engineer death spiral. it usually happens when an engineer goes into a new job, gets a promotion, or even just gets a big project at work. or they ask for a big project because they think to themselves, “oh, if I work harder, do a bigger thing, then I will be rewarded with promotions and what have you,” right? like, that’s the move. and the thing they do is they tell themselves they need to almost cosplay being a more senior engineer than they are. they’re like, “oh, you know what, I’m going to try designing something way more ambitious.”
 

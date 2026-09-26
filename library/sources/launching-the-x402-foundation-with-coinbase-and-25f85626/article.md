@@ -112,7 +112,7 @@ The server can now handle the settlement flexibly. The validated id from the han
 
 Running code is what moves an open convention from the theoretical to truly useful, and eventually to a recognized standard. Agents built using Cloudflare’s [Agent SDK](https://developers.cloudflare.com/agents/x402/) can now pay for resources with x402, and MCP servers can expose tools to be paid for via x402. To show how this works, we created the [x402 playground](https://playground.x402.cloudflare.com/), a live demo employing x402. The x402 playground is powered by the [Agents SDK](https://developers.cloudflare.com/agents/) and has access to tools from [MCP servers](https://developers.cloudflare.com/agents/guides/remote-mcp-server/) deployed on Cloudflare.
 
-![](media/001.webp)
+![](media/001.png)
 
 When you open the x402 playground, a new wallet is created and funded with Testnet USDC on a [Base blockchain testnet](https://docs.base.org/learn/deployment-to-testnet/test-networks). The agent, built with Agents SDK, has access to an MCP server with both free and paid tools.
 

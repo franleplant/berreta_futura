@@ -429,15 +429,28 @@ fn yq(s: &str) -> String {
     }
 }
 
-fn source_figure_candidates(sid: &str) -> Vec<(String, String)> {
+struct SourceImage {
+    media: String,
+    alt: String,
+    anchor: String,
+}
+
+fn source_images(sid: &str) -> Vec<SourceImage> {
     let path = PathBuf::from("library/sources")
         .join(sid)
         .join("article.md");
-    let Ok(text) = fs::read_to_string(&path) else {
-        return Vec::new();
-    };
+    fs::read_to_string(&path)
+        .map(|text| images_in(&text))
+        .unwrap_or_default()
+}
+
+fn images_in(text: &str) -> Vec<SourceImage> {
+    let mut anchor = "__opener__".to_string();
     let mut out = Vec::new();
     for line in text.lines() {
+        if let Some(heading) = line.strip_prefix("## ").or(line.strip_prefix("### ")) {
+            anchor = heading.trim().to_string();
+        }
         let Some(rest) = line.trim_start().strip_prefix("![") else {
             continue;
         };
@@ -448,10 +461,46 @@ fn source_figure_candidates(sid: &str) -> Vec<(String, String)> {
             continue;
         };
         if media.starts_with("media/") {
-            out.push((media.to_string(), alt.chars().take(110).collect()));
+            out.push(SourceImage {
+                media: media.to_string(),
+                alt: alt.trim().to_string(),
+                anchor: anchor.clone(),
+            });
         }
     }
     out
+}
+
+fn verbatim_figures(sids: &[String]) -> String {
+    let rows: Vec<String> = sids
+        .iter()
+        .flat_map(|sid| {
+            source_images(sid)
+                .into_iter()
+                .map(move |image| (sid, image))
+        })
+        .enumerate()
+        .map(|(index, (sid, image))| {
+            let caption = if image.alt.is_empty() {
+                "TODO"
+            } else {
+                &image.alt
+            };
+            format!(
+                "  - id: figure-{}\n    source_id: {sid}\n    path: {}\n    caption: {}\n    \
+                 alt_text: {}\n    anchor: {}\n    layout: evidence_band\n",
+                index + 1,
+                image.media,
+                yq(caption),
+                yq(caption),
+                yq(&image.anchor)
+            )
+        })
+        .collect();
+    match rows.is_empty() {
+        true => String::new(),
+        false => format!("  figures:\n{}", rows.concat()),
+    }
 }
 
 fn scaffold_edition_yaml(
@@ -515,14 +564,19 @@ fn scaffold_edition_yaml(
                 y += &format!("  {line}\n");
             }
         }
-        let mut any = false;
-        for sid in &sids {
-            for (media, alt) in source_figure_candidates(sid) {
-                if !any {
-                    y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text, credit,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate). short_title and display_emphasis must occur inside title.\n";
-                    any = true;
+        if get("content_mode") == "verbatim" {
+            y += &verbatim_figures(&sids);
+        } else {
+            let mut any = false;
+            for sid in &sids {
+                for image in source_images(sid) {
+                    if !any {
+                        y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate). short_title and display_emphasis must occur inside title.\n";
+                        any = true;
+                    }
+                    let alt: String = image.alt.chars().take(110).collect();
+                    y += &format!("  #   {sid} {}: {alt}\n", image.media);
                 }
-                y += &format!("  #   {sid} {media}: {alt}\n");
             }
         }
         y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
@@ -868,6 +922,24 @@ mod tests {
         assert_eq!(
             fm,
             "---\nsource_ids:\n- a-1\n- b-2\ncontent_mode: in_a_nutshell\nlabel: IN A NUTSHELL\n---\n\n"
+        );
+    }
+
+    #[test]
+    fn source_images_carry_the_heading_above_them() {
+        let text = "# T\n\n![lead](media/000.png)\n\n## One\n\n![a](media/001.png)\n\n### Two\n\n![](media/002.png)\n![web](https://x/y.png)\n";
+        let images: Vec<(String, String, String)> = images_in(text)
+            .into_iter()
+            .map(|i| (i.media, i.alt, i.anchor))
+            .collect();
+        let row = |m: &str, a: &str, h: &str| (m.to_string(), a.to_string(), h.to_string());
+        assert_eq!(
+            images,
+            vec![
+                row("media/000.png", "lead", "__opener__"),
+                row("media/001.png", "a", "One"),
+                row("media/002.png", "", "Two"),
+            ]
         );
     }
 

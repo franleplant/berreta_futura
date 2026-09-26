@@ -1752,6 +1752,7 @@ dependencies = [
  "fancy-regex",
  "flate2",
  "hex",
+ "image-webp",
  "lopdf",
  "pdf_encoding",
  "png",
