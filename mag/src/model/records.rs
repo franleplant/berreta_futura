@@ -619,7 +619,7 @@ pub fn load_records(sources_dir: &Path) -> Result<Vec<SourceRecord>> {
     Ok(records)
 }
 
-pub const FIGURE_LAYOUTS: [&str; 7] = [
+pub const FIGURE_LAYOUTS: [&str; 9] = [
     "evidence_band",
     "evidence_band_prose",
     "adaptive_band",
@@ -627,9 +627,12 @@ pub const FIGURE_LAYOUTS: [&str; 7] = [
     "column_plate",
     "landscape_plate",
     "landscape_plate_after",
+    "full_band",
+    "rotated_plate",
 ];
 
 const FIGURE_TONES: [&str; 3] = ["auto", "keep", "invert"];
+const FIGURE_FITS: [&str; 2] = ["auto", "keep"];
 
 pub const EXTRACT_STYLES: [&str; 2] = ["code", "quote"];
 
@@ -644,6 +647,7 @@ pub struct Figure {
     pub anchor: String,
     pub layout: String,
     pub tone: String,
+    pub fit: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -787,6 +791,7 @@ pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<
             "anchor",
             "layout",
             "tone",
+            "fit",
         ];
         let mut fields: BTreeMap<&str, String> = BTreeMap::new();
         for name in names {
@@ -794,7 +799,7 @@ pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<
         }
         let missing: Vec<&str> = names
             .into_iter()
-            .filter(|name| !["credit", "tone"].contains(name) && fields[name].is_empty())
+            .filter(|name| !["credit", "tone", "fit"].contains(name) && fields[name].is_empty())
             .collect();
         if !missing.is_empty() {
             errors.push(format!("{label} missing: {}", missing.join(", ")));
@@ -858,6 +863,13 @@ fn resolve_figure(
             "{label} has invalid tone: {tone} (auto, keep, or invert)"
         ));
     }
+    let fit = match fields["fit"].as_str() {
+        "" => "auto".to_string(),
+        fit => fit.to_string(),
+    };
+    if !FIGURE_FITS.contains(&fit.as_str()) {
+        errors.push(format!("{label} has invalid fit: {fit} (auto or keep)"));
+    }
     let anchor = fields["anchor"].clone();
     if anchor != "__opener__" && !headings.contains(&anchor) && !request.allow_unanchored {
         errors.push(format!(
@@ -887,6 +899,7 @@ fn resolve_figure(
         anchor,
         layout: fields["layout"].clone(),
         tone,
+        fit,
     })
 }
 
