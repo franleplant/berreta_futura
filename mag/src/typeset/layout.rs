@@ -1,6 +1,7 @@
 use crate::model::manifest::{load_edition, Edition, LoadOptions, Records};
 use crate::model::records::load_records;
 use crate::typeset::content::Tree;
+use crate::typeset::legible::{ENLARGED, ENLARGED_MIN_PPI};
 use crate::typeset::media::pixels;
 use crate::typeset::template::TEMPLATE_TYP;
 use anyhow::{bail, Context, Result};
@@ -37,6 +38,7 @@ pub struct Placed {
     pub y: f64,
     pub width: f64,
     pub height: f64,
+    pub turned: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -57,12 +59,40 @@ pub struct Measured {
     pub content_bottom: f64,
 }
 
-fn declared_pt(name: &str) -> Result<f64> {
+pub(crate) fn declared_pt(name: &str) -> Result<f64> {
     let prefix = format!("#let {name} = ");
     TEMPLATE_TYP
         .lines()
         .find_map(|line| line.strip_prefix(&prefix)?.strip_suffix("pt")?.parse().ok())
         .with_context(|| format!("the template declares no {name} in points"))
+}
+
+fn placed(value: &Typed, page: usize, x: f64, y: f64) -> Result<Placed> {
+    let id = text(value, "id").context("a figure box carries no id")?;
+    let width = points(value, "width").context("a figure box carries no width")?;
+    let height = points(value, "height").context("a figure box carries no height")?;
+    let turned =
+        matches!(value, Typed::Dict(d) if matches!(d.get("turned"), Ok(Typed::Bool(true))));
+    Ok(match turned {
+        true => Placed {
+            id,
+            page,
+            x,
+            y: y - width,
+            width: height,
+            height: width,
+            turned,
+        },
+        false => Placed {
+            id,
+            page,
+            x,
+            y,
+            width,
+            height,
+            turned,
+        },
+    })
 }
 
 fn text(value: &Typed, key: &str) -> Option<String> {
@@ -156,14 +186,12 @@ pub fn measure(document: &PagedDocument) -> Result<Measured> {
             }),
             (Some("mag-piece-end"), Some(piece)) => piece.foot = Some(page),
             (Some("mag-opener-end"), Some(piece)) => piece.opener_end = Some(page),
-            (Some("mag-figure-box"), _) => boxes.push(Placed {
-                id: text(&meta.value, "id").context("a figure box carries no id")?,
+            (Some("mag-figure-box"), _) => boxes.push(placed(
+                &meta.value,
                 page,
-                x: at.point.x.to_pt(),
-                y: at.point.y.to_pt(),
-                width: points(&meta.value, "width").context("a figure box carries no width")?,
-                height: points(&meta.value, "height").context("a figure box carries no height")?,
-            }),
+                at.point.x.to_pt(),
+                at.point.y.to_pt(),
+            )?),
             (Some("mag-tail"), _) => {
                 tails.push(tail(&meta.value).context("a tail mark is malformed")?)
             }
@@ -368,20 +396,27 @@ fn figures(edition: &Edition, measured: &Measured, tree: &Tree, root: &Path) -> 
         let placed = measured
             .boxes
             .iter()
-            .find(|b| b.id == id)
+            .find(|b| b.id == id && b.page >= page)
             .with_context(|| format!("figure {id} placed no image box"))?;
-        let ppi = effective_ppi((width, height), placed.width, placed.height);
-        if ppi < MIN_FIGURE_PPI {
+        let ppi = match placed.turned {
+            true => effective_ppi((width, height), placed.height, placed.width),
+            false => effective_ppi((width, height), placed.width, placed.height),
+        };
+        let floor = match ENLARGED.contains(&figure.layout.as_str()) {
+            true => ENLARGED_MIN_PPI,
+            false => MIN_FIGURE_PPI,
+        };
+        if ppi < floor {
             bail!(
                 "Curated figure {id} resolves to {ppi:.1} ppi at its Quiet Standard placement; \
-                 the minimum is {MIN_FIGURE_PPI:.0} ppi"
+                 the minimum is {floor:.0} ppi"
             );
         }
         let bottom = measured.page_height - placed.y - placed.height + RASTER_NUDGE_PT;
         out.push(json!({
             "id": id,
             "article_id": article,
-            "page": page,
+            "page": placed.page,
             "path": figure.path.strip_prefix(root).unwrap_or(&figure.path).to_string_lossy().replace('\\', "/"),
             "pixel_dimensions": [width, height],
             "box_points": ([placed.x, bottom, placed.width, placed.height].map(|v| rounded(v, 3))),

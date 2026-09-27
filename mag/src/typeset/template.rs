@@ -951,6 +951,31 @@ mod tests {
     }
 
     #[test]
+    fn a_rotated_plate_takes_one_whole_page_and_the_prose_fills_the_page_before_it() {
+        let muse = Some(", pixels: (2842, 1357)");
+        for n in [0, 9, 21, 33] {
+            let with = figure_run(n, "rotated_plate", muse);
+            let without = figure_run(n, "rotated_plate", None);
+            let (plated, bare) = (laid(&with, TEMPLATE_TYP), laid(&without, TEMPLATE_TYP));
+            assert_eq!(plated.len(), bare.len() + 1, "step {n}");
+            let caption = plated
+                .iter()
+                .position(|page| page.iter().any(|m| m.text == "Cap."))
+                .expect("the caption is laid");
+            assert!(
+                !plated[caption].iter().any(|m| m.text.starts_with("Line ")),
+                "step {n}: prose shares the plate page"
+            );
+            assert!(
+                plated[caption - 1]
+                    .iter()
+                    .any(|m| m.text.starts_with("Line ")),
+                "step {n}: the page before the plate is empty"
+            );
+        }
+    }
+
+    #[test]
     fn a_band_anchor_heading_follows_its_paragraph_on_the_space_after_alone() {
         let square = Some(", pixels: (1000, 1000)");
         let moved = sweep(0..64, |n| {

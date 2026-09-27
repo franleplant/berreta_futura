@@ -70,6 +70,9 @@
 #let FIGURE-MAX-HEIGHT = 205pt
 #let COMPACT-FIGURE-MAX-HEIGHT = 170pt
 #let OPENER-FIGURE-MAX-HEIGHT = 270pt
+#let FULL-FIGURE-MAX-HEIGHT = 400pt
+#let ROTATED-PLATE-LENGTH = 523pt
+#let ROTATED-PLATE-DEPTH = 295pt
 #let COMPACT-BAND-INSET = 32.5pt
 #let FIGURE-RULE = 0.55pt
 #let CAPTION-NUDGE = 0.1166pt
@@ -80,7 +83,8 @@
 #let BAND-CLEARANCE-LINES = 4
 #let TAIL-FOOT-F32-LIFT = 0.0001pt
 #let PAGE-TOP-EPSILON = 0.01pt
-#let BAND-LAYOUTS = ("evidence_band", "evidence_band_prose", "adaptive_band")
+#let BAND-LAYOUTS = ("evidence_band", "evidence_band_prose", "adaptive_band", "full_band")
+#let ROTATED-PLATE = "rotated_plate"
 #let COMPACT-BAND = "compact_band"
 #let OPENER-ANCHOR = "__opener__"
 #let EXTRACT-GAP = 5mm
@@ -271,7 +275,9 @@
       BAND-ESCAPE
     } else if compact { COMPACT-ESCAPE } else { FIGURE-ESCAPE },
     gap: if opener { 0pt } else if compact { COMPACT-FIGURE-GAP } else { FIGURE-GAP },
-    max-height: if opener {
+    max-height: if layout == "full_band" {
+      FULL-FIGURE-MAX-HEIGHT
+    } else if opener {
       OPENER-FIGURE-MAX-HEIGHT
     } else if compact { COMPACT-FIGURE-MAX-HEIGHT } else { FIGURE-MAX-HEIGHT },
   )
@@ -1106,15 +1112,31 @@
   pixels.at(1) * calc.min(width / pixels.at(0), max-height / pixels.at(1))
 )
 
+#let framed-image(id, path, width, height, turned: false) = block(width: width, height: height, spacing: 0pt, {
+  place(top + left, [#metadata((id: id, width: width, height: height, turned: turned))<mag-figure-box>])
+  place(top + left, clipped(width, height, image(path, width: width, height: height, fit: "stretch")))
+  layer(place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK)))
+})
+
 #let figure-image(id, path, pixels, spec) = layout(size => {
   let height = fitted-image-height(size.width, pixels, spec.max-height)
   let width = pixels.at(0) * height / pixels.at(1)
-  block(height: height, width: 100%, spacing: 0pt, align(center, block(width: width, height: height, {
-    place(top + left, [#metadata((id: id, width: width, height: height))<mag-figure-box>])
-    place(top + left, clipped(width, height, image(path, width: width, height: height, fit: "stretch")))
-    layer(place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK)))
-  })))
+  block(height: height, width: 100%, spacing: 0pt, align(center, framed-image(id, path, width, height)))
 })
+
+#let rotated-plate(id, path, pixels, body) = {
+  let scale = calc.min(ROTATED-PLATE-LENGTH / pixels.at(0), ROTATED-PLATE-DEPTH / pixels.at(1))
+  let (width, height) = (pixels.at(0) * scale, pixels.at(1) * scale)
+  caption-edge.update(none)
+  flow-mark("figure", ROTATED-PLATE, _ => layer(place(top, float: true, clearance: 0pt, block(
+    width: 100%,
+    height: CONTENT-HEIGHT,
+    place(center + horizon, dy: (MARGIN-BOTTOM - MARGIN-TOP) / 2, rotate(-90deg, reflow: true, block(width: width, {
+      framed-image(id, path, width, height, turned: true)
+      body
+    }))),
+  ))))
+}
 
 #let band-clearance() = context {
   let room = BAND-CLEARANCE-LINES * (text.top-edge - text.bottom-edge).to-absolute()
@@ -1126,6 +1148,24 @@
   let anchor = query(<mag-flow>).filter(m => m.value.index == index - 1 and m.value.kind == "heading")
   let top = anchor.len() > 0 and anchor.first().location().position().y <= MARGIN-TOP + PAGE-TOP-EPSILON
   if not top { 0pt } else if calc.odd(here().page()) { MARGIN-OUTER - MARGIN-INNER } else { MARGIN-INNER - MARGIN-OUTER }
+}
+
+#let plain-figure(id, anchor, layout, path, pixels, trim, body) = {
+  let spec = figure-spec(layout, anchor)
+  spec.max-height -= trim
+  caption-edge.update(if BAND-LAYOUTS.contains(layout) { "band" } else if layout == COMPACT-BAND { "compact" })
+  flow-mark("figure", layout, index => layer(block(
+    above: 0pt,
+    below: spec.gap,
+    breakable: false,
+    width: 100%,
+    inset: spec.escape,
+    move(dx: if is-band(layout) and anchor != OPENER-ANCHOR { carried-shift(index) } else { 0pt }, dy: DATUM, {
+      figure-image(id, path, pixels, spec)
+      body
+    }),
+  )))
+  band-clearance()
 }
 
 #let figure-block(
@@ -1142,21 +1182,7 @@
 ) = {
   assert(pixels != none, message: "figure " + id + " carries no pixel size; the emitter must state it")
   figure-counter.step()
-  let spec = figure-spec(layout, anchor)
-  spec.max-height -= trim
-  caption-edge.update(if BAND-LAYOUTS.contains(layout) { "band" } else if layout == COMPACT-BAND { "compact" })
-  flow-mark("figure", layout, index => layer(block(
-    above: 0pt,
-    below: spec.gap,
-    breakable: false,
-    width: 100%,
-    inset: spec.escape,
-    move(dx: if is-band(layout) and anchor != OPENER-ANCHOR { carried-shift(index) } else { 0pt }, dy: DATUM, {
-      figure-image(id, path, pixels, spec)
-      body
-    }),
-  )))
-  band-clearance()
+  if layout == ROTATED-PLATE { rotated-plate(id, path, pixels, body) } else { plain-figure(id, anchor, layout, path, pixels, trim, body) }
 }
 
 #let quote-line(body) = par(body)

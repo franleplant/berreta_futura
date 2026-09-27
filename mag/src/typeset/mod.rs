@@ -3,6 +3,7 @@ pub(crate) mod cover;
 pub(crate) mod estimate;
 pub(crate) mod hyphen;
 pub(crate) mod layout;
+pub(crate) mod legible;
 pub(crate) mod media;
 pub(crate) mod release;
 pub(crate) mod runt;
@@ -79,12 +80,15 @@ pub(crate) fn run_request(
     .map_err(anyhow::Error::msg)?;
     let mut result = serde_json::json!({"layouts": [], "files": [], "warnings": []});
     for language in languages {
-        let edition = tone::print_figures(
-            match language == primary {
-                true => base.clone(),
-                false => crate::model::manifest::load_translation(&staged, &base, language)?,
-            },
-            &staged,
+        let edition = legible::enlarge(
+            tone::print_figures(
+                match language == primary {
+                    true => base.clone(),
+                    false => crate::model::manifest::load_translation(&staged, &base, language)?,
+                },
+                &staged,
+            )?,
+            repo_root,
         )?;
         let work = match language == primary {
             true => render_dir.join("typst"),
