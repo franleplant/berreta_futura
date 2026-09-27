@@ -117,6 +117,7 @@ fn seed_figures(case: &serde_yaml::Mapping, root: &Path) -> Vec<Figure> {
                 alt_text: text("alt_text"),
                 anchor: text("anchor"),
                 layout: text("layout"),
+                tone: "auto".to_string(),
             }
         })
         .collect()

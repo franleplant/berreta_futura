@@ -8,6 +8,7 @@ pub(crate) mod release;
 pub(crate) mod runt;
 pub(crate) mod template;
 pub(crate) mod text_shim;
+pub(crate) mod tone;
 pub(crate) mod world;
 
 use anyhow::{Context, Result};
@@ -78,11 +79,13 @@ pub(crate) fn run_request(
     .map_err(anyhow::Error::msg)?;
     let mut result = serde_json::json!({"layouts": [], "files": [], "warnings": []});
     for language in languages {
-        let edition = if language == primary {
-            base.clone()
-        } else {
-            crate::model::manifest::load_translation(&staged, &base, language)?
-        };
+        let edition = tone::print_figures(
+            match language == primary {
+                true => base.clone(),
+                false => crate::model::manifest::load_translation(&staged, &base, language)?,
+            },
+            &staged,
+        )?;
         let work = match language == primary {
             true => render_dir.join("typst"),
             false => render_dir.join(format!("typst-{language}")),
