@@ -1,12 +1,12 @@
-use crate::typeset::content::{File, Tree};
+use crate::typeset::content::{compose, File, Tree};
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::text_shim;
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
 use lopdf::{Object, ObjectId};
 use std::path::Path;
-use typst::foundations::Smart;
-use typst::introspection::{Location, PagedPosition, Tag};
+use typst::foundations::{Smart, Value};
+use typst::introspection::{Location, MetadataElem, PagedPosition, Tag};
 use typst::layout::{Abs, Frame, FrameItem, GroupItem, Point, Size, Transform};
 use typst::model::{Destination, Document, Url};
 use typst::text::TextItem;
@@ -28,6 +28,35 @@ const CHIP_FILL: [u8; 4] = [244, 241, 249, 255];
 
 pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
     Sources::new(tree, TEMPLATE_TYP, ROOT_TYP, font_dir)
+}
+
+pub fn composed(
+    edition: &crate::model::manifest::Edition,
+    font_dir: &Path,
+    hyphenation: Hyphenation,
+) -> Result<Tree> {
+    let tree = compose(edition, font_dir, hyphenation, &[])?;
+    let keeps = standfirst_keeps(&document(&world(&tree, font_dir)?)?);
+    Ok(match keeps.iter().any(Option::is_some) {
+        true => compose(edition, font_dir, hyphenation, &keeps)?,
+        false => tree,
+    })
+}
+
+pub fn standfirst_keeps(document: &PagedDocument) -> Vec<Option<usize>> {
+    document
+        .introspector()
+        .elements()
+        .all()
+        .filter(|c| {
+            c.label()
+                .is_some_and(|l| l.resolve().as_str() == "mag-standfirst")
+        })
+        .map(|c| match c.to_packed::<MetadataElem>().map(|m| &m.value) {
+            Some(Value::Int(keep)) => usize::try_from(*keep).ok(),
+            _ => None,
+        })
+        .collect()
 }
 
 const PLATE_CONTENT: &str = "#closing-signature(none)\n";

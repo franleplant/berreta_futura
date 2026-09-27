@@ -8,10 +8,11 @@ use crate::model::shared::{
     anchor_key, article_opener_format, clamp_roster, content_label, is_name_roster,
     is_reference_heading, py_repr, py_str, scalar_label, ui, Result, ValidationError,
 };
-use crate::typeset::estimate::{Metrics, Opener};
+use crate::typeset::estimate::Metrics;
 use crate::typeset::hyphen::{Hyphenation, Hyphenator};
 use crate::typeset::media::pixels;
 use crate::web::edition::source_code_directory;
+use std::cell::Cell;
 use std::collections::BTreeSet;
 use std::path::Path;
 use typst_syntax::{SyntaxKind, SyntaxNode};
@@ -85,24 +86,22 @@ pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
             allow_unanchored_figures: inputs.allow_unanchored_figures,
         },
     )?;
-    compose(&edition, inputs.fonts, Hyphenation::PARITY)
+    compose(&edition, inputs.fonts, Hyphenation::PARITY, &[])
 }
 
-pub fn compose(edition: &Edition, fonts: &Path, hyphenation: Hyphenation) -> Result<Tree> {
-    let settable = settable_codepoints(fonts).map_err(refusal)?;
-    build(edition, &settable, &Metrics::load(fonts)?, hyphenation)
-}
-
-pub fn build(
+pub fn compose(
     edition: &Edition,
-    settable: &BTreeSet<u32>,
-    metrics: &Metrics,
+    fonts: &Path,
     hyphenation: Hyphenation,
+    keeps: &[Option<usize>],
 ) -> Result<Tree> {
+    let settable = settable_codepoints(fonts).map_err(refusal)?;
     Writer {
         edition,
-        settable,
-        metrics,
+        settable: &settable,
+        metrics: &Metrics::load(fonts)?,
+        keeps,
+        standfirsts: Cell::new(0),
         illustrated: article_opener_format(&edition.raw) == ILLUSTRATED,
         native: hyphenation.native(&edition.locale),
         hyphenator: Hyphenator::for_locale(&edition.locale)
@@ -120,6 +119,8 @@ struct Writer<'a> {
     edition: &'a Edition,
     settable: &'a BTreeSet<u32>,
     metrics: &'a Metrics,
+    keeps: &'a [Option<usize>],
+    standfirsts: Cell<usize>,
     illustrated: bool,
     native: bool,
     hyphenator: Option<Hyphenator>,
@@ -392,7 +393,7 @@ impl Writer<'_> {
         }
         let mut lead = false;
         if let (true, Some(block)) = (illustrated, document.blocks.first()) {
-            let standfirst = self.standfirst(article, block)?;
+            let standfirst = self.standfirst(block)?;
             lead = !standfirst.contains("split: true");
             out.push_str(&standfirst);
         }
@@ -417,18 +418,13 @@ impl Writer<'_> {
         Ok(out)
     }
 
-    fn standfirst(&self, article: &Article, block: &Block) -> Result<String> {
+    fn standfirst(&self, block: &Block) -> Result<String> {
         let Block::Paragraph(children) = block else {
             return self.markup_block(block, true, false, false);
         };
-        let plain = |value: &str| fold_reader_characters(value, self.settable);
-        let keep = self.metrics.standfirst_keep_words(&Opener {
-            title: &plain(&article.title),
-            byline: &plain(&article.author),
-            note: &plain(&article.author_note),
-            intro: &self.plain_text(children),
-        });
-        let Some((kept, moved)) = split_words(children, keep) else {
+        let ordinal = self.standfirsts.replace(self.standfirsts.get() + 1);
+        let keep = self.keeps.get(ordinal).copied().flatten().unwrap_or(0);
+        let Some((kept, moved)) = split_segments(children, keep) else {
             return self.markup_block(block, true, false, false);
         };
         Ok(format!(
@@ -438,21 +434,6 @@ impl Writer<'_> {
             self.inlines(&kept),
             self.flowing(&moved, true),
         ))
-    }
-
-    fn plain_text(&self, inlines: &[Inline]) -> String {
-        inlines
-            .iter()
-            .map(|inline| match inline {
-                Inline::Text(value) => {
-                    fold_reader_characters(&educate_reader_quotes(value), self.settable)
-                }
-                Inline::Code(value) => fold_reader_characters(value, self.settable),
-                Inline::Emphasis(children) | Inline::Strong(children) => self.plain_text(children),
-                Inline::Link { children, .. } => self.plain_text(children),
-                Inline::LineBreak { .. } => "\n".to_string(),
-            })
-            .collect()
     }
 
     fn article_head(
@@ -897,37 +878,32 @@ fn split_extracts(extracts: &[Extract]) -> (Vec<&Extract>, Vec<&Extract>) {
     extracts.iter().partition(|e| e.anchor == OPENER_ANCHOR)
 }
 
-fn split_words(inlines: &[Inline], mut remaining: usize) -> Option<(Vec<Inline>, Vec<Inline>)> {
-    if remaining == 0 {
-        return None;
-    }
+fn split_segments(inlines: &[Inline], keep: usize) -> Option<(Vec<Inline>, Vec<Inline>)> {
+    let (mut seen, mut spaced) = (0, true);
     for (index, inline) in inlines.iter().enumerate() {
-        let Inline::Text(value) = inline else {
-            let words = inline_text(std::slice::from_ref(inline))
-                .split_whitespace()
-                .count();
-            if remaining == 0 || words > remaining {
-                return Some((inlines[..index].to_vec(), inlines[index..].to_vec()));
-            }
-            remaining -= words;
-            continue;
+        let value = match inline {
+            Inline::Text(value) => value.as_str(),
+            Inline::LineBreak { hard: false } => " ",
+            _ => "\u{fffc}",
         };
-        let starts = value.char_indices().filter(|(at, c)| {
-            !c.is_whitespace()
-                && value[..*at]
-                    .chars()
-                    .next_back()
-                    .is_none_or(char::is_whitespace)
-        });
-        for (at, _) in starts {
-            if remaining == 0 {
-                let mut kept = inlines[..index].to_vec();
-                kept.push(Inline::Text(value[..at].trim_end().to_string()));
-                let mut moved = vec![Inline::Text(value[at..].to_string())];
-                moved.extend_from_slice(&inlines[index + 1..]);
+        for (at, c) in value.char_indices() {
+            let start = spaced && !c.is_whitespace();
+            spaced = c.is_whitespace();
+            if !start {
+                continue;
+            }
+            if keep > 0 && seen == keep {
+                let (head, tail) = inlines.split_at(index);
+                let mut kept = head.to_vec();
+                let mut moved = tail.to_vec();
+                if let Inline::Text(value) = inline {
+                    let head = value[..at].trim_end();
+                    kept.extend((!head.is_empty()).then(|| Inline::Text(head.to_string())));
+                    moved[0] = Inline::Text(value[at..].to_string());
+                }
                 return Some((kept, moved));
             }
-            remaining -= 1;
+            seen += 1;
         }
     }
     None
@@ -1537,21 +1513,21 @@ mod tests {
         let base = crate::typeset::layout::edition(&root, "906", PUBLICATION).expect("906 loads");
         let es = crate::model::manifest::load_translation(&root, &base, "es").expect("es loads");
         let tree =
-            compose(&es, &fonts(), Hyphenation::PARITY).expect("the Spanish edition composes");
+            compose(&es, &fonts(), Hyphenation::PARITY, &[]).expect("the Spanish edition composes");
         let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#set text(lang: \"es\", region: \"AR\")"));
         assert!(text.contains("[Artículo 01]"));
         assert!(text.contains("res\u{ad}pon\u{ad}sa\u{ad}bi\u{ad}li\u{ad}dad"));
         assert!(text.contains("level: 2)[Dónde se dividen las palabras]"));
         assert!(text.contains("Una columna justificada corta las palabras"));
-        let english =
-            compose(&base, &fonts(), Hyphenation::PARITY).expect("the English edition composes");
+        let english = compose(&base, &fonts(), Hyphenation::PARITY, &[])
+            .expect("the English edition composes");
         assert!(english.files.iter().all(|f| !f.source.contains('\u{ad}')));
         let native = Hyphenation {
             english: true,
             ..Hyphenation::PARITY
         };
-        let hyphenated = compose(&base, &fonts(), native).expect("it composes");
+        let hyphenated = compose(&base, &fonts(), native, &[]).expect("it composes");
         let text: String = hyphenated.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#text(hyphenate: true)[A cache budget limits"));
         assert!(text.contains("level: 2)[Budgets]"));
@@ -1896,14 +1872,14 @@ mod tests {
     }
 
     #[test]
-    fn a_standfirst_splits_at_its_word_budget_and_moves_an_unfitting_inline_whole() {
+    fn a_standfirst_splits_at_its_top_level_spaces_and_moves_an_inline_whole() {
         let text = |v: &str| Inline::Text(v.to_string());
         let run = [
             text("one two "),
             Inline::Code("three four".into()),
             text(" five six"),
         ];
-        let (kept, moved) = split_words(&run, 1).expect("one word splits");
+        let (kept, moved) = split_segments(&run, 1).expect("one segment splits");
         assert_eq!(
             (kept, moved),
             (
@@ -1911,13 +1887,22 @@ mod tests {
                 vec![text("two "), run[1].clone(), run[2].clone()]
             )
         );
-        let (kept, moved) = split_words(&run, 3).expect("the code does not fit");
+        let (kept, moved) = split_segments(&run, 2).expect("the code moves whole");
         assert_eq!((kept, moved), (run[..1].to_vec(), run[1..].to_vec()));
-        let (kept, moved) = split_words(&run, 5).expect("five of six words");
+        let (kept, moved) = split_segments(&run, 3).expect("the code is one segment");
+        assert_eq!((kept, moved), (run[..2].to_vec(), vec![text("five six")]));
+        let (kept, moved) = split_segments(&run, 4).expect("four of five segments");
         assert_eq!(kept, vec![text("one two "), run[1].clone(), text(" five")]);
         assert_eq!(moved, vec![text("six")]);
-        assert_eq!(split_words(&run, 6), None);
-        assert_eq!(split_words(&run, 0), None);
+        let glued = [text("see "), Inline::Code("x".into()), text("-style runs")];
+        let (kept, moved) = split_segments(&glued, 2).expect("glued code joins its word");
+        assert_eq!(
+            kept,
+            vec![glued[0].clone(), glued[1].clone(), text("-style")]
+        );
+        assert_eq!(moved, vec![text("runs")]);
+        assert_eq!(split_segments(&run, 5), None);
+        assert_eq!(split_segments(&run, 0), None);
     }
 
     #[test]
