@@ -119,7 +119,7 @@ fn render_language(
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     println!("out dir: {}", out_dir.display());
     let fonts = repo_root.join(template::FONT_DIR);
-    let tree = content::compose(edition, &fonts, hyphenation)?;
+    let tree = template::composed(edition, &fonts, hyphenation)?;
     let (tree, document) = template::paginate(tree, &fonts, hyphenation)?;
     for file in &tree.files {
         let path = work.join(&file.path);

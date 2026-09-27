@@ -743,6 +743,22 @@
   link(source.destination, box(width: OPENER-QR, height: OPENER-QR, if source.code != none { qr-symbol(source.code) }))
 }
 
+#let standfirst-keep(body, fits) = {
+  let parts = if body.has("children") { body.children } else { (body,) }
+  let words(part) = if part.func() == text { part.text } else if part == [ ] { " " } else { "\u{fffc}" }
+  let cuts = ()
+  for (i, part) in parts.enumerate() {
+    cuts += words(part).matches(regex("\\s+")).map(m => (i, m.start)).filter(((i, at)) => i > 0 or at > 0)
+  }
+  let prefix((i, at)) = (parts.slice(0, i) + (text(words(parts.at(i)).slice(0, at)),)).join()
+  let (low, high) = (0, cuts.len())
+  while low < high {
+    let middle = calc.quo(low + high + 1, 2)
+    if fits(prefix(cuts.at(middle - 1))) { low = middle } else { high = middle - 1 }
+  }
+  low
+}
+
 #let opener-page(rows, body, split) = {
   let title = opener-part(rows, "title")
   let (fit, compact) = opener-part(rows, "titles")
@@ -773,10 +789,11 @@
     credit-column(rows),
     source-code(opener-part(rows, "source")),
   ))
-  let standfirst = rail({
+  let set-standfirst(body) = rail({
     set par(leading: 0pt, spacing: 0pt)
     standfirst-text(density, body)
   })
+  let standfirst = set-standfirst(body)
   let y-label = OPENER-ART-HEIGHT - OPENER-ART-LIFT + density.label
   let y-title = y-label + measure(label).height + density.title-gap
   let y-tick = y-title + measure(heading).height + density.tick
@@ -784,6 +801,8 @@
   let y-rule = y-meta + measure(meta).height + density.meta-pad
   let y-standfirst = y-rule + OPENER-META-RULE + density.standfirst-gap
   let at(y, body) = place(top + left, dx: -OPENER-ESCAPE, dy: y, body)
+  let fits(body) = y-standfirst + measure(set-standfirst(body)).height <= CONTENT-HEIGHT
+  if not split [#metadata(if fits(body) { none } else { standfirst-keep(body, fits) })<mag-standfirst>]
   block(breakable: false, above: 0pt, below: 0pt, width: 100%, height: y-standfirst + measure(standfirst).height, {
     at(y-tick, rect(width: OPENER-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, stroke: none))
     at(y-label, label)

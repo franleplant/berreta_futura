@@ -828,6 +828,33 @@ mod tests {
         assert_eq!(spilling, fitting + 1);
     }
 
+    #[test]
+    fn the_template_keeps_the_longest_standfirst_prefix_that_fits_the_page() {
+        let keeps = |words| template::standfirst_keeps(&compiled(&opener_run(words)));
+        let split = |words| {
+            let mut tree = opener_run(words);
+            tree.files[0].source = tree.files[0].source.replace(
+                "roster: false)[standfirst",
+                "roster: false, split: true)[standfirst",
+            );
+            let measured = measure(&compiled(&tree)).expect("the run measures");
+            measured.opener_fits()["a"].as_bool().expect("measured")
+        };
+        let [Some(keep)] = keeps(1000)[..] else {
+            panic!("a spilling standfirst reports the words it keeps");
+        };
+        assert!(
+            split(keep) && !split(keep + 1),
+            "{keep} words is the exact fit"
+        );
+        assert_eq!(
+            keeps(keep),
+            vec![None],
+            "a standfirst that fits whole never splits"
+        );
+        assert_eq!(keeps(keep + 1), vec![Some(keep)]);
+    }
+
     fn plain_fits(note_words: usize) -> bool {
         let note = vec!["note"; note_words].join(" ");
         let tree = Tree {
