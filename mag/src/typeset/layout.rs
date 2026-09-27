@@ -560,6 +560,7 @@ mod tests {
     use crate::typeset::content::{pipeline, File, Inputs};
     use crate::typeset::template::{self, FONT_DIR, ROOT_TYP};
     use crate::typeset::world::Sources;
+    use std::collections::BTreeSet;
     use std::path::PathBuf;
 
     const TARGET: [&str; 3] = ["article_pages", "editorial_pages", "article_opener_fits"];
@@ -784,6 +785,10 @@ mod tests {
     }
 
     fn opener_run(words: usize) -> Tree {
+        titled_run("A Fixture Title", words)
+    }
+
+    fn titled_run(title: &str, words: usize) -> Tree {
         let standfirst = vec!["standfirst"; words].join(" ");
         Tree {
             files: vec![File {
@@ -793,7 +798,7 @@ mod tests {
                      opener: \"illustrated_paper_spots_v1\", \
                      titles: ((size: 32.5pt, lines: 1), (size: 30pt, lines: 1)))[\n\
                      #content-label[#label-primary[Feature 01]]\n\
-                     #piece-title[A Fixture Title]\n\
+                     #piece-title[{title}]\n\
                      #byline[#byline-prefix[By]#byline-name[ Ada]]\n\
                      #doc-paragraph(standfirst: true, roster: false)[{standfirst}]\n\
                      #doc-paragraph(standfirst: false, roster: false)[Body.]\n]\n"
@@ -830,21 +835,11 @@ mod tests {
 
     #[test]
     fn the_template_keeps_the_longest_standfirst_prefix_that_fits_the_page() {
-        let keeps = |words| template::standfirst_keeps(&compiled(&opener_run(words)));
-        let split = |words| {
-            let mut tree = opener_run(words);
-            tree.files[0].source = tree.files[0].source.replace(
-                "roster: false)[standfirst",
-                "roster: false, split: true)[standfirst",
-            );
-            let measured = measure(&compiled(&tree)).expect("the run measures");
-            measured.opener_fits()["a"].as_bool().expect("measured")
-        };
         let [Some(keep)] = keeps(1000)[..] else {
             panic!("a spilling standfirst reports the words it keeps");
         };
         assert!(
-            split(keep) && !split(keep + 1),
+            split("A Fixture Title", keep) && !split("A Fixture Title", keep + 1),
             "{keep} words is the exact fit"
         );
         assert_eq!(
@@ -852,7 +847,54 @@ mod tests {
             vec![None],
             "a standfirst that fits whole never splits"
         );
-        assert_eq!(keeps(keep + 1), vec![Some(keep)]);
+    }
+
+    #[test]
+    fn a_short_standfirst_carry_squeezes_the_opener_or_grows_to_two_lines() {
+        let branches: BTreeSet<bool> = (0..16).step_by(3).map(short_carry_branch).collect();
+        assert_eq!(branches.len(), 2, "some titles squeeze and some pull back");
+    }
+
+    fn short_carry_branch(extra: usize) -> bool {
+        let title = format!("A Fixture Title{}", " Word".repeat(extra));
+        let keeps = |words| template::standfirst_keeps(&compiled(&titled_run(&title, words)));
+        let [Some(keep)] = keeps(1000)[..] else {
+            panic!("a spilling standfirst reports the words it keeps");
+        };
+        let sweep: Vec<_> = (keep + 1..)
+            .map(|words| (words, keeps(words)[0]))
+            .take_while(|(_, kept)| *kept != Some(keep))
+            .collect();
+        let line = sweep.len();
+        for &(words, kept) in &sweep {
+            let fitted = match kept {
+                None => opener_fits(titled_run(&title, words)),
+                Some(kept) => kept < keep && words - kept > line && split(&title, kept),
+            };
+            assert!(
+                fitted,
+                "{words} words keep {kept:?} of {keep}, {line} per line"
+            );
+        }
+        sweep[0].1.is_none()
+    }
+
+    fn keeps(words: usize) -> Vec<Option<usize>> {
+        template::standfirst_keeps(&compiled(&opener_run(words)))
+    }
+
+    fn split(title: &str, words: usize) -> bool {
+        let mut tree = titled_run(title, words);
+        tree.files[0].source = tree.files[0].source.replace(
+            "roster: false)[standfirst",
+            "roster: false, split: true)[standfirst",
+        );
+        opener_fits(tree)
+    }
+
+    fn opener_fits(tree: Tree) -> bool {
+        let measured = measure(&compiled(&tree)).expect("the run measures");
+        measured.opener_fits()["a"].as_bool().expect("measured")
     }
 
     fn plain_fits(note_words: usize) -> bool {
