@@ -159,6 +159,8 @@
   standfirst-size: 9.6pt,
   standfirst-leading: 13.2pt,
 )
+#let OPENER-SQUEEZED = (..OPENER-COMPACT, meta-pad: 5pt, standfirst-gap: 14pt)
+#let OPENER-MIN-CARRY = 2
 
 #let pango-half(size, ascender: 1984, descender: -494, upem: 2048) = {
   let pango = calc.floor(size / 1pt * 4 / 3 * 1024)
@@ -743,30 +745,35 @@
   link(source.destination, box(width: OPENER-QR, height: OPENER-QR, if source.code != none { qr-symbol(source.code) }))
 }
 
-#let standfirst-keep(body, fits) = {
+#let standfirst-cuts(body) = {
   let parts = if body.has("children") { body.children } else { (body,) }
   let words(part) = if part.func() == text { part.text } else if part == [ ] { " " } else { "\u{fffc}" }
   let cuts = ()
   for (i, part) in parts.enumerate() {
     cuts += words(part).matches(regex("\\s+")).map(m => (i, m.start)).filter(((i, at)) => i > 0 or at > 0)
   }
-  let prefix((i, at)) = (parts.slice(0, i) + (text(words(parts.at(i)).slice(0, at)),)).join()
+  cuts.map(((i, at)) => (
+    (parts.slice(0, i) + (text(words(parts.at(i)).slice(0, at)),)).join(),
+    ((text(words(parts.at(i)).slice(at).trim(at: start)),) + parts.slice(i + 1)).join(),
+  ))
+}
+
+#let standfirst-keep(body, fits, lines) = {
+  let cuts = standfirst-cuts(body)
   let (low, high) = (0, cuts.len())
   while low < high {
     let middle = calc.quo(low + high + 1, 2)
-    if fits(prefix(cuts.at(middle - 1))) { low = middle } else { high = middle - 1 }
+    if fits(OPENER-COMPACT, cuts.at(middle - 1).first()) { low = middle } else { high = middle - 1 }
   }
+  let runt(keep) = keep > 0 and lines(cuts.at(keep - 1).last()) < OPENER-MIN-CARRY
+  if runt(low) and fits(OPENER-SQUEEZED, body) { return none }
+  while low > 1 and runt(low) { low -= 1 }
   low
 }
 
 #let opener-page(rows, body, split) = {
   let title = opener-part(rows, "title")
-  let (fit, compact) = opener-part(rows, "titles")
-  let density = OPENER-STANDARD
-  if split or opener-stack(density, fit, rows, body) + OPENER-PANGO-RESERVE > CONTENT-HEIGHT {
-    density = OPENER-COMPACT
-    fit = compact
-  }
+  let titles = opener-part(rows, "titles")
   let rail(body) = block(width: OPENER-RAIL, above: 0pt, below: 0pt, body)
   let label = rail(text(
     font: SANS,
@@ -777,10 +784,11 @@
     ..tracked(OPENER-LABEL-TRACKING * OPENER-LABEL-SIZE),
     tracked-body(OPENER-LABEL-TRACKING * OPENER-LABEL-SIZE, upper(opener-part(rows, "label"))),
   ))
-  let heading = rail({
+  let heading(density) = rail({
     set par(leading: 0pt, spacing: 0pt)
-    let tracking = OPENER-TITLE-TRACKING * fit.size
-    text(..tracked(tracking), tracked-body(tracking, opener-title-text(fit.size, title)))
+    let size = titles.at(int(density != OPENER-STANDARD)).size
+    let tracking = OPENER-TITLE-TRACKING * size
+    text(..tracked(tracking), tracked-body(tracking, opener-title-text(size, title)))
   })
   let meta = rail(grid(
     columns: (1fr, OPENER-QR),
@@ -789,31 +797,40 @@
     credit-column(rows),
     source-code(opener-part(rows, "source")),
   ))
-  let set-standfirst(body) = rail({
+  let set-standfirst(density, body) = rail({
     set par(leading: 0pt, spacing: 0pt)
     standfirst-text(density, body)
   })
-  let standfirst = set-standfirst(body)
-  let y-label = OPENER-ART-HEIGHT - OPENER-ART-LIFT + density.label
-  let y-title = y-label + measure(label).height + density.title-gap
-  let y-tick = y-title + measure(heading).height + density.tick
-  let y-meta = y-tick + OPENER-TICK + density.meta-pad
-  let y-rule = y-meta + measure(meta).height + density.meta-pad
-  let y-standfirst = y-rule + OPENER-META-RULE + density.standfirst-gap
+  let y-label(density) = OPENER-ART-HEIGHT - OPENER-ART-LIFT + density.label
+  let y-title(density) = y-label(density) + measure(label).height + density.title-gap
+  let y-tick(density) = y-title(density) + measure(heading(density)).height + density.tick
+  let y-meta(density) = y-tick(density) + OPENER-TICK + density.meta-pad
+  let y-rule(density) = y-meta(density) + measure(meta).height + density.meta-pad
+  let y-standfirst(density) = y-rule(density) + OPENER-META-RULE + density.standfirst-gap
+  let fits(density, body) = y-standfirst(density) + measure(set-standfirst(density, body)).height <= CONTENT-HEIGHT
+  let lines(body) = calc.round(measure(set-standfirst(OPENER-COMPACT, body)).height / OPENER-COMPACT.standfirst-leading)
+  let density = OPENER-STANDARD
+  if split or opener-stack(density, titles.first(), rows, body) + OPENER-PANGO-RESERVE > CONTENT-HEIGHT {
+    density = OPENER-COMPACT
+  }
+  if not split {
+    let keep = if fits(density, body) { none } else { standfirst-keep(body, fits, lines) }
+    if keep == none and not fits(density, body) { density = OPENER-SQUEEZED }
+    [#metadata(keep)<mag-standfirst>]
+  }
+  let standfirst = set-standfirst(density, body)
   let at(y, body) = place(top + left, dx: -OPENER-ESCAPE, dy: y, body)
-  let fits(body) = y-standfirst + measure(set-standfirst(body)).height <= CONTENT-HEIGHT
-  if not split [#metadata(if fits(body) { none } else { standfirst-keep(body, fits) })<mag-standfirst>]
-  block(breakable: false, above: 0pt, below: 0pt, width: 100%, height: y-standfirst + measure(standfirst).height, {
-    at(y-tick, rect(width: OPENER-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, stroke: none))
-    at(y-label, label)
-    at(y-title, heading)
-    at(y-title, bookmark(1, title))
-    at(y-standfirst, standfirst)
+  block(breakable: false, above: 0pt, below: 0pt, width: 100%, height: y-standfirst(density) + measure(standfirst).height, {
+    at(y-tick(density), rect(width: OPENER-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, stroke: none))
+    at(y-label(density), label)
+    at(y-title(density), heading(density))
+    at(y-title(density), bookmark(1, title))
+    at(y-standfirst(density), standfirst)
     place(top + left, dx: OPENER-OFFSET - OPENER-ESCAPE, dy: OPENER-OFFSET - OPENER-ART-LIFT, {
       rect(width: OPENER-RAIL, height: OPENER-FRAME-HEIGHT, fill: SIGNAL-ORANGE, stroke: none)
     })
-    at(y-rule, rect(width: OPENER-RAIL, height: OPENER-META-RULE, fill: PAPER-RULE, stroke: none))
-    at(y-meta, meta)
+    at(y-rule(density), rect(width: OPENER-RAIL, height: OPENER-META-RULE, fill: PAPER-RULE, stroke: none))
+    at(y-meta(density), meta)
     at(-OPENER-ART-LIFT, opener-art(opener-part(rows, "art")))
   })
 }
