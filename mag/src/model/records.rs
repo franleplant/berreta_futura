@@ -629,6 +629,8 @@ pub const FIGURE_LAYOUTS: [&str; 7] = [
     "landscape_plate_after",
 ];
 
+const FIGURE_TONES: [&str; 3] = ["auto", "keep", "invert"];
+
 pub const EXTRACT_STYLES: [&str; 2] = ["code", "quote"];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -641,6 +643,7 @@ pub struct Figure {
     pub alt_text: String,
     pub anchor: String,
     pub layout: String,
+    pub tone: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -783,6 +786,7 @@ pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<
             "alt_text",
             "anchor",
             "layout",
+            "tone",
         ];
         let mut fields: BTreeMap<&str, String> = BTreeMap::new();
         for name in names {
@@ -790,7 +794,7 @@ pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<
         }
         let missing: Vec<&str> = names
             .into_iter()
-            .filter(|name| *name != "credit" && fields[name].is_empty())
+            .filter(|name| !["credit", "tone"].contains(name) && fields[name].is_empty())
             .collect();
         if !missing.is_empty() {
             errors.push(format!("{label} missing: {}", missing.join(", ")));
@@ -845,6 +849,15 @@ fn resolve_figure(
         };
         errors.push(format!("{label} has invalid layout: {shown}"));
     }
+    let tone = match fields["tone"].as_str() {
+        "" => "auto".to_string(),
+        tone => tone.to_string(),
+    };
+    if !FIGURE_TONES.contains(&tone.as_str()) {
+        errors.push(format!(
+            "{label} has invalid tone: {tone} (auto, keep, or invert)"
+        ));
+    }
     let anchor = fields["anchor"].clone();
     if anchor != "__opener__" && !headings.contains(&anchor) && !request.allow_unanchored {
         errors.push(format!(
@@ -873,6 +886,7 @@ fn resolve_figure(
         alt_text: fields["alt_text"].clone(),
         anchor,
         layout: fields["layout"].clone(),
+        tone,
     })
 }
 
