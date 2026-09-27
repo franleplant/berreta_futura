@@ -111,6 +111,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 
 ## Repository rules
 
+- Mechanical beats linguistic: solve a problem with a deterministic, measured
+  step (pixel statistics, OCR geometry, Typst measurement, string checks)
+  before reaching for a model call. Use an LLM only where no deterministic
+  signal exists, and gate its output with a mechanical check.
 - Ship each feature complete in the fewest lines that stay readable, and
   keep cyclomatic complexity low. Style is enforced by tooling, not prose:
   `cargo fmt`, `cargo clippy` (complexity and length lints in Cargo.toml),

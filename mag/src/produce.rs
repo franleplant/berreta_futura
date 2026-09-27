@@ -571,7 +571,7 @@ fn scaffold_edition_yaml(
             for sid in &sids {
                 for image in source_images(sid) {
                     if !any {
-                        y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate). short_title and display_emphasis must occur inside title.\n";
+                        y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures\n  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.\n";
                         any = true;
                     }
                     let alt: String = image.alt.chars().take(110).collect();
