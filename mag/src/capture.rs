@@ -86,9 +86,14 @@ pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
             }
         },
     };
-    if ext == "webp" {
+    if ext == "webp" || ext == "gif" {
         let dest = dest_stem.with_extension("png");
-        let png = webp_to_png(&fs::read(&tmp)?).with_context(|| format!("decoding {url}"))?;
+        let bytes = fs::read(&tmp)?;
+        let png = match ext {
+            "gif" => gif_to_png(&bytes),
+            _ => webp_to_png(&bytes),
+        }
+        .with_context(|| format!("decoding {url}"))?;
         fs::write(&dest, png).with_context(|| format!("writing {}", dest.display()))?;
         fs::remove_file(&tmp)?;
         return Ok(dest);
@@ -124,11 +129,35 @@ fn webp_to_png(bytes: &[u8]) -> Result<Vec<u8>> {
             .context("the WebP is too large")?
     ];
     decoder.read_image(&mut pixels)?;
+    encode_png(width, height, colour, &pixels)
+}
+
+fn gif_to_png(bytes: &[u8]) -> Result<Vec<u8>> {
+    let mut options = gif::DecodeOptions::new();
+    options.set_color_output(gif::ColorOutput::RGBA);
+    let mut decoder = options.read_info(std::io::Cursor::new(bytes))?;
+    let (width, height) = (decoder.width() as usize, decoder.height() as usize);
+    let frame = decoder.read_next_frame()?.context("the GIF has no frame")?;
+    let (left, top, w) = (
+        frame.left as usize,
+        frame.top as usize,
+        frame.width as usize,
+    );
+    let mut canvas = vec![0; width * height * 4];
+    for (y, row) in frame.buffer.chunks(w * 4).enumerate() {
+        let at = ((top + y) * width + left) * 4;
+        let room = canvas.len().saturating_sub(at).min(row.len());
+        canvas[at..at + room].copy_from_slice(&row[..room]);
+    }
+    encode_png(width as u32, height as u32, png::ColorType::Rgba, &canvas)
+}
+
+fn encode_png(width: u32, height: u32, colour: png::ColorType, pixels: &[u8]) -> Result<Vec<u8>> {
     let mut out = Vec::new();
     let mut encoder = png::Encoder::new(&mut out, width, height);
     encoder.set_color(colour);
     encoder.set_depth(png::BitDepth::Eight);
-    encoder.write_header()?.write_image_data(&pixels)?;
+    encoder.write_header()?.write_image_data(pixels)?;
     Ok(out)
 }
 
@@ -962,6 +991,30 @@ mod tests {
         let webp = include_bytes!("../tests/capture_fixtures/tiny.webp");
         assert_eq!(sniff_image(webp), Some("webp"));
         assert_eq!(sniff_image(b"<html>"), None);
+    }
+
+    #[test]
+    fn a_gif_becomes_a_png_of_its_first_frame() {
+        let mut gif_bytes = Vec::new();
+        {
+            let mut encoder =
+                gif::Encoder::new(&mut gif_bytes, 2, 1, &[255, 0, 0, 0, 0, 255]).unwrap();
+            encoder
+                .write_frame(&gif::Frame {
+                    width: 2,
+                    height: 1,
+                    buffer: std::borrow::Cow::Borrowed(&[0, 1]),
+                    ..Default::default()
+                })
+                .unwrap();
+        }
+        let png = gif_to_png(&gif_bytes).expect("decodes");
+        let mut reader = png::Decoder::new(std::io::Cursor::new(png))
+            .read_info()
+            .expect("a PNG");
+        let mut pixels = vec![0; reader.output_buffer_size().expect("sized")];
+        reader.next_frame(&mut pixels).expect("a frame");
+        assert_eq!(&pixels[..8], &[255, 0, 0, 255, 0, 0, 255, 255]);
     }
 
     #[test]

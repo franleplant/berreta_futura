@@ -42,6 +42,7 @@ fancy-regex = "0.16"
 toml = "0.8"
 qrcodegen = "1.8"
 image-webp = "0.2.4"
+gif = "0.13"
 
 [lints.clippy]
 cognitive_complexity = "warn"
