@@ -71,6 +71,8 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
         "404.html",
         "site.css",
         "favicon.svg",
+        "apple-touch-icon.png",
+        "og.png",
     ] {
         assert!(a.contains_key(page), "missing {page}");
     }

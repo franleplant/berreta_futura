@@ -15,6 +15,7 @@ mod outline;
 mod pdf;
 #[path = "../src/cover/raster.rs"]
 mod raster;
+#[allow(dead_code)]
 #[path = "../src/cover/svg.rs"]
 mod svg;
 

@@ -1,5 +1,6 @@
 mod html;
 mod images;
+mod logo;
 
 use crate::model::manifest::{load_translation, Edition};
 use crate::render::{request, resolve_edition_dir, RenderArgs};
@@ -83,13 +84,20 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
     prepare(&args.out)?;
     let images = images::encode_all(html::image_paths(&issues), &args.out)?;
-    let files = html::pages(&issues, &images, &site)?;
+    let name = issues
+        .first()
+        .map_or("Magazine", |i| i.editions[0].publication_name.as_str())
+        .to_string();
+    let logo = logo::build(&root, &name)?;
+    let files = html::pages(&issues, &images, &site, &name, &logo.inline)?;
     for (path, body) in &files {
         let target = args.out.join(path);
         fs::create_dir_all(target.parent().context("a page has no parent")?)?;
         fs::write(&target, body)?;
     }
-    fs::write(args.out.join("favicon.svg"), html::FAVICON)?;
+    fs::write(args.out.join("favicon.svg"), &logo.favicon)?;
+    fs::write(args.out.join("apple-touch-icon.png"), &logo.touch)?;
+    fs::write(args.out.join("og.png"), &logo.card)?;
     for font in FONTS {
         let target = args
             .out
