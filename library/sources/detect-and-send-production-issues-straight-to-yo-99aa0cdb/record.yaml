@@ -1,0 +1,8 @@
+id: detect-and-send-production-issues-straight-to-yo-99aa0cdb
+title: 'Detect and send production issues straight to your agent'
+author: 'Thomas Ankcorn, Maksym Makuch, Nevi Shah'
+url: https://blog.cloudflare.com/real-time-issue-detection/
+captured_at: '2026-10-01T14:48:46Z'
+published_at: '2026-09-30'
+tags: []
+synopsis: 'Cloudflare announces Issues, an open-beta error monitoring feature for Workers that groups repeated failures, captures logs, traces, and stack traces, and sends them through Automations to coding agents, webhooks, or chat tools.'

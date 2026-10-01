@@ -1,0 +1,36 @@
+edition: '012'
+dry_run: false
+generated:
+- brief: closing-deep-well
+  variant: 1
+  file: closing-deep-well-v1.png
+  ok: true
+- brief: closing-deep-well
+  variant: 2
+  file: closing-deep-well-v2.png
+  ok: true
+- brief: closing-deep-well
+  variant: 3
+  file: closing-deep-well-v3.png
+  ok: true
+- brief: closing-deep-well
+  variant: 4
+  file: closing-deep-well-v4.png
+  ok: true
+- brief: closing-block-tower
+  variant: 1
+  file: closing-block-tower-v1.png
+  ok: true
+- brief: closing-block-tower
+  variant: 2
+  file: closing-block-tower-v2.png
+  ok: true
+- brief: closing-block-tower
+  variant: 3
+  file: closing-block-tower-v3.png
+  ok: true
+- brief: closing-block-tower
+  variant: 4
+  file: closing-block-tower-v4.png
+  ok: true
+failures: 0

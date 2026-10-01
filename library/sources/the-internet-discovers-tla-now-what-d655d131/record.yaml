@@ -1,0 +1,8 @@
+id: the-internet-discovers-tla-now-what-d655d131
+title: 'The internet discovers TLA+. Now what?'
+author: 'Anna Mészáros, Szilvia Ujváry, Kseniia Strelbytska, Balázs Szilágyi, and Ferenc Huszár'
+url: https://reasonable.io/blog/tla-tutorial/
+captured_at: '2026-10-01T14:48:47Z'
+published_at: '2026-09-25'
+tags: []
+synopsis: 'Following Boris Cherny''s viral TLA+ tweet, the article explains what TLA+ is and is not, how models can be taken into proof systems like Verus, and previews Reasonable''s pipeline that turned TLA+ specification/property pairs into machine-checked Verus proofs.'

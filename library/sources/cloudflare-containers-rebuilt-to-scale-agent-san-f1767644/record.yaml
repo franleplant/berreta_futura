@@ -1,0 +1,8 @@
+id: cloudflare-containers-rebuilt-to-scale-agent-san-f1767644
+title: 'Cloudflare Containers, rebuilt to scale agent sandboxes'
+author: 'Thomas Gauvin, Rushil Mehra, Gabi Villalonga Simón, Thomas Lefebvre'
+url: https://blog.cloudflare.com/faster-agent-sandboxes/
+captured_at: '2026-10-01T14:49:08Z'
+published_at: '2026-09-30'
+tags: []
+synopsis: 'Cloudflare rebuilt Containers around a new `durable_object` scheduling policy that lets application code choose each agent sandbox''s image and instance type at runtime, starts Containers about 6x faster, and adds filesystem snapshots in public beta.'
