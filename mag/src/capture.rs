@@ -34,10 +34,18 @@ pub fn source_id(title: &str, url: &str) -> String {
 }
 
 pub(crate) fn curl_text(url: &str) -> Result<String> {
-    let out = Command::new("curl")
-        .args(["-sL", "--max-time", "90", "-A", USER_AGENT, "--fail", url])
-        .output()
-        .context("spawning curl")?;
+    let fetch = |extra: &[&str]| {
+        Command::new("curl")
+            .args(["-sL", "--max-time", "90", "-A", USER_AGENT, "--fail"])
+            .args(extra)
+            .arg(url)
+            .output()
+            .context("spawning curl")
+    };
+    let mut out = fetch(&[])?;
+    if !out.status.success() {
+        out = fetch(&["--http1.1"])?;
+    }
     if !out.status.success() {
         bail!(
             "fetching {url} failed (curl exit {})",
@@ -70,10 +78,13 @@ pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
         "image/webp" => "webp",
         "image/svg+xml" => "svg",
         "image/avif" => "avif",
-        other => {
-            let _ = fs::remove_file(&tmp);
-            bail!("image {url} came back as '{other}', not an image");
-        }
+        other => match sniff_image(&fs::read(&tmp)?) {
+            Some(ext) => ext,
+            None => {
+                let _ = fs::remove_file(&tmp);
+                bail!("image {url} came back as '{other}', not an image");
+            }
+        },
     };
     if ext == "webp" {
         let dest = dest_stem.with_extension("png");
@@ -85,6 +96,18 @@ pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
     let dest = dest_stem.with_extension(ext);
     fs::rename(&tmp, &dest).with_context(|| format!("writing {}", dest.display()))?;
     Ok(dest)
+}
+
+fn sniff_image(bytes: &[u8]) -> Option<&'static str> {
+    let head = &bytes[..bytes.len().min(16)];
+    match head {
+        [0x89, b'P', b'N', b'G', ..] => Some("png"),
+        [0xFF, 0xD8, 0xFF, ..] => Some("jpg"),
+        [b'G', b'I', b'F', b'8', ..] => Some("gif"),
+        [b'R', b'I', b'F', b'F', _, _, _, _, b'W', b'E', b'B', b'P', ..] => Some("webp"),
+        [_, _, _, _, b'f', b't', b'y', b'p', b'a', b'v', b'i', b'f', ..] => Some("avif"),
+        _ => None,
+    }
 }
 
 fn webp_to_png(bytes: &[u8]) -> Result<Vec<u8>> {
@@ -261,7 +284,17 @@ pub(crate) fn page_title(html: &str) -> Option<String> {
         .unwrap_or(&raw)
         .trim()
         .to_string();
-    let clean = normalize_ws(&head);
+    let mut clean = normalize_ws(&head);
+    if let Some(site) = meta_content(html, &["og:site_name"]).map(|s| s.to_lowercase()) {
+        while let Some(cut) = [" / ", " - ", " \u{2013} ", " \u{2014} "]
+            .iter()
+            .filter_map(|sep| clean.rfind(sep))
+            .max()
+            .filter(|&i| !site.is_empty() && clean[i..].to_lowercase().contains(&site))
+        {
+            clean.truncate(cut);
+        }
+    }
     (!clean.is_empty()).then_some(clean)
 }
 
@@ -901,6 +934,34 @@ mod tests {
         reader.next_frame(&mut pixels).expect("a frame");
         assert_eq!((reader.info().width, reader.info().height), (3, 2));
         assert_eq!(&pixels[..6], &[255, 0, 0, 0, 255, 0]);
+    }
+
+    #[test]
+    fn a_title_drops_the_site_name_suffix_and_a_mislabeled_webp_is_sniffed() {
+        let page = |title: &str, site: &str| {
+            format!(
+                "<head><title>{title}</title><meta property=\"og:site_name\" content=\"{site}\"></head>"
+            )
+        };
+        assert_eq!(
+            page_title(&page(
+                "Spending your effort / claude.dev Blog",
+                "claude.dev Blog"
+            ))
+            .unwrap(),
+            "Spending your effort"
+        );
+        assert_eq!(
+            page_title(&page(
+                "OCE - The Open Agent Platform - OpenClaw Blog",
+                "OpenClaw"
+            ))
+            .unwrap(),
+            "OCE - The Open Agent Platform"
+        );
+        let webp = include_bytes!("../tests/capture_fixtures/tiny.webp");
+        assert_eq!(sniff_image(webp), Some("webp"));
+        assert_eq!(sniff_image(b"<html>"), None);
     }
 
     #[test]
