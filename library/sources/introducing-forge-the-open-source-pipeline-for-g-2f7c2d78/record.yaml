@@ -1,0 +1,8 @@
+id: introducing-forge-the-open-source-pipeline-for-g-2f7c2d78
+title: 'Introducing Forge: the open source pipeline for generating SDKs, CLIs, docs, and more'
+author: 'Dimitri Mitropoulos, Matt “TK” Taylor, Samuel Macleod'
+url: https://blog.cloudflare.com/forge-open-source-generation-pipeline/
+captured_at: '2026-10-01T14:48:43Z'
+published_at: '2026-09-28'
+tags: []
+synopsis: 'Cloudflare introduces Forge, an open source, pluggable, chainable pipeline that generates SDKs, CLIs, docs, and other API surfaces from OpenAPI specs, runs in CI to produce per-change previews, and already generates the cf CLI.'

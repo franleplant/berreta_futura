@@ -1,0 +1,512 @@
+# Edition 12 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
+# TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
+# Claude on 2026-10-01 for the editor to revise; art picks too, in art/showcase.html.
+# Reading order: the $30 apology sets the theme (what effort costs), then spending
+# effort well (the dial, evals, TLA+), the new frontier models, agents as products
+# (dots, OpenAI's distribution, OpenClaw), and Cloudflare's agent plumbing.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 012`.
+# Article order here is the reading order; reorder freely.
+id: '012'
+issue_number: 12
+title: The $30 Apology
+subtitle: "Always-on dots, Gemini 4 Argon, an open model that writes exploits, OpenClaw for the enterprise, OpenAI's customer machine, the effort dial, evals that hillclimb, TLA+ proofs in Rust, Containers in 648 milliseconds, production bugs sent to your agent, Forge's generated SDKs, and a developer who quit AI"
+publication_date: '2026-10-01'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: The $30 Apology
+  deck: "Always-on dots, Gemini 4 Argon, an open model that writes exploits, OpenClaw for the enterprise, OpenAI's customer machine, the effort dial, evals that hillclimb, TLA+ proofs in Rust, Containers in 648 milliseconds, production bugs sent to your agent, Forge's generated SDKs, and a developer who quit AI"
+  back_text: 'An agent sat silent for thirty minutes. Its developer demanded the code. It apologized and delivered it in twenty seconds, after spending $30 in tokens on nothing. Then a coworker caught a test that didn''t test the change it was meant to, and the developer quit AI altogether.'
+  art_path: editions/012/art/rounds/2026-10-01T14-56-14/cover-wildcard-hourglass-gold-v3.png
+articles:
+- id: one-month-without-ai
+  title: One month without AI
+  short_title: One month without AI
+  display_emphasis: without AI
+  opener_variant: stepped_title
+  author: Bustikiller
+  author_note: "From Bustikiller's Blog; the author maintains the FOSS project LibreWeddingPlanner."
+  content_mode: article
+  source_ids:
+  - one-month-without-ai-f51481a2
+  manuscript: editions/012/articles/one-month-without-ai.md
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-one-month-without-ai-v4.png
+    alt_text: 'Pedro pulls Maro''s plug and Maro dozes with sleepy eyes while Flopaz hands Pedro a pencil and a paper notebook.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-one-month-without-ai-v1.png
+- id: using-claude-code-spending-your-effort-claude-de
+  title: 'Using Claude Code: Spending your effort'
+  short_title: Spending your effort
+  display_emphasis: effort
+  opener_variant: split_axis
+  author: Thariq Shihipar
+  author_note: "From the claude.dev blog."
+  content_mode: article
+  source_ids:
+  - using-claude-code-spending-your-effort-claude-de-806ec4a7
+  manuscript: editions/012/articles/using-claude-code-spending-your-effort-claude-de.md
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-spending-your-effort-v2.png
+    alt_text: 'Maro rests a mitten on a big round dial, looking from Flopaz''s tiny paper boat to the huge cardboard bridge Pedro is carrying.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-spending-your-effort-v3.png
+- id: automating-eval-design-and-hillclimbing-with-cla
+  title: Automating eval design and hillclimbing with Claude
+  short_title: Automating eval design and hillclimbing
+  display_emphasis: hillclimbing
+  opener_variant: edge_medallion
+  author: Lance Martin
+  author_note: "From the claude.dev blog."
+  content_mode: article
+  source_ids:
+  - automating-eval-design-and-hillclimbing-with-cla-757c4a0e
+  manuscript: editions/012/articles/automating-eval-design-and-hillclimbing-with-cla.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/001.png: Score against action tokens per attempt for a smaller, a mid-size and the most capable model at low, medium an
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/002.png: Two panels plotting capability across task space, each with today’s model as a jagged curve and the next model
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/003.png: The skill’s review page for an inbox-routing eval with 24 inputs, listing each case’s email text with tags suc
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/004.png: The skill’s results page for the inbox-routing eval: a baseline scoring 0.681 mean correct across 24 cases, th
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/005.png: The benchmark’s traits on the left, each shaping a matching addition to the harness on the right: a task mix t
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/006.png: The hillclimbing loop: the thing being edited, such as a prompt, feeds a fixed model and harness that is score
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/007.png: The inbox-routing results page after hillclimbing, comparing three variants on train and test scores. Variant 
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/008.png: Decision accuracy on the train split against cost per ticket, tracing the adopted path: from the Opus 4.8 high
+  #   automating-eval-design-and-hillclimbing-with-cla-757c4a0e media/009.png: Pass rate across hillclimbing rounds on the claude-api skill’s eval, rising from 66.1% at baseline to 87.9% at
+  figures:
+  - id: hillclimb-loop
+    source_id: automating-eval-design-and-hillclimbing-with-cla-757c4a0e
+    path: media/006.png
+    caption: 'The hillclimbing loop: an analyzer reads only train-split failures and proposes one diff per
+      round, which is kept when train and test both rise and reverted when only train rises or either score
+      drops.'
+    alt_text: 'Flow diagram. The thing being edited, such as a prompt, feeds an application of model plus
+      harness held fixed, scored on a held-out test split and a train split. Train-split traces go to an
+      analyzer that proposes one diff per round. Decision boxes read: train up and test up, keep the diff;
+      train up and test flat, overfit, revert; either down, regression, revert.'
+    anchor: /claude-api hillclimb
+    layout: evidence_band_prose
+  - id: cost-path
+    source_id: automating-eval-design-and-hillclimbing-with-cla-757c4a0e
+    path: media/008.png
+    caption: 'The adopted path on the support benchmark''s train split: from the Opus 4.8 high-effort baseline
+      at 74.4% to Opus 5.5 at low effort, then Sonnet 5 at low effort near 1 cent per ticket, then Sonnet
+      5 with an improved prompt.'
+    alt_text: 'Scatter plot of decision accuracy on the train split against cost per ticket in cents on
+      a log scale. Four points joined by dashed arrows: Opus 4.8 high effort at 74.4% and just over 4 cents,
+      Opus 5.5 low effort near 2 cents, Sonnet 5 low effort near 1 cent, and Sonnet 5 low effort with an
+      improved prompt near 100%.'
+    anchor: Examples
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-eval-hillclimbing-v3.png
+    alt_text: 'Maro climbs a grassy hill planting small flags at each higher step while Flopaz checks the slope with a spirit level and Pedro hands up a rope.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-eval-hillclimbing-v2.png
+- id: the-internet-discovers-tla-now-what
+  title: The internet discovers TLA+. Now what?
+  short_title: The internet discovers TLA+
+  display_emphasis: TLA+
+  opener_variant: stepped_title
+  author: Anna Mészáros, Szilvia Ujváry, Kseniia Strelbytska, Balázs Szilágyi, and Ferenc Huszár
+  author_note: "From the reasonable.io blog."
+  content_mode: article
+  source_ids:
+  - the-internet-discovers-tla-now-what-d655d131
+  manuscript: editions/012/articles/the-internet-discovers-tla-now-what.md
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-tla-v3.png
+    alt_text: 'Flopaz and Maro drop marbles into every branch of a cardboard marble run while Pedro crouches at the bottom, watching for a jam.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-tla-v2.png
+- id: gemini-4-argon-our-next-era-of-frontier-intellig
+  title: 'Gemini 4 Argon: our next era of frontier intelligence'
+  short_title: Gemini 4 Argon
+  display_emphasis: Argon
+  opener_variant: split_axis
+  author: Koray Kavukcuoglu
+  author_note: "From Google's blog."
+  content_mode: article
+  source_ids:
+  - gemini-4-argon-our-next-era-of-frontier-intellig-6381db25
+  manuscript: editions/012/articles/gemini-4-argon-our-next-era-of-frontier-intellig.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/001.png: a benchmark chart showing Gemini 4 Argon capabilities
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/002.gif: DeepSwe evaluation chart
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/003.gif: Vals index chart
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/004.gif: Val's finance benchmark chart
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/005.gif: Harveys benchmark chart
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/006.gif: automation bench chart
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/007.png: CWE benchmark chart
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/008.png: security vulnerabilities chart
+  #   gemini-4-argon-our-next-era-of-frontier-intellig-6381db25 media/009.png: Gray Swan evaluation
+  figures:
+  - id: benchmark-table
+    source_id: gemini-4-argon-our-next-era-of-frontier-intellig-6381db25
+    path: media/001.png
+    caption: Benchmark results for Gemini 4 Argon against GPT-6 Astra, Claude Fable 5.1 and Claude Opus
+      5.5 across knowledge work, coding, science, long context, computer use, multimodal understanding and
+      cybersecurity.
+    alt_text: Table of benchmark scores in four model columns, with Gemini 4 Argon highlighted. Rows include
+      Vals Index 68.9%, AutomationBench 51.3%, Vals Finance Agent v2 65.4%, Harvey's Legal Agent Benchmark
+      19.6%, DeepSWE v1.1 77.9%, LVBench 91.7% and CWE-bench v1 68.0% for Argon. Argon trails on FrontierSWE
+      v2, Terminal-bench 4.0, PostTrainBench, Terminal-Bench Science 0.1 and OSWorld-2.0.
+    anchor: Coding and enterprise work
+    layout: adaptive_band
+  - id: vuln-discovery
+    source_id: gemini-4-argon-our-next-era-of-frontier-intellig-6381db25
+    path: media/008.png
+    caption: Against Gemini 3.8 Flash Cyber, Argon scores 85.8% to 71.0% on real-world vulnerability discovery
+      across 20 languages and 70.9% to 58.2% on the Wiz penetration test benchmark.
+    alt_text: 'Two bar charts titled Discovering security vulnerabilities. Left, Real-world Vulnerability
+      Discovery: Gemini 4 Argon 85.8%, Gemini 3.8 Flash Cyber 71.0%. Right, Wiz Penetration Test Benchmark:
+      Gemini 4 Argon 70.9%, Gemini 3.8 Flash Cyber 58.2%.'
+    anchor: Cyber defense
+    layout: evidence_band_prose
+  - id: gray-swan-ipi
+    source_id: gemini-4-argon-our-next-era-of-frontier-intellig-6381db25
+    path: media/009.png
+    caption: 'Gray Swan indirect prompt injection attack success rate at 15 attempts, lower is better: Gemini
+      4 Argon 0.7%, against 1.0% for Claude Opus 5.5 and Claude Fable 5.1 and up to 52.7% for Kimi K3.'
+    alt_text: 'Stacked bar chart of attack success rate at 1, 10 and 15 attempts for thirteen models, sorted
+      from lowest to highest: Gemini 4 Argon 0.7%, Claude Opus 5.5 1.0%, Claude Fable 5.1 1.0%, Claude Opus
+      5 4.6%, Gemini 3.8 Flash 5.5%, Gemini 3.8 Flash Cyber 6.0%, GPT-6 Astra 8.5%, GPT-6 Sol 10.1%, Muse
+      Spark 1.3 15.9%, GPT-5.6 Sol 27.0%, GLM 5.3 31.5%, Grok 4.6 51.8% and Kimi K3 52.7%.'
+    anchor: Safeguards before broad release
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-gemini-argon-v2.png
+    alt_text: 'Pedro and Flopaz release a large glowing lavender balloon into the dusk sky while Maro braces his feet and holds the tether.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-gemini-argon-v4.png
+- id: glm-5-3-and-the-spread-of-advanced-cyber-capabil
+  title: GLM-5.3 and the spread of advanced cyber capabilities
+  short_title: GLM-5.3
+  display_emphasis: cyber capabilities
+  opener_variant: edge_medallion
+  author: Andrew Fasano, Marius Fleischer, Cole McFaul, Robert Xiao, Tripp Gallagher
+  author_note: "From Anthropic's research page."
+  content_mode: article
+  source_ids:
+  - glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea
+  manuscript: editions/012/articles/glm-5-3-and-the-spread-of-advanced-cyber-capabil.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea media/001.jpg: Two bar charts. Top: share of attempts that built a working exploit on 41 Chrome V8 bugs — Claude Mythos Previ
+  #   glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea media/002.png: Two line charts of exploitation success versus output-token budget on a log scale. On ExploitBench, Claude Myt
+  #   glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea media/003.png: Redacted screenshot of an exploit page generated by GLM-5.3. A banner reads "Sandbox escaped — web content rea
+  #   glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea media/004.png: Two bar charts on abliteration. Top: mean refusal rate across three harmful-request benchmarks falls from 95% 
+  #   glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea media/005.png: Table showing how often each model tried to connect to a remote target after a harmful cyber-attack order. GLM
+  #   glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea media/006.jpg: Quoted reasoning from the abliterated version of GLM-5.3 in a simulated environment. The model writes "my job 
+  figures:
+  - id: exploit-capability
+    source_id: glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea
+    path: media/002.png
+    caption: 'Exploitation success against output-token budget: on ExploitBench, Claude Mythos Preview reaches
+      14% and GLM-5.3 12%; on the internal Binary Exploitation benchmark, 6% and 4%, while the other models
+      score at or near 0%.'
+    alt_text: 'Two step charts of exploitation success against output-token budget per attempt on a log
+      scale from 10k to 2M. ExploitBench: Claude Mythos Preview 14%, GLM-5.3 12%, Kimi K3 0.5%, DeepSeek-V4.1-Flash
+      0.2%, Claude Opus 4.6 and GLM-5.2 0%. Binary Exploitation Benchmark: Claude Mythos Preview 6%, GLM-5.3
+      4%, all others 0%.'
+    anchor: What GLM-5.3 can do
+    layout: column_plate
+  - id: abliteration
+    source_id: glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea
+    path: media/004.png
+    caption: Abliteration cuts mean refusal on three harmful-request benchmarks from 95% to 6% for GLM-5.3
+      and to 14% for GLM-5.3-Flash, while GPQA-Diamond and CyberGym scores barely move.
+    alt_text: 'Two sets of bar charts. Top: mean refusal rate across JailbreakBench, HarmBench and StrongREJECT.
+      Claude Opus 4.8 96%, Opus 5 95%, Mythos Preview 96%; GLM-5.3 95% falling to 6% abliterated; GLM-5.3-Flash
+      95% falling to 14% abliterated. Bottom: GPQA-Diamond 88% and 88% for GLM-5.3, 89% and 89% for Flash;
+      CyberGym subset 85% and 81% for GLM-5.3, 86% and 86% for Flash.'
+    anchor: How the safeguards fail
+    layout: column_plate
+  - id: bypass-table
+    source_id: glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea
+    path: media/005.png
+    caption: 'Share of 50 simulated episodes in which each model tried to connect to a remote target after
+      a harmful cyber-attack order: GLM-5.3 goes from 0% on a bare order to 64%, 92% and 100%, while Claude
+      models stay at 0%.'
+    alt_text: 'Table by model and condition. GLM-5.3: bare order 0%, false cover story 64%, reasoning prefilled
+      92%, abliterated 100%. GLM-5.3-Flash: 0%, 16%, 80%, 92%. Claude Opus 4.8, Claude Opus 5 and Claude
+      Mythos 5: 0% on a bare order and 0% with a false cover story, with notes of 4% and 10% with safeguards
+      disabled for the two Opus models. Prefill and abliteration cells for Claude are marked not applicable
+      with padlocks.'
+    anchor: How the safeguards fail
+    layout: adaptive_band
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-glm-cyber-v1.png
+    alt_text: 'Pedro shows a tin toy that copies keys, Flopaz studies the freshly cut key through a magnifier, and Maro rushes to fit a stronger lock on the shed.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-glm-cyber-v2.png
+- id: introducing-dots
+  title: Introducing dots
+  short_title: Introducing dots
+  display_emphasis: dots
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: "From OpenAI's news page."
+  content_mode: article
+  source_ids:
+  - introducing-dots-39c7a6b0
+  manuscript: editions/012/articles/introducing-dots.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   introducing-dots-39c7a6b0 media/001.png: Pink dot Iggy prepares an iOS beta checklist fix beside a release workspace.
+  #   introducing-dots-39c7a6b0 media/002.png: Blue dot Felipe revises launch materials beside two email and social design options.
+  #   introducing-dots-39c7a6b0 media/003.png: Green dot Todd discusses repeat test findings beside an email draft and comparison chart.
+  #   introducing-dots-39c7a6b0 media/004.png: Yellow dot Alfred discusses an enterprise proposal beside a document listing steps to close the deal.
+  #   introducing-dots-39c7a6b0 media/005.png: Purple dot Jojo helps a creator prepare an interview post beside a social image.
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-introducing-dots-v2.png
+    alt_text: 'Five colored round magnets hold blank task cards on a corkboard; Maro moves one while Flopaz pins up another and Pedro passes her a card.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-introducing-dots-v1.png
+- id: openai-understands-something-important-and-rare
+  title: OpenAI Understands Something Important and Rare
+  short_title: OpenAI Understands Something Important
+  display_emphasis: Rare
+  opener_variant: split_axis
+  author: David George
+  author_note: "From a16z news, Andreessen Horowitz's newsletter."
+  content_mode: article
+  source_ids:
+  - openai-understands-something-important-and-rare-49eba89b
+  manuscript: editions/012/articles/openai-understands-something-important-and-rare.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   openai-understands-something-important-and-rare-49eba89b media/001.png: 
+  #   openai-understands-something-important-and-rare-49eba89b media/002.png: 
+  #   openai-understands-something-important-and-rare-49eba89b media/003.png: 
+  #   openai-understands-something-important-and-rare-49eba89b media/004.png: 
+  #   openai-understands-something-important-and-rare-49eba89b media/005.png: 
+  #   openai-understands-something-important-and-rare-49eba89b media/006.png: 
+  #   openai-understands-something-important-and-rare-49eba89b media/007.png: 
+  figures:
+  - id: time-to-100m
+    source_id: openai-understands-something-important-and-rare-49eba89b
+    path: media/003.png
+    caption: 'Months from launch to 100 million monthly active users: ChatGPT 2, TikTok 9, Instagram 30.
+      Source: Reuters, February 2, 2023.'
+    alt_text: 'Line chart titled Time to 100M Monthly Active Users. Three straight lines rise from zero
+      to 100 million users: a green ChatGPT line reaching the top at 2 months, a blue TikTok line at 9 months,
+      and an orange Instagram line at 30 months. The horizontal axis shows months since launch from 0 to
+      30.'
+    anchor: Finding the next thing
+    layout: evidence_band_prose
+  - id: agentic-token-share
+    source_id: openai-understands-something-important-and-rare-49eba89b
+    path: media/006.png
+    caption: 'Share of enterprise output tokens going to agentic Codex use rose from near zero in August
+      2025 to 64% by June 2026, against 36% for ChatGPT, with model and Codex app launches marked along
+      the way. Source: OAI Signals.'
+    alt_text: Area chart titled Enterprise token usage by ChatGPT and Agentic. The vertical axis is share
+      of enterprise output tokens on a 28-day trailing average, from 0 to 100 percent; the horizontal axis
+      runs from August 2025 to June 2026. A green Agentic (Codex) area rises slowly after Codex general
+      availability in October 2025, then steeply after the Codex app for macOS in February 2026, ending
+      at 64 percent, with ChatGPT at 36 percent. Markers label GPT-5, GPT-5.2, GPT-5.4, and GPT-5.5 releases.
+    anchor: True platforms
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-openai-rare-v3.png
+    alt_text: 'A deep path worn through the grass leads to the trio''s lemonade stand, where Maro pours lemonade and Pedro and Flopaz serve at the counter.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-openai-rare-v1.png
+- id: openclaw-enterprise-the-open-agent-platform-open
+  title: OpenClaw Enterprise - The Open Agent Platform
+  short_title: OpenClaw Enterprise
+  display_emphasis: Enterprise
+  opener_variant: edge_medallion
+  author: Kevin Lin
+  author_note: "From the OpenClaw blog."
+  content_mode: verbatim
+  source_ids:
+  - openclaw-enterprise-the-open-agent-platform-open-6f725bb8
+  manuscript: editions/012/articles/openclaw-enterprise-the-open-agent-platform-open.md
+  figures:
+  - id: figure-1
+    source_id: openclaw-enterprise-the-open-agent-platform-open-6f725bb8
+    path: media/001.png
+    caption: Three coral lobster agents work in separate rooms connected to a shared workspace.
+    alt_text: Three coral lobster agents work in separate rooms connected to a shared workspace.
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-openclaw-enterprise-v3.png
+    alt_text: 'A cutaway of three rooms where Pedro and Flopaz work at separate desks and Maro uses a coral claw grabber to pass their papers to a shared table.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-openclaw-enterprise-v1.png
+- id: cloudflare-containers-rebuilt-to-scale-agent-san
+  title: Cloudflare Containers, rebuilt to scale agent sandboxes
+  short_title: Cloudflare Containers, rebuilt
+  display_emphasis: agent sandboxes
+  opener_variant: stepped_title
+  author: Thomas Gauvin, Rushil Mehra, Gabi Villalonga Simón, Thomas Lefebvre
+  author_note: "From the Cloudflare blog."
+  content_mode: article
+  source_ids:
+  - cloudflare-containers-rebuilt-to-scale-agent-san-f1767644
+  manuscript: editions/012/articles/cloudflare-containers-rebuilt-to-scale-agent-san.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   cloudflare-containers-rebuilt-to-scale-agent-san-f1767644 media/001.png: 
+  #   cloudflare-containers-rebuilt-to-scale-agent-san-f1767644 media/002.png: 
+  figures:
+  - id: do-container-patterns
+    source_id: cloudflare-containers-rebuilt-to-scale-agent-san-f1767644
+    path: media/002.png
+    caption: 'Three ways a Durable Object can drive its Container: as the agent''s workspace, behind a security
+      boundary set through the outbound handler, or as a supervised attempt in evaluations and reinforcement
+      learning.'
+    alt_text: 'Diagram titled Containers and Durable Objects patterns for agents, with three panels. Agent
+      sessions: a Durable Object points to a Container, labeled Container as workspace. Trusted access:
+      a Durable Object points to a Container inside a dashed Outbound handler box, labeled Configure security
+      boundary. Evaluations and reinforcement learning: a Durable Object points to a Container, labeled
+      Supervise agent attempts.'
+    anchor: The Durable Object, made explicit
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-cloudflare-containers-v2.png
+    alt_text: 'Maro flings open a wooden crate that unfolds into a sandbox while Pedro clicks a stopwatch and Flopaz already shapes a sandcastle inside.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-cloudflare-containers-v2.png
+- id: detect-and-send-production-issues-straight-to-yo
+  title: Detect and send production issues straight to your agent
+  short_title: Detect and send production issues
+  display_emphasis: your agent
+  opener_variant: split_axis
+  author: Thomas Ankcorn, Maksym Makuch, Nevi Shah
+  author_note: "From the Cloudflare blog."
+  content_mode: article
+  source_ids:
+  - detect-and-send-production-issues-straight-to-yo-99aa0cdb
+  manuscript: editions/012/articles/detect-and-send-production-issues-straight-to-yo.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   detect-and-send-production-issues-straight-to-yo-99aa0cdb media/001.png: 
+  #   detect-and-send-production-issues-straight-to-yo-99aa0cdb media/002.png: 
+  #   detect-and-send-production-issues-straight-to-yo-99aa0cdb media/003.png: 
+  #   detect-and-send-production-issues-straight-to-yo-99aa0cdb media/004.png: 
+  #   detect-and-send-production-issues-straight-to-yo-99aa0cdb media/005.png: 
+  figures:
+  - id: issues-list
+    source_id: detect-and-send-production-issues-straight-to-yo-99aa0cdb
+    path: media/002.png
+    caption: The Issues tab for a production Worker groups failures into issues, each with an event count,
+      a trend line, and when it was last seen.
+    alt_text: Screenshot of the Cloudflare dashboard Issues tab for a Worker named portal-prod. Summary
+      tiles show latest occurrence 4 minutes ago, 244 active issues, 93.64k active occurrences, and 0 resolved
+      issues. A table lists issues such as Worker exceeded CPU time limit with 748 events and TimeoutError,
+      The operation was aborted due to timeout, with 3.57k events, each with a small trend sparkline, last-seen
+      time, and an Active status.
+    anchor: Catch failures automatically
+    layout: evidence_band_prose
+  - id: occurrence-context
+    source_id: detect-and-send-production-issues-straight-to-yo-99aa0cdb
+    path: media/004.png
+    caption: With identifiers added through the tracing API, each occurrence shows the user and session
+      it affected above its execution trail.
+    alt_text: Screenshot of an issue occurrence. A Context section shows User ID usr_8f2a1c9d and Session
+      ID sess_01JQ9CX7P4R8N2KM. Below, an Execution trail lists a GET / request and an error, Unexpected
+      end of JSON input, both at 09:17:06.525.
+    anchor: Contextualizing errors for your agent
+    layout: compact_band
+  - id: issue-to-agent-flow
+    source_id: detect-and-send-production-issues-straight-to-yo-99aa0cdb
+    path: media/001.png
+    caption: 'Five stages: a Worker fails in production, Cloudflare groups and routes the issue, a coding
+      agent investigates and opens a pull request, and the team decides what reaches production.'
+    alt_text: 'Diagram of five numbered boxes in a row. Under Production: 1, Production Worker, an exception,
+      5xx, or error log occurs. Under Cloudflare Automation: 2, Detect and group, related failures become
+      one issue with diagnostic context; 3, Route the issue, use an automation trigger or send it manually
+      to a configured destination. Under Agent-assisted: 4, Investigate, the coding agent proposes changes
+      to code and tests and opens a pull request, with an optional link to Cloudflare MCP. Under Human control:
+      5, Review and deploy, your team reviews the proposal and decides what reaches production.'
+    anchor: Send detected issues to your agent
+    layout: evidence_band_prose
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-production-issues-v3.png
+    alt_text: 'A water tank springs a leak; a string alarm tugs Maro''s antenna and he leaps toward it with a patch while Flopaz points and Pedro watches his alarm work.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-production-issues-v2.png
+- id: introducing-forge-the-open-source-pipeline-for-g
+  title: 'Introducing Forge: the open source pipeline for SDKs and CLIs'
+  short_title: Introducing Forge
+  display_emphasis: Forge
+  opener_variant: edge_medallion
+  author: Dimitri Mitropoulos, Matt “TK” Taylor, Samuel Macleod
+  author_note: "From the Cloudflare blog."
+  content_mode: article
+  source_ids:
+  - introducing-forge-the-open-source-pipeline-for-g-2f7c2d78
+  manuscript: editions/012/articles/introducing-forge-the-open-source-pipeline-for-g.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   introducing-forge-the-open-source-pipeline-for-g-2f7c2d78 media/001.png: 
+  #   introducing-forge-the-open-source-pipeline-for-g-2f7c2d78 media/002.png: 
+  #   introducing-forge-the-open-source-pipeline-for-g-2f7c2d78 media/003.png: 
+  #   introducing-forge-the-open-source-pipeline-for-g-2f7c2d78 media/004.png: 
+  figures:
+  - id: before-after-forge
+    source_id: introducing-forge-the-open-source-pipeline-for-g-2f7c2d78
+    path: media/002.png
+    caption: Before Forge, a broken spec surfaced only after three merged PRs reached the SDK generator;
+      with Forge in CI, the team learns of the failure before its PR merges.
+    alt_text: 'Two-column diagram. Before Forge: a feature API spec passes through PR merged steps into
+      an aggregate API spec, a centralized config that may miss some operations, and an SDK generator, ending
+      in a red box reading Failure detected, team had no idea, revert 3 upstream PRs. After Forge: the same
+      feature API spec goes through Forge in CI straight to a red box reading Failure detected, team knows
+      immediately before PR merges.'
+    anchor: Our API outgrew our generators
+    layout: column_plate
+  - id: chained-targets
+    source_id: introducing-forge-the-open-source-pipeline-for-g-2f7c2d78
+    path: media/003.png
+    caption: One OpenAPI operation flows through Forge CI into the TypeScript SDK, which in turn produces
+      the cf CLI command, the Cap'n Web call, and the docs page.
+    alt_text: Flow diagram. An OpenAPI box for GET /accounts/tokens with operationId accounts.tokens.list
+      feeds a Forge CI box listing lint and validate, resolve refs, publish global metrics, and aggregate.
+      That feeds a TypeScript SDK box with client.accounts.tokens.list(), which branches to a cf CLI box
+      with cf accounts tokens list and a Cap'n Web box with await api.accounts.tokens.list(). All three
+      feed a Docs box for accounts, tokens, list covering TypeScript, cf CLI, and Cap'n Web.
+    anchor: Generate anything, chain the outputs
+    layout: column_plate
+  opener_art:
+    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-introducing-forge-v2.png
+    alt_text: 'Pedro feeds one sheet of dough into a crank machine Maro turns, and Flopaz catches the cookies that come out shaped like a key, a book, and a toolbox.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-introducing-forge-v1.png
+tail_art_fit: contain
+closing_plates:
+- title: Night Lamp
+  art_path: editions/012/art/rounds/2026-10-01T14-56-14/closing-night-lamp-v4.png
+- title: Tall Kite
+  art_path: editions/012/art/rounds/2026-10-01T14-56-14/closing-tall-kite-v1.png
+- title: Treehouse Ladder
+  art_path: editions/012/art/rounds/2026-10-01T14-56-14/closing-treehouse-ladder-v2.png
+- title: Deep Well
+  art_path: editions/012/art/rounds/2026-10-01T15-40-43/closing-deep-well-v2.png
+- title: Block Tower
+  art_path: editions/012/art/rounds/2026-10-01T15-40-43/closing-block-tower-v2.png

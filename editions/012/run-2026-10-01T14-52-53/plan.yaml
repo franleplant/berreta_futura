@@ -1,0 +1,75 @@
+edition:
+  id: '012'
+articles:
+- id: openclaw-enterprise-the-open-agent-platform-open
+  title: OpenClaw Enterprise - The Open Agent Platform
+  author: Kevin Lin
+  content_mode: verbatim
+  source_ids:
+  - openclaw-enterprise-the-open-agent-platform-open-6f725bb8
+- id: one-month-without-ai
+  title: One month without AI
+  author: Bustikiller
+  content_mode: article
+  source_ids:
+  - one-month-without-ai-f51481a2
+- id: introducing-forge-the-open-source-pipeline-for-g
+  title: 'Introducing Forge: the open source pipeline for generating SDKs, CLIs, docs, and more'
+  author: Dimitri Mitropoulos, Matt “TK” Taylor, Samuel Macleod
+  content_mode: article
+  source_ids:
+  - introducing-forge-the-open-source-pipeline-for-g-2f7c2d78
+- id: using-claude-code-spending-your-effort-claude-de
+  title: 'Using Claude Code: Spending your effort'
+  author: Thariq Shihipar
+  content_mode: article
+  source_ids:
+  - using-claude-code-spending-your-effort-claude-de-806ec4a7
+- id: detect-and-send-production-issues-straight-to-yo
+  title: Detect and send production issues straight to your agent
+  author: Thomas Ankcorn, Maksym Makuch, Nevi Shah
+  content_mode: article
+  source_ids:
+  - detect-and-send-production-issues-straight-to-yo-99aa0cdb
+- id: the-internet-discovers-tla-now-what
+  title: The internet discovers TLA+. Now what?
+  author: Anna Mészáros, Szilvia Ujváry, Kseniia Strelbytska, Balázs Szilágyi, and Ferenc Huszár
+  content_mode: article
+  source_ids:
+  - the-internet-discovers-tla-now-what-d655d131
+- id: glm-5-3-and-the-spread-of-advanced-cyber-capabil
+  title: GLM-5.3 and the spread of advanced cyber capabilities
+  author: Andrew Fasano, Marius Fleischer, Cole McFaul, Robert Xiao, Tripp Gallagher
+  content_mode: article
+  source_ids:
+  - glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea
+- id: automating-eval-design-and-hillclimbing-with-cla
+  title: Automating eval design and hillclimbing with Claude
+  author: Lance Martin
+  content_mode: article
+  source_ids:
+  - automating-eval-design-and-hillclimbing-with-cla-757c4a0e
+- id: cloudflare-containers-rebuilt-to-scale-agent-san
+  title: Cloudflare Containers, rebuilt to scale agent sandboxes
+  author: Thomas Gauvin, Rushil Mehra, Gabi Villalonga Simón, Thomas Lefebvre
+  content_mode: article
+  source_ids:
+  - cloudflare-containers-rebuilt-to-scale-agent-san-f1767644
+- id: openai-understands-something-important-and-rare
+  title: OpenAI Understands Something Important and Rare
+  author: David George
+  content_mode: article
+  source_ids:
+  - openai-understands-something-important-and-rare-49eba89b
+- id: gemini-4-argon-our-next-era-of-frontier-intellig
+  title: 'Gemini 4 Argon: our next era of frontier intelligence'
+  author: Koray Kavukcuoglu
+  content_mode: article
+  source_ids:
+  - gemini-4-argon-our-next-era-of-frontier-intellig-6381db25
+- id: introducing-dots
+  title: Introducing dots
+  author: OpenAI
+  content_mode: article
+  source_ids:
+  - introducing-dots-39c7a6b0

@@ -1,0 +1,8 @@
+id: automating-eval-design-and-hillclimbing-with-cla-757c4a0e
+title: 'Automating eval design and hillclimbing with Claude'
+author: 'Lance Martin'
+url: https://claude.dev/blog/automating-eval-design-and-hillclimbing/
+captured_at: '2026-10-01T14:49:03Z'
+published_at: '2026-09-28'
+tags: []
+synopsis: 'The article presents principles for designing evals and hillclimbing against them without overfitting, and shows how the claude-api skill''s build-eval and hillclimb commands apply them, with examples of cost reduction and performance improvement.'

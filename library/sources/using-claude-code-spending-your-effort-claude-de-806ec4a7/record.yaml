@@ -1,0 +1,8 @@
+id: using-claude-code-spending-your-effort-claude-de-806ec4a7
+title: 'Using Claude Code: Spending your effort'
+author: 'Thariq Shihipar'
+url: https://claude.dev/blog/spending-your-effort/
+captured_at: '2026-10-01T14:48:43Z'
+published_at: '2026-09-25'
+tags: []
+synopsis: 'The author explains that effort in Claude Code modulates how much verification, edge-case testing and independent judgement the model applies, and uses his own build experiments and Terminal-Bench 3.0 results on Opus 5.5 and Fable 5.1 to recommend which effort level to use for which kind of task.'

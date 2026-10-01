@@ -1,5 +1,5 @@
 schema_version: 2
-intake_edition_id: '011'
+intake_edition_id: '012'
 collecting_editions:
 - id: '005'
   issue_number: 5
@@ -103,6 +103,22 @@ collecting_editions:
   - staff-archetypes-c22d800c
   - what-a-task-costs-on-opus-5-5-3d1eacfa
   - mega-megadevhq-on-x-b8963c9d
+- id: '012'
+  issue_number: 12
+  status: collecting
+  source_ids:
+  - openclaw-enterprise-the-open-agent-platform-open-6f725bb8
+  - one-month-without-ai-f51481a2
+  - introducing-forge-the-open-source-pipeline-for-g-2f7c2d78
+  - using-claude-code-spending-your-effort-claude-de-806ec4a7
+  - detect-and-send-production-issues-straight-to-yo-99aa0cdb
+  - the-internet-discovers-tla-now-what-d655d131
+  - glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea
+  - automating-eval-design-and-hillclimbing-with-cla-757c4a0e
+  - cloudflare-containers-rebuilt-to-scale-agent-san-f1767644
+  - openai-understands-something-important-and-rare-49eba89b
+  - gemini-4-argon-our-next-era-of-frontier-intellig-6381db25
+  - introducing-dots-39c7a6b0
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1

@@ -16,6 +16,128 @@ _Collecting: `010` (9 queued)._
 
 _Collecting: `011` (12 queued)._
 
+_Collecting: `012` (12 queued)._
+
+## Introducing dots — OpenAI
+
+- ID: `introducing-dots-39c7a6b0`
+- Source: https://openai.com/index/introducing-dots/
+- Published: 2026-09-29
+- Captured: 2026-10-01T14:50:53Z
+- Release: queued for `012`
+
+OpenAI introduces dots, always-on agents powered by GPT‑6 Astra with their own cloud computers that work on a user's behalf across ChatGPT, Slack, and Teams, with built-in safeguards, permissions, and approvals, a preview of specialist dots for organizations, and a rollout to Pro, Business Premium, and Enterprise users.
+
+## Gemini 4 Argon: our next era of frontier intelligence — Koray Kavukcuoglu
+
+- ID: `gemini-4-argon-our-next-era-of-frontier-intellig-6381db25`
+- Source: https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/
+- Published: 2026-09-30
+- Captured: 2026-10-01T14:50:46Z
+- Release: queued for `012`
+
+Google announces Gemini 4 Argon, a frontier model for software engineering, enterprise knowledge work, and cybersecurity defense, rolling out first to trusted cyber defenders through the Fairwind Program with a phased release and strengthened safeguards before broad availability.
+
+## OpenAI Understands Something Important and Rare — David George
+
+- ID: `openai-understands-something-important-and-rare-49eba89b`
+- Source: https://www.a16z.news/p/openai-understands-something-important
+- Published: 2026-09-28
+- Captured: 2026-10-01T14:49:14Z
+- Release: queued for `012`
+
+The authors argue that OpenAI will win the AI frontier by creating new kinds of customers and building the most durable distribution as a true platform, so that distribution, rather than models, chips, or products, drives its other advantages.
+
+## Cloudflare Containers, rebuilt to scale agent sandboxes — Thomas Gauvin, Rushil Mehra, Gabi Villalonga Simón, Thomas Lefebvre
+
+- ID: `cloudflare-containers-rebuilt-to-scale-agent-san-f1767644`
+- Source: https://blog.cloudflare.com/faster-agent-sandboxes/
+- Published: 2026-09-30
+- Captured: 2026-10-01T14:49:08Z
+- Release: queued for `012`
+
+Cloudflare rebuilt Containers around a new `durable_object` scheduling policy that lets application code choose each agent sandbox's image and instance type at runtime, starts Containers about 6x faster, and adds filesystem snapshots in public beta.
+
+## Automating eval design and hillclimbing with Claude — Lance Martin
+
+- ID: `automating-eval-design-and-hillclimbing-with-cla-757c4a0e`
+- Source: https://claude.dev/blog/automating-eval-design-and-hillclimbing/
+- Published: 2026-09-28
+- Captured: 2026-10-01T14:49:03Z
+- Release: queued for `012`
+
+The article presents principles for designing evals and hillclimbing against them without overfitting, and shows how the claude-api skill's build-eval and hillclimb commands apply them, with examples of cost reduction and performance improvement.
+
+## GLM-5.3 and the spread of advanced cyber capabilities — Andrew Fasano, Marius Fleischer, Cole McFaul, Robert Xiao, Tripp Gallagher
+
+- ID: `glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea`
+- Source: https://www.anthropic.com/research/glm-5-3-and-the-spread-of-advanced-cyber-capabilities
+- Published: 2026-09-29
+- Captured: 2026-10-01T14:48:58Z
+- Release: queued for `012`
+
+Anthropic's Frontier Red Team reports that the open-weight GLM-5.3 can build end-to-end cyber exploits at rates close to Claude Mythos Preview and that its safeguards can be bypassed 64% to 100% of the time with simple techniques that did not work on safeguarded Claude models.
+
+## The internet discovers TLA+. Now what? — Anna Mészáros, Szilvia Ujváry, Kseniia Strelbytska, Balázs Szilágyi, and Ferenc Huszár
+
+- ID: `the-internet-discovers-tla-now-what-d655d131`
+- Source: https://reasonable.io/blog/tla-tutorial/
+- Published: 2026-09-25
+- Captured: 2026-10-01T14:48:47Z
+- Release: queued for `012`
+
+Following Boris Cherny's viral TLA+ tweet, the article explains what TLA+ is and is not, how models can be taken into proof systems like Verus, and previews Reasonable's pipeline that turned TLA+ specification/property pairs into machine-checked Verus proofs.
+
+## Detect and send production issues straight to your agent — Thomas Ankcorn, Maksym Makuch, Nevi Shah
+
+- ID: `detect-and-send-production-issues-straight-to-yo-99aa0cdb`
+- Source: https://blog.cloudflare.com/real-time-issue-detection/
+- Published: 2026-09-30
+- Captured: 2026-10-01T14:48:46Z
+- Release: queued for `012`
+
+Cloudflare announces Issues, an open-beta error monitoring feature for Workers that groups repeated failures, captures logs, traces, and stack traces, and sends them through Automations to coding agents, webhooks, or chat tools.
+
+## Using Claude Code: Spending your effort — Thariq Shihipar
+
+- ID: `using-claude-code-spending-your-effort-claude-de-806ec4a7`
+- Source: https://claude.dev/blog/spending-your-effort/
+- Published: 2026-09-25
+- Captured: 2026-10-01T14:48:43Z
+- Release: queued for `012`
+
+The author explains that effort in Claude Code modulates how much verification, edge-case testing and independent judgement the model applies, and uses his own build experiments and Terminal-Bench 3.0 results on Opus 5.5 and Fable 5.1 to recommend which effort level to use for which kind of task.
+
+## Introducing Forge: the open source pipeline for generating SDKs, CLIs, docs, and more — Dimitri Mitropoulos, Matt “TK” Taylor, Samuel Macleod
+
+- ID: `introducing-forge-the-open-source-pipeline-for-g-2f7c2d78`
+- Source: https://blog.cloudflare.com/forge-open-source-generation-pipeline/
+- Published: 2026-09-28
+- Captured: 2026-10-01T14:48:43Z
+- Release: queued for `012`
+
+Cloudflare introduces Forge, an open source, pluggable, chainable pipeline that generates SDKs, CLIs, docs, and other API surfaces from OpenAPI specs, runs in CI to produce per-change previews, and already generates the cf CLI.
+
+## One month without AI — Bustikiller
+
+- ID: `one-month-without-ai-f51481a2`
+- Source: https://blog.bustikiller.com/2026/09/25/one-month-without-ai.html
+- Published: 2026-09-25
+- Captured: 2026-10-01T14:48:37Z
+- Release: queued for `012`
+
+The author describes how heavy use of AI coding agents left them lazy, complacent, and unable to explain their own pull requests, and how a month of stopping AI use restored their control, understanding, and enjoyment of programming.
+
+## OpenClaw Enterprise - The Open Agent Platform — Kevin Lin
+
+- ID: `openclaw-enterprise-the-open-agent-platform-open-6f725bb8`
+- Source: https://openclaw.ai/blog/openclaw-enterprise
+- Published: 2026-09-29
+- Captured: 2026-10-01T14:48:28Z
+- Release: queued for `012`
+
+OpenClaw announces OpenClaw Enterprise, an open source, vendor neutral control plane for deploying persistent agents with multi-tenancy, hard security boundaries, and governance, now available for internal pilot workloads ahead of a 1.0 release later this year.
+
 ## Towards Autonomous Product Development — MEGA
 
 - ID: `mega-megadevhq-on-x-b8963c9d`

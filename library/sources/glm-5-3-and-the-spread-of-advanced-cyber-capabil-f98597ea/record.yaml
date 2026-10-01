@@ -1,0 +1,8 @@
+id: glm-5-3-and-the-spread-of-advanced-cyber-capabil-f98597ea
+title: 'GLM-5.3 and the spread of advanced cyber capabilities'
+author: 'Andrew Fasano, Marius Fleischer, Cole McFaul, Robert Xiao, Tripp Gallagher'
+url: https://www.anthropic.com/research/glm-5-3-and-the-spread-of-advanced-cyber-capabilities
+captured_at: '2026-10-01T14:48:58Z'
+published_at: '2026-09-29'
+tags: []
+synopsis: 'Anthropic''s Frontier Red Team reports that the open-weight GLM-5.3 can build end-to-end cyber exploits at rates close to Claude Mythos Preview and that its safeguards can be bypassed 64% to 100% of the time with simple techniques that did not work on safeguarded Claude models.'
