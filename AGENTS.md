@@ -19,8 +19,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
   loads `edition.yaml`, lays out reader pages, and writes the PDFs. There is no other engine and
   no Python in the render path.
-- `mag site [--out output/site]` builds the public static site (CI deploys
-  it to berreta.franleplant.com). It publishes the editions listed in
+- `mag site [--out output/site]` builds the public static site, deployed
+  from this laptop to berreta.franleplant.com (`deploy/web/README.md`). It publishes the editions listed in
   `magazine.toml` `[site] editions`, each from its newest git-tracked complete
   run (never an untracked local run), with the print-tone figure copies,
   resized JPEG/WebP variants, and no Typst render and no model call. PDF links
