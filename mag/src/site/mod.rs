@@ -28,8 +28,7 @@ struct Config {
 pub struct SiteConfig {
     pub base_url: String,
     pub editions: Vec<String>,
-    pub pdf_bucket: String,
-    pub pdf_base_url: String,
+    pub pdf_remote: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]

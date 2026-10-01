@@ -20,26 +20,20 @@ npx wrangler@4 deploy --config deploy/web/wrangler.jsonc
 git add editions/011/publish.yaml && git commit && git push
 ```
 
-## PDFs on R2
+## PDFs on Google Drive
 
-PDFs exceed the 25 MiB asset limit, so they live in the R2 bucket
-`berreta-pdfs`, served at https://files.berreta.franleplant.com.
+PDFs exceed the 25 MiB asset limit, so they live in Google Drive under
+`[site] pdf_remote` (`gdrive:berreta-futura`), shared as anyone with the link.
 
-`mag publish` refuses a file without a `%PDF-` header, names the object
-`011/en/berreta-futura-011-en-<first 8 hex of sha256>.pdf` (new content gets
-a new URL, so a re-publish never serves a cached old copy), and merges the
-language into `publish.yaml`. `--dry-run` prints the upload command without
-running it. Wrangler uploads at most 315 MB per object
-([Upload objects](https://developers.cloudflare.com/r2/objects/upload-objects/)).
+`mag publish` refuses a file without a `%PDF-` header, uploads it unchanged
+with `rclone copyto` as `011/en/berreta-futura-011-en-<first 8 hex of
+sha256>.pdf` (new content gets a new file and link), shares it with
+`rclone link`, and merges the language into `publish.yaml`. `--dry-run`
+prints the rclone commands without running them.
 
 One-time setup on this laptop:
 
-1. `npx wrangler login` (opens the browser; deploy and publish use it).
-2. Dashboard, **R2 object storage**, enable R2.
-3. `npx wrangler r2 bucket create berreta-pdfs`
-   ([Wrangler commands](https://developers.cloudflare.com/r2/reference/wrangler-commands/)).
-4. Dashboard, **R2 object storage**, the bucket, **Settings**, under
-   **Custom Domains** select **Add**, enter `files.berreta.franleplant.com`,
-   **Continue**, **Connect Domain**
-   ([Public buckets](https://developers.cloudflare.com/r2/buckets/public-buckets/)).
-   Leave the `r2.dev` development URL disabled.
+1. `npx wrangler login` (deploys).
+2. rclone on PATH (official binary from https://rclone.org/downloads/; Homebrew
+   has no bottle for it), then `rclone config create gdrive drive
+   scope=drive.file` and approve in the browser.

@@ -29,9 +29,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   PDF link. It refuses to write a page that drops any manuscript block,
   figure, or extract.
 - `mag publish NNN --pdf <file> [--lang en] [--dry-run]` ships an approved
-  PDF: it uploads the file unchanged to the R2 bucket in `[site] pdf_bucket`
-  (`npx wrangler`, the owner's local login) as
-  `NNN/<lang>/berreta-futura-NNN-<lang>-<sha8>.pdf` and writes its url,
+  PDF: it uploads the file unchanged to Google Drive at `[site] pdf_remote`
+  (`rclone`, the owner's local `gdrive` remote) as
+  `NNN/<lang>/berreta-futura-NNN-<lang>-<sha8>.pdf`, shares it as
+  anyone-with-the-link (`rclone link`), and writes its url,
   bytes, and sha256 into `editions/NNN/publish.yaml`; committing that file
   publishes the link.
 - `tools/letter.py`, `coverproof.py`, `compare.py`, and `read.py` are

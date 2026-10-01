@@ -12,6 +12,6 @@ hyphenate_english = true
 # which `mag publish` writes.
 base_url = "https://berreta.franleplant.com"
 editions = ["011"]
-# `mag publish` uploads approved PDFs to this R2 bucket, served from this domain.
-pdf_bucket = "berreta-pdfs"
-pdf_base_url = "https://files.berreta.franleplant.com"
+# `mag publish` uploads approved PDFs to this rclone remote (Google Drive) and
+# records an anyone-with-the-link share URL.
+pdf_remote = "gdrive:berreta-futura"
