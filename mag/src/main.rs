@@ -199,7 +199,7 @@ enum Cmd {
     Render(render::RenderArgs),
     /// Build the public static website from the editions listed in magazine.toml [site]
     Site(site::SiteArgs),
-    /// Upload an approved edition PDF to R2 and record its link in editions/<edition>/publish.yaml
+    /// Upload an approved edition PDF to Google Drive and record its link in editions/<edition>/publish.yaml
     Publish(publish::PublishArgs),
 }
 

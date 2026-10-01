@@ -8,7 +8,7 @@ fn scratch() -> PathBuf {
     std::fs::create_dir_all(root.join("editions/011")).unwrap();
     std::fs::write(
         root.join("magazine.toml"),
-        "[publication]\nname = \"Berreta Futura\"\n\n[site]\nbase_url = \"https://b.example\"\neditions = [\"011\"]\npdf_bucket = \"pdfs\"\npdf_base_url = \"https://files.example/\"\n",
+        "[publication]\nname = \"Berreta Futura\"\n\n[site]\nbase_url = \"https://b.example\"\neditions = [\"011\"]\npdf_remote = \"drive:pdfs/\"\n",
     )
     .unwrap();
     root
@@ -34,7 +34,7 @@ fn publish_names_the_object_by_content_merges_languages_and_refuses_a_non_pdf() 
     let sha = "a85679e8";
     let key = format!("011/en/berreta-futura-011-en-{sha}.pdf");
     assert!(stdout.contains(&format!(
-        "npx wrangler r2 object put pdfs/{key} --file a.pdf --remote --content-type application/pdf"
+        "rclone copyto a.pdf drive:pdfs/{key} && rclone link drive:pdfs/{key}"
     )));
     assert!(stdout.contains("git add editions/011/publish.yaml"));
     assert!(publish(&root, "b.pdf", "es").status.success());
@@ -48,7 +48,7 @@ fn publish_names_the_object_by_content_merges_languages_and_refuses_a_non_pdf() 
     let en = &record["pdfs"]["en"];
     assert_eq!(
         en["url"].as_str(),
-        Some(format!("https://files.example/{key}").as_str())
+        Some(format!("drive:pdfs/{key}").as_str())
     );
     assert_eq!(en["bytes"].as_u64(), Some(16));
     assert!(en["sha256"].as_str().unwrap().starts_with(sha));

@@ -8,19 +8,17 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const WRANGLER_LIMIT: u64 = 315_000_000;
-
 #[derive(clap::Args)]
 pub(crate) struct PublishArgs {
     #[arg(help = "Edition id, e.g. 011")]
     pub edition: String,
-    #[arg(long, help = "The approved PDF, uploaded to R2 unchanged")]
+    #[arg(long, help = "The approved PDF, uploaded to Google Drive unchanged")]
     pub pdf: PathBuf,
     #[arg(long, default_value = "en", help = "The language this PDF is")]
     pub lang: String,
     #[arg(
         long = "dry-run",
-        help = "Print the upload command instead of running it (publish.yaml is still written)"
+        help = "Print the rclone commands instead of running them (publish.yaml is still written)"
     )]
     pub dry_run: bool,
 }
@@ -39,39 +37,23 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
         args.lang
     );
     let (bytes, sha256) = digest(&args.pdf)?;
-    ensure!(
-        bytes <= WRANGLER_LIMIT,
-        "{} is {bytes} bytes; wrangler uploads at most 315 MB",
-        args.pdf.display()
-    );
     let key = key(
         &slug(&publication_name(&root)),
         &edition,
         &args.lang,
         &sha256,
     );
-    let object = format!("{}/{key}", site.pdf_bucket);
+    let object = format!("{}/{key}", site.pdf_remote.trim_end_matches('/'));
     let file = args.pdf.to_string_lossy();
-    let upload = [
-        "wrangler",
-        "r2",
-        "object",
-        "put",
-        &object,
-        "--file",
-        &file,
-        "--remote",
-        "--content-type",
-        "application/pdf",
-    ];
-    match args.dry_run {
-        true => println!("dry run, not uploading: npx {}", upload.join(" ")),
-        false => ensure!(
-            Command::new("npx").args(upload).status()?.success(),
-            "the R2 upload failed; publish.yaml is unchanged"
-        ),
-    }
-    let url = format!("{}/{key}", site.pdf_base_url.trim_end_matches('/'));
+    let url = match args.dry_run {
+        true => {
+            println!(
+                "dry run, not uploading: rclone copyto {file} {object} && rclone link {object}"
+            );
+            object
+        }
+        false => upload(&file, &object)?,
+    };
     let path = dir.join("publish.yaml");
     let mut record = publish_record(&path)?;
     record.pdfs.insert(
@@ -90,6 +72,19 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
         args.lang
     );
     Ok(0)
+}
+
+fn upload(file: &str, object: &str) -> Result<String> {
+    ensure!(
+        Command::new("rclone")
+            .args(["copyto", file, object])
+            .status()?
+            .success(),
+        "the upload to {object} failed; publish.yaml is unchanged"
+    );
+    let link = Command::new("rclone").args(["link", object]).output()?;
+    ensure!(link.status.success(), "rclone could not share {object}");
+    Ok(String::from_utf8(link.stdout)?.trim().to_string())
 }
 
 fn key(name: &str, edition: &str, lang: &str, sha256: &str) -> String {
