@@ -11,7 +11,7 @@ hyphenate_english = true
 # git-tracked complete run. PDF links come from editions/<id>/publish.yaml,
 # which `mag publish` writes.
 base_url = "https://berreta.franleplant.com"
-editions = ["011"]
+editions = ["012", "011", "010"]
 # `mag publish` uploads approved PDFs to this rclone remote (Google Drive) and
 # records an anyone-with-the-link share URL.
 pdf_remote = "gdrive:berreta-futura"
