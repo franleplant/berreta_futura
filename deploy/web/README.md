@@ -39,6 +39,46 @@ at 20,000 files on the free plan; the workflow fails before deploying if
 5. Push to `main` or run the workflow from the **Actions** tab. The first
    deploy creates the Worker `berreta-futura-web` and the custom domain.
 
+CI checks out sparsely: `mag/`, `magazine.toml`, `deploy/web/`, `prompts/`,
+`design/`, `library/`, and per edition `edition.yaml`, `publish.yaml`,
+`source-codes/`, `translations/`, and the `run-*/` dirs, then adds only the
+art files the published editions' `edition.yaml` names. That is about 225 MB
+for edition 011 instead of the whole 3.9 GB tree, and it builds the same site
+byte for byte. A new edition in `[site] editions` needs no workflow change.
+
+## PDFs on R2
+
+PDFs exceed the 25 MiB asset limit, so they live in the R2 bucket
+`berreta-pdfs`, served at https://files.berreta.franleplant.com. After
+approving a render:
+
+```sh
+mag/target/release/mag publish 011 --pdf editions/011/render-.../en/reader.pdf
+git add editions/011/publish.yaml && git commit && git push
+```
+
+`mag publish` refuses a file without a `%PDF-` header, names the object
+`011/en/berreta-futura-011-en-<first 8 hex of sha256>.pdf` (new content gets
+a new URL, so a re-publish never serves a cached old copy), and merges the
+language into `publish.yaml`. `--dry-run` prints the upload command without
+running it. Wrangler uploads at most 315 MB per object
+([Upload objects](https://developers.cloudflare.com/r2/objects/upload-objects/)).
+
+One-time setup on this laptop:
+
+1. `npx wrangler login` (opens the browser; `mag publish` uses this login,
+   CI never uploads PDFs).
+2. `npx wrangler r2 bucket create berreta-pdfs`, or dashboard, **R2 object
+   storage**, **Create bucket**
+   ([Wrangler commands](https://developers.cloudflare.com/r2/reference/wrangler-commands/)).
+3. Dashboard, **R2 object storage**, the bucket, **Settings**, under
+   **Custom Domains** select **Add**, enter `files.berreta.franleplant.com`,
+   **Continue**, review the DNS record, **Connect Domain**; it goes from
+   Initializing to Active within minutes. The domain must be a zone in the
+   same account as the bucket
+   ([Public buckets](https://developers.cloudflare.com/r2/buckets/public-buckets/)).
+   Leave the `r2.dev` development URL disabled.
+
 ## Local check
 
 ```sh
