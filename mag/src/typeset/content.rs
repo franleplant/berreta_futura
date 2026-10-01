@@ -8,10 +8,10 @@ use crate::model::shared::{
     anchor_key, article_opener_format, clamp_roster, content_label, is_name_roster,
     is_reference_heading, py_repr, py_str, scalar_label, ui, Result, ValidationError,
 };
+use crate::sourcecodes::source_code_directory;
 use crate::typeset::estimate::Metrics;
 use crate::typeset::hyphen::{Hyphenation, Hyphenator};
 use crate::typeset::media::pixels;
-use crate::web::edition::source_code_directory;
 use std::cell::Cell;
 use std::collections::BTreeSet;
 use std::path::Path;

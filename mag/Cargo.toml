@@ -43,6 +43,7 @@ toml = "0.8"
 qrcodegen = "1.8"
 image-webp = "0.2.4"
 gif = "0.13"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 
 [lints.clippy]
 cognitive_complexity = "warn"

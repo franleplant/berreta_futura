@@ -2,7 +2,7 @@ use anyhow::{bail, Context, Result};
 use qrcodegen::{DataTooLong, Mask, QrCode, QrCodeEcc, QrSegment, QrSegmentMode, Version};
 use serde_json::{json, Value};
 use serde_yaml::Value as Yaml;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const ILLUSTRATED_ROOM: f64 = 41.0;
 const PLAIN_ROOM: f64 = 55.5;
@@ -396,4 +396,11 @@ pub fn run(edition: &str, check: bool) -> Result<i32> {
     );
     println!("\nnext: mag render {edition}");
     Ok(0)
+}
+
+pub fn source_code_directory(anchor: &Path) -> Option<PathBuf> {
+    anchor
+        .ancestors()
+        .find(|parent| parent.join("edition.yaml").is_file())
+        .map(|parent| parent.join("source-codes"))
 }

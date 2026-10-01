@@ -1,10 +1,7 @@
-use crate::model::doc::settable_codepoints;
 use crate::model::manifest::Edition;
-use crate::model::records::load_records;
 use crate::package::archive::archive_tree;
 use crate::package::preflight::FigurePlacement;
 use crate::package::release::{package_release, Release};
-use crate::web::edition::{write_web_edition, WebOptions};
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
@@ -76,7 +73,6 @@ fn kind(path: &Path) -> (&'static str, &'static str) {
         "json" => ("render_report", "application/json"),
         "md" => ("render_instructions", "text/markdown"),
         "zip" if name == "package.zip" => ("package_artifact", "application/zip"),
-        "zip" => ("web_output", "application/zip"),
         _ => ("render_file", "text/plain"),
     }
 }
@@ -148,33 +144,6 @@ pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
         recorded_review: None,
         fonts: &fonts,
     })?;
-    let urls = load_records(&p.staged.join("library").join("sources"))?
-        .into_iter()
-        .filter(|record| !record.url.is_empty())
-        .map(|record| (record.id, record.url))
-        .collect();
-    let settable = settable_codepoints(&p.assets.join("fonts"))?;
-    let alternates = p.request["languages"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(Value::as_str)
-        .filter(|other| *other != p.edition.language)
-        .map(|other| (other.to_string(), format!("../../{other}/web/")))
-        .collect();
-    let options = WebOptions {
-        source_urls: urls,
-        alternates,
-        ..WebOptions::default()
-    };
-    write_web_edition(
-        p.edition,
-        &settable,
-        p.assets,
-        &p.out_dir.join("web"),
-        &options,
-    )?;
-    let web = archive_tree(&p.out_dir.join("web"), &p.out_dir.join("web-output.zip"))?;
     let package = archive_tree(p.out_dir, &p.out_dir.join("package.zip"))?;
     let report: Value = serde_json::from_str(&std::fs::read_to_string(
         p.out_dir.join("render-critic.json"),
@@ -183,7 +152,7 @@ pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
         .as_str()
         .context("render-critic.json has no result")?
         .to_string();
-    let files: Vec<PathBuf> = written.into_iter().chain([web, package]).collect();
+    let files: Vec<PathBuf> = written.into_iter().chain([package]).collect();
     Ok((
         files
             .iter()

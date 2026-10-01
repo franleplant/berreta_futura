@@ -1,7 +1,7 @@
 # Berreta Futura
 
 Captures articles, rewrites them, and produces a printable A5 magazine plus a
-web edition. `mag`, a Rust CLI in `mag/`, runs the whole pipeline.
+public web site. `mag`, a Rust CLI in `mag/`, runs the whole pipeline.
 
 ## Setup
 
@@ -23,8 +23,9 @@ mag produce editions/NNN/plan.yaml         # writes the run, scaffolds edition.y
 # edit editions/NNN/edition.yaml
 mag art NNN                                # art candidates; pick in art/showcase.html
 mag source-codes NNN                       # QR codes for the openers
-mag render NNN                             # reader.pdf, booklets, web edition, package
+mag render NNN                             # reader.pdf, booklets, package
 mag translate <run dir>                    # Spanish edition
+mag site [--out output/site]               # static site of the [site] editions
 ```
 
 `mag render` typesets through Typst in Rust (`mag/src/typeset/`).

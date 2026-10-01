@@ -5,3 +5,9 @@ name = "Berreta Futura"
 # English prose hyphenates (Typst patterns); no prose block ends more than two
 # consecutive lines on a hyphen. Absent means true.
 hyphenate_english = true
+
+[site]
+# `mag site` publishes these editions, newest first, each from its newest
+# git-tracked complete run. PDF links come from editions/<id>/publish.yaml.
+base_url = "https://berreta.franleplant.com"
+editions = ["011"]

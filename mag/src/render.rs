@@ -13,17 +13,17 @@ const RENDERER: &str = "typst";
 const DESIGN_TOML_PATH: &str = "design/covers/canto-vivo/design.toml";
 
 #[derive(Serialize)]
-struct InputRow {
+pub(crate) struct InputRow {
     #[serde(rename = "artifactId")]
     artifact_id: String,
     #[serde(rename = "sourcePath")]
-    source_path: String,
+    pub source_path: String,
     #[serde(rename = "targetPath")]
-    target_path: String,
+    pub target_path: String,
 }
 
 #[derive(Serialize)]
-struct Request {
+pub(crate) struct Request {
     #[serde(rename = "schemaVersion")]
     schema_version: u32,
     #[serde(rename = "rendererContractVersion")]
@@ -32,16 +32,16 @@ struct Request {
     #[serde(rename = "articleId", skip_serializing_if = "Option::is_none")]
     article_id: Option<String>,
     #[serde(rename = "editionId")]
-    edition_id: String,
+    pub edition_id: String,
     #[serde(rename = "primaryLanguage")]
-    primary_language: String,
-    languages: Vec<String>,
+    pub primary_language: String,
+    pub languages: Vec<String>,
     #[serde(rename = "publicationName")]
-    publication_name: String,
+    pub publication_name: String,
     renderer: String,
     #[serde(rename = "artifactRoot")]
     artifact_root: String,
-    inputs: Vec<InputRow>,
+    pub inputs: Vec<InputRow>,
 }
 
 struct Staging {
@@ -156,7 +156,7 @@ fn str_field<'a>(v: &'a serde_yaml::Value, key: &str) -> Option<&'a str> {
     v.get(key).and_then(|x| x.as_str())
 }
 
-fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
+pub(crate) fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     let exact = PathBuf::from("editions").join(edition);
     if exact.is_dir() {
         return Ok(exact);
@@ -531,6 +531,17 @@ fn load_edition(edition: &str) -> Result<EditionInputs> {
 }
 
 pub fn run(args: &RenderArgs) -> Result<i32> {
+    let repo_root = std::env::current_dir()
+        .context("resolving current directory")?
+        .canonicalize()
+        .context("canonicalizing repo root")?;
+    let edition_dir = resolve_edition_dir(&args.edition)?;
+    let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
+    let request = request(args, &repo_root, &render_dir)?;
+    run_typst(&repo_root, &render_dir, &request)
+}
+
+pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) -> Result<Request> {
     let operation = args.operation.as_str();
     let article = args.article.as_deref();
     let langs = args.langs.as_deref();
@@ -546,10 +557,7 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
         bail!("measure_article requires --article");
     }
 
-    let repo_root = std::env::current_dir()
-        .context("resolving current directory")?
-        .canonicalize()
-        .context("canonicalizing repo root")?;
+    let repo_root = repo_root.to_path_buf();
     let anchor_model = &ModelSpec::parse(&args.anchor_model)?;
     let EditionInputs {
         dir: edition_dir,
@@ -568,11 +576,10 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
         }
     }
 
-    let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
     let content_run = pick_content_run(run_flag, &edition_dir, &article_ids, &edition_yaml)?;
     let mut staging = Staging::new(repo_root.clone());
     let staged_edition_path = match &content_run {
-        Some(run) => patch_anchors(run, &render_dir, &edition_yaml, anchor_model, no_model)?
+        Some(run) => patch_anchors(run, render_dir, &edition_yaml, anchor_model, no_model)?
             .unwrap_or_else(|| edition_yaml_path.clone()),
         None => edition_yaml_path.clone(),
     };
@@ -607,7 +614,7 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
         );
     }
 
-    let request = Request {
+    Ok(Request {
         schema_version: SCHEMA_VERSION,
         renderer_contract_version: RENDERER_CONTRACT_VERSION.to_string(),
         operation: operation.to_string(),
@@ -623,8 +630,7 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
         renderer: RENDERER.to_string(),
         artifact_root: repo_root.to_string_lossy().to_string(),
         inputs: staging.rows,
-    };
-    run_typst(&repo_root, &render_dir, &request)
+    })
 }
 
 fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i32> {
