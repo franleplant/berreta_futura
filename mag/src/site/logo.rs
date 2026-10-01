@@ -3,7 +3,7 @@ use crate::cover::svg::{escape, pyf, Builder, Fonts};
 use anyhow::{anyhow, Result};
 use std::path::Path;
 
-const DARK: &str = "@media (prefers-color-scheme: dark){.wm-ink{fill:#e7e5e0;stroke:#e7e5e0}.wm-paper{fill:#131518;stroke:#131518}}";
+const DARK: &str = "@media (prefers-color-scheme: dark){.wm-ink{fill:#e7e5e0;stroke:#e7e5e0}.wm-box{stroke:#e7e5e0;stroke-opacity:.35}}";
 
 pub struct Logo {
     pub inline: String,
@@ -23,13 +23,14 @@ pub fn build(root: &Path, name: &str) -> Result<Logo> {
     let (ink, paper) = (&design.colors.ink, &design.colors.paper);
     let themed = mark
         .replace(&format!("fill=\"{ink}\""), "class=\"wm-ink\"")
-        .replace(&format!("fill=\"{paper}\""), "class=\"wm-paper\"");
+        .replace(&format!("fill=\"{paper}\""), "class=\"wm-paper\"")
+        .replacen("class=\"wm-ink\"/>", "class=\"wm-box\"/>", 1);
     let [x, y, w, h] = bounds;
     let side = w.max(h);
     let square = [x - (side - w) / 2.0, y - (side - h) / 2.0, side, side];
     let label = escape(name).replace('"', "&quot;");
     let style = format!(
-        "<style>.wm-ink{{fill:{ink};stroke:{ink}}}.wm-paper{{fill:{paper};stroke:{paper}}}{DARK}</style>"
+        "<style>.wm-ink{{fill:{ink};stroke:{ink}}}.wm-box{{fill:{ink}}}.wm-paper{{fill:{paper};stroke:{paper}}}{DARK}</style>"
     );
     Ok(Logo {
         inline: format!(
