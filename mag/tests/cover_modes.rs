@@ -292,3 +292,18 @@ fn a_headline_that_cannot_fit_is_refused() {
         format!("Cover headline cannot fit: {headline}")
     );
 }
+
+#[test]
+fn the_logo_is_the_framed_wordmark_cropped_to_its_ink() {
+    let assets = repository().join("mag/assets");
+    let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
+    let design = design();
+    let (mark, [x, y, w, h]) = Builder {
+        design: &design,
+        fonts: &mut fonts,
+    }
+    .logo(&edition_010_text().publication_name)
+    .expect("the logo builds");
+    assert!(build("framed").contains(&mark));
+    assert!(x > 0.0 && y > 0.0 && w > 2.0 * h && x + w < svg::PAGE_WIDTH && h < 80.0);
+}

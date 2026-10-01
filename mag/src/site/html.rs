@@ -10,11 +10,6 @@ use anyhow::{Context, Result};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-pub const FAVICON: &str = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\">\
-<rect width=\"64\" height=\"64\" rx=\"12\" fill=\"#315D8C\"/>\
-<text x=\"32\" y=\"47\" font-family=\"Georgia,serif\" font-size=\"44\" font-weight=\"700\" \
-text-anchor=\"middle\" fill=\"#fff\">B</text>\
-<rect x=\"14\" y=\"52\" width=\"36\" height=\"4\" fill=\"#F05738\"/></svg>\n";
 const OPENER: &str = "__opener__";
 const BODY_SIZES: &str = "(min-width: 44rem) 40rem, calc(100vw - 2.5rem)";
 const WIDE_SIZES: &str = "(min-width: 44rem) 40rem, 100vw";
@@ -461,7 +456,7 @@ fn depth_root(path: &str) -> String {
     "../".repeat(path.matches('/').count())
 }
 
-fn document(page: &Page, site: &SiteConfig, name: &str, root: &str) -> String {
+fn document(page: &Page, site: &SiteConfig, (name, logo): (&str, &str), root: &str) -> String {
     let base = site.base_url.trim_end_matches('/');
     let url = format!("{base}/{}", page.path);
     let mut head = vec![
@@ -483,12 +478,11 @@ fn document(page: &Page, site: &SiteConfig, name: &str, root: &str) -> String {
         format!("<meta property=\"og:url\" content=\"{url}\">"),
         "<meta property=\"og:type\" content=\"article\">".to_string(),
     ];
-    if let Some(image) = &page.image {
-        head.push(format!(
-            "<meta property=\"og:image\" content=\"{base}/{image}\">"
-        ));
-        head.push("<meta name=\"twitter:card\" content=\"summary_large_image\">".to_string());
-    }
+    let image = page.image.as_deref().unwrap_or("og.png");
+    head.push(format!(
+        "<meta property=\"og:image\" content=\"{base}/{image}\">"
+    ));
+    head.push("<meta name=\"twitter:card\" content=\"summary_large_image\">".to_string());
     let mut switch = String::new();
     if let Some((language, path)) = &page.alternate {
         head.push(format!(
@@ -499,17 +493,21 @@ fn document(page: &Page, site: &SiteConfig, name: &str, root: &str) -> String {
             say(language, "name")
         );
     }
-    let home = prefix(&page.language);
+    let home = match format!("{root}{}", prefix(&page.language)) {
+        home if home.is_empty() => "./".to_string(),
+        home => home,
+    };
     format!(
         "<!doctype html>\n<html lang=\"{lang}\">\n<head>\n<meta charset=\"utf-8\">\n\
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
 <meta name=\"color-scheme\" content=\"light dark\">\n{head}\n\
 <link rel=\"icon\" href=\"{root}favicon.svg\" type=\"image/svg+xml\">\n\
+<link rel=\"apple-touch-icon\" href=\"{root}apple-touch-icon.png\">\n\
 <link rel=\"preload\" href=\"{root}fonts/SourceSerif4SmText-Regular.ttf\" as=\"font\" type=\"font/ttf\" crossorigin>\n\
 <link rel=\"stylesheet\" href=\"{root}site.css\">\n</head>\n<body>\n\
-<header class=\"masthead\"><a class=\"brand\" href=\"{root}{home}\">{name}</a>{crumb}{switch}</header>\n\
+<header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}{switch}</header>\n\
 <main>\n{body}\n</main>\n\
-<footer class=\"colophon\"><a href=\"{root}{home}\">{name}</a></footer>\n</body>\n</html>\n",
+<footer class=\"colophon\"><a href=\"{home}\">{name}</a></footer>\n</body>\n</html>\n",
         lang = esc(&page.language),
         head = head.join("\n"),
         name = esc(name),
@@ -879,6 +877,8 @@ pub fn pages(
     issues: &[Issue],
     images: &Images,
     site: &SiteConfig,
+    name: &str,
+    logo: &str,
 ) -> Result<Vec<(String, String)>> {
     let mut issued = Vec::new();
     for issue in issues {
@@ -896,10 +896,6 @@ pub fn pages(
             });
         }
     }
-    let name = issues
-        .first()
-        .map_or("Magazine", |i| i.editions[0].publication_name.as_str())
-        .to_string();
     let mut languages: Vec<&str> = issued.iter().map(|i| i.edition.language.as_str()).collect();
     languages.sort_by_key(|l| (*l != "en", *l));
     languages.dedup();
@@ -924,13 +920,13 @@ pub fn pages(
             let root = depth_root(&page.path);
             (
                 format!("{}index.html", page.path),
-                document(page, site, &name, &root),
+                document(page, site, (name, logo), &root),
             )
         })
         .collect();
     files.push((
         "404.html".to_string(),
-        document(&lost_page(&name), site, &name, "/"),
+        document(&lost_page(name), site, (name, logo), "/"),
     ));
     Ok(files)
 }

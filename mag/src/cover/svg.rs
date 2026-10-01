@@ -343,6 +343,22 @@ impl Builder<'_> {
         ))
     }
 
+    pub fn logo(&mut self, publication_name: &str) -> Result<(String, [f64; 4])> {
+        let mark = self.wordmark(publication_name)?;
+        let probe = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{PAGE_WIDTH}\" height=\"{PAGE_HEIGHT}\">{mark}</svg>");
+        let tree = usvg::Tree::from_str(&probe, &usvg::Options::default())?;
+        let bounds = tree.root().abs_stroke_bounding_box();
+        let (left, top) = (
+            f64::from(bounds.left()).floor(),
+            f64::from(bounds.top()).floor(),
+        );
+        let (right, bottom) = (
+            f64::from(bounds.right()).ceil(),
+            f64::from(bounds.bottom()).ceil(),
+        );
+        Ok((mark, [left, top, right - left, bottom - top]))
+    }
+
     fn scaled_wordmark(
         &mut self,
         publication_name: &str,
