@@ -49,22 +49,20 @@ pub fn transcribe_bytes(bytes: &[u8]) -> Result<String> {
     Ok(out.join("\n\n") + "\n")
 }
 
+pub fn page_glyphs(pdf: &Path) -> Result<Vec<Vec<Glyph>>> {
+    let doc = Document::load(pdf).with_context(|| format!("reading {}", pdf.display()))?;
+    let mut fonts = BTreeMap::new();
+    doc.get_pages()
+        .into_iter()
+        .map(|(n, id)| {
+            let it = interpret_page(&doc, id, &mut fonts).with_context(|| format!("page {n}"))?;
+            Ok(it.glyphs)
+        })
+        .collect()
+}
+
 fn read_page(doc: &Document, id: ObjectId, fonts: &mut FontCache) -> Result<Vec<String>> {
-    let mut it = Interp {
-        doc,
-        fonts,
-        glyphs: Vec::new(),
-        rules: Vec::new(),
-        voids: Vec::new(),
-        invisible: 0,
-        images: 0,
-        gs: Gs::fresh(),
-        stack: Vec::new(),
-        depth: 0,
-        pending_space: false,
-    };
-    let res = page_resources(doc, id);
-    it.interpret(&doc.get_page_content_with_limit(id, usize::MAX)?, &res)?;
+    let it = interpret_page(doc, id, fonts)?;
     if let Some((_, what)) = it
         .voids
         .iter()
@@ -84,6 +82,29 @@ fn read_page(doc: &Document, id: ObjectId, fonts: &mut FontCache) -> Result<Vec<
         bail!("the page is an image with no text layer (a scan?); OCR is not transcription");
     }
     Ok(layout(it.glyphs, &it.rules))
+}
+
+fn interpret_page<'a>(
+    doc: &'a Document,
+    id: ObjectId,
+    fonts: &'a mut FontCache,
+) -> Result<Interp<'a>> {
+    let mut it = Interp {
+        doc,
+        fonts,
+        glyphs: Vec::new(),
+        rules: Vec::new(),
+        voids: Vec::new(),
+        invisible: 0,
+        images: 0,
+        gs: Gs::fresh(),
+        stack: Vec::new(),
+        depth: 0,
+        pending_space: false,
+    };
+    let res = page_resources(doc, id);
+    it.interpret(&doc.get_page_content_with_limit(id, usize::MAX)?, &res)?;
+    Ok(it)
 }
 
 fn touches(v: &Glyph, g: &Glyph) -> bool {

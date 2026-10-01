@@ -777,6 +777,31 @@ pre {
 code {
   font-family: "Courier New", Courier, monospace;
 }
+table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.4rem 0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.35rem 0.8rem 0.35rem 0;
+}
+th {
+  font-weight: 600;
+  color: var(--violet);
+  border-bottom: 1px solid var(--ink);
+}
+tbody tr + tr td {
+  border-top: 1px solid var(--rule);
+}
 /* Syntax highlighting: color only, mirroring the print inks. */
 pre code .k, pre code .kc, pre code .kd, pre code .kn, pre code .kp, pre code .kr, pre code .ow { color: #f05737; }
 pre code .kt { color: #55308f; }

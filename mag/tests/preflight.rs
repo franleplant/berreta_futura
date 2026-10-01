@@ -29,6 +29,14 @@ mod critic {
     pub use super::metrics_source as metrics;
 }
 
+#[path = "../src/pdf_text.rs"]
+#[allow(dead_code)]
+pub mod pdf_text;
+
+mod capture {
+    pub use super::pdf_text;
+}
+
 #[path = "../src/package/preflight.rs"]
 #[allow(dead_code)]
 mod preflight;

@@ -812,7 +812,25 @@ impl Renderer<'_> {
                 format!("<{tag}{start}{role}>{items}</{tag}>")
             }
             Block::HorizontalRule => "<hr>".to_string(),
+            Block::Table(rows) => self.table(rows),
         })
+    }
+
+    fn table(&self, rows: &[Vec<Vec<Inline>>]) -> String {
+        let row = |cells: &Vec<Vec<Inline>>, tag: &str| {
+            let cells: String = cells
+                .iter()
+                .map(|cell| format!("<{tag}>{}</{tag}>", self.inline_html(cell)))
+                .collect();
+            format!("<tr>{cells}</tr>")
+        };
+        let (head, body) = rows
+            .split_first()
+            .map_or((String::new(), &[][..]), |(head, body)| {
+                (row(head, "th"), body)
+            });
+        let body: String = body.iter().map(|cells| row(cells, "td")).collect();
+        format!("<table><thead>{head}</thead><tbody>{body}</tbody></table>")
     }
 
     fn children(&self, blocks: &[Block]) -> Result<String> {
