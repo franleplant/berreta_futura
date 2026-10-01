@@ -56,9 +56,11 @@ img { display: block; max-width: 100%; height: auto; }
 }
 .masthead a { text-decoration: none; }
 .brand { display: block; line-height: 0; }
-.logo { display: block; height: 2.5rem; width: auto; }
+.logo { display: block; height: 3.5rem; width: auto; }
 .logo .wm-ink { fill: var(--ink); stroke: var(--ink); }
-.logo .wm-paper { fill: var(--paper); stroke: var(--paper); }
+.logo .wm-box { fill: #0a0b0d; }
+.logo .wm-paper { fill: #fff; stroke: #fff; }
+@media (prefers-color-scheme: dark) { .logo .wm-box { stroke: var(--ink); stroke-opacity: .35; stroke-width: 1px; vector-effect: non-scaling-stroke; } }
 .crumb { color: var(--muted); }
 .switch { margin-left: auto; color: var(--muted); }
 .colophon {
@@ -161,7 +163,7 @@ pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .
 
 @media (min-width: 52rem) {
   :root { --gutter: 2rem; }
-  .logo { height: 3rem; }
+  .logo { height: 4rem; }
   .front { display: grid; grid-template-columns: 22rem 1fr; gap: 2rem; align-items: center; max-width: 52rem; }
   .front .cover { margin: 0; }
   .pager { grid-template-columns: 1fr 1fr; }
