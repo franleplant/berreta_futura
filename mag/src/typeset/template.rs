@@ -2288,4 +2288,68 @@ mod tests {
         );
         assert_eq!(lang(&spanish), "es-AR");
     }
+
+    fn piece_marks(body: &str) -> Vec<Mark> {
+        let tree = synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n{body}]\n"
+        ));
+        page_marks(&tree, |m| m.iter().any(|m| m.text.starts_with("Line")))
+            .into_iter()
+            .flatten()
+            .collect()
+    }
+
+    #[test]
+    fn a_table_sets_inside_the_measure_and_wraps_its_long_cells() {
+        let long = "words ".repeat(60);
+        let marks = piece_marks(&format!(
+            "{}#doc-table(\n  ([Head], [Other], [Last],),\n  ([Cell], [{long}], [End],),\n)\n",
+            prose(1)
+        ));
+        let left = marks.iter().find(|m| m.text.starts_with("Line")).unwrap().x;
+        let cells: Vec<&Mark> = marks
+            .iter()
+            .filter(|m| (m.size - 7.5).abs() < 1e-6)
+            .collect();
+        assert!(cells.iter().any(|m| m.text.starts_with("Head")));
+        for mark in &cells {
+            assert!(
+                mark.x >= left - 1e-3 && mark.x + mark.width <= left + 325.0 + 1e-3,
+                "{:?} at {}..{} leaves the measure from {left}",
+                mark.text,
+                mark.x,
+                mark.x + mark.width
+            );
+        }
+        let lines: BTreeSet<i64> = cells
+            .iter()
+            .filter(|m| m.text.contains("words"))
+            .map(|m| m.y.round() as i64)
+            .collect();
+        assert!(
+            lines.len() > 2,
+            "the long cell set on {} lines",
+            lines.len()
+        );
+    }
+
+    #[test]
+    fn an_opener_figure_clears_its_caption_as_an_anchored_figure_does() {
+        let gap = |anchor: &str| {
+            let marks = piece_marks(&format!(
+                "#figure-block(id: \"f\", source-id: \"s\", anchor: \"{anchor}\", layout: \"evidence_band\", \
+                 word: \"Figure\", alt: \"a\", path: \"{}\", pixels: (2400, 1350))[#figure-caption[Cap.]]\n{}",
+                fixture_png(),
+                prose(3)
+            ));
+            let at = |start: &str| marks.iter().find(|m| m.text.starts_with(start)).unwrap().y;
+            at("Line") - at("Cap")
+        };
+        let opener = gap("__opener__");
+        assert!(
+            opener > 10.0,
+            "the body line sits {opener}pt under the caption"
+        );
+        assert!((opener - gap("A")).abs() < 1e-3, "{opener} vs {}", gap("A"));
+    }
 }

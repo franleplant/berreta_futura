@@ -772,6 +772,18 @@ impl Writer<'_> {
             )
             }
             Block::HorizontalRule => "#doc-rule()\n\n".to_string(),
+            Block::Table(rows) => format!(
+                "#doc-table(\n{})\n\n",
+                rows.iter()
+                    .map(|row| {
+                        let cells: Vec<String> = row
+                            .iter()
+                            .map(|cell| format!("[{}]", self.inlines(cell)))
+                            .collect();
+                        format!("  ({},),\n", cells.join(", "))
+                    })
+                    .collect::<String>()
+            ),
         })
     }
 

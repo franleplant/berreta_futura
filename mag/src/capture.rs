@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[path = "pdf_text.rs"]
-mod pdf_text;
+pub mod pdf_text;
 
 const RAW_DIR: &str = ".magazine/capture";
 const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";

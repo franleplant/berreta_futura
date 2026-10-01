@@ -32,6 +32,11 @@
 #let CODE-BLOCK-SIZE = 7.5pt
 #let CODE-BLOCK-LEADING = 1.3
 #let CODE-BLOCK-PAD = 3mm
+#let TABLE-SIZE = 7.5pt
+#let TABLE-LEADING = 9.6pt
+#let TABLE-PAD = 3.5pt
+#let TABLE-GAP = 4mm
+#let TABLE-RULE = 0.4pt
 #let DISC = 5pt
 #let DISC-KAPPA = 0.55
 
@@ -274,7 +279,7 @@
     escape: if BAND-LAYOUTS.contains(layout) {
       BAND-ESCAPE
     } else if compact { COMPACT-ESCAPE } else { FIGURE-ESCAPE },
-    gap: if opener { 0pt } else if compact { COMPACT-FIGURE-GAP } else { FIGURE-GAP },
+    gap: if compact { COMPACT-FIGURE-GAP } else { FIGURE-GAP },
     max-height: if layout == "full_band" {
       FULL-FIGURE-MAX-HEIGHT
     } else if opener {
@@ -999,6 +1004,20 @@
   above: CODE-BLOCK-SIZE,
   below: CODE-BLOCK-SIZE,
 )
+
+#let doc-table(..rows) = block(above: TABLE-GAP, below: TABLE-GAP, width: 100%, {
+  let rows = rows.pos()
+  let rule(y) = if y == 0 or y == 1 or y == rows.len() { FIGURE-RULE + INK } else { TABLE-RULE + COOL-GRAY }
+  set text(font: SANS, size: TABLE-SIZE, fill: INK, hyphenate: true, ..edges(TABLE-SIZE, TABLE-LEADING, HALF-SANS))
+  set par(leading: 0pt, spacing: 0pt, justify: false)
+  table(
+    columns: rows.first().len(),
+    stroke: (_, y) => (top: rule(y), bottom: if y == rows.len() - 1 { rule(rows.len()) }),
+    inset: (x, _) => (left: if x == 0 { 0pt } else { TABLE-PAD }, rest: TABLE-PAD),
+    table.header(..rows.first().map(cell => text(weight: 600, fill: VIOLET, cell))),
+    ..rows.slice(1).flatten(),
+  )
+})
 
 #let reference-list = state("reference-list", false)
 

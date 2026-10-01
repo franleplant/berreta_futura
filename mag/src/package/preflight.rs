@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use lopdf::{Document, Object, ObjectId};
 use serde_json::{json, Map, Value};
 
+use crate::capture::pdf_text::{page_glyphs, Glyph};
 use crate::critic::metrics::{prepare_print_image, round_places, PreparedPrintImage};
 use crate::impose::{section_reader_pages, A4_LANDSCAPE_POINTS};
 
@@ -325,7 +326,25 @@ fn box_invalid(row: &FigureRow, page_count: usize) -> bool {
         || y + height > A5_POINTS.1 + NEAR_TOLERANCE
 }
 
-fn figure_geometry(rows: &[FigureRow], page_count: usize) -> (Vec<Value>, Vec<Value>) {
+fn overprint(glyphs: &[Glyph]) -> Option<(&Glyph, &Glyph)> {
+    let span = |g: &Glyph| (g.y - 0.2 * g.size, g.y + 0.7 * g.size);
+    glyphs.iter().enumerate().find_map(|(i, a)| {
+        glyphs[i + 1..]
+            .iter()
+            .find(|b| {
+                let ((a0, a1), (b0, b1)) = (span(a), span(b));
+                let across = a.x.max(b.x) + 0.5 * a.w.min(b.w) < (a.x + a.w).min(b.x + b.w);
+                a.dir == b.dir && (a.y - b.y).abs() > 0.5 && across && a0.max(b0) < a1.min(b1)
+            })
+            .map(|b| (a, b))
+    })
+}
+
+fn figure_geometry(
+    rows: &[FigureRow],
+    page_count: usize,
+    glyphs: &[Vec<Glyph>],
+) -> (Vec<Value>, Vec<Value>) {
     let mut invalid = Vec::new();
     let mut collisions = Vec::new();
     let mut by_page: BTreeMap<i64, Vec<&FigureRow>> = BTreeMap::new();
@@ -357,6 +376,18 @@ fn figure_geometry(rows: &[FigureRow], page_count: usize) -> (Vec<Value>, Vec<Va
             }
         }
         placed.push(row);
+    }
+    for (page, placed) in &by_page {
+        let page_glyphs = glyphs
+            .get(*page as usize - 1)
+            .map_or(&[][..], Vec::as_slice);
+        if let Some((a, b)) = overprint(page_glyphs) {
+            collisions.push(json!({
+                "figure_ids": placed.iter().map(|row| &row.figure_id).collect::<Vec<_>>(),
+                "page": page,
+                "overprinted_text": [a.text, b.text],
+            }));
+        }
     }
     (invalid, collisions)
 }
@@ -412,7 +443,8 @@ pub fn inspect_package(
             }));
         }
     }
-    let (invalid_boxes, collisions) = figure_geometry(&rows, reader.page_count());
+    let glyphs = page_glyphs(reader_pdf)?;
+    let (invalid_boxes, collisions) = figure_geometry(&rows, reader.page_count(), &glyphs);
 
     let messages = messages_for(language);
     let mut blockers = vec![json!(messages.pdfx), json!(messages.bleed)];
@@ -458,4 +490,33 @@ pub fn inspect_package(
         "figure_collisions": collisions,
         "studio": {"ready": blockers.is_empty(), "blockers": blockers},
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn glyph(x: f64, y: f64, size: f64) -> Glyph {
+        Glyph {
+            x,
+            y,
+            w: 0.5 * size,
+            size,
+            text: format!("{x}"),
+            mono: false,
+            spaced: false,
+            dir: 0,
+        }
+    }
+
+    #[test]
+    fn a_caption_drawn_over_a_body_line_is_an_overprint_and_stacked_lines_are_not() {
+        let body = [glyph(100.0, 400.0, 10.0), glyph(105.0, 400.0, 10.0)];
+        let caption = glyph(101.0, 401.5, 6.8);
+        let below = glyph(100.0, 387.0, 10.0);
+        assert!(overprint(&[body[0].clone(), body[1].clone(), below.clone()]).is_none());
+        let page = [body[0].clone(), below, caption, body[1].clone()];
+        let (a, b) = overprint(&page).expect("the caption overprints the body line");
+        assert_eq!((a.text.as_str(), b.text.as_str()), ("100", "101"));
+    }
 }

@@ -131,3 +131,29 @@ fn edition_manuscripts_match_the_python_projection() {
         "the Rust projection diverged from the Python projection of the edition"
     );
 }
+
+#[test]
+fn a_pipe_table_parses_into_rows_of_inline_cells() {
+    let markdown = "Before.\n\n| Name | `code` |\n| --- | :-: |\n| **A** | 1 \\| 2 |\n| B |\n";
+    let document = doc::parse_publication_document(markdown).expect("the table parses");
+    assert_eq!(
+        doc::block_signature(&document.blocks),
+        ["body", "table[2,2,2]"]
+    );
+    let cells: Vec<String> = doc::visible_blocks(&document.blocks)
+        .into_iter()
+        .skip(1)
+        .map(|(kind, body)| format!("{kind}:{body}"))
+        .collect();
+    assert_eq!(
+        cells,
+        [
+            "cell:Name",
+            "cell:code",
+            "cell:A",
+            "cell:1 | 2",
+            "cell:B",
+            "cell:"
+        ]
+    );
+}

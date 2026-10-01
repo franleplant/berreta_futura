@@ -1,5 +1,5 @@
 use super::shared::{is_python_space, load_yaml};
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde_yaml::{Mapping, Value};
 use std::collections::BTreeSet;
@@ -39,6 +39,7 @@ pub enum Block {
         items: Vec<Vec<Block>>,
     },
     HorizontalRule,
+    Table(Vec<Vec<Vec<Inline>>>),
 }
 
 #[derive(Debug, Clone)]
@@ -55,6 +56,7 @@ enum Until {
     List,
     Item,
     CodeBlock,
+    TableCell,
     Emphasis,
     Strong,
     Link,
@@ -76,7 +78,7 @@ pub fn inline_text(inlines: &[Inline]) -> String {
 pub fn parse_publication_document(markdown: &str) -> Result<Document> {
     let (metadata, body) = split_frontmatter(markdown)?;
     let body = fallback_glyphs(&body);
-    let events: Vec<Event> = Parser::new_ext(&body, Options::empty()).collect();
+    let events: Vec<Event> = Parser::new_ext(&body, Options::ENABLE_TABLES).collect();
     let mut index = 0;
     let blocks = parse_blocks(&events, &mut index, None)?;
     if index != events.len() {
@@ -253,6 +255,7 @@ fn parse_block(events: &[Event], index: &mut usize) -> Result<Block> {
         Event::Start(Tag::List(start)) => parse_list(events, index, *start),
         Event::Start(Tag::CodeBlock(kind)) => parse_code_block(events, index, kind),
         Event::Rule => Ok(Block::HorizontalRule),
+        Event::Start(Tag::Table(_)) => parse_table(events, index),
         other => bail!("Unsupported Markdown block token: {other:?}"),
     }
 }
@@ -277,6 +280,26 @@ fn parse_list(events: &[Event], index: &mut usize, start: Option<u64>) -> Result
         }
     }
     bail!("Unclosed Markdown list")
+}
+
+fn parse_table(events: &[Event], index: &mut usize) -> Result<Block> {
+    let mut rows: Vec<Vec<Vec<Inline>>> = Vec::new();
+    while *index < events.len() {
+        *index += 1;
+        match &events[*index - 1] {
+            Event::End(TagEnd::Table) => return Ok(Block::Table(rows)),
+            Event::Start(Tag::TableHead | Tag::TableRow) => rows.push(Vec::new()),
+            Event::End(TagEnd::TableHead | TagEnd::TableRow) => {}
+            Event::Start(Tag::TableCell) => {
+                let cell = parse_inlines(events, index, Until::TableCell)?;
+                rows.last_mut()
+                    .context("Markdown table cell outside a row")?
+                    .push(cell);
+            }
+            other => bail!("Unsupported Markdown table token: {other:?}"),
+        }
+    }
+    bail!("Unclosed Markdown table")
 }
 
 fn parse_code_block(events: &[Event], index: &mut usize, kind: &CodeBlockKind) -> Result<Block> {
@@ -351,6 +374,7 @@ fn closes(end: &TagEnd, until: Until) -> bool {
             | (TagEnd::List(_), Until::List)
             | (TagEnd::Item, Until::Item)
             | (TagEnd::CodeBlock, Until::CodeBlock)
+            | (TagEnd::TableCell, Until::TableCell)
             | (TagEnd::Emphasis, Until::Emphasis)
             | (TagEnd::Strong, Until::Strong)
             | (TagEnd::Link, Until::Link)
@@ -393,6 +417,11 @@ fn flatten(blocks: &[Block], into: &mut Vec<(String, String)>, container: Option
                 }
             }
             Block::HorizontalRule => {}
+            Block::Table(rows) => into.extend(
+                rows.iter()
+                    .flatten()
+                    .map(|cell| ("cell".to_string(), inline_visible(cell))),
+            ),
         }
     }
 }
@@ -425,6 +454,13 @@ fn descriptor(block: &Block) -> String {
         Block::Paragraph(_) => "body".to_string(),
         Block::FencedCode { .. } => "code".to_string(),
         Block::HorizontalRule => "rule".to_string(),
+        Block::Table(rows) => format!(
+            "table[{}]",
+            rows.iter()
+                .map(|row| row.len().to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
         Block::Quote(children) => format!("quote[{}]", joined(children, ",")),
         Block::List {
             ordered,

@@ -48,6 +48,14 @@ mod critic {
     pub use super::{inspect, metrics, rules, text};
 }
 
+#[path = "../src/pdf_text.rs"]
+#[allow(dead_code)]
+pub mod pdf_text;
+
+mod capture {
+    pub use super::pdf_text;
+}
+
 #[path = "../src/package/preflight.rs"]
 #[allow(dead_code)]
 pub mod preflight;
