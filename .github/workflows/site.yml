@@ -22,6 +22,27 @@ jobs:
         with:
           lfs: false
           fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /mag/
+            /magazine.toml
+            /deploy/web/
+            /prompts/
+            /design/
+            /library/
+            /editions/*/edition.yaml
+            /editions/*/publish.yaml
+            /editions/*/source-codes/
+            /editions/*/translations/
+            /editions/*/run-*/
+      - name: Check out the selected art of the published editions
+        run: |
+          editions=$(python3 -c 'import tomllib; print(*tomllib.load(open("magazine.toml", "rb"))["site"]["editions"])')
+          for id in $editions; do
+            grep -hoE "[^ \"']*art/[^ \"']+\.(png|jpe?g|webp)" "editions/$id/edition.yaml" |
+              awk -v d="editions/$id/" '{print "/" ($0 ~ /^editions\// ? "" : d) $0}'
+          done | sort -u | git sparse-checkout add --stdin
+          du -sh --exclude=.git .
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:

@@ -209,7 +209,7 @@ fn slashes() -> &'static Regex {
     PATTERN.get_or_init(|| Regex::new(r"/{2,}").expect("the pattern compiles"))
 }
 
-fn slug(text: &str) -> String {
+pub(crate) fn slug(text: &str) -> String {
     let mut collapsed = String::new();
     let mut pending = false;
     for character in text.to_lowercase().chars() {

@@ -8,6 +8,10 @@ hyphenate_english = true
 
 [site]
 # `mag site` publishes these editions, newest first, each from its newest
-# git-tracked complete run. PDF links come from editions/<id>/publish.yaml.
+# git-tracked complete run. PDF links come from editions/<id>/publish.yaml,
+# which `mag publish` writes.
 base_url = "https://berreta.franleplant.com"
 editions = ["011"]
+# `mag publish` uploads approved PDFs to this R2 bucket, served from this domain.
+pdf_bucket = "berreta-pdfs"
+pdf_base_url = "https://files.berreta.franleplant.com"

@@ -4,7 +4,7 @@ mod images;
 use crate::model::manifest::{load_translation, Edition};
 use crate::render::{request, resolve_edition_dir, RenderArgs};
 use anyhow::{bail, Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -28,19 +28,21 @@ struct Config {
 pub struct SiteConfig {
     pub base_url: String,
     pub editions: Vec<String>,
+    pub pdf_bucket: String,
+    pub pdf_base_url: String,
 }
 
-#[derive(Deserialize, Clone, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub struct Pdf {
     pub url: String,
     pub bytes: u64,
     pub sha256: String,
 }
 
-#[derive(Deserialize, Default)]
-struct PublishRecord {
+#[derive(Deserialize, Serialize, Default)]
+pub struct PublishRecord {
     #[serde(default)]
-    pdfs: BTreeMap<String, Pdf>,
+    pub pdfs: BTreeMap<String, Pdf>,
 }
 
 pub struct Issue {
@@ -56,12 +58,25 @@ const FONTS: [&str; 5] = [
     "source-serif-4/LICENSE.md",
 ];
 
+pub fn config(root: &Path) -> Result<SiteConfig> {
+    let text = fs::read_to_string(root.join("magazine.toml")).context("reading magazine.toml")?;
+    let config: Config =
+        toml::from_str(&text).context("magazine.toml needs a full [site] table")?;
+    Ok(config.site)
+}
+
+pub fn publish_record(path: &Path) -> Result<PublishRecord> {
+    match path.is_file() {
+        true => serde_yaml::from_str(&fs::read_to_string(path)?)
+            .with_context(|| format!("reading {}", path.display())),
+        false => Ok(PublishRecord::default()),
+    }
+}
+
 pub fn run(args: &SiteArgs) -> Result<i32> {
     let root = std::env::current_dir()?.canonicalize()?;
-    let text = fs::read_to_string(root.join("magazine.toml")).context("reading magazine.toml")?;
-    let config: Config = toml::from_str(&text).context("magazine.toml needs a [site] table")?;
-    let mut issues = config
-        .site
+    let site = config(&root)?;
+    let mut issues = site
         .editions
         .iter()
         .map(|id| issue(&root, id))
@@ -69,7 +84,7 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
     prepare(&args.out)?;
     let images = images::encode_all(html::image_paths(&issues), &args.out)?;
-    let files = html::pages(&issues, &images, &config.site)?;
+    let files = html::pages(&issues, &images, &site)?;
     for (path, body) in &files {
         let target = args.out.join(path);
         fs::create_dir_all(target.parent().context("a page has no parent")?)?;
@@ -215,15 +230,7 @@ fn issue(root: &Path, id: &str) -> Result<Issue> {
             crate::typeset::tone::print_figures(edition, &staged)
         })
         .collect::<Result<Vec<_>>>()?;
-    let record = dir.join("publish.yaml");
-    let pdfs = match record.is_file() {
-        true => {
-            serde_yaml::from_str::<PublishRecord>(&fs::read_to_string(&record)?)
-                .with_context(|| format!("reading {}", record.display()))?
-                .pdfs
-        }
-        false => BTreeMap::new(),
-    };
+    let pdfs = publish_record(&dir.join("publish.yaml"))?.pdfs;
     Ok(Issue { editions, pdfs })
 }
 

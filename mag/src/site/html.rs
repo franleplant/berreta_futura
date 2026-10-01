@@ -605,6 +605,17 @@ impl Issued<'_> {
     }
 }
 
+fn download(language: &str, pdf: Option<&super::Pdf>) -> String {
+    pdf.map_or(String::new(), |pdf| {
+        format!(
+            "<p class=\"download\"><a href=\"{}\" download>{} <span>(PDF, {})</span></a></p>",
+            esc(&pdf.url),
+            say(language, "pdf"),
+            megabytes(pdf.bytes)
+        )
+    })
+}
+
 fn issue_page(issued: &Issued, images: &Images) -> Page {
     let path = issued.dir();
     let ctx = Ctx {
@@ -628,14 +639,7 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
             )
         })
         .collect();
-    let pdf = issued.pdf.map_or(String::new(), |pdf| {
-        format!(
-            "<p class=\"download\"><a href=\"{}\" download>{} <span>(PDF, {})</span></a></p>",
-            esc(&pdf.url),
-            say(language, "pdf"),
-            megabytes(pdf.bytes)
-        )
-    });
+    let pdf = download(language, issued.pdf);
     let body = format!(
         "<section class=\"issue\">\n{}\n<div class=\"issue-head\"><p class=\"kicker\">{} · <time datetime=\"{}\">{}</time></p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{}\"><h2>{}</h2><ol>{entries}</ol></nav>",
         issued.cover(&ctx, true),
@@ -933,8 +937,32 @@ pub fn pages(
 
 #[cfg(test)]
 mod tests {
-    use super::{block, dropped, Piece};
+    use super::{block, download, dropped, Piece};
     use crate::model::doc::{Block, Document, Inline};
+    use crate::site::publish_record;
+
+    #[test]
+    fn a_publish_record_puts_its_language_pdf_link_on_the_issue_page_and_no_record_puts_none() {
+        let dir = std::env::temp_dir().join(format!("mag-site-pdf-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("publish.yaml");
+        std::fs::write(
+            &path,
+            "pdfs:\n  es:\n    url: https://files.example/011/es/x.pdf\n    bytes: 127300000\n    sha256: ab\n",
+        )
+        .unwrap();
+        let pdfs = publish_record(&path).unwrap().pdfs;
+        assert_eq!(
+            download("es", pdfs.get("es")),
+            "<p class=\"download\"><a href=\"https://files.example/011/es/x.pdf\" download>Descargar el PDF <span>(PDF, 127.3 MB)</span></a></p>"
+        );
+        assert_eq!(download("en", pdfs.get("en")), "");
+        assert!(publish_record(&dir.join("absent.yaml"))
+            .unwrap()
+            .pdfs
+            .is_empty());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 
     #[test]
     fn a_page_missing_any_manuscript_block_is_reported_and_a_whole_page_is_not() {

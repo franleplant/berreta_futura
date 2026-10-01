@@ -7,7 +7,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 ## Pipeline
 
 - `mag` (Rust, in `mag/`) is the CLI: `capture`, `plan`, `produce`, `art`,
-  `translate`, `render`, `site`. Build with `cargo build`, run from the repo root.
+  `translate`, `render`, `site`, `publish`. Build with `cargo build`, run from the repo root.
 - The pipeline leads: every step prints the next command when it finishes.
   Follow that, not the previous edition. The order is `mag capture` (writes
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
@@ -28,6 +28,12 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (`pdfs: {en: {url, bytes, sha256}}`); without one the issue page has no
   PDF link. It refuses to write a page that drops any manuscript block,
   figure, or extract.
+- `mag publish NNN --pdf <file> [--lang en] [--dry-run]` ships an approved
+  PDF: it uploads the file unchanged to the R2 bucket in `[site] pdf_bucket`
+  (`npx wrangler`, the owner's local login) as
+  `NNN/<lang>/berreta-futura-NNN-<lang>-<sha8>.pdf` and writes its url,
+  bytes, and sha256 into `editions/NNN/publish.yaml`; committing that file
+  publishes the link.
 - `tools/letter.py`, `coverproof.py`, `compare.py`, and `read.py` are
   standalone Python side scripts (`uv run --with <dep> tools/<name>.py`), not
   pipeline steps; nothing in `mag` calls them.
