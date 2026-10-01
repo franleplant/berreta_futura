@@ -1,0 +1,42 @@
+name: site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          lfs: false
+          fetch-depth: 1
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mag
+      - run: cargo build --release
+        working-directory: mag
+      - run: mag/target/release/mag site --out output/site
+      - name: Refuse files over the 25 MiB asset limit
+        run: |
+          test -f output/site/404.html
+          big=$(find output/site -type f -size +25M)
+          if [ -n "$big" ]; then echo "$big"; exit 1; fi
+      - if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config deploy/web/wrangler.jsonc
