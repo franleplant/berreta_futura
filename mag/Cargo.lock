@@ -1763,6 +1763,7 @@ dependencies = [
  "flate2",
  "gif 0.13.3",
  "hex",
+ "image",
  "image-webp",
  "lopdf",
  "pdf_encoding",

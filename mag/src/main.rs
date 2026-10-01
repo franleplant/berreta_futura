@@ -17,11 +17,11 @@ mod plan_cmd;
 mod print_cmd;
 mod produce;
 mod render;
+mod site;
 mod sourcecodes;
 mod trace;
 mod translate;
 mod typeset;
-mod web;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -196,6 +196,8 @@ enum Cmd {
     },
     /// Render an edition through Typst
     Render(render::RenderArgs),
+    /// Build the public static website from the editions listed in magazine.toml [site]
+    Site(site::SiteArgs),
 }
 
 fn main() {
@@ -341,6 +343,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             layout,
         }),
         Cmd::Render(args) => render::run(&args),
+        Cmd::Site(args) => site::run(&args),
         Cmd::SourceCodes { edition, check } => sourcecodes::run(&edition, check),
         _ => unreachable!(),
     }
