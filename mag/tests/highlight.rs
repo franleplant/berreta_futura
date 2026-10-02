@@ -410,3 +410,12 @@ fn http_body_is_lexed_by_its_content_type() {
         ],
     );
 }
+
+#[test]
+fn a_jsonc_fence_is_coloured_by_the_json_lexer() {
+    let code = "{\n  // comment\n  \"a\": 1\n}\n";
+    assert_eq!(highlight::language(code, "jsonc"), "json");
+    assert!(highlight::spans(code, highlight::language(code, "JSONC"))
+        .unwrap()
+        .is_some());
+}
