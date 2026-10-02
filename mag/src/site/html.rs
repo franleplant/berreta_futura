@@ -276,7 +276,7 @@ fn code(code: &str, info: &str) -> Result<String> {
     let tail = &code[code.trim_end_matches('\n').len()..];
     Ok(format!(
         "<pre><code{class}>{}{tail}</code></pre>",
-        crate::highlight::html(code, language)?
+        crate::highlight::html(code, crate::highlight::language(code, language))?
     ))
 }
 

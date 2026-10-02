@@ -272,6 +272,82 @@ fn pre_runs(html: &str) -> Vec<String> {
         .collect()
 }
 
+fn marked_language(element: scraper::ElementRef) -> Option<String> {
+    let class = Regex::new(r"^(?:language|lang|highlight-source|highlight)-([\w+#.-]+)$").unwrap();
+    let value = element.value();
+    let named = [value.attr("data-lang"), value.attr("data-language")];
+    named
+        .into_iter()
+        .flatten()
+        .map(str::to_owned)
+        .chain(
+            value
+                .classes()
+                .filter_map(|c| class.captures(c).map(|m| m[1].to_owned())),
+        )
+        .map(|language| language.to_lowercase())
+        .find(|language| {
+            Regex::new(r"^[a-z0-9][\w+#.-]*$")
+                .unwrap()
+                .is_match(language)
+                && !["none", "plain", "default", "undefined", "null"].contains(&language.as_str())
+        })
+}
+
+fn pre_languages(html: &str) -> Vec<(String, String)> {
+    let page = scraper::Html::parse_document(html);
+    let (pre, code) = (
+        scraper::Selector::parse("pre").unwrap(),
+        scraper::Selector::parse("code").unwrap(),
+    );
+    page.select(&pre)
+        .filter_map(|element| {
+            let inner = element.select(&code).next();
+            let parent = element.parent().and_then(scraper::ElementRef::wrap);
+            let language = [Some(element), inner, parent]
+                .into_iter()
+                .flatten()
+                .find_map(marked_language)?;
+            Some((
+                normalize_code(&element.text().collect::<String>()),
+                language,
+            ))
+        })
+        .collect()
+}
+
+fn label_fences(article: &str, html: &str) -> String {
+    let marked = pre_languages(html);
+    let mut lines: Vec<String> = article.split('\n').map(str::to_owned).collect();
+    let mut open: Option<(usize, String)> = None;
+    for index in 0..lines.len() {
+        let line = lines[index].trim().to_owned();
+        let fence: String = line
+            .chars()
+            .take_while(|c| matches!(c, '`' | '~'))
+            .collect();
+        match open.take() {
+            None if fence.len() >= 3 => open = Some((index, fence)),
+            Some((start, marker)) if line == marker => {
+                let body = normalize_code(&lines[start + 1..index].join("\n"));
+                let found: std::collections::BTreeSet<&String> = marked
+                    .iter()
+                    .filter(|(text, _)| !body.is_empty() && *text == body)
+                    .map(|(_, language)| language)
+                    .collect();
+                if let ([language], true) = (
+                    found.into_iter().collect::<Vec<_>>().as_slice(),
+                    lines[start].trim() == marker,
+                ) {
+                    lines[start] = format!("{}{language}", lines[start].trim_end());
+                }
+            }
+            still => open = still,
+        }
+    }
+    lines.join("\n")
+}
+
 fn normalize_code(s: &str) -> String {
     s.lines()
         .map(str::trim_end)
@@ -898,7 +974,8 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
 
     let media_dir = src_dir.join("media");
     fs::create_dir_all(&media_dir)?;
-    let (article, image_count) = match localize_images(&extraction.article, &media_dir) {
+    let labeled = label_fences(&extraction.article, &html);
+    let (article, image_count) = match localize_images(&labeled, &media_dir) {
         Ok(v) => v,
         Err(e) => {
             let _ = fs::remove_dir_all(&src_dir);
@@ -1120,6 +1197,18 @@ mod tests {
         assert!(fidelity_gate(exact, &page_text(html), &pres).is_ok());
         let edited = "# T\nB\n\n```js\nlet x = 1;\nlet y = 3;\n```";
         assert!(fidelity_gate(edited, &page_text(html), &pres).is_err());
+    }
+
+    #[test]
+    fn bare_fences_take_the_language_the_page_marks() {
+        let html = r#"<pre data-language="ts"><code>const a = 1;</code></pre>
+<div class="highlight highlight-source-python"><pre>print(1)</pre></div>
+<pre class="shiki"><code>echo hi</code></pre>
+<pre><code class="language-rust">fn x() {}</code></pre>
+<pre><code class="lang-js">x &amp;&amp; y</code></pre>"#;
+        let article = "```\nconst a = 1;\n```\n\n```\nprint(1)\n```\n\n```\necho hi\n```\n\n```sh\nfn x() {}\n```\n\n```\nx && y\n```\n";
+        let labeled = "```ts\nconst a = 1;\n```\n\n```python\nprint(1)\n```\n\n```\necho hi\n```\n\n```sh\nfn x() {}\n```\n\n```js\nx && y\n```\n";
+        assert_eq!(label_fences(article, html), labeled);
     }
 
     #[test]

@@ -1,4 +1,5 @@
 mod engine;
+mod guess;
 mod json;
 
 use anyhow::{anyhow, bail, Result};
@@ -47,6 +48,14 @@ fn load(raw: &str) -> Result<Tables> {
         lexers,
         classes: strings("classes"),
     })
+}
+
+pub fn language<'a>(code: &str, declared: &'a str) -> &'a str {
+    let known = |name: &&str| tables().is_ok_and(|t| t.names.contains_key(*name));
+    match declared {
+        "" => guess::guess(code).filter(known).unwrap_or(""),
+        declared => declared,
+    }
 }
 
 pub fn spans(code: &str, language: &str) -> Result<Option<Vec<Span>>> {
