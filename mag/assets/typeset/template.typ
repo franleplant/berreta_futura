@@ -16,10 +16,11 @@
 #let PALE-VIOLET = rgb(95.5%, 94.5%, 97.5%)
 #let SIGNAL-ORANGE = rgb(240, 87, 56)
 
-#let SERIF = "Source Serif 4 SmText"
-#let DISPLAY = ("Source Serif 4 Display", "Source Serif 4 SmText")
-#let SANS = "Inter"
-#let MONO = "Geist Mono"
+#let SYMBOLS = "Noto Sans Math"
+#let SERIF = ("Source Serif 4 SmText", SYMBOLS)
+#let DISPLAY = ("Source Serif 4 Display", "Source Serif 4 SmText", SYMBOLS)
+#let SANS = ("Inter", SYMBOLS)
+#let MONO = ("Geist Mono", SYMBOLS)
 
 #let HALF-SERIF = 0.3505
 #let HALF-SANS = 0.36377

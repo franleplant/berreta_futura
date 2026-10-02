@@ -527,42 +527,31 @@ fn educated(character: char, previous: Option<char>, following: Option<char>, op
     '\u{2019}'
 }
 
-pub fn fold_reader_characters(text: &str, settable: &BTreeSet<u32>) -> String {
-    let text = text.replace('\u{a0}', " ");
-    if text.is_ascii() {
-        return text;
-    }
-    text.chars()
-        .map(|character| {
-            let code = character as u32;
-            if is_python_space(character) || code < 0x20 || settable.contains(&code) {
-                character
-            } else {
-                '?'
-            }
-        })
-        .collect()
+pub fn fold_reader_characters(text: &str) -> String {
+    text.replace('\u{a0}', " ")
+}
+
+pub fn is_settable(character: char, settable: &BTreeSet<u32>) -> bool {
+    character.is_ascii()
+        || character.is_whitespace()
+        || character.is_control()
+        || settable.contains(&(character as u32))
 }
 
 pub fn settable_codepoints(fonts: &Path) -> Result<BTreeSet<u32>> {
     let mut faces = Vec::new();
     collect_faces(fonts, &mut faces)?;
-    faces.sort();
     if faces.is_empty() {
         bail!(
             "The publication ships no reader faces under {}",
             fonts.display()
         );
     }
-    let mut settable: Option<BTreeSet<u32>> = None;
+    let mut settable = BTreeSet::new();
     for face in &faces {
-        let codepoints = face_codepoints(face)?;
-        settable = Some(match settable {
-            None => codepoints,
-            Some(previous) => previous.intersection(&codepoints).copied().collect(),
-        });
+        settable.extend(face_codepoints(face)?);
     }
-    Ok(settable.unwrap_or_default())
+    Ok(settable)
 }
 
 fn collect_faces(directory: &Path, into: &mut Vec<PathBuf>) -> Result<()> {
