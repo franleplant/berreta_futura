@@ -895,7 +895,7 @@ mod tests {
 
     #[test]
     fn a_figure_carries_what_follows_to_the_next_page_when_four_lines_do_not_fit_under_it() {
-        let bare = TEMPLATE_TYP.replace("  band-clearance()\n", "");
+        let bare = TEMPLATE_TYP.replace("  if float != true { band-clearance() }\n", "");
         assert_ne!(bare, TEMPLATE_TYP, "the clearance call moved");
         let tail = |n: usize| {
             let (paragraphs, lift) = phase(n);
@@ -1132,6 +1132,169 @@ mod tests {
             carried > 0 && stayed > 0,
             "{carried} carried, {stayed} stayed"
         );
+    }
+
+    fn settled(tree: Tree) -> (Tree, Vec<Vec<Mark>>) {
+        let (_, font_dir) = roots();
+        let (tree, doc) = crate::typeset::runt::bound(tree, font_dir, Hyphenation::PARITY)
+            .expect("the run settles");
+        let pages = doc.pages().iter().map(|page| {
+            let mut out = vec![];
+            marks(&page.frame, Point::zero(), &mut out);
+            out
+        });
+        (tree, pages.collect())
+    }
+
+    fn at(pages: &[Vec<Mark>], keep: impl Fn(&Mark) -> bool) -> Vec<(usize, f64, f64)> {
+        let found = pages.iter().enumerate().flat_map(|(n, page)| {
+            page.iter()
+                .filter(|m| keep(m))
+                .map(move |m| (n + 1, m.y, m.x))
+        });
+        found.collect()
+    }
+
+    #[test]
+    fn a_figure_that_misses_its_heading_s_page_floats_to_the_next_page_top_and_the_text_flows_on() {
+        let anchor = |m: &Mark| m.text == "Anchor" && (m.size - 18.5).abs() < 1e-6;
+        let (mut floated, mut kept) = (0, 0);
+        for n in 0..64 {
+            for layout in ["evidence_band", "column_plate"] {
+                let tree = figure_run(n, layout, Some(", pixels: (2400, 1350)"));
+                let plain = laid(&tree, TEMPLATE_TYP);
+                let (tree, pages) = settled(tree);
+                let (heading, caption) =
+                    (at(&pages, anchor)[0], at(&pages, |m| m.text == "Cap.")[0]);
+                let lines = at(&pages, |m| m.text.starts_with("Line "));
+                let under = lines
+                    .iter()
+                    .filter(|l| l.0 == heading.0 && l.1 > heading.1)
+                    .count();
+                let floats = tree.files[0].source.contains("float: true");
+                assert!(
+                    caption.0 == heading.0 + usize::from(floats),
+                    "step {n} {layout}"
+                );
+                if floats {
+                    floated += 1;
+                    assert!(
+                        under >= 2,
+                        "step {n} {layout}: {under} lines under the heading"
+                    );
+                    let next = lines
+                        .iter()
+                        .find(|l| l.0 == caption.0)
+                        .expect("text follows");
+                    assert!(
+                        next.1 > caption.1,
+                        "step {n} {layout}: the figure is not on top"
+                    );
+                } else {
+                    kept += 1;
+                    let before = (at(&plain, anchor)[0], at(&plain, |m| m.text == "Cap.")[0]);
+                    assert_eq!(
+                        before,
+                        (heading, caption),
+                        "step {n} {layout}: a fitting figure moved"
+                    );
+                }
+            }
+        }
+        assert!(floated > 0 && kept > 0, "{floated} floated, {kept} kept");
+    }
+
+    #[test]
+    fn the_last_heading_of_a_piece_is_laid_alike_whatever_the_next_piece_opens_with() {
+        let last = format!(
+            "#piece(id: \"a\", kind: \"article\", short-title: \"A\", opener: \"plain\")[\n\
+             {}#doc-heading(level: 3)[Closing]\n#doc-paragraph[After words.]\n]\n",
+            prose(6)
+        );
+        let opener = format!(
+            "#piece(id: \"b\", kind: \"article\", short-title: \"B\", opener: \"plain\")[\n\
+             #figure-block(id: \"f\", source-id: \"s\", anchor: \"__opener__\", layout: \"evidence_band\", \
+             word: \"Figure\", alt: \"a\", path: \"{}\", pixels: (2400, 1350))[#figure-caption[Cap.]]\n\
+             #doc-paragraph[Body.]\n]\n",
+            fixture_png()
+        );
+        let marks = |main: String| {
+            let pages = laid(&synthetic(main), TEMPLATE_TYP);
+            let find = |text: &str| at(&pages, |m| m.text.to_uppercase() == text)[0];
+            (find("CLOSING"), find("AFTER WORDS."))
+        };
+        let (heading, after) = marks(last.clone() + &opener);
+        assert_eq!(
+            (heading, after),
+            marks(last),
+            "the next piece's opener reached back"
+        );
+        assert!((heading.2 - after.2).abs() < 1e-3, "{heading:?} {after:?}");
+    }
+
+    fn code_run(paragraphs: usize, lines: usize) -> Tree {
+        let code: String = (0..lines).map(|n| format!("code{n}\\n")).collect();
+        synthetic(format!(
+            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+             {}#doc-code(lang: \"\", inks: (), raw(\"{code}\"))\n{}]\n",
+            prose(paragraphs),
+            prose(4)
+        ))
+    }
+
+    #[test]
+    fn a_code_block_that_fits_a_page_is_kept_whole_and_a_taller_one_splits() {
+        let pages = |tree: &Tree| {
+            let mut found: Vec<usize> =
+                at(&laid(tree, TEMPLATE_TYP), |m| m.text.starts_with("code"))
+                    .iter()
+                    .map(|m| m.0)
+                    .collect();
+            found.dedup();
+            found
+        };
+        for n in 0..40 {
+            assert_eq!(pages(&code_run(n, 24)).len(), 1, "step {n}");
+        }
+        assert!(
+            pages(&code_run(0, 80)).len() > 1,
+            "a page-tall block did not split"
+        );
+    }
+
+    #[test]
+    fn a_rotated_plate_waits_for_the_block_boundary_instead_of_interrupting_a_paragraph() {
+        let mut cut = 0;
+        for n in 0..32 {
+            let (paragraphs, lift) = phase(n);
+            let long: String = (0..6)
+                .map(|k| format!("#doc-paragraph[{}]\n", format!("w{k} ").repeat(90)))
+                .collect();
+            let tree = synthetic(format!(
+                "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
+                 {}#v({lift}pt)\n#doc-heading(level: 2)[Anchor]\n#figure-block(id: \"f\", source-id: \"s\", \
+                 anchor: \"Anchor\", layout: \"rotated_plate\", word: \"Figure\", alt: \"a\", path: \"{}\", \
+                 pixels: (2842, 1357))[#figure-caption[Cap.]]\n{long}]\n",
+                prose(paragraphs),
+                fixture_png()
+            ));
+            let (tree, pages) = settled(tree);
+            let plate = at(&pages, |m| m.text == "Cap.")[0].0;
+            for k in 0..6 {
+                let word = format!("w{k}");
+                let spans = at(&pages, |m| m.text.split_whitespace().any(|w| w == word));
+                let sides = (
+                    spans.iter().any(|s| s.0 < plate),
+                    spans.iter().any(|s| s.0 > plate),
+                );
+                assert!(
+                    sides != (true, true),
+                    "step {n}: the plate interrupts paragraph {k}"
+                );
+            }
+            cut += usize::from(tree.files[0].source.contains("#colbreak()"));
+        }
+        assert!(cut > 0, "no step needed a cut");
     }
 
     #[test]
@@ -2218,29 +2381,13 @@ mod tests {
     }
 
     #[test]
-    fn a_heading_that_opens_the_body_after_an_illustrated_opener_keeps_its_margin() {
-        let tree = fixture_tree("904");
-        let notes = |tree: &Tree| {
-            let pages = page_marks(tree, |m| {
-                m.iter()
-                    .any(|m| m.text == "Notes" && (m.size - 18.5).abs() < 1e-9)
-            });
-            mark(&pages[0], |m| m.text == "Notes").y
-        };
-        assert!(
-            (notes(&tree) - (42.0004 + 20.4 + 10.0046)).abs() < 1e-3,
-            "{}",
-            notes(&tree)
-        );
-        let mut dropped = tree.clone();
-        for file in &mut dropped.files {
-            file.source = file.source.replace("lead: true", "lead: false");
-        }
-        assert!(
-            (notes(&dropped) - (42.0004 + 10.0046)).abs() < 1e-3,
-            "{}",
-            notes(&dropped)
-        );
+    fn a_heading_that_opens_the_body_after_an_illustrated_opener_starts_at_the_top_margin() {
+        let pages = page_marks(&fixture_tree("904"), |m| {
+            m.iter()
+                .any(|m| m.text == "Notes" && (m.size - 18.5).abs() < 1e-9)
+        });
+        let notes = mark(&pages[0], |m| m.text == "Notes").y;
+        assert!((notes - (42.0004 + 10.0046)).abs() < 1e-3, "{notes}");
     }
 
     #[test]

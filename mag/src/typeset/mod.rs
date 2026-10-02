@@ -2,6 +2,7 @@ mod art;
 pub(crate) mod content;
 pub(crate) mod cover;
 pub(crate) mod estimate;
+pub(crate) mod flow;
 pub(crate) mod hyphen;
 pub(crate) mod layout;
 pub(crate) mod legible;

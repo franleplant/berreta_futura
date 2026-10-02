@@ -416,18 +416,10 @@ impl Writer<'_> {
         if !illustrated {
             out.push_str("  #opener-end()\n");
         }
-        let mut lead = false;
         if let (true, Some(block)) = (illustrated, document.blocks.first()) {
-            let standfirst = self.standfirst(block)?;
-            lead = !standfirst.contains("split: true");
-            out.push_str(&standfirst);
+            out.push_str(&self.standfirst(block)?);
         }
-        out.push_str(&self.article_body(
-            article,
-            document,
-            (usize::from(illustrated), trim),
-            lead,
-        )?);
+        out.push_str(&self.article_body(article, document, (usize::from(illustrated), trim))?);
         out.push_str(&self.key_ideas(article));
         out.push_str(&format!(
             "#end-mark{}\n\n",
@@ -592,11 +584,9 @@ impl Writer<'_> {
         article: &Article,
         document: &Document,
         (skip, trim): (usize, f64),
-        lead: bool,
     ) -> Result<String> {
         let (opener_figures, anchored_figures) = split_figures(&article.figures);
         let (opener_extracts, anchored_extracts) = split_extracts(&article.extracts);
-        let lead = lead && opener_figures.is_empty() && opener_extracts.is_empty();
         let mut out = String::new();
         for figure in &opener_figures {
             out.push_str(&self.figure(figure, trim)?);
@@ -610,14 +600,9 @@ impl Writer<'_> {
             if let Block::Heading { children, .. } = block {
                 references = is_reference_heading(&inline_text(children));
             }
-            let follows = match position {
-                1 if standfirst => "standfirst",
-                _ if lead && position == skip => "lead",
-                _ => "",
-            };
             out.push_str(&match block {
-                Block::Heading { level, children } if !follows.is_empty() => format!(
-                    "#doc-heading(level: {level}, {follows}: true)[{}]\n\n",
+                Block::Heading { level, children } if standfirst && position == 1 => format!(
+                    "#doc-heading(level: {level}, standfirst: true)[{}]\n\n",
                     self.inlines(children)
                 ),
                 _ => self.markup_block(block, skip == 0 && position == 0, references, false)?,
