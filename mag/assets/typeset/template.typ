@@ -263,12 +263,14 @@
 
 #let flow-counter = counter("mag-flow")
 
-#let flow-mark(kind, layout, body) = {
+#let flow-mark(kind, layout, body, id: none, float: none) = {
   flow-counter.step()
   context [#metadata((
       kind: kind,
       layout: layout,
       index: flow-counter.get().first(),
+      id: id,
+      float: float,
     ))<mag-flow>]
   context body(flow-counter.get().first())
 }
@@ -291,7 +293,7 @@
 
 #let is-band(layout) = BAND-LAYOUTS.contains(layout) or layout == COMPACT-BAND
 
-#let next-flow(index) = query(<mag-flow>).filter(m => m.value.index == index + 1).map(m => m.value).at(0, default: (kind: none, layout: none))
+#let next-flow(index) = query(<mag-flow>).filter(m => m.value.index == index + 1).map(m => m.value).at(0, default: (kind: none, layout: none, float: none))
 #let band-anchored(index) = next-flow(index).kind == "figure" and is-band(next-flow(index).layout)
 
 #let layer(body) = [#body<mag-layer>]
@@ -914,9 +916,8 @@
   (font: SANS, size: 8.5pt, leading: 12pt, above: 15.4pt, after-standfirst: 23pt, below: 8pt, fill: VIOLET, caps: true, drop: 10pt),
 )
 
-#let heading-stack(level, spec, above, escape, drop, body, lead: false, sticky: false) = {
-  layer(block(above: if lead { 0pt } else { above }, below: 0pt, breakable: false, sticky: sticky, width: 100%, inset: escape, {
-    if lead { v(above, weak: false) }
+#let heading-stack(level, spec, above, escape, drop, body, sticky: false) = {
+  layer(block(above: above, below: 0pt, breakable: false, sticky: sticky, width: 100%, inset: escape, {
     bookmark(level, body)
     move(dy: drop, text(
       font: spec.font,
@@ -932,10 +933,10 @@
   v(-HEADING-CLEARANCE)
 }
 
-#let doc-heading(level: 1, lead: false, standfirst: false, body) = {
+#let doc-heading(level: 1, standfirst: false, body) = {
   let spec = HEADINGS.at(calc.min(level, 3) - 1)
   flow-mark("heading", none, index => {
-    let anchor = level >= 2 and level <= 3 and band-anchored(index)
+    let anchor = level >= 2 and level <= 3 and band-anchored(index) and next-flow(index).float != true
     let midpage = anchor and here().position().y > MARGIN-TOP + PAGE-TOP-EPSILON
     heading-stack(
       level,
@@ -944,7 +945,6 @@
       if anchor { BAND-ESCAPE } else { NO-ESCAPE },
       if midpage { spec.drop } else { 0pt },
       body,
-      lead: lead and not anchor,
       sticky: next-flow(index).kind == "figure",
     )
   })
@@ -1000,11 +1000,11 @@
   })
 }
 
-#let doc-code(lang: "", inks: (), body) = block(
-  code-panel(inks: inks, body),
-  above: CODE-BLOCK-SIZE,
-  below: CODE-BLOCK-SIZE,
-)
+#let doc-code(lang: "", inks: (), body) = context {
+  let panel = code-panel(inks: inks, body)
+  let tall = measure(block(width: MEASURE + MEASURE-DELTA, panel)).height > CONTENT-HEIGHT
+  block(panel, above: CODE-BLOCK-SIZE, below: CODE-BLOCK-SIZE, breakable: tall)
+}
 
 #let doc-table(..rows) = block(above: TABLE-GAP, below: TABLE-GAP, width: 100%, {
   let rows = rows.pos()
@@ -1148,7 +1148,7 @@
   let scale = calc.min(ROTATED-PLATE-LENGTH / pixels.at(0), ROTATED-PLATE-DEPTH / pixels.at(1))
   let (width, height) = (pixels.at(0) * scale, pixels.at(1) * scale)
   caption-edge.update(none)
-  flow-mark("figure", ROTATED-PLATE, _ => layer(place(top, float: true, clearance: 0pt, block(
+  flow-mark("figure", ROTATED-PLATE, id: id, _ => layer(place(top, float: true, clearance: 0pt, block(
     width: 100%,
     height: CONTENT-HEIGHT,
     place(center + horizon, dy: (MARGIN-BOTTOM - MARGIN-TOP) / 2, rotate(-90deg, reflow: true, block(width: width, {
@@ -1170,22 +1170,25 @@
   if not top { 0pt } else if calc.odd(here().page()) { MARGIN-OUTER - MARGIN-INNER } else { MARGIN-INNER - MARGIN-OUTER }
 }
 
-#let plain-figure(id, anchor, layout, path, pixels, trim, body) = {
+#let plain-figure(id, anchor, layout, path, pixels, trim, float, body) = {
   let spec = figure-spec(layout, anchor)
   spec.max-height -= trim
   caption-edge.update(if BAND-LAYOUTS.contains(layout) { "band" } else if layout == COMPACT-BAND { "compact" })
-  flow-mark("figure", layout, index => layer(block(
-    above: 0pt,
-    below: spec.gap,
-    breakable: false,
-    width: 100%,
-    inset: spec.escape,
-    move(dx: if is-band(layout) and anchor != OPENER-ANCHOR { carried-shift(index) } else { 0pt }, dy: DATUM, {
-      figure-image(id, path, pixels, spec)
-      body
-    }),
-  )))
-  band-clearance()
+  flow-mark("figure", layout, id: id, float: float, index => {
+    let framed = layer(block(
+      above: 0pt,
+      below: spec.gap,
+      breakable: false,
+      width: 100%,
+      inset: spec.escape,
+      move(dx: if is-band(layout) and anchor != OPENER-ANCHOR { carried-shift(index) } else { 0pt }, dy: DATUM, {
+        figure-image(id, path, pixels, spec)
+        body
+      }),
+    ))
+    if float == true { place(top, float: true, clearance: spec.gap, framed) } else { framed }
+  })
+  if float != true { band-clearance() }
 }
 
 #let figure-block(
@@ -1198,11 +1201,12 @@
   path: none,
   pixels: none,
   trim: 0pt,
+  float: none,
   body,
 ) = {
   assert(pixels != none, message: "figure " + id + " carries no pixel size; the emitter must state it")
   figure-counter.step()
-  if layout == ROTATED-PLATE { rotated-plate(id, path, pixels, body) } else { plain-figure(id, anchor, layout, path, pixels, trim, body) }
+  if layout == ROTATED-PLATE { rotated-plate(id, path, pixels, body) } else { plain-figure(id, anchor, layout, path, pixels, trim, float, body) }
 }
 
 #let quote-line(body) = par(body)
@@ -1327,6 +1331,7 @@
       opener-parts.update(_ => ((tag: "art", body: art), (tag: "titles", body: titles)))
     }
     body
+    flow-mark("end", none, _ => none)
     [#metadata(id)<mag-piece-end>]
   })
   page-cap(id, kind)

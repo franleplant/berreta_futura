@@ -122,6 +122,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - Cover art carries no baked-in masthead or cover lines; layout owns all
   typography.
 - Keep the inside front and back covers blank.
+- A figure that misses its heading's page floats to the next page top while the text flows on (`mag/src/typeset/flow.rs`); a rotated plate waits for a block boundary.
 - Layout feedback comes from the production measurement interface, not
   character counts.
 

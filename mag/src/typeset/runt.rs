@@ -456,7 +456,7 @@ fn suppressed(doc: &PagedDocument, sources: &dyn World) -> Vec<(FileId, usize, u
         .collect()
 }
 
-type Edit = (FileId, usize, usize, &'static str);
+pub(crate) type Edit = (FileId, usize, usize, &'static str);
 
 fn bind(tree: Tree, found: &[Edit]) -> Tree {
     let files = tree.files.into_iter().map(|file| {
@@ -502,6 +502,7 @@ pub fn bound(
             .map(|(f, a, b)| (f, a, b, NO_BREAK))
             .chain(shy.map(|(f, a, b)| (f, a, b, "")))
             .chain(ladders)
+            .chain(crate::typeset::flow::edits(&doc, &sources, &tree)?)
             .collect();
         if edits.is_empty() {
             return Ok((tree, doc));
