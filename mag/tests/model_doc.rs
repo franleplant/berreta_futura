@@ -21,12 +21,12 @@ fn settable() -> BTreeSet<u32> {
         .expect("the vendored faces are readable")
 }
 
-fn projection(markdown: &str, settable: &BTreeSet<u32>) -> Value {
+fn projection(markdown: &str) -> Value {
     let document = doc::parse_publication_document(markdown).expect("the manuscript parses");
     let visible = doc::visible_blocks(&document.blocks);
     let text: Vec<&str> = visible.iter().map(|(_, body)| body.as_str()).collect();
     let educated = doc::educate_reader_quotes(&text.join("\n"));
-    let folded = doc::fold_reader_characters(&educated, settable);
+    let folded = doc::fold_reader_characters(&educated);
     let keys: Vec<String> = document
         .metadata
         .keys()
@@ -46,7 +46,7 @@ fn projection(markdown: &str, settable: &BTreeSet<u32>) -> Value {
     })
 }
 
-fn dump(directory: &Path, pattern: &str, settable: &BTreeSet<u32>) -> Map<String, Value> {
+fn dump(directory: &Path, pattern: &str) -> Map<String, Value> {
     let mut entries: Vec<PathBuf> = std::fs::read_dir(directory)
         .expect("the manuscript directory is readable")
         .map(|entry| entry.expect("the entry is readable").path())
@@ -74,7 +74,7 @@ fn dump(directory: &Path, pattern: &str, settable: &BTreeSet<u32>) -> Map<String
             ),
             _ => continue,
         };
-        dumped.insert(name, projection(&markdown, settable));
+        dumped.insert(name, projection(&markdown));
     }
     dumped
 }
@@ -87,7 +87,7 @@ fn fixtures_match_the_python_projection() {
             .expect("the committed expectation is readable"),
     )
     .expect("the committed expectation is JSON");
-    let produced = dump(&root.join("tests/model_doc_fixtures"), "*.md", &settable());
+    let produced = dump(&root.join("tests/model_doc_fixtures"), "*.md");
     assert_eq!(
         Value::Object(produced),
         expected,
@@ -96,7 +96,7 @@ fn fixtures_match_the_python_projection() {
 }
 
 #[test]
-fn settable_codepoints_match_the_python_intersection() {
+fn settable_codepoints_are_the_union_of_the_bundled_faces() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let expected = std::fs::read_to_string(root.join("tests/model_doc_settable.txt"))
         .expect("the committed codepoints are readable");
@@ -107,7 +107,7 @@ fn settable_codepoints_match_the_python_intersection() {
     assert_eq!(
         produced.join("\n"),
         expected.trim_end_matches('\n'),
-        "the Rust cmap intersection diverged from fontTools"
+        "the bundled faces cover a different set of codepoints"
     );
 }
 
@@ -124,7 +124,7 @@ fn edition_manuscripts_match_the_python_projection() {
         &std::fs::read_to_string(&oracle).expect("the oracle dump is readable"),
     )
     .expect("the oracle dump is JSON");
-    let produced = dump(Path::new(&articles), "final.md", &settable());
+    let produced = dump(Path::new(&articles), "final.md");
     assert_eq!(
         Value::Object(produced),
         expected,

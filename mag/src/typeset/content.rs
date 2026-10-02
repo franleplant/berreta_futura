@@ -1,6 +1,6 @@
 use crate::model::doc::{
-    educate_reader_quotes, fold_reader_characters, inline_text, parse_publication_document,
-    settable_codepoints, Block, Document, Inline,
+    educate_reader_quotes, fold_reader_characters, inline_text, is_settable,
+    parse_publication_document, settable_codepoints, Block, Document, Inline,
 };
 use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
@@ -96,9 +96,8 @@ pub fn compose(
     keeps: &[Option<usize>],
 ) -> Result<Tree> {
     let settable = settable_codepoints(fonts).map_err(refusal)?;
-    Writer {
+    let tree = Writer {
         edition,
-        settable: &settable,
         metrics: &Metrics::load(fonts)?,
         keeps,
         standfirsts: Cell::new(0),
@@ -108,7 +107,43 @@ pub fn compose(
             .transpose()
             .map_err(ValidationError::one)?,
     }
-    .tree()
+    .tree()?;
+    let misses: Vec<String> = tree
+        .files
+        .iter()
+        .flat_map(|file| unsettable_in(file, &settable))
+        .collect();
+    if misses.is_empty() {
+        Ok(tree)
+    } else {
+        Err(ValidationError(misses))
+    }
+}
+
+pub fn unsettable_in(file: &File, settable: &BTreeSet<u32>) -> Vec<String> {
+    let piece = file
+        .path
+        .strip_prefix("pieces/article-")
+        .and_then(|rest| rest.get(3..)?.strip_suffix(".typ"))
+        .map_or_else(|| file.path.clone(), |id| format!("article {id}"));
+    let mut seen = BTreeSet::new();
+    file.source
+        .char_indices()
+        .filter(|&(_, character)| !is_settable(character, settable) && seen.insert(character))
+        .map(|(at, character)| {
+            let before: Vec<char> = file.source[..at].chars().rev().take(40).collect();
+            let near: String = before
+                .into_iter()
+                .rev()
+                .chain(file.source[at..].chars().take(41))
+                .collect();
+            format!(
+                "U+{:04X} {character:?} has no glyph in any bundled font: {piece}, near {:?}",
+                character as u32,
+                near.replace('\\', "").replace('\n', " "),
+            )
+        })
+        .collect()
 }
 
 fn refusal(error: anyhow::Error) -> ValidationError {
@@ -117,7 +152,6 @@ fn refusal(error: anyhow::Error) -> ValidationError {
 
 struct Writer<'a> {
     edition: &'a Edition,
-    settable: &'a BTreeSet<u32>,
     metrics: &'a Metrics,
     keeps: &'a [Option<usize>],
     standfirsts: Cell<usize>,
@@ -139,17 +173,11 @@ impl Writer<'_> {
     }
 
     fn prose(&self, value: &str) -> String {
-        escape_markup(&fold_reader_characters(
-            &educate_reader_quotes(value),
-            self.settable,
-        ))
+        escape_markup(&fold_reader_characters(&educate_reader_quotes(value)))
     }
 
     fn hyphenated(&self, value: &str) -> String {
-        self.hyphenable(fold_reader_characters(
-            &educate_reader_quotes(value),
-            self.settable,
-        ))
+        self.hyphenable(fold_reader_characters(&educate_reader_quotes(value)))
     }
 
     fn hyphenable(&self, folded: String) -> String {
@@ -165,14 +193,11 @@ impl Writer<'_> {
     }
 
     fn verbatim_body(&self, value: &str) -> String {
-        format!(
-            "[{}]",
-            self.hyphenable(fold_reader_characters(value, self.settable))
-        )
+        format!("[{}]", self.hyphenable(fold_reader_characters(value)))
     }
 
     fn literal(&self, value: &str) -> String {
-        escape_markup(&fold_reader_characters(value, self.settable))
+        escape_markup(&fold_reader_characters(value))
     }
 
     fn said(&self, value: &str) -> String {
@@ -334,7 +359,7 @@ impl Writer<'_> {
 
     fn editorial(&self, editorial: &Editorial, document: &Document) -> Result<String> {
         let (size, field) = self.metrics.editorial_opener(&editorial.title)?;
-        let title = fold_reader_characters(&educate_reader_quotes(&editorial.title), self.settable);
+        let title = fold_reader_characters(&educate_reader_quotes(&editorial.title));
         Ok(format!(
             "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n)[\n\
              #plain-opener(size: {size}pt, field: {field}pt, title: {}, wide: true)[\n  \
@@ -548,7 +573,7 @@ impl Writer<'_> {
             rows,
             figure,
         )?;
-        let title = fold_reader_characters(&educate_reader_quotes(&article.title), self.settable);
+        let title = fold_reader_characters(&educate_reader_quotes(&article.title));
         Ok((
             format!(
                 "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, title: {})[\n",
@@ -688,7 +713,7 @@ impl Writer<'_> {
         let body = if extract.style == "code" {
             format!(
                 "  #code-panel(collapse: true, {})",
-                raw_block(&fold_reader_characters(&extract.text, self.settable))
+                raw_block(&fold_reader_characters(&extract.text))
             )
         } else {
             extract
@@ -740,7 +765,7 @@ impl Writer<'_> {
             }
             Block::FencedCode { code, info } => {
                 let language = info.split_whitespace().next().unwrap_or("");
-                let folded = fold_reader_characters(code, self.settable);
+                let folded = fold_reader_characters(code);
                 let shown = folded.trim_end_matches('\n');
                 format!(
                     "#doc-code(lang: {}, inks: {}, {})\n\n",
@@ -1285,10 +1310,6 @@ mod tests {
         fixtures().join("corpus")
     }
 
-    fn settable() -> BTreeSet<u32> {
-        settable_codepoints(&fonts()).expect("the reader faces are readable")
-    }
-
     fn inputs(root: &Path, edition_id: &str) -> Inputs<'static> {
         let root: &'static Path = Box::leak(root.to_path_buf().into_boxed_path());
         Inputs {
@@ -1676,6 +1697,32 @@ mod tests {
     }
 
     #[test]
+    fn symbols_reach_typst_and_a_glyph_no_face_carries_is_refused() {
+        let root = mutated("unsettable", "900", &[]);
+        let manuscript = root.join("editions/900/articles/plain-opener-article.md");
+        let text = std::fs::read_to_string(&manuscript).expect("the manuscript is readable");
+        let symbols = format!("{text}\nAlways \u{25a1} P, eventually \u{25c7} P, P \u{21dd} Q.\n");
+        std::fs::write(&manuscript, &symbols).expect("the manuscript is writable");
+        let tree = pipeline(&inputs(&root, "900")).expect("bundled symbols are settable");
+        let reached = |run: &str| tree.files.iter().any(|file| file.source.contains(run));
+        assert!(["\u{25a1} P", "\u{25c7} P", "P \u{21dd} Q"]
+            .into_iter()
+            .all(reached));
+        std::fs::write(
+            &manuscript,
+            format!("{symbols}A private \u{f0000} glyph.\n"),
+        )
+        .expect("the manuscript is writable");
+        let message = refusal_of(&root, "900");
+        assert!(
+            message.contains("U+F0000")
+                && message.contains("article plain-opener-article")
+                && message.contains("A private"),
+            "{message}"
+        );
+    }
+
+    #[test]
     fn a_run_already_in_the_manuscript_is_refused() {
         let root = mutated("verbatim-run", "900", &[]);
         let manuscript = root.join("editions/900/articles/plain-opener-article.md");
@@ -1837,7 +1884,6 @@ mod tests {
 
     #[test]
     fn escaping_round_trips_every_text_atom_the_fixtures_carry() {
-        let settable = settable();
         let mut atoms: Vec<String> = vec![
             "plain words".to_string(),
             "#hash $dollar *star _under `tick [bracket] <angle> @at =eq ~tilde +plus -dash /slash"
@@ -1868,7 +1914,6 @@ mod tests {
                 "escaping did not round trip {atom:?}"
             );
         }
-        let _ = settable;
     }
 
     #[test]

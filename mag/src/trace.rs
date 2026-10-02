@@ -10,7 +10,7 @@ pub(crate) use exact::{authored, num};
 pub(crate) use streams::{qc, qo, Color};
 pub(crate) use streams::{Element, Face as TextFace, GLYPH_QUANTUM};
 
-const FONT_ALIASES: [(&str, &str, &str); 11] = [
+const FONT_ALIASES: [(&str, &str, &str); 12] = [
     (
         "Magazine-Serif",
         "SourceSerif4SmText-Regular",
@@ -57,6 +57,11 @@ const FONT_ALIASES: [(&str, &str, &str); 11] = [
         "Magazine-Mono-Semi-Bold",
         "GeistMono-SemiBold",
         "geist-mono/GeistMono-SemiBold.ttf",
+    ),
+    (
+        "Magazine-Symbols",
+        "NotoSansMath-Regular",
+        "noto-sans-math/NotoSansMath-Regular.ttf",
     ),
 ];
 

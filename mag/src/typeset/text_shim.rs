@@ -392,6 +392,35 @@ mod tests {
     }
 
     #[test]
+    fn temporal_operators_fall_back_to_the_bundled_symbol_face_in_every_family() {
+        for family in ["SERIF", "DISPLAY", "SANS", "MONO"] {
+            let mut found = vec![];
+            texts(
+                &page(&format!(
+                    "#text(font: {family})[\u{25a1} \u{25c7} \u{21dd}]"
+                )),
+                Point::zero(),
+                &mut found,
+            );
+            let set: String = found.iter().map(|(_, text)| text.text.as_str()).collect();
+            assert!(
+                set.replace(" ", "").starts_with("\u{25a1}\u{25c7}\u{21dd}"),
+                "{family}"
+            );
+            assert!(found
+                .iter()
+                .all(|(_, text)| text.glyphs.iter().all(|glyph| glyph.id != 0)));
+            assert!(
+                family == "SANS"
+                    || found
+                        .iter()
+                        .any(|(_, text)| text.font.info().family == "Noto Sans Math"),
+                "{family}"
+            );
+        }
+    }
+
+    #[test]
     fn a_soft_hyphen_break_is_one_run_ending_in_a_kerned_u2010_as_pango_sets_it() {
         let body = "#set text(font: SERIF, size: 10pt, lang: \"es\")\n\
                     #block(width: 25pt)[#set par(linebreaks: \"simple\", justify: false)\n\
