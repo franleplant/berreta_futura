@@ -1038,6 +1038,7 @@ fn class_ink(class: &str) -> Option<&'static str> {
 }
 
 fn code_inks(code: &str, shown: usize, language: &str) -> Result<String> {
+    let language = crate::highlight::language(code, language);
     let spans = crate::highlight::spans(code, language)
         .map_err(|error| ValidationError::one(format!("code block: {error:#}")))?;
     let Some(spans) = spans else {
@@ -1463,7 +1464,11 @@ mod tests {
             code_inks("fn x() {}\n", 9, "rust").expect("rust highlights"),
             "((2, rgb(240, 87, 56)), (1, none), (1, rgb(11%, 22%, 55%)), (5, none), )"
         );
-        assert_eq!(code_inks("fn x() {}\n", 9, "").expect("plain"), "()");
+        assert_eq!(
+            code_inks("fn x() {}\n", 9, "").expect("inferred"),
+            code_inks("fn x() {}\n", 9, "rust").expect("rust highlights")
+        );
+        assert_eq!(code_inks("hello there\n", 11, "").expect("plain"), "()");
         assert_eq!(
             code_inks("fn x() {}\n", 9, "jsonc").expect("no lexer"),
             "()"
