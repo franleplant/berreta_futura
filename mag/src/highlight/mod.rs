@@ -54,6 +54,7 @@ pub fn language<'a>(code: &str, declared: &'a str) -> &'a str {
     let known = |name: &&str| tables().is_ok_and(|t| t.names.contains_key(*name));
     match declared {
         "" => guess::guess(code).filter(known).unwrap_or(""),
+        declared if declared.eq_ignore_ascii_case("jsonc") => "json",
         declared => declared,
     }
 }

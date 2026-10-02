@@ -1470,7 +1470,7 @@ mod tests {
         );
         assert_eq!(code_inks("hello there\n", 11, "").expect("plain"), "()");
         assert_eq!(
-            code_inks("fn x() {}\n", 9, "jsonc").expect("no lexer"),
+            code_inks("fn x() {}\n", 9, "nosuchlang").expect("no lexer"),
             "()"
         );
     }
