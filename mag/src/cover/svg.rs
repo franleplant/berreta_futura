@@ -8,8 +8,13 @@ use super::outline::Outliner;
 
 pub const PAGE_WIDTH: f64 = 419.527559;
 pub const PAGE_HEIGHT: f64 = 595.275591;
-const WORDMARK_TRACKING: f64 = -3.6;
-const WORDMARK_HEAD_SCALE: f64 = 89.9;
+pub const WORDMARK_SVG: &str = include_str!("../../assets/brand/wordmark.svg");
+pub const MARK_SVG: &str = include_str!("../../assets/brand/mark.svg");
+pub const MARK_SQUARE_SVG: &str = include_str!("../../assets/brand/mark-square.svg");
+const WORDMARK_INSET: (f64, f64) = (2.85, -28.91);
+const WORDMARK_HEIGHT: f64 = 75.13;
+const BOX_FILL: &str = "fill=\"var(--box, #0a0b0d)\"";
+const DARK_EDGE: &str = "stroke=\"var(--ink)\" stroke-opacity=\"0.35\" stroke-width=\"0.73\"";
 
 pub struct Palette {
     pub paper: String,
@@ -89,7 +94,6 @@ pub struct Design {
 }
 
 pub struct CoverText {
-    pub publication_name: String,
     pub headline: String,
     pub date_line: String,
     pub contributors: String,
@@ -125,6 +129,34 @@ pub(crate) fn pyf(value: f64) -> String {
     } else {
         format!("{value}")
     }
+}
+
+pub fn brand_view(svg: &str) -> [f64; 4] {
+    let view = svg
+        .split_once("viewBox=\"")
+        .and_then(|(_, rest)| rest.split_once('"'))
+        .map_or("", |(view, _)| view);
+    let mut numbers = view.split(' ').map(|v| v.parse().unwrap_or(0.0));
+    [0; 4].map(|_| numbers.next().unwrap_or(0.0))
+}
+
+pub fn brand_body(svg: &str) -> &str {
+    let start = svg.find("</title>").map_or(0, |at| at + "</title>".len());
+    &svg[start..svg.rfind("</svg>").unwrap_or(svg.len())]
+}
+
+pub fn paint<'a>(markup: &str, colour: impl Fn(&str) -> Option<&'a str>) -> String {
+    let mut out = String::new();
+    let mut rest = markup;
+    while let Some(at) = rest.find("var(--") {
+        out.push_str(&rest[..at]);
+        let tail = &rest[at + "var(--".len()..];
+        let end = tail.find(')').unwrap_or(tail.len());
+        let (name, fallback) = tail[..end].split_once(", ").unwrap_or((&tail[..end], ""));
+        out.push_str(colour(name).unwrap_or(fallback));
+        rest = tail.get(end + 1..).unwrap_or("");
+    }
+    out + rest
 }
 
 pub(crate) fn escape(value: &str) -> String {
@@ -222,179 +254,42 @@ impl Builder<'_> {
         (PAGE_WIDTH - width, width - self.design.tab.edge_reveal)
     }
 
-    fn wordmark_size(&mut self, head: &str, tail: &str, publication_name: &str) -> Result<f64> {
-        let tracking = WORDMARK_TRACKING;
-        let max_width = PAGE_WIDTH - self.design.tab.width - self.design.wordmark.right_reserve;
-        let mut size = 42.0;
-        loop {
-            if size < 25.0 {
-                bail!("Publication wordmark cannot fit: {publication_name}");
-            }
-            let head_width = self
-                .fonts
-                .bold
-                .measure(head, size, tracking, WORDMARK_HEAD_SCALE)?;
-            let tail_width = if tail.is_empty() {
-                0.0
-            } else {
-                self.fonts.bold.measure(tail, size, tracking, 105.1)?
-            };
-            let tail_offset = size * (97.0 / 42.0);
-            let box_width = tail_width + if tail.is_empty() { 0.0 } else { 13.0 };
-            if head_width.max(tail_offset + box_width) <= max_width {
-                return Ok(size);
-            }
-            size -= 0.5;
+    fn wordmark(&self, on_dark: bool) -> String {
+        let (colors, spot) = (&self.design.colors, &self.design.wordmark);
+        let [vx, vy, vw, vh] = brand_view(WORDMARK_SVG);
+        let (x, y) = (spot.x + WORDMARK_INSET.0, spot.top + WORDMARK_INSET.1);
+        let max_width = PAGE_WIDTH - self.design.tab.width - spot.right_reserve - WORDMARK_INSET.0;
+        let scale = (WORDMARK_HEIGHT / vh).min(max_width / vw);
+        let mut body = brand_body(WORDMARK_SVG).to_string();
+        if on_dark {
+            body = body.replacen(BOX_FILL, &format!("{BOX_FILL} {DARK_EDGE}"), 1);
         }
+        let head = if on_dark { &colors.paper } else { &colors.ink };
+        let body = paint(&body, |name| match name {
+            "ink" => Some(head.as_str()),
+            "paper" => Some(colors.paper.as_str()),
+            "red" => Some(colors.orange.as_str()),
+            "box" => Some(colors.ink.as_str()),
+            _ => None,
+        });
+        format!(
+            "<g data-slot=\"wordmark\" transform=\"translate({x:.4} {y:.4}) scale({scale:.6}) translate({} {})\">{body}</g>",
+            pyf(-vx),
+            pyf(-vy)
+        )
     }
 
-    fn wordmark(&mut self, publication_name: &str) -> Result<String> {
-        let value = publication_name.to_uppercase();
-        let value = value.trim();
-        let (head, tail) = match value.rsplit_once(' ') {
-            Some((head, tail)) => (head.to_string(), tail.to_string()),
-            None => (value.to_string(), String::new()),
-        };
-        let x = self.design.wordmark.x;
-        let top = self.design.wordmark.top;
-        let pdf_baseline = PAGE_HEIGHT - top;
-        let baseline = PAGE_HEIGHT - (pdf_baseline - 1.65);
-        let tracking = WORDMARK_TRACKING;
-        let head_scale = WORDMARK_HEAD_SCALE;
-        let size = self.wordmark_size(&head, &tail, publication_name)?;
-        let ink = self.design.colors.ink.clone();
-        let head_path = self
-            .fonts
-            .bold
-            .outline(
-                &head,
-                x + 0.36,
-                baseline,
-                size,
-                &ink,
-                tracking,
-                head_scale,
-                Some((&ink, 0.30)),
-                "",
-            )?
-            .markup;
-        if tail.is_empty() {
-            return Ok(format!("<g data-slot=\"wordmark\">{head_path}</g>"));
-        }
-        let tail_offset = size * (97.0 / 42.0);
-        let tail_x = x + tail_offset;
-        let tail_origin_y = PAGE_HEIGHT - (pdf_baseline - size * 0.91);
-        let tail_width = self.fonts.bold.measure(&tail, size, tracking, 105.1)?;
-        let (box_x, box_y) = (-7.0_f64, -7.0_f64);
-        let box_height = size * 1.04 - 1.0;
-        let box_width = tail_width + 13.0;
-        let slug_y = box_y - 1.0;
-        let center_x = box_x + box_width / 2.0;
-        let center_y = box_y + box_height / 2.0;
-        let skew = (-10.0_f64).to_radians().tan();
-        let group = format!(
-            "translate({tail_x:.5} {tail_origin_y:.5}) translate({center_x:.5} {:.5}) matrix(1 0 {skew:.8} 1 0 0) translate({:.5} {center_y:.5})",
-            -center_y,
-            -center_x
-        );
-        let slug = format!(
-            "<path d=\"M {} {} H {} V {} H {} Z\" fill=\"{}\"/>",
-            pyf(box_x),
-            pyf(-slug_y),
-            pyf(box_x + box_width),
-            pyf(-slug_y - (box_height + 0.65)),
-            pyf(box_x),
-            self.design.colors.ink
-        );
-        let orange_colour = self.design.colors.orange.clone();
-        let orange = self
-            .fonts
-            .bold
-            .outline(
-                &tail,
-                -13.0,
-                -1.65,
-                size,
-                &orange_colour,
-                tracking,
-                106.6,
-                Some((&orange_colour, 0.15)),
-                "",
-            )?
-            .markup;
-        let paper = self.design.colors.paper.clone();
-        let white = self
-            .fonts
-            .bold
-            .outline(
-                &tail,
-                0.0,
-                -1.65,
-                size,
-                &paper,
-                tracking,
-                105.1,
-                Some((&paper, 0.30)),
-                "",
-            )?
-            .markup;
-        Ok(format!(
-            "<g data-slot=\"wordmark\">{head_path}<g transform=\"{group}\">{slug}{orange}{white}</g></g>"
-        ))
+    fn scaled_wordmark(&self, on_dark: bool, scale: f64, dx: f64, dy: f64) -> String {
+        format!(
+            "<g transform=\"translate({dx:.4} {dy:.4}) scale({})\">{}</g>",
+            pyf(scale),
+            self.wordmark(on_dark)
+        )
     }
 
-    pub fn logo(&mut self, publication_name: &str) -> Result<(String, [f64; 4])> {
-        let mark = self.wordmark(publication_name)?;
-        let probe = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{PAGE_WIDTH}\" height=\"{PAGE_HEIGHT}\">{mark}</svg>");
-        let tree = usvg::Tree::from_str(&probe, &usvg::Options::default())?;
-        let bounds = tree.root().abs_stroke_bounding_box();
-        let (left, top) = (
-            f64::from(bounds.left()).floor(),
-            f64::from(bounds.top()).floor(),
-        );
-        let (right, bottom) = (
-            f64::from(bounds.right()).ceil(),
-            f64::from(bounds.bottom()).ceil(),
-        );
-        Ok((mark, [left, top, right - left, bottom - top]))
-    }
-
-    fn scaled_wordmark(
-        &mut self,
-        publication_name: &str,
-        mode: &str,
-        scale: f64,
-        dx: f64,
-        dy: f64,
-    ) -> Result<String> {
-        let mut part = self.wordmark(publication_name)?;
-        if mode == "light" {
-            if let Some(i) = part.find("matrix(") {
-                if let Some(j) = part[..i].rfind("<g transform=") {
-                    let head =
-                        part[..j].replace(&self.design.colors.ink, &self.design.colors.paper);
-                    part = format!("{head}{}", &part[j..]);
-                }
-            } else {
-                part = part.replace(&self.design.colors.ink, &self.design.colors.paper);
-            }
-        }
-        Ok(format!(
-            "<g transform=\"translate({dx:.4} {dy:.4}) scale({})\">{part}</g>",
-            pyf(scale)
-        ))
-    }
-
-    fn margin_locked_wordmark(
-        &mut self,
-        publication_name: &str,
-        mode: &str,
-        scale: f64,
-        margin: f64,
-        dy: f64,
-    ) -> Result<String> {
+    fn margin_locked_wordmark(&self, on_dark: bool, scale: f64, margin: f64, dy: f64) -> String {
         let dx = margin - (self.design.wordmark.x + 0.36) * scale;
-        self.scaled_wordmark(publication_name, mode, scale, dx, dy)
+        self.scaled_wordmark(on_dark, scale, dx, dy)
     }
 
     fn fit_display_line(&mut self, text: &str, max_size: f64, width: f64) -> Result<f64> {
@@ -652,7 +547,7 @@ impl Builder<'_> {
                 PAGE_HEIGHT + overdraw * 2.0
             ),
         ];
-        parts.push(self.wordmark(&text.publication_name)?);
+        parts.push(self.wordmark(false));
         parts.push(self.headline(&text.headline)?);
         let (ax, ay) = (self.design.art.x, self.design.art.top);
         let (aw, ah) = (self.design.art.width, self.design.art.height);
@@ -708,12 +603,11 @@ impl Builder<'_> {
                 pyf(PAGE_HEIGHT - 2.0 * margin - footer)
             ),
             self.scaled_wordmark(
-                &text.publication_name,
-                "dark",
+                false,
                 self.design.honored_plate.wordmark_scale,
                 6.0,
                 PAGE_HEIGHT - footer - 22.0 - 14.0,
-            )?,
+            ),
         ];
         let title = text.headline.to_uppercase();
         let title = title.trim().to_string();
@@ -799,15 +693,8 @@ impl Builder<'_> {
 
         parts.push(scrim_band(&scrim, alpha, title_top - 60.0, band));
         parts.extend(self.caption_gradients(&top, band));
-        let mode = if top.mean < 118.0 { "light" } else { "dark" };
         let dy = self.design.footer_caption.wordmark_dy;
-        parts.push(self.margin_locked_wordmark(
-            &text.publication_name,
-            mode,
-            scale,
-            spec_margin,
-            dy,
-        )?);
+        parts.push(self.margin_locked_wordmark(top.mean < 118.0, scale, spec_margin, dy));
         self.caption_body(&mut parts, text, spec_margin, right_edge, &fill, band)?;
         Ok(self.shell(&parts.join("\n    ")))
     }

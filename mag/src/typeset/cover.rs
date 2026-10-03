@@ -314,7 +314,6 @@ fn placeholder(design: &Design) -> String {
 fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(String, Face)> {
     let headline = cover_field(edition, "headline", &edition.title);
     let text = CoverText {
-        publication_name: edition.publication_name.clone(),
         headline: headline.clone(),
         date_line: cover_date(&edition.publication_date),
         contributors: cover_contributors(edition),

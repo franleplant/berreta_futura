@@ -94,7 +94,6 @@ fn design() -> Design {
 
 fn edition_010_text() -> CoverText {
     CoverText {
-        publication_name: "Berreta Futura".into(),
         headline: "The Speed Limit".into(),
         date_line: "2026 09 13".into(),
         contributors: "FRANK RIETTA / ANTHROPIC / DARIO AMODEI / SANTI RUIZ / MICHAEL TRUELL / WILSON LIN / DEEPSEEK-AI / JON LEE, CHAOMIN YU, BEN RIES".into(),
@@ -135,7 +134,7 @@ fn build(layout: &str) -> String {
 fn framed_raster_matches_the_python_compiler() {
     assert_eq!(
         raster_hash(&build("framed")),
-        "ece03e915b38e0d3fc36cf68499c4f63c3bad698992210119ba07035fcb11aca",
+        "0cdc1e310bf4347169fc8b8a6daf2971abe0a3a13587a50cc0c0eb6f8a313eb4",
         "framed cover raster diverged from the Python compiler"
     );
 }
@@ -144,7 +143,7 @@ fn framed_raster_matches_the_python_compiler() {
 fn honored_plate_raster_matches_the_python_compiler() {
     assert_eq!(
         raster_hash(&build("honored_plate")),
-        "c46b2db485d6bcba195cbda9e37ad9ecbcfca6baa0dc2561af1e4522322a02e9",
+        "3df3459da9ef158af8e77071e04fa6e52f4df57b9482c3818ce513c83ec98468",
         "honored_plate cover raster diverged from the Python compiler"
     );
 }
@@ -218,23 +217,6 @@ fn accepted(layout: &str, mutate: impl FnOnce(&mut CoverText)) {
     compile(layout, mutate).expect("the input fits");
 }
 
-const WORDMARK_STEM: &str = "Berreta Incomprehensibilitie";
-
-#[test]
-fn a_publication_wordmark_at_the_size_floor_still_fits() {
-    let name = format!("{WORDMARK_STEM}l");
-    accepted("framed", |text| text.publication_name = name);
-}
-
-#[test]
-fn a_publication_wordmark_that_cannot_fit_is_refused() {
-    let name = format!("{WORDMARK_STEM}s");
-    assert_eq!(
-        refusal("framed", |text| text.publication_name = name.clone()),
-        format!("Publication wordmark cannot fit: {name}")
-    );
-}
-
 const TITLE_STEM: &str = "The Speed Limit And Its Apostle";
 
 #[test]
@@ -294,16 +276,43 @@ fn a_headline_that_cannot_fit_is_refused() {
 }
 
 #[test]
-fn the_logo_is_the_framed_wordmark_cropped_to_its_ink() {
-    let assets = repository().join("mag/assets");
-    let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
-    let design = design();
-    let (mark, [x, y, w, h]) = Builder {
-        design: &design,
-        fonts: &mut fonts,
+fn every_cover_layout_draws_the_committed_brand_wordmark() {
+    let first_path = svg::WORDMARK_SVG
+        .split(" d=\"")
+        .nth(1)
+        .and_then(|rest| rest.split('"').next())
+        .expect("the wordmark has paths");
+    for layout in ["framed", "honored_plate", "footer_caption"] {
+        let cover = build(layout);
+        assert_eq!(
+            cover.matches("data-slot=\"wordmark\"").count(),
+            1,
+            "{layout}"
+        );
+        assert!(
+            cover.contains(first_path),
+            "{layout} lost the brand outlines"
+        );
+        assert!(
+            !cover.contains("var(--"),
+            "{layout} left a CSS colour unresolved"
+        );
     }
-    .logo(&edition_010_text().publication_name)
-    .expect("the logo builds");
-    assert!(build("framed").contains(&mark));
-    assert!(x > 0.0 && y > 0.0 && w > 2.0 * h && x + w < svg::PAGE_WIDTH && h < 80.0);
+}
+
+#[test]
+fn the_brand_files_are_committed_and_themeable() {
+    let brand = repository().join("mag/assets/brand");
+    for (file, embedded) in [
+        ("wordmark.svg", svg::WORDMARK_SVG),
+        ("mark.svg", svg::MARK_SVG),
+        ("mark-square.svg", svg::MARK_SQUARE_SVG),
+    ] {
+        let on_disk = std::fs::read_to_string(brand.join(file)).expect("brand file exists");
+        assert_eq!(on_disk, embedded, "{file}");
+        assert!(on_disk.contains("var(--paper, #ffffff)") && !on_disk.contains("stroke"));
+    }
+    assert!(std::fs::read_to_string(brand.join("README.md"))
+        .expect("the brand spec exists")
+        .contains("tools/logo.py"));
 }

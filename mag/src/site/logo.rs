@@ -1,9 +1,8 @@
 use crate::cover::raster::render;
-use crate::cover::svg::{escape, pyf, Builder, Fonts};
+use crate::cover::svg::{
+    brand_body, brand_view, escape, paint, pyf, MARK_SQUARE_SVG, MARK_SVG, WORDMARK_SVG,
+};
 use anyhow::{anyhow, Result};
-use std::path::Path;
-
-const DARK: &str = "@media (prefers-color-scheme: dark){.wm-ink{fill:#e7e5e0;stroke:#e7e5e0}.wm-box{stroke:#e7e5e0;stroke-opacity:.35}}";
 
 pub struct Logo {
     pub inline: String,
@@ -12,55 +11,32 @@ pub struct Logo {
     pub card: Vec<u8>,
 }
 
-pub fn build(root: &Path, name: &str) -> Result<Logo> {
-    let (design, _) = crate::typeset::cover::design(root)?;
-    let mut fonts = Fonts::load(&root.join("mag/assets"))?;
-    let (mark, bounds) = Builder {
-        design: &design,
-        fonts: &mut fonts,
-    }
-    .logo(name)?;
-    let (ink, paper) = (&design.colors.ink, &design.colors.paper);
-    let themed = mark
-        .replace(&format!("fill=\"{ink}\""), "class=\"wm-ink\"")
-        .replace(&format!("fill=\"{paper}\""), "class=\"wm-paper\"")
-        .replacen("class=\"wm-ink\"/>", "class=\"wm-box\"/>", 1);
-    let [x, y, w, h] = bounds;
-    let side = w.max(h);
-    let square = [x - (side - w) / 2.0, y - (side - h) / 2.0, side, side];
+pub fn build(name: &str) -> Result<Logo> {
     let label = escape(name).replace('"', "&quot;");
-    let style = format!(
-        "<style>.wm-ink{{fill:{ink};stroke:{ink}}}.wm-box{{fill:{ink}}}.wm-paper{{fill:{paper};stroke:{paper}}}{DARK}</style>"
-    );
+    let view = brand_view(WORDMARK_SVG).map(pyf).join(" ");
     Ok(Logo {
         inline: format!(
-            "<svg class=\"logo\" viewBox=\"{}\" role=\"img\" aria-label=\"{label}\">{themed}</svg>",
-            view(bounds)
+            "<svg class=\"logo\" viewBox=\"{view}\" role=\"img\" aria-label=\"{label}\">{}</svg>",
+            brand_body(WORDMARK_SVG)
         ),
-        favicon: format!(
-            "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{}\">{style}{themed}</svg>\n",
-            view(square)
-        ),
-        touch: png(&mark, bounds, paper, (180.0, 180.0), 0.82)?,
-        card: png(&mark, bounds, paper, (1200.0, 630.0), 0.6)?,
+        favicon: MARK_SVG.to_string(),
+        touch: png(MARK_SQUARE_SVG, (180.0, 180.0), 1.0)?,
+        card: png(WORDMARK_SVG, (1200.0, 630.0), 0.6)?,
     })
 }
 
-fn view(bounds: [f64; 4]) -> String {
-    bounds.map(pyf).join(" ")
-}
-
-fn png(mark: &str, bounds: [f64; 4], paper: &str, size: (f64, f64), share: f64) -> Result<Vec<u8>> {
-    let ([x, y, w, h], (width, height)) = (bounds, size);
+fn png(svg: &str, (width, height): (f64, f64), share: f64) -> Result<Vec<u8>> {
+    let [x, y, w, h] = brand_view(svg);
     let scale = (width * share / w).min(height * share / h);
     let dx = (width - w * scale) / 2.0 - x * scale;
     let dy = (height - h * scale) / 2.0 - y * scale;
-    let svg = format!(
+    let body = paint(brand_body(svg), |_| None);
+    let page = format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{height}\">\
-<rect width=\"{width}\" height=\"{height}\" fill=\"{paper}\"/>\
-<g transform=\"translate({dx:.4} {dy:.4}) scale({scale:.6})\">{mark}</g></svg>"
+<rect width=\"{width}\" height=\"{height}\" fill=\"#ffffff\"/>\
+<g transform=\"translate({dx:.4} {dy:.4}) scale({scale:.6})\">{body}</g></svg>"
     );
-    render(&svg)?
+    render(&page)?
         .encode_png()
         .map_err(|error| anyhow!("Could not encode the logo PNG: {error}"))
 }

@@ -8,6 +8,12 @@ Source: <https://github.com/rsms/inter/releases/tag/v4.1>
 
 Files used: Regular, Medium, SemiBold, and Bold static TTFs from the official release archive. License: SIL Open Font License 1.1; see `inter/LICENSE.txt`.
 
+## Inter Display Black 4.001
+
+Source: <https://github.com/rsms/inter> (Inter 4.001 release, `extras/ttf/InterDisplay-Black.ttf`)
+
+Used only by `tools/logo.py` to draw the logo outlines in `mag/assets/brand/`. License: SIL Open Font License 1.1; see `inter/LICENSE.txt`.
+
 ## Source Serif 4.005
 
 Source: <https://github.com/adobe-fonts/source-serif/releases/tag/4.005R>

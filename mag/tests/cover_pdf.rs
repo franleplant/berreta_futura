@@ -104,7 +104,6 @@ fn design() -> Design {
 
 fn edition_010_text() -> CoverText {
     CoverText {
-        publication_name: "Berreta Futura".into(),
         headline: "The Speed Limit".into(),
         date_line: "2026 09 13".into(),
         contributors: "FRANK RIETTA / ANTHROPIC / DARIO AMODEI / SANTI RUIZ / MICHAEL TRUELL / WILSON LIN / DEEPSEEK-AI / JON LEE, CHAOMIN YU, BEN RIES".into(),
@@ -137,7 +136,7 @@ fn front_face(design: &Design, text: &CoverText) -> Face {
     let band_x = svg::PAGE_WIDTH - design.tab.width;
     let mut lines = vec![
         Line {
-            value: text.publication_name.to_uppercase(),
+            value: "BERRETA FUTURA".into(),
             x: design.wordmark.x,
             y: PAGE_HEIGHT - 55.0,
             size: 22.0,
@@ -323,11 +322,11 @@ fn every_layout_renders_as_the_python_compiler_renders_it() {
     for (layout, expected) in [
         (
             "framed",
-            "330ae10cf0dcae7163d5389c502284d7aeb1818ed7a0503f37120adf2ef67120",
+            "b3304a2ba3d8484abe88d3e5dcd768a4f1a3b61a5b0ef1555a967ad9242cd22c",
         ),
         (
             "honored_plate",
-            "02d379d867f748b9efe45a98abcdd3546bb8b65e43d8b8cfbb75e2d1af82e453",
+            "a67de98b2d481e63d4c5c01d1d63b63da8ad123ca395c6f48c031b34b7fddecc",
         ),
     ] {
         let actual = page_hash(&build(layout));
