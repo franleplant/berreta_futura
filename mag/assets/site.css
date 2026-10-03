@@ -56,11 +56,11 @@ img { display: block; max-width: 100%; height: auto; }
 }
 .masthead a { text-decoration: none; }
 .brand { display: block; line-height: 0; }
-.logo { display: block; height: 3.5rem; width: auto; }
-.logo .wm-ink { fill: var(--ink); stroke: var(--ink); }
-.logo .wm-box { fill: #0a0b0d; }
-.logo .wm-paper { fill: #fff; stroke: #fff; }
-@media (prefers-color-scheme: dark) { .logo .wm-box { stroke: var(--ink); stroke-opacity: .35; stroke-width: 1px; vector-effect: non-scaling-stroke; } }
+.logo { display: block; height: 3.5rem; width: auto; --ink: #0a0b0d; --paper: #ffffff; --red: #f05738; --box: #0a0b0d; }
+@media (prefers-color-scheme: dark) {
+  .logo { --ink: #e7e5e0; }
+  .logo path[fill^="var(--box"] { stroke: var(--ink); stroke-opacity: .35; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+}
 .crumb { color: var(--muted); }
 .switch { margin-left: auto; color: var(--muted); }
 .colophon {

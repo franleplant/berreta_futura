@@ -76,5 +76,13 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
     ] {
         assert!(a.contains_key(page), "missing {page}");
     }
+    let brand = repository().join("mag/assets/brand");
+    assert_eq!(
+        a["favicon.svg"],
+        std::fs::read(brand.join("mark.svg")).unwrap()
+    );
+    let wordmark = std::fs::read_to_string(brand.join("wordmark.svg")).unwrap();
+    let body = &wordmark[wordmark.find("</title>").unwrap() + 8..wordmark.rfind("</svg>").unwrap()];
+    assert!(String::from_utf8_lossy(&a["index.html"]).contains(body));
     std::fs::remove_dir_all(&base).unwrap();
 }

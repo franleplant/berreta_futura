@@ -88,7 +88,7 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
         .first()
         .map_or("Magazine", |i| i.editions[0].publication_name.as_str())
         .to_string();
-    let logo = logo::build(&root, &name)?;
+    let logo = logo::build(&name)?;
     let files = html::pages(&issues, &images, &site, &name, &logo.inline)?;
     for (path, body) in &files {
         let target = args.out.join(path);
