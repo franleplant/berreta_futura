@@ -1,6 +1,6 @@
 # Run summary — edition 013
 
-- 6 model calls, $1.55, 1.8 minutes
+- 0 model calls, $0.00, 0.0 minutes
 - writer `opus`
 
 | piece | words |
@@ -11,3 +11,5 @@
 | uber-engineering-en-x-designing-mcp-gateway-uber | 786 |
 | statecharts-depth-and-orthogonality | 1026 |
 | statecharts-actions-extensions-and-practice | 1313 |
+| mcp-events-plugins | 1968 |
+| evals-how-to-know-whether-an-ai-system-actually | 1288 |

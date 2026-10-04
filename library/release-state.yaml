@@ -128,6 +128,8 @@ collecting_editions:
   - cloudflare-os-your-company-s-agent-workspace-man-32af5c2a
   - uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43
   - statecharts-a-visual-formalism-for-complex-syste-7833c2fd
+  - mcp-events-plugins-d29e87e0
+  - evals-how-to-know-whether-an-ai-system-actually-a5c96be7
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
