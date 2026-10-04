@@ -30,3 +30,6 @@ editions/*/render-*/
 
 # Cover proof sheets are reproducible render output (tools/coverproof.py).
 editions/*/art/cover-proofs/
+
+# Art candidates stay local; `mag art NNN --promote` commits picks as art/picks/*.jpg.
+editions/*/art/rounds/

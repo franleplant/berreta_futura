@@ -1,3 +1,4 @@
+pub mod epub;
 mod html;
 mod images;
 mod logo;
@@ -45,9 +46,15 @@ pub struct PublishRecord {
     pub pdfs: BTreeMap<String, Pdf>,
 }
 
+pub struct Epub {
+    pub path: PathBuf,
+    pub bytes: u64,
+}
+
 pub struct Issue {
     pub editions: Vec<Edition>,
     pub pdfs: BTreeMap<String, Pdf>,
+    pub epubs: BTreeMap<String, Epub>,
 }
 
 const FONTS: [&str; 5] = [
@@ -90,6 +97,19 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
         .to_string();
     let logo = logo::build(&name)?;
     let files = html::pages(&issues, &images, &site, &name, &logo.inline)?;
+    for issue in &issues {
+        for edition in &issue.editions {
+            let Some(epub) = issue.epubs.get(&edition.language) else {
+                continue;
+            };
+            let target = args
+                .out
+                .join(html::issue_dir(edition))
+                .join(epub.path.file_name().context("an EPUB has no file name")?);
+            fs::create_dir_all(target.parent().context("an EPUB has no parent")?)?;
+            fs::copy(&epub.path, target)?;
+        }
+    }
     for (path, body) in &files {
         let target = args.out.join(path);
         fs::create_dir_all(target.parent().context("a page has no parent")?)?;
@@ -186,7 +206,7 @@ pub fn newest_tracked_run(
         .map(str::to_string)
 }
 
-fn issue(root: &Path, id: &str) -> Result<Issue> {
+pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
     let yaml: serde_yaml::Value =
@@ -197,13 +217,9 @@ fn issue(root: &Path, id: &str) -> Result<Issue> {
         .flatten()
         .filter_map(|article| article["id"].as_str().map(str::to_string))
         .collect();
-    let run = newest_tracked_run(
-        &tracked_files(root, &rel)?,
-        &rel,
-        &articles,
-        yaml.get("editorial").is_some(),
-    )
-    .with_context(|| format!("{rel} has no git-tracked complete run"))?;
+    let tracked = tracked_files(root, &rel)?;
+    let run = newest_tracked_run(&tracked, &rel, &articles, yaml.get("editorial").is_some())
+        .with_context(|| format!("{rel} has no git-tracked complete run"))?;
     let scratch = root.join(".magazine/site").join(id);
     if scratch.exists() {
         fs::remove_dir_all(&scratch)?;
@@ -238,7 +254,35 @@ fn issue(root: &Path, id: &str) -> Result<Issue> {
         })
         .collect::<Result<Vec<_>>>()?;
     let pdfs = publish_record(&dir.join("publish.yaml"))?.pdfs;
-    Ok(Issue { editions, pdfs })
+    let epubs = tracked_epubs(root, &tracked, &rel)?;
+    Ok(Issue {
+        editions,
+        pdfs,
+        epubs,
+    })
+}
+
+fn tracked_epubs(
+    root: &Path,
+    tracked: &BTreeSet<String>,
+    rel: &str,
+) -> Result<BTreeMap<String, Epub>> {
+    let prefix = format!("{rel}/epub/");
+    tracked
+        .iter()
+        .filter(|path| path.starts_with(&prefix))
+        .filter_map(|path| {
+            let stem = path.strip_suffix(".epub")?;
+            let (_, language) = stem.rsplit_once('-')?;
+            Some((language.to_string(), root.join(path)))
+        })
+        .map(|(language, path)| {
+            let bytes = fs::metadata(&path)
+                .with_context(|| format!("reading {}", path.display()))?
+                .len();
+            Ok((language, Epub { path, bytes }))
+        })
+        .collect()
 }
 
 #[cfg(test)]

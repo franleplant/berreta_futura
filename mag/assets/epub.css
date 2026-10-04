@@ -1,0 +1,63 @@
+@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Regular.ttf); font-weight: normal; font-style: normal; }
+@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-It.ttf); font-weight: normal; font-style: italic; }
+@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Bold.ttf); font-weight: bold; font-style: normal; }
+@font-face { font-family: "Source Serif Display"; src: url(fonts/SourceSerif4Display-Semibold.ttf); font-weight: 600; font-style: normal; }
+
+body { font-family: "Source Serif", Georgia, serif; line-height: 1.5; overflow-wrap: break-word; }
+p { margin: 0 0 0.9em; text-align: left; }
+a { color: #315d8c; }
+img { max-width: 100%; height: auto; }
+h1, h2, h3, h4, h5, h6 { font-family: "Source Serif Display", "Source Serif", Georgia, serif; font-weight: 600; line-height: 1.15; page-break-after: avoid; break-after: avoid; }
+h1 { font-size: 2em; margin: 0 0 0.5em; }
+h2 { font-size: 1.35em; margin: 1.8em 0 0.5em; }
+h3 { font-size: 1.15em; margin: 1.5em 0 0.4em; }
+h4, h5, h6 { font-size: 1em; margin: 1.3em 0 0.3em; }
+ul, ol { padding-left: 1.4em; margin: 0 0 0.9em; }
+li > p { margin: 0 0 0.3em; }
+hr { border: 0; border-top: 1px solid #b9bbc0; margin: 2em auto; width: 30%; }
+blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 3px solid #f05738; font-style: italic; }
+code { font-family: Menlo, "SF Mono", monospace; font-size: 0.82em; }
+pre { font-family: Menlo, "SF Mono", monospace; font-size: 0.72em; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; background: #f4f5f7; padding: 0.7em 0.8em; border-radius: 4px; margin: 0 0 1em; }
+pre code { font-size: 1em; }
+table { border-collapse: collapse; margin: 1.2em 0; font-size: 0.8em; line-height: 1.35; border-top: 1px solid; border-bottom: 1px solid; }
+th, td { text-align: left; vertical-align: top; padding: 0.3em 0.6em 0.3em 0; }
+th { border-bottom: 1px solid; }
+
+.kicker { margin: 0 0 0.4em; color: #f05738; font-family: -apple-system, sans-serif; font-size: 0.7em; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.piece-head { margin-bottom: 1.4em; padding-bottom: 1em; border-bottom: 1px solid #b9bbc0; }
+.opener { margin: 0 0 1.2em; }
+.opener img { width: 100%; }
+.byline { margin: 0; font-family: -apple-system, sans-serif; font-size: 0.85em; font-weight: 600; }
+.author-note { margin: 0.2em 0 0; font-family: -apple-system, sans-serif; font-size: 0.8em; opacity: 0.75; }
+.source { margin: 0.5em 0 0; font-family: -apple-system, sans-serif; font-size: 0.8em; font-weight: 600; }
+.source span { font-weight: normal; opacity: 0.75; }
+.standfirst { font-size: 1.15em; line-height: 1.45; }
+
+figure { margin: 1.5em 0; page-break-inside: avoid; break-inside: avoid; }
+figure img { display: block; margin: 0 auto; max-height: 90vh; }
+figcaption { margin-top: 0.4em; font-family: -apple-system, sans-serif; font-size: 0.78em; line-height: 1.4; opacity: 0.8; }
+.extract { page-break-inside: auto; break-inside: auto; }
+.extract-label { margin: 0 0 0.4em; color: #f05738; font-family: -apple-system, sans-serif; font-size: 0.65em; font-weight: 600; letter-spacing: 0.1em; }
+.extract blockquote { font-style: normal; }
+.key-ideas { margin: 2em 0; padding: 0.8em 1em; background: #f4f5f7; border-radius: 4px; }
+.key-ideas h2 { margin: 0 0 0.5em; color: #f05738; font-family: -apple-system, sans-serif; font-size: 0.7em; letter-spacing: 0.08em; }
+.key-ideas ul { margin: 0; }
+.tail { margin: 2em 0 0; }
+.tail img { width: 100%; }
+
+.cover-page { margin: 0; padding: 0; text-align: center; }
+.cover-page img { max-height: 98vh; max-width: 100%; }
+.title-page { margin-top: 25%; text-align: center; }
+.title-page p { text-align: center; }
+.title-page h1 { font-size: 2.4em; }
+.subtitle { font-size: 1.1em; opacity: 0.8; }
+.masthead-name { margin-top: 3em; font-family: "Source Serif Display", serif; font-size: 1.1em; letter-spacing: 0.04em; }
+nav ol { list-style: none; padding: 0; }
+nav li { margin: 0.6em 0; }
+
+pre code .k, pre code .kc, pre code .kd, pre code .kn, pre code .kp, pre code .kr, pre code .ow { color: #c8432a; }
+pre code .kt { color: #55308f; }
+pre code .s, pre code .s1, pre code .s2, pre code .sb, pre code .sd, pre code .se, pre code .si, pre code .sr, pre code .ss, pre code .sa { color: #1d6b41; }
+pre code .c, pre code .c1, pre code .cm, pre code .cs, pre code .cp, pre code .cpf { color: #6f6c78; font-style: italic; }
+pre code .m, pre code .mi, pre code .mf, pre code .mh, pre code .mo, pre code .mb, pre code .il { color: #8f2b33; }
+pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .nb, pre code .bp, pre code .nt { color: #274b9f; }

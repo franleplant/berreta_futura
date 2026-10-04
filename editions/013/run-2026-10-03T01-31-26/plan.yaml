@@ -43,3 +43,15 @@ articles:
   source_range:
     begin: '## 4. Additional statechart features'
     end: '[1] The languages of STATEMATE'
+- id: mcp-events-plugins
+  title: MCP Events
+  author: OpenAI
+  content_mode: verbatim
+  source_ids:
+  - mcp-events-plugins-d29e87e0
+- id: evals-how-to-know-whether-an-ai-system-actually
+  title: 'Evals: how to know whether an AI system actually works'
+  author: Sergii Makarevych
+  content_mode: article
+  source_ids:
+  - evals-how-to-know-whether-an-ai-system-actually-a5c96be7

@@ -11,17 +11,19 @@ fn blank_slot(svg: &str, slot: &str) -> String {
     pattern.replace(svg, "$1 fill=\"none\"").into_owned()
 }
 
-pub fn raster_svg(svg: &str, dpi: u32) -> String {
+pub fn sized(svg: &str, dpi: u32) -> String {
     let pixel_width = (PAGE_WIDTH / 72.0 * f64::from(dpi)).round() as u32;
     let pixel_height = (PAGE_HEIGHT / 72.0 * f64::from(dpi)).round() as u32;
     let size = Regex::new("width=\"[^\"]+\" height=\"[^\"]+\"").expect("static pattern");
-    let sized = size
-        .replace(
-            svg,
-            format!("width=\"{pixel_width}\" height=\"{pixel_height}\"").as_str(),
-        )
-        .into_owned();
-    let mut out = sized;
+    size.replace(
+        svg,
+        format!("width=\"{pixel_width}\" height=\"{pixel_height}\"").as_str(),
+    )
+    .into_owned()
+}
+
+pub fn raster_svg(svg: &str, dpi: u32) -> String {
+    let mut out = sized(svg, dpi);
     for slot in ["paper", "edge-tab", "field"] {
         out = blank_slot(&out, slot);
     }

@@ -7,13 +7,14 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 ## Pipeline
 
 - `mag` (Rust, in `mag/`) is the CLI: `capture`, `plan`, `produce`, `art`,
-  `translate`, `render`, `site`, `publish`. Build with `cargo build`, run from the repo root.
+  `translate`, `render`, `epub`, `site`, `publish`. Build with `cargo build`, run from the repo root.
 - The pipeline leads: every step prints the next command when it finishes.
   Follow that, not the previous edition. The order is `mag capture` (writes
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
   the first time, scaffolds `edition.yaml` with TODO fields and figure
   candidates) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
-  `tools/imagegen`) -> pick in `art/showcase.html` -> `mag render NNN`. If a
+  `tools/imagegen`) -> pick in `art/showcase.html` -> `mag art NNN --promote`
+  -> `mag render NNN`. If a
   step leaves you guessing what comes next, fix the step's output in code;
   documenting the gap here is the fallback, not the fix.
 - `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
@@ -28,6 +29,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (`pdfs: {en: {url, bytes, sha256}}`); without one the issue page has no
   PDF link. It refuses to write a page that drops any manuscript block,
   figure, or extract.
+- `mag render` also writes the typeset front cover as `<lang>/cover.png` in
+  its render dir. `mag epub NNN [--lang en] [--cover file]` packages that
+  language as a reflowable EPUB 3 for Apple Books: the newest tracked run's
+  manuscripts, figures, and extracts through the site's HTML walk (same
+  drop check), embedded Source Serif, and the newest render's cover. It
+  writes `editions/NNN/epub/<publication>-NNN-<lang>.epub`; committing that
+  file is what makes `mag site` copy it and link it on the issue page.
 - `mag publish NNN --pdf <file> [--lang en] [--dry-run]` ships an approved
   PDF: it uploads the file unchanged to Google Drive at `[site] pdf_remote`
   (`rclone`, the owner's local `gdrive` remote) as
@@ -119,6 +127,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 
 - Image generation and art selection are separate steps; rendering only
   consumes selected art and never generates an image.
+- Candidates in `art/rounds/` stay local (gitignored). `mag art NNN --promote`
+  turns each pick edition.yaml names there into `art/picks/<stem>.jpg` (the
+  JPEG print embeds anyway) and repoints edition.yaml; render refuses round
+  paths. Editions 001-009 still track their rounds and need a promote to render.
 - Cover art carries no baked-in masthead or cover lines; layout owns all
   typography.
 - Keep the inside front and back covers blank.

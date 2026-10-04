@@ -456,11 +456,12 @@ pub fn faces(
     assets: &Path,
     edition: &Edition,
     work: &Path,
-) -> Result<(Vec<u8>, Vec<u8>)> {
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
     let (design, back_design) = design(root)?;
     let mut fonts = Fonts::load(assets)?;
     let inter = std::fs::read(assets.join("fonts/inter/Inter-Regular.ttf"))?;
     let front = front(&design, &mut fonts, edition)?;
+    let picture = raster::render(&raster::sized(&front.0, 300))?.encode_png()?;
     let back = back(
         &design,
         &back_design,
@@ -477,7 +478,7 @@ pub fn faces(
         out.push(bytes);
     }
     let back = out.pop().context("two faces")?;
-    Ok((out.pop().context("two faces")?, back))
+    Ok((out.pop().context("two faces")?, back, picture))
 }
 
 fn cover_page(reader: &mut Document, face: &[u8]) -> Result<lopdf::Dictionary> {

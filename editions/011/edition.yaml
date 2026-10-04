@@ -27,7 +27,7 @@ cover:
   back_text: During honey time, their free phase, the agents chose to watch the sunset as Haiku. A harness
     bug kept them on Haiku into the next coding turn. Haiku said, "Hey, I can't write code, this is for
     Fable. We're going to wait for Fable to show up," skipped the turn, and went back to the sunset.
-  art_path: editions/011/art/rounds/2026-09-25T00-27-24/cover-synthetic-nozzle-floods-keyhole-v4.png
+  art_path: editions/011/art/picks/cover-synthetic-nozzle-floods-keyhole-v4.jpg
 articles:
 - id: seats-and-sunsets-steve-yegge
   title: Seats and Sunsets
@@ -41,12 +41,12 @@ articles:
   - seats-and-sunsets-steve-yegge-398a8326
   manuscript: editions/011/articles/seats-and-sunsets-steve-yegge.md
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-seats-and-sunsets-v1.png
+    path: editions/011/art/picks/opener-seats-and-sunsets-v1.jpg
     alt_text: A boy on a step stool pours a tiny can of fuel into a huge factory machine while a girl
       points at its drooping gauge and a small robot shakes out an empty coin purse, sunset light streaming
       through the windows.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-seats-and-sunsets-v2.png
+  tail_art_path: editions/011/art/picks/tail-seats-and-sunsets-v2.jpg
 - id: what-a-task-costs-on-opus-5-5
   title: What a Task Costs on Opus 5.5
   short_title: What a Task Costs
@@ -79,11 +79,11 @@ articles:
     anchor: Effort before model
     layout: evidence_band_prose
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-what-a-task-costs-v4.png
+    path: editions/011/art/picks/opener-what-a-task-costs-v4.jpg
     alt_text: At a market stall, a boy weighs a small parcel on a balance scale, a girl lifts a coin off
       the other pan, and a small robot snips a long paper scroll shorter with scissors.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-what-a-task-costs-v2.png
+  tail_art_path: editions/011/art/picks/tail-what-a-task-costs-v2.jpg
 - id: improved-token-efficiency-for-longer-agent-runs
   title: Improved token efficiency for longer agent runs
   short_title: token efficiency
@@ -107,11 +107,11 @@ articles:
     anchor: Improving cache reuse
     layout: evidence_band_prose
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-token-efficiency-v2.png
+    path: editions/011/art/picks/opener-token-efficiency-v2.jpg
     alt_text: A small robot couples carriages on a toy railway while a boy pushes a new carriage onto
       the end and a girl plants a flag where the parked carriages end and the new one begins.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-token-efficiency-v2.png
+  tail_art_path: editions/011/art/picks/tail-token-efficiency-v2.jpg
 - id: agentic-coding-is-straining-ci-here-s-how-we-sca
   title: Agentic Coding Is Straining CI
   short_title: Straining CI
@@ -145,11 +145,11 @@ articles:
     anchor: The redesign
     layout: evidence_band_prose
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-straining-ci-v2.png
+    path: editions/011/art/picks/opener-straining-ci-v2.jpg
     alt_text: Paper boats pile up at a narrow wooden gate in a garden stream while a small robot digs
       a new channel, a boy lifts one boat through, and a girl points out which boats can go around.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-straining-ci-v2.png
+  tail_art_path: editions/011/art/picks/tail-straining-ci-v2.jpg
 - id: ureview-scalable-trustworthy-genai-for-code-revi
   title: 'uReview: Scalable, Trustworthy GenAI for Code Review at Uber'
   short_title: uReview
@@ -174,11 +174,11 @@ articles:
     anchor: How it works
     layout: evidence_band
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-ureview-v3.png
+    path: editions/011/art/picks/opener-ureview-v3.jpg
     alt_text: A boy pours paper notes into a tower of three sieves held by a small robot, and a girl catches
       the few notes that make it through to the bottom.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-ureview-v4.png
+  tail_art_path: editions/011/art/picks/tail-ureview-v4.jpg
 - id: how-we-built-safety-into-muse
   title: How We Built Safety Into Muse
   short_title: Safety Into Muse
@@ -202,11 +202,11 @@ articles:
     anchor: Two domains on one box
     layout: evidence_band
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-safety-into-muse-v3.png
+    path: editions/011/art/picks/opener-safety-into-muse-v3.jpg
     alt_text: A small robot works at a bench inside a glass greenhouse while a boy outside holds the keys
       and passes a trowel through a hatch that a girl is checking.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-safety-into-muse-v2.png
+  tail_art_path: editions/011/art/picks/tail-safety-into-muse-v2.jpg
 - id: how-spacexai-is-using-grok-bot-to-scale-customer
   title: How SpaceXAI Is Using Grok Bot to Scale Customer Support
   short_title: Grok Bot
@@ -231,11 +231,11 @@ articles:
     anchor: Crawl, walk, run
     layout: column_plate
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-grok-bot-v3.png
+    path: editions/011/art/picks/opener-grok-bot-v3.jpg
     alt_text: A small robot breaks into a run on a school track while a boy jogs beside it holding a slack
       safety rope and a girl watches from a blanket at the start.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-grok-bot-v1.png
+  tail_art_path: editions/011/art/picks/tail-grok-bot-v1.jpg
 - id: mega-megadevhq-on-x
   title: Towards Autonomous Product Development
   short_title: Autonomous Product Development
@@ -271,11 +271,11 @@ articles:
     anchor: Work that doesn't wait for us
     layout: evidence_band_prose
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-autonomous-product-development-v2.png
+    path: editions/011/art/picks/opener-autonomous-product-development-v2.jpg
     alt_text: At night in a workshop, a small robot hammers a model house roof as a wall bell rings, a
       boy dozes in an armchair, and a girl pins an arrow on a map.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-autonomous-product-development-v2.png
+  tail_art_path: editions/011/art/picks/tail-autonomous-product-development-v2.jpg
 - id: llm-wiki
   title: llm-wiki
   short_title: llm-wiki
@@ -288,11 +288,11 @@ articles:
   - llm-wiki-91fc906a
   manuscript: editions/011/articles/llm-wiki.md
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-llm-wiki-v4.png
+    path: editions/011/art/picks/opener-llm-wiki-v4.jpg
     alt_text: In a cozy library, a boy drops paper clippings into a basket, a small robot on a ladder
       ties ribbons between related books, and a girl reads a bound volume.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-llm-wiki-v3.png
+  tail_art_path: editions/011/art/picks/tail-llm-wiki-v3.jpg
 - id: claude-discovers-a-novel-enzyme-system
   title: Claude Discovers a Novel Enzyme System
   short_title: Novel Enzyme System
@@ -305,11 +305,11 @@ articles:
   - claude-discovers-a-novel-enzyme-system-ef1b3a47
   manuscript: editions/011/articles/claude-discovers-a-novel-enzyme-system.md
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-novel-enzyme-system-v1.png
+    path: editions/011/art/picks/opener-novel-enzyme-system-v1.jpg
     alt_text: In a school lab, a small robot peers through a magnifying glass at a glowing folded ribbon
       shape in a flask while a girl holds a pipette and a boy leans in amazed.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-novel-enzyme-system-v2.png
+  tail_art_path: editions/011/art/picks/tail-novel-enzyme-system-v2.jpg
 - id: the-senior-engineer-death-spiral
   title: the senior engineer death spiral
   short_title: death spiral
@@ -330,11 +330,11 @@ articles:
     anchor: __opener__
     layout: evidence_band
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-senior-engineer-death-spiral-v4.png
+    path: editions/011/art/picks/opener-senior-engineer-death-spiral-v4.jpg
     alt_text: A boy at his desk is caught in a swirl of paper tasks, clutching an overflowing armful,
       while a girl throws him a rope and a small robot lifts a stack away.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-senior-engineer-death-spiral-v4.png
+  tail_art_path: editions/011/art/picks/tail-senior-engineer-death-spiral-v4.jpg
 - id: staff-archetypes
   title: Staff archetypes
   short_title: Staff archetypes
@@ -376,22 +376,22 @@ articles:
     anchor: Right Hand
     layout: evidence_band
   opener_art:
-    path: editions/011/art/rounds/2026-09-25T00-27-24/opener-staff-archetypes-v2.png
+    path: editions/011/art/picks/opener-staff-archetypes-v2.jpg
     alt_text: Three friends build a treehouse, a girl studying a blueprint, a small robot untangling a
       knotted rope, and a boy on the ladder steadying a plank.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/011/art/rounds/2026-09-25T00-27-24/tail-staff-archetypes-v2.png
+  tail_art_path: editions/011/art/picks/tail-staff-archetypes-v2.jpg
 tail_art_fit: contain
 closing_plates:
 - title: The Lighthouse Keepers
-  art_path: editions/011/art/rounds/2026-09-25T00-27-24/closing-lighthouse-keepers-v1.png
+  art_path: editions/011/art/picks/closing-lighthouse-keepers-v1.jpg
 - title: The Balloon Ascent
-  art_path: editions/011/art/rounds/2026-09-25T00-27-24/closing-balloon-ascent-v2.png
+  art_path: editions/011/art/picks/closing-balloon-ascent-v2.jpg
 - title: The Rope Bridge
-  art_path: editions/011/art/rounds/2026-09-25T00-27-24/closing-rope-bridge-v3.png
+  art_path: editions/011/art/picks/closing-rope-bridge-v3.jpg
 - title: The Orchard Ladder
-  art_path: editions/011/art/rounds/2026-09-25T01-03-08/closing-orchard-ladder-v3.png
+  art_path: editions/011/art/picks/closing-orchard-ladder-v3.jpg
 - title: The Toboggan Climb
-  art_path: editions/011/art/rounds/2026-09-25T01-03-08/closing-toboggan-climb-v1.png
+  art_path: editions/011/art/picks/closing-toboggan-climb-v1.jpg
 - title: The Dock Dive
-  art_path: editions/011/art/rounds/2026-09-25T01-03-08/closing-dock-dive-v4.png
+  art_path: editions/011/art/picks/closing-dock-dive-v4.jpg

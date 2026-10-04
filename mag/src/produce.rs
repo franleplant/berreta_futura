@@ -537,14 +537,105 @@ fn verbatim_figures(sids: &[String], range: Option<&serde_yaml::Value>) -> Strin
     }
 }
 
-fn scaffold_edition_yaml(
-    edition_dir: &Path,
-    edition_id: &str,
-    plan: &Plan,
-) -> Result<Option<PathBuf>> {
+fn article_scaffold(a: &serde_yaml::Value, edition_id: &str) -> Result<String> {
+    let get = |k: &str| a.get(k).and_then(value_to_string).unwrap_or_default();
+    let mut y = String::new();
+    let id = get("id");
+    let title = get("title");
+    y += &format!(
+        "- id: {}\n  title: {}\n  short_title: {}\n",
+        yq(&id),
+        yq(&title),
+        yq(&title)
+    );
+    y += "  display_emphasis: TODO\n  opener_variant: stepped_title\n";
+    y += &format!(
+        "  author: {}\n  author_note: TODO\n  content_mode: {}\n",
+        yq(&get("author")),
+        yq(&get("content_mode"))
+    );
+    y += "  source_ids:\n";
+    let sids: Vec<String> = a
+        .get("source_ids")
+        .and_then(|v| v.as_sequence())
+        .map(|s| s.iter().filter_map(value_to_string).collect())
+        .unwrap_or_default();
+    for sid in &sids {
+        y += &format!("  - {sid}\n");
+    }
+    y += &format!("  manuscript: editions/{edition_id}/articles/{id}.md\n");
+    if let Some(ex) = a.get("extracts") {
+        let mut m = serde_yaml::Mapping::new();
+        m.insert(serde_yaml::Value::String("extracts".into()), ex.clone());
+        for line in serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?.lines() {
+            y += &format!("  {line}\n");
+        }
+    }
+    if get("content_mode") == "verbatim" {
+        y += &verbatim_figures(&sids, a.get("source_range"));
+    } else {
+        let mut any = false;
+        for sid in &sids {
+            for image in source_images(sid, a.get("source_range")) {
+                if !any {
+                    y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures\n  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.\n";
+                    any = true;
+                }
+                let alt: String = image.alt.chars().take(110).collect();
+                y += &format!("  #   {sid} {}: {alt}\n", image.media);
+            }
+        }
+    }
+    y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
+    y += "  tail_art_path: TODO\n";
+    Ok(y)
+}
+
+fn append_missing_articles(path: &Path, edition_id: &str, plan: &Plan) -> Result<String> {
+    let text = read(path)?;
+    let spec: serde_yaml::Value = serde_yaml::from_str(&text)?;
+    let have: HashSet<&str> = spec
+        .get("articles")
+        .and_then(|v| v.as_sequence())
+        .map(|s| s.iter().filter_map(|a| a.get("id")?.as_str()).collect())
+        .unwrap_or_default();
+    let mut rows = String::new();
+    let mut added = Vec::new();
+    for a in &plan.articles {
+        let id = a.get("id").and_then(value_to_string).unwrap_or_default();
+        if !have.contains(id.as_str()) {
+            rows += &article_scaffold(a, edition_id)?;
+            added.push(id);
+        }
+    }
+    if added.is_empty() {
+        return Ok(format!(
+            "{} already lists every plan article",
+            path.display()
+        ));
+    }
+    let lines: Vec<&str> = text.lines().collect();
+    let articles_at = lines
+        .iter()
+        .position(|l| *l == "articles:")
+        .ok_or_else(|| anyhow!("{} has no top-level articles: list", path.display()))?;
+    let insert_at = lines[articles_at + 1..]
+        .iter()
+        .position(|l| l.chars().next().is_some_and(|c| c.is_ascii_alphabetic()))
+        .map_or(lines.len(), |i| articles_at + 1 + i);
+    let out = lines[..insert_at].join("\n") + "\n" + &rows + &lines[insert_at..].join("\n") + "\n";
+    fs::write(path, out)?;
+    Ok(format!(
+        "added {} to {} (fill their TODOs)",
+        added.join(", "),
+        path.display()
+    ))
+}
+
+fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> Result<String> {
     let path = edition_dir.join("edition.yaml");
     if path.exists() {
-        return Ok(None);
+        return append_missing_articles(&path, edition_id, plan);
     }
     let issue_number: u32 = edition_id.trim_start_matches('0').parse().unwrap_or(0);
     let today = crate::caller::now_stamp()
@@ -566,59 +657,11 @@ fn scaffold_edition_yaml(
     y += "cover:\n  layout: footer_caption\n  headline: TODO\n  deck: TODO\n  back_text: TODO\n  art_path: TODO\n";
     y += "articles:\n";
     for a in &plan.articles {
-        let get = |k: &str| a.get(k).and_then(value_to_string).unwrap_or_default();
-        let id = get("id");
-        let title = get("title");
-        y += &format!(
-            "- id: {}\n  title: {}\n  short_title: {}\n",
-            yq(&id),
-            yq(&title),
-            yq(&title)
-        );
-        y += "  display_emphasis: TODO\n  opener_variant: stepped_title\n";
-        y += &format!(
-            "  author: {}\n  author_note: TODO\n  content_mode: {}\n",
-            yq(&get("author")),
-            yq(&get("content_mode"))
-        );
-        y += "  source_ids:\n";
-        let sids: Vec<String> = a
-            .get("source_ids")
-            .and_then(|v| v.as_sequence())
-            .map(|s| s.iter().filter_map(value_to_string).collect())
-            .unwrap_or_default();
-        for sid in &sids {
-            y += &format!("  - {sid}\n");
-        }
-        y += &format!("  manuscript: editions/{edition_id}/articles/{id}.md\n");
-        if let Some(ex) = a.get("extracts") {
-            let mut m = serde_yaml::Mapping::new();
-            m.insert(serde_yaml::Value::String("extracts".into()), ex.clone());
-            for line in serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?.lines() {
-                y += &format!("  {line}\n");
-            }
-        }
-        if get("content_mode") == "verbatim" {
-            y += &verbatim_figures(&sids, a.get("source_range"));
-        } else {
-            let mut any = false;
-            for sid in &sids {
-                for image in source_images(sid, a.get("source_range")) {
-                    if !any {
-                        y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures\n  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.\n";
-                        any = true;
-                    }
-                    let alt: String = image.alt.chars().take(110).collect();
-                    y += &format!("  #   {sid} {}: {alt}\n", image.media);
-                }
-            }
-        }
-        y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
-        y += "  tail_art_path: TODO\n";
+        y += &article_scaffold(a, edition_id)?;
     }
     y += "tail_art_fit: contain\nclosing_plates: []\n";
     fs::write(&path, y)?;
-    Ok(Some(path))
+    Ok(format!("scaffolded {}", path.display()))
 }
 
 pub fn run_edition(
@@ -867,10 +910,10 @@ fn print_next_steps(
     run_dir: &Path,
 ) -> Result<()> {
     let edition_yaml = edition_dir.join("edition.yaml");
-    match scaffold_edition_yaml(edition_dir, edition_id, plan)? {
-        Some(p) => println!("\nscaffolded {}", p.display()),
-        None => println!("\n{} already exists; left as is", edition_yaml.display()),
-    }
+    println!(
+        "\n{}",
+        scaffold_edition_yaml(edition_dir, edition_id, plan)?
+    );
     if front_matter(caller, model, &edition_yaml, run_dir)? {
         println!(
             "drafted title, deck, and back cover into {} (review them)",
@@ -892,6 +935,39 @@ fn print_next_steps(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_new_plan_article_is_appended_before_the_trailing_keys() {
+        let dir = std::env::temp_dir().join(format!("mag-append-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("edition.yaml");
+        fs::write(
+            &path,
+            "id: '099'\narticles:\n- id: old\n  title: Edited\ntail_art_fit: contain\n",
+        )
+        .unwrap();
+        let plan: Plan = serde_yaml::from_str(
+            "edition: {id: '099'}\narticles:\n- {id: old, title: Old, source_ids: []}\n- {id: new, title: New, content_mode: verbatim, source_ids: []}\n",
+        )
+        .unwrap();
+        let msg = append_missing_articles(&path, "099", &plan).unwrap();
+        let out = read(&path).unwrap();
+        assert!(msg.contains("added new"), "{msg}");
+        let spec: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let ids: Vec<&str> = spec["articles"]
+            .as_sequence()
+            .unwrap()
+            .iter()
+            .map(|a| a["id"].as_str().unwrap())
+            .collect();
+        assert_eq!(ids, ["old", "new"]);
+        assert_eq!(spec["articles"][0]["title"].as_str(), Some("Edited"));
+        assert_eq!(spec["tail_art_fit"].as_str(), Some("contain"));
+        assert!(append_missing_articles(&path, "099", &plan)
+            .unwrap()
+            .contains("already lists"));
+        fs::remove_dir_all(&dir).unwrap();
+    }
 
     #[test]
     fn source_range_slices_between_unique_markers() {

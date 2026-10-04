@@ -564,6 +564,7 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
         articles,
         article_ids,
     } = load_edition(&args.edition)?;
+    crate::picks::refuse_rounds(&edition_yaml, &args.edition)?;
     if let Some(wanted) = article.filter(|_| operation == "measure_article") {
         if !article_ids.iter().any(|id| id == wanted) {
             bail!(
@@ -898,7 +899,7 @@ fn stage_source_records(staging: &mut Staging, edition_yaml: &serde_yaml::Value,
 fn next_step(pdf_dir: &Path) -> String {
     format!(
         "\nnext: read the PDF in {}; fix copy in the run finals or picks in edition.yaml and re-render; \
-         `mag translate <run dir>` for the Spanish edition",
+         `mag translate <run dir>` for the Spanish edition; `mag epub <edition>` packages the approved issue for Apple Books",
         pdf_dir.display()
     )
 }

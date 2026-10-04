@@ -38,6 +38,8 @@ fn say(language: &str, key: &str) -> &'static str {
         "issues" => "Issues",
         "pdf" if spanish => "Descargar el PDF",
         "pdf" => "Download the PDF",
+        "epub" if spanish => "Descargar el EPUB",
+        "epub" => "Download the EPUB",
         "original" if spanish => "Leer el original",
         "original" => "Read the original",
         "next" if spanish => "Siguiente",
@@ -149,18 +151,20 @@ pub fn pieces(edition: &Edition) -> Result<Vec<Piece<'_>>> {
     Ok(out)
 }
 
+pub fn art_paths(edition: &Edition) -> Vec<PathBuf> {
+    let art = edition.articles.iter().flat_map(|article| {
+        let figures = article.figures.iter().map(|f| f.path.clone());
+        let opener = article.opener_art.iter().map(|o| o.path.clone());
+        opener.chain(article.tail_art.clone()).chain(figures)
+    });
+    edition.cover_art.clone().into_iter().chain(art).collect()
+}
+
 pub fn image_paths(issues: &[Issue]) -> Vec<PathBuf> {
     let mut paths: Vec<PathBuf> = issues
         .iter()
         .flat_map(|issue| &issue.editions)
-        .flat_map(|edition| {
-            let art = edition.articles.iter().flat_map(|article| {
-                let figures = article.figures.iter().map(|f| f.path.clone());
-                let opener = article.opener_art.iter().map(|o| o.path.clone());
-                opener.chain(article.tail_art.clone()).chain(figures)
-            });
-            edition.cover_art.clone().into_iter().chain(art)
-        })
+        .flat_map(art_paths)
         .collect();
     paths.sort();
     paths.dedup();
@@ -170,11 +174,22 @@ pub fn image_paths(issues: &[Issue]) -> Vec<PathBuf> {
 struct Ctx<'a> {
     root: String,
     images: &'a Images,
+    epub: bool,
 }
 
 impl Ctx<'_> {
     fn picture(&self, path: &Path, alt: &str, sizes: &str, eager: bool) -> String {
         let image = &self.images[path];
+        if self.epub {
+            return format!(
+                "<img src=\"{}{}\" width=\"{}\" height=\"{}\" alt=\"{}\"/>",
+                self.root,
+                image.src(),
+                image.width,
+                image.height,
+                esc(alt)
+            );
+        }
         let srcset: Vec<String> = image
             .variants
             .iter()
@@ -196,6 +211,9 @@ impl Ctx<'_> {
     }
 
     fn zoomable(&self, path: &Path, alt: &str, sizes: &str) -> String {
+        if self.epub {
+            return self.picture(path, alt, sizes, false);
+        }
         format!(
             "<a class=\"zoom\" href=\"{}{}\">{}</a>",
             self.root,
@@ -547,12 +565,13 @@ struct Issued<'a> {
     edition: &'a Edition,
     pieces: Vec<Piece<'a>>,
     pdf: Option<&'a super::Pdf>,
+    epub: Option<&'a super::Epub>,
     others: Vec<&'a str>,
 }
 
 impl Issued<'_> {
     fn dir(&self) -> String {
-        format!("{}{}/", prefix(&self.edition.language), self.edition.id)
+        issue_dir(self.edition)
     }
 
     fn issue_label(&self) -> String {
@@ -603,6 +622,27 @@ impl Issued<'_> {
     }
 }
 
+pub fn issue_dir(edition: &Edition) -> String {
+    format!("{}{}/", prefix(&edition.language), edition.id)
+}
+
+fn ebook(language: &str, epub: Option<&super::Epub>) -> String {
+    let Some(epub) = epub else {
+        return String::new();
+    };
+    let name = epub
+        .path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+    format!(
+        "<p class=\"download\"><a href=\"{}\" download type=\"application/epub+zip\">{} <span>(EPUB, {})</span></a></p>",
+        esc(&name),
+        say(language, "epub"),
+        megabytes(epub.bytes)
+    )
+}
+
 fn download(language: &str, pdf: Option<&super::Pdf>) -> String {
     pdf.map_or(String::new(), |pdf| {
         format!(
@@ -619,6 +659,7 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
     let ctx = Ctx {
         root: depth_root(&path),
         images,
+        epub: false,
     };
     let language = &issued.edition.language;
     let entries: String = issued
@@ -637,7 +678,7 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
             )
         })
         .collect();
-    let pdf = download(language, issued.pdf);
+    let pdf = download(language, issued.pdf) + &ebook(language, issued.epub);
     let body = format!(
         "<section class=\"issue\">\n{}\n<div class=\"issue-head\"><p class=\"kicker\">{} · <time datetime=\"{}\">{}</time></p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{}\"><h2>{}</h2><ol>{entries}</ol></nav>",
         issued.cover(&ctx, true),
@@ -665,8 +706,7 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
     }
 }
 
-fn article_head(ctx: &Ctx, issued: &Issued, piece: &Piece) -> String {
-    let language = &issued.edition.language;
+fn article_head(ctx: &Ctx, language: &str, piece: &Piece) -> String {
     let mut out = Vec::new();
     if let Some(opener) = piece.article.and_then(|a| a.opener_art.as_ref()) {
         out.push(format!(
@@ -768,6 +808,7 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
     let ctx = Ctx {
         root: depth_root(&path),
         images,
+        epub: false,
     };
     let language = &issued.edition.language;
     let image = piece
@@ -777,7 +818,7 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
         .or_else(|| issued.cover_image(images));
     let body = format!(
         "<article class=\"piece\">\n<header class=\"piece-head\">\n{}\n</header>\n{}\n{}\n</article>\n{}",
-        article_head(&ctx, issued, piece),
+        article_head(&ctx, language, piece),
         body(&ctx, language, piece)?,
         article_tail(&ctx, language, piece.article),
         pager(issued, index)
@@ -809,11 +850,48 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
     })
 }
 
+pub fn chapter(edition: &Edition, piece: &Piece, images: &Images) -> Result<String> {
+    let ctx = Ctx {
+        root: String::new(),
+        images,
+        epub: true,
+    };
+    let language = &edition.language;
+    let body = format!(
+        "<article class=\"piece\">\n<header class=\"piece-head\">\n{}\n</header>\n{}\n{}\n</article>",
+        article_head(&ctx, language, piece),
+        body(&ctx, language, piece)?,
+        article_tail(&ctx, language, piece.article),
+    );
+    let missing = dropped(piece, &body);
+    anyhow::ensure!(
+        missing.is_empty(),
+        "the EPUB chapter for {} drops {} block(s) of its manuscript:\n  {}",
+        piece.slug,
+        missing.len(),
+        missing.join("\n  ")
+    );
+    Ok(body.replace("<br>", "<br/>").replace("<hr>", "<hr/>"))
+}
+
+pub fn title_page(edition: &Edition) -> String {
+    let language = &edition.language;
+    format!(
+        "<section class=\"title-page\"><p class=\"kicker\">{} · {}</p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n<p class=\"masthead-name\">{}</p></section>",
+        esc(&format!("{} {}", ui(language, "issue"), edition.issue_number)),
+        date(language, &edition.publication_date),
+        prose(&edition.title),
+        prose(edition.raw["subtitle"].as_str().unwrap_or_default().trim()),
+        esc(&edition.publication_name)
+    )
+}
+
 fn index_page(language: &str, issued: &[&Issued], images: &Images, other: Option<&str>) -> Page {
     let path = prefix(language);
     let ctx = Ctx {
         root: depth_root(&path),
         images,
+        epub: false,
     };
     let latest = issued[0];
     let rows: String = issued
@@ -888,6 +966,7 @@ pub fn pages(
                 edition,
                 pieces: pieces(edition)?,
                 pdf: issue.pdfs.get(&edition.language),
+                epub: issue.epubs.get(&edition.language),
                 others: languages
                     .iter()
                     .copied()

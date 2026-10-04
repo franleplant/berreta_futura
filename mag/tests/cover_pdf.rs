@@ -122,7 +122,7 @@ fn deck_lines() -> Vec<String> {
 fn cover_art() -> PathBuf {
     oracle::pinned(
         "cover_pdf",
-        "editions/010/art/rounds/2026-09-13T01-40-20/cover-wildcard-sign-punched-v3.png",
+        "mag/tests/cover_fixtures/cover-wildcard-sign-punched-v3.png",
     )
 }
 
