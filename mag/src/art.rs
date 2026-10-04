@@ -1,9 +1,9 @@
 use crate::caller::{Caller, ModelSpec};
 use crate::produce::{self, INLINE_PREAMBLE};
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -139,8 +139,8 @@ fn inject_cast(briefs: &mut [Brief], cast: &[CastMember], license: &HashMap<Stri
             continue;
         }
         let preamble = match license.get(&brief.purpose) {
-            Some(_) => "Recurring cast — identities below are canon:",
-            None => "Recurring cast — draw exactly as specified, never redesign:",
+            Some(_) => "Recurring cast: identities below are canon:",
+            None => "Recurring cast: draw exactly as specified, never redesign:",
         };
         let mut block: String = std::iter::once(preamble.to_string())
             .chain(named.iter().map(|m| m.prompt.trim().to_string()))
@@ -176,7 +176,7 @@ fn validate_cast_named(briefs: &[Brief], cast: &[CastMember], label: &str) -> Re
         if !names_one {
             let names: Vec<&str> = cast.iter().map(|m| m.name.as_str()).collect();
             bail!(
-                "{label}: interior brief '{}' names no cast member ({}) — every \
+                "{label}: interior brief '{}' names no cast member ({}); every \
                  interior prompt must name each cast member who appears, by name",
                 b.id,
                 names.join(", ")
@@ -252,7 +252,7 @@ fn build_brief_prompt(
         let names: Vec<&str> = cast.iter().map(|m| m.name.as_str()).collect();
         out += &format!(
             "\nThe art direction defines a canonical recurring cast: {}. Never \
-             describe their appearance in a prompt — the pipeline appends each \
+             describe their appearance in a prompt; the pipeline appends each \
              member's canonical description verbatim to every prompt that \
              names the member. Name each cast member who appears in a scene \
              (the direction's constraints say who must appear), and give only \
@@ -279,7 +279,7 @@ fn build_brief_prompt(
              made: {}. Every other article, the cover, and the closing plates \
              already have art; do not propose anything for them. Keep the \
              edition's established art direction and shared constraints.\n\n\
-             You are not generating images yourself — a later pipeline step \
+             You are not generating images yourself; a later pipeline step \
              will run each brief through an image generator {candidates} \
              time(s) to produce that many variants.\n\n",
             ids.join(", ")
@@ -293,9 +293,9 @@ fn build_brief_prompt(
                  their briefs are above. Keep each branch's established art \
                  direction and the shared constraints, but change the \
                  editorial proposition, subject, metaphor, and composition \
-                 completely — reuse nothing conceptual from the rejected \
+                 completely: reuse nothing conceptual from the rejected \
                  briefs.\n\n\
-                 You are not generating images yourself — a later pipeline \
+                 You are not generating images yourself; a later pipeline \
                  step will run each brief through an image generator \
                  {candidates} time(s) to produce that many variants.\n\n",
                     purposes.join(", ")
@@ -304,7 +304,7 @@ fn build_brief_prompt(
             None => {
                 out += &format!(
                     "\nPropose the complete art-brief slate for this edition now. You are \
-         not generating images yourself — a later pipeline step will run each \
+         not generating images yourself; a later pipeline step will run each \
          brief through an image generator {candidates} time(s) to produce that \
          many variants. Per prompts/illustrations.md the slate covers the \
          cover (one brief per cover branch), one opener brief and one tail \
@@ -322,7 +322,7 @@ fn build_brief_prompt(
          - `article_id`: for `opener` and `tail` briefs, the edition.yaml id \
            of the article the brief illustrates; omit it otherwise\n\
          - `prompt`: the complete, standalone image-generation prompt text for \
-           this brief — it must stand entirely on its own, restating the art \
+           this brief; it must stand entirely on its own, restating the art \
            direction's visual language, palette, constraints, and avoid-list, \
            since the image generator that reads it will see nothing else from \
            this reply, this conversation, or the documents above\n\
@@ -347,9 +347,20 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
     if doc.briefs.is_empty() {
         bail!("{label}: 'briefs' list is empty");
     }
+    let id_re = Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap();
+    let mut seen = HashSet::new();
     for b in &doc.briefs {
-        if b.id.trim().is_empty() || b.prompt.trim().is_empty() {
-            bail!("{label}: every brief needs a non-empty id and prompt");
+        if b.prompt.trim().is_empty() {
+            bail!("{label}: every brief needs a non-empty prompt");
+        }
+        if !id_re.is_match(&b.id) {
+            bail!(
+                "{label}: brief id '{}' must be lowercase letters and digits joined by single hyphens",
+                b.id
+            );
+        }
+        if !seen.insert(b.id.as_str()) {
+            bail!("{label}: brief id '{}' is used more than once", b.id);
         }
         let purpose = b.purpose.as_str();
         if !matches!(purpose, "cover" | "opener" | "tail" | "closing") {
@@ -379,8 +390,63 @@ struct GeneratedItem {
     ok: bool,
 }
 
-fn shell_single_quote_escape(s: &str) -> String {
-    s.replace('\'', "'\\''")
+fn shell_single_quote(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "'\\''"))
+}
+
+type GenEnv = [(&'static str, String); 4];
+
+const GEN_PLACEHOLDERS: [(&str, &str); 4] = [
+    ("{prompt}", "MAG_PROMPT"),
+    ("{out}", "MAG_OUT"),
+    ("{ref}", "MAG_REF"),
+    ("{size}", "MAG_SIZE"),
+];
+
+fn expand_placeholders(gen_cmd: &str) -> Result<String> {
+    for word in gen_cmd.split_whitespace() {
+        for (placeholder, _) in GEN_PLACEHOLDERS {
+            let whole = [
+                placeholder.to_string(),
+                format!("'{placeholder}'"),
+                format!("\"{placeholder}\""),
+            ];
+            ensure!(
+                !word.contains(placeholder) || whole.iter().any(|w| w == word),
+                "gen-cmd: {placeholder} must be a whole shell word, not part of {word}"
+            );
+        }
+    }
+    for (placeholder, _) in GEN_PLACEHOLDERS {
+        for (at, _) in gen_cmd.match_indices(placeholder) {
+            let before = &gen_cmd[..at];
+            let after = &gen_cmd[at + placeholder.len()..];
+            let wrapped = ['\'', '"']
+                .iter()
+                .any(|q| before.ends_with(*q) && after.starts_with(*q));
+            let open = if wrapped {
+                &before[..before.len() - 1]
+            } else {
+                before
+            };
+            ensure!(
+                open.matches('\'').count() % 2 == 0 && open.matches('"').count() % 2 == 0,
+                "gen-cmd: {placeholder} sits inside a quoted string; give it its own shell word"
+            );
+        }
+    }
+    Ok(GEN_PLACEHOLDERS
+        .iter()
+        .fold(gen_cmd.to_string(), |cmd, (placeholder, var)| {
+            let value = format!("\"${var}\"");
+            [
+                format!("'{placeholder}'"),
+                format!("\"{placeholder}\""),
+                (*placeholder).to_string(),
+            ]
+            .iter()
+            .fold(cmd, |cmd, form| cmd.replace(form.as_str(), &value))
+        }))
 }
 
 fn candidate_command(
@@ -388,22 +454,26 @@ fn candidate_command(
     brief: &Brief,
     variant: u32,
     round_dir: &Path,
-) -> (String, String) {
+) -> Result<(String, String, GenEnv)> {
     let filename = format!("{}-v{variant}.png", brief.id);
-    let out_path = round_dir.join(&filename);
-    let variant_prompt = format!("{} — variation {variant}", brief.prompt);
-    let escaped_prompt = shell_single_quote_escape(&variant_prompt);
     let refs = brief
         .cast_references
         .as_deref()
         .unwrap_or_default()
         .join(" ");
-    let cmd_str = gen_cmd
-        .replace("{prompt}", &escaped_prompt)
-        .replace("{out}", &out_path.to_string_lossy())
-        .replace("{ref}", &shell_single_quote_escape(&refs))
-        .replace("{size}", size_for(&brief.purpose));
-    (filename, cmd_str)
+    let env = [
+        (
+            "MAG_PROMPT",
+            format!("{} (variation {variant})", brief.prompt),
+        ),
+        (
+            "MAG_OUT",
+            round_dir.join(&filename).to_string_lossy().into_owned(),
+        ),
+        ("MAG_REF", refs),
+        ("MAG_SIZE", size_for(&brief.purpose).to_string()),
+    ];
+    Ok((filename, expand_placeholders(gen_cmd)?, env))
 }
 
 fn write_generate_script(
@@ -427,9 +497,12 @@ fn write_generate_script(
     for brief in briefs {
         script += &format!("\n# {} [{}]\n", brief.id, brief.purpose);
         for variant in 1..=candidates {
-            let (_, cmd_str) = candidate_command(gen_cmd, brief, variant, round_dir);
-            script += &cmd_str;
-            script += "\n";
+            let (_, cmd_str, env) = candidate_command(gen_cmd, brief, variant, round_dir)?;
+            let exports: String = env
+                .iter()
+                .map(|(k, v)| format!("{k}={} ", shell_single_quote(v)))
+                .collect();
+            script += &format!("(export {}; {cmd_str})\n", exports.trim_end());
         }
     }
     let path = round_dir.join("generate.sh");
@@ -442,10 +515,11 @@ fn write_generate_script(
     Ok(path)
 }
 
-fn run_gen_command(cmd_str: &str, out_path: &Path) -> Result<(), String> {
+fn run_gen_command(cmd_str: &str, env: &GenEnv, out_path: &Path) -> Result<(), String> {
     let output = Command::new("sh")
         .arg("-c")
         .arg(cmd_str)
+        .envs(env.iter().map(|(k, v)| (*k, v)))
         .output()
         .map_err(|e| format!("failed to spawn gen-cmd: {e}"))?;
     if !output.status.success() {
@@ -468,23 +542,22 @@ fn generate_all(
     candidates: u32,
     gen_cmd: &str,
     round_dir: &Path,
-) -> Vec<GeneratedItem> {
-    let jobs: Vec<(String, u32, String, String)> = briefs
+) -> Result<Vec<GeneratedItem>> {
+    let jobs: Vec<(String, u32, String, String, GenEnv)> = briefs
         .iter()
-        .flat_map(|b| {
-            (1..=candidates).map(move |v| {
-                let (file, cmd) = candidate_command(gen_cmd, b, v, round_dir);
-                (b.id.clone(), v, file, cmd)
-            })
+        .flat_map(|b| (1..=candidates).map(move |v| (b, v)))
+        .map(|(b, v)| {
+            let (file, cmd, env) = candidate_command(gen_cmd, b, v, round_dir)?;
+            Ok((b.id.clone(), v, file, cmd, env))
         })
-        .collect();
+        .collect::<Result<_>>()?;
     let next = AtomicUsize::new(0);
     let results = Mutex::new(Vec::with_capacity(jobs.len()));
     thread::scope(|s| {
         for _ in 0..GEN_CONCURRENCY.min(jobs.len()) {
             s.spawn(|| loop {
                 let i = next.fetch_add(1, Ordering::Relaxed);
-                let Some((brief, variant, file, cmd)) = jobs.get(i) else {
+                let Some((brief, variant, file, cmd, env)) = jobs.get(i) else {
                     break;
                 };
                 let out_path = round_dir.join(file);
@@ -492,13 +565,13 @@ fn generate_all(
                     println!("    {brief} v{variant}: kept (already on disk)");
                     true
                 } else {
-                    match run_gen_command(cmd, &out_path) {
+                    match run_gen_command(cmd, env, &out_path) {
                         Ok(()) => {
                             println!("    {brief} v{variant}: ok");
                             true
                         }
                         Err(e) => {
-                            eprintln!("    {brief} v{variant}: FAILED — {e}");
+                            eprintln!("    {brief} v{variant}: FAILED: {e}");
                             false
                         }
                     }
@@ -515,7 +588,7 @@ fn generate_all(
     });
     let mut results = results.into_inner().unwrap();
     results.sort_by_key(|(i, _)| *i);
-    results.into_iter().map(|(_, item)| item).collect()
+    Ok(results.into_iter().map(|(_, item)| item).collect())
 }
 
 fn html_escape(s: &str) -> String {
@@ -539,14 +612,11 @@ fn write_proof_sheet(
     let mut html = String::new();
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
     html += &format!(
-        "<title>Art proof sheet — {}</title>\n",
+        "<title>Art proof sheet: {}</title>\n",
         html_escape(edition_label)
     );
     html += PROOF_SHEET_CSS;
-    html += &format!(
-        "<h1>Art proof sheet — {}</h1>\n",
-        html_escape(edition_label)
-    );
+    html += &format!("<h1>Art proof sheet: {}</h1>\n", html_escape(edition_label));
     html += "<div class=\"grid\">\n";
     for item in generated {
         let prompt = prompts_by_id
@@ -563,7 +633,7 @@ fn write_proof_sheet(
             html += "<div class=\"failed\">FAILED</div>\n";
         }
         html += &format!(
-            "<figcaption>{} — variant {}</figcaption>\n",
+            "<figcaption>{}, variant {}</figcaption>\n",
             html_escape(&item.brief),
             item.variant
         );
@@ -846,7 +916,7 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
         let lines: Vec<String> = item
             .verdicts
             .iter()
-            .map(|v| format!("{}: {} — {}", v.name, v.verdict, v.reason))
+            .map(|v| format!("{}: {}, {}", v.name, v.verdict, v.reason))
             .collect();
         html += &format!(
             "<div class=\"verdicts\">{}</div>\n",
@@ -959,7 +1029,7 @@ fn showcase_sections(
                 let article_note = item
                     .article_id
                     .as_deref()
-                    .map(|a| format!(" — {}", html_escape(a)))
+                    .map(|a| format!(": {}", html_escape(a)))
                     .unwrap_or_default();
                 html += &format!(
                     "<h3>{}{article_note}</h3>\n<div class=\"grid\">\n",
@@ -983,7 +1053,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     let mut html = String::new();
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
     html += &format!(
-        "<title>Art showcase — {}</title>\n",
+        "<title>Art showcase: {}</title>\n",
         html_escape(edition_label)
     );
     html += SHOWCASE_CSS;
@@ -999,7 +1069,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
         .collect::<Vec<_>>()
         .join(" · ");
     html += &format!(
-        "<h1>Art showcase — {} ({} image(s))</h1>\n\
+        "<h1>Art showcase: {} ({} image(s))</h1>\n\
          <p class=\"rounds\">Rounds: {rounds_line}</p>\n\
          <p>Every generated candidate across every round. A green badge marks \
          what edition.yaml currently selects. Click an image to pick it for its \
@@ -1283,9 +1353,9 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
 
     let mut html = String::new();
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
-    html += &format!("<title>Cast — {}</title>\n", html_escape(&stem));
+    html += &format!("<title>Cast: {}</title>\n", html_escape(&stem));
     html += CAST_SHOWCASE_CSS;
-    html += &format!("<h1>Cast — {}</h1>\n", html_escape(&stem));
+    html += &format!("<h1>Cast: {}</h1>\n", html_escape(&stem));
     html += &format!(
         "<p class=\"hint\">Judge the designs, not the poses. Approve a new sheet by \
          copying it over the <code>reference:</code> path in {} (the CANON badge \
@@ -1346,11 +1416,14 @@ pub fn cast_sheet_run(
         println!("cast showcase rebuilt: {}", path.display());
         return Ok(0);
     }
+    if let Some(cmd) = gen_cmd {
+        expand_placeholders(cmd)?;
+    }
     let text = read(direction_path)?;
     let cast = cast_members(&text)?;
     if cast.is_empty() {
         bail!(
-            "{} defines no direction.cast — nothing to sheet",
+            "{} defines no direction.cast; nothing to sheet",
             direction_path.display()
         );
     }
@@ -1386,14 +1459,7 @@ pub fn cast_sheet_run(
         .join("rounds")
         .join(&stem)
         .join(crate::caller::now_stamp());
-    if round_dir.exists() {
-        bail!(
-            "round directory already exists, refusing to touch it: {}",
-            round_dir.display()
-        );
-    }
-    fs::create_dir_all(&round_dir)
-        .with_context(|| format!("creating round directory {}", round_dir.display()))?;
+    crate::caller::create_fresh_dir(&round_dir)?;
     println!("round dir: {}", round_dir.display());
     fs::write(
         round_dir.join("briefs.yaml"),
@@ -1423,14 +1489,14 @@ pub fn cast_sheet_run(
                 );
             }
             None => println!(
-                "no --gen-cmd recorded; the prompt is in {}/briefs.yaml — {approval_note}",
+                "no --gen-cmd recorded; the prompt is in {}/briefs.yaml; {approval_note}",
                 round_dir.display()
             ),
         }
         return Ok(0);
     }
     let gen_cmd = gen_cmd.expect("clap requires --gen-cmd when not a dry run");
-    let generated = generate_all(&briefs, candidates, gen_cmd, &round_dir);
+    let generated = generate_all(&briefs, candidates, gen_cmd, &round_dir)?;
     write_proof_sheet(&round_dir, &stem, &briefs, &generated)?;
     let failures = write_round_yaml(&round_dir, &stem, false, &generated)?;
     let showcase = write_cast_showcase(direction_path)?;
@@ -1475,7 +1541,7 @@ fn cast_check_prompt(cast: &[CastMember], image_abs: &Path, license: Option<&str
     if let Some(l) = license {
         p += &format!(
             "\nThis image comes from a licensed slot. License: {} \
-             Judge identity anchors only — wardrobe, apparent age, rendering \
+             Judge identity anchors only: wardrobe, apparent age, rendering \
              style, and mood are licensed and never count as deviations.\n",
             l.trim()
         );
@@ -1749,7 +1815,7 @@ fn check_round(
             r.verdicts
                 .iter()
                 .filter(|v| v.verdict == "off_model")
-                .map(|v| format!("  {} — {}: {}", r.file, v.name, v.reason))
+                .map(|v| format!("  {}, {}: {}", r.file, v.name, v.reason))
         })
         .collect();
     fs::write(
@@ -1803,8 +1869,7 @@ fn write_round_yaml(
     Ok(failures)
 }
 
-pub const DEFAULT_GEN_CMD: &str =
-    "tools/imagegen '{prompt}' --out {out} --ref '{ref}' --size {size}";
+pub const DEFAULT_GEN_CMD: &str = "tools/imagegen {prompt} --out {out} --ref {ref} --size {size}";
 
 fn size_for(purpose: &str) -> &'static str {
     match purpose {
@@ -1957,6 +2022,7 @@ fn resume_round(
     if doc.briefs.is_empty() {
         bail!("{} has no briefs to resume", briefs_path.display());
     }
+    expand_placeholders(gen_cmd)?;
     ensure_ref_placeholder(gen_cmd, &doc.briefs)?;
     println!("resuming round: {}", round_dir.display());
     generate_and_finish(
@@ -1993,7 +2059,7 @@ fn dry_run_report(
             );
         }
         None => println!(
-            "no --gen-cmd recorded; the prompts are in {}/briefs.yaml — \
+            "no --gen-cmd recorded; the prompts are in {}/briefs.yaml; \
              generate them by hand, or rerun with --dry-run --gen-cmd to \
              get an executable generate.sh.",
             round_dir.display()
@@ -2033,20 +2099,16 @@ pub fn run(opts: &ArtRun) -> Result<i32> {
         return resume_round(opts, resume, &edition_dir, &edition_label);
     }
 
+    if let Some(cmd) = gen_cmd {
+        expand_placeholders(cmd)?;
+    }
     let edition_yaml_text = read(&edition_dir.join("edition.yaml"))?;
 
     let round_dir = edition_dir
         .join("art")
         .join("rounds")
         .join(crate::caller::now_stamp());
-    if round_dir.exists() {
-        bail!(
-            "round directory already exists, refusing to touch it: {}",
-            round_dir.display()
-        );
-    }
-    fs::create_dir_all(&round_dir)
-        .with_context(|| format!("creating round directory {}", round_dir.display()))?;
+    crate::caller::create_fresh_dir(&round_dir)?;
 
     println!("round dir: {}", round_dir.display());
 
@@ -2135,7 +2197,7 @@ fn generate_and_finish(
     edition_dir: &Path,
     edition_label: &str,
 ) -> Result<i32> {
-    let generated = generate_all(briefs, candidates, gen_cmd, round_dir);
+    let generated = generate_all(briefs, candidates, gen_cmd, round_dir)?;
 
     write_proof_sheet(round_dir, edition_label, briefs, &generated)?;
     let failures = write_round_yaml(round_dir, edition_label, false, &generated)?;
@@ -2228,13 +2290,13 @@ mod tests {
             credit: None,
             cast_references: None,
         };
-        let (filename, cmd) =
-            candidate_command("gen '{prompt}' -o {out}", &brief, 2, Path::new("rounds/r1"));
+        let (filename, cmd, env) =
+            candidate_command("gen '{prompt}' -o {out}", &brief, 2, Path::new("rounds/r1"))
+                .unwrap();
         assert_eq!(filename, "tail-a-v2.png");
-        assert_eq!(
-            cmd,
-            "gen 'a robot'\\''s day — variation 2' -o rounds/r1/tail-a-v2.png"
-        );
+        assert_eq!(cmd, "gen \"$MAG_PROMPT\" -o \"$MAG_OUT\"");
+        assert_eq!(env[0].1, "a robot's day (variation 2)");
+        assert_eq!(env[1].1, "rounds/r1/tail-a-v2.png");
     }
 
     fn brief(id: &str, purpose: &str, prompt: &str) -> Brief {
@@ -2293,9 +2355,9 @@ mod tests {
             brief("tail-b", "tail", "Flopaz ties a knot"),
         ];
         inject_cast(&mut briefs, &cast, &HashMap::new());
-        let pair = "Recurring cast — draw exactly as specified, never \
+        let pair = "Recurring cast: draw exactly as specified, never \
                     redesign: Pedro: a boy. Maro: a robot.";
-        let solo = "Recurring cast — draw exactly as specified, never \
+        let solo = "Recurring cast: draw exactly as specified, never \
                     redesign: Flopaz: a girl.";
         assert_eq!(
             briefs[0].prompt,
@@ -2397,14 +2459,29 @@ mod tests {
     }
 
     #[test]
+    fn candidate_command_refuses_a_placeholder_inside_a_larger_word() {
+        let b = brief("p1", "cover", "a prompt");
+        for template in [
+            "gen --p=\"x {prompt}\"",
+            "gen --p='x {prompt}'",
+            "gen --p={prompt}",
+            "gen 'a {prompt} b'",
+            "gen \"a {out} b\"",
+        ] {
+            assert!(candidate_command(template, &b, 1, Path::new("r")).is_err());
+        }
+    }
+
+    #[test]
     fn candidate_command_substitutes_refs_or_empties_the_placeholder() {
         let mut b = brief("opener-a", "opener", "maro waves");
         let template = "imagegen '{prompt}' --out {out} --ref '{ref}'";
-        let (_, cmd) = candidate_command(template, &b, 1, Path::new("r"));
-        assert!(cmd.ends_with("--ref ''"), "{cmd}");
+        let (_, cmd, env) = candidate_command(template, &b, 1, Path::new("r")).unwrap();
+        assert!(cmd.ends_with("--ref \"$MAG_REF\""), "{cmd}");
+        assert_eq!(env[2].1, "");
         b.cast_references = Some(vec!["a.png".into(), "b.png".into()]);
-        let (_, cmd) = candidate_command(template, &b, 1, Path::new("r"));
-        assert!(cmd.ends_with("--ref 'a.png b.png'"), "{cmd}");
+        let (_, _, env) = candidate_command(template, &b, 1, Path::new("r")).unwrap();
+        assert_eq!(env[2].1, "a.png b.png");
     }
 
     #[test]
@@ -2597,7 +2674,7 @@ mod tests {
         assert!(html.contains("<h2>Cover</h2>"), "{html}");
         assert!(html.contains("<h2>Article openers</h2>"), "{html}");
         assert!(
-            html.contains("opener-a</h3>") || html.contains("opener-a — a</h3>"),
+            html.contains("opener-a</h3>") || html.contains("opener-a: a</h3>"),
             "{html}"
         );
 
@@ -2634,5 +2711,54 @@ mod tests {
         assert!(script.contains("variation 1"), "{script}");
         assert!(script.contains("variation 2"), "{script}");
         assert!(script.contains("cover-wildcard-v2.png"), "{script}");
+    }
+
+    #[test]
+    fn hostile_values_reach_the_generator_as_data_only() {
+        let dir = std::env::temp_dir().join(format!("mag-gen-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join("pwned");
+        let mut b = brief(
+            "cover-a",
+            "cover",
+            &format!("$(touch {}); `x` it's", marker.display()),
+        );
+        b.cast_references = Some(vec!["a b.png".into()]);
+        let cmd = "printf '%s|%s|%s' {prompt} {ref} {size} > {out}";
+        let (file, cmd_str, env) = candidate_command(cmd, &b, 1, &dir).unwrap();
+        let out = dir.join(&file);
+        run_gen_command(&cmd_str, &env, &out).unwrap();
+        let got = fs::read_to_string(&out).unwrap();
+        assert!(got.starts_with("$(touch "), "{got}");
+        assert!(
+            got.contains("it's (variation 1)|a b.png|1440x2160"),
+            "{got}"
+        );
+        assert!(!marker.exists());
+        let script = write_generate_script(&dir, "x", &[b], 1, cmd).unwrap();
+        let status = Command::new("sh").arg(&script).status().unwrap();
+        assert!(status.success());
+        assert!(!marker.exists());
+        assert!(fs::read_to_string(&out)
+            .unwrap()
+            .contains("it's (variation 1)"));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn extract_briefs_rejects_unsafe_and_duplicate_ids() {
+        for bad in ["a;b", "a$(x)", "a b", "../x", "A", "a--b", "-a", ""] {
+            let reply = yaml_reply(&format!(
+                "briefs:\n- id: \"{bad}\"\n  purpose: cover\n  prompt: p\n"
+            ));
+            let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+            assert!(err.contains("brief id"), "{bad}: {err}");
+        }
+        let reply = yaml_reply(
+            "briefs:\n- id: x\n  purpose: cover\n  prompt: p\n- id: x\n  purpose: cover\n  prompt: p\n",
+        );
+        let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+        assert!(err.contains("more than once"), "{err}");
     }
 }

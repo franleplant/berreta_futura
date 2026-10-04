@@ -495,12 +495,12 @@ pub fn printing_instructions(
         return format!(
             "# Impresión doméstica\n\nImprimir al 100 % en A4 horizontal, a doble cara y volteando por el borde corto. En una impresora de una sola cara, imprimir primero las páginas impares del PDF y después las pares en orden inverso. Doblar el bloque por la mitad y graparlo a caballete. Hacer primero una prueba para confirmar la orientación de alimentación de la impresora.\n\n\
 Hay tres imposiciones de la misma revista. Imprimir el cuadernillo completo o bien la pareja de interior y cubierta, no ambas cosas.\n\n\
-## booklet-a4.pdf \u{2014} todo en uno\n\n\
+## booklet-a4.pdf: todo en uno\n\n\
 La revista entera, cubierta incluida: {all_in_one_sheets} hojas A4 en un solo papel. Es la opción para imprimir con un único gramaje y sin nada que intercalar.\n\n\
-## booklet-a4-interior.pdf \u{2014} interior en papel de texto\n\n\
+## booklet-a4-interior.pdf: interior en papel de texto\n\n\
 Las páginas {first_interior} a {last_interior} del PDF de lectura: la revista sin la cubierta y sin las páginas en blanco de su cara interior. Son {interior_sheets} hojas A4 en papel corriente de 80 a 100 g/m².\n\n\
-## booklet-a4-cover.pdf \u{2014} cubierta en papel más grueso\n\n\
-{cover_sheets} hoja A4, a una sola cara: la contracubierta junto a la cubierta. El PDF es esa única página \u{2014} no hay cara interior que imprimir. Usar papel más grueso \u{2014}de 160 a 250 g/m², que dobla bien\u{2014} y dejar secar la tinta antes de doblar.\n\n\
+## booklet-a4-cover.pdf: cubierta en papel más grueso\n\n\
+{cover_sheets} hoja A4, a una sola cara: la contracubierta junto a la cubierta. El PDF es esa única página; no hay cara interior que imprimir. Usar papel más grueso (de 160 a 250 g/m², que dobla bien) y dejar secar la tinta antes de doblar.\n\n\
 ## Montaje de la impresión en dos papeles\n\n\
 Doblar por separado el bloque interior y la hoja de cubierta, encajar el interior dentro de la cubierta doblada y grapar a caballete atravesando ambos por el lomo.\n"
         );
@@ -508,12 +508,12 @@ Doblar por separado el bloque interior y la hoja de cubierta, encajar el interio
     format!(
         "# Home printing\n\nPrint at 100% on A4 landscape, duplex, flipping on the short edge. On a simplex printer, print odd PDF pages first, then even PDF pages in reverse order. Fold the stack in half and saddle-staple. First run a test to confirm your printer's feed direction.\n\n\
 Three impositions of the same magazine are included. Print either the all-in-one booklet or the interior-and-cover pair, not both.\n\n\
-## booklet-a4.pdf \u{2014} all in one\n\n\
+## booklet-a4.pdf: all in one\n\n\
 The whole magazine, cover included: {all_in_one_sheets} A4 sheets on one stock. This is the single-stock print, with nothing to collate.\n\n\
-## booklet-a4-interior.pdf \u{2014} interior on text stock\n\n\
+## booklet-a4-interior.pdf: interior on text stock\n\n\
 Reader pages {first_interior} to {last_interior}: the magazine without the cover and without the blank inside covers. {interior_sheets} A4 sheets on ordinary 80-100 gsm text stock.\n\n\
-## booklet-a4-cover.pdf \u{2014} cover wrap on heavier stock\n\n\
-{cover_sheets} A4 sheet, printed single-sided: the back cover beside the front cover. The PDF is that one page \u{2014} there is no inside face to print. Use heavier stock \u{2014} 160-250 gsm folds well \u{2014} and let the ink dry before folding.\n\n\
+## booklet-a4-cover.pdf: cover wrap on heavier stock\n\n\
+{cover_sheets} A4 sheet, printed single-sided: the back cover beside the front cover. The PDF is that one page; there is no inside face to print. Use heavier stock (160-250 gsm folds well) and let the ink dry before folding.\n\n\
 ## Assembling the two-stock print\n\n\
 Fold the interior stack and the cover sheet separately, nest the interior inside the folded cover, then saddle-staple through the spine of both.\n"
     )

@@ -18,7 +18,7 @@ pub(crate) struct PublishArgs {
     pub lang: String,
     #[arg(
         long = "dry-run",
-        help = "Print the rclone commands instead of running them (publish.yaml is still written)"
+        help = "Print the rclone commands instead of running them (nothing is written)"
     )]
     pub dry_run: bool,
 }
@@ -45,16 +45,17 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
     );
     let object = format!("{}/{key}", site.pdf_remote.trim_end_matches('/'));
     let file = args.pdf.to_string_lossy();
-    let url = match args.dry_run {
-        true => {
-            println!(
-                "dry run, not uploading: rclone copyto {file} {object} && rclone link {object}"
-            );
-            object
-        }
-        false => upload(&file, &object)?,
-    };
     let path = dir.join("publish.yaml");
+    if args.dry_run {
+        println!("dry run, not uploading: rclone copyto {file} {object} && rclone link {object}");
+        println!(
+            "would write {} with the {} PDF at {object}",
+            path.display(),
+            args.lang
+        );
+        return Ok(0);
+    }
+    let url = upload(&file, &object)?;
     let mut record = publish_record(&path)?;
     record.pdfs.insert(
         args.lang.clone(),

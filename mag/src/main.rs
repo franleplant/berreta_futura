@@ -123,7 +123,7 @@ enum Cmd {
     /// Generate art candidate rounds for an edition (human selects)
     Art {
         edition: String,
-        /// Shell command template for one image; {prompt}, {out}, and {ref} are substituted
+        /// Shell command for one image; {prompt}, {out}, {ref}, {size} must each be a whole word (bare or quoted) and expand to quoted MAG_* variables
         #[arg(long = "gen-cmd", default_value = art::DEFAULT_GEN_CMD)]
         gen_cmd: String,
         /// How many candidates per art brief
@@ -162,7 +162,7 @@ enum Cmd {
     CastSheet {
         /// The art direction file whose direction.cast to sheet
         direction: PathBuf,
-        /// Shell command template for one image; {prompt}, {out}, and {ref} are substituted
+        /// Shell command for one image; {prompt}, {out}, {ref}, {size} must each be a whole word (bare or quoted) and expand to quoted MAG_* variables
         #[arg(long = "gen-cmd", required_unless_present_any = ["dry_run", "showcase"])]
         gen_cmd: Option<String>,
         /// How many sheet candidates to render

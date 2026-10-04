@@ -1,6 +1,7 @@
 use anyhow::{bail, Context, Result};
+use std::fs;
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Condvar, Mutex};
@@ -77,6 +78,18 @@ impl ModelSpec {
             full: spec.to_string(),
         })
     }
+}
+
+pub fn create_fresh_dir(path: &Path) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::create_dir(path).with_context(|| {
+        format!(
+            "creating {} (a directory by that name may already exist; retry in a second)",
+            path.display()
+        )
+    })
 }
 
 pub fn now_stamp() -> String {
@@ -275,7 +288,7 @@ impl Caller {
             None => None,
         };
         bail!(
-            "{label}: model call failed after retries — {}{}",
+            "{label}: model call failed after retries: {}{}",
             last_error.unwrap_or_else(|| "unknown error".to_string()),
             match saved {
                 Some(path) => format!(" (unparsed reply saved to {})", path.display()),
@@ -558,6 +571,15 @@ fn parse_ollama(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn create_fresh_dir_fails_when_the_directory_exists() {
+        let dir = std::env::temp_dir().join(format!("mag-fresh-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        assert!(create_fresh_dir(&dir).is_ok());
+        assert!(create_fresh_dir(&dir).is_err());
+        fs::remove_dir_all(&dir).unwrap();
+    }
 
     #[test]
     fn model_spec_defaults_to_claude() {

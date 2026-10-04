@@ -398,7 +398,7 @@ pub fn propose_plan(edition: &str) -> Result<i32> {
 
     write_new_plan(&out_path, &edition_id, articles)?;
     println!(
-        "\nwrote {} — {} article(s) from '{edition_id}'. Edit it (drop rows, flip \
+        "\nwrote {}: {} article(s) from '{edition_id}'. Edit it (drop rows, flip \
          content_mode to in_a_nutshell, fix titles), then: mag produce {}",
         out_path.display(),
         source_ids.len(),

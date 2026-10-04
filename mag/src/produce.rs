@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
 
-pub const INLINE_PREAMBLE: &str = "You are running non-interactively with NO file access and NO tools. Every\ndocument you need is inlined below. If an included instruction tells you to\nread a file or path, the content of that file is already included here —\nnever claim to have read anything that is not inlined.";
+pub const INLINE_PREAMBLE: &str = "You are running non-interactively with NO file access and NO tools. Every\ndocument you need is inlined below. If an included instruction tells you to\nread a file or path, the content of that file is already included here;\nnever claim to have read anything that is not inlined.";
 
 pub(crate) fn section(title: &str, body: &str) -> String {
     format!("\n\n========== {title} ==========\n\n{}\n", body.trim())
@@ -679,9 +679,17 @@ pub fn run_edition(
         .ok_or_else(|| anyhow!("plan.edition.id missing or not a string/number"))?;
 
     let edition_dir = plan_path.parent().map(PathBuf::from).unwrap_or_default();
-    let run_dir =
-        resume.unwrap_or_else(|| edition_dir.join(format!("run-{}", crate::caller::now_stamp())));
-    fs::create_dir_all(&run_dir)?;
+    let run_dir = match resume {
+        Some(dir) => {
+            fs::create_dir_all(&dir)?;
+            dir
+        }
+        None => {
+            let dir = edition_dir.join(format!("run-{}", crate::caller::now_stamp()));
+            crate::caller::create_fresh_dir(&dir)?;
+            dir
+        }
+    };
     fs::write(run_dir.join("plan.yaml"), serde_yaml::to_string(&plan)?)?;
     let caller = Arc::new(Caller::new(&run_dir));
     let started = Instant::now();
@@ -814,7 +822,7 @@ fn summary_lines(
     failures: &Failures,
 ) -> Vec<String> {
     let mut lines = vec![
-        format!("# Run summary — edition {edition_id}"),
+        format!("# Run summary: edition {edition_id}"),
         String::new(),
         format!(
             "- {} model calls, ${:.2}, {:.1} minutes",
@@ -832,7 +840,7 @@ fn summary_lines(
     }
     for (pid, err) in failures {
         let short: String = err.chars().take(80).collect();
-        lines.push(format!("| {pid} | **FAILED** — {short} |"));
+        lines.push(format!("| {pid} | **FAILED**: {short} |"));
     }
     lines
 }

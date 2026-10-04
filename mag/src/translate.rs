@@ -72,7 +72,7 @@ fn build_prompt(piece_id: &str, manuscript: &str, hash_hex: &str) -> Result<Stri
     out += &section("prompts/translation-es.md", &read(&lens_path)?);
     out += &section(&format!("english manuscript: {piece_id}"), manuscript);
     out += &format!("\nenglish_sha256: {hash_hex}\n");
-    out += "\nCompute nothing yourself — use the english_sha256 value given above exactly \
+    out += "\nCompute nothing yourself; use the english_sha256 value given above exactly \
             as provided, unchanged. Reply with exactly one fenced ```json code block \
             containing a JSON object with exactly two keys: \"english_sha256\" (the value \
             above, unchanged) and \"markdown\" (a JSON string holding the full Spanish \
@@ -105,7 +105,7 @@ fn parse_translation(
         .ok_or_else(|| anyhow!("{label}: json missing string field 'english_sha256'"))?;
     if got_hash != expected_hash {
         bail!(
-            "{label}: english_sha256 mismatch — model must echo the provided hash \
+            "{label}: english_sha256 mismatch: model must echo the provided hash \
              unchanged (expected {expected_hash}, got {got_hash})"
         );
     }
@@ -121,7 +121,7 @@ fn parse_translation(
     let got_fence_count = markdown.matches("```").count();
     if got_fence_count != english_fence_count {
         bail!(
-            "{label}: fenced code block count mismatch — english input has \
+            "{label}: fenced code block count mismatch: english input has \
              {english_fence_count}, translation has {got_fence_count}"
         );
     }

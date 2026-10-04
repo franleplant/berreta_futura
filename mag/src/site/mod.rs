@@ -72,9 +72,13 @@ pub fn config(root: &Path) -> Result<SiteConfig> {
     Ok(config.site)
 }
 
+pub fn parse_publish_record(text: &str) -> Result<PublishRecord> {
+    serde_yaml::from_str(text).context("reading publish.yaml")
+}
+
 pub fn publish_record(path: &Path) -> Result<PublishRecord> {
     match path.is_file() {
-        true => serde_yaml::from_str(&fs::read_to_string(path)?)
+        true => parse_publish_record(&fs::read_to_string(path)?)
             .with_context(|| format!("reading {}", path.display())),
         false => Ok(PublishRecord::default()),
     }
@@ -167,6 +171,54 @@ fn prepare(out: &Path) -> Result<()> {
     )?)
 }
 
+fn committed_text(root: &Path, path: &str) -> Result<String> {
+    let output = std::process::Command::new("git")
+        .args(["show", &format!("HEAD:{path}")])
+        .current_dir(root)
+        .output()
+        .context("running git show")?;
+    anyhow::ensure!(
+        output.status.success(),
+        "{path} is not committed at HEAD; mag site publishes committed files only"
+    );
+    Ok(String::from_utf8(output.stdout)?)
+}
+
+fn git_lines(root: &Path, args: &[&str], paths: &[&str]) -> Result<BTreeSet<String>> {
+    let output = std::process::Command::new("git")
+        .args(args)
+        .arg("--")
+        .args(paths)
+        .current_dir(root)
+        .output()
+        .context("running git")?;
+    anyhow::ensure!(output.status.success(), "git {} failed", args.join(" "));
+    Ok(String::from_utf8(output.stdout)?
+        .split('\0')
+        .filter(|path| !path.is_empty())
+        .map(str::to_string)
+        .collect())
+}
+
+fn require_committed(root: &Path, inputs: &[String]) -> Result<()> {
+    let paths: Vec<&str> = inputs.iter().map(String::as_str).collect();
+    let tracked = git_lines(root, &["ls-files", "-z"], &paths)?;
+    let dirty = git_lines(root, &["diff", "--name-only", "-z", "HEAD"], &paths)?;
+    let bad: Vec<&String> = inputs
+        .iter()
+        .filter(|path| !tracked.contains(*path) || dirty.contains(*path))
+        .collect();
+    anyhow::ensure!(
+        bad.is_empty(),
+        "mag site publishes committed inputs only; untracked or modified: {}",
+        bad.iter()
+            .map(|p| p.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    Ok(())
+}
+
 fn tracked_files(root: &Path, dir: &str) -> Result<BTreeSet<String>> {
     let output = std::process::Command::new("git")
         .args(["ls-files", "-z", "--", dir])
@@ -210,7 +262,7 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
     let yaml: serde_yaml::Value =
-        serde_yaml::from_str(&fs::read_to_string(dir.join("edition.yaml"))?)?;
+        serde_yaml::from_str(&committed_text(root, &format!("{rel}/edition.yaml"))?)?;
     let articles: Vec<String> = yaml["articles"]
         .as_sequence()
         .into_iter()
@@ -234,6 +286,15 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
         no_model: true,
     };
     let request = request(&args, root, &scratch)?;
+    let inputs: Vec<String> = request
+        .inputs
+        .iter()
+        .map(|row| match Path::new(&row.source_path).strip_prefix(root) {
+            Ok(rel) if !rel.starts_with(".magazine") => rel.to_string_lossy().replace('\\', "/"),
+            _ => row.target_path.clone(),
+        })
+        .collect();
+    require_committed(root, &inputs)?;
     let staged = scratch.join("staged");
     for row in &request.inputs {
         let target = staged.join(&row.target_path);
@@ -253,7 +314,11 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
             crate::typeset::tone::print_figures(edition, &staged)
         })
         .collect::<Result<Vec<_>>>()?;
-    let pdfs = publish_record(&dir.join("publish.yaml"))?.pdfs;
+    let publish_path = format!("{rel}/publish.yaml");
+    let pdfs = match tracked.contains(&publish_path) {
+        true => parse_publish_record(&committed_text(root, &publish_path)?)?.pdfs,
+        false => BTreeMap::new(),
+    };
     let epubs = tracked_epubs(root, &tracked, &rel)?;
     Ok(Issue {
         editions,
@@ -287,11 +352,45 @@ fn tracked_epubs(
 
 #[cfg(test)]
 mod tests {
-    use super::newest_tracked_run;
+    use super::{newest_tracked_run, require_committed};
     use std::collections::BTreeSet;
 
     fn set(paths: &[&str]) -> BTreeSet<String> {
         paths.iter().map(std::string::ToString::to_string).collect()
+    }
+
+    #[test]
+    fn require_committed_names_untracked_and_modified_inputs() {
+        let dir = std::env::temp_dir().join(format!("mag-site-git-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let git = |args: &[&str]| {
+            let status = std::process::Command::new("git")
+                .args(["-c", "user.name=t", "-c", "user.email=t@t"])
+                .args(args)
+                .current_dir(&dir)
+                .status()
+                .unwrap();
+            assert!(status.success());
+        };
+        git(&["init", "-q"]);
+        std::fs::write(dir.join("a.md"), "a").unwrap();
+        git(&["add", "a.md"]);
+        git(&["commit", "-qm", "a"]);
+        std::fs::write(dir.join("é b.png"), "e").unwrap();
+        git(&["add", "é b.png"]);
+        git(&["commit", "-qm", "e"]);
+        let both = vec!["a.md".to_string(), "b.md".to_string()];
+        let unicode = vec!["é b.png".to_string()];
+        assert!(require_committed(&dir, &unicode).is_ok());
+        std::fs::write(dir.join("b.md"), "b").unwrap();
+        let err = require_committed(&dir, &both).unwrap_err().to_string();
+        assert!(err.ends_with(": b.md"), "{err}");
+        assert!(require_committed(&dir, &both[..1]).is_ok());
+        std::fs::write(dir.join("a.md"), "changed").unwrap();
+        let err = require_committed(&dir, &both[..1]).unwrap_err().to_string();
+        assert!(err.ends_with(": a.md"), "{err}");
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
