@@ -48,11 +48,7 @@ pub fn print_copy(path: &Path, tone: &str, out: &Path) -> Result<bool> {
     }
     let image = trim(&invert(&image));
     std::fs::create_dir_all(out.parent().context("a print copy has no parent")?)?;
-    let file = std::io::BufWriter::new(std::fs::File::create(out)?);
-    let mut encoder = png::Encoder::new(file, image.width, image.height);
-    encoder.set_color(png::ColorType::Rgb);
-    encoder.set_depth(png::BitDepth::Eight);
-    encoder.write_header()?.write_image_data(&image.data)?;
+    std::fs::write(out, image.png()?)?;
     Ok(true)
 }
 
@@ -61,27 +57,17 @@ fn decode(path: &Path) -> Result<Rgb> {
     if !bytes.starts_with(b"\x89PNG") {
         return decode_rgb(path);
     }
-    let mut decoder = png::Decoder::new(std::io::Cursor::new(&bytes));
-    decoder.set_transformations(png::Transformations::normalize_to_color8());
-    let mut reader = decoder.read_info()?;
-    let mut buffer = vec![0; reader.output_buffer_size().unwrap_or(0)];
-    let frame = reader.next_frame(&mut buffer)?;
-    let channels = frame.color_type.samples();
+    let image = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png)?.into_rgba8();
     let over_white = |p: &[u8]| {
-        let (color, alpha) = match channels {
-            1 => ([p[0]; 3], 255),
-            2 => ([p[0]; 3], p[1]),
-            3 => ([p[0], p[1], p[2]], 255),
-            _ => ([p[0], p[1], p[2]], p[3]),
-        };
-        let a = u32::from(alpha);
-        color.map(|c| ((u32::from(c) * a + 255 * (255 - a) + 127) / 255) as u8)
+        let a = u32::from(p[3]);
+        [p[0], p[1], p[2]].map(|c| ((u32::from(c) * a + 255 * (255 - a) + 127) / 255) as u8)
     };
     Ok(Rgb {
-        width: frame.width,
-        height: frame.height,
-        data: buffer[..frame.buffer_size()]
-            .chunks_exact(channels)
+        width: image.width(),
+        height: image.height(),
+        data: image
+            .as_raw()
+            .chunks_exact(4)
             .flat_map(over_white)
             .collect(),
     })

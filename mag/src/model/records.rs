@@ -1,6 +1,6 @@
 use super::shared::{quoted, show, Result, ValidationError};
 use regex::Regex;
-use serde_yaml::Value;
+use serde_norway::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -205,11 +205,11 @@ impl SourceRecord {
     }
 }
 
-fn mapping_get<'a>(mapping: &'a serde_yaml::Mapping, key: &str) -> Option<&'a Value> {
+fn mapping_get<'a>(mapping: &'a serde_norway::Mapping, key: &str) -> Option<&'a Value> {
     mapping.get(Value::String(key.to_string()))
 }
 
-fn resolve_url(mapping: &serde_yaml::Mapping) -> Result<Option<String>> {
+fn resolve_url(mapping: &serde_norway::Mapping) -> Result<Option<String>> {
     for key in ["url", "canonical_url", "submitted_url"] {
         let value = text_field(mapping_get(mapping, key), key)?;
         if filled(value.as_ref()) {
@@ -233,8 +233,8 @@ fn coerce_timestamp(document: Option<&str>, key: &str, slot: &mut Option<String>
 }
 
 fn resolve_tags(
-    mapping: &serde_yaml::Mapping,
-    metadata: Option<&serde_yaml::Mapping>,
+    mapping: &serde_norway::Mapping,
+    metadata: Option<&serde_norway::Mapping>,
 ) -> Result<Option<Vec<String>>> {
     let value = match mapping_get(mapping, "tags") {
         Some(value) => Some(value),
@@ -251,8 +251,8 @@ fn resolve_tags(
 }
 
 fn resolve_synopsis(
-    mapping: &serde_yaml::Mapping,
-    metadata: Option<&serde_yaml::Mapping>,
+    mapping: &serde_norway::Mapping,
+    metadata: Option<&serde_norway::Mapping>,
 ) -> Result<Option<String>> {
     match mapping_get(mapping, "synopsis") {
         Some(value) => text_field(Some(value), "synopsis"),
@@ -309,7 +309,7 @@ pub fn load_records(sources_dir: &Path) -> Result<Vec<SourceRecord>> {
     for path in &paths {
         let text = std::fs::read_to_string(path)
             .map_err(|error| ValidationError::one(format!("Cannot read {path:?}: {error}")))?;
-        let data: Value = serde_yaml::from_str(&text)
+        let data: Value = serde_norway::from_str(&text)
             .map_err(|error| ValidationError::one(format!("Cannot read {path:?}: {error}")))?;
         if !matches!(data, Value::Mapping(_)) {
             return Err(ValidationError::one(format!(
@@ -411,7 +411,7 @@ fn row_text(name: &str, value: Option<&Value>) -> Result<String> {
     }
 }
 
-fn row_field(row: &serde_yaml::Mapping, name: &str) -> Result<String> {
+fn row_field(row: &serde_norway::Mapping, name: &str) -> Result<String> {
     row_text(name, row.get(Value::String(name.to_string())))
 }
 
@@ -941,7 +941,7 @@ pub fn localize_extracts(
     Ok(localized)
 }
 
-fn index_rows(items: &[Value]) -> BTreeMap<String, serde_yaml::Mapping> {
+fn index_rows(items: &[Value]) -> BTreeMap<String, serde_norway::Mapping> {
     let mut by_id = BTreeMap::new();
     for item in items {
         let Value::Mapping(mapping) = item else {
@@ -962,7 +962,7 @@ fn index_rows(items: &[Value]) -> BTreeMap<String, serde_yaml::Mapping> {
 }
 
 fn compare_ids(
-    by_id: &BTreeMap<String, serde_yaml::Mapping>,
+    by_id: &BTreeMap<String, serde_norway::Mapping>,
     expected: &BTreeSet<String>,
     article_id: &str,
     language: &str,

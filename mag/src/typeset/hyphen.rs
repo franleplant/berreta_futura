@@ -31,11 +31,10 @@ impl Hyphenation {
         limit_ladders: true,
     };
 
-    pub fn from_settings(setting: impl Fn(&str) -> Option<String>) -> Result<Self, String> {
-        let flag = |key: &str, default: bool| match setting(key).as_deref() {
+    pub fn from_settings(render: Option<&toml::Value>) -> Result<Self, String> {
+        let flag = |key: &str, default: bool| match render.and_then(|table| table.get(key)) {
             None => Ok(default),
-            Some("true") => Ok(true),
-            Some("false") => Ok(false),
+            Some(toml::Value::Boolean(value)) => Ok(*value),
             Some(other) => Err(format!(
                 "magazine.toml [render] {key} = {other}: expected true or false"
             )),
@@ -193,14 +192,19 @@ mod tests {
 
     #[test]
     fn english_hyphenation_ships_by_default_and_a_bad_value_is_refused() {
-        let unset = Hyphenation::from_settings(|_| None).expect("defaults");
+        let unset = Hyphenation::from_settings(None).expect("defaults");
         assert_eq!(unset, Hyphenation::SHIPPED);
         assert!(unset.native("en") && unset.limit_ladders);
         assert!(!Hyphenation::PLAIN.native("en") && !Hyphenation::PLAIN.limit_ladders);
-        let off = Hyphenation::from_settings(|key| Some((key != "hyphenate_english").to_string()))
-            .expect("booleans");
+        let off = Hyphenation::from_settings(Some(&toml::Value::Table(
+            toml::from_str("hyphenate_english = false  # off").expect("toml"),
+        )))
+        .expect("booleans");
         assert!(!off.native("en-GB") && off.limit_ladders);
-        let refused = Hyphenation::from_settings(|_| Some("yes".into())).expect_err("not a bool");
+        let refused = Hyphenation::from_settings(Some(&toml::Value::Table(
+            toml::from_str("hyphenate_english = \"yes\"").expect("toml"),
+        )))
+        .expect_err("not a bool");
         assert!(refused.contains("hyphenate_english"), "{refused}");
     }
 

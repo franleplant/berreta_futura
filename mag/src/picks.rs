@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 const ROUNDS: &str = "art/rounds/";
 
-pub fn round_paths(edition_yaml: &serde_yaml::Value) -> Vec<String> {
+pub fn round_paths(edition_yaml: &serde_norway::Value) -> Vec<String> {
     crate::art::selected_art_paths(edition_yaml)
         .into_iter()
         .filter(|path| path.contains(ROUNDS))
@@ -27,7 +27,7 @@ fn resolve(raw: &str, edition_dir: &Path) -> PathBuf {
 pub fn promote(edition_dir: &Path) -> Result<Vec<(String, String)>> {
     let yaml_path = edition_dir.join("edition.yaml");
     let mut text = std::fs::read_to_string(&yaml_path)?;
-    let rounds: BTreeSet<String> = round_paths(&serde_yaml::from_str(&text)?)
+    let rounds: BTreeSet<String> = round_paths(&serde_norway::from_str(&text)?)
         .into_iter()
         .collect();
     let moves: Vec<(String, String)> = rounds.into_iter().map(|p| (pick_path(&p), p)).collect();
@@ -52,7 +52,7 @@ pub fn picked_from(pick: &str, candidate: &Path) -> bool {
     })
 }
 
-pub fn refuse_rounds(edition_yaml: &serde_yaml::Value, edition: &str) -> Result<()> {
+pub fn refuse_rounds(edition_yaml: &serde_norway::Value, edition: &str) -> Result<()> {
     let rounds = round_paths(edition_yaml);
     ensure!(
         rounds.is_empty(),
@@ -127,11 +127,11 @@ mod tests {
 
     #[test]
     fn render_refuses_round_paths_with_the_promote_command() {
-        let yaml = serde_yaml::from_str(YAML).unwrap();
+        let yaml = serde_norway::from_str(YAML).unwrap();
         let error = refuse_rounds(&yaml, "099").unwrap_err().to_string();
         assert!(error.contains("names 3 candidate(s)"), "{error}");
         assert!(error.ends_with("run: mag art 099 --promote"), "{error}");
-        assert!(refuse_rounds(&serde_yaml::from_str(PROMOTED).unwrap(), "099").is_ok());
+        assert!(refuse_rounds(&serde_norway::from_str(PROMOTED).unwrap(), "099").is_ok());
     }
 
     #[test]

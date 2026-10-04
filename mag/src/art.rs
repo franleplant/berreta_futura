@@ -80,7 +80,7 @@ struct BriefsDoc {
 }
 
 fn art_direction_section(edition_yaml_text: &str) -> Result<Option<(String, String)>> {
-    let doc: serde_yaml::Value = serde_yaml::from_str(edition_yaml_text)
+    let doc: serde_norway::Value = serde_norway::from_str(edition_yaml_text)
         .context("parsing edition.yaml for art_direction_path")?;
     let Some(path) = doc.get("art_direction_path").and_then(|v| v.as_str()) else {
         return Ok(None);
@@ -103,21 +103,21 @@ struct CastMember {
 }
 
 fn cast_members(art_direction_text: &str) -> Result<Vec<CastMember>> {
-    let doc: serde_yaml::Value = serde_yaml::from_str(art_direction_text)
+    let doc: serde_norway::Value = serde_norway::from_str(art_direction_text)
         .context("parsing art direction file for direction.cast")?;
     match doc.get("direction").and_then(|d| d.get("cast")) {
-        Some(v) => serde_yaml::from_value(v.clone())
+        Some(v) => serde_norway::from_value(v.clone())
             .context("direction.cast entries need `name` and `prompt`"),
         None => Ok(Vec::new()),
     }
 }
 
 fn cast_license(art_direction_text: &str) -> Result<HashMap<String, String>> {
-    let doc: serde_yaml::Value = serde_yaml::from_str(art_direction_text)
+    let doc: serde_norway::Value = serde_norway::from_str(art_direction_text)
         .context("parsing art direction file for direction.cast_license")?;
     let map: HashMap<String, String> =
         match doc.get("direction").and_then(|d| d.get("cast_license")) {
-            Some(v) => serde_yaml::from_value(v.clone())
+            Some(v) => serde_norway::from_value(v.clone())
                 .context("direction.cast_license must map purposes to license text")?,
             None => HashMap::new(),
         };
@@ -216,7 +216,7 @@ fn previous_briefs(edition_dir: &Path, purposes: &[String]) -> Result<Vec<Brief>
         if !briefs_path.exists() {
             continue;
         }
-        let doc: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
+        let doc: BriefsDoc = serde_norway::from_str(&read(&briefs_path)?)
             .with_context(|| format!("parsing {}", briefs_path.display()))?;
         out.extend(
             doc.briefs
@@ -342,7 +342,7 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
         .last()
         .map(|c| c[1].to_string())
         .ok_or_else(|| anyhow!("{label}: reply contained no fenced yaml block"))?;
-    let doc: BriefsDoc = serde_yaml::from_str(&fence)
+    let doc: BriefsDoc = serde_norway::from_str(&fence)
         .with_context(|| format!("{label}: invalid yaml, or no non-empty 'briefs' list"))?;
     if doc.briefs.is_empty() {
         bail!("{label}: 'briefs' list is empty");
@@ -661,9 +661,9 @@ struct ShowcaseItem {
     verdicts: Vec<MemberVerdict>,
 }
 
-pub fn selected_art_paths(edition_yaml: &serde_yaml::Value) -> Vec<String> {
+pub fn selected_art_paths(edition_yaml: &serde_norway::Value) -> Vec<String> {
     let mut out = Vec::new();
-    let mut push = |v: Option<&serde_yaml::Value>| {
+    let mut push = |v: Option<&serde_norway::Value>| {
         if let Some(s) = v.and_then(|v| v.as_str()) {
             if !s.trim().is_empty() {
                 out.push(s.to_string());
@@ -707,15 +707,15 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
         if !briefs_path.exists() || !round_path.exists() {
             continue;
         }
-        let briefs: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
+        let briefs: BriefsDoc = serde_norway::from_str(&read(&briefs_path)?)
             .with_context(|| format!("parsing {}", briefs_path.display()))?;
         let by_id: HashMap<&str, &Brief> =
             briefs.briefs.iter().map(|b| (b.id.as_str(), b)).collect();
-        let round: serde_yaml::Value = serde_yaml::from_str(&read(&round_path)?)
+        let round: serde_norway::Value = serde_norway::from_str(&read(&round_path)?)
             .with_context(|| format!("parsing {}", round_path.display()))?;
         let check_path = round_dir.join("cast-check.yaml");
         let checks: HashMap<String, Vec<MemberVerdict>> = if check_path.exists() {
-            let doc: CastCheckDoc = serde_yaml::from_str(&read(&check_path)?)
+            let doc: CastCheckDoc = serde_norway::from_str(&read(&check_path)?)
                 .with_context(|| format!("parsing {}", check_path.display()))?;
             doc.results
                 .into_iter()
@@ -728,7 +728,7 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
         for item in generated.into_iter().flatten() {
             let ok = item
                 .get("ok")
-                .and_then(serde_yaml::Value::as_bool)
+                .and_then(serde_norway::Value::as_bool)
                 .unwrap_or(false);
             let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
             if !ok || file.is_empty() || !round_dir.join(file).exists() {
@@ -737,7 +737,7 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
             let brief_id = item.get("brief").and_then(|v| v.as_str()).unwrap_or("");
             let variant = item
                 .get("variant")
-                .and_then(serde_yaml::Value::as_u64)
+                .and_then(serde_norway::Value::as_u64)
                 .unwrap_or(0) as u32;
             let (purpose, article_id, prompt) = match by_id.get(brief_id) {
                 Some(b) => (b.purpose.clone(), b.article_id.clone(), b.prompt.clone()),
@@ -782,8 +782,12 @@ const PROOF_SHEET_CSS: &str = "<style>\n\
 
 fn showcase_frame(edition_dir: &Path, edition_label: &str) -> Result<(CoverFrame, Vec<String>)> {
     let edition_yaml_path = edition_dir.join("edition.yaml");
+    let repo_root = edition_dir
+        .ancestors()
+        .nth(2)
+        .context("an edition directory sits under editions/")?;
     let mut cover_frame = CoverFrame {
-        publication: crate::render::publication_name(Path::new(".")),
+        publication: crate::render::publication_name(repo_root)?,
         headline: edition_label.to_string(),
         issue: edition_label.to_string(),
         date: String::new(),
@@ -791,7 +795,7 @@ fn showcase_frame(edition_dir: &Path, edition_label: &str) -> Result<(CoverFrame
     if !edition_yaml_path.exists() {
         return Ok((cover_frame, Vec::new()));
     }
-    let doc: serde_yaml::Value = serde_yaml::from_str(&read(&edition_yaml_path)?)
+    let doc: serde_norway::Value = serde_norway::from_str(&read(&edition_yaml_path)?)
         .with_context(|| format!("parsing {}", edition_yaml_path.display()))?;
     if let Some(h) = doc
         .get("cover")
@@ -800,7 +804,10 @@ fn showcase_frame(edition_dir: &Path, edition_label: &str) -> Result<(CoverFrame
     {
         cover_frame.headline = h.to_string();
     }
-    if let Some(n) = doc.get("issue_number").and_then(serde_yaml::Value::as_u64) {
+    if let Some(n) = doc
+        .get("issue_number")
+        .and_then(serde_norway::Value::as_u64)
+    {
         cover_frame.issue = format!("{n:03}");
     }
     if let Some(d) = doc.get("publication_date").and_then(|v| v.as_str()) {
@@ -1199,7 +1206,7 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
 "#;
 
 fn cast_sheet_prompt(
-    direction: &serde_yaml::Value,
+    direction: &serde_norway::Value,
     cast: &[CastMember],
     note: Option<&str>,
 ) -> String {
@@ -1280,7 +1287,7 @@ fn cast_round_cells(round_dir: &Path, canon: &[(String, Vec<u8>)]) -> Result<Str
     if !round_path.exists() {
         return Ok(String::new());
     }
-    let round: serde_yaml::Value = serde_yaml::from_str(&read(&round_path)?)
+    let round: serde_norway::Value = serde_norway::from_str(&read(&round_path)?)
         .with_context(|| format!("parsing {}", round_path.display()))?;
     let mut cells = String::new();
     for item in round
@@ -1291,12 +1298,12 @@ fn cast_round_cells(round_dir: &Path, canon: &[(String, Vec<u8>)]) -> Result<Str
     {
         let ok = item
             .get("ok")
-            .and_then(serde_yaml::Value::as_bool)
+            .and_then(serde_norway::Value::as_bool)
             .unwrap_or(false);
         let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
         let variant = item
             .get("variant")
-            .and_then(serde_yaml::Value::as_u64)
+            .and_then(serde_norway::Value::as_u64)
             .unwrap_or(0);
         let path = round_dir.join(file);
         if !ok || file.is_empty() || !path.exists() {
@@ -1427,7 +1434,7 @@ pub fn cast_sheet_run(
             direction_path.display()
         );
     }
-    let doc: serde_yaml::Value = serde_yaml::from_str(&text)
+    let doc: serde_norway::Value = serde_norway::from_str(&text)
         .with_context(|| format!("parsing {}", direction_path.display()))?;
     let direction = doc
         .get("direction")
@@ -1463,7 +1470,7 @@ pub fn cast_sheet_run(
     println!("round dir: {}", round_dir.display());
     write_atomic(
         round_dir.join("briefs.yaml"),
-        serde_yaml::to_string(&BriefsDoc {
+        serde_norway::to_string(&BriefsDoc {
             briefs: briefs.clone(),
         })?,
     )?;
@@ -1597,7 +1604,7 @@ fn extract_verdicts(reply: &str, label: &str, cast: &[CastMember]) -> Result<Vec
         .last()
         .map(|c| c[1].to_string())
         .ok_or_else(|| anyhow!("{label}: reply contained no fenced yaml block"))?;
-    let doc: Doc = serde_yaml::from_str(&fence)
+    let doc: Doc = serde_norway::from_str(&fence)
         .with_context(|| format!("{label}: invalid yaml, or no 'verdicts' list"))?;
     for m in cast {
         let n = doc.verdicts.iter().filter(|v| v.name == m.name).count();
@@ -1648,7 +1655,7 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
     if !briefs_path.exists() || !round_path.exists() {
         return Ok(Vec::new());
     }
-    let briefs: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
+    let briefs: BriefsDoc = serde_norway::from_str(&read(&briefs_path)?)
         .with_context(|| format!("parsing {}", briefs_path.display()))?;
     let applies: HashMap<&str, (bool, &str)> = briefs
         .briefs
@@ -1661,7 +1668,7 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
             (b.id.as_str(), (a, b.purpose.as_str()))
         })
         .collect();
-    let round: serde_yaml::Value = serde_yaml::from_str(&read(&round_path)?)
+    let round: serde_norway::Value = serde_norway::from_str(&read(&round_path)?)
         .with_context(|| format!("parsing {}", round_path.display()))?;
     let mut out = Vec::new();
     for item in round
@@ -1672,7 +1679,7 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
     {
         let ok = item
             .get("ok")
-            .and_then(serde_yaml::Value::as_bool)
+            .and_then(serde_norway::Value::as_bool)
             .unwrap_or(false);
         let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
         let brief = item.get("brief").and_then(|v| v.as_str()).unwrap_or("");
@@ -1795,7 +1802,7 @@ fn check_round(
 
     let check_path = round_dir.join("cast-check.yaml");
     let mut by_file: HashMap<String, CastCheckResult> = if check_path.exists() {
-        let old: CastCheckDoc = serde_yaml::from_str(&read(&check_path)?)
+        let old: CastCheckDoc = serde_norway::from_str(&read(&check_path)?)
             .with_context(|| format!("parsing {}", check_path.display()))?;
         old.results
             .into_iter()
@@ -1820,7 +1827,7 @@ fn check_round(
         .collect();
     write_atomic(
         &check_path,
-        serde_yaml::to_string(&CastCheckDoc {
+        serde_norway::to_string(&CastCheckDoc {
             model: model.full.clone(),
             checked: crate::caller::now_stamp(),
             results: merged,
@@ -1865,7 +1872,7 @@ fn write_round_yaml(
         generated,
         failures,
     };
-    write_atomic(round_dir.join("round.yaml"), serde_yaml::to_string(&doc)?)?;
+    write_atomic(round_dir.join("round.yaml"), serde_norway::to_string(&doc)?)?;
     Ok(failures)
 }
 
@@ -1942,8 +1949,8 @@ fn parse_only_articles(
     if ids.is_empty() {
         bail!("--articles was given but named no article ids");
     }
-    let doc: serde_yaml::Value =
-        serde_yaml::from_str(edition_yaml_text).context("parsing edition.yaml for article ids")?;
+    let doc: serde_norway::Value = serde_norway::from_str(edition_yaml_text)
+        .context("parsing edition.yaml for article ids")?;
     let known: Vec<String> = doc
         .get("articles")
         .and_then(|v| v.as_sequence())
@@ -2017,7 +2024,7 @@ fn resume_round(
         round_dir = edition_dir.join("art/rounds").join(resume);
     }
     let briefs_path = round_dir.join("briefs.yaml");
-    let doc: BriefsDoc = serde_yaml::from_str(&read(&briefs_path)?)
+    let doc: BriefsDoc = serde_norway::from_str(&read(&briefs_path)?)
         .with_context(|| format!("parsing {}", briefs_path.display()))?;
     if doc.briefs.is_empty() {
         bail!("{} has no briefs to resume", briefs_path.display());
@@ -2156,7 +2163,7 @@ pub fn run(opts: &ArtRun) -> Result<i32> {
     };
     write_atomic(
         round_dir.join("briefs.yaml"),
-        serde_yaml::to_string(&briefs_doc)?,
+        serde_norway::to_string(&briefs_doc)?,
     )?;
     println!("  {} brief(s) proposed", briefs.len());
 
@@ -2516,7 +2523,7 @@ mod tests {
 
     #[test]
     fn cast_sheet_prompt_is_wordless_verbatim_composition() {
-        let direction: serde_yaml::Value = serde_yaml::from_str(
+        let direction: serde_norway::Value = serde_norway::from_str(
             "visual_language: manga.\npalette: soft print.\navoid:\n- photorealism\n- neon\n",
         )
         .unwrap();
@@ -2645,6 +2652,11 @@ mod tests {
             .join("009");
         let round = ed.join("art").join("rounds").join("2026-01-01T00-00-00");
         fs::create_dir_all(&round).unwrap();
+        fs::write(
+            ed.join("../../magazine.toml"),
+            "[publication]\nname = \"Test\"\n",
+        )
+        .unwrap();
         fs::write(
             round.join("briefs.yaml"),
             "briefs:\n\

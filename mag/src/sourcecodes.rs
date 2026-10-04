@@ -2,7 +2,7 @@ use crate::package::release::json_text;
 use anyhow::{bail, Context, Result};
 use qrcodegen::{DataTooLong, Mask, QrCode, QrCodeEcc, QrSegment, QrSegmentMode, Version};
 use serde_json::{json, Value};
-use serde_yaml::Value as Yaml;
+use serde_norway::Value as Yaml;
 use std::path::{Path, PathBuf};
 
 const ILLUSTRATED_ROOM: f64 = 41.0;
@@ -248,7 +248,7 @@ pub fn web_svg(payload: &str) -> Result<String> {
 fn yaml(path: &Path) -> Result<Yaml> {
     let text =
         std::fs::read_to_string(path).with_context(|| format!("cannot read {}", path.display()))?;
-    serde_yaml::from_str(&text).with_context(|| format!("cannot parse {}", path.display()))
+    serde_norway::from_str(&text).with_context(|| format!("cannot parse {}", path.display()))
 }
 
 fn sources(root: &Path, edition: &str) -> Result<Vec<(String, String, f64)>> {

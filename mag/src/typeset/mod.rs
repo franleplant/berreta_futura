@@ -88,10 +88,9 @@ pub(crate) fn run_request(
         field(&request, "editionId")?,
         field(&request, "publicationName")?,
     )?;
-    let hyphenation = hyphen::Hyphenation::from_settings(|key| {
-        crate::render::toml_value(repo_root, "render", key)
-    })
-    .map_err(anyhow::Error::msg)?;
+    let hyphenation =
+        hyphen::Hyphenation::from_settings(crate::render::magazine_toml(repo_root)?.get("render"))
+            .map_err(anyhow::Error::msg)?;
     if legibility {
         legible::require_tesseract()?;
     }

@@ -2,7 +2,7 @@ use mag::cover::text;
 use mag::model::manifest;
 
 use manifest::{Article, Edition};
-use serde_yaml::{Mapping, Value};
+use serde_norway::{Mapping, Value};
 use std::path::PathBuf;
 
 fn article(author: &str) -> Article {

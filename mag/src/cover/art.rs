@@ -129,21 +129,10 @@ pub fn graded_art(path: &Path) -> Result<Vec<u8>> {
             graded.extend_from_slice(pixel);
         }
     }
-    encode_png(&Rgb {
+    Rgb {
         width: image.width,
         height: image.height,
         data: graded,
-    })
-}
-
-fn encode_png(image: &Rgb) -> Result<Vec<u8>> {
-    let mut out = Vec::new();
-    {
-        let mut encoder = png::Encoder::new(&mut out, image.width, image.height);
-        encoder.set_color(png::ColorType::Rgb);
-        encoder.set_depth(png::BitDepth::Eight);
-        let mut writer = encoder.write_header()?;
-        writer.write_image_data(&image.data)?;
     }
-    Ok(out)
+    .png()
 }

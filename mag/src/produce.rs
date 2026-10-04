@@ -63,7 +63,7 @@ fn unique_at(text: &str, marker: &str) -> Result<usize> {
     }
 }
 
-fn ranged(text: String, range: Option<&serde_yaml::Value>) -> Result<String> {
+fn ranged(text: String, range: Option<&serde_norway::Value>) -> Result<String> {
     let Some(range) = range else {
         return Ok(text);
     };
@@ -83,14 +83,14 @@ fn ranged(text: String, range: Option<&serde_yaml::Value>) -> Result<String> {
     Ok(text[start..stop].trim_end().to_string() + "\n")
 }
 
-fn ranged_source(source_id: &str, range: Option<&serde_yaml::Value>) -> Result<String> {
+fn ranged_source(source_id: &str, range: Option<&serde_norway::Value>) -> Result<String> {
     ranged(source_text(source_id)?, range)
 }
 
-fn value_to_string(v: &serde_yaml::Value) -> Option<String> {
+fn value_to_string(v: &serde_norway::Value) -> Option<String> {
     match v {
-        serde_yaml::Value::String(s) => Some(s.clone()),
-        serde_yaml::Value::Number(n) => Some(n.to_string()),
+        serde_norway::Value::String(s) => Some(s.clone()),
+        serde_norway::Value::Number(n) => Some(n.to_string()),
         _ => None,
     }
 }
@@ -106,7 +106,7 @@ fn sources_block(sources: &[(String, String)]) -> String {
     out
 }
 
-fn writer_prompt(article: &serde_yaml::Value, sources: &[(String, String)]) -> Result<String> {
+fn writer_prompt(article: &serde_norway::Value, sources: &[(String, String)]) -> Result<String> {
     let mode = article
         .get("content_mode")
         .and_then(|v| v.as_str())
@@ -337,7 +337,7 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
     Ok(body.join("\n").trim().to_string() + "\n")
 }
 
-fn article_frontmatter(article: &serde_yaml::Value) -> Result<String> {
+fn article_frontmatter(article: &serde_norway::Value) -> Result<String> {
     let mode = article
         .get("content_mode")
         .and_then(|v| v.as_str())
@@ -372,7 +372,7 @@ fn produce_piece(
     caller: &Arc<Caller>,
     run_dir: &Path,
     piece_id: &str,
-    article: &serde_yaml::Value,
+    article: &serde_norway::Value,
     sources: &[(String, String)],
     writer_model: &ModelSpec,
 ) -> Result<PieceStatus> {
@@ -384,7 +384,7 @@ fn produce_piece(
         return Ok(
             match read(&out.join("status.yaml"))
                 .ok()
-                .and_then(|t| serde_yaml::from_str(&t).ok())
+                .and_then(|t| serde_norway::from_str(&t).ok())
             {
                 Some(status) => status,
                 None => PieceStatus {
@@ -408,7 +408,7 @@ fn produce_piece(
                 words: body.split_whitespace().count(),
                 state: "written".to_string(),
             };
-            write_atomic(out.join("status.yaml"), serde_yaml::to_string(&status)?)?;
+            write_atomic(out.join("status.yaml"), serde_norway::to_string(&status)?)?;
             println!(
                 "  {piece_id}: verbatim from source ({} words)",
                 status.words
@@ -442,22 +442,22 @@ fn produce_piece(
         words: body.split_whitespace().count(),
         state: "written".to_string(),
     };
-    write_atomic(out.join("status.yaml"), serde_yaml::to_string(&status)?)?;
+    write_atomic(out.join("status.yaml"), serde_norway::to_string(&status)?)?;
     println!("  {piece_id}: written ({} words)", status.words);
     Ok(status)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Plan {
-    edition: serde_yaml::Value,
-    articles: Vec<serde_yaml::Value>,
+    edition: serde_norway::Value,
+    articles: Vec<serde_norway::Value>,
 }
 
 fn yq(s: &str) -> String {
     if s.contains(['\n', '\r']) {
         serde_json::to_string(s).expect("a string serializes")
     } else {
-        serde_yaml::to_string(s)
+        serde_norway::to_string(s)
             .expect("a string serializes")
             .trim_end()
             .to_string()
@@ -470,7 +470,7 @@ struct SourceImage {
     anchor: String,
 }
 
-fn source_images(sid: &str, range: Option<&serde_yaml::Value>) -> Vec<SourceImage> {
+fn source_images(sid: &str, range: Option<&serde_norway::Value>) -> Vec<SourceImage> {
     ranged_source(sid, range)
         .map(|text| images_in(&text))
         .unwrap_or_default()
@@ -503,7 +503,7 @@ fn images_in(text: &str) -> Vec<SourceImage> {
     out
 }
 
-fn verbatim_figures(sids: &[String], range: Option<&serde_yaml::Value>) -> String {
+fn verbatim_figures(sids: &[String], range: Option<&serde_norway::Value>) -> String {
     let rows: Vec<String> = sids
         .iter()
         .flat_map(|sid| {
@@ -535,7 +535,7 @@ fn verbatim_figures(sids: &[String], range: Option<&serde_yaml::Value>) -> Strin
     }
 }
 
-fn article_scaffold(a: &serde_yaml::Value, edition_id: &str) -> Result<String> {
+fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String> {
     let get = |k: &str| a.get(k).and_then(value_to_string).unwrap_or_default();
     let mut y = String::new();
     let id = get("id");
@@ -563,9 +563,9 @@ fn article_scaffold(a: &serde_yaml::Value, edition_id: &str) -> Result<String> {
     }
     y += &format!("  manuscript: editions/{edition_id}/articles/{id}.md\n");
     if let Some(ex) = a.get("extracts") {
-        let mut m = serde_yaml::Mapping::new();
-        m.insert(serde_yaml::Value::String("extracts".into()), ex.clone());
-        for line in serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?.lines() {
+        let mut m = serde_norway::Mapping::new();
+        m.insert(serde_norway::Value::String("extracts".into()), ex.clone());
+        for line in serde_norway::to_string(&serde_norway::Value::Mapping(m))?.lines() {
             y += &format!("  {line}\n");
         }
     }
@@ -591,7 +591,7 @@ fn article_scaffold(a: &serde_yaml::Value, edition_id: &str) -> Result<String> {
 
 fn append_missing_articles(path: &Path, edition_id: &str, plan: &Plan) -> Result<String> {
     let text = read(path)?;
-    let spec: serde_yaml::Value = serde_yaml::from_str(&text)?;
+    let spec: serde_norway::Value = serde_norway::from_str(&text)?;
     let have: HashSet<&str> = spec
         .get("articles")
         .and_then(|v| v.as_sequence())
@@ -669,7 +669,7 @@ pub fn run_edition(
     writer_model: &ModelSpec,
 ) -> Result<i32> {
     let plan_text = read(plan_path)?;
-    let plan: Plan = serde_yaml::from_str(&plan_text).context("parsing plan.yaml")?;
+    let plan: Plan = serde_norway::from_str(&plan_text).context("parsing plan.yaml")?;
     let edition_id = plan
         .edition
         .get("id")
@@ -688,7 +688,7 @@ pub fn run_edition(
             dir
         }
     };
-    write_atomic(run_dir.join("plan.yaml"), serde_yaml::to_string(&plan)?)?;
+    write_atomic(run_dir.join("plan.yaml"), serde_norway::to_string(&plan)?)?;
     let caller = Arc::new(Caller::new(&run_dir));
     let started = Instant::now();
     println!("run dir: {}", run_dir.display());
@@ -697,7 +697,7 @@ pub fn run_edition(
         edition: plan.edition.clone(),
         articles: plan.articles.clone(),
     };
-    let articles: Vec<serde_yaml::Value> = plan
+    let articles: Vec<serde_norway::Value> = plan
         .articles
         .into_iter()
         .filter(|a| match only {
@@ -749,7 +749,7 @@ type Failures = Vec<(String, String)>;
 fn write_articles(
     caller: &Arc<Caller>,
     run_dir: &Path,
-    articles: &[serde_yaml::Value],
+    articles: &[serde_norway::Value],
     writer_model: &ModelSpec,
 ) -> (Vec<PieceStatus>, Failures) {
     let mut handles = Vec::new();
@@ -858,7 +858,7 @@ const FRONT_TODOS: [(&str, &str); 5] = [
 fn parse_front_matter(reply: &str) -> Result<HashMap<String, String>> {
     let yaml = reply.trim().trim_start_matches("```yaml").trim_matches('`');
     let drafted: HashMap<String, String> =
-        serde_yaml::from_str(yaml).context("the front matter reply is not a YAML mapping")?;
+        serde_norway::from_str(yaml).context("the front matter reply is not a YAML mapping")?;
     for key in ["title", "subtitle", "back_text"] {
         let value = drafted.get(key).map_or("", |v| v.trim());
         if value.is_empty() || value.contains('\u{2014}') {
@@ -882,7 +882,7 @@ fn front_matter(
     if !text.lines().any(|line| front_todo(line).is_some()) {
         return Ok(false);
     }
-    let edition: serde_yaml::Value = serde_yaml::from_str(&text)?;
+    let edition: serde_norway::Value = serde_norway::from_str(&text)?;
     let finals = edition["articles"]
         .as_sequence()
         .into_iter()
@@ -956,8 +956,8 @@ mod tests {
             "true", "null", "~", "1984", "- x", "? x", "a: b", "it's", "a\nb", "", "# x", "yes",
             "0x1F", "1e3", "@x", "a #b", "x:", "'q'", "\"q\"", "é: ü",
         ] {
-            let doc: serde_yaml::Value =
-                serde_yaml::from_str(&format!("k: {}\n", yq(raw))).unwrap();
+            let doc: serde_norway::Value =
+                serde_norway::from_str(&format!("k: {}\n", yq(raw))).unwrap();
             assert_eq!(doc["k"].as_str(), Some(raw), "{raw:?} -> {}", yq(raw));
         }
     }
@@ -982,14 +982,14 @@ mod tests {
             "id: '099'\narticles:\n- id: old\n  title: Edited\ntail_art_fit: contain\n",
         )
         .unwrap();
-        let plan: Plan = serde_yaml::from_str(
+        let plan: Plan = serde_norway::from_str(
             "edition: {id: '099'}\narticles:\n- {id: old, title: Old, source_ids: []}\n- {id: new, title: New, content_mode: verbatim, source_ids: []}\n",
         )
         .unwrap();
         let msg = append_missing_articles(&path, "099", &plan).unwrap();
         let out = read(&path).unwrap();
         assert!(msg.contains("added new"), "{msg}");
-        let spec: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let spec: serde_norway::Value = serde_norway::from_str(&out).unwrap();
         let ids: Vec<&str> = spec["articles"]
             .as_sequence()
             .unwrap()
@@ -1008,18 +1008,18 @@ mod tests {
     #[test]
     fn source_range_slices_between_unique_markers() {
         let text = "# T\n\n## 1. Intro\nA\n\n## 2. Depth\nB\n\n## 3. End\nC\n".to_string();
-        let range: serde_yaml::Value =
-            serde_yaml::from_str("{begin: '## 2. Depth', end: '## 3. End'}").unwrap();
+        let range: serde_norway::Value =
+            serde_norway::from_str("{begin: '## 2. Depth', end: '## 3. End'}").unwrap();
         assert_eq!(
             ranged(text.clone(), Some(&range)).unwrap(),
             "## 2. Depth\nB\n"
         );
-        let open: serde_yaml::Value = serde_yaml::from_str("{begin: '## 3. End'}").unwrap();
+        let open: serde_norway::Value = serde_norway::from_str("{begin: '## 3. End'}").unwrap();
         assert_eq!(ranged(text.clone(), Some(&open)).unwrap(), "## 3. End\nC\n");
-        let ambiguous: serde_yaml::Value = serde_yaml::from_str("{begin: '## '}").unwrap();
+        let ambiguous: serde_norway::Value = serde_norway::from_str("{begin: '## '}").unwrap();
         assert!(ranged(text.clone(), Some(&ambiguous)).is_err());
-        let backwards: serde_yaml::Value =
-            serde_yaml::from_str("{begin: '## 3. End', end: '## 1. Intro'}").unwrap();
+        let backwards: serde_norway::Value =
+            serde_norway::from_str("{begin: '## 3. End', end: '## 1. Intro'}").unwrap();
         assert!(ranged(text, Some(&backwards)).is_err());
     }
 
@@ -1054,8 +1054,8 @@ mod tests {
         assert_eq!(v, vec!["Bad \u{2014} line.".to_string()]);
     }
 
-    fn article_row() -> serde_yaml::Value {
-        serde_yaml::from_str(
+    fn article_row() -> serde_norway::Value {
+        serde_norway::from_str(
             "id: mcp\ntitle: MCP in a Nutshell\ncontent_mode: in_a_nutshell\nsource_ids: [a-1, b-2]\n",
         )
         .unwrap()
@@ -1064,8 +1064,8 @@ mod tests {
     #[test]
     fn writer_prompt_opens_with_sources_block() {
         let sources = vec![("a-1".to_string(), "SOURCE TEXT".to_string())];
-        let row: serde_yaml::Value =
-            serde_yaml::from_str("content_mode: article\ntitle: T\n").unwrap();
+        let row: serde_norway::Value =
+            serde_norway::from_str("content_mode: article\ntitle: T\n").unwrap();
         let p = writer_prompt(&row, &sources).unwrap();
         assert!(p.starts_with("<sources>\n\nSOURCE TEXT\n\n</sources>\n\n"));
         assert!(p.contains("90% orwell"));

@@ -1,6 +1,6 @@
 use mag::model::records::{load_records, resolve_extracts, Extract, ExtractRequest};
 use mag::model::shared::ValidationError;
-use serde_yaml::Value;
+use serde_norway::Value;
 use std::path::{Path, PathBuf};
 
 fn root() -> PathBuf {
@@ -8,7 +8,7 @@ fn root() -> PathBuf {
 }
 
 fn resolve(manuscript: &str, begin: &str, end: &str, style: &str) -> Result<Vec<Extract>, String> {
-    let rows: Value = serde_yaml::from_str(&format!(
+    let rows: Value = serde_norway::from_str(&format!(
         "[{{id: x1, source_id: src-a, begin: '{begin}', end: '{end}', style: {style}, caption: c, anchor: Beta Heading}}]"
     ))
     .expect("the row parses");

@@ -158,12 +158,12 @@ fn resolve_field(raw: &str, manifest_dir: &Path) -> PathBuf {
     }
 }
 
-fn read_yaml(path: &Path) -> Result<serde_yaml::Value> {
+fn read_yaml(path: &Path) -> Result<serde_norway::Value> {
     let text = fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
-    serde_yaml::from_str(&text).with_context(|| format!("parsing {}", path.display()))
+    serde_norway::from_str(&text).with_context(|| format!("parsing {}", path.display()))
 }
 
-fn str_field<'a>(v: &'a serde_yaml::Value, key: &str) -> Option<&'a str> {
+fn str_field<'a>(v: &'a serde_norway::Value, key: &str) -> Option<&'a str> {
     v.get(key).and_then(|x| x.as_str())
 }
 
@@ -201,37 +201,24 @@ pub(crate) fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     }
 }
 
-pub(crate) fn toml_value(repo_root: &Path, section: &str, key: &str) -> Option<String> {
-    let text = fs::read_to_string(repo_root.join("magazine.toml")).ok()?;
-    let header = format!("[{section}]");
-    let mut inside = false;
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with('[') {
-            inside = trimmed == header;
-            continue;
-        }
-        if !inside {
-            continue;
-        }
-        let Some(rest) = trimmed.strip_prefix(key).map(str::trim_start) else {
-            continue;
-        };
-        if let Some(value) = rest.strip_prefix('=') {
-            let value = value.trim().trim_matches('"');
-            if !value.is_empty() {
-                return Some(value.to_string());
-            }
-        }
-    }
-    None
+pub(crate) fn magazine_toml(repo_root: &Path) -> Result<toml::Table> {
+    let path = repo_root.join("magazine.toml");
+    fs::read_to_string(&path)
+        .with_context(|| format!("reading {}", path.display()))?
+        .parse()
+        .with_context(|| format!("parsing {}", path.display()))
 }
 
-pub(crate) fn publication_name(repo_root: &Path) -> String {
-    toml_value(repo_root, "publication", "name").unwrap_or_else(|| "Magazine".to_string())
+pub(crate) fn publication_name(repo_root: &Path) -> Result<String> {
+    magazine_toml(repo_root)?
+        .get("publication")
+        .and_then(|table| table.get("name"))
+        .and_then(toml::Value::as_str)
+        .map(str::to_string)
+        .context("magazine.toml needs [publication] name")
 }
 
-fn stage_article_figures(staging: &mut Staging, article: &serde_yaml::Value) -> Result<()> {
+fn stage_article_figures(staging: &mut Staging, article: &serde_norway::Value) -> Result<()> {
     let article_id = str_field(article, "id").unwrap_or("<unknown article>");
     let Some(figures) = article.get("figures").and_then(|v| v.as_sequence()) else {
         return Ok(());
@@ -248,7 +235,7 @@ fn stage_article_figures(staging: &mut Staging, article: &serde_yaml::Value) -> 
     Ok(())
 }
 
-fn stage_article_extracts(staging: &mut Staging, article: &serde_yaml::Value) -> Result<()> {
+fn stage_article_extracts(staging: &mut Staging, article: &serde_norway::Value) -> Result<()> {
     let article_id = str_field(article, "id").unwrap_or("<unknown article>");
     let Some(extracts) = article.get("extracts").and_then(|v| v.as_sequence()) else {
         return Ok(());
@@ -310,7 +297,7 @@ struct PendingFigures {
     meta: String,
 }
 
-fn pending_figures(article: &serde_yaml::Value, headings: &[String]) -> PendingFigures {
+fn pending_figures(article: &serde_norway::Value, headings: &[String]) -> PendingFigures {
     let mut pending = PendingFigures {
         idx: Vec::new(),
         ids: Vec::new(),
@@ -355,7 +342,7 @@ fn resolve_article_anchors(
     manuscript_path: &Path,
     headings: &[String],
     pending: &PendingFigures,
-    article: &mut serde_yaml::Value,
+    article: &mut serde_norway::Value,
 ) -> Result<AnchorOutcome> {
     let mut outcome = AnchorOutcome {
         changed: false,
@@ -401,8 +388,8 @@ fn resolve_article_anchors(
                 println!("  re-anchored {article_id}:{fig_id} '{old}' -> '{heading}'");
                 if let Some(map) = figs[i].as_mapping_mut() {
                     map.insert(
-                        serde_yaml::Value::String("anchor".to_string()),
-                        serde_yaml::Value::String(heading),
+                        serde_norway::Value::String("anchor".to_string()),
+                        serde_norway::Value::String(heading),
                     );
                 }
                 outcome.changed = true;
@@ -508,9 +495,9 @@ pub struct RenderArgs {
 struct EditionInputs {
     dir: PathBuf,
     yaml_path: PathBuf,
-    yaml: serde_yaml::Value,
+    yaml: serde_norway::Value,
     id: String,
-    articles: Vec<serde_yaml::Value>,
+    articles: Vec<serde_norway::Value>,
     article_ids: Vec<String>,
 }
 
@@ -647,7 +634,7 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
             .unwrap_or("en")
             .to_string(),
         languages,
-        publication_name: publication_name(&repo_root),
+        publication_name: publication_name(&repo_root)?,
         renderer: RENDERER.to_string(),
         artifact_root: repo_root.to_string_lossy().to_string(),
         inputs: staging.rows,
@@ -692,7 +679,7 @@ fn pick_content_run(
     run_flag: Option<&str>,
     edition_dir: &Path,
     article_ids: &[String],
-    edition_yaml: &serde_yaml::Value,
+    edition_yaml: &serde_norway::Value,
 ) -> Result<Option<PathBuf>> {
     let needs_editorial = str_field(edition_yaml, "editorial").is_some();
     let content_run = match run_flag {
@@ -719,7 +706,7 @@ fn pick_content_run(
 fn patch_anchors(
     run: &Path,
     render_dir: &Path,
-    edition_yaml: &serde_yaml::Value,
+    edition_yaml: &serde_norway::Value,
     anchor_model: &ModelSpec,
     no_model: bool,
 ) -> Result<Option<PathBuf>> {
@@ -787,13 +774,13 @@ fn patch_anchors(
         return Ok(None);
     }
     let patched_path = render_dir.join("edition.yaml");
-    fs::write(&patched_path, serde_yaml::to_string(&patched)?)?;
+    fs::write(&patched_path, serde_norway::to_string(&patched)?)?;
     Ok(Some(patched_path))
 }
 
 fn stage_manuscripts(
     staging: &mut Staging,
-    edition_yaml: &serde_yaml::Value,
+    edition_yaml: &serde_norway::Value,
     edition_dir: &Path,
     content_run: Option<&Path>,
 ) {
@@ -819,7 +806,7 @@ fn stage_manuscripts(
     }
 }
 
-fn articles_of(edition_yaml: &serde_yaml::Value) -> impl Iterator<Item = &serde_yaml::Value> {
+fn articles_of(edition_yaml: &serde_norway::Value) -> impl Iterator<Item = &serde_norway::Value> {
     edition_yaml
         .get("articles")
         .and_then(|v| v.as_sequence())
@@ -843,7 +830,7 @@ fn stage_source_codes(staging: &mut Staging, edition_dir: &Path, repo_root: &Pat
     }
 }
 
-fn stage_art(staging: &mut Staging, edition_yaml: &serde_yaml::Value, edition_dir: &Path) {
+fn stage_art(staging: &mut Staging, edition_yaml: &serde_norway::Value, edition_dir: &Path) {
     let cover = edition_yaml
         .get("cover")
         .and_then(|c| str_field(c, "art_path"));
@@ -894,7 +881,11 @@ fn stage_translation(
     Ok(vec!["en".to_string(), "es".to_string()])
 }
 
-fn stage_source_records(staging: &mut Staging, edition_yaml: &serde_yaml::Value, repo_root: &Path) {
+fn stage_source_records(
+    staging: &mut Staging,
+    edition_yaml: &serde_norway::Value,
+    repo_root: &Path,
+) {
     let top = edition_yaml
         .get("sources")
         .and_then(|v| v.as_sequence())

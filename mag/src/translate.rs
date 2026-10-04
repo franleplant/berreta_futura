@@ -215,7 +215,7 @@ pub fn run(run_dir: &Path, model: &ModelSpec) -> Result<i32> {
 
     write_atomic(
         translations_root.join("status.yaml"),
-        serde_yaml::to_string(&results)?,
+        serde_norway::to_string(&results)?,
     )
     .with_context(|| {
         format!(

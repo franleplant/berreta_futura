@@ -41,3 +41,16 @@ Model calls go through `caller.rs`, which takes `<backend>:<model>` specs.
 `cargo test` in `mag/` covers the CLI and the Typst renderer. Render the
 current edition after renderer changes and read the PDF; the render critic's
 report sits beside it.
+
+## Dependency pins
+
+`typst`, `typst-layout`, `typst-pdf`, and `typst-syntax` are pinned with `=`
+because a patch release can move glyph positions and line breaks, which
+changes the printed pages; a bump is a deliberate step followed by rendering
+an edition and comparing pages. They also release in lockstep, so they move
+together. `resvg`, `usvg`, and `tiny-skia` are pinned for pixel
+reproducibility of the cover, logo, and social-card rasters, and their
+versions must equal the ones `typst-library` (usvg) and `krilla-svg` (resvg,
+usvg, tiny-skia) already resolve, or Cargo would build duplicate copies and
+`tiny_skia::Pixmap` would stop matching across crates. `typst-library` is not
+listed; `typst` re-exports what is needed.

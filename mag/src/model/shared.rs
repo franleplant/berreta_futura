@@ -1,4 +1,4 @@
-use serde_yaml::{Mapping, Value};
+use serde_norway::{Mapping, Value};
 use std::fmt;
 use std::path::{Component, Path, PathBuf};
 
@@ -51,7 +51,7 @@ pub(crate) fn safe_project_path(root: &Path, value: &str, must_exist: bool) -> R
 }
 
 pub(crate) fn load_yaml(text: &str) -> std::result::Result<Value, String> {
-    serde_yaml::from_str(text).map_err(|error| error.to_string())
+    serde_norway::from_str(text).map_err(|error| error.to_string())
 }
 
 pub(crate) fn text(value: Option<&Value>) -> &str {

@@ -1,7 +1,7 @@
 use super::shared::load_yaml;
 use anyhow::{bail, Context, Result};
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
-use serde_yaml::{Mapping, Value};
+use serde_norway::{Mapping, Value};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 

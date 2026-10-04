@@ -23,7 +23,7 @@ fn a_translated_figure_path_stays_source_relative_as_in_the_base_edition() {
     let base = load_edition(&root, "906", &known, &options).expect("906 loads");
     let es = load_translation(&root, &base, "es").expect("906 es loads");
     let paths = |edition: &Edition| -> Vec<Json> {
-        serde_yaml::from_value::<Json>(edition.raw.clone()).expect("raw is data")["articles"]
+        serde_norway::from_value::<Json>(edition.raw.clone()).expect("raw is data")["articles"]
             .as_array()
             .expect("articles")
             .iter()

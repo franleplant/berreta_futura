@@ -27,8 +27,8 @@ fn matching_edition_dirs(edition: &str) -> Result<Vec<PathBuf>> {
 }
 
 pub fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<String>)> {
-    let doc: serde_yaml::Value =
-        serde_yaml::from_str(release_state).context("parsing library/release-state.yaml")?;
+    let doc: serde_norway::Value =
+        serde_norway::from_str(release_state).context("parsing library/release-state.yaml")?;
     let collecting = doc
         .get("collecting_editions")
         .and_then(|v| v.as_sequence())
@@ -67,25 +67,28 @@ fn article_slug(source_id: &str) -> String {
     trimmed.trim_end_matches('-').to_string()
 }
 
-fn article_row(source_id: &str, title: &str, author: &str, mode: &str) -> serde_yaml::Value {
-    let mut row = serde_yaml::Mapping::new();
-    let mut set = |k: &str, v: serde_yaml::Value| {
-        row.insert(serde_yaml::Value::String(k.to_string()), v);
+fn article_row(source_id: &str, title: &str, author: &str, mode: &str) -> serde_norway::Value {
+    let mut row = serde_norway::Mapping::new();
+    let mut set = |k: &str, v: serde_norway::Value| {
+        row.insert(serde_norway::Value::String(k.to_string()), v);
     };
-    set("id", serde_yaml::Value::String(article_slug(source_id)));
-    set("title", serde_yaml::Value::String(title.to_string()));
-    set("author", serde_yaml::Value::String(author.to_string()));
-    set("content_mode", serde_yaml::Value::String(mode.to_string()));
+    set("id", serde_norway::Value::String(article_slug(source_id)));
+    set("title", serde_norway::Value::String(title.to_string()));
+    set("author", serde_norway::Value::String(author.to_string()));
+    set(
+        "content_mode",
+        serde_norway::Value::String(mode.to_string()),
+    );
     set(
         "source_ids",
-        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(source_id.to_string())]),
+        serde_norway::Value::Sequence(vec![serde_norway::Value::String(source_id.to_string())]),
     );
-    serde_yaml::Value::Mapping(row)
+    serde_norway::Value::Mapping(row)
 }
 
 fn referenced_source_ids(plan_text: &str) -> Result<std::collections::HashSet<String>> {
-    let doc: serde_yaml::Value =
-        serde_yaml::from_str(plan_text).context("parsing existing plan.yaml")?;
+    let doc: serde_norway::Value =
+        serde_norway::from_str(plan_text).context("parsing existing plan.yaml")?;
     let articles = doc
         .get("articles")
         .and_then(|v| v.as_sequence())
@@ -106,16 +109,16 @@ fn referenced_source_ids(plan_text: &str) -> Result<std::collections::HashSet<St
     Ok(out)
 }
 
-fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
-    let before: serde_yaml::Value =
-        serde_yaml::from_str(plan_text).context("parsing existing plan.yaml")?;
+fn append_rows(plan_text: &str, rows: &[serde_norway::Value]) -> Result<String> {
+    let before: serde_norway::Value =
+        serde_norway::from_str(plan_text).context("parsing existing plan.yaml")?;
     let before_len = before
         .get("articles")
         .and_then(|v| v.as_sequence())
         .map(std::vec::Vec::len)
         .ok_or_else(|| anyhow!("existing plan.yaml has no articles list"))?;
 
-    let rows_text = serde_yaml::to_string(&serde_yaml::Value::Sequence(rows.to_vec()))?;
+    let rows_text = serde_norway::to_string(&serde_norway::Value::Sequence(rows.to_vec()))?;
     let mut appended = plan_text.to_string();
     if !appended.ends_with('\n') {
         appended.push('\n');
@@ -123,7 +126,7 @@ fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
     appended.push_str(&rows_text);
 
     let check = |appended: &str| -> Option<usize> {
-        serde_yaml::from_str::<serde_yaml::Value>(appended)
+        serde_norway::from_str::<serde_norway::Value>(appended)
             .ok()?
             .get("articles")?
             .as_sequence()
@@ -157,7 +160,7 @@ fn default_mode(sid: &str) -> Result<&'static str> {
     Ok(mode_for_source_text(&read(&path)?))
 }
 
-fn row_from_record(sid: &str, mode: Option<&str>) -> Result<serde_yaml::Value> {
+fn row_from_record(sid: &str, mode: Option<&str>) -> Result<serde_norway::Value> {
     let mode = match mode {
         Some(m) => m,
         None => default_mode(sid)?,
@@ -165,7 +168,7 @@ fn row_from_record(sid: &str, mode: Option<&str>) -> Result<serde_yaml::Value> {
     let record_path = PathBuf::from("library/sources")
         .join(sid)
         .join("record.yaml");
-    let record: serde_yaml::Value = serde_yaml::from_str(&read(&record_path)?)
+    let record: serde_norway::Value = serde_norway::from_str(&read(&record_path)?)
         .with_context(|| format!("parsing {}", record_path.display()))?;
     let title = record
         .get("title")
@@ -218,8 +221,8 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     let mut joined = out.join("\n");
     joined.push('\n');
 
-    let doc: serde_yaml::Value =
-        serde_yaml::from_str(&joined).context("re-parsing plan.yaml after join")?;
+    let doc: serde_norway::Value =
+        serde_norway::from_str(&joined).context("re-parsing plan.yaml after join")?;
     let landed = doc
         .get("articles")
         .and_then(|v| v.as_sequence())
@@ -249,28 +252,28 @@ fn plan_path_for(edition: &str) -> Result<PathBuf> {
 fn write_new_plan(
     out_path: &std::path::Path,
     edition_id: &str,
-    articles: Vec<serde_yaml::Value>,
+    articles: Vec<serde_norway::Value>,
 ) -> Result<()> {
-    let mut edition_map = serde_yaml::Mapping::new();
+    let mut edition_map = serde_norway::Mapping::new();
     edition_map.insert(
-        serde_yaml::Value::String("id".to_string()),
-        serde_yaml::Value::String(edition_id.to_string()),
+        serde_norway::Value::String("id".to_string()),
+        serde_norway::Value::String(edition_id.to_string()),
     );
-    let mut plan = serde_yaml::Mapping::new();
+    let mut plan = serde_norway::Mapping::new();
     plan.insert(
-        serde_yaml::Value::String("edition".to_string()),
-        serde_yaml::Value::Mapping(edition_map),
+        serde_norway::Value::String("edition".to_string()),
+        serde_norway::Value::Mapping(edition_map),
     );
     plan.insert(
-        serde_yaml::Value::String("articles".to_string()),
-        serde_yaml::Value::Sequence(articles),
+        serde_norway::Value::String("articles".to_string()),
+        serde_norway::Value::Sequence(articles),
     );
     if let Some(dir) = out_path.parent() {
         fs::create_dir_all(dir)?;
     }
     write_atomic(
         out_path,
-        serde_yaml::to_string(&serde_yaml::Value::Mapping(plan))?,
+        serde_norway::to_string(&serde_norway::Value::Mapping(plan))?,
     )?;
     Ok(())
 }
@@ -493,7 +496,7 @@ articles:
         let out = append_rows(PLAN, &[row]).unwrap();
         assert!(out.starts_with("# hand-written header comment\n"));
         assert!(out.contains("- id: merged-nutshell"));
-        let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let doc: serde_norway::Value = serde_norway::from_str(&out).unwrap();
         let articles = doc.get("articles").unwrap().as_sequence().unwrap();
         assert_eq!(articles.len(), 3);
         assert_eq!(articles[2].get("id").unwrap().as_str(), Some("d"));
@@ -526,7 +529,7 @@ edition:
     fn join_article_appends_to_that_rows_source_ids_only() {
         let out = join_article(PLAN, "merged-nutshell", "d-77778888").unwrap();
         assert!(out.starts_with("# hand-written header comment\n"));
-        let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let doc: serde_norway::Value = serde_norway::from_str(&out).unwrap();
         let arts = doc.get("articles").unwrap().as_sequence().unwrap();
         let merged = arts[0].get("source_ids").unwrap().as_sequence().unwrap();
         assert_eq!(merged.len(), 3);
@@ -542,7 +545,7 @@ edition:
         );
 
         let out = join_article(PLAN, "solo-article", "d-77778888").unwrap();
-        let doc: serde_yaml::Value = serde_yaml::from_str(&out).unwrap();
+        let doc: serde_norway::Value = serde_norway::from_str(&out).unwrap();
         let solo = doc.get("articles").unwrap().as_sequence().unwrap()[1]
             .get("source_ids")
             .unwrap();

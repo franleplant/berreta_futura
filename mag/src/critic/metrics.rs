@@ -1,4 +1,6 @@
 use anyhow::{anyhow, bail, Context, Result};
+use image::codecs::png::{CompressionType, FilterType, PngDecoder, PngEncoder};
+use image::{DynamicImage, ExtendedColorType, ImageDecoder, ImageEncoder};
 use std::path::Path;
 use zune_core::bytestream::ZCursor;
 use zune_core::colorspace::ColorSpace;
@@ -43,6 +45,13 @@ pub struct Rgb {
 }
 
 impl Rgb {
+    pub fn png(&self) -> Result<Vec<u8>> {
+        let mut out = Vec::new();
+        PngEncoder::new_with_quality(&mut out, CompressionType::Default, FilterType::Adaptive)
+            .write_image(&self.data, self.width, self.height, ExtendedColorType::Rgb8)?;
+        Ok(out)
+    }
+
     fn pixels(&self) -> usize {
         (self.width as usize) * (self.height as usize)
     }
@@ -158,45 +167,20 @@ pub fn decode_rgb(path: &Path) -> Result<Rgb> {
     if bytes.starts_with(b"\xff\xd8") {
         return decode_jpeg(&bytes, path);
     }
-    let mut decoder = png::Decoder::new(std::io::Cursor::new(&bytes));
-    decoder.set_transformations(png::Transformations::EXPAND);
-    let mut reader = decoder
-        .read_info()
+    let mut decoder = PngDecoder::new(std::io::Cursor::new(&bytes))
         .with_context(|| format!("cannot read png header {}", path.display()))?;
-    check_orientation(reader.info().exif_metadata.as_deref(), path)?;
-    let mut buffer = vec![0; reader.output_buffer_size().unwrap_or(0)];
-    let frame = reader
-        .next_frame(&mut buffer)
-        .with_context(|| format!("cannot decode png {}", path.display()))?;
-    if frame.bit_depth != png::BitDepth::Eight {
-        bail!(
-            "unsupported png bit depth {:?} in {}",
-            frame.bit_depth,
-            path.display()
-        );
+    check_orientation(decoder.exif_metadata()?.as_deref(), path)?;
+    let color = decoder.color_type();
+    if color.bytes_per_pixel() != color.channel_count() {
+        bail!("unsupported png bit depth {color:?} in {}", path.display());
     }
-    let raw = &buffer[..frame.buffer_size()];
-    let data = match frame.color_type {
-        png::ColorType::Rgb => raw.to_vec(),
-        png::ColorType::Rgba => raw
-            .chunks_exact(4)
-            .flat_map(|p| [p[0], p[1], p[2]])
-            .collect(),
-        png::ColorType::Grayscale => raw.iter().flat_map(|&g| [g, g, g]).collect(),
-        png::ColorType::GrayscaleAlpha => raw
-            .chunks_exact(2)
-            .flat_map(|p| [p[0], p[0], p[0]])
-            .collect(),
-        other @ png::ColorType::Indexed => bail!(
-            "unsupported png color type {:?} in {}",
-            other,
-            path.display()
-        ),
-    };
+    let image = DynamicImage::from_decoder(decoder)
+        .with_context(|| format!("cannot decode png {}", path.display()))?
+        .into_rgb8();
     Ok(Rgb {
-        width: frame.width,
-        height: frame.height,
-        data,
+        width: image.width(),
+        height: image.height(),
+        data: image.into_raw(),
     })
 }
 

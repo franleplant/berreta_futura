@@ -66,7 +66,7 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
     files(&second, &second, &mut b);
     assert!(a == b, "two builds from the same inputs differ");
     let edition = std::fs::read_to_string(repository().join("editions/011/edition.yaml")).unwrap();
-    let yaml: serde_yaml::Value = serde_yaml::from_str(&edition).unwrap();
+    let yaml: serde_norway::Value = serde_norway::from_str(&edition).unwrap();
     for article in yaml["articles"].as_sequence().unwrap() {
         let page = format!("011/{}/index.html", article["id"].as_str().unwrap());
         assert!(a.contains_key(&page), "missing {page}");

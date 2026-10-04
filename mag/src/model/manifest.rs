@@ -8,7 +8,7 @@ use super::shared::{
     ValidationError,
 };
 use regex::Regex;
-use serde_yaml::{Mapping, Value};
+use serde_norway::{Mapping, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 use std::sync::OnceLock;
@@ -2147,7 +2147,7 @@ fn load_editorial(path: &Path) -> Result<Editorial> {
             path.display()
         )]));
     };
-    let metadata: Value = serde_yaml::from_str(header).map_err(|error| {
+    let metadata: Value = serde_norway::from_str(header).map_err(|error| {
         ValidationError(vec![format!(
             "Cannot parse editorial frontmatter {}: {error}",
             path.display()

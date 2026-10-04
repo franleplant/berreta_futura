@@ -9,7 +9,7 @@ use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cov
 use crate::model::manifest::Edition;
 use anyhow::{bail, Context, Result};
 use lopdf::{Document, Object, StringFormat};
-use serde_yaml::Value;
+use serde_norway::Value;
 use std::path::Path;
 
 pub const DESIGN_TOML: &str = "design/covers/canto-vivo/design.toml";
@@ -563,10 +563,10 @@ mod tests {
             editorial: None,
             articles: vec![],
             sections: vec![],
-            cover: serde_yaml::Mapping::new(),
+            cover: serde_norway::Mapping::new(),
             cover_art: None,
             closing_plates: vec![],
-            raw: serde_yaml::Value::Null,
+            raw: serde_norway::Value::Null,
         }
     }
 
@@ -621,7 +621,7 @@ mod tests {
         let assets = root().join("mag/assets");
         let (design, _) = super::design(&root()).expect("design.toml loads");
         let framed = |layout: &str| {
-            let mut cover = serde_yaml::Mapping::new();
+            let mut cover = serde_norway::Mapping::new();
             cover.insert("layout".into(), layout.into());
             let edition = Edition {
                 cover,
@@ -639,7 +639,7 @@ mod tests {
         assert!(framed("footer_caption").is_err() && framed("honored_plate").is_err());
     }
 
-    fn back_face(language: &str, cover: serde_yaml::Mapping) -> (String, Face) {
+    fn back_face(language: &str, cover: serde_norway::Mapping) -> (String, Face) {
         let assets = root().join("mag/assets");
         let (design, back_design) = design(&root()).expect("design.toml loads");
         let mut fonts = Fonts::load(&assets).expect("cover faces load");
@@ -660,7 +660,7 @@ mod tests {
     #[test]
     fn the_back_cover_text_layer_carries_each_languages_copy() {
         let values = |language| {
-            back_face(language, serde_yaml::Mapping::new())
+            back_face(language, serde_norway::Mapping::new())
                 .1
                 .text
                 .into_iter()
@@ -690,7 +690,7 @@ mod tests {
 
     #[test]
     fn the_back_cover_rasterizes_at_a5_and_300_dpi() {
-        let (svg, _) = back_face("en", serde_yaml::Mapping::new());
+        let (svg, _) = back_face("en", serde_norway::Mapping::new());
         let pixmap = raster::render(&raster::raster_svg(&svg, 300)).expect("back rasterizes");
         assert_eq!((pixmap.width(), pixmap.height()), (1748, 2480));
     }

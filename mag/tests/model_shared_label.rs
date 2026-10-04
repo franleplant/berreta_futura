@@ -1,8 +1,8 @@
 use mag::model::shared;
-use serde_yaml::Value;
+use serde_norway::Value;
 
 fn label(frontmatter: &str) -> String {
-    let parsed: Value = serde_yaml::from_str(frontmatter).expect("frontmatter parses");
+    let parsed: Value = serde_norway::from_str(frontmatter).expect("frontmatter parses");
     shared::content_label("en", parsed.as_mapping().expect("mapping"), "article")
 }
 

@@ -358,7 +358,7 @@ fn format_int(edition: &Edition, key: &str, default: i64) -> i64 {
         .raw
         .get("format")
         .and_then(|f| f.get(key))
-        .and_then(serde_yaml::Value::as_i64)
+        .and_then(serde_norway::Value::as_i64)
         .unwrap_or(default)
 }
 

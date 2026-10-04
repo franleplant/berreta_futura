@@ -46,18 +46,8 @@ fn write_pdf(path: &Path, pages: &[(f64, f64)]) {
 }
 
 fn write_png(path: &Path, width: u32, height: u32, pixel: impl Fn(u32, u32) -> [u8; 3]) {
-    let file = std::fs::File::create(path).expect("png file");
-    let mut encoder = png::Encoder::new(std::io::BufWriter::new(file), width, height);
-    encoder.set_color(png::ColorType::Rgb);
-    encoder.set_depth(png::BitDepth::Eight);
-    let mut writer = encoder.write_header().expect("png header");
-    let mut data = Vec::with_capacity((width * height * 3) as usize);
-    for y in 0..height {
-        for x in 0..width {
-            data.extend_from_slice(&pixel(x, y));
-        }
-    }
-    writer.write_image_data(&data).expect("png data");
+    let image = image::RgbImage::from_fn(width, height, |x, y| image::Rgb(pixel(x, y)));
+    image.save(path).expect("png file");
 }
 
 fn a5_pages(count: usize) -> Vec<(f64, f64)> {

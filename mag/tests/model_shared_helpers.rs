@@ -1,8 +1,8 @@
 use mag::model::shared;
-use serde_yaml::{Mapping, Value};
+use serde_norway::{Mapping, Value};
 
 fn yaml(text: &str) -> Value {
-    serde_yaml::from_str(text).expect("the case parses")
+    serde_norway::from_str(text).expect("the case parses")
 }
 
 fn mapping(text: &str) -> Mapping {

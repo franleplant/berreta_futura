@@ -1650,14 +1650,7 @@ fn crop_rgb(image: &Rgb, box_rect: [u32; 4]) -> Rgb {
 }
 
 pub(crate) fn write_png(path: &Path, image: &Rgb) -> Result<()> {
-    let file =
-        std::fs::File::create(path).with_context(|| format!("cannot create {}", path.display()))?;
-    let mut encoder = png::Encoder::new(std::io::BufWriter::new(file), image.width, image.height);
-    encoder.set_color(png::ColorType::Rgb);
-    encoder.set_depth(png::BitDepth::Eight);
-    let mut writer = encoder.write_header()?;
-    writer.write_image_data(&image.data)?;
-    Ok(())
+    std::fs::write(path, image.png()?).with_context(|| format!("cannot write {}", path.display()))
 }
 
 fn crop_name(base: &str, used: &mut BTreeSet<String>) -> String {

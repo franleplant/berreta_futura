@@ -5,7 +5,6 @@ use crate::site::{config, publish_record, Pdf};
 use anyhow::{ensure, Context, Result};
 use sha2::{Digest, Sha256};
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -39,7 +38,7 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
     );
     let (bytes, sha256) = digest(&args.pdf)?;
     let key = key(
-        &slug(&publication_name(&root)),
+        &slug(&publication_name(&root)?),
         &edition,
         &args.lang,
         &sha256,
@@ -66,7 +65,7 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             sha256,
         },
     );
-    write_atomic(&path, serde_yaml::to_string(&record)?)?;
+    write_atomic(&path, serde_norway::to_string(&record)?)?;
     println!("link: {url}\nwrote {}", path.display());
     println!(
         "\nnext: git add {0} && git commit -m 'edition {edition}: publish the {1} PDF' && git push (the site deploy adds the link)",
@@ -97,12 +96,11 @@ fn key(name: &str, edition: &str, lang: &str, sha256: &str) -> String {
 }
 
 fn digest(path: &Path) -> Result<(u64, String)> {
-    let mut file = fs::File::open(path).with_context(|| format!("opening {}", path.display()))?;
-    let mut head = [0u8; 5];
-    let pdf = file.read_exact(&mut head).is_ok() && &head == b"%PDF-";
-    ensure!(pdf, "{} is not a PDF (no %PDF- header)", path.display());
-    let mut hasher = Sha256::new();
-    hasher.update(head);
-    let bytes = 5 + std::io::copy(&mut file, &mut hasher)?;
-    Ok((bytes, hex::encode(hasher.finalize())))
+    let bytes = fs::read(path).with_context(|| format!("reading {}", path.display()))?;
+    ensure!(
+        bytes.starts_with(b"%PDF-"),
+        "{} is not a PDF (no %PDF- header)",
+        path.display()
+    );
+    Ok((bytes.len() as u64, hex::encode(Sha256::digest(&bytes))))
 }

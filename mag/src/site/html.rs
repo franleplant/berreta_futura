@@ -1060,7 +1060,7 @@ mod tests {
             author: String::new(),
             article: None,
             document: Document {
-                metadata: serde_yaml::Mapping::default(),
+                metadata: serde_norway::Mapping::default(),
                 blocks,
             },
         };

@@ -47,7 +47,7 @@ pub fn load(dir: &Path) -> Fixture {
     let (passages, code) = blocks(&truth);
     Fixture {
         name: dir.file_name().unwrap().to_string_lossy().into_owned(),
-        spec: serde_yaml::from_str(&spec).expect("spec.yaml parses"),
+        spec: serde_norway::from_str(&spec).expect("spec.yaml parses"),
         truth,
         passages,
         code,

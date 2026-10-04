@@ -73,7 +73,7 @@ pub fn config(root: &Path) -> Result<SiteConfig> {
 }
 
 pub fn parse_publish_record(text: &str) -> Result<PublishRecord> {
-    serde_yaml::from_str(text).context("reading publish.yaml")
+    serde_norway::from_str(text).context("reading publish.yaml")
 }
 
 pub fn publish_record(path: &Path) -> Result<PublishRecord> {
@@ -274,8 +274,8 @@ fn scratch_root() -> PathBuf {
 pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
-    let yaml: serde_yaml::Value =
-        serde_yaml::from_str(&committed_text(root, &format!("{rel}/edition.yaml"))?)?;
+    let yaml: serde_norway::Value =
+        serde_norway::from_str(&committed_text(root, &format!("{rel}/edition.yaml"))?)?;
     let articles: Vec<String> = yaml["articles"]
         .as_sequence()
         .into_iter()
