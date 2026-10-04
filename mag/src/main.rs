@@ -13,6 +13,7 @@ mod impose;
 mod model;
 #[allow(dead_code)]
 mod package;
+mod picks;
 mod plan_cmd;
 mod print_cmd;
 mod produce;
@@ -151,6 +152,10 @@ enum Cmd {
         /// already on disk, generate only the missing ones, then finish the round
         #[arg(long = "resume-round")]
         resume_round: Option<String>,
+        /// Convert the art edition.yaml names under art/rounds/ (which stay out of git) to
+        /// JPEGs in art/picks/ and point edition.yaml at them; run after picking
+        #[arg(long)]
+        promote: bool,
     },
     /// Generate cast model-sheet candidates for an art direction (no brief-writer call;
     /// human approves by pointing the cast's `reference:` at the chosen variant)
@@ -291,6 +296,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
             note,
             articles,
             resume_round,
+            promote,
         } => {
             let spec = caller::ModelSpec::parse(&model)?;
             art::run(&art::ArtRun {
@@ -304,6 +310,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
                 note: note.as_deref(),
                 articles: articles.as_deref(),
                 resume_round: resume_round.as_deref(),
+                promote,
             })
         }
         Cmd::CastSheet {

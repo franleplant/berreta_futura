@@ -21,7 +21,7 @@ cover:
   headline: The $30 Apology
   deck: "Always-on dots, Gemini 4 Argon, an open model that writes exploits, OpenClaw for the enterprise, OpenAI's customer machine, the effort dial, evals that hillclimb, TLA+ proofs in Rust, Containers in 648 milliseconds, production bugs sent to your agent, Forge's generated SDKs, and a developer who quit AI"
   back_text: 'An agent sat silent for thirty minutes. Its developer demanded the code. It apologized and delivered it in twenty seconds, after spending $30 in tokens on nothing. Then a coworker caught a test that didn''t test the change it was meant to, and the developer quit AI altogether.'
-  art_path: editions/012/art/rounds/2026-10-01T14-56-14/cover-wildcard-hourglass-gold-v3.png
+  art_path: editions/012/art/picks/cover-wildcard-hourglass-gold-v3.jpg
 articles:
 - id: one-month-without-ai
   title: One month without AI
@@ -35,10 +35,10 @@ articles:
   - one-month-without-ai-f51481a2
   manuscript: editions/012/articles/one-month-without-ai.md
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-one-month-without-ai-v4.png
+    path: editions/012/art/picks/opener-one-month-without-ai-v4.jpg
     alt_text: 'Pedro pulls Maro''s plug and Maro dozes with sleepy eyes while Flopaz hands Pedro a pencil and a paper notebook.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-one-month-without-ai-v1.png
+  tail_art_path: editions/012/art/picks/tail-one-month-without-ai-v1.jpg
 - id: using-claude-code-spending-your-effort-claude-de
   title: 'Using Claude Code: Spending your effort'
   short_title: Spending your effort
@@ -51,10 +51,10 @@ articles:
   - using-claude-code-spending-your-effort-claude-de-806ec4a7
   manuscript: editions/012/articles/using-claude-code-spending-your-effort-claude-de.md
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-spending-your-effort-v2.png
+    path: editions/012/art/picks/opener-spending-your-effort-v2.jpg
     alt_text: 'Maro rests a mitten on a big round dial, looking from Flopaz''s tiny paper boat to the huge cardboard bridge Pedro is carrying.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-spending-your-effort-v3.png
+  tail_art_path: editions/012/art/picks/tail-spending-your-effort-v3.jpg
 - id: automating-eval-design-and-hillclimbing-with-cla
   title: Automating eval design and hillclimbing with Claude
   short_title: Automating eval design and hillclimbing
@@ -105,10 +105,10 @@ articles:
     anchor: Examples
     layout: evidence_band_prose
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-eval-hillclimbing-v3.png
+    path: editions/012/art/picks/opener-eval-hillclimbing-v3.jpg
     alt_text: 'Maro climbs a grassy hill planting small flags at each higher step while Flopaz checks the slope with a spirit level and Pedro hands up a rope.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-eval-hillclimbing-v2.png
+  tail_art_path: editions/012/art/picks/tail-eval-hillclimbing-v2.jpg
 - id: the-internet-discovers-tla-now-what
   title: The internet discovers TLA+. Now what?
   short_title: The internet discovers TLA+
@@ -121,10 +121,10 @@ articles:
   - the-internet-discovers-tla-now-what-d655d131
   manuscript: editions/012/articles/the-internet-discovers-tla-now-what.md
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-tla-v3.png
+    path: editions/012/art/picks/opener-tla-v3.jpg
     alt_text: 'Flopaz and Maro drop marbles into every branch of a cardboard marble run while Pedro crouches at the bottom, watching for a jam.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-tla-v2.png
+  tail_art_path: editions/012/art/picks/tail-tla-v2.jpg
 - id: gemini-4-argon-our-next-era-of-frontier-intellig
   title: 'Gemini 4 Argon: our next era of frontier intelligence'
   short_title: Gemini 4 Argon
@@ -184,10 +184,10 @@ articles:
     anchor: Safeguards before broad release
     layout: evidence_band_prose
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-gemini-argon-v2.png
+    path: editions/012/art/picks/opener-gemini-argon-v2.jpg
     alt_text: 'Pedro and Flopaz release a large glowing lavender balloon into the dusk sky while Maro braces his feet and holds the tether.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-gemini-argon-v4.png
+  tail_art_path: editions/012/art/picks/tail-gemini-argon-v4.jpg
 - id: glm-5-3-and-the-spread-of-advanced-cyber-capabil
   title: GLM-5.3 and the spread of advanced cyber capabilities
   short_title: GLM-5.3
@@ -247,10 +247,10 @@ articles:
     anchor: How the safeguards fail
     layout: adaptive_band
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-glm-cyber-v1.png
+    path: editions/012/art/picks/opener-glm-cyber-v1.jpg
     alt_text: 'Pedro shows a tin toy that copies keys, Flopaz studies the freshly cut key through a magnifier, and Maro rushes to fit a stronger lock on the shed.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-glm-cyber-v2.png
+  tail_art_path: editions/012/art/picks/tail-glm-cyber-v2.jpg
 - id: introducing-dots
   title: Introducing dots
   short_title: Introducing dots
@@ -272,10 +272,10 @@ articles:
   #   introducing-dots-39c7a6b0 media/004.png: Yellow dot Alfred discusses an enterprise proposal beside a document listing steps to close the deal.
   #   introducing-dots-39c7a6b0 media/005.png: Purple dot Jojo helps a creator prepare an interview post beside a social image.
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-introducing-dots-v2.png
+    path: editions/012/art/picks/opener-introducing-dots-v2.jpg
     alt_text: 'Five colored round magnets hold blank task cards on a corkboard; Maro moves one while Flopaz pins up another and Pedro passes her a card.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-introducing-dots-v1.png
+  tail_art_path: editions/012/art/picks/tail-introducing-dots-v1.jpg
 - id: openai-understands-something-important-and-rare
   title: OpenAI Understands Something Important and Rare
   short_title: OpenAI Understands Something Important
@@ -324,10 +324,10 @@ articles:
     anchor: True platforms
     layout: evidence_band_prose
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-openai-rare-v3.png
+    path: editions/012/art/picks/opener-openai-rare-v3.jpg
     alt_text: 'A deep path worn through the grass leads to the trio''s lemonade stand, where Maro pours lemonade and Pedro and Flopaz serve at the counter.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-openai-rare-v1.png
+  tail_art_path: editions/012/art/picks/tail-openai-rare-v1.jpg
 - id: openclaw-enterprise-the-open-agent-platform-open
   title: OpenClaw Enterprise - The Open Agent Platform
   short_title: OpenClaw Enterprise
@@ -348,10 +348,10 @@ articles:
     anchor: __opener__
     layout: evidence_band
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-openclaw-enterprise-v3.png
+    path: editions/012/art/picks/opener-openclaw-enterprise-v3.jpg
     alt_text: 'A cutaway of three rooms where Pedro and Flopaz work at separate desks and Maro uses a coral claw grabber to pass their papers to a shared table.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-openclaw-enterprise-v1.png
+  tail_art_path: editions/012/art/picks/tail-openclaw-enterprise-v1.jpg
 - id: cloudflare-containers-rebuilt-to-scale-agent-san
   title: Cloudflare Containers, rebuilt to scale agent sandboxes
   short_title: Cloudflare Containers, rebuilt
@@ -384,10 +384,10 @@ articles:
     anchor: The Durable Object, made explicit
     layout: evidence_band_prose
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-cloudflare-containers-v2.png
+    path: editions/012/art/picks/opener-cloudflare-containers-v2.jpg
     alt_text: 'Maro flings open a wooden crate that unfolds into a sandbox while Pedro clicks a stopwatch and Flopaz already shapes a sandcastle inside.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-cloudflare-containers-v2.png
+  tail_art_path: editions/012/art/picks/tail-cloudflare-containers-v2.jpg
 - id: detect-and-send-production-issues-straight-to-yo
   title: Detect and send production issues straight to your agent
   short_title: Detect and send production issues
@@ -445,10 +445,10 @@ articles:
     anchor: Send detected issues to your agent
     layout: evidence_band_prose
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-production-issues-v3.png
+    path: editions/012/art/picks/opener-production-issues-v3.jpg
     alt_text: 'A water tank springs a leak; a string alarm tugs Maro''s antenna and he leaps toward it with a patch while Flopaz points and Pedro watches his alarm work.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-production-issues-v2.png
+  tail_art_path: editions/012/art/picks/tail-production-issues-v2.jpg
 - id: introducing-forge-the-open-source-pipeline-for-g
   title: 'Introducing Forge: the open source pipeline for SDKs and CLIs'
   short_title: Introducing Forge
@@ -494,23 +494,23 @@ articles:
     anchor: Generate anything, chain the outputs
     layout: column_plate
   opener_art:
-    path: editions/012/art/rounds/2026-10-01T14-56-14/opener-introducing-forge-v2.png
+    path: editions/012/art/picks/opener-introducing-forge-v2.jpg
     alt_text: 'Pedro feeds one sheet of dough into a crank machine Maro turns, and Flopaz catches the cookies that come out shaped like a key, a book, and a toolbox.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/012/art/rounds/2026-10-01T14-56-14/tail-introducing-forge-v1.png
+  tail_art_path: editions/012/art/picks/tail-introducing-forge-v1.jpg
 tail_art_fit: contain
 closing_plates:
 - title: Night Lamp
-  art_path: editions/012/art/rounds/2026-10-01T14-56-14/closing-night-lamp-v4.png
+  art_path: editions/012/art/picks/closing-night-lamp-v4.jpg
 - title: Tall Kite
-  art_path: editions/012/art/rounds/2026-10-01T14-56-14/closing-tall-kite-v1.png
+  art_path: editions/012/art/picks/closing-tall-kite-v1.jpg
 - title: Treehouse Ladder
-  art_path: editions/012/art/rounds/2026-10-01T14-56-14/closing-treehouse-ladder-v2.png
+  art_path: editions/012/art/picks/closing-treehouse-ladder-v2.jpg
 - title: Deep Well
-  art_path: editions/012/art/rounds/2026-10-01T15-40-43/closing-deep-well-v2.png
+  art_path: editions/012/art/picks/closing-deep-well-v2.jpg
 - title: Block Tower
-  art_path: editions/012/art/rounds/2026-10-01T15-40-43/closing-block-tower-v2.png
+  art_path: editions/012/art/picks/closing-block-tower-v2.jpg
 - title: Puddle Leap
-  art_path: editions/012/art/rounds/2026-10-02T15-46-08/closing-puddle-leap-v2.png
+  art_path: editions/012/art/picks/closing-puddle-leap-v2.jpg
 - title: Sled Run
-  art_path: editions/012/art/rounds/2026-10-02T15-46-08/closing-sled-run-v3.png
+  art_path: editions/012/art/picks/closing-sled-run-v3.jpg

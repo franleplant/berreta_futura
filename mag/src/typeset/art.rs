@@ -29,14 +29,24 @@ fn jpeg_copy(path: &Path, staged: &Path) -> Result<PathBuf> {
         .join("print")
         .join(format!("{}.jpg", relative.display()));
     if !out.is_file() {
-        let image = image::open(path)
-            .with_context(|| format!("decoding {}", path.display()))?
-            .to_rgb8();
-        std::fs::create_dir_all(out.parent().context("an art copy has no parent")?)?;
-        let file = std::io::BufWriter::new(std::fs::File::create(&out)?);
-        JpegEncoder::new_with_quality(file, QUALITY).encode_image(&image)?;
+        write_jpeg(path, &out)?;
     }
     Ok(out)
+}
+
+pub fn jpeg_bytes(path: &Path) -> Result<Vec<u8>> {
+    let image = image::open(path)
+        .with_context(|| format!("decoding {}", path.display()))?
+        .to_rgb8();
+    let mut bytes = Vec::new();
+    JpegEncoder::new_with_quality(&mut bytes, QUALITY).encode_image(&image)?;
+    Ok(bytes)
+}
+
+pub fn write_jpeg(path: &Path, out: &Path) -> Result<()> {
+    let bytes = jpeg_bytes(path)?;
+    std::fs::create_dir_all(out.parent().context("an art copy has no parent")?)?;
+    Ok(std::fs::write(out, bytes)?)
 }
 
 #[cfg(test)]

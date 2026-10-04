@@ -594,7 +594,7 @@ struct ShowcaseItem {
     verdicts: Vec<MemberVerdict>,
 }
 
-fn selected_art_paths(edition_yaml: &serde_yaml::Value) -> Vec<String> {
+pub fn selected_art_paths(edition_yaml: &serde_yaml::Value) -> Vec<String> {
     let mut out = Vec::new();
     let mut push = |v: Option<&serde_yaml::Value>| {
         if let Some(s) = v.and_then(|v| v.as_str()) {
@@ -682,7 +682,11 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
                 article_id,
                 prompt,
                 variant,
-                selected: selected.iter().any(|s| s == &repo_path),
+                selected: selected.iter().any(|s| {
+                    s == &repo_path
+                        || (*s == crate::picks::pick_path(&repo_path)
+                            && crate::picks::picked_from(s, &round_dir.join(file)))
+                }),
                 verdicts: checks.get(file).cloned().unwrap_or_default(),
             });
         }
@@ -1822,6 +1826,7 @@ pub struct ArtRun<'a> {
     pub note: Option<&'a str>,
     pub articles: Option<&'a str>,
     pub resume_round: Option<&'a str>,
+    pub promote: bool,
 }
 
 fn parse_only_purposes(only: Option<&str>) -> Result<Option<Vec<String>>> {
@@ -2000,6 +2005,7 @@ pub fn run(opts: &ArtRun) -> Result<i32> {
         note,
         articles,
         resume_round: resume,
+        promote,
     } = *opts;
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_label = edition_dir
@@ -2011,6 +2017,9 @@ pub fn run(opts: &ArtRun) -> Result<i32> {
         let path = write_showcase(&edition_dir, &edition_label)?;
         println!("showcase rebuilt: {}", path.display());
         return Ok(0);
+    }
+    if promote {
+        return promote_picks(&edition_dir, &edition_label);
     }
     if let Some(resume) = resume {
         return resume_round(opts, resume, &edition_dir, &edition_label);
@@ -2096,6 +2105,20 @@ pub fn run(opts: &ArtRun) -> Result<i32> {
     )
 }
 
+fn promote_picks(edition_dir: &Path, edition_label: &str) -> Result<i32> {
+    let moves = crate::picks::promote(edition_dir)?;
+    for (pick, round) in &moves {
+        println!("  {round} -> {pick}");
+    }
+    println!(
+        "promoted {} pick(s) into {}/art/picks\n\nnext:\n  1. mag source-codes {edition_label}   (opener QR codes)\n  2. mag render {edition_label}\n  3. commit {}/art/picks and edition.yaml",
+        moves.len(),
+        edition_dir.display(),
+        edition_dir.display()
+    );
+    Ok(0)
+}
+
 fn generate_and_finish(
     briefs: &[Brief],
     candidates: u32,
@@ -2129,9 +2152,10 @@ fn generate_and_finish(
     println!(
         "\nnext:\n  1. mag cast-check {edition_label}        (optional: badge off-model candidates in the showcase)\n  \
          2. open editions/{edition_label}/art/showcase.html and pick; clicking writes the paths to copy into edition.yaml \
-         (cover.art_path / opener_art.path / tail_art_path / closing_plates); historic images are never deleted\n  \
-         3. mag source-codes {edition_label}   (opener QR codes; reads the picked opener art)\n  \
-         4. mag render {edition_label}"
+         (cover.art_path / opener_art.path / tail_art_path / closing_plates); rounds stay local, out of git\n  \
+         3. mag art {edition_label} --promote   (picks become committed JPEGs in art/picks)\n  \
+         4. mag source-codes {edition_label}   (opener QR codes; reads the picked opener art)\n  \
+         5. mag render {edition_label}"
     );
 
     let all_failed = !generated.is_empty() && failures == generated.len();

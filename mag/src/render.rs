@@ -567,6 +567,7 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
         articles,
         article_ids,
     } = load_edition(&args.edition)?;
+    crate::picks::refuse_rounds(&edition_yaml, &args.edition)?;
     if let Some(wanted) = article.filter(|_| operation == "measure_article") {
         if !article_ids.iter().any(|id| id == wanted) {
             bail!(

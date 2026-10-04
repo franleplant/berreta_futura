@@ -13,7 +13,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
   the first time, scaffolds `edition.yaml` with TODO fields and figure
   candidates) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
-  `tools/imagegen`) -> pick in `art/showcase.html` -> `mag render NNN`. If a
+  `tools/imagegen`) -> pick in `art/showcase.html` -> `mag art NNN --promote`
+  -> `mag render NNN`. If a
   step leaves you guessing what comes next, fix the step's output in code;
   documenting the gap here is the fallback, not the fix.
 - `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
@@ -119,6 +120,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 
 - Image generation and art selection are separate steps; rendering only
   consumes selected art and never generates an image.
+- Candidates in `art/rounds/` stay local (gitignored). `mag art NNN --promote`
+  turns each pick edition.yaml names there into `art/picks/<stem>.jpg` (the
+  JPEG print embeds anyway) and repoints edition.yaml; render refuses round
+  paths. Editions 001-009 still track their rounds and need a promote to render.
 - Cover art carries no baked-in masthead or cover lines; layout owns all
   typography.
 - Keep the inside front and back covers blank.
