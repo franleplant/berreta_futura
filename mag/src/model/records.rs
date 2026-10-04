@@ -1,213 +1,11 @@
 use super::shared::{py_repr, PyStrip, Result, ValidationError};
 use regex::Regex;
-use serde_json::{json, Map, Value as Json};
 use serde_yaml::Value;
-use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-const TRACKING: [&str; 6] = ["fbclid", "gclid", "mc_cid", "mc_eid", "ref", "source"];
-
 pub const ARTICLE_FILENAME: &str = "article.md";
-
-struct UrlParts {
-    scheme: String,
-    netloc: String,
-    path: String,
-    query: String,
-}
-
-fn scheme_char(value: char) -> bool {
-    value.is_ascii_alphanumeric() || matches!(value, '+' | '-' | '.')
-}
-
-fn urlsplit(url: &str) -> UrlParts {
-    let stripped: String = url
-        .chars()
-        .filter(|c| !matches!(c, '\t' | '\r' | '\n'))
-        .collect();
-    let mut rest = stripped.as_str();
-    let mut scheme = String::new();
-    if let Some(colon) = rest.find(':') {
-        let candidate = &rest[..colon];
-        let first = candidate.chars().next();
-        if colon > 0
-            && first.is_some_and(|c| c.is_ascii_alphabetic())
-            && candidate.chars().all(scheme_char)
-        {
-            scheme = candidate.to_lowercase();
-            rest = &rest[colon + 1..];
-        }
-    }
-    let mut netloc = String::new();
-    if let Some(after) = rest.strip_prefix("//") {
-        let end = after.find(['/', '?', '#']).unwrap_or(after.len());
-        netloc = after[..end].to_string();
-        rest = &after[end..];
-    }
-    if let Some(hash) = rest.find('#') {
-        rest = &rest[..hash];
-    }
-    let (path, query) = match rest.find('?') {
-        Some(mark) => (&rest[..mark], &rest[mark + 1..]),
-        None => (rest, ""),
-    };
-    UrlParts {
-        scheme,
-        netloc,
-        path: path.to_string(),
-        query: query.to_string(),
-    }
-}
-
-fn host_and_port(netloc: &str) -> Result<(String, Option<u32>)> {
-    let hostinfo = match netloc.rfind('@') {
-        Some(at) => &netloc[at + 1..],
-        None => netloc,
-    };
-    let (host, port) = match hostinfo.find('[') {
-        Some(open) => {
-            let bracketed = &hostinfo[open + 1..];
-            let (inside, after) = match bracketed.find(']') {
-                Some(close) => (&bracketed[..close], &bracketed[close + 1..]),
-                None => (bracketed, ""),
-            };
-            let port = after.find(':').map_or("", |mark| &after[mark + 1..]);
-            (inside, port)
-        }
-        None => match hostinfo.find(':') {
-            Some(mark) => (&hostinfo[..mark], &hostinfo[mark + 1..]),
-            None => (hostinfo, ""),
-        },
-    };
-    let parsed = if port.is_empty() {
-        None
-    } else if !port.chars().all(|character| character.is_ascii_digit()) {
-        return Err(ValidationError::one(format!(
-            "Port could not be cast to integer value as {}",
-            py_repr(port)
-        )));
-    } else {
-        let digits = port.trim_start_matches('0');
-        let number: u32 = if digits.is_empty() {
-            0
-        } else {
-            digits.parse().unwrap_or(u32::MAX)
-        };
-        if digits.len() > 5 || number > 65535 {
-            return Err(ValidationError::one(
-                "Port out of range 0-65535".to_string(),
-            ));
-        }
-        Some(number)
-    };
-    Ok((host.to_lowercase(), parsed))
-}
-
-fn quote_plus(value: &str) -> String {
-    let mut out = String::new();
-    for byte in value.as_bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'_' | b'.' | b'-' | b'~' => {
-                out.push(*byte as char);
-            }
-            b' ' => out.push('+'),
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
-}
-
-fn unquote_plus(value: &str) -> String {
-    let source = value.replace('+', " ");
-    let bytes = source.as_bytes();
-    let mut out: Vec<u8> = Vec::new();
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] == b'%' && index + 2 < bytes.len() {
-            let pair = &source[index + 1..index + 3];
-            if let Ok(decoded) = u8::from_str_radix(pair, 16) {
-                out.push(decoded);
-                index += 3;
-                continue;
-            }
-        }
-        out.push(bytes[index]);
-        index += 1;
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
-fn parse_qsl(query: &str) -> Vec<(String, String)> {
-    let mut pairs = Vec::new();
-    for item in query.split('&') {
-        if item.is_empty() {
-            continue;
-        }
-        let (name, value) = match item.find('=') {
-            Some(mark) => (&item[..mark], &item[mark + 1..]),
-            None => (item, ""),
-        };
-        pairs.push((unquote_plus(name), unquote_plus(value)));
-    }
-    pairs
-}
-
-pub fn canonicalize_url(url: &str) -> Result<String> {
-    let parts = urlsplit(url.trim());
-    if !matches!(parts.scheme.as_str(), "http" | "https") || parts.netloc.is_empty() {
-        return Err(ValidationError::one(format!(
-            "Expected an http(s) URL, got: {url}"
-        )));
-    }
-    let mut query: Vec<(String, String)> = parse_qsl(&parts.query)
-        .into_iter()
-        .filter(|(key, _)| {
-            let lowered = key.to_lowercase();
-            !TRACKING.contains(&lowered.as_str()) && !lowered.starts_with("utm_")
-        })
-        .collect();
-    query.sort();
-    let (hostname, port) = host_and_port(&parts.netloc)?;
-    let mut host = hostname;
-    if let Some(number) = port.filter(|number| *number != 0) {
-        let default =
-            (parts.scheme == "http" && number == 80) || (parts.scheme == "https" && number == 443);
-        if !default {
-            host = format!("{host}:{number}");
-        }
-    }
-    let collapsed = slashes().replace_all(&parts.path, "/").into_owned();
-    let mut path = if collapsed.is_empty() {
-        "/".to_string()
-    } else {
-        collapsed
-    };
-    if path != "/" {
-        path = path.trim_end_matches('/').to_string();
-    }
-    let encoded = query
-        .iter()
-        .map(|(key, value)| format!("{}={}", quote_plus(key), quote_plus(value)))
-        .collect::<Vec<String>>()
-        .join("&");
-    let mut result = format!("{}://{}", parts.scheme, host);
-    if !path.is_empty() && !path.starts_with('/') {
-        result.push('/');
-    }
-    result.push_str(&path);
-    if !encoded.is_empty() {
-        result.push('?');
-        result.push_str(&encoded);
-    }
-    Ok(result)
-}
-
-fn slashes() -> &'static Regex {
-    static PATTERN: OnceLock<Regex> = OnceLock::new();
-    PATTERN.get_or_init(|| Regex::new(r"/{2,}").expect("the pattern compiles"))
-}
 
 pub(crate) fn slug(text: &str) -> String {
     let mut collapsed = String::new();
@@ -229,11 +27,6 @@ pub(crate) fn slug(text: &str) -> String {
     } else {
         trimmed
     }
-}
-
-pub fn source_id(title: &str, canonical_url: &str) -> String {
-    let digest = hex::encode(Sha256::digest(canonical_url.as_bytes()));
-    format!("{}-{}", slug(title), &digest[..8])
 }
 
 fn timestamp_detect() -> &'static Regex {
@@ -327,17 +120,6 @@ fn plain_scalar(text: &str, key: &str) -> Option<String> {
     None
 }
 
-pub struct NewRecord<'a> {
-    pub url: &'a str,
-    pub title: Option<&'a str>,
-    pub author: Option<&'a str>,
-    pub published_at: Option<&'a str>,
-    pub captured_at: &'a str,
-    pub tags: &'a [String],
-    pub synopsis: &'a str,
-    pub notes: &'a str,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceRecord {
     pub id: String,
@@ -366,37 +148,6 @@ fn truthy(value: Option<&String>) -> bool {
 }
 
 impl SourceRecord {
-    pub fn create(request: &NewRecord) -> Result<Self> {
-        let canonical = canonicalize_url(request.url)?;
-        let resolved = request
-            .title
-            .filter(|title| !title.is_empty())
-            .unwrap_or(&canonical)
-            .trim()
-            .to_string();
-        let mut unique: BTreeSet<String> = BTreeSet::new();
-        for tag in request.tags {
-            let cleaned = tag.trim();
-            if !cleaned.is_empty() {
-                unique.insert(cleaned.to_lowercase());
-            }
-        }
-        Ok(Self {
-            id: source_id(&resolved, &canonical),
-            url: canonical,
-            title: resolved,
-            captured_at: request.captured_at.to_string(),
-            author: request
-                .author
-                .filter(|value| !value.is_empty())
-                .map(|value| value.trim().to_string()),
-            published_at: request.published_at.map(str::to_string),
-            tags: Some(unique.into_iter().collect()),
-            synopsis: Some(request.synopsis.trim().to_string()),
-            notes: Some(request.notes.trim().to_string()),
-        })
-    }
-
     pub fn from_value(data: &Value, document: Option<&str>) -> Result<Self> {
         let Value::Mapping(mapping) = data else {
             return Err(ValidationError::one("Source record must be a mapping"));
@@ -451,39 +202,6 @@ impl SourceRecord {
             synopsis,
             notes,
         })
-    }
-
-    pub fn to_json(&self) -> Json {
-        let mut result = Map::new();
-        result.insert("id".into(), json!(self.id));
-        result.insert("title".into(), json!(self.title));
-        result.insert("author".into(), json!(self.author));
-        result.insert("url".into(), json!(self.url));
-        result.insert("captured_at".into(), json!(self.captured_at));
-        result.insert("published_at".into(), json!(self.published_at));
-        result.insert("tags".into(), json!(self.tags));
-        result.insert("synopsis".into(), json!(self.synopsis));
-        if truthy(self.notes.as_ref()) {
-            result.insert("notes".into(), json!(self.notes));
-        }
-        Json::Object(result)
-    }
-
-    pub fn key_order(&self) -> Vec<&'static str> {
-        let mut keys = vec![
-            "id",
-            "title",
-            "author",
-            "url",
-            "captured_at",
-            "published_at",
-            "tags",
-            "synopsis",
-        ];
-        if truthy(self.notes.as_ref()) {
-            keys.push("notes");
-        }
-        keys
     }
 }
 

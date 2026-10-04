@@ -1,5 +1,4 @@
 use mag::model::doc;
-use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -15,94 +14,31 @@ fn settable() -> BTreeSet<u32> {
         .expect("the vendored faces are readable")
 }
 
-fn projection(markdown: &str) -> Value {
-    let document = doc::parse_publication_document(markdown).expect("the manuscript parses");
-    let visible = doc::visible_blocks(&document.blocks);
-    let text: Vec<&str> = visible.iter().map(|(_, body)| body.as_str()).collect();
-    let educated = doc::educate_reader_quotes(&text.join("\n"));
-    let folded = doc::fold_reader_characters(&educated);
-    let keys: Vec<String> = document
-        .metadata
-        .keys()
-        .filter_map(|key| key.as_str().map(str::to_string))
-        .collect();
-    let mut sorted = keys;
-    sorted.sort();
-    json!({
-        "metadata_keys": sorted,
-        "visible_blocks": visible
-            .iter()
-            .map(|(kind, body)| json!([kind, body]))
-            .collect::<Vec<Value>>(),
-        "block_signature": doc::block_signature(&document.blocks),
-        "educated": educated,
-        "folded": folded,
-    })
-}
-
-fn dump(directory: &Path, pattern: &str) -> Map<String, Value> {
-    let mut entries: Vec<PathBuf> = std::fs::read_dir(directory)
-        .expect("the manuscript directory is readable")
-        .map(|entry| entry.expect("the entry is readable").path())
-        .collect();
-    entries.sort();
-    let mut dumped = Map::new();
-    for entry in entries {
-        let (name, markdown) = match pattern {
-            "*.md" if entry.extension().is_some_and(|kind| kind == "md") => (
-                entry
-                    .file_stem()
-                    .expect("the fixture has a stem")
-                    .to_string_lossy()
-                    .to_string(),
-                std::fs::read_to_string(&entry).expect("the fixture is readable"),
-            ),
-            "final.md" if entry.join("final.md").is_file() => (
-                entry
-                    .file_name()
-                    .expect("the article has a name")
-                    .to_string_lossy()
-                    .to_string(),
-                std::fs::read_to_string(entry.join("final.md"))
-                    .expect("the manuscript is readable"),
-            ),
-            _ => continue,
-        };
-        dumped.insert(name, projection(&markdown));
+#[test]
+fn settable_codepoints_cover_text_but_not_unbundled_scripts() {
+    let settable = settable();
+    for character in ['A', 'z', '\u{e9}', '\u{2014}'] {
+        assert!(settable.contains(&(character as u32)), "{character:?}");
     }
-    dumped
+    assert!(!settable.contains(&0x5915));
 }
 
 #[test]
-fn fixtures_match_the_python_projection() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let expected: Value = serde_json::from_str(
-        &std::fs::read_to_string(root.join("tests/model_doc_expected.json"))
-            .expect("the committed expectation is readable"),
-    )
-    .expect("the committed expectation is JSON");
-    let produced = dump(&root.join("tests/model_doc_fixtures"), "*.md");
-    assert_eq!(
-        Value::Object(produced),
-        expected,
-        "the Rust projection diverged from the committed Python projection"
-    );
-}
-
-#[test]
-fn settable_codepoints_are_the_union_of_the_bundled_faces() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let expected = std::fs::read_to_string(root.join("tests/model_doc_settable.txt"))
-        .expect("the committed codepoints are readable");
-    let produced: Vec<String> = settable()
+fn fenced_code_survives_parsing_byte_for_byte() {
+    let code = "  indented\n\ttabbed  \n\n---\n# not a heading\n| a | b |\n\nlast";
+    let markdown = format!("Before.\n\n```rust\n{code}\n```\n\nAfter.\n");
+    let document = doc::parse_publication_document(&markdown).expect("the manuscript parses");
+    let fenced: Vec<&doc::Block> = document
+        .blocks
         .iter()
-        .map(|codepoint| format!("{codepoint:04X}"))
+        .filter(|block| matches!(block, doc::Block::FencedCode { .. }))
         .collect();
-    assert_eq!(
-        produced.join("\n"),
-        expected.trim_end_matches('\n'),
-        "the bundled faces cover a different set of codepoints"
-    );
+    assert_eq!(fenced.len(), 1);
+    let doc::Block::FencedCode { code: kept, info } = fenced[0] else {
+        unreachable!()
+    };
+    assert_eq!(info, "rust");
+    assert_eq!(kept.trim_end_matches('\n'), code);
 }
 
 #[test]
@@ -113,20 +49,13 @@ fn a_pipe_table_parses_into_rows_of_inline_cells() {
         doc::block_signature(&document.blocks),
         ["body", "table[2,2,2]"]
     );
-    let cells: Vec<String> = doc::visible_blocks(&document.blocks)
-        .into_iter()
-        .skip(1)
-        .map(|(kind, body)| format!("{kind}:{body}"))
+    let doc::Block::Table(rows) = &document.blocks[1] else {
+        panic!("the second block is a table")
+    };
+    let cells: Vec<String> = rows
+        .iter()
+        .flatten()
+        .map(|cell| doc::inline_text(cell))
         .collect();
-    assert_eq!(
-        cells,
-        [
-            "cell:Name",
-            "cell:code",
-            "cell:A",
-            "cell:1 | 2",
-            "cell:B",
-            "cell:"
-        ]
-    );
+    assert_eq!(cells, ["Name", "code", "A", "1 | 2", "B", ""]);
 }

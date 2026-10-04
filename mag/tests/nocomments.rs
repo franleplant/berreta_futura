@@ -1,6 +1,3 @@
-#[allow(dead_code)]
-mod oracle;
-
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 

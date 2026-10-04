@@ -1,6 +1,5 @@
 use lopdf::{dictionary, Document, Object, Stream};
-use mag::trace::elements;
-use mag::trace::streams;
+use mag::trace::{trace_elements, Element};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -55,8 +54,8 @@ fn build(dir: &Path, name: &str, text: &str, mode: i64, named_dest: bool) -> Pat
     path
 }
 
-fn elements(pdf: &Path) -> Vec<streams::Element> {
-    elements::trace_elements(pdf, 1, 1, &BTreeMap::new())
+fn elements(pdf: &Path) -> Vec<Element> {
+    trace_elements(pdf, 1, 1, &BTreeMap::new())
         .unwrap()
         .remove(0)
 }
@@ -65,7 +64,7 @@ fn shown(pdf: &Path) -> Vec<(String, i64)> {
     elements(pdf)
         .iter()
         .filter_map(|e| match e {
-            streams::Element::Text { s, tr, .. } => Some((s.clone(), *tr)),
+            Element::Text { s, tr, .. } => Some((s.clone(), *tr)),
             _ => None,
         })
         .collect()

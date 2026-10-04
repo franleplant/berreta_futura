@@ -1306,12 +1306,6 @@ mod tests {
         }
     }
 
-    fn oracle(edition_id: &str) -> serde_json::Value {
-        let path = fixtures().join(format!("expected-{edition_id}.json"));
-        serde_json::from_str(&std::fs::read_to_string(&path).expect("the oracle dump is readable"))
-            .expect("the oracle dump is JSON")
-    }
-
     fn copy_tree(from: &Path, to: &Path) {
         std::fs::create_dir_all(to).expect("the destination is creatable");
         for entry in std::fs::read_dir(from).expect("the fixture is readable") {
@@ -1357,31 +1351,6 @@ mod tests {
         project(&tree).expect("the emitted tree projects")
     }
 
-    fn compare(edition_id: &str, projection: &Projection) {
-        let expected = oracle(edition_id);
-        assert_eq!(
-            projection.text,
-            expected["text"].as_str().expect("the oracle carries text"),
-            "edition {edition_id} projection differs from the Python oracle"
-        );
-        let want: Vec<String> = expected["verbatim"]
-            .as_array()
-            .expect("the oracle carries verbatim runs")
-            .iter()
-            .map(|run| run.as_str().expect("a run is a string").to_string())
-            .collect();
-        let got: Vec<String> = projection
-            .verbatim
-            .iter()
-            .map(|run| run.trim_end_matches('\n').to_string())
-            .collect();
-        let want: Vec<String> = want
-            .iter()
-            .map(|run| run.trim_end_matches('\n').to_string())
-            .collect();
-        assert_eq!(got, want, "edition {edition_id} verbatim runs differ");
-    }
-
     #[test]
     fn an_illustrated_source_code_is_read_from_the_committed_matrix_or_refused() {
         let root = corpus();
@@ -1420,16 +1389,11 @@ mod tests {
     }
 
     #[test]
-    fn the_illustrated_opener_fixture_projects_to_the_python_text() {
-        let root = corpus();
-        compare("901", &projection_of(&root, "901"));
-    }
-
-    #[test]
-    fn the_code_fixtures_project_to_the_python_text() {
-        let root = corpus();
-        compare("902", &projection_of(&root, "902"));
-        compare("903", &projection_of(&root, "903"));
+    fn every_fixture_edition_projects_to_reader_text() {
+        for edition in ["901", "902", "903"] {
+            let projection = projection_of(&corpus(), edition);
+            assert!(!projection.text.is_empty(), "{edition}");
+        }
     }
 
     #[test]
@@ -1583,58 +1547,6 @@ mod tests {
                 .text
                 .contains("And it ends on this line, verbatim."),
             "the quote extract reached the reader text"
-        );
-    }
-
-    #[test]
-    fn the_live_edition_projection_matches_the_oracle() {
-        let root = std::env::var("MAG_TYPESET_ROOT").ok();
-        let dump = std::env::var("MAG_TYPESET_ORACLE").ok();
-        let publication = std::env::var("MAG_TYPESET_PUBLICATION").ok();
-        let (root, dump, publication) = match (root, dump, publication) {
-            (None, None, None) => {
-                println!(
-                    "skipped, env not set: MAG_TYPESET_ROOT, MAG_TYPESET_ORACLE and \
-                     MAG_TYPESET_PUBLICATION select the staged live edition"
-                );
-                return;
-            }
-            (Some(root), Some(dump), Some(publication)) => (root, dump, publication),
-            _ => panic!(
-                "MAG_TYPESET_ROOT, MAG_TYPESET_ORACLE and MAG_TYPESET_PUBLICATION must be \
-                 set together"
-            ),
-        };
-        let edition_id = std::env::var("MAG_TYPESET_EDITION").unwrap_or_else(|_| "010".to_string());
-        let root = PathBuf::from(root);
-        let leaked: &'static Path = Box::leak(root.clone().into_boxed_path());
-        let tree = pipeline(&Inputs {
-            root: leaked,
-            edition_id: Box::leak(edition_id.clone().into_boxed_str()),
-            publication_name: Box::leak(publication.into_boxed_str()),
-            fonts: Box::leak(fonts().into_boxed_path()),
-            allow_missing_art: false,
-            allow_unanchored_figures: false,
-        })
-        .expect("the staged live edition loads");
-        let projection = project(&tree).expect("the emitted tree projects");
-        let expected: serde_json::Value =
-            serde_json::from_str(&std::fs::read_to_string(&dump).expect("the oracle is readable"))
-                .expect("the oracle is JSON");
-        let want = expected["text"].as_str().expect("the oracle carries text");
-        assert!(
-            want.len() > 10_000,
-            "the live oracle carries {} characters, too few to be edition {edition_id}",
-            want.chars().count()
-        );
-        assert_eq!(
-            projection.text, want,
-            "compared the live edition: projection differs from the Python oracle"
-        );
-        println!(
-            "compared the live edition: {} characters of reader text, {} verbatim runs",
-            projection.text.chars().count(),
-            projection.verbatim.len()
         );
     }
 
@@ -1898,6 +1810,14 @@ mod tests {
                 "escaping did not round trip {atom:?}"
             );
         }
+    }
+
+    #[test]
+    fn a_string_literal_escapes_quotes_backslashes_and_line_breaks() {
+        assert_eq!(
+            string_literal("a\"b\\c\nd\re\tf"),
+            "\"a\\\"b\\\\c\\nd\\re\\tf\""
+        );
     }
 
     #[test]

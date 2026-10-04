@@ -392,58 +392,6 @@ fn heading_level(level: HeadingLevel) -> u8 {
     }
 }
 
-pub fn visible_blocks(blocks: &[Block]) -> Vec<(String, String)> {
-    let mut flattened = Vec::new();
-    flatten(blocks, &mut flattened, None);
-    flattened
-}
-
-fn flatten(blocks: &[Block], into: &mut Vec<(String, String)>, container: Option<&str>) {
-    for block in blocks {
-        match block {
-            Block::Heading { level, children } => {
-                into.push((format!("h{level}"), inline_visible(children)));
-            }
-            Block::Paragraph(children) => into.push((
-                container.unwrap_or("p").to_string(),
-                inline_visible(children),
-            )),
-            Block::FencedCode { code, .. } => into.push(("code".to_string(), code.clone())),
-            Block::Quote(children) => flatten(children, into, Some("quote")),
-            Block::List { ordered, items, .. } => {
-                let kind = if *ordered { "ordered" } else { "bullet" };
-                for item in items {
-                    flatten(item, into, Some(kind));
-                }
-            }
-            Block::HorizontalRule => {}
-            Block::Table(rows) => into.extend(
-                rows.iter()
-                    .flatten()
-                    .map(|cell| ("cell".to_string(), inline_visible(cell))),
-            ),
-        }
-    }
-}
-
-fn inline_visible(inlines: &[Inline]) -> String {
-    let mut buffer = String::new();
-    for inline in inlines {
-        match inline {
-            Inline::Text(value) | Inline::Code(value) => buffer.push_str(value),
-            Inline::Emphasis(children)
-            | Inline::Strong(children)
-            | Inline::Link { children, .. } => buffer.push_str(&inline_visible(children)),
-            Inline::LineBreak { .. } => buffer.push(' '),
-        }
-    }
-    buffer
-        .split(is_python_space)
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
 pub fn block_signature(blocks: &[Block]) -> Vec<String> {
     blocks.iter().map(descriptor).collect()
 }

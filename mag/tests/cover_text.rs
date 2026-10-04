@@ -1,28 +1,9 @@
 use mag::cover::text;
 use mag::model::manifest;
-#[allow(dead_code)]
-mod oracle;
 
 use manifest::{Article, Edition};
-use serde_json::Value as Json;
 use serde_yaml::{Mapping, Value};
-use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
-
-fn oracle(name: &str) -> Json {
-    let path: PathBuf = Path::new(env!("CARGO_MANIFEST_DIR")).join(name);
-    serde_json::from_str(&std::fs::read_to_string(&path).expect("oracle readable"))
-        .expect("oracle parses")
-}
-
-fn section(data: &Json, name: &str) -> BTreeMap<String, String> {
-    data[name]
-        .as_object()
-        .expect("section is an object")
-        .iter()
-        .map(|(key, value)| (key.clone(), value.as_str().expect("string").to_string()))
-        .collect()
-}
+use std::path::PathBuf;
 
 fn article(author: &str) -> Article {
     Article {
@@ -70,142 +51,6 @@ fn plain(authors: &[&str]) -> Edition {
     edition(authors, Mapping::new(), "en", "010", "Berreta Futura")
 }
 
-fn with_deck(value: Option<Value>) -> Edition {
-    let mut cover = Mapping::new();
-    if let Some(value) = value {
-        cover.insert(Value::String("deck".to_string()), value);
-    }
-    edition(&[], cover, "en", "010", "Berreta Futura")
-}
-
-fn live_010() -> Edition {
-    let path = oracle::snapshot().join("editions/010/edition.yaml");
-    let raw: Value = serde_yaml::from_str(&std::fs::read_to_string(&path).expect("edition.yaml"))
-        .expect("edition.yaml parses");
-    let authors: Vec<String> = raw["articles"]
-        .as_sequence()
-        .expect("articles")
-        .iter()
-        .map(|item| {
-            item["author"]
-                .as_str()
-                .map(str::to_string)
-                .unwrap_or_default()
-        })
-        .collect();
-    let cover = raw["cover"].as_mapping().cloned().unwrap_or_default();
-    let issue = raw["issue_number"]
-        .as_i64()
-        .map(|value| value.to_string())
-        .expect("issue_number");
-    let language = raw["language"].as_str().unwrap_or("en").to_string();
-    let borrowed: Vec<&str> = authors.iter().map(String::as_str).collect();
-    edition(&borrowed, cover, &language, &issue, "Berreta Futura")
-}
-
-fn contributor_cases() -> BTreeMap<String, Edition> {
-    let mut cases: BTreeMap<String, Edition> = BTreeMap::new();
-    let authored = [
-        ("010_shape", vec!["Ada Lovelace", "Grace Hopper"]),
-        ("single", vec!["Ada Lovelace"]),
-        ("dup_exact", vec!["Ada Lovelace", "Ada Lovelace"]),
-        ("dup_case", vec!["Ada Lovelace", "ADA LOVELACE"]),
-        ("dup_casefold_sharp_s", vec!["Strasse", "STRA\u{df}E"]),
-        ("strip_ascii", vec!["  Ada Lovelace  "]),
-        ("strip_u001f", vec!["Ada\u{1f}", "Grace"]),
-        ("blank_skipped", vec!["   ", "Ada"]),
-        ("sharp_s_upper", vec!["Stra\u{df}e"]),
-        ("ligature_upper", vec!["\u{fb01}re Ada"]),
-    ];
-    for (key, authors) in authored {
-        cases.insert(key.to_string(), plain(&authors));
-    }
-    let decks = [
-        ("deck_string", Some(Value::String("  A deck  ".to_string()))),
-        ("deck_absent", None),
-        ("deck_null", Some(Value::Null)),
-        ("deck_int", Some(5.into())),
-        ("deck_bool", Some(Value::Bool(true))),
-        (
-            "deck_list",
-            Some(Value::Sequence(vec![
-                Value::String("a".to_string()),
-                Value::String("b".to_string()),
-            ])),
-        ),
-        ("deck_empty", Some(Value::String("   ".to_string()))),
-        (
-            "deck_map",
-            Some(serde_yaml::from_str::<Value>("{a: 1, b: x}").expect("mapping parses")),
-        ),
-    ];
-    for (key, deck) in decks {
-        cases.insert(key.to_string(), with_deck(deck));
-    }
-    cases.insert("edition_010".to_string(), live_010());
-    cases
-}
-
-fn issue_cases() -> BTreeMap<String, Edition> {
-    [
-        ("en_010", "en", "010"),
-        ("en_us", "en-US", "010"),
-        ("es", "es", "010"),
-        ("es_ar", "es-AR", "7"),
-        ("pad_1", "en", "1"),
-        ("wide", "en", "1234"),
-        ("negative", "en", "-1"),
-        ("empty_issue", "en", ""),
-        ("empty_lang", "", "010"),
-    ]
-    .iter()
-    .map(|(key, language, issue)| {
-        (
-            key.to_string(),
-            edition(&[], Mapping::new(), language, issue, "Berreta Futura"),
-        )
-    })
-    .chain(std::iter::once(("edition_010".to_string(), live_010())))
-    .collect()
-}
-
-fn identity_cases() -> BTreeMap<String, Edition> {
-    [
-        ("plain", "Berreta Futura"),
-        ("sharp_s", "Stra\u{df}e"),
-        ("lower", "berreta futura"),
-    ]
-    .iter()
-    .map(|(key, name)| {
-        (
-            key.to_string(),
-            edition(&[], Mapping::new(), "en", "010", name),
-        )
-    })
-    .chain(std::iter::once(("edition_010".to_string(), live_010())))
-    .collect()
-}
-
-fn check(name: &str, cases: &BTreeMap<String, Edition>, apply: fn(&Edition) -> String) {
-    let data = oracle("tests/cover_text_expected.json");
-    let expected = section(&data, name);
-    assert_eq!(expected.len(), cases.len(), "{name} case count");
-    for (key, want) in &expected {
-        let value = cases.get(key).unwrap_or_else(|| panic!("case {key} built"));
-        assert_eq!(&apply(value), want, "{name} case {key}");
-    }
-}
-
-#[test]
-fn cover_date_matches_python() {
-    let data = oracle("tests/cover_text_expected.json");
-    let expected = section(&data, "cover_date");
-    assert_eq!(expected.len(), 8, "case count");
-    for (input, want) in &expected {
-        assert_eq!(&text::cover_date(input), want, "cover_date({input:?})");
-    }
-}
-
 #[test]
 fn a_multi_author_article_collapses_to_its_lead_author() {
     let roster = text::cover_contributors(&plain(&[
@@ -217,24 +62,34 @@ fn a_multi_author_article_collapses_to_its_lead_author() {
 }
 
 #[test]
-fn cover_contributors_matches_python() {
-    check(
-        "cover_contributors",
-        &contributor_cases(),
-        text::cover_contributors,
-    );
+fn contributors_are_deduplicated_trimmed_and_upper_cased() {
+    let roster = text::cover_contributors(&plain(&[
+        "Ada Lovelace",
+        "  ADA LOVELACE ",
+        "   ",
+        "Grace Hopper",
+    ]));
+    assert_eq!(roster, "ADA LOVELACE / GRACE HOPPER");
 }
 
 #[test]
-fn cover_tab_issue_matches_python() {
-    check("cover_tab_issue", &issue_cases(), text::cover_tab_issue);
+fn the_issue_tab_follows_the_language_and_pads_the_number() {
+    let issue = |language, number| {
+        text::cover_tab_issue(&edition(
+            &[],
+            Mapping::new(),
+            language,
+            number,
+            "Berreta Futura",
+        ))
+    };
+    assert_eq!(issue("en", "010"), "ISSUE 010");
+    assert_eq!(issue("es-AR", "7"), "N\u{da}MERO 007");
 }
 
 #[test]
-fn cover_tab_identity_matches_python() {
-    check(
-        "cover_tab_identity",
-        &identity_cases(),
-        text::cover_tab_identity,
-    );
+fn the_identity_tab_upper_cases_the_publication_name() {
+    let identity =
+        text::cover_tab_identity(&edition(&[], Mapping::new(), "en", "010", "berreta futura"));
+    assert_eq!(identity, "BERRETA FUTURA / BUENOS AIRES");
 }

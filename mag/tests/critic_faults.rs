@@ -1,6 +1,4 @@
 use mag::impose;
-#[allow(dead_code)]
-mod oracle;
 
 #[test]
 fn authored_expectations_follow_the_imposition_plan() {

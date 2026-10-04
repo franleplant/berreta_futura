@@ -1,4 +1,4 @@
-pub mod engine;
+mod engine;
 pub mod guess;
 mod json;
 

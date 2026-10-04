@@ -33,13 +33,6 @@ pub struct PreparedPrintImage {
     pub adjusted: bool,
     pub before: PrintContrastAnalysis,
     pub after: PrintContrastAnalysis,
-    pub image: Option<Rgb>,
-}
-
-impl PreparedPrintImage {
-    pub fn unresolved(&self) -> bool {
-        self.after.needs_treatment
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -623,7 +616,6 @@ pub fn prepare_print_image(path: &Path) -> Result<PreparedPrintImage> {
         adjusted: false,
         before,
         after: before,
-        image: None,
     };
     if !before.needs_treatment {
         return Ok(unchanged);
@@ -655,11 +647,10 @@ pub fn prepare_print_image(path: &Path) -> Result<PreparedPrintImage> {
     }
     match best_candidate {
         None => Ok(unchanged),
-        Some(candidate) => Ok(PreparedPrintImage {
+        Some(_) => Ok(PreparedPrintImage {
             adjusted: true,
             before,
             after: best_after,
-            image: Some(candidate),
         }),
     }
 }

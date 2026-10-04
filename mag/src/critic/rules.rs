@@ -1841,15 +1841,6 @@ pub struct Critique {
     pub editorial_page_cap: i64,
 }
 
-impl Critique {
-    pub fn decisions(&self) -> Value {
-        json!({
-            "result": self.result,
-            "issues": self.issues.iter().map(Issue::as_row).collect::<Vec<Value>>(),
-        })
-    }
-}
-
 fn inspect_leg(rasters: &[PathBuf], leg: &Leg) -> Result<Vec<PageInspection>> {
     rasters
         .iter()

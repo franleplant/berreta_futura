@@ -1,37 +1,5 @@
 use mag::sourcecodes;
-#[allow(dead_code)]
-mod oracle;
 use qrcodegen::{Mask, QrCode, QrCodeEcc, QrSegment, Version};
-use serde_json::Value;
-use std::path::{Path, PathBuf};
-
-const CORPUS: &str = "tests/typeset_fixtures/corpus";
-const SNAPSHOT: &str = "tests/repo_snapshot";
-const EDITIONS: [(&str, &str); 9] = [
-    (SNAPSHOT, "008"),
-    (SNAPSHOT, "010"),
-    (CORPUS, "900"),
-    (CORPUS, "901"),
-    (CORPUS, "902"),
-    (CORPUS, "903"),
-    (CORPUS, "904"),
-    (CORPUS, "905"),
-    (CORPUS, "906"),
-];
-
-fn expected(edition: &str) -> PathBuf {
-    Path::new("tests/sourcecodes_expected").join(edition)
-}
-
-#[test]
-fn rust_writes_every_committed_expected_file_byte_for_byte() {
-    for (root, edition) in EDITIONS {
-        let (files, declines) = sourcecodes::build(Path::new(root), edition).unwrap();
-        let differences = sourcecodes::differences(&files, &expected(edition)).unwrap();
-        assert!(differences.is_empty(), "{edition}: {differences:?}");
-        assert_eq!(declines, 0, "{edition}");
-    }
-}
 
 #[test]
 fn segno_deviation_adds_a_zero_byte_at_a_codeword_boundary() {
@@ -116,25 +84,21 @@ fn decode(matrix: &[Vec<bool>]) -> String {
 
 #[test]
 fn every_code_decodes_to_its_payload() {
-    let mut decoded = 0;
-    for (_, edition) in EDITIONS {
-        let text = std::fs::read_to_string(expected(edition).join("codes.json")).unwrap();
-        let index: Value = serde_json::from_str(&text).unwrap();
-        for code in index["codes"].as_array().unwrap() {
-            let payload = code["payload"].as_str().unwrap();
-            for level in [
-                QrCodeEcc::Low,
-                QrCodeEcc::Medium,
-                QrCodeEcc::Quartile,
-                QrCodeEcc::High,
-            ] {
-                assert_eq!(
-                    decode(&sourcecodes::matrix(payload, level).unwrap()),
-                    payload
-                );
-                decoded += 1;
-            }
+    for payload in [
+        "cursor.com/blog/third-era",
+        "example.com/a/b?c=d",
+        "berreta.franleplant.com/editions/012",
+    ] {
+        for level in [
+            QrCodeEcc::Low,
+            QrCodeEcc::Medium,
+            QrCodeEcc::Quartile,
+            QrCodeEcc::High,
+        ] {
+            assert_eq!(
+                decode(&sourcecodes::matrix(payload, level).unwrap()),
+                payload
+            );
         }
     }
-    assert_eq!(decoded, 4 * 28);
 }

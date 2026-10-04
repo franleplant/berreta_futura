@@ -2278,6 +2278,12 @@ mod tests {
     }
 
     #[test]
+    fn shell_single_quote_survives_apostrophes_and_metacharacters() {
+        assert_eq!(shell_single_quote("it's"), "'it'\\''s'");
+        assert_eq!(shell_single_quote("$(x); `y` && z"), "'$(x); `y` && z'");
+    }
+
+    #[test]
     fn candidate_command_substitutes_prompt_and_out() {
         let brief = Brief {
             id: "tail-a".into(),

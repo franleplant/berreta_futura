@@ -1,14 +1,12 @@
-pub mod elements;
-pub mod exact;
-pub mod streams;
+mod elements;
+mod exact;
+mod streams;
 
 use std::collections::BTreeMap;
 
-pub(crate) use elements::trace_elements;
+pub use elements::trace_elements;
 pub(crate) use exact::{authored, num};
-#[allow(unused_imports)]
-pub(crate) use streams::{qc, qo, Color};
-pub(crate) use streams::{Element, Face as TextFace, GLYPH_QUANTUM};
+pub use streams::{qc, qo, Color, Element, Face, Face as TextFace, GLYPH_QUANTUM};
 
 const FONT_ALIASES: [(&str, &str, &str); 12] = [
     (

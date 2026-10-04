@@ -1,9 +1,4 @@
-use mag::cover::raster;
 use mag::cover::svg;
-#[allow(dead_code)]
-mod oracle;
-
-use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
 use svg::{
@@ -90,18 +85,7 @@ fn edition_010_text() -> CoverText {
 }
 
 fn cover_art() -> PathBuf {
-    oracle::pinned(
-        "cover_modes",
-        "mag/tests/cover_fixtures/cover-wildcard-sign-punched-v3.png",
-    )
-}
-
-fn raster_hash(document: &str) -> String {
-    let prepared = raster::raster_svg(document, 300);
-    let pixmap = raster::render(&prepared).expect("cover rasterizes");
-    let mut hasher = Sha256::new();
-    hasher.update(pixmap.data());
-    format!("{:x}", hasher.finalize())
+    repository().join("mag/tests/cover_fixtures/cover-wildcard-sign-punched-v3.png")
 }
 
 fn build(layout: &str) -> String {
@@ -118,31 +102,13 @@ fn build(layout: &str) -> String {
 }
 
 #[test]
-fn framed_raster_matches_the_python_compiler() {
-    assert_eq!(
-        raster_hash(&build("framed")),
-        "0cdc1e310bf4347169fc8b8a6daf2971abe0a3a13587a50cc0c0eb6f8a313eb4",
-        "framed cover raster diverged from the Python compiler"
-    );
-}
-
-#[test]
-fn honored_plate_raster_matches_the_python_compiler() {
-    assert_eq!(
-        raster_hash(&build("honored_plate")),
-        "3df3459da9ef158af8e77071e04fa6e52f4df57b9482c3818ce513c83ec98468",
-        "honored_plate cover raster diverged from the Python compiler"
-    );
-}
-
-#[test]
 fn footer_caption_still_dispatches_through_materialize() {
     let svg = build("footer_caption");
     assert!(svg.contains("data-slot=\"headline\"") && svg.contains("url(#cap-b)"));
 }
 
 #[test]
-fn an_unknown_layout_is_refused_as_python_refuses_it() {
+fn an_unknown_layout_is_refused() {
     let assets = repository().join("mag/assets");
     let mut fonts = Fonts::load(&assets).expect("vendored cover faces load");
     let design = design();

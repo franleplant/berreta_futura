@@ -1208,6 +1208,25 @@ mod tests {
     }
 
     #[test]
+    fn gate_rejects_a_reworded_paragraph_among_verbatim_ones() {
+        let first = "The actor model is a conceptual model to deal with concurrent computation \
+                     and it defines some general rules for how components behave.";
+        let second = "Each actor owns private state and communicates only by sending messages \
+                      to the mailboxes of other actors in the system.";
+        let third = "Supervision trees restart failed actors so that one crash never takes the \
+                     whole application down with it.";
+        let html = format!("<html><body><p>{first}</p><p>{second}</p><p>{third}</p></body></html>");
+        let haystack = page_text(&html);
+        let exact = format!("# T\nByline\n\n{first}\n\n{second}\n\n{third}");
+        assert!(fidelity_gate(&exact, &haystack, &[]).is_ok());
+        let reworded = format!(
+            "# T\nByline\n\n{first}\n\nActors keep their own data hidden and talk to each \
+             other purely through queued notes passed around the network.\n\n{third}"
+        );
+        assert!(fidelity_gate(&reworded, &haystack, &[]).is_err());
+    }
+
+    #[test]
     fn meta_field_tolerates_colons_in_values() {
         let html = "<html><body><p>It covers dynamic Worker loading, node: imports, \
                     compatibility flags, and Wrangler configuration in celld.</p></body></html>";

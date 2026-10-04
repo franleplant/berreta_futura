@@ -163,9 +163,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   `ruff format --check` and `ruff check` on `tools/`, and the no-comments
   test; a commit that fails any of them does not land. Zero warnings is the
   standing state, not a goal.
-- Verification: `cargo test` in `mag/` (also runs the comment check). Committed expectations are regression snapshots of the
-  Rust output; the web port re-blesses with `MAG_BLESS=1` after an intended
-  change.
+- Verification: `cargo test` in `mag/` (also runs the comment check). Tests assert
+  invariants by hand, not recorded oracle output; the one surviving snapshot is
+  `mag/tests/pdf_fixtures/verdicts.tsv`, re-recorded with
+  `MAG_PDF_FIXTURES_BLESS=1 cargo test --test pdf_fixtures` after an intended change.
 - NEVER switch to a feature branch; always work on main unless a human
   requested otherwise. Commit coherent checkpoints.
 - Assume there are other agents working in this very same local repo; don't

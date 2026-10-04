@@ -6,8 +6,6 @@ use anyhow::{anyhow, Context, Result};
 
 pub struct Outlined {
     pub markup: String,
-    #[allow(dead_code)]
-    pub width: f64,
     pub ascent: f64,
     pub descent: f64,
 }
@@ -242,7 +240,6 @@ impl Outliner {
         let transform = transform.trim().to_string();
         Ok(Outlined {
             markup: format!("<g transform=\"{transform}\">{paths}</g>"),
-            width: cursor,
             ascent: self.ascent_units * scale,
             descent: self.descent_units * scale,
         })

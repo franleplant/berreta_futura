@@ -1,35 +1,26 @@
 use mag::critic::text;
-use mag::trace::streams;
-fn text_show(s: &str, x_pt: f64, y_pt: f64, size_pt: f64, advance_pt: f64) -> streams::Element {
+use mag::trace::{qc, qo, Color, Element};
+fn text_show(s: &str, x_pt: f64, y_pt: f64, size_pt: f64, advance_pt: f64) -> Element {
     let glyphs = s.chars().count().max(2);
     let step = advance_pt / (glyphs as f64 - 1.0);
-    let offs = (0..glyphs)
-        .map(|i| [streams::qo(step * i as f64), 0])
-        .collect();
-    streams::Element::Text {
+    let offs = (0..glyphs).map(|i| [qo(step * i as f64), 0]).collect();
+    Element::Text {
         s: s.to_string(),
         font: "Test".into(),
-        size: streams::qc(size_pt),
-        fill: streams::Color {
+        size: qc(size_pt),
+        fill: Color {
             family: "DeviceGray".into(),
             rgb: [0, 0, 0],
         },
         glyphs,
         gids: vec![],
-        m: [
-            streams::qc(size_pt),
-            0,
-            0,
-            streams::qc(size_pt),
-            streams::qc(x_pt),
-            streams::qc(y_pt),
-        ],
+        m: [qc(size_pt), 0, 0, qc(size_pt), qc(x_pt), qc(y_pt)],
         tr: 0,
         clip: vec![],
-        origin: [streams::qo(x_pt), streams::qo(y_pt)],
+        origin: [qo(x_pt), qo(y_pt)],
         offs,
         units: s.chars().map(String::from).collect(),
-        pen: [streams::qo(step * glyphs as f64), 0],
+        pen: [qo(step * glyphs as f64), 0],
     }
 }
 

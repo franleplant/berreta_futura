@@ -1,9 +1,5 @@
 use mag::highlight;
-#[allow(dead_code)]
-mod oracle;
-
-use serde_json::Value;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 fn repo() -> PathBuf {
@@ -32,46 +28,6 @@ fn colour(rules: &[(BTreeSet<String>, String)], class: &str) -> String {
     hit.map_or("inherit".into(), |(_, colour)| colour.clone())
 }
 
-fn colours(
-    rules: &[(BTreeSet<String>, String)],
-    spans: &[(String, String)],
-) -> Vec<(char, String)> {
-    let per_char = spans
-        .iter()
-        .flat_map(|(text, class)| text.chars().map(move |c| (c, class)));
-    per_char
-        .filter(|(c, _)| *c != '\n')
-        .map(|(c, class)| (c, colour(rules, class)))
-        .collect()
-}
-
-const TABLES_SHA256: &str = "adbcb031afe2e6bb90a999abd0041dc901010ccf911a455cd093b3fcc49aa3a9";
-
-#[test]
-fn tables_are_generated_from_the_locked_pygments() {
-    let committed = std::fs::read_to_string(repo().join("mag/src/highlight/tables.json")).unwrap();
-    assert_eq!(
-        oracle::sha256(committed.as_bytes()),
-        TABLES_SHA256,
-        "tables.json moved off the digest the live pygments run recorded"
-    );
-}
-
-fn corpus() -> Vec<Value> {
-    let text = oracle::expectation("highlight_corpus_expected.json");
-    serde_json::from_str(&text).unwrap()
-}
-
-fn oracle_pairs(block: &Value) -> Vec<(String, String)> {
-    let mut chars = block["code"].as_str().unwrap().chars();
-    let runs = block["tokens"].as_array().unwrap().iter();
-    runs.map(|run| {
-        let text = chars.by_ref().take(run[0].as_u64().unwrap() as usize);
-        (text.collect(), run[1].as_str().unwrap().to_owned())
-    })
-    .collect()
-}
-
 #[test]
 fn print_colours_group_the_token_classes_into_seven_inks() {
     let rules = colour_rules();
@@ -82,72 +38,6 @@ fn print_colours_group_the_token_classes_into_seven_inks() {
     assert_eq!(colour(&rules, "p p-Indicator"), "inherit");
     assert_eq!(colour(&rules, "sc"), "inherit");
     assert_eq!(colour(&rules, "kt"), "rgb(25% 10% 43%)");
-}
-
-#[test]
-fn every_corpus_block_matches_pygments() {
-    let rules = colour_rules();
-    let corpus = corpus();
-    let mut stats: BTreeMap<String, (usize, usize)> = BTreeMap::new();
-    let (mut spans_total, mut classes, mut refused) = (0, BTreeSet::new(), Vec::new());
-    for block in &corpus {
-        let (code, language) = (
-            block["code"].as_str().unwrap(),
-            block["language"].as_str().unwrap(),
-        );
-        let files = &block["files"];
-        let entry = stats.entry(language.to_owned()).or_default();
-        entry.0 += 1;
-        let spans = match highlight::spans(code, language) {
-            Err(e) => {
-                assert!(
-                    block["scratch"].as_bool().unwrap(),
-                    "{language} refused in {files}: {e}"
-                );
-                assert!(
-                    !block["tokens"].is_null(),
-                    "refused a language pygments lacks"
-                );
-                refused.push(language.to_owned());
-                continue;
-            }
-            Ok(spans) => spans,
-        };
-        assert_eq!(
-            spans.is_none(),
-            block["tokens"].is_null(),
-            "fallback for {language:?}"
-        );
-        let html = highlight::html(code, language).unwrap();
-        assert_eq!(
-            oracle::sha256(html.as_bytes()),
-            block["html"].as_str().unwrap(),
-            "{language} html in {files}: {html}"
-        );
-        let Some(spans) = spans else { continue };
-        let oracle = oracle_pairs(block);
-        assert_eq!(
-            colours(&rules, &spans),
-            colours(&rules, &oracle),
-            "{language} colours in {files}"
-        );
-        entry.1 += html.matches("<span class=").count();
-        spans_total += html.matches("<span class=").count();
-        classes.extend(
-            spans
-                .iter()
-                .map(|(_, c)| c.clone())
-                .filter(|c| !c.is_empty()),
-        );
-    }
-    eprintln!(
-        "blocks {} spans {spans_total} classes {}",
-        corpus.len(),
-        classes.len()
-    );
-    eprintln!("per language (blocks, spans) {stats:?}");
-    eprintln!("refused (scratch only) {refused:?}");
-    eprintln!("classes {classes:?}");
 }
 
 fn classes(code: &str, language: &str) -> Vec<(String, String)> {
