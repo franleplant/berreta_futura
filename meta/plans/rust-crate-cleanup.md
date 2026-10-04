@@ -148,6 +148,18 @@ U+2014 outside captured-text fixtures.
 - `tests/site.rs` runs `mag site` against the live repo and writes
   `.magazine/site/`: point it at a temp output dir.
 
+**WP-1.12 Capture gate checks recall and order.** Found during WP-2.3:
+`capture.rs` `fidelity_gate` only checks that the transcription's words
+appear on the page (2% miss budget), so a transcription that drops or
+reorders paragraphs passes, against "substantive text, verbatim, in source
+order". Record where each matched window lands in the folded page text,
+require those positions to increase, and fail when the longest run of page
+words no window covers inside the first-to-last match span exceeds a
+calibrated limit (fenced code, headings, table cells count as covered).
+Calibrate on the committed library captures whose raw HTML is still in
+`.magazine/capture/`; test that a dropped paragraph and a swapped pair are
+rejected.
+
 ## Phase 2: delete and restructure
 
 **WP-2.1 Library crate.** Add `src/lib.rs` with the modules and a thin
