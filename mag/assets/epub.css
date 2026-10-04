@@ -42,7 +42,8 @@ figcaption { margin-top: 0.4em; font-family: -apple-system, sans-serif; font-siz
 .key-ideas { margin: 2em 0; padding: 0.8em 1em; background: #f4f5f7; border-radius: 4px; }
 .key-ideas h2 { margin: 0 0 0.5em; color: #f05738; font-family: -apple-system, sans-serif; font-size: 0.7em; letter-spacing: 0.08em; }
 .key-ideas ul { margin: 0; }
-.tail { margin: 2em auto 0; max-width: 50%; }
+.tail { margin: 2em 0 0; }
+.tail img { width: 100%; }
 
 .cover-page { margin: 0; padding: 0; text-align: center; }
 .cover-page img { max-height: 98vh; max-width: 100%; }
