@@ -9,7 +9,9 @@ direction:
   name: Story-Led Boy and Robot, Gentle Print Color
   visual_language: Original family-friendly children's science-comedy manga with simple charcoal contours,
     rounded readable expressions, economical watercolor washes, minimal hatching, restrained halftone,
-    quiet print grain, and one playful visual idea per illustration. The recurring cast is defined
+    quiet print grain, and one playful visual idea per illustration. Synthetic and naive, with big
+    figures and few props; the setting is simple, a real place when the scene needs one, laid
+    in a few flat washes that stop short of the frame and fade into warm off-white paper. The recurring cast is defined
     under cast, and nobody outside it ever appears. Use broad period and production cues only.
     Never reproduce a franchise character, costume, face, silhouette, composition, or gadget.
   palette: 'Scene-led gentle historical magazine color at low to medium saturation: softened cyan
@@ -44,8 +46,7 @@ direction:
       curved white eyes, rounded silhouette and antenna; Flopaz's chestnut side ponytail and
       bangs).
     tail: >-
-      Tails may drift toward the edition's quieter register: more painterly rendering, softer
-      light, Pedro and Flopaz reading a few years older, wardrobe following the hour and season
+      Tails may drift toward the edition's quieter register: softer light, Pedro and Flopaz reading a few years older, wardrobe following the hour and season
       instead of the canon outfits. Identity anchors hold: Pedro's black tousled hair, round
       glasses and face; Maro's black screen face with two curved white eyes, rounded silhouette
       and antenna; Flopaz's chestnut side ponytail and bangs.
@@ -60,7 +61,9 @@ direction:
     all drawn to their cast prompts, nobody outside the cast
   - Article tails are wide short strips, composed for a 3:1 landscape frame with the action
     in the middle band, never a square or 2:1 frame
-  - Background color and setting arise from the article subject
+  - Background color and setting arise from the article subject, kept simple and suggested in a
+    few flat washes rather than rendered in detail
+  - The cast is drawn large, filling most of the frame height, with calm empty paper around them
   - At least three distinct non-neutral colors
   - Strong silhouettes and expressions that remain legible at A5 size
   - Print-friendly contrast with minimal hatching and restrained halftone
@@ -70,7 +73,10 @@ direction:
   avoid:
   - Direct copies of Doraemon, Nobita, or any recognizable franchise character
   - Blue robotic cats, signature franchise gadgets, copied costumes, or copied faces
-  - Uniform yellow, mustard, beige, sepia, cream-paper, or bright cyan backgrounds
+  - A flat yellow, mustard, beige, sepia, or bright cyan field filling the whole frame
+  - Cluttered or minutely rendered backgrounds, shelves of objects, pegboards, posters, or props
+    beyond the ones the idea needs
+  - Crisp digital line art or cel shading
   - Extra humans, extra robots, or robot-faced background appliances
   - Decorative montages, contact sheets, or filler patterns
   - Dense technical realism, steampunk clutter, or excessive crosshatching

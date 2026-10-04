@@ -18,8 +18,8 @@ round and an explicit new selection.
 - **Article openers** — exactly one per article, placed at the article's
   start. Each opener illustrates its own article's core proposition, in the
   edition's art direction. The opener frame is landscape, 348 x 203 pt (1.71:1),
-  filled edge to edge, so compose for that shape with the essential subject
-  and every head well inside it, legible at A5.
+  so compose for that shape with the essential subject and every head well
+  inside it, legible at A5.
 - **Article tails** — exactly one per article, a wide single vignette drawn
   in the whitespace at the end of an article when the final page has room.
   Whether a tail *prints* is the typesetter's call at render time; whether a
@@ -34,6 +34,26 @@ round and an explicit new selection.
   Maintain an approved pool of at least three; the render takes however many
   the final page count demands. Genuinely vertical, poster-weight subjects
   belong here.
+
+## Interior look: sparse, on paper
+
+Openers, tails, and closing plates are synthetic and naive, never a
+rendered scene. Write every interior prompt in this order and spirit:
+
+1. **Style first.** Open with the direction's visual language and style
+   line, then the scene.
+2. **One idea, few props.** Name the cast and only the props the idea
+   needs. Never furnish a room or paint a landscape.
+3. **Simple setting.** Give the scene the place it needs, a wall, a
+   hill, a riverbank, a night window, laid in a few flat washes with a
+   soft cast shadow. Keep it simple, never minutely rendered; a bare
+   paper ground is fine when the idea needs no place.
+4. **Paper, not full bleed.** The washes stop short of the frame and fade
+   into warm off-white paper; the figures are large, filling most of the
+   frame height, with calm empty paper around them.
+5. **Avoid clutter by name:** cluttered or minutely rendered backgrounds,
+   shelves of objects, pegboards, posters, crisp digital line art, cel
+   shading.
 
 Curated source figures (screenshots and diagrams captured with a source) are
 a separate, non-generated pipeline and are out of scope here.
