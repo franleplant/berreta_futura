@@ -63,11 +63,10 @@ paper, and `--red` its orange.
 
 ## Dark grounds
 
-The box stays near-black on every ground; only BERRETA changes, to the light
-ink (site dark mode `#e7e5e0`, cover over dark art: paper). On a dark ground
-the box takes a separating hairline in the BERRETA colour at 35% opacity:
-1 CSS px (non-scaling) on screen, 1% of C (0.73 units of `wordmark.svg`) in
-vector and print output. The mark needs no rule: its red tile separates it.
+The logo is drawn as is: no outlines, strokes, or other additions on any
+ground. The box stays near-black everywhere; only BERRETA changes, to the
+light ink (site dark mode `#e7e5e0`, cover over dark art: paper), so it stays
+legible.
 
 ## Sizes and clear space
 
