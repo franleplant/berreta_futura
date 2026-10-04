@@ -1,4 +1,4 @@
-use crate::typeset::content::{compose, File, Tree};
+use crate::typeset::content::{compose, Tree};
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
@@ -44,25 +44,13 @@ pub fn standfirst_keeps(document: &PagedDocument) -> Vec<Option<usize>> {
         .collect()
 }
 
-const PLATE_CONTENT: &str = "#closing-signature(none)\n";
-
 pub fn paginate(tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDocument)> {
-    let (tree, bare) = crate::typeset::runt::bound(tree, hyphenation)?;
+    let (mut tree, bare) = crate::typeset::runt::bound(tree, hyphenation)?;
     let content =
         bare.pages().len().checked_sub(2).ok_or_else(|| {
             anyhow::anyhow!("the bare document has fewer than the two cover pages")
         })?;
-    let files = tree.files.into_iter().map(|file| File {
-        source: file.source.replacen(
-            PLATE_CONTENT,
-            &format!("#closing-signature({content})\n"),
-            1,
-        ),
-        ..file
-    });
-    let tree = Tree {
-        files: files.collect(),
-    };
+    tree.decisions.closing = Some(content);
     let plated = document(&world(&tree)?)?;
     let plates = plated
         .introspector()
@@ -178,7 +166,8 @@ pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeset::content::{pipeline, File, Inputs};
+    use crate::typeset::content::{pipeline, Emitted, File, Inputs};
+    use crate::typeset::decisions::hole;
     use lopdf::{Document, Object};
     use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
@@ -260,6 +249,12 @@ mod tests {
                 path: "main.typ".to_string(),
                 source: main,
             }],
+            figures: vec![Emitted {
+                piece: "p".to_string(),
+                id: "f".to_string(),
+                hole: 0,
+            }],
+            ..Tree::default()
         }
     }
 
@@ -550,8 +545,9 @@ mod tests {
         let (paragraphs, lift) = phase(step);
         let figure = figure.map_or(String::new(), |pixels| {
             format!(
-                "#figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", layout: \"{layout}\", \
+                "#figure-block(id: \"f\",{} source-id: \"s\", anchor: \"Anchor\", layout: \"{layout}\", \
                  word: \"Figure\", alt: \"a\", path: \"{}\"{pixels})[#figure-caption[Cap.]]\n",
+                hole('f', 0),
                 fixture_png()
             )
         });
@@ -858,7 +854,7 @@ mod tests {
                     .iter()
                     .filter(|l| l.0 == heading.0 && l.1 > heading.1)
                     .count();
-                let floats = tree.files[0].source.contains("float: true");
+                let floats = tree.decisions.floats.values().any(|on| *on);
                 assert!(
                     caption.0 == heading.0 + usize::from(floats),
                     "step {n} {layout}"
@@ -955,7 +951,13 @@ mod tests {
         for n in 0..32 {
             let (paragraphs, lift) = phase(n);
             let long: String = (0..6)
-                .map(|k| format!("#doc-paragraph[{}]\n", format!("w{k} ").repeat(90)))
+                .map(|k| {
+                    format!(
+                        "{}#doc-paragraph[{}]\n",
+                        hole('c', k + 1),
+                        format!("w{k} ").repeat(90)
+                    )
+                })
                 .collect();
             let tree = synthetic(format!(
                 "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
@@ -979,7 +981,7 @@ mod tests {
                     "step {n}: the plate interrupts paragraph {k}"
                 );
             }
-            cut += usize::from(tree.files[0].source.contains("#colbreak()"));
+            cut += usize::from(!tree.decisions.cuts.is_empty());
         }
         assert!(cut > 0, "no step needed a cut");
     }
@@ -1059,7 +1061,7 @@ mod tests {
                 )
             })
             .collect();
-        synthetic(plates + "#closing-signature(none)\n" + &pieces)
+        synthetic(plates + &format!("#closing-signature({})\n", hole('g', 0)) + &pieces)
     }
 
     fn first_plate_page(pdf: &[u8]) -> Vec<usize> {
@@ -1342,7 +1344,8 @@ mod tests {
     fn expected_outline(tree: &Tree) -> Vec<(usize, String)> {
         let mut levels: Vec<usize> = vec![];
         let mut out = vec![];
-        let calls = tree
+        let flat = tree.flat().expect("the tree renders");
+        let calls = flat
             .files
             .iter()
             .flat_map(|f| f.source.lines())

@@ -1,4 +1,5 @@
-use crate::typeset::content::{File, Tree};
+use crate::typeset::content::Tree;
+use crate::typeset::decisions::{render_tree, Mark};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -12,7 +13,7 @@ use typst_syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 
 pub const ROOT: &str = "/root.typ";
 pub const TEMPLATE: &str = "/template.typ";
-pub const PRELUDE: &str = "#import \"/template.typ\": *\n";
+const PRELUDE: &str = "#import \"/template.typ\": *\n";
 const RASTERS: [&str; 3] = [".png", ".jpg", ".jpeg"];
 
 struct Shared {
@@ -28,6 +29,7 @@ pub struct Sources {
     shared: &'static Shared,
     main: FileId,
     texts: HashMap<FileId, Source>,
+    marks: HashMap<FileId, Vec<Mark>>,
 }
 
 pub fn id(path: &str) -> Result<FileId> {
@@ -80,9 +82,11 @@ fn shared() -> Result<&'static Shared> {
 impl Sources {
     pub fn new(tree: &Tree, template: &str, root: &str) -> Result<Self> {
         let mut texts = HashMap::new();
-        for File { path, source } in &tree.files {
+        let mut marks = HashMap::new();
+        for (path, rendered) in render_tree(tree, PRELUDE)? {
             let file = id(&format!("/{path}"))?;
-            texts.insert(file, Source::new(file, format!("{PRELUDE}{source}")));
+            texts.insert(file, Source::new(file, rendered.text));
+            marks.insert(file, rendered.marks);
         }
         for (path, text) in [(TEMPLATE, template), (ROOT, root)] {
             let file = id(path)?;
@@ -92,7 +96,12 @@ impl Sources {
             shared: shared()?,
             main: id(ROOT)?,
             texts,
+            marks,
         })
+    }
+
+    pub fn marks(&self, file: FileId) -> &[Mark] {
+        self.marks.get(&file).map_or(&[], Vec::as_slice)
     }
 }
 

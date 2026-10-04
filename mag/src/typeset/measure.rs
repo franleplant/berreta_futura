@@ -53,7 +53,7 @@ impl Metrics {
              #set text(font: \"{family}\", weight: {weight}, size: {size}pt{extra})\n\
              #box(\"{literal}\")"
         );
-        let world = Sources::new(&Tree { files: vec![] }, "", &root)
+        let world = Sources::new(&Tree::default(), "", &root)
             .map_err(|e| ValidationError::one(e.to_string()))?;
         let document = typst::compile::<PagedDocument>(&world)
             .output

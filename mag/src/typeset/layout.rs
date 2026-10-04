@@ -1,7 +1,7 @@
 use crate::model::kinds::{ContentMode, RenderOperation};
 use crate::model::manifest::{load_edition, Edition, LoadOptions, Records};
 use crate::model::records::load_records;
-use crate::typeset::content::Tree;
+use crate::typeset::content::{Emitted, Tree};
 use crate::typeset::geometry::geometry;
 use crate::typeset::legible::{ENLARGED, ENLARGED_MIN_PPI};
 use crate::typeset::media::pixels;
@@ -383,35 +383,6 @@ pub fn edition(root: &Path, edition_id: &str, publication_name: &str) -> Result<
     )?)
 }
 
-fn literal_after<'a>(line: &'a str, key: &str) -> Option<&'a str> {
-    line.trim().strip_prefix(key)?.strip_suffix(',')
-}
-
-pub fn emitted_figures(tree: &Tree) -> Vec<(String, String)> {
-    let mut out = Vec::new();
-    for file in &tree.files {
-        let (mut piece, mut wanted) = (String::new(), "");
-        for line in file.source.lines() {
-            match line {
-                "#piece(" | "#figure-block(" => wanted = line,
-                _ => {
-                    let Some(id) = literal_after(line, "id: ")
-                        .and_then(|l| serde_json::from_str::<String>(l).ok())
-                    else {
-                        continue;
-                    };
-                    match std::mem::take(&mut wanted) {
-                        "#piece(" => piece = id,
-                        "#figure-block(" => out.push((piece.clone(), id)),
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-    out
-}
-
 fn page_cap(mode: ContentMode) -> usize {
     match mode {
         ContentMode::Verbatim => geometry().verbatim_cap,
@@ -430,7 +401,7 @@ fn figures(
         .iter()
         .flat_map(|p| p.figures.iter().map(move |page| (p.id.as_str(), *page)));
     let mut out = Vec::new();
-    for (piece, id) in emitted_figures(tree) {
+    for Emitted { piece, id, .. } in tree.figures.iter().cloned() {
         let (placed_in, page) = pages
             .next()
             .with_context(|| format!("figure {id} has no placement mark in the typst document"))?;
@@ -716,6 +687,7 @@ mod tests {
                      #doc-paragraph(standfirst: false, roster: false)[Body.]\n]\n"
                 ),
             }],
+            ..Tree::default()
         }
     }
 
@@ -821,6 +793,7 @@ mod tests {
                      #doc-paragraph(standfirst: true, roster: false)[Body.]\n]\n"
                 ),
             }],
+            ..Tree::default()
         };
         let measured = measure(&compiled(&tree)).expect("the run measures");
         measured.plain_opener_fits()["a"]
@@ -880,6 +853,7 @@ mod tests {
                      \"https://x.org/\", title: none)[{body}]]\n]\n"
                 ),
             }],
+            ..Tree::default()
         };
         let pdf = template::pdf(&compiled(&tree)).expect("the pdf exports");
         let doc = lopdf::Document::load_mem(&pdf).expect("the pdf parses");
@@ -1047,6 +1021,7 @@ mod tests {
                      #opener-end()\n{body}]\n"
                 ),
             }],
+            ..Tree::default()
         }
     }
 

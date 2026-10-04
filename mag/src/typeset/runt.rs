@@ -1,10 +1,10 @@
-use crate::typeset::content::{File, Tree};
+use crate::typeset::content::Tree;
+use crate::typeset::decisions::{locate, Splice};
 use crate::typeset::geometry::geometry;
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::measure::Metrics;
 use crate::typeset::template::{document, world};
-use crate::typeset::world::PRELUDE;
-use anyhow::{bail, Result};
+use anyhow::{bail, ensure, Result};
 use typst::introspection::{Location, Tag};
 use typst::layout::{FrameItem, Point, Transform};
 use typst::text::TextItem;
@@ -366,47 +366,38 @@ pub fn ladder_warnings(doc: &PagedDocument, edition: &str) -> Vec<String> {
         .collect()
 }
 
-pub(crate) type Edit = (FileId, usize, usize, &'static str);
-
-fn bind(tree: Tree, found: &[Edit]) -> Tree {
-    let files = tree.files.into_iter().map(|file| {
-        let path = format!("/{}", file.path);
-        let mut source = file.source;
-        let mut here: Vec<_> = found
-            .iter()
-            .filter(|(id, ..)| id.vpath().get_with_slash() == path)
-            .map(|(_, a, b, with)| (a - PRELUDE.len(), b - PRELUDE.len(), *with))
-            .collect();
-        here.sort_unstable_by(|a, b| b.cmp(a));
-        here.dedup();
-        for (a, b, with) in here {
-            source.replace_range(a..b, with);
-        }
-        File { source, ..file }
-    });
-    Tree {
-        files: files.collect(),
-    }
-}
+type Edit = (FileId, usize, usize, &'static str);
 
 pub fn bound(mut tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDocument)> {
     for _ in 0..PASSES {
         let sources = world(&tree)?;
         let doc = document(&sources)?;
-        let runts = binds(&doc, &sources, &Metrics, hyphenation.english)?.into_iter();
+        let runts = binds(&doc, &sources, &Metrics, hyphenation.english)?;
+        let stuck = runts.len();
         let ladders = match hyphenation.limit_ladders {
             true => laddered(&doc, &sources),
             false => Vec::new(),
         };
         let edits: Vec<Edit> = runts
+            .into_iter()
             .map(|(f, a, b)| (f, a, b, NO_BREAK))
             .chain(ladders)
-            .chain(crate::typeset::flow::edits(&doc, &sources, &tree)?)
             .collect();
-        if edits.is_empty() {
+        let before = tree.decisions.clone();
+        for (file, a, b, with) in edits {
+            let (unit, from, to) = locate(sources.marks(file), a, b)?;
+            tree.decisions.splice(unit, Splice { from, to, with });
+        }
+        for choice in crate::typeset::flow::choices(&doc, &sources, &tree) {
+            tree.decisions.choose(choice);
+        }
+        if tree.decisions == before {
+            ensure!(
+                stuck == 0,
+                "the Typst reader's runt binds did not settle: {stuck} runts remain after binding"
+            );
             return Ok((tree, doc));
         }
-        tree = bind(tree, &edits);
     }
     bail!("the Typst reader's runt binds did not settle within {PASSES} passes")
 }
@@ -414,6 +405,8 @@ pub fn bound(mut tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDoc
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::typeset::content::File;
+    use crate::typeset::decisions::unit;
 
     const RUNT: &str = "7\\:10\\:25 AM EST\\, July 30\\. A malformed BMP from a RIPE address\\, \
         presenting as Chrome 131\\.0\\.0 on Windows 10\\. We initially assumed whoever built it had \
@@ -430,9 +423,12 @@ mod tests {
                 path: "main.typ".into(),
                 source: format!(
                     "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
-                     #doc-paragraph[{RUNT}]\n\n#doc-paragraph[{FULL}]\n]\n"
+                     #doc-paragraph[{}]\n\n#doc-paragraph[{}]\n]\n",
+                    unit(0, RUNT),
+                    unit(1, FULL)
                 ),
             }],
+            ..Tree::default()
         }
     }
 
@@ -474,9 +470,11 @@ mod tests {
                     "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
                      #doc-heading(level: 3)[Anchor]\n#figure-block(id: \"f\", source-id: \"s\", \
                      anchor: \"Anchor\", layout: \"{layout}\", word: \"Figure\", alt: \"a\", \
-                     path: \"{image}\", pixels: (40, 25))[#figure-caption[{CAPTION}]]\n]\n"
+                     path: \"{image}\", pixels: (40, 25))[#figure-caption[{}]]\n]\n",
+                    unit(0, CAPTION)
                 ),
             }],
+            ..Tree::default()
         }
     }
 
@@ -496,21 +494,25 @@ mod tests {
     fn a_band_caption_is_bound_on_the_band_s_own_measure() {
         let (band, _) =
             bound(captioned("evidence_band_prose"), Hyphenation::PLAIN).expect("the binds settle");
+        let band = band
+            .flat()
+            .expect("the tree renders")
+            .files
+            .remove(0)
+            .source;
         assert!(
-            !band.files[0].source.contains("effort goes\\.")
-                && band.files[0]
-                    .source
-                    .contains(&format!("effort{NO_BREAK}goes")),
-            "{}",
-            band.files[0].source
+            !band.contains("effort goes\\.") && band.contains(&format!("effort{NO_BREAK}goes")),
+            "{band}"
         );
         let (column, _) =
             bound(captioned("column_plate"), Hyphenation::PLAIN).expect("the binds settle");
-        assert!(
-            column.files[0].source.contains("effort goes\\."),
-            "{}",
-            column.files[0].source
-        );
+        let column = column
+            .flat()
+            .expect("the tree renders")
+            .files
+            .remove(0)
+            .source;
+        assert!(column.contains("effort goes\\."), "{column}");
     }
 
     #[test]
@@ -521,7 +523,9 @@ mod tests {
             ["BMP.", "A closing line that ends well inside the measure."]
         );
         let (tree, doc) = bound(piece(), Hyphenation::PLAIN).expect("the binds settle");
-        let source = &tree.files[0].source;
+        let source = &tree.flat().expect("the tree renders").files[0]
+            .source
+            .clone();
         assert!(source.contains("malformed\\u{a0}BMP\\."), "{source}");
         assert_eq!(source.matches(NO_BREAK).count(), 1, "{source}");
         assert_eq!(last_lines(&doc)[0], "malformed BMP.");

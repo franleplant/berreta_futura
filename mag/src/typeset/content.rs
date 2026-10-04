@@ -10,11 +10,12 @@ use crate::model::shared::{
     scalar_label, ui, Result, ValidationError,
 };
 use crate::sourcecodes::source_code_directory;
+use crate::typeset::decisions::{hole, unit, Decisions};
 use crate::typeset::hyphen::{Hyphenation, Hyphenator};
 use crate::typeset::measure::Metrics;
 use crate::typeset::media::pixels;
 use crate::typeset::world::font_dir;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::BTreeSet;
 use std::path::Path;
 use typst_syntax::{SyntaxKind, SyntaxNode};
@@ -42,8 +43,17 @@ pub struct File {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Emitted {
+    pub piece: String,
+    pub id: String,
+    pub hole: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Tree {
     pub files: Vec<File>,
+    pub figures: Vec<Emitted>,
+    pub decisions: Decisions,
 }
 
 impl Tree {
@@ -101,6 +111,8 @@ pub fn compose(
         metrics: &Metrics,
         keeps,
         standfirsts: Cell::new(0),
+        holes: Cell::new(0),
+        figures: RefCell::new(Vec::new()),
         illustrated: edition.format.article_opener.as_deref().map(str::trim) == Some(ILLUSTRATED),
         native: hyphenation.native(&edition.locale),
         hyphenator: Hyphenator::for_locale(&edition.locale)
@@ -108,7 +120,8 @@ pub fn compose(
             .map_err(ValidationError::one)?,
     }
     .tree()?;
-    let misses: Vec<String> = tree
+    let flat = tree.flat().map_err(|error| refusal(&error))?;
+    let misses: Vec<String> = flat
         .files
         .iter()
         .flat_map(|file| unsettable_in(file, &settable))
@@ -155,6 +168,8 @@ struct Writer<'a> {
     metrics: &'a Metrics,
     keeps: &'a [Option<usize>],
     standfirsts: Cell<usize>,
+    holes: Cell<usize>,
+    figures: RefCell<Vec<Emitted>>,
     illustrated: bool,
     native: bool,
     hyphenator: Option<Hyphenator>,
@@ -172,8 +187,25 @@ impl Writer<'_> {
         ui(&self.edition.language, key)
     }
 
+    fn next(&self) -> usize {
+        self.holes.replace(self.holes.get() + 1)
+    }
+
+    fn unit(&self, text: &str) -> String {
+        unit(self.next(), text)
+    }
+
+    fn cut(&self, attach: bool, markup: String) -> String {
+        match attach {
+            true => markup,
+            false => format!("{}{markup}", hole('c', self.next())),
+        }
+    }
+
     fn prose(&self, value: &str) -> String {
-        escape_markup(&fold_reader_characters(&educate_reader_quotes(value)))
+        self.unit(&escape_markup(&fold_reader_characters(
+            &educate_reader_quotes(value),
+        )))
     }
 
     fn hyphenated(&self, value: &str) -> String {
@@ -182,9 +214,12 @@ impl Writer<'_> {
 
     fn hyphenable(&self, folded: &str) -> String {
         match (&self.hyphenator, self.native) {
-            (Some(hyphenator), _) => escape_markup(&hyphenator.text(folded)),
-            (None, true) => format!("#text(hyphenate: true)[{}]", escape_markup(folded)),
-            (None, false) => escape_markup(folded),
+            (Some(hyphenator), _) => self.unit(&escape_markup(&hyphenator.text(folded))),
+            (None, true) => format!(
+                "#text(hyphenate: true)[{}]",
+                self.unit(&escape_markup(folded))
+            ),
+            (None, false) => self.unit(&escape_markup(folded)),
         }
     }
 
@@ -197,7 +232,7 @@ impl Writer<'_> {
     }
 
     fn literal(&self, value: &str) -> String {
-        escape_markup(&fold_reader_characters(value))
+        self.unit(&escape_markup(&fold_reader_characters(value)))
     }
 
     fn said(&self, value: &str) -> String {
@@ -250,7 +285,11 @@ impl Writer<'_> {
                 source: main,
             },
         );
-        Ok(Tree { files })
+        Ok(Tree {
+            files,
+            figures: self.figures.take(),
+            decisions: Decisions::default(),
+        })
     }
 
     fn header(&self) -> String {
@@ -366,7 +405,7 @@ impl Writer<'_> {
             self.said(&editorial.label),
             self.said(&editorial.title),
             self.byline(&editorial.byline),
-            self.blocks(&document.blocks, true, false)?,
+            self.blocks(&document.blocks)?,
         ))
     }
 
@@ -384,7 +423,7 @@ impl Writer<'_> {
             string_literal(&section.title),
             self.said(&self.ui(&section.kind)),
             self.said(&section.title),
-            self.blocks(&document.blocks, true, false)?,
+            self.blocks(&document.blocks)?,
         ))
     }
 
@@ -432,20 +471,23 @@ impl Writer<'_> {
 
     fn standfirst(&self, block: &Block) -> Result<String> {
         let Block::Paragraph(children) = block else {
-            return self.markup_block(block, true, false, false);
+            return Ok(self.cut(false, self.markup_block(block, true, false, false)?));
         };
         let ordinal = self.standfirsts.replace(self.standfirsts.get() + 1);
         let keep = self.keeps.get(ordinal).copied().flatten().unwrap_or(0);
         let Some((kept, moved)) = split_segments(children, keep) else {
-            return self.markup_block(block, true, false, false);
+            return Ok(self.cut(false, self.markup_block(block, true, false, false)?));
         };
-        Ok(format!(
-            "#doc-paragraph(standfirst: true, roster: {}, split: true)[{}]\n\n\
-             #doc-paragraph(standfirst: false, roster: false)[{}]\n\n",
+        let held = format!(
+            "#doc-paragraph(standfirst: true, roster: {}, split: true)[{}]\n\n",
             is_name_roster(&inline_text(children)),
             self.inlines(&kept),
+        );
+        let rest = format!(
+            "#doc-paragraph(standfirst: false, roster: false)[{}]\n\n",
             self.flowing(&moved, true),
-        ))
+        );
+        Ok(self.cut(false, held) + &self.cut(false, rest))
     }
 
     fn article_head(
@@ -584,24 +626,28 @@ impl Writer<'_> {
         let (opener_extracts, anchored_extracts) = split_extracts(&article.extracts);
         let mut out = String::new();
         for figure in &opener_figures {
-            out.push_str(&self.figure(figure, trim)?);
+            out.push_str(&self.figure(article, figure, trim)?);
         }
         for extract in &opener_extracts {
             out.push_str(&self.extract(extract));
         }
         let mut references = false;
         let standfirst = skip == 0 && matches!(document.blocks.first(), Some(Block::Paragraph(_)));
+        let mut attach = false;
         for (position, block) in document.blocks.iter().enumerate().skip(skip) {
             if let Block::Heading { children, .. } = block {
                 references = is_reference_heading(&inline_text(children));
             }
-            out.push_str(&match block {
+            let markup = match block {
                 Block::Heading { level, children } if standfirst && position == 1 => format!(
                     "#doc-heading(level: {level}, standfirst: true)[{}]\n\n",
                     self.inlines(children)
                 ),
                 _ => self.markup_block(block, skip == 0 && position == 0, references, false)?,
-            });
+            };
+            let heading = matches!(block, Block::Heading { .. });
+            out.push_str(&self.cut(attach && !heading, markup));
+            attach = heading;
             let Block::Heading { children, .. } = block else {
                 continue;
             };
@@ -610,13 +656,15 @@ impl Writer<'_> {
                 .iter()
                 .filter(|figure| anchor_key(&figure.anchor) == key)
             {
-                out.push_str(&self.figure(figure, 0.0)?);
+                out.push_str(&self.figure(article, figure, 0.0)?);
+                attach = false;
             }
             for extract in anchored_extracts
                 .iter()
                 .filter(|extract| anchor_key(&extract.anchor) == key)
             {
                 out.push_str(&self.extract(extract));
+                attach = false;
             }
         }
         Ok(out)
@@ -653,17 +701,24 @@ impl Writer<'_> {
         )
     }
 
-    fn figure(&self, figure: &Figure, trim: f64) -> Result<String> {
+    fn figure(&self, article: &Article, figure: &Figure, trim: f64) -> Result<String> {
         let (width, height) = pixels(&figure.path)?;
+        let slot = self.next();
+        self.figures.borrow_mut().push(Emitted {
+            piece: format!("article-{}", article.id),
+            id: figure.id.clone(),
+            hole: slot,
+        });
         let trim = match trim > 0.0 {
             true => format!("  trim: {trim}pt,\n"),
             false => String::new(),
         };
         Ok(format!(
-            "#figure-block(\n  id: {},\n  source-id: {},\n  anchor: {},\n  layout: {},\n  \
+            "#figure-block(\n  id: {},{}\n  source-id: {},\n  anchor: {},\n  layout: {},\n  \
              word: {},\n  alt: {},\n  path: {},\n  pixels: ({width}, {height}),\n{trim}\
              )[#figure-caption{}]\n\n",
             string_literal(&figure.id),
+            hole('f', slot),
             string_literal(&figure.source_id),
             string_literal(&figure.anchor),
             string_literal(figure.layout.as_str()),
@@ -711,12 +766,29 @@ impl Writer<'_> {
         )
     }
 
-    fn blocks(&self, blocks: &[Block], standfirst: bool, manual: bool) -> Result<String> {
-        blocks
-            .iter()
-            .enumerate()
-            .map(|(index, block)| self.markup_block(block, standfirst && index == 0, false, manual))
-            .collect()
+    fn blocks(&self, blocks: &[Block]) -> Result<String> {
+        self.sequence(blocks, (true, false), false)
+    }
+
+    fn children(&self, blocks: &[Block], manual: bool) -> Result<String> {
+        self.sequence(blocks, (false, manual), true)
+    }
+
+    fn sequence(
+        &self,
+        blocks: &[Block],
+        (standfirst, manual): (bool, bool),
+        nested: bool,
+    ) -> Result<String> {
+        let mut attach = nested;
+        let mut out = String::new();
+        for (index, block) in blocks.iter().enumerate() {
+            let heading = matches!(block, Block::Heading { .. });
+            let markup = self.markup_block(block, standfirst && index == 0, false, manual)?;
+            out.push_str(&self.cut(attach && !heading, markup));
+            attach = heading;
+        }
+        Ok(out)
     }
 
     fn markup_block(
@@ -750,10 +822,7 @@ impl Writer<'_> {
                 )
             }
             Block::Quote(children) => {
-                format!(
-                    "#doc-quote[\n{}]\n\n",
-                    self.blocks(children, false, manual)?
-                )
+                format!("#doc-quote[\n{}]\n\n", self.children(children, manual)?)
             }
             Block::List {
                 ordered,
@@ -764,9 +833,11 @@ impl Writer<'_> {
                 "#doc-list(ordered: {ordered}, start: {start}, references: {references})[\n{}]\n\n",
                 items
                     .iter()
-                    .map(|item| {
+                    .enumerate()
+                    .map(|(index, item)| {
                         let manual = manual || (references && !ordered);
-                        Ok(format!("  #doc-item[\n{}]\n", self.blocks(item, false, manual)?))
+                        let markup = format!("  #doc-item[\n{}]\n", self.children(item, manual)?);
+                        Ok(self.cut(index == 0, markup))
                     })
                     .collect::<Result<String>>()?
             )
@@ -821,7 +892,7 @@ impl Writer<'_> {
                 if *hard {
                     "\\\n".to_string()
                 } else {
-                    "\n".to_string()
+                    self.unit("\n")
                 }
             }
         }
@@ -844,7 +915,7 @@ impl Writer<'_> {
                     path_literal(&plate.art_path)
                 )
             })
-            .chain(["#closing-signature(none)\n".to_string()])
+            .chain([format!("#closing-signature({})\n", hole('g', self.next()))])
             .collect()
     }
 }
@@ -1065,6 +1136,7 @@ pub fn raw_block(code: &str) -> String {
 }
 
 pub fn project(tree: &Tree) -> Result<Projection> {
+    let tree = &tree.flat().map_err(|error| refusal(&error))?;
     let main = tree
         .get(MAIN)
         .ok_or_else(|| ValidationError::one(format!("the source tree has no {MAIN}")))?;
@@ -1367,6 +1439,33 @@ mod tests {
     }
 
     #[test]
+    fn every_emitted_figure_is_listed_with_a_float_slot_the_markup_honours() {
+        let mut listed = 0;
+        for edition in ["900", "905", "906"] {
+            let mut tree = pipeline(&inputs(&corpus(), edition)).expect("the edition composes");
+            let flat = tree.flat().expect("the tree renders");
+            let calls: usize = flat
+                .files
+                .iter()
+                .map(|f| f.source.matches("#figure-block(").count())
+                .sum();
+            assert_eq!(calls, tree.figures.len(), "{edition}");
+            for figure in tree.figures.clone() {
+                tree.decisions.floats.insert(figure.hole, true);
+            }
+            let floated = tree.flat().expect("the tree renders");
+            let marks: usize = floated
+                .files
+                .iter()
+                .map(|f| f.source.matches("\n  float: true,").count())
+                .sum();
+            assert_eq!(marks, calls, "{edition}");
+            listed += calls;
+        }
+        assert!(listed > 0, "no fixture carries a figure");
+    }
+
+    #[test]
     fn every_code_run_is_a_contiguous_run_of_its_captured_source() {
         let root = corpus();
         let captured =
@@ -1469,7 +1568,8 @@ mod tests {
         let base = crate::typeset::layout::edition(&root, "906", PUBLICATION).expect("906 loads");
         let es = crate::model::manifest::load_translation(&root, &base, "es").expect("es loads");
         let tree = compose(&es, Hyphenation::PLAIN, &[]).expect("the Spanish edition composes");
-        let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
+        let flat = tree.flat().expect("the tree renders");
+        let text: String = flat.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#set text(lang: \"es\", region: \"AR\")"));
         assert!(text.contains("[Artículo 01]"));
         assert!(text.contains("res\u{ad}pon\u{ad}sa\u{ad}bi\u{ad}li\u{ad}dad"));
@@ -1483,7 +1583,8 @@ mod tests {
             ..Hyphenation::PLAIN
         };
         let hyphenated = compose(&base, native, &[]).expect("it composes");
-        let text: String = hyphenated.files.iter().map(|f| f.source.as_str()).collect();
+        let flat = hyphenated.flat().expect("the tree renders");
+        let text: String = flat.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#text(hyphenate: true)[A cache budget limits"));
         assert!(text.contains("level: 2)[Budgets]"));
         assert!(!text.contains('\u{ad}'));
@@ -1794,6 +1895,7 @@ mod tests {
                     path: MAIN.to_string(),
                     source,
                 }],
+                ..Tree::default()
             };
             let projected = project(&tree).expect("the escaped atom projects");
             assert_eq!(
@@ -1819,6 +1921,7 @@ mod tests {
                 path: MAIN.to_string(),
                 source: "= A Typst heading the emitter never writes\n".to_string(),
             }],
+            ..Tree::default()
         };
         let Err(error) = project(&tree) else {
             panic!("unescaped markup must refuse rather than project silently");

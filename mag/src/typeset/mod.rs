@@ -1,6 +1,7 @@
 pub mod art;
 pub(crate) mod content;
 pub(crate) mod cover;
+pub(crate) mod decisions;
 pub(crate) mod flow;
 pub(crate) mod geometry;
 pub(crate) mod hyphen;
@@ -122,7 +123,7 @@ fn render_language(
     println!("out dir: {}", out_dir.display());
     let tree = template::composed(edition, hyphenation)?;
     let (tree, document) = template::paginate(tree, hyphenation)?;
-    for file in &tree.files {
+    for file in &tree.flat()?.files {
         let path = work.join(&file.path);
         let parent = path.parent().context("a tree file has no parent")?;
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;

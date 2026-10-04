@@ -1,22 +1,17 @@
 use crate::typeset::content::Tree;
+use crate::typeset::decisions::{cut_before, Choice};
 use crate::typeset::geometry::geometry;
-use crate::typeset::runt::Edit;
-use crate::typeset::world::id;
-use anyhow::Result;
+use crate::typeset::world::Sources;
 use std::collections::{BTreeSet, HashMap};
 use typst::foundations::Value;
 use typst::introspection::{Location, MetadataElem, Tag};
 use typst::layout::{Frame, FrameItem, Point};
 use typst::visualize::Geometry;
-use typst::{World, WorldExt};
+use typst::WorldExt;
 use typst_layout::PagedDocument;
-use typst_syntax::{FileId, Span};
+use typst_syntax::Span;
 
 const BLOCKS: [&str; 2] = ["mag-prose", "mag-backdrop"];
-const CONTAINERS: [&str; 3] = ["#doc-item[", "#doc-quote[", "#doc-list("];
-const CUT: &str = "#colbreak()\n";
-const FLOAT: &str = "\n  float: true,";
-const KEPT: &str = "\n  float: false,";
 const HEAD_ROOM_LINES: f64 = 2.0;
 const HEADING_ABOVE: f64 = 20.4;
 
@@ -108,23 +103,7 @@ fn ink_bottom(frame: &Frame, at: Point, top: f64, bottom: f64) -> f64 {
     })
 }
 
-fn occurrences(world: &dyn World, tree: &Tree, needle: &str) -> Vec<(FileId, usize)> {
-    tree.files
-        .iter()
-        .filter_map(|file| id(&format!("/{}", file.path)).ok())
-        .filter_map(|file| Some((file, world.source(file).ok()?)))
-        .flat_map(|(file, source)| {
-            let found: Vec<usize> = source
-                .text()
-                .match_indices(needle)
-                .map(|(at, _)| at)
-                .collect();
-            found.into_iter().map(move |at| (file, at))
-        })
-        .collect()
-}
-
-fn floats(doc: &PagedDocument, world: &dyn World, tree: &Tree, g: &Page) -> Vec<Edit> {
+fn floats(doc: &PagedDocument, tree: &Tree, g: &Page) -> Vec<Choice> {
     let mut boxes: HashMap<String, Vec<Mark>> = HashMap::new();
     for mark in marks(doc, "mag-figure-box") {
         boxes
@@ -149,11 +128,10 @@ fn floats(doc: &PagedDocument, world: &dyn World, tree: &Tree, g: &Page) -> Vec<
         }
         let id = figure.text("id").unwrap_or_default();
         let nth = *seen.entry(id.clone()).and_modify(|n| *n += 1).or_default();
-        let needle = format!("id: \"{id}\",");
         let head = index.checked_sub(1).map(|i| &flows[i]);
         let placed = boxes.get(&id).and_then(|b| b.get(nth));
-        let source = occurrences(world, tree, &needle).get(nth).copied();
-        let (Some(head), Some(placed), Some((file, at))) = (head, placed, source) else {
+        let slot = tree.figures.iter().filter(|f| f.id == id).nth(nth);
+        let (Some(head), Some(placed), Some(slot)) = (head, placed, slot) else {
             continue;
         };
         if head.text("kind").as_deref() != Some("heading") || placed.flag("turned") == Some(true) {
@@ -166,13 +144,11 @@ fn floats(doc: &PagedDocument, world: &dyn World, tree: &Tree, g: &Page) -> Vec<
                 let room = g.bottom - ink_bottom(page, Point::zero(), g.top, g.bottom);
                 let need = g.above + (placed.y - g.datum - head.y) + g.lines * HEAD_ROOM_LINES;
                 if moved && head.page > 1 && !fresh(head.page) && room >= need {
-                    let after = at + needle.len();
-                    edits.push((file, after, after, FLOAT));
+                    edits.push(Choice::Float(slot.hole, true));
                 }
             }
             Some(true) if placed.page != head.page + 1 || placed.page > end(head.page) => {
-                let from = at + needle.len();
-                edits.push((file, from, from + FLOAT.len(), KEPT));
+                edits.push(Choice::Float(slot.hole, false));
             }
             _ => {}
         }
@@ -234,41 +210,7 @@ fn body(frame: &Frame) -> &[(Point, FrameItem)] {
     &items[..foreground.unwrap_or(items.len())]
 }
 
-fn line_start(text: &str, at: usize) -> usize {
-    text[..at].rfind('\n').map_or(0, |i| i + 1)
-}
-
-fn previous_line(text: &str, start: usize) -> Option<usize> {
-    let mut at = start;
-    while at > 0 {
-        at = line_start(text, at - 1);
-        if !text[at..start].trim().is_empty() {
-            return Some(at);
-        }
-    }
-    None
-}
-
-fn block_start(text: &str, at: usize) -> usize {
-    let mut start = line_start(text, at);
-    while start > 0 && !text[start..].trim_start().starts_with("#doc-") {
-        start = line_start(text, start - 1);
-    }
-    while let Some(prev) = previous_line(text, start) {
-        let line = text[prev..start].trim();
-        let container = CONTAINERS.iter().any(|c| line.starts_with(c)) && line.ends_with('[');
-        if !container && !line.starts_with("#doc-heading(") {
-            break;
-        }
-        start = prev;
-        if !container {
-            break;
-        }
-    }
-    start
-}
-
-fn plate_cuts(doc: &PagedDocument, world: &dyn World) -> Result<Vec<Edit>> {
+fn plate_cuts(doc: &PagedDocument, world: &Sources) -> Vec<Choice> {
     let plates: Vec<usize> = marks(doc, "mag-figure-box")
         .iter()
         .filter(|b| b.flag("turned") == Some(true))
@@ -297,16 +239,12 @@ fn plate_cuts(doc: &PagedDocument, world: &dyn World) -> Result<Vec<Edit>> {
         let (Some(file), Some(range)) = (span.id(), world.range(span)) else {
             continue;
         };
-        let text = world.source(file)?.text().to_string();
-        let start = block_start(&text, range.start + offset);
-        if text[start..].trim_start().starts_with("#doc-") && !text[..start].ends_with(CUT) {
-            edits.push((file, start, start, CUT));
-        }
+        edits.extend(cut_before(world.marks(file), range.start + offset).map(Choice::Cut));
     }
-    Ok(edits)
+    edits
 }
 
-pub fn edits(doc: &PagedDocument, world: &dyn World, tree: &Tree) -> Result<Vec<Edit>> {
+pub fn choices(doc: &PagedDocument, world: &Sources, tree: &Tree) -> Vec<Choice> {
     let d = geometry();
     let g = Page {
         top: d.margin_top,
@@ -320,5 +258,5 @@ pub fn edits(doc: &PagedDocument, world: &dyn World, tree: &Tree) -> Result<Vec<
         above: HEADING_ABOVE + d.paragraph_after,
         lines: d.body_leading,
     };
-    Ok([floats(doc, world, tree, &g), plate_cuts(doc, world)?].concat())
+    [floats(doc, tree, &g), plate_cuts(doc, world)].concat()
 }
