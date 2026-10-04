@@ -837,25 +837,14 @@ mod tests {
     }
 
     #[test]
-    fn an_inline_inside_a_link_carries_its_own_link_as_weasyprint_does() {
+    fn an_inline_inside_a_link_adds_no_second_link() {
         assert_eq!(link_rects("plain").len(), 1);
-        let whole = link_rects("#emph[pacing the frontier]");
-        assert_eq!(whole.len(), 2);
-        assert_eq!(whole[0], whole[1]);
+        assert_eq!(link_rects("#emph[pacing the frontier]").len(), 1);
         let part = link_rects("a #strong[bold] b");
-        assert_eq!(part.len(), 2);
-        assert!(
-            part[1][0] > part[0][0] && part[1][2] < part[0][2],
-            "{part:?}"
-        );
+        assert!(part.windows(2).all(|pair| pair[0][2] <= pair[1][0] + 1e-3));
         let wrapped = link_rects(&format!("#emph[{}]", vec!["frontier"; 20].join(" ")));
-        assert_eq!(
-            wrapped.len(),
-            6,
-            "outer and inner per line over three lines"
-        );
-        assert!(wrapped.chunks(2).all(|pair| pair[0] == pair[1]));
-        assert!(wrapped[0][1] > wrapped[2][1] && wrapped[2][1] > wrapped[4][1]);
+        assert_eq!(wrapped.len(), 3, "one link per line over three lines");
+        assert!(wrapped[0][1] > wrapped[1][1] && wrapped[1][1] > wrapped[2][1]);
     }
 
     #[test]
@@ -1096,7 +1085,7 @@ mod tests {
     }
 
     #[test]
-    fn body_blocks_collapse_their_margins_as_the_oracle_css_does() {
+    fn body_blocks_collapse_their_margins() {
         let line = 13.0;
         near(
             gap(&(para("Alpha.") + &bullets("Beta.")), "Alpha.", "Beta."),
@@ -1124,7 +1113,7 @@ mod tests {
     }
 
     #[test]
-    fn the_running_furniture_paints_after_the_body_as_the_oracle_margin_boxes_do() {
+    fn the_running_furniture_paints_after_the_body() {
         let items = laid(&para(&vec!["words"; 900].join(" ")));
         let page = |y: f64| (y / 1e4).floor();
         let rules: Vec<usize> = (0..items.len())
@@ -1160,7 +1149,7 @@ mod tests {
     }
 
     #[test]
-    fn inline_code_carries_the_oracle_padding_chip_and_line_box() {
+    fn inline_code_carries_its_padding_chip_and_line_box() {
         let items = laid(&(para("Alpha #inline-code[beta] gamma") + &para("Omega.")));
         let (x, y, width) = word(&items, "beta");
         let pads: Vec<f64> = items
@@ -1222,7 +1211,7 @@ mod tests {
     }
 
     #[test]
-    fn the_list_disc_takes_the_oracle_bezier_constant() {
+    fn the_list_disc_takes_the_bezier_constant() {
         let items = laid(&bullets("Beta."));
         let controls: Vec<f64> = items
             .iter()

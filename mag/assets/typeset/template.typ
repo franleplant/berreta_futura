@@ -68,7 +68,6 @@
 #let RUNNING-TICK-TOP = 27.425pt
 #let ARTICLE-PAGE-CAP = 7
 #let VERBATIM-PAGE-CAP = 10
-#let INLINE-LINK = " mag-inline-link"
 
 #let FIGURE-CAPTION-ABOVE = 6.3pt
 #let FIGURE-GAP = 15.75pt
@@ -120,7 +119,7 @@
 #let OPENER-MARK-LIFT = 12pt
 #let OPENER-ART-FLOW = 195.1pt
 #let OPENER-META-MEASURE = 293pt
-#let OPENER-PANGO-RESERVE = 13.2pt
+#let OPENER-LINE-RESERVE = 13.2pt
 #let CONTENT-HEIGHT = PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM
 #let OPENER-FRAME-HEIGHT = 203pt
 #let OPENER-OFFSET = 4.1pt
@@ -172,20 +171,20 @@
 #let OPENER-SQUEEZED = (..OPENER-COMPACT, meta-pad: 5pt, standfirst-gap: 14pt)
 #let OPENER-MIN-CARRY = 2
 
-#let pango-half(size, ascender: 1984, descender: -494, upem: 2048) = {
-  let pango = calc.floor(size / 1pt * 4 / 3 * 1024)
-  let mult = calc.floor(pango * 65536 / upem)
+#let line-half(size, ascender: 1984, descender: -494, upem: 2048) = {
+  let units = calc.floor(size / 1pt * 4 / 3 * 1024)
+  let mult = calc.floor(units * 65536 / upem)
   let scaled(v) = calc.floor((v * mult + 32768) / 65536)
   (scaled(ascender) + scaled(descender)) / 2048 * 0.75pt
 }
 #let FACE-METRICS = ((HALF-SERIF, 1036, -335, 1000), (HALF-SANS, 1984, -494, 2048), (HALF-MONO, 1005, -295, 1000))
-#let pango-center(half, size) = {
+#let line-center(half, size) = {
   let (_, ascender, descender, upem) = FACE-METRICS.find(m => m.first() == half)
-  pango-half(size, ascender: ascender, descender: descender, upem: upem)
+  line-half(size, ascender: ascender, descender: descender, upem: upem)
 }
 #let edges(size, leading, half) = (
-  top-edge: leading / 2 + pango-center(half, size),
-  bottom-edge: leading / 2 + pango-center(half, size) - leading,
+  top-edge: leading / 2 + line-center(half, size),
+  bottom-edge: leading / 2 + line-center(half, size) - leading,
 )
 
 #let pinned(leading) = (top-edge: DATUM, bottom-edge: DATUM - leading)
@@ -193,9 +192,6 @@
 #let flat = (top-edge: 0pt, bottom-edge: 0pt)
 
 #let tracked(amount) = (tracking: amount, features: (liga: 0, clig: 0))
-#let tracked-body(amount, body) = if amount == 0pt { body } else {
-  [#body#label("mag-track:" + str(amount / 1pt))]
-}
 
 #let publication = state("publication", [])
 
@@ -221,7 +217,7 @@
     top + right,
     dx: -MARGIN-OUTER,
     dy: PAGE-HEIGHT - FOLIO-BASELINE,
-    [#folio-text(leading-zero(index))<mag-flush-right>],
+    [#folio-text(leading-zero(index))],
   )
 }
 
@@ -231,7 +227,7 @@
   let inner = if calc.odd(index) { MARGIN-INNER } else { MARGIN-OUTER }
   let outer = if calc.odd(index) { MARGIN-OUTER } else { MARGIN-INNER }
   place(top + left, dx: inner, dy: RUNNING-BASELINE, folio-text(publication.final()))
-  place(top + right, dx: -outer, dy: RUNNING-BASELINE, [#folio-text(marks.last().value.head)<mag-flush-right>])
+  place(top + right, dx: -outer, dy: RUNNING-BASELINE, [#folio-text(marks.last().value.head)])
   place(
     top + left,
     dx: inner,
@@ -296,7 +292,6 @@
 #let next-flow(index) = query(<mag-flow>).filter(m => m.value.index == index + 1).map(m => m.value).at(0, default: (kind: none, layout: none, float: none))
 #let band-anchored(index) = next-flow(index).kind == "figure" and is-band(next-flow(index).layout)
 
-#let layer(body) = [#body<mag-layer>]
 #let backdrop(body) = [#body<mag-backdrop>]
 #let prose(body) = [#body<mag-prose>]
 #let caption-edge = state("mag-caption-edge", none)
@@ -397,7 +392,7 @@
   weight: 500,
   ..flat,
   ..tracked(tracking),
-  tracked-body(tracking, upper(body)),
+  upper(body),
 )
 
 #let contents-row(row, offsets, destination, rows) = {
@@ -421,7 +416,7 @@
   for _ in range(2) {
     place(top + left, dy: row + offsets.folio, link(target, box(width: measure(folio).width, height: 0pt)))
   }
-  place(top + left, dy: row + offsets.folio + pango-center(HALF-SANS, 23pt), folio)
+  place(top + left, dy: row + offsets.folio + line-center(HALF-SANS, 23pt), folio)
   if title != none {
     place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.title, link(target, box(
       width: LIVE-WIDTH - CONTENTS-ENTRY-LEFT,
@@ -448,7 +443,7 @@
       place(top + left, dy: CONTENTS-KICKER-TOP + ZERO-LEADING-SANS, contents-caption(kicker, tracking: 0.45pt))
     }
     if label != none {
-      place(top + left, dy: CONTENTS-TITLE-TOP + pango-center(HALF-SERIF, CONTENTS-TITLE-SIZE), {
+      place(top + left, dy: CONTENTS-TITLE-TOP + line-center(HALF-SERIF, CONTENTS-TITLE-SIZE), {
         bookmark(1, label)
         text(font: DISPLAY, size: CONTENTS-TITLE-SIZE, weight: 600, ..flat, label)
       })
@@ -556,11 +551,11 @@
   })
   place(top + left, dx: -escape, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, [#box(width: 100% - MEASURE-DELTA + 2 * escape, text(
     font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(LABEL-TRACKING),
-    tracked-body(LABEL-TRACKING, upper(items.intersperse(h(1fr)).join())),
-  ))<mag-spread>])
+    upper(items.intersperse(h(1fr)).join()),
+  ))])
 } else if opener-parts.get() == none {
   block(
-    text(font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(0.45pt), tracked-body(0.45pt, upper(body))),
+    text(font: SANS, size: CAPTION-SIZE, weight: 500, ..flat, ..tracked(0.45pt), upper(body)),
     spacing: 7.53085pt,
   )
 } else {
@@ -615,7 +610,7 @@
     size: OPENER-PREFIX-SIZE,
     fill: PAPER-BLUE,
     ..tracked(OPENER-PREFIX-TRACKING * OPENER-PREFIX-SIZE),
-    tracked-body(OPENER-PREFIX-TRACKING * OPENER-PREFIX-SIZE, body),
+    body,
   )
   h(OPENER-PREFIX-GAP * OPENER-PREFIX-SIZE)
 }
@@ -640,18 +635,18 @@
 #let byline(code: none, body) = context if opener-parts.get() == none {
   let head = plain-head.get()
   let tracking = if head == none { 0pt } else { head.tracking }
-  let line = text(font: SANS, size: OPENER-BYLINE-SIZE, weight: 600, ..flat, tracking: tracking, tracked-body(tracking, upper(body)))
+  let line = text(font: SANS, size: OPENER-BYLINE-SIZE, weight: 600, ..flat, tracking: tracking, upper(body))
   let credit = {
     if code != none {
       let quiet = code-quiet(code)
-      layer(place(top + left, dx: -quiet, dy: -OPENER-BYLINE-SIZE * INTER-CAP - quiet, qr-symbol(code, side: PLAIN-QR)))
+      place(top + left, dx: -quiet, dy: -OPENER-BYLINE-SIZE * INTER-CAP - quiet, qr-symbol(code, side: PLAIN-QR))
     }
     pad(left: credit-inset(code), line)
   }
   if head == none {
     block(above: 12pt, below: 0pt, credit)
   } else {
-    let shift = pango-center(HALF-SANS, OPENER-BYLINE-SIZE) - HALF-SANS * OPENER-BYLINE-SIZE
+    let shift = line-center(HALF-SANS, OPENER-BYLINE-SIZE) - HALF-SANS * OPENER-BYLINE-SIZE
     place(top + left, dx: -head.escape, dy: plain-byline-baseline(head) + shift, block(width: 100% + 2 * head.escape, credit))
   }
 } else {
@@ -693,7 +688,7 @@
     top-edge: edges(OPENER-BYLINE-SIZE, OPENER-BYLINE-LEADING, HALF-SANS).top-edge,
     bottom-edge: edges(OPENER-PREFIX-SIZE, OPENER-BYLINE-LEADING, HALF-SANS).bottom-edge,
     ..tracked(OPENER-BYLINE-TRACKING * OPENER-BYLINE-SIZE),
-    tracked-body(OPENER-BYLINE-TRACKING * OPENER-BYLINE-SIZE, upper(opener-part(rows, "byline"))),
+    upper(opener-part(rows, "byline")),
   ))
   if note != none {
     block(above: OPENER-NOTE-ABOVE, below: 0pt, text(
@@ -719,7 +714,7 @@
     size: OPENER-DROP-SIZE,
     weight: 600,
     fill: PAPER-BLUE,
-    top-edge: OPENER-DROP-LEADING * OPENER-DROP-SIZE / 2 + pango-center(HALF-SERIF, OPENER-DROP-SIZE),
+    top-edge: OPENER-DROP-LEADING * OPENER-DROP-SIZE / 2 + line-center(HALF-SERIF, OPENER-DROP-SIZE),
     bottom-edge: 0pt,
     letters.slice(0, lead + 1).join(),
   ))
@@ -796,13 +791,13 @@
     fill: PAPER-BLUE,
     ..edges(OPENER-LABEL-SIZE, OPENER-LABEL-LEADING, HALF-SANS),
     ..tracked(OPENER-LABEL-TRACKING * OPENER-LABEL-SIZE),
-    tracked-body(OPENER-LABEL-TRACKING * OPENER-LABEL-SIZE, upper(opener-part(rows, "label"))),
+    upper(opener-part(rows, "label")),
   ))
   let heading(density) = rail({
     set par(leading: 0pt, spacing: 0pt)
     let size = titles.at(int(density != OPENER-STANDARD)).size
     let tracking = OPENER-TITLE-TRACKING * size
-    text(..tracked(tracking), tracked-body(tracking, opener-title-text(size, title)))
+    text(..tracked(tracking), opener-title-text(size, title))
   })
   let meta = rail(grid(
     columns: (1fr, OPENER-QR),
@@ -824,7 +819,7 @@
   let fits(density, body) = y-standfirst(density) + measure(set-standfirst(density, body)).height <= CONTENT-HEIGHT
   let lines(body) = calc.round(measure(set-standfirst(OPENER-COMPACT, body)).height / OPENER-COMPACT.standfirst-leading)
   let density = OPENER-STANDARD
-  if split or opener-stack(density, titles.first(), rows, body) + OPENER-PANGO-RESERVE > CONTENT-HEIGHT {
+  if split or opener-stack(density, titles.first(), rows, body) + OPENER-LINE-RESERVE > CONTENT-HEIGHT {
     density = OPENER-COMPACT
   }
   if not split {
@@ -856,8 +851,6 @@
 }
 
 #let doc-link(destination: none, title: none, body) = {
-  show emph: it => link(destination + INLINE-LINK, it)
-  show strong: it => link(destination + INLINE-LINK, it)
   link(destination, body)
 }
 
@@ -866,7 +859,7 @@
 #let inline-code(body) = context {
   let size = CODE-SIZE * text.size
   let leading = (text.top-edge - text.bottom-edge).to-absolute()
-  let lift = calc.min(0pt, text.top-edge.to-absolute() - leading / 2 - pango-center(HALF-SERIF, text.size))
+  let lift = calc.min(0pt, text.top-edge.to-absolute() - leading / 2 - line-center(HALF-SERIF, text.size))
   let (top-edge, bottom-edge) = edges(size, leading, HALF-MONO)
   code-pad
   highlight(
@@ -900,7 +893,7 @@
     context {
       let rows = opener-parts.get()
       if rows == none {
-        layer(block(prose(par(text(size: 12pt, ..pinned(16.4pt), body))), below: 13pt))
+        block(prose(par(text(size: 12pt, ..pinned(16.4pt), body))), below: 13pt)
       } else {
         opener-standfirst(rows, body, split)
       }
@@ -917,7 +910,7 @@
 )
 
 #let heading-stack(level, spec, above, escape, drop, body, sticky: false) = {
-  layer(block(above: above, below: 0pt, breakable: false, sticky: sticky, width: 100%, inset: escape, {
+  block(above: above, below: 0pt, breakable: false, sticky: sticky, width: 100%, inset: escape, {
     bookmark(level, body)
     move(dy: drop, text(
       font: spec.font,
@@ -929,7 +922,7 @@
     ))
     v(spec.below)
     block(height: HEADING-CLEARANCE, width: 100%, spacing: 0pt, [])
-  }))
+  })
   v(-HEADING-CLEARANCE)
 }
 
@@ -1040,14 +1033,14 @@
   if reference-list.get() {
     block(prose(move(dy: DATUM - REFERENCE-LEADING / 2 - HALF-SERIF * REFERENCE-SIZE, body)), above: 0pt, below: REFERENCE-AFTER)
   } else {
-    layer(block(
+    block(
       {
-        layer(place(top + left, dy: 3.505pt, disc))
+        place(top + left, dy: 3.505pt, disc)
         prose(pad(left: LIST-INDENT, body))
       },
       above: 0pt,
       below: ITEM-AFTER,
-    ))
+    )
   }
 }
 
@@ -1072,7 +1065,7 @@
 }
 
 #let key-ideas-label(body) = block(
-  text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: VIOLET, ..flat, ..tracked(0.45pt), tracked-body(0.45pt, upper(body))),
+  text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: VIOLET, ..flat, ..tracked(0.45pt), upper(body)),
   above: 0pt,
   below: 13pt,
 )
@@ -1091,7 +1084,7 @@
 #let end-mark(body) = {
   set par(spacing: 0pt)
   v(-20pt)
-  layer(block(
+  block(
     height: 0pt,
     width: 100%,
     above: auto,
@@ -1109,7 +1102,7 @@
           fill: VIOLET,
           ..flat,
           ..tracked(0.25pt),
-          tracked-body(0.25pt, upper(body)),
+          upper(body),
         ),
       )
       place(
@@ -1118,7 +1111,7 @@
         rect(width: 17pt, height: 1.1pt, fill: SIGNAL-ORANGE, stroke: none),
       )
     },
-  ))
+  )
 }
 
 #let figure-caption(body) = block(
@@ -1135,7 +1128,7 @@
 #let framed-image(id, path, width, height, turned: false) = block(width: width, height: height, spacing: 0pt, {
   place(top + left, [#metadata((id: id, width: width, height: height, turned: turned))<mag-figure-box>])
   place(top + left, clipped(width, height, image(path, width: width, height: height, fit: "stretch")))
-  layer(place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK)))
+  place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK))
 })
 
 #let figure-image(id, path, pixels, spec) = layout(size => {
@@ -1148,14 +1141,14 @@
   let scale = calc.min(ROTATED-PLATE-LENGTH / pixels.at(0), ROTATED-PLATE-DEPTH / pixels.at(1))
   let (width, height) = (pixels.at(0) * scale, pixels.at(1) * scale)
   caption-edge.update(none)
-  flow-mark("figure", ROTATED-PLATE, id: id, _ => layer(place(top, float: true, clearance: 0pt, block(
+  flow-mark("figure", ROTATED-PLATE, id: id, _ => place(top, float: true, clearance: 0pt, block(
     width: 100%,
     height: CONTENT-HEIGHT,
     place(center + horizon, dy: (MARGIN-BOTTOM - MARGIN-TOP) / 2, rotate(-90deg, reflow: true, block(width: width, {
       framed-image(id, path, width, height, turned: true)
       body
     }))),
-  ))))
+  )))
 }
 
 #let band-clearance() = context {
@@ -1175,7 +1168,7 @@
   spec.max-height -= trim
   caption-edge.update(if BAND-LAYOUTS.contains(layout) { "band" } else if layout == COMPACT-BAND { "compact" })
   flow-mark("figure", layout, id: id, float: float, index => {
-    let framed = layer(block(
+    let framed = block(
       above: 0pt,
       below: spec.gap,
       breakable: false,
@@ -1185,7 +1178,7 @@
         figure-image(id, path, pixels, spec)
         body
       }),
-    ))
+    )
     if float == true { place(top, float: true, clearance: spec.gap, framed) } else { framed }
   })
   if float != true { band-clearance() }
@@ -1223,7 +1216,7 @@
     fill: VIOLET,
     ..edges(CAPTION-SIZE, BODY-LEADING, HALF-SANS),
     ..tracked(EXTRACT-LABEL-TRACKING),
-    tracked-body(EXTRACT-LABEL-TRACKING, upper(word)),
+    upper(word),
   ),
   above: 0pt,
   below: EXTRACT-LABEL-AFTER,

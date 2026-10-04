@@ -274,72 +274,6 @@ fn ordered(block: &Block) -> Vec<Row> {
         .collect()
 }
 
-fn attempted(text: &[char], first: usize, room: f64, size: f64) -> bool {
-    let cut = (room / size * 4.0 + 1e-6).floor() as usize;
-    let opens = |p: &usize| text[*p - 1] == ' ' && text[*p] != ' ';
-    let within = |end: usize| (first + 1..end).find(opens);
-    let n = match text.len() > cut && within(cut).is_some() {
-        true => cut,
-        false => text.len(),
-    };
-    let Some(bp) = within(n).map(|p| p - first - 1) else {
-        return true;
-    };
-    let e = bp as isize - first as isize - 1;
-    let end = if e >= 0 { e } else { (n - first) as isize + e };
-    end > 0
-}
-
-fn box_text(rows: &[Row], line: usize, style: &str, run: usize) -> String {
-    let items = &rows[line].1;
-    let mut text: String = items[items.len() - run..]
-        .iter()
-        .map(|(_, t, _)| t.as_str())
-        .collect();
-    for (_, next, _) in &rows[line + 1..] {
-        match text.strip_suffix(SHY) {
-            Some(joined) => text.truncate(joined.len()),
-            None if !text.ends_with(' ') => text.push(' '),
-            None => {}
-        }
-        let same = next.iter().take_while(|(_, _, k)| k == style);
-        text.extend(same.clone().map(|(_, t, _)| t.as_str()));
-        if same.count() < next.len() {
-            break;
-        }
-    }
-    text
-}
-
-fn weasyprint_hyphenates(block: &Block, rows: &[Row], line: usize) -> bool {
-    let items = &rows[line].1;
-    let Some((_, _, style)) = items.iter().rev().find(|(_, t, _)| t.as_str() != SHY) else {
-        return true;
-    };
-    let run = items
-        .iter()
-        .rev()
-        .take_while(|(_, t, k)| k == style || t.as_str() == SHY)
-        .count();
-    let start = match run == items.len() {
-        true => rows[line].0,
-        false => items[items.len() - run].0,
-    };
-    let own: String = items[items.len() - run..]
-        .iter()
-        .map(|(_, t, _)| t.as_str())
-        .collect();
-    let first = own
-        .rfind(' ')
-        .map_or(0, |i| own[..=i].chars().filter(|c| *c != '\u{ad}').count());
-    let text: Vec<char> = box_text(rows, line, style, run)
-        .chars()
-        .filter(|c| *c != '\u{ad}')
-        .collect();
-    let room = block.right - start - (COLUMN_RIGHT - MEASURE);
-    attempted(&text, first, room, block.size)
-}
-
 fn word(
     sources: &dyn World,
     (span, offset): Anchor,
@@ -441,21 +375,6 @@ pub fn ladder_warnings(doc: &PagedDocument, edition: &str) -> Vec<String> {
         .collect()
 }
 
-fn suppressed(doc: &PagedDocument, sources: &dyn World) -> Vec<(FileId, usize, usize)> {
-    prose_blocks(doc)
-        .iter()
-        .flat_map(|(_, block)| {
-            let rows = ordered(block);
-            (0..rows.len().saturating_sub(1))
-                .filter(|&i| rows[i].1.last().is_some_and(|(_, t, _)| t.ends_with(SHY)))
-                .filter(|&i| !weasyprint_hyphenates(block, &rows, i))
-                .filter_map(|i| rows[i].2)
-                .flat_map(|anchor| unhyphenated(sources, anchor))
-                .collect::<Vec<_>>()
-        })
-        .collect()
-}
-
 pub(crate) type Edit = (FileId, usize, usize, &'static str);
 
 fn bind(tree: Tree, found: &[Edit]) -> Tree {
@@ -489,18 +408,12 @@ pub fn bound(
         let sources = world(&tree, font_dir)?;
         let doc = document(&sources)?;
         let runts = binds(&doc, &sources, &metrics, hyphenation.english).into_iter();
-        let shy = match hyphenation.weasyprint69_skip {
-            true => suppressed(&doc, &sources),
-            false => Vec::new(),
-        }
-        .into_iter();
         let ladders = match hyphenation.limit_ladders {
             true => laddered(&doc, &sources),
             false => Vec::new(),
         };
         let edits: Vec<Edit> = runts
             .map(|(f, a, b)| (f, a, b, NO_BREAK))
-            .chain(shy.map(|(f, a, b)| (f, a, b, "")))
             .chain(ladders)
             .chain(crate::typeset::flow::edits(&doc, &sources, &tree)?)
             .collect();
@@ -603,53 +516,10 @@ mod tests {
     }
 
     #[test]
-    fn weasyprint_tries_a_hyphen_only_while_its_negative_word_slice_is_not_empty() {
-        let tail = "bajan por la página; cortar solamente deja una columna llena de guiones. Una \
-                    buena composición equilibra ambas cosas, renglón tras renglón, y ese equilibrio \
-                    depende de saber dónde puede dividirse legítimamente cada palabra.";
-        let from = |at: &str| &tail[tail.find(at).expect("in the paragraph")..];
-        let cases = [
-            (
-                tail,
-                "bajan por la página; cortar solamente deja una columna llena de ",
-                true,
-            ),
-            (
-                from("nes. Una"),
-                "nes. Una buena composición equilibra ambas cosas, renglón tras ",
-                true,
-            ),
-            (
-                from("glón, y"),
-                "glón, y ese equilibrio depende de saber dónde puede dividirse ",
-                false,
-            ),
-        ];
-        for (text, first, tried) in cases {
-            let chars: Vec<char> = text.chars().collect();
-            assert_eq!(
-                attempted(&chars, first.chars().count(), 325.0, 10.0),
-                tried,
-                "{text}"
-            );
-        }
-        let short: Vec<char> = "glón, y ese equilibrio depende de saber dónde puede dividirse \
-                                legítimamente cada palabra. Otra oración larga sigue aquí para \
-                                que el texto pase de los ciento treinta caracteres."
-            .chars()
-            .collect();
-        assert!(attempted(&short, 62, 325.0, 10.0));
-    }
-
-    #[test]
     fn a_band_caption_is_bound_on_the_band_s_own_measure() {
         let fonts = reader_fonts();
-        let (band, _) = bound(
-            captioned("evidence_band_prose"),
-            &fonts,
-            Hyphenation::PARITY,
-        )
-        .expect("the binds settle");
+        let (band, _) = bound(captioned("evidence_band_prose"), &fonts, Hyphenation::PLAIN)
+            .expect("the binds settle");
         assert!(
             !band.files[0].source.contains("effort goes\\.")
                 && band.files[0]
@@ -658,8 +528,8 @@ mod tests {
             "{}",
             band.files[0].source
         );
-        let (column, _) = bound(captioned("column_plate"), &fonts, Hyphenation::PARITY)
-            .expect("the binds settle");
+        let (column, _) =
+            bound(captioned("column_plate"), &fonts, Hyphenation::PLAIN).expect("the binds settle");
         assert!(
             column.files[0].source.contains("effort goes\\."),
             "{}",
@@ -676,7 +546,7 @@ mod tests {
             last_lines(&bare),
             ["BMP.", "A closing line that ends well inside the measure."]
         );
-        let (tree, doc) = bound(piece(), &fonts, Hyphenation::PARITY).expect("the binds settle");
+        let (tree, doc) = bound(piece(), &fonts, Hyphenation::PLAIN).expect("the binds settle");
         let source = &tree.files[0].source;
         assert!(source.contains("malformed\\u{a0}BMP\\."), "{source}");
         assert_eq!(source.matches(NO_BREAK).count(), 1, "{source}");

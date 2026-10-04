@@ -10,7 +10,6 @@ pub(crate) mod media;
 pub(crate) mod release;
 pub(crate) mod runt;
 pub(crate) mod template;
-pub(crate) mod text_shim;
 pub(crate) mod tone;
 pub(crate) mod world;
 

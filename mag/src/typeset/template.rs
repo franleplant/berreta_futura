@@ -1,16 +1,11 @@
 use crate::typeset::content::{compose, File, Tree};
 use crate::typeset::hyphen::Hyphenation;
-use crate::typeset::text_shim;
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
-use lopdf::{Object, ObjectId};
 use std::path::Path;
 use typst::foundations::{Smart, Value};
-use typst::introspection::{Location, MetadataElem, PagedPosition, Tag};
-use typst::layout::{Abs, Frame, FrameItem, GroupItem, Point, Size, Transform};
-use typst::model::{Destination, Document, Url};
-use typst::text::TextItem;
-use typst::visualize::{Curve, CurveItem, Geometry, Paint, Shape};
+use typst::introspection::MetadataElem;
+use typst::layout::{Frame, FrameItem};
 use typst_layout::PagedDocument;
 use typst_pdf::{PdfOptions, PdfStandards};
 
@@ -18,13 +13,6 @@ pub const TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template.typ")
 pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
 pub const FONT_DIR: &str = "mag/assets/fonts";
 const IDENT: &str = "mag-typeset-reader";
-const INLINE_LINK: &str = " mag-inline-link";
-const TYPST_DEST_LIFT: f64 = 10.0;
-const CHIP_KAPPA: f64 = 0.55;
-const CHIP_PAD_X: f64 = 3.0;
-const LAYER: &str = "mag-layer";
-const BACKDROP: &str = "mag-backdrop";
-const CHIP_FILL: [u8; 4] = [244, 241, 249, 255];
 
 pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
     Sources::new(tree, TEMPLATE_TYP, ROOT_TYP, font_dir)
@@ -171,301 +159,7 @@ fn missing_glyph(frame: &Frame) -> Option<String> {
     })
 }
 
-type Run = (Point, Size);
-
-fn flush(frame: &mut Frame, open: &mut Option<(Destination, Run, Vec<Run>)>) {
-    if let Some((dest, (pos, size), inner)) = open.take() {
-        frame.push(pos, FrameItem::Link(dest.clone(), size));
-        for (pos, size) in inner {
-            frame.push(pos, FrameItem::Link(dest.clone(), size));
-        }
-    }
-}
-
-fn weasyprint_links(frame: &mut Frame, at: &dyn Fn(Location) -> Option<PagedPosition>) {
-    let items: Vec<_> = frame.items().cloned().collect();
-    frame.clear();
-    let mut open = None;
-    for (pos, mut item) in items {
-        let FrameItem::Link(dest, size) = &item else {
-            if let FrameItem::Group(group) = &mut item {
-                flush(frame, &mut open);
-                weasyprint_links(&mut group.frame, at);
-            }
-            frame.push(pos, item);
-            continue;
-        };
-        let (dest, inner) = match dest {
-            Destination::Url(url) if url.ends_with(INLINE_LINK) => {
-                let clean = url.trim_end_matches(INLINE_LINK);
-                (
-                    Destination::Url(Url::new(clean).expect("a url stays a url")),
-                    true,
-                )
-            }
-            Destination::Location(loc) => (
-                at(*loc).map_or(dest.clone(), |p| {
-                    Destination::Position(PagedPosition {
-                        point: Point::new(p.point.x, p.point.y + Abs::pt(TYPST_DEST_LIFT)),
-                        ..p
-                    })
-                }),
-                false,
-            ),
-            other => (other.clone(), false),
-        };
-        match &mut open {
-            Some((d, (p, s), _))
-                if *d == dest
-                    && p.y == pos.y
-                    && s.y == size.y
-                    && (p.x + s.x - pos.x).abs() < Abs::pt(1e-6) =>
-            {
-                s.x += size.x;
-            }
-            _ => {
-                flush(frame, &mut open);
-                open = Some((dest, (pos, *size), vec![]));
-            }
-        }
-        if inner {
-            open.as_mut().expect("a run is open").2.push((pos, *size));
-        }
-    }
-    flush(frame, &mut open);
-}
-
-fn chip(size: Size, [tl, tr, br, bl]: [Abs; 4]) -> Curve {
-    let (w, h) = (size.x, size.y);
-    let k = |r: Abs| r * (1.0 - CHIP_KAPPA);
-    let mut c = Curve::new();
-    c.move_(Point::new(Abs::zero(), tl));
-    c.cubic(
-        Point::new(Abs::zero(), k(tl)),
-        Point::new(k(tl), Abs::zero()),
-        Point::new(tl, Abs::zero()),
-    );
-    c.line(Point::new(w - tr, Abs::zero()));
-    c.cubic(
-        Point::new(w - k(tr), Abs::zero()),
-        Point::new(w, k(tr)),
-        Point::new(w, tr),
-    );
-    c.line(Point::new(w, h - br));
-    c.cubic(
-        Point::new(w, h - k(br)),
-        Point::new(w - k(br), h),
-        Point::new(w - br, h),
-    );
-    c.line(Point::new(bl, h));
-    c.cubic(
-        Point::new(k(bl), h),
-        Point::new(Abs::zero(), h - k(bl)),
-        Point::new(Abs::zero(), h - bl),
-    );
-    c.close();
-    c
-}
-
-fn is_chip(shape: &Shape) -> Option<&Curve> {
-    match (&shape.geometry, &shape.fill) {
-        (Geometry::Curve(curve), Some(Paint::Solid(color))) if color.to_vec4_u8() == CHIP_FILL => {
-            Some(curve)
-        }
-        _ => None,
-    }
-}
-
-fn mono(text: &TextItem) -> bool {
-    text.font.info().family == "Geist Mono"
-}
-
-fn weasyprint_chips(frame: &mut Frame) {
-    let near = |a: Abs, b: Abs| (a - b).abs() < Abs::pt(0.001);
-    let mut pads = vec![];
-    let mut runs = vec![];
-    for (pos, item) in frame.items() {
-        if let FrameItem::Text(text) = item {
-            match (mono(text), text.text.as_str() == "\u{a0}") {
-                (true, true) => pads.push((pos.x, pos.x + text.width())),
-                (true, false) => runs.push((pos.x, pos.x + text.width())),
-                _ => {}
-            }
-        }
-    }
-    let items: Vec<_> = frame.items().cloned().collect();
-    frame.clear();
-    for (mut pos, mut item) in items {
-        match &mut item {
-            FrameItem::Group(group) => weasyprint_chips(&mut group.frame),
-            FrameItem::Shape(shape, _) => {
-                if let Some(curve) = is_chip(shape) {
-                    let bbox = curve.bbox(None).size();
-                    let radius = match curve.0.first() {
-                        Some(CurveItem::Move(p)) => p.y,
-                        _ => Abs::zero(),
-                    };
-                    let (mut left, mut right) = (pos.x, pos.x + bbox.x);
-                    let inside = runs.iter().filter(|(a, _)| *a >= left && *a < right);
-                    let start = inside.clone().map(|r| r.0).fold(right, Abs::min);
-                    let end = inside.map(|r| r.1).fold(left, Abs::max);
-                    let opens = pads.iter().any(|(_, b)| near(*b, start));
-                    let closes = pads.iter().any(|(a, _)| near(*a, end));
-                    let pad = |on: bool| if on { Abs::pt(CHIP_PAD_X) } else { Abs::zero() };
-                    left = start - pad(opens);
-                    right = end + pad(closes);
-                    let (l, r) = (
-                        if opens { radius } else { Abs::zero() },
-                        if closes { radius } else { Abs::zero() },
-                    );
-                    pos.x = left;
-                    shape.geometry =
-                        Geometry::Curve(chip(Size::new(right - left, bbox.y), [l, r, r, l]));
-                }
-            }
-            _ => {}
-        }
-        frame.push(pos, item);
-    }
-}
-
-type Placed = (Point, FrameItem);
-
-#[derive(Default)]
-struct Layers {
-    backdrops: Vec<Placed>,
-    layers: Vec<Vec<Placed>>,
-}
-
-fn labelled(tag: &Tag, name: &str) -> Option<Location> {
-    match tag {
-        Tag::Start(content, _)
-            if content
-                .label()
-                .is_some_and(|l| l.resolve().as_str() == name) =>
-        {
-            content.location()
-        }
-        _ => None,
-    }
-}
-
-fn translation(group: &GroupItem) -> Option<Point> {
-    let t = group.transform;
-    (group.clip.is_none()
-        && Transform {
-            tx: Abs::zero(),
-            ty: Abs::zero(),
-            ..t
-        }
-        .is_identity())
-    .then(|| Point::new(t.tx, t.ty))
-}
-
-fn lift(frame: &mut Frame, at: Point, out: &mut Layers, backdrop: bool) {
-    let items: Vec<_> = frame.items().cloned().collect();
-    frame.clear();
-    let mut open: Option<(Location, Vec<Placed>)> = None;
-    let mut backdrops = vec![];
-    for (pos, mut item) in items {
-        if let Some((loc, layer)) = &mut open {
-            let done = matches!(&item, FrameItem::Tag(Tag::End(end, ..)) if end == loc);
-            layer.push((at + pos, item));
-            if done {
-                out.layers.extend(open.take().map(|(_, l)| l));
-            }
-            continue;
-        }
-        let inside = backdrop || !backdrops.is_empty();
-        match &mut item {
-            FrameItem::Tag(tag) => {
-                if let Some(loc) = labelled(tag, LAYER) {
-                    open = Some((loc, vec![(at + pos, item)]));
-                    continue;
-                }
-                backdrops.extend(labelled(tag, BACKDROP));
-                if let Tag::End(end, ..) = tag {
-                    backdrops.retain(|b| b != end);
-                }
-            }
-            FrameItem::Group(group) => {
-                if let Some(shift) = translation(group) {
-                    lift(&mut group.frame, at + pos + shift, out, inside);
-                }
-            }
-            FrameItem::Shape(shape, _) if inside && is_chip(shape).is_none() => {
-                out.backdrops.push((at + pos, item));
-                continue;
-            }
-            _ => {}
-        }
-        frame.push(pos, item);
-    }
-    out.layers.extend(open.map(|(_, l)| l));
-}
-
-fn painted(mut items: Vec<Placed>, own: bool) -> Vec<Placed> {
-    let head = own.then(|| items.remove(0));
-    let mut frame = Frame::soft(Size::zero());
-    frame.push_multiple(items);
-    let mut out = Layers::default();
-    lift(&mut frame, Point::zero(), &mut out, false);
-    let mut all: Vec<Placed> = head.into_iter().collect();
-    all.extend(out.backdrops);
-    all.extend(frame.items().cloned());
-    all.extend(out.layers.into_iter().flat_map(|l| painted(l, true)));
-    all
-}
-
-fn unlink(frame: &mut Frame, at: Point, out: &mut Vec<Placed>) {
-    let items: Vec<_> = frame.items().cloned().collect();
-    frame.clear();
-    for (pos, mut item) in items {
-        match &mut item {
-            FrameItem::Link(..) => {
-                out.push((at + pos, item));
-                continue;
-            }
-            FrameItem::Group(group) => {
-                if let Some(shift) = translation(group) {
-                    unlink(&mut group.frame, at + pos + shift, out);
-                }
-            }
-            _ => {}
-        }
-        frame.push(pos, item);
-    }
-}
-
-fn weasyprint_paint_order(frame: &mut Frame) {
-    let items: Vec<_> = frame.items().cloned().collect();
-    let foreground = items
-        .iter()
-        .rposition(|(_, i)| matches!(i, FrameItem::Group(_)))
-        .unwrap_or(items.len());
-    let (body, furniture) = items.split_at(foreground);
-    let mut links = vec![];
-    let mut tree = Frame::soft(Size::zero());
-    tree.push_multiple(body.to_vec());
-    unlink(&mut tree, Point::zero(), &mut links);
-    frame.clear();
-    frame.push_multiple(painted(tree.items().cloned().collect(), false));
-    frame.push_multiple(links);
-    frame.push_multiple(furniture.to_vec());
-}
-
 pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
-    let mut pages = document.pages().to_vec();
-    let at = |loc| document.introspector().position(loc);
-    for page in &mut pages {
-        if text_shim::WEASYPRINT_69 {
-            text_shim::weasyprint_text(&mut page.frame);
-        }
-        weasyprint_links(&mut page.frame, &at);
-        weasyprint_chips(&mut page.frame);
-        weasyprint_paint_order(&mut page.frame);
-    }
-    let document = PagedDocument::new(pages.into(), document.info().clone());
     let options = PdfOptions {
         ident: Smart::Custom(IDENT.to_string()),
         creator: Smart::Custom(Some(IDENT.to_string())),
@@ -475,47 +169,13 @@ pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
         tagged: false,
         pretty: false,
     };
-    let bytes = typst_pdf::pdf(&document, &options).map_err(|errors| {
+    let bytes = typst_pdf::pdf(document, &options).map_err(|errors| {
         anyhow::anyhow!(
             "PDF export failed:\n  {}",
             joined(errors.iter().map(|e| e.message.to_string()))
         )
     })?;
-    weasyprint_annotations(&bytes)
-}
-
-fn open_outline(doc: &mut lopdf::Document, id: ObjectId) -> Result<i64> {
-    let mut count = 0;
-    let mut child = doc.get_dictionary(id)?.get(b"First").ok().cloned();
-    while let Some(Object::Reference(kid)) = child {
-        count += 1 + open_outline(doc, kid)?;
-        child = doc.get_dictionary(kid)?.get(b"Next").ok().cloned();
-    }
-    doc.get_dictionary_mut(id)?.set("Count", count);
-    Ok(count)
-}
-
-fn weasyprint_annotations(bytes: &[u8]) -> Result<Vec<u8>> {
-    let mut doc = lopdf::Document::load_mem(bytes)?;
-    for object in doc.objects.values_mut() {
-        if let Ok(dict) = object.as_dict_mut() {
-            if dict.get(b"Subtype").and_then(Object::as_name).ok() == Some(b"Link") {
-                dict.remove(b"Border");
-                dict.remove(b"F");
-                dict.set("BS", lopdf::dictionary! { "W" => 0 });
-            }
-        }
-    }
-    if let Ok(root) = doc
-        .catalog()?
-        .get(b"Outlines")
-        .and_then(Object::as_reference)
-    {
-        open_outline(&mut doc, root)?;
-    }
-    let mut out = Vec::new();
-    doc.save_to(&mut out)?;
-    Ok(out)
+    Ok(bytes)
 }
 
 #[cfg(test)]
@@ -525,6 +185,7 @@ mod tests {
     use lopdf::{Document, Object};
     use std::collections::BTreeSet;
     use std::path::PathBuf;
+    use typst::layout::{Abs, Point, Size};
     use typst::visualize::{FillRule, Paint};
 
     const OLD_QUOTE_RULE: &str = "grid(\n      columns: (QUOTE-RULE, QUOTE-PAD, 1fr),\n      \
@@ -800,7 +461,7 @@ mod tests {
         assert_eq!(
             declared("HEADING-CLEARANCE"),
             25.0,
-            "the reservation drifted from weasyprint-a5.css:522"
+            "the reservation drifted from its declared value"
         );
     }
 
@@ -1187,7 +848,7 @@ mod tests {
 
     fn settled(tree: Tree) -> (Tree, Vec<Vec<Mark>>) {
         let (_, font_dir) = roots();
-        let (tree, doc) = crate::typeset::runt::bound(tree, font_dir, Hyphenation::PARITY)
+        let (tree, doc) = crate::typeset::runt::bound(tree, font_dir, Hyphenation::PLAIN)
             .expect("the run settles");
         let pages = doc.pages().iter().map(|page| {
             let mut out = vec![];
@@ -1445,7 +1106,7 @@ mod tests {
     fn closing_plates_close_the_signature_in_the_adapter_s_slots_and_order() {
         let (_, font_dir) = roots();
         let paged = |articles, plates| {
-            paginate(plated(articles, plates), font_dir, Hyphenation::PARITY)
+            paginate(plated(articles, plates), font_dir, Hyphenation::PLAIN)
                 .map(|(_, doc)| pdf(&doc).expect("a PDF"))
         };
         let pdf = paged(2, 7).expect("the plated run compiles");
@@ -1533,7 +1194,7 @@ mod tests {
             assert_eq!(
                 declared(name),
                 value,
-                "{name} drifted from weasyprint-a5.css"
+                "{name} drifted from its declared value"
             );
         }
         let band = declared("CONTENTS-BAND-TOP") + declared("CONTENTS-BAND");
@@ -1566,7 +1227,7 @@ mod tests {
             assert_eq!(
                 declared(name),
                 value,
-                "{name} drifted from weasyprint-a5.css"
+                "{name} drifted from its declared value"
             );
         }
         let live = 419.527_559_055_118_1 - declared("MARGIN-INNER") - declared("MARGIN-OUTER");
@@ -1630,7 +1291,7 @@ mod tests {
     }
 
     #[test]
-    fn the_illustrated_opener_paints_art_code_and_ring_in_the_oracle_order() {
+    fn the_illustrated_opener_paints_art_code_and_ring_in_stacking_order() {
         let found = opener_paints(TEMPLATE_TYP);
         let want = [
             "fill 240,87,56 14.50x2.40",
@@ -1707,7 +1368,7 @@ mod tests {
         (title, out)
     }
 
-    fn weasyprint_outline(tree: &Tree) -> Vec<(usize, String)> {
+    fn expected_outline(tree: &Tree) -> Vec<(usize, String)> {
         let mut levels: Vec<usize> = vec![];
         let mut out = vec![];
         let calls = tree
@@ -1743,14 +1404,14 @@ mod tests {
     }
 
     #[test]
-    fn the_reader_carries_its_title_and_a_bookmark_per_heading_nested_as_weasyprint_does() {
+    fn the_reader_carries_its_title_and_a_bookmark_per_heading_nested_by_heading_level() {
         let (_, font_dir) = roots();
         for edition_id in ["900", "901"] {
             let tree = fixture_tree(edition_id);
             let pdf =
                 compile(&world(&tree, font_dir).expect("the world builds")).expect("it compiles");
             let (title, found) = outline(&pdf);
-            let want = weasyprint_outline(&tree);
+            let want = expected_outline(&tree);
             assert!(want.len() >= 3, "fixture {edition_id} carries {want:?}");
             assert!(
                 want.iter().any(|w| w.0 == 2),
@@ -1763,27 +1424,6 @@ mod tests {
                 "{title}"
             );
         }
-    }
-
-    fn descendants(doc: &Document, id: ObjectId, bad: &mut Vec<String>) -> i64 {
-        let node = doc.get_dictionary(id).expect("an outline node");
-        let mut total = 0;
-        let mut child = node.get(b"First").and_then(Object::as_reference).ok();
-        while let Some(kid) = child {
-            total += 1 + descendants(doc, kid, bad);
-            child = doc
-                .get_dictionary(kid)
-                .and_then(|k| k.get(b"Next"))
-                .and_then(Object::as_reference)
-                .ok();
-        }
-        if node.get(b"Count").and_then(Object::as_i64).ok() != Some(total) {
-            bad.push(format!(
-                "{id:?} holds {:?} for {total}",
-                node.get(b"Count").ok()
-            ));
-        }
-        total
     }
 
     fn links(pdf: &[u8]) -> (Document, Vec<lopdf::Dictionary>) {
@@ -1799,245 +1439,33 @@ mod tests {
     }
 
     #[test]
-    fn links_and_bookmarks_are_written_as_weasyprint_writes_them() {
-        for (edition_id, top) in [("903", 553.275_591), ("902", 565.275_591)] {
+    fn links_and_bookmarks_are_written_as_typst_writes_them() {
+        for edition_id in ["903", "902"] {
             let (doc, found) = links(&fixture_pdf(edition_id));
-            let internal: Vec<f64> = found
+            let internal = found
                 .iter()
-                .filter_map(|d| {
-                    d.get(b"Dest")
-                        .or_else(|_| {
-                            d.get(b"A")
-                                .and_then(Object::as_dict)
-                                .and_then(|a| a.get(b"D"))
-                        })
-                        .ok()
-                        .and_then(|o| doc.dereference(o).ok())
-                        .and_then(|(_, o)| o.as_array().ok())
+                .filter(|d| d.has(b"Dest") || d.has(b"A"))
+                .filter(|d| {
+                    d.get(b"Dest").is_ok()
+                        || d.get(b"A")
+                            .and_then(Object::as_dict)
+                            .is_ok_and(|a| a.has(b"D"))
                 })
-                .map(|dest| f64::from(dest[3].as_float().expect("an XYZ top")))
-                .collect();
-            assert!(internal.len() >= 3, "fixture {edition_id}: {internal:?}");
+                .count();
             assert!(
-                internal.iter().all(|y| (y - top).abs() < 0.001),
-                "fixture {edition_id} links to {internal:?}, not the piece top {top}"
+                internal >= 3,
+                "fixture {edition_id}: {internal} internal links"
             );
-            for link in &found {
-                assert_eq!(
-                    (link.get(b"BS").ok(), link.has(b"Border"), link.has(b"F")),
-                    (
-                        Some(&Object::from(lopdf::dictionary! { "W" => 0 })),
-                        false,
-                        false
-                    ),
-                    "fixture {edition_id}: {link:?}"
-                );
-            }
             let root = doc
                 .catalog()
                 .and_then(|c| c.get(b"Outlines"))
-                .and_then(Object::as_reference)
-                .expect("an outline");
-            let mut bad = vec![];
-            assert!(descendants(&doc, root, &mut bad) >= 3);
-            assert!(bad.is_empty(), "fixture {edition_id} collapses {bad:?}");
-        }
-        let (_, raw) = links(
-            &typst_pdf::pdf(
-                &document(&world(&fixture_tree("902"), roots().1).expect("the world builds"))
-                    .expect("it compiles"),
-                &PdfOptions::default(),
-            )
-            .expect("it exports"),
-        );
-        assert!(
-            raw.iter().all(|l| l.has(b"Border")),
-            "the unpatched export already writes WeasyPrint's links"
-        );
-    }
-
-    fn chips(frame: &Frame, at: Point, out: &mut Vec<(f64, f64, Vec<CurveItem>)>) {
-        for (pos, item) in frame.items() {
-            match item {
-                FrameItem::Group(group) => chips(&group.frame, at + *pos, out),
-                FrameItem::Shape(shape, _) => {
-                    if let Some(curve) = is_chip(shape) {
-                        let x = (at + *pos).x.to_pt();
-                        let w = curve.bbox(None).size().x.to_pt();
-                        out.push((x, x + w, curve.0.clone()));
-                    }
-                }
-                _ => {}
-            }
+                .and_then(Object::as_reference);
+            assert!(root.is_ok(), "fixture {edition_id} has no outline");
         }
     }
 
     #[test]
-    fn an_inline_code_chip_broken_across_lines_is_sliced_as_weasyprint_slices_it() {
-        let tree = synthetic(
-            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
-             Some words that run along the measure of the line until #inline-code[Mozilla/5.0 \
-             (CVE-2026-66066 security verification)] breaks, and a #inline-code[short] one.\n]\n"
-                .to_string(),
-        );
-        let doc =
-            document(&world(&tree, roots().1).expect("the world builds")).expect("it compiles");
-        let page = doc
-            .pages()
-            .iter()
-            .find(|p| p.frame.items().next().is_some())
-            .expect("a page carries the piece");
-        let text = |frame: &Frame| {
-            let mut found = vec![];
-            marks(frame, Point::zero(), &mut found);
-            found
-        };
-        let mut before = vec![];
-        chips(&page.frame, Point::zero(), &mut before);
-        let mut frame = page.frame.clone();
-        weasyprint_chips(&mut frame);
-        let mut after = vec![];
-        chips(&frame, Point::zero(), &mut after);
-        let words = text(&frame);
-        let start = |t: &str| words.iter().find(|m| m.text.starts_with(t)).expect(t).x;
-        let end = |t: &str| {
-            let m = words.iter().find(|m| m.text.starts_with(t)).expect(t);
-            m.x + m.width
-        };
-        let corners = |c: &[CurveItem]| -> Vec<f64> {
-            c.iter()
-                .filter_map(|i| match i {
-                    CurveItem::Cubic(a, _, e) => {
-                        Some((e.x - a.x).abs().max((e.y - a.y).abs()).to_pt())
-                    }
-                    _ => None,
-                })
-                .collect()
-        };
-        let handle = |c: &[CurveItem]| match (&c[0], &c[1]) {
-            (CurveItem::Move(m), CurveItem::Cubic(a, _, _)) => (m.y - a.y).to_pt(),
-            _ => f64::NAN,
-        };
-        assert_eq!(after.len(), 3, "{before:?}");
-        let broken = [
-            (after[0].0, before[0].0),
-            (after[0].1, end("Mozilla/5.0")),
-            (after[1].0, start("(CVE")),
-            (after[1].1, before[1].1),
-            (after[2].0, before[2].0),
-            (after[2].1, before[2].1),
-        ];
-        assert!(
-            broken.iter().all(|(a, b)| (a - b).abs() < 1e-3),
-            "{broken:?}"
-        );
-        assert!(
-            before[0].1 - after[0].1 > 2.9 && after[1].0 - before[1].0 > 2.9,
-            "{before:?}"
-        );
-        let quarter = |c: f64| (c * 1e4).round() / 1e4;
-        assert_eq!(
-            corners(&after[0].2)
-                .into_iter()
-                .map(quarter)
-                .collect::<Vec<_>>(),
-            [2.0, 0.0, 0.0, 2.0]
-        );
-        assert_eq!(
-            corners(&after[1].2)
-                .into_iter()
-                .map(quarter)
-                .collect::<Vec<_>>(),
-            [0.0, 2.0, 2.0, 0.0]
-        );
-        assert_eq!(
-            corners(&after[2].2)
-                .into_iter()
-                .map(quarter)
-                .collect::<Vec<_>>(),
-            [2.0; 4]
-        );
-        assert!((handle(&after[2].2) - 1.1).abs() < 1e-9, "{:?}", after[2].2);
-        assert!(
-            (handle(&before[2].2) - 1.1).abs() > 0.004,
-            "typst already draws WeasyPrint's arcs"
-        );
-    }
-
-    fn sequence(frame: &Frame, out: &mut Vec<String>) {
-        for (_, item) in frame.items() {
-            match item {
-                FrameItem::Group(group) => sequence(&group.frame, out),
-                FrameItem::Text(text) if text.text.trim().len() > 2 => out.push(
-                    text.text
-                        .split_whitespace()
-                        .next()
-                        .unwrap_or("")
-                        .to_string(),
-                ),
-                FrameItem::Shape(shape, _) => out.push(match &shape.fill {
-                    Some(Paint::Solid(c)) => format!("fill {:?}", &c.to_vec4_u8()[..3]),
-                    _ => "stroke".to_string(),
-                }),
-                _ => {}
-            }
-        }
-    }
-
-    #[test]
-    fn a_page_paints_backdrops_first_and_positioned_boxes_after_its_flow_as_weasyprint_does() {
-        let tree = synthetic(
-            "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n\
-             #doc-paragraph[Alpha opens the page.]\n\
-             #doc-quote[#doc-paragraph[Quoted words sit in the rule.]]\n\
-             #doc-list(ordered: false, start: 1, references: false)[\n\
-             #doc-item[Bullet one reads here.]\n#doc-item[Bullet two reads here.]\n]\n\
-             #doc-heading(level: 2)[Heading after the list]\n\
-             #doc-paragraph[Omega closes the page.]\n]\n"
-                .to_string(),
-        );
-        let doc =
-            document(&world(&tree, roots().1).expect("the world builds")).expect("it compiles");
-        let page = doc
-            .pages()
-            .iter()
-            .find(|p| {
-                let mut s = vec![];
-                sequence(&p.frame, &mut s);
-                s.iter().any(|w| w == "Alpha")
-            })
-            .expect("a page carries the piece");
-        let order = |frame: &Frame| {
-            let mut s = vec![];
-            sequence(frame, &mut s);
-            let keep = [
-                "Alpha",
-                "Quoted",
-                "Bullet",
-                "Heading",
-                "Omega",
-                "fill [64, 26, 110]",
-            ];
-            s.into_iter()
-                .filter(|w| keep.contains(&w.as_str()))
-                .collect::<Vec<_>>()
-        };
-        let mut frame = page.frame.clone();
-        weasyprint_paint_order(&mut frame);
-        let rule = "fill [64, 26, 110]";
-        let want = [
-            rule, "Alpha", "Quoted", "Omega", "Bullet", rule, "Bullet", rule, "Heading",
-        ];
-        assert_eq!(order(&frame), want);
-        assert_ne!(
-            order(&page.frame),
-            want,
-            "typst already paints in WeasyPrint's order"
-        );
-    }
-
-    #[test]
-    fn the_fixture_with_tail_art_settles_and_draws_the_end_tick_where_the_oracle_does() {
+    fn the_fixture_with_tail_art_settles_and_draws_the_end_tick() {
         let tree = fixture_tree("900");
         let compiled =
             typst::compile::<PagedDocument>(&world(&tree, roots().1).expect("the world builds"));
@@ -2080,7 +1508,7 @@ mod tests {
     }
 
     #[test]
-    fn every_body_image_is_clipped_to_its_own_box_as_weasyprint_clips_it() {
+    fn every_body_image_is_clipped_to_its_own_box() {
         let doc = document(&world(&fixture_tree("900"), roots().1).expect("the world builds"))
             .expect("it compiles");
         let mut found = vec![];

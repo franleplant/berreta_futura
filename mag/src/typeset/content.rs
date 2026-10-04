@@ -86,7 +86,7 @@ pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
             allow_unanchored_figures: inputs.allow_unanchored_figures,
         },
     )?;
-    compose(&edition, inputs.fonts, Hyphenation::PARITY, &[])
+    compose(&edition, inputs.fonts, Hyphenation::PLAIN, &[])
 }
 
 pub fn compose(
@@ -1341,7 +1341,7 @@ mod tests {
 
     fn refusal_of(root: &Path, edition_id: &str) -> String {
         match pipeline(&inputs(root, edition_id)) {
-            Ok(_) => panic!("the pipeline accepted inputs the oracle refuses"),
+            Ok(_) => panic!("the pipeline accepted inputs the loader refuses"),
             Err(error) => error.to_string(),
         }
     }
@@ -1499,19 +1499,19 @@ mod tests {
         let base = crate::typeset::layout::edition(&root, "906", PUBLICATION).expect("906 loads");
         let es = crate::model::manifest::load_translation(&root, &base, "es").expect("es loads");
         let tree =
-            compose(&es, &fonts(), Hyphenation::PARITY, &[]).expect("the Spanish edition composes");
+            compose(&es, &fonts(), Hyphenation::PLAIN, &[]).expect("the Spanish edition composes");
         let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#set text(lang: \"es\", region: \"AR\")"));
         assert!(text.contains("[Artículo 01]"));
         assert!(text.contains("res\u{ad}pon\u{ad}sa\u{ad}bi\u{ad}li\u{ad}dad"));
         assert!(text.contains("level: 2)[Dónde se dividen las palabras]"));
         assert!(text.contains("Una columna justificada corta las palabras"));
-        let english = compose(&base, &fonts(), Hyphenation::PARITY, &[])
+        let english = compose(&base, &fonts(), Hyphenation::PLAIN, &[])
             .expect("the English edition composes");
         assert!(english.files.iter().all(|f| !f.source.contains('\u{ad}')));
         let native = Hyphenation {
             english: true,
-            ..Hyphenation::PARITY
+            ..Hyphenation::PLAIN
         };
         let hyphenated = compose(&base, &fonts(), native, &[]).expect("it composes");
         let text: String = hyphenated.files.iter().map(|f| f.source.as_str()).collect();
