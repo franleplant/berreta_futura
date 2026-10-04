@@ -1,3 +1,4 @@
+pub mod epub;
 mod html;
 mod images;
 mod logo;
@@ -186,7 +187,7 @@ pub fn newest_tracked_run(
         .map(str::to_string)
 }
 
-fn issue(root: &Path, id: &str) -> Result<Issue> {
+pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
     let yaml: serde_yaml::Value =

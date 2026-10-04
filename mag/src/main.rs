@@ -204,6 +204,8 @@ enum Cmd {
     Render(render::RenderArgs),
     /// Build the public static website from the editions listed in magazine.toml [site]
     Site(site::SiteArgs),
+    /// Package one language of an edition as an EPUB 3 for Apple Books and other e-readers
+    Epub(site::epub::EpubArgs),
     /// Upload an approved edition PDF to Google Drive and record its link in editions/<edition>/publish.yaml
     Publish(publish::PublishArgs),
 }
@@ -354,6 +356,7 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
         }),
         Cmd::Render(args) => render::run(&args),
         Cmd::Site(args) => site::run(&args),
+        Cmd::Epub(args) => site::epub::run(&args),
         Cmd::Publish(args) => publish::run(&args),
         Cmd::SourceCodes { edition, check } => sourcecodes::run(&edition, check),
         _ => unreachable!(),

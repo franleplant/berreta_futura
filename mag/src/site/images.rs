@@ -32,7 +32,7 @@ impl Image {
     }
 }
 
-fn flatten(path: &Path) -> Result<RgbImage> {
+pub fn flatten(path: &Path) -> Result<RgbImage> {
     let rgba = image::open(path)
         .with_context(|| format!("decoding {}", path.display()))?
         .to_rgba8();
