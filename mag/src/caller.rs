@@ -92,6 +92,20 @@ pub fn create_fresh_dir(path: &Path) -> Result<()> {
     })
 }
 
+pub fn write_atomic(path: impl AsRef<Path>, bytes: impl AsRef<[u8]>) -> Result<()> {
+    let path = path.as_ref();
+    let name = path
+        .file_name()
+        .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+    let tmp = path.with_file_name(format!(".{name}.{}.tmp", std::process::id()));
+    fs::write(&tmp, bytes)
+        .and_then(|()| fs::rename(&tmp, path))
+        .inspect_err(|_| {
+            let _ = fs::remove_file(&tmp);
+        })
+        .with_context(|| format!("writing {}", path.display()))
+}
+
 pub fn now_stamp() -> String {
     let secs = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -160,6 +174,8 @@ struct Semaphore {
     max: usize,
 }
 
+struct Permit<'a>(&'a Semaphore);
+
 impl Semaphore {
     fn new(max: usize) -> Self {
         Self {
@@ -169,35 +185,29 @@ impl Semaphore {
         }
     }
 
-    fn acquire(&self) {
+    fn acquire(&self) -> Permit<'_> {
         let mut count = self.count.lock().unwrap();
         while *count >= self.max {
             count = self.cond.wait(count).unwrap();
         }
         *count += 1;
-    }
-
-    fn release(&self) {
-        let mut count = self.count.lock().unwrap();
-        *count -= 1;
-        self.cond.notify_one();
+        Permit(self)
     }
 }
 
-struct SemaphoreGuard<'a>(&'a Semaphore);
-
-impl<'a> SemaphoreGuard<'a> {
-    fn acquire(sem: &'a Semaphore) -> Self {
-        sem.acquire();
-        Self(sem)
-    }
-}
-
-impl Drop for SemaphoreGuard<'_> {
+impl Drop for Permit<'_> {
     fn drop(&mut self) {
-        self.0.release();
+        *self.0.count.lock().unwrap() -= 1;
+        self.0.cond.notify_one();
     }
 }
+
+enum CallError {
+    Transport(String),
+    Timeout(String),
+}
+
+type Reply = (String, f64, f64);
 
 pub struct Caller {
     sem: Semaphore,
@@ -206,6 +216,7 @@ pub struct Caller {
     root: std::path::PathBuf,
     total_cost: Mutex<f64>,
     calls: AtomicUsize,
+    backoff: Duration,
 }
 
 impl Caller {
@@ -217,6 +228,7 @@ impl Caller {
             root: std::env::current_dir().unwrap_or_else(|_| ".".into()),
             total_cost: Mutex::new(0.0),
             calls: AtomicUsize::new(0),
+            backoff: Duration::from_secs(2),
         }
     }
 
@@ -249,47 +261,63 @@ impl Caller {
         if !images.is_empty() && spec.backend == Backend::Ollama {
             bail!("{label}: the ollama backend is not wired for image input");
         }
-        let mut last_error: Option<String> = None;
+        self.retry(label, spec, prompt, parse, |sent| {
+            self.run_once(spec, sent, images)
+        })
+    }
+
+    fn retry<T>(
+        &self,
+        label: &str,
+        spec: &ModelSpec,
+        prompt: &str,
+        parse: impl Fn(&str) -> Result<T>,
+        run: impl Fn(&str) -> Result<Reply, CallError>,
+    ) -> Result<T> {
+        let mut rejection: Option<String> = None;
+        let mut transport: Option<String> = None;
         let mut last_reply: Option<String> = None;
         for attempt in 0..=CALL_RETRIES {
-            let sent = match &last_error {
+            let sent = match &rejection {
                 None => prompt.to_string(),
                 Some(e) => format!(
                     "{prompt}\n\nYour previous reply was rejected: {e}. Reply again \
                      following the required output format exactly."
                 ),
             };
-
-            let (result_text, cost, seconds) = match self.run_once(spec, &sent, images) {
+            let (result_text, cost, seconds) = match run(&sent) {
                 Ok(v) => v,
-                Err(e) => {
-                    last_error = Some(e);
+                Err(CallError::Timeout(e)) => bail!("{label}: model call timed out: {e}"),
+                Err(CallError::Transport(e)) => {
+                    transport = Some(e);
+                    if attempt < CALL_RETRIES {
+                        thread::sleep(self.backoff * 2u32.pow(attempt));
+                    }
                     continue;
                 }
             };
-
+            transport = None;
             *self.total_cost.lock().unwrap() += cost;
             self.calls.fetch_add(1, Ordering::SeqCst);
-
             match parse(&result_text) {
                 Ok(parsed) => {
                     self.log_and_print(label, spec, seconds, cost, attempt)?;
                     return Ok(parsed);
                 }
                 Err(e) => {
-                    last_error = Some(e.to_string());
+                    rejection = Some(e.to_string());
                     last_reply = Some(result_text);
                 }
             }
         }
-
-        let saved = match &last_reply {
-            Some(reply) => self.save_failed_reply(label, spec, reply),
-            None => None,
-        };
+        let saved = last_reply
+            .as_ref()
+            .and_then(|reply| self.save_failed_reply(label, spec, reply));
         bail!(
             "{label}: model call failed after retries: {}{}",
-            last_error.unwrap_or_else(|| "unknown error".to_string()),
+            transport
+                .or(rejection)
+                .unwrap_or_else(|| "unknown error".to_string()),
             match saved {
                 Some(path) => format!(" (unparsed reply saved to {})", path.display()),
                 None => String::new(),
@@ -344,43 +372,25 @@ impl Caller {
         spec: &ModelSpec,
         prompt: &str,
         images: &[PathBuf],
-    ) -> Result<(String, f64, f64), String> {
-        let _permit = SemaphoreGuard::acquire(&self.sem);
+    ) -> Result<Reply, CallError> {
+        let _permit = self.sem.acquire();
         let started = Instant::now();
         let scratch = match spec.backend {
-            Backend::Codex => Some(CodexScratch::new()?),
+            Backend::Codex => Some(CodexScratch::new().map_err(CallError::Transport)?),
             _ => None,
         };
-        let mut cmd = self.backend_command(spec, images, scratch.as_ref());
-        let mut child = cmd
-            .spawn()
-            .map_err(|e| format!("failed to spawn {:?}: {e}", spec.backend))?;
-
-        let stdin_payload = stdin_payload(spec, prompt);
-        let mut stdin = child.stdin.take().expect("piped stdin");
-        let writer = thread::spawn(move || {
-            let _ = stdin.write_all(stdin_payload.as_bytes());
-        });
-        let stdout_reader = drain(child.stdout.take().expect("piped stdout"));
-        let stderr_reader = drain(child.stderr.take().expect("piped stderr"));
-
+        let cmd = self.backend_command(spec, images, scratch.as_ref());
         let timeout = Duration::from_secs(call_timeout_secs_for(Some(spec)));
-        let status = wait_with_timeout(&mut child, started, timeout)?;
-        let _ = writer.join();
-        let out = stdout_reader.join().unwrap_or_default();
-        let err = stderr_reader.join().unwrap_or_default();
+        let (status, out, err) = run_child(cmd, stdin_payload(spec, prompt), timeout)?;
         let seconds = started.elapsed().as_secs_f64();
-        let status = status
-            .ok_or_else(|| format!("timeout after {}s", call_timeout_secs_for(Some(spec))))?;
-
         let (result, cost) = match spec.backend {
-            Backend::Claude => parse_claude(&out, &err, status)?,
+            Backend::Claude => parse_claude(&out, &err, status),
             Backend::Codex => {
-                let out_path = &scratch.as_ref().expect("codex scratch").out;
-                parse_codex(out_path, &err, status)?
+                parse_codex(&scratch.as_ref().expect("codex scratch").out, &err, status)
             }
-            Backend::Ollama => parse_ollama(&out, &err, status)?,
-        };
+            Backend::Ollama => parse_ollama(&out, &err, status),
+        }
+        .map_err(CallError::Transport)?;
         Ok((result, cost, seconds))
     }
 
@@ -480,23 +490,64 @@ fn drain<R: Read + Send + 'static>(mut pipe: R) -> thread::JoinHandle<Vec<u8>> {
     })
 }
 
-fn wait_with_timeout(
-    child: &mut std::process::Child,
-    started: Instant,
+fn descendants(pid: u32) -> Vec<u32> {
+    let out = Command::new("pgrep")
+        .args(["-P", &pid.to_string()])
+        .stderr(Stdio::null())
+        .output()
+        .map(|o| o.stdout)
+        .unwrap_or_default();
+    let kids: Vec<u32> = String::from_utf8_lossy(&out)
+        .split_whitespace()
+        .filter_map(|p| p.parse().ok())
+        .collect();
+    kids.iter()
+        .flat_map(|&kid| descendants(kid).into_iter().chain([kid]))
+        .collect()
+}
+
+fn kill_descendants(pid: u32) {
+    for victim in descendants(pid) {
+        let _ = Command::new("kill")
+            .args(["-KILL", &victim.to_string()])
+            .stderr(Stdio::null())
+            .status();
+    }
+}
+
+fn run_child(
+    mut cmd: Command,
+    payload: String,
     timeout: Duration,
-) -> Result<Option<ExitStatus>, String> {
-    loop {
+) -> Result<(ExitStatus, Vec<u8>, Vec<u8>), CallError> {
+    let transport = |what: &str, e: std::io::Error| CallError::Transport(format!("{what}: {e}"));
+    let mut child = cmd.spawn().map_err(|e| transport("failed to spawn", e))?;
+    let mut stdin = child.stdin.take().expect("piped stdin");
+    let writer = thread::spawn(move || {
+        let _ = stdin.write_all(payload.as_bytes());
+    });
+    let stdout_reader = drain(child.stdout.take().expect("piped stdout"));
+    let stderr_reader = drain(child.stderr.take().expect("piped stderr"));
+    let started = Instant::now();
+    let status = loop {
         match child.try_wait() {
-            Ok(Some(status)) => return Ok(Some(status)),
+            Ok(Some(status)) => break Some(status),
             Ok(None) if started.elapsed() > timeout => {
+                kill_descendants(child.id());
                 let _ = child.kill();
                 let _ = child.wait();
-                return Ok(None);
+                break None;
             }
             Ok(None) => thread::sleep(Duration::from_millis(50)),
-            Err(e) => return Err(format!("wait failed: {e}")),
+            Err(e) => return Err(transport("wait failed", e)),
         }
-    }
+    };
+    let _ = writer.join();
+    let out = stdout_reader.join().unwrap_or_default();
+    let err = stderr_reader.join().unwrap_or_default();
+    status
+        .map(|s| (s, out, err))
+        .ok_or_else(|| CallError::Timeout(format!("after {}s", timeout.as_secs())))
 }
 
 fn truncated(bytes: &[u8]) -> String {
@@ -582,6 +633,24 @@ mod tests {
     }
 
     #[test]
+    fn write_atomic_replaces_whole_files_and_leaves_no_partial() {
+        let dir = scratch("atomic");
+        let file = dir.join("a.yaml");
+        write_atomic(&file, "one").unwrap();
+        write_atomic(&file, "two").unwrap();
+        assert_eq!(fs::read_to_string(&file).unwrap(), "two");
+        let target = dir.join("taken");
+        fs::create_dir(&target).unwrap();
+        assert!(write_atomic(&target, "x").is_err());
+        let mut names: Vec<_> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        names.sort();
+        assert_eq!(names, ["a.yaml", "taken"]);
+    }
+
+    #[test]
     fn model_spec_defaults_to_claude() {
         let s = ModelSpec::parse("opus").unwrap();
         assert_eq!(s.backend, Backend::Claude);
@@ -599,5 +668,75 @@ mod tests {
     #[test]
     fn timestamp_matches_known_unix_time() {
         assert_eq!(format_utc_stamp(1700000000), "2023-11-14T22-13-20");
+    }
+
+    fn scratch(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("mag-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn quick_caller(name: &str) -> Caller {
+        let mut caller = Caller::new(&scratch(name));
+        caller.backoff = Duration::from_millis(1);
+        caller
+    }
+
+    #[test]
+    fn timeout_returns_even_when_a_grandchild_holds_stdout() {
+        let mut cmd = Command::new("sh");
+        cmd.args(["-c", "sleep 30 & sleep 30"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        let started = Instant::now();
+        let result = run_child(cmd, String::new(), Duration::from_millis(300));
+        assert!(matches!(result, Err(CallError::Timeout(_))));
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn transport_errors_retry_with_the_original_prompt_and_timeouts_do_not() {
+        let caller = quick_caller("retry");
+        let spec = ModelSpec::parse("opus").unwrap();
+        let prompts = Mutex::new(Vec::new());
+        let flaky = |sent: &str| {
+            let mut seen = prompts.lock().unwrap();
+            seen.push(sent.to_string());
+            if seen.len() < 3 {
+                Err(CallError::Transport("429".into()))
+            } else {
+                Ok(("ok".to_string(), 0.0, 0.0))
+            }
+        };
+        let got = caller.retry("t", &spec, "PROMPT", |r| Ok(r.to_string()), flaky);
+        assert_eq!(got.unwrap(), "ok");
+        assert!(prompts.lock().unwrap().iter().all(|p| p == "PROMPT"));
+        let calls = Mutex::new(0);
+        let slow = |_: &str| {
+            *calls.lock().unwrap() += 1;
+            Err(CallError::Timeout("1s".into()))
+        };
+        let got = caller.retry("t", &spec, "PROMPT", |r| Ok(r.to_string()), slow);
+        assert!(got.is_err());
+        assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn parse_rejections_are_fed_back_to_the_model() {
+        let caller = quick_caller("reject");
+        let spec = ModelSpec::parse("opus").unwrap();
+        let prompts = Mutex::new(Vec::new());
+        let run = |sent: &str| {
+            prompts.lock().unwrap().push(sent.to_string());
+            Ok(("reply".to_string(), 0.0, 0.0))
+        };
+        let parse = |_: &str| -> Result<()> { bail!("bad shape") };
+        assert!(caller.retry("t", &spec, "PROMPT", parse, run).is_err());
+        let seen = prompts.lock().unwrap();
+        assert_eq!(seen.len(), 3);
+        assert_eq!(seen[0], "PROMPT");
+        assert!(seen[1].contains("rejected: bad shape"));
     }
 }

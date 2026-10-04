@@ -1,4 +1,4 @@
-use crate::caller::{Caller, ModelSpec};
+use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::produce::{section, INLINE_PREAMBLE};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
@@ -154,7 +154,7 @@ fn translate_piece(caller: &Caller, model: &ModelSpec, job: &PieceJob) -> Result
     if let Some(parent) = job.output_path.parent() {
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
     }
-    fs::write(&job.output_path, &markdown)
+    write_atomic(&job.output_path, &markdown)
         .with_context(|| format!("writing {}", job.output_path.display()))?;
 
     Ok(PieceTranslation {
@@ -208,7 +208,7 @@ pub fn run(run_dir: &Path, model: &ModelSpec) -> Result<i32> {
         }
     }
 
-    fs::write(
+    write_atomic(
         translations_root.join("status.yaml"),
         serde_yaml::to_string(&results)?,
     )

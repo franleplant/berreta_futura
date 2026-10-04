@@ -1,4 +1,5 @@
-use anyhow::{anyhow, bail, Context, Result};
+use crate::caller::write_atomic;
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use std::fs;
 use std::path::PathBuf;
 
@@ -25,7 +26,7 @@ fn matching_edition_dirs(edition: &str) -> Result<Vec<PathBuf>> {
     Ok(out)
 }
 
-fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<String>)> {
+pub fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<String>)> {
     let doc: serde_yaml::Value =
         serde_yaml::from_str(release_state).context("parsing library/release-state.yaml")?;
     let collecting = doc
@@ -267,10 +268,24 @@ fn write_new_plan(
     if let Some(dir) = out_path.parent() {
         fs::create_dir_all(dir)?;
     }
-    fs::write(
+    write_atomic(
         out_path,
         serde_yaml::to_string(&serde_yaml::Value::Mapping(plan))?,
     )?;
+    Ok(())
+}
+
+pub fn check_join(edition: &str, article: &str) -> Result<()> {
+    let plan = plan_path_for(edition)?;
+    if plan.exists() {
+        return join_article(&read(&plan)?, article, "preflight").map(drop);
+    }
+    let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
+    let queued = queued_source_ids(&release_state, edition)?.1;
+    ensure!(
+        queued.iter().any(|q| article_slug(q) == article),
+        "no plan.yaml for edition {edition} and no queued source forms article '{article}'"
+    );
     Ok(())
 }
 
@@ -337,7 +352,7 @@ pub fn add_source(
             t
         }
     };
-    fs::write(&out_path, new_text)?;
+    write_atomic(&out_path, new_text)?;
     Ok(())
 }
 
@@ -373,7 +388,7 @@ pub fn propose_plan(edition: &str) -> Result<i32> {
             rows.push(row);
             println!("  added: {sid} ({mode})");
         }
-        fs::write(&out_path, append_rows(&plan_text, &rows)?)?;
+        write_atomic(&out_path, append_rows(&plan_text, &rows)?)?;
         println!(
             "\nappended {} row(s) to {}; existing rows untouched. Edit the new rows \
              (merge source_ids, flip content_mode, fix titles), then: mag produce {}",

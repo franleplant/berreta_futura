@@ -1,5 +1,5 @@
-use crate::caller::{self, Caller, ModelSpec};
-use anyhow::{anyhow, bail, Context, Result};
+use crate::caller::{self, write_atomic, Caller, ModelSpec};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -591,6 +591,17 @@ fn record_yaml(m: &SourceMeta) -> String {
 }
 
 pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(String, usize)> {
+    let (out, queued) = splice_release_state(text, edition, sid)?;
+    let (_, ids) = crate::plan_cmd::queued_source_ids(&out, edition)
+        .context("release-state.yaml no longer parses after queueing")?;
+    ensure!(
+        ids.len() == queued && ids.last().map(String::as_str) == Some(sid),
+        "release-state.yaml edit did not land {sid} last in edition {edition}"
+    );
+    Ok((out, queued))
+}
+
+fn splice_release_state(text: &str, edition: &str, sid: &str) -> Result<(String, usize)> {
     let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
     let section = lines
         .iter()
@@ -748,13 +759,13 @@ impl Drop for StateLock {
 }
 
 fn publish_source(m: &SourceMeta, src_dir: &Path, edition: &str, release_text: &str) -> Result<()> {
-    fs::write(src_dir.join("record.yaml"), record_yaml(m))?;
+    write_atomic(src_dir.join("record.yaml"), record_yaml(m))?;
     let (new_release, queued) = queue_in_release_state(release_text, edition, m.sid)?;
-    fs::write("library/release-state.yaml", new_release)?;
+    write_atomic("library/release-state.yaml", new_release)?;
     let sources_path = PathBuf::from("sources.md");
     let entry = sources_md_entry(m, edition);
     let sources_text = fs::read_to_string(&sources_path).context("reading sources.md")?;
-    fs::write(
+    write_atomic(
         &sources_path,
         prepend_sources_md(&sources_text, &entry, edition, queued),
     )?;
@@ -964,6 +975,9 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
         .map(str::to_string)
         .or_else(|| intake_edition(&release_text))
         .ok_or_else(|| anyhow!("no --edition and no intake_edition_id in release-state.yaml"))?;
+    if let Some(article) = join_article {
+        crate::plan_cmd::check_join(&edition, article)?;
+    }
 
     write_raw(pdf.as_ref(), &html, &sid)?;
 
@@ -985,7 +999,7 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
             return Err(e);
         }
     };
-    fs::write(
+    write_atomic(
         src_dir.join("article.md"),
         article.trim_end().to_string() + "\n",
     )?;

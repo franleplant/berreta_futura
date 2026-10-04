@@ -1,4 +1,4 @@
-use crate::caller::{Caller, ModelSpec};
+use crate::caller::{write_atomic, Caller, ModelSpec};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -402,13 +402,13 @@ fn produce_piece(
         let mode = article.get("content_mode").and_then(|v| v.as_str());
         if mode == Some("verbatim") {
             let body = verbatim_body(sources)?;
-            fs::write(&final_path, article_frontmatter(article)? + &body)?;
+            write_atomic(&final_path, article_frontmatter(article)? + &body)?;
             let status = PieceStatus {
                 piece: piece_id.to_string(),
                 words: body.split_whitespace().count(),
                 state: "written".to_string(),
             };
-            fs::write(out.join("status.yaml"), serde_yaml::to_string(&status)?)?;
+            write_atomic(out.join("status.yaml"), serde_yaml::to_string(&status)?)?;
             println!(
                 "  {piece_id}: verbatim from source ({} words)",
                 status.words
@@ -435,14 +435,14 @@ fn produce_piece(
         heading_cost,
     )?;
     let body = fix_em_dashes(caller, writer_model, piece_id, &prompt, body, sources)?;
-    fs::write(&final_path, frontmatter + &body)?;
+    write_atomic(&final_path, frontmatter + &body)?;
 
     let status = PieceStatus {
         piece: piece_id.to_string(),
         words: body.split_whitespace().count(),
         state: "written".to_string(),
     };
-    fs::write(out.join("status.yaml"), serde_yaml::to_string(&status)?)?;
+    write_atomic(out.join("status.yaml"), serde_yaml::to_string(&status)?)?;
     println!("  {piece_id}: written ({} words)", status.words);
     Ok(status)
 }
@@ -454,15 +454,13 @@ struct Plan {
 }
 
 fn yq(s: &str) -> String {
-    if s.is_empty()
-        || s.contains(':')
-        || s.contains('#')
-        || s.contains('\'')
-        || s.starts_with(['[', '{', '&', '*', '!', '|', '>', '%', '@', '`', '"'])
-    {
-        format!("'{}'", s.replace('\'', "''"))
+    if s.contains(['\n', '\r']) {
+        serde_json::to_string(s).expect("a string serializes")
     } else {
-        s.to_string()
+        serde_yaml::to_string(s)
+            .expect("a string serializes")
+            .trim_end()
+            .to_string()
     }
 }
 
@@ -624,7 +622,7 @@ fn append_missing_articles(path: &Path, edition_id: &str, plan: &Plan) -> Result
         .position(|l| l.chars().next().is_some_and(|c| c.is_ascii_alphabetic()))
         .map_or(lines.len(), |i| articles_at + 1 + i);
     let out = lines[..insert_at].join("\n") + "\n" + &rows + &lines[insert_at..].join("\n") + "\n";
-    fs::write(path, out)?;
+    write_atomic(path, out)?;
     Ok(format!(
         "added {} to {} (fill their TODOs)",
         added.join(", "),
@@ -660,7 +658,7 @@ fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> R
         y += &article_scaffold(a, edition_id)?;
     }
     y += "tail_art_fit: contain\nclosing_plates: []\n";
-    fs::write(&path, y)?;
+    write_atomic(&path, y)?;
     Ok(format!("scaffolded {}", path.display()))
 }
 
@@ -690,7 +688,7 @@ pub fn run_edition(
             dir
         }
     };
-    fs::write(run_dir.join("plan.yaml"), serde_yaml::to_string(&plan)?)?;
+    write_atomic(run_dir.join("plan.yaml"), serde_yaml::to_string(&plan)?)?;
     let caller = Arc::new(Caller::new(&run_dir));
     let started = Instant::now();
     println!("run dir: {}", run_dir.display());
@@ -722,7 +720,7 @@ pub fn run_edition(
         &statuses,
         &failures,
     );
-    fs::write(run_dir.join("summary.md"), lines.join("\n") + "\n")?;
+    write_atomic(run_dir.join("summary.md"), lines.join("\n") + "\n")?;
     println!("\n{}", run_dir.join("summary.md").display());
     println!("{}", lines.join("\n"));
 
@@ -845,6 +843,10 @@ fn summary_lines(
     lines
 }
 
+fn front_todo(line: &str) -> Option<&'static (&'static str, &'static str)> {
+    FRONT_TODOS.iter().find(|(todo, _)| line == *todo)
+}
+
 const FRONT_TODOS: [(&str, &str); 5] = [
     ("title: TODO", "title"),
     ("subtitle: TODO", "subtitle"),
@@ -877,8 +879,7 @@ fn front_matter(
     run_dir: &Path,
 ) -> Result<bool> {
     let text = read(edition_yaml)?;
-    let todo = |line: &str| FRONT_TODOS.iter().find(|(todo, _)| line == *todo);
-    if !text.lines().any(|line| todo(line).is_some()) {
+    if !text.lines().any(|line| front_todo(line).is_some()) {
         return Ok(false);
     }
     let edition: serde_yaml::Value = serde_yaml::from_str(&text)?;
@@ -898,15 +899,20 @@ fn front_matter(
         read(&prompts_path("edition-front-matter.md"))?
     );
     let drafted = caller.call_with_parse("front-matter", model, &prompt, parse_front_matter)?;
+    let filled = fill_todos(&read(edition_yaml)?, &drafted);
+    write_atomic(edition_yaml, filled)?;
+    Ok(true)
+}
+
+fn fill_todos(text: &str, drafted: &HashMap<String, String>) -> String {
     let filled: Vec<String> = text
         .lines()
-        .map(|line| match todo(line) {
+        .map(|line| match front_todo(line) {
             Some((todo, key)) => format!("{}{}", &todo[..todo.len() - 4], yq(&drafted[*key])),
             None => line.to_string(),
         })
         .collect();
-    fs::write(edition_yaml, filled.join("\n") + "\n")?;
-    Ok(true)
+    filled.join("\n") + "\n"
 }
 
 fn print_next_steps(
@@ -943,6 +949,28 @@ fn print_next_steps(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn yq_round_trips_every_awkward_scalar() {
+        for raw in [
+            "true", "null", "~", "1984", "- x", "? x", "a: b", "it's", "a\nb", "", "# x", "yes",
+            "0x1F", "1e3", "@x", "a #b", "x:", "'q'", "\"q\"", "é: ü",
+        ] {
+            let doc: serde_yaml::Value =
+                serde_yaml::from_str(&format!("k: {}\n", yq(raw))).unwrap();
+            assert_eq!(doc["k"].as_str(), Some(raw), "{raw:?} -> {}", yq(raw));
+        }
+    }
+
+    #[test]
+    fn fill_todos_leaves_edited_lines_alone() {
+        let drafted = HashMap::from([
+            ("title".to_string(), "Drafted".to_string()),
+            ("subtitle".to_string(), "Sub".to_string()),
+        ]);
+        let out = fill_todos("title: Edited by hand\nsubtitle: TODO\n", &drafted);
+        assert_eq!(out, "title: Edited by hand\nsubtitle: Sub\n");
+    }
 
     #[test]
     fn a_new_plan_article_is_appended_before_the_trailing_keys() {

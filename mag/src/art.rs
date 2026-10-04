@@ -1,4 +1,4 @@
-use crate::caller::{Caller, ModelSpec};
+use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::produce::{self, INLINE_PREAMBLE};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
@@ -1461,7 +1461,7 @@ pub fn cast_sheet_run(
         .join(crate::caller::now_stamp());
     crate::caller::create_fresh_dir(&round_dir)?;
     println!("round dir: {}", round_dir.display());
-    fs::write(
+    write_atomic(
         round_dir.join("briefs.yaml"),
         serde_yaml::to_string(&BriefsDoc {
             briefs: briefs.clone(),
@@ -1818,7 +1818,7 @@ fn check_round(
                 .map(|v| format!("  {}, {}: {}", r.file, v.name, v.reason))
         })
         .collect();
-    fs::write(
+    write_atomic(
         &check_path,
         serde_yaml::to_string(&CastCheckDoc {
             model: model.full.clone(),
@@ -1865,7 +1865,7 @@ fn write_round_yaml(
         generated,
         failures,
     };
-    fs::write(round_dir.join("round.yaml"), serde_yaml::to_string(&doc)?)?;
+    write_atomic(round_dir.join("round.yaml"), serde_yaml::to_string(&doc)?)?;
     Ok(failures)
 }
 
@@ -2154,7 +2154,7 @@ pub fn run(opts: &ArtRun) -> Result<i32> {
     let briefs_doc = BriefsDoc {
         briefs: briefs.clone(),
     };
-    fs::write(
+    write_atomic(
         round_dir.join("briefs.yaml"),
         serde_yaml::to_string(&briefs_doc)?,
     )?;

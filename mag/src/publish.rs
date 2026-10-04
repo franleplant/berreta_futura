@@ -1,3 +1,4 @@
+use crate::caller::write_atomic;
 use crate::model::records::slug;
 use crate::render::{publication_name, resolve_edition_dir};
 use crate::site::{config, publish_record, Pdf};
@@ -65,7 +66,7 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             sha256,
         },
     );
-    fs::write(&path, serde_yaml::to_string(&record)?)?;
+    write_atomic(&path, serde_yaml::to_string(&record)?)?;
     println!("link: {url}\nwrote {}", path.display());
     println!(
         "\nnext: git add {0} && git commit -m 'edition {edition}: publish the {1} PDF' && git push (the site deploy adds the link)",
