@@ -12,6 +12,24 @@ const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 
 const SHINGLE_WORDS: usize = 12;
 const MISS_RATE_LIMIT: f64 = 0.02;
+const CODE_EDGE_CHARS: usize = 40;
+const ORDER_TOLERANCE: usize = 0;
+const GAP_WORD_LIMIT: usize = 200;
+const EDGE_WORD_LIMIT: usize = 120;
+const EDGE_PARAGRAPH_WORDS: usize = 30;
+const CHROME_MARKERS: [&str; 9] = [
+    "author",
+    "authors",
+    "bio",
+    "comment",
+    "comments",
+    "disclaimer",
+    "newsletter",
+    "related",
+    "share",
+];
+const DISCLAIMER_PHRASE: &str = "informational purposes only";
+const EDGE_WINDOW_WORDS: usize = 8;
 
 pub fn source_id(title: &str, url: &str) -> String {
     let mut slug = String::new();
@@ -233,20 +251,88 @@ fn strip_sr_only(html: &str) -> String {
         .into_owned()
 }
 
-fn page_text(html: &str) -> String {
+fn visible_html(html: &str) -> String {
     let mut s = strip_sr_only(html);
     for tag in ["script", "style", "svg", "noscript"] {
         s = strip_block(&s, tag);
     }
-    s = Regex::new(r"(?s)<!--.*?-->")
+    Regex::new(r"(?s)<!--.*?-->")
         .unwrap()
         .replace_all(&s, " ")
-        .into_owned();
-    s = Regex::new(r"(?s)<[^>]*>")
-        .unwrap()
-        .replace_all(&s, " ")
-        .into_owned();
-    normalize_ws(&decode_entities(&s))
+        .into_owned()
+}
+
+fn plain_text(html: &str) -> String {
+    let stripped = Regex::new(r"(?s)<[^>]*>").unwrap().replace_all(html, " ");
+    normalize_ws(&decode_entities(&stripped))
+}
+
+fn page_text(html: &str) -> String {
+    plain_text(&visible_html(html))
+}
+
+fn is_chrome(el: scraper::ElementRef) -> bool {
+    let value = el.value();
+    let region = scraper::Selector::parse("article, main").unwrap();
+    if matches!(value.name(), "article" | "main") || el.select(&region).next().is_some() {
+        return false;
+    }
+    let marked = [
+        value.attr("class"),
+        value.attr("id"),
+        value.attr("data-testid"),
+    ]
+    .into_iter()
+    .flatten()
+    .any(|v| {
+        v.to_lowercase()
+            .split(|c: char| c == '-' || c == '_' || c.is_whitespace())
+            .any(|t| CHROME_MARKERS.contains(&t))
+    });
+    marked || matches!(value.name(), "aside" | "footer" | "nav")
+}
+
+fn article_paragraphs(html: &str) -> Vec<String> {
+    let doc = scraper::Html::parse_document(&visible_html(html));
+    let selector = scraper::Selector::parse("p").unwrap();
+    let paragraphs: Vec<_> = doc
+        .select(&selector)
+        .filter(|p| {
+            !p.ancestors()
+                .filter_map(scraper::ElementRef::wrap)
+                .any(is_chrome)
+        })
+        .map(|p| (p, plain_text(&p.inner_html())))
+        .filter(|(_, t)| !t.to_lowercase().contains(DISCLAIMER_PHRASE))
+        .collect();
+    let words = |t: &str| t.split_whitespace().count();
+    let region = ["article", "main"].iter().find_map(|tag| {
+        let mut groups: Vec<(ego_tree::NodeId, Vec<&str>)> = Vec::new();
+        for (p, text) in &paragraphs {
+            let outer = p
+                .ancestors()
+                .filter_map(scraper::ElementRef::wrap)
+                .find(|a| a.value().name() == *tag);
+            let Some(id) = outer.map(|a| a.id()) else {
+                continue;
+            };
+            match groups.iter_mut().find(|g| g.0 == id) {
+                Some(g) => g.1.push(text),
+                None => groups.push((id, vec![text])),
+            }
+        }
+        groups
+            .into_iter()
+            .max_by_key(|g| g.1.iter().map(|t| words(t)).sum::<usize>())
+            .map(|g| g.1)
+    });
+    let all: Vec<&str> = paragraphs.iter().map(|(_, t)| t.as_str()).collect();
+    region
+        .unwrap_or(all)
+        .into_iter()
+        .filter(|t| words(t) >= EDGE_PARAGRAPH_WORDS)
+        .map(str::to_string)
+        .collect()
 }
 
 fn page_for_model(html: &str) -> String {
@@ -449,7 +535,12 @@ struct Extraction {
     published: String,
 }
 
-fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extraction> {
+fn parse_reply(
+    reply: &str,
+    haystack: &str,
+    pres: &[String],
+    paragraphs: &[String],
+) -> Result<Extraction> {
     let (article, meta) = reply
         .rsplit_once("===META===")
         .ok_or_else(|| anyhow!("reply has no ===META=== separator"))?;
@@ -465,7 +556,7 @@ fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extractio
         bail!("META block has no synopsis");
     }
     let article = article.trim().to_string();
-    fidelity_gate(&article, haystack, pres)?;
+    fidelity_gate(&article, haystack, pres, paragraphs)?;
     Ok(Extraction {
         article,
         synopsis,
@@ -476,8 +567,166 @@ fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extractio
 
 const PROSE_FOLD: [char; 5] = ['*', '`', '[', ']', '\u{2197}'];
 
-fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
+struct Folded<'a> {
+    text: String,
+    words: Vec<(usize, usize, &'a str)>,
+}
+
+fn fold_page(haystack: &str) -> Folded<'_> {
+    let mut text = String::new();
+    let mut words = Vec::new();
+    for w in haystack.split_whitespace() {
+        let f = comparison_form(w).replace(PROSE_FOLD, "");
+        if !f.is_empty() {
+            words.push((text.len(), text.len() + f.len(), w));
+            text.push_str(&f);
+        }
+    }
+    Folded { text, words }
+}
+
+fn locate(text: &str, needle: &str, cursor: usize) -> Option<(usize, usize, bool)> {
+    let (start, ordered) = match text[cursor..].find(needle) {
+        Some(i) => (cursor + i, true),
+        None => (text.find(needle)?, false),
+    };
+    Some((start, start + needle.len(), ordered))
+}
+
+fn shingles(words: &[&str]) -> Vec<String> {
+    if words.len() <= SHINGLE_WORDS {
+        return vec![words.join(" ")];
+    }
+    let mut windows: Vec<String> = words
+        .chunks_exact(SHINGLE_WORDS)
+        .map(|c| c.join(" "))
+        .collect();
+    if !words.len().is_multiple_of(SHINGLE_WORDS) {
+        windows.push(words[words.len() - SHINGLE_WORDS..].join(" "));
+    }
+    windows
+}
+
+fn longest_gap(page: &Folded, spans: &[(usize, usize)], matched: (usize, usize)) -> (usize, usize) {
+    let (lo, hi) = matched;
+    let (mut best, mut run, mut run_start) = ((0, 0), 0, 0);
+    for (i, &(start, end, _)) in page.words.iter().enumerate() {
+        if start < lo || end > hi {
+            continue;
+        }
+        if spans.iter().any(|s| start >= s.0 && start < s.1) {
+            run = 0;
+            continue;
+        }
+        if run == 0 {
+            run_start = i;
+        }
+        run += 1;
+        if run > best.0 {
+            best = (run, run_start);
+        }
+    }
+    best
+}
+
+struct Recall {
+    misses: Vec<String>,
+    total: usize,
+    disorder: usize,
+    gap_words: usize,
+    gap_at: usize,
+}
+
+fn edge_spans(text: &str, run: &str) -> Vec<(usize, usize)> {
+    let edge = |s: &str| s.chars().take(CODE_EDGE_CHARS).collect::<String>();
+    let head = edge(run);
+    let tail_at = run
+        .char_indices()
+        .rev()
+        .nth(CODE_EDGE_CHARS - 1)
+        .map_or(0, |(i, _)| i);
+    let tail = &run[tail_at..];
+    text.match_indices(&head)
+        .filter_map(|(s, _)| Some((s, s + text[s..].find(tail)? + tail.len())))
+        .filter(|(s, e)| e - s <= 2 * run.len())
+        .collect()
+}
+
+fn recall(body: &str, covers: &[String], page: &Folded) -> Recall {
+    let ordinal = Regex::new(r"^\d+\.\s").unwrap();
+    let mut spans = Vec::new();
+    let mut r = Recall {
+        misses: Vec::new(),
+        total: 0,
+        disorder: 0,
+        gap_words: 0,
+        gap_at: 0,
+    };
+    let mut cursor = 0;
+    let mut matched = (usize::MAX, 0);
+    for needle in covers {
+        spans.extend(edge_spans(&page.text, needle));
+    }
+    for (i, line) in body.lines().enumerate() {
+        let t = line.trim();
+        let structural = i < 3 || t.starts_with(['#', '|']) || t.starts_with("![");
+        let t = t.trim_start_matches(['-', '*', '>', '#']).trim_start();
+        let t = ordinal.replace(t, "").replace(PROSE_FOLD, "");
+        let words: Vec<&str> = t.split_whitespace().collect();
+        if structural || words.len() < 5 {
+            for cell in t.split('|') {
+                let needle = comparison_form(cell);
+                if let Some((s, e, _)) = Some(&needle)
+                    .filter(|n| !n.is_empty())
+                    .and_then(|n| locate(&page.text, n, cursor))
+                {
+                    spans.push((s, e));
+                }
+            }
+            continue;
+        }
+        let from = cursor;
+        for w in shingles(&words) {
+            r.total += 1;
+            match locate(&page.text, &comparison_form(&w), from) {
+                None => r.misses.push(w),
+                Some((s, e, ordered)) => {
+                    spans.push((s, e));
+                    matched = (matched.0.min(s), matched.1.max(e));
+                    cursor = cursor.max(e);
+                    r.disorder += usize::from(!ordered);
+                }
+            }
+        }
+    }
+    (r.gap_words, r.gap_at) = longest_gap(page, &spans, matched);
+    r
+}
+
+fn dequote(block: &str) -> Option<String> {
+    let lines = || block.lines().filter(|l| !l.trim().is_empty());
+    lines().all(|l| l.starts_with('>')).then(|| {
+        normalize_code(
+            &block
+                .lines()
+                .map(|l| {
+                    l.strip_prefix('>')
+                        .map_or(l, |r| r.strip_prefix(' ').unwrap_or(r))
+                })
+                .collect::<Vec<_>>()
+                .join("\n"),
+        )
+    })
+}
+
+fn fidelity_gate(
+    article: &str,
+    haystack: &str,
+    pres: &[String],
+    paragraphs: &[String],
+) -> Result<()> {
     let fence = Regex::new(r"(?s)```[^\n]*\n(.*?)```").unwrap();
+    let mut covers = Vec::new();
     for block in fence.captures_iter(article) {
         let code = normalize_code(&block[1]);
         if code.is_empty() {
@@ -487,75 +736,36 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
             pres.iter().any(|p| p.contains(c))
                 || comparison_form(haystack).contains(&comparison_form(c))
         };
-
-        let dequoted = block[1]
-            .lines()
-            .filter(|l| !l.trim().is_empty())
-            .all(|l| l.starts_with('>'))
-            .then(|| {
-                normalize_code(
-                    &block[1]
-                        .lines()
-                        .map(|l| {
-                            l.strip_prefix('>')
-                                .map_or(l, |r| r.strip_prefix(' ').unwrap_or(r))
-                        })
-                        .collect::<Vec<_>>()
-                        .join("\n"),
-                )
-            });
+        let dequoted = dequote(&block[1]);
         if !ok(&code) && !dequoted.as_deref().is_some_and(ok) {
             let first = code.lines().next().unwrap_or("");
             bail!("code block starting '{first}' is not an exact contiguous run from the page");
         }
+        covers.extend(
+            [Some(code), dequoted]
+                .into_iter()
+                .flatten()
+                .map(|c| comparison_form(&c).replace(PROSE_FOLD, "")),
+        );
     }
 
     let link = Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
-    let image = Regex::new(r"!\[[^\]]*\]\([^)]*\)").unwrap();
+    let image = Regex::new(r"!\[([^\]]*)\]\([^)]*\)").unwrap();
+    covers.extend(
+        image
+            .captures_iter(article)
+            .map(|c| comparison_form(&c[1]).replace(PROSE_FOLD, "")),
+    );
     let body = fence.replace_all(article, " ");
     let body = image.replace_all(&body, " ");
     let body = link.replace_all(&body, "$1");
 
-    let folded_haystack = comparison_form(haystack).replace(PROSE_FOLD, "");
-    let mut misses = Vec::new();
-    let mut total = 0usize;
-    let ordinal = Regex::new(r"^\d+\.\s").unwrap();
-    for (i, line) in body.lines().enumerate() {
-        let t = line.trim();
-
-        if i < 3 || t.starts_with('#') || t.starts_with('|') || t.starts_with("![") {
-            continue;
-        }
-        let t = t.trim_start_matches(['-', '*', '>']).trim_start();
-        let t = ordinal.replace(t, "");
-        let t = t.replace(PROSE_FOLD, "");
-        let words: Vec<&str> = t.split_whitespace().collect();
-        if words.len() < 5 {
-            continue;
-        }
-        let mut windows: Vec<String> = Vec::new();
-        if words.len() <= SHINGLE_WORDS {
-            windows.push(words.join(" "));
-        } else {
-            let mut i = 0;
-            while i + SHINGLE_WORDS <= words.len() {
-                windows.push(words[i..i + SHINGLE_WORDS].join(" "));
-                i += SHINGLE_WORDS;
-            }
-            if !words.len().is_multiple_of(SHINGLE_WORDS) {
-                windows.push(words[words.len() - SHINGLE_WORDS..].join(" "));
-            }
-        }
-        for w in windows {
-            total += 1;
-            if !folded_haystack.contains(&comparison_form(&w)) {
-                misses.push(w);
-            }
-        }
-    }
-    let limit = ((total as f64) * MISS_RATE_LIMIT).max(1.0) as usize;
-    if misses.len() > limit {
-        let examples: Vec<String> = misses
+    let page = fold_page(haystack);
+    let r = recall(&body, &covers, &page);
+    let limit = ((r.total as f64) * MISS_RATE_LIMIT).max(1.0) as usize;
+    if r.misses.len() > limit {
+        let examples: Vec<String> = r
+            .misses
             .iter()
             .take(5)
             .map(|m| format!("  ...{m}..."))
@@ -563,10 +773,70 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
         bail!(
             "{} of {} prose passages are not verbatim from the page; transcribe the page's \
              own wording exactly. Examples:\n{}",
-            misses.len(),
-            total,
+            r.misses.len(),
+            r.total,
             examples.join("\n")
         );
+    }
+    if r.disorder > ORDER_TOLERANCE {
+        bail!(
+            "{} passages appear out of page order; keep the page's order",
+            r.disorder
+        );
+    }
+    if r.gap_words > GAP_WORD_LIMIT {
+        let skipped: Vec<&str> = page.words[r.gap_at..]
+            .iter()
+            .take(12)
+            .map(|w| w.2)
+            .collect();
+        bail!(
+            "{} consecutive page words are missing from the transcription, starting '{}'; \
+             include all of the page's substantive text",
+            r.gap_words,
+            skipped.join(" ")
+        );
+    }
+    edge_check(article, paragraphs)
+}
+
+fn edge_check(article: &str, paragraphs: &[String]) -> Result<()> {
+    let link = Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
+    let folded = comparison_form(&link.replace_all(article, "$1")).replace(PROSE_FOLD, "");
+    let covered: Vec<bool> = paragraphs
+        .iter()
+        .map(|p| {
+            let words: Vec<&str> = p.split_whitespace().collect();
+            let windows = (0..=words.len().saturating_sub(EDGE_WINDOW_WORDS))
+                .step_by(EDGE_WINDOW_WORDS / 2)
+                .map(|i| {
+                    let window = words[i..words.len().min(i + EDGE_WINDOW_WORDS)].join(" ");
+                    folded.contains(&comparison_form(&window).replace(PROSE_FOLD, ""))
+                })
+                .collect::<Vec<_>>();
+            windows.iter().filter(|&&w| w).count() * 2 >= windows.len()
+        })
+        .collect();
+    let first = covered.iter().position(|&c| c).unwrap_or(paragraphs.len());
+    let after = covered.iter().rposition(|&c| c).map_or(0, |i| i + 1);
+    let words = |ps: &[String]| {
+        ps.iter()
+            .map(|p| p.split_whitespace().count())
+            .sum::<usize>()
+    };
+    for (edge, missing) in [
+        ("start", &paragraphs[..first]),
+        ("end", &paragraphs[after..]),
+    ] {
+        if words(missing) > EDGE_WORD_LIMIT {
+            let lead: Vec<&str> = missing[0].split_whitespace().take(12).collect();
+            bail!(
+                "{} page words at the {edge} of the article are missing from the transcription, \
+                 starting '{}'; include all of the page's substantive text",
+                words(missing),
+                lead.join(" ")
+            );
+        }
     }
     Ok(())
 }
@@ -910,10 +1180,11 @@ fn fetched_pdf(url: &str) -> Result<Option<PathBuf>> {
 fn transcribe(html: &str, url: &str, sid: &str, spec: &ModelSpec) -> Result<(Extraction, String)> {
     let haystack = page_text(html);
     let pres = pre_runs(html);
+    let paragraphs = article_paragraphs(html);
     let prompt = capture_prompt(html, url)?;
     let caller = Caller::new(Path::new(RAW_DIR));
     let extraction = caller.call_with_parse(&format!("capture {sid}"), spec, &prompt, |reply| {
-        parse_reply(reply, &haystack, &pres)
+        parse_reply(reply, &haystack, &pres, &paragraphs)
     })?;
     Ok((extraction, caller.cost_label()))
 }
@@ -1200,11 +1471,11 @@ mod tests {
         let verbatim = "# T\nByline\n\nThe actor model is a conceptual model to deal with \
                         concurrent computation and it defines some general rules for how the \
                         system components should behave and interact with each other.";
-        assert!(fidelity_gate(verbatim, &haystack, &[]).is_ok());
+        assert!(fidelity_gate(verbatim, &haystack, &[], &[]).is_ok());
         let paraphrase = "# T\nByline\n\nThe actor model is a framework for concurrency that \
                           lays out rules describing the ways components of a system interact \
                           and communicate with one another over time.";
-        assert!(fidelity_gate(paraphrase, &haystack, &[]).is_err());
+        assert!(fidelity_gate(paraphrase, &haystack, &[], &[]).is_err());
     }
 
     #[test]
@@ -1218,12 +1489,12 @@ mod tests {
         let html = format!("<html><body><p>{first}</p><p>{second}</p><p>{third}</p></body></html>");
         let haystack = page_text(&html);
         let exact = format!("# T\nByline\n\n{first}\n\n{second}\n\n{third}");
-        assert!(fidelity_gate(&exact, &haystack, &[]).is_ok());
+        assert!(fidelity_gate(&exact, &haystack, &[], &[]).is_ok());
         let reworded = format!(
             "# T\nByline\n\n{first}\n\nActors keep their own data hidden and talk to each \
              other purely through queued notes passed around the network.\n\n{third}"
         );
-        assert!(fidelity_gate(&reworded, &haystack, &[]).is_err());
+        assert!(fidelity_gate(&reworded, &haystack, &[], &[]).is_err());
     }
 
     #[test]
@@ -1234,7 +1505,7 @@ mod tests {
                      compatibility flags, and Wrangler configuration in celld.\n\n===META===\n\
                      synopsis: Covers dynamic Worker loading, node: imports, and flags.\n\
                      author:\npublished: 2026-08-01\n";
-        let e = parse_reply(reply, &page_text(html), &[]).unwrap();
+        let e = parse_reply(reply, &page_text(html), &[], &[]).unwrap();
         assert_eq!(
             e.synopsis,
             "Covers dynamic Worker loading, node: imports, and flags."
@@ -1251,7 +1522,7 @@ mod tests {
         let reply = "# T\nByline\n\nThe bucket credentials come from the `AWS_*` environment \
                      or from explicit managed credentials, which includes instance metadata \
                      and web identity tokens.";
-        assert!(fidelity_gate(reply, &page_text(html), &[]).is_ok());
+        assert!(fidelity_gate(reply, &page_text(html), &[], &[]).is_ok());
     }
 
     #[test]
@@ -1262,9 +1533,9 @@ mod tests {
         let reply = "# T\nByline\n\n> A note about timeouts follows here below:\n>\n> ```js\n\
                      > try {\n> \tconst event = await step.waitForEvent();\n> } catch (e) {\n\
                      > \tconsole.log(\"none\");\n> }\n> ```";
-        assert!(fidelity_gate(reply, &page_text(html), &pres).is_ok());
+        assert!(fidelity_gate(reply, &page_text(html), &pres, &[]).is_ok());
         let edited = reply.replace("console.log(\"none\")", "console.log(\"changed\")");
-        assert!(fidelity_gate(&edited, &page_text(html), &pres).is_err());
+        assert!(fidelity_gate(&edited, &page_text(html), &pres, &[]).is_err());
     }
 
     #[test]
@@ -1275,7 +1546,7 @@ mod tests {
         let reply = "# T\nByline\n\nUses a TypeScript [type parameter](https://example.com) \
                      to type the return value, which must be set (up to 100 characters [1]) \
                      on the corresponding instance.";
-        assert!(fidelity_gate(reply, &page_text(html), &[]).is_ok());
+        assert!(fidelity_gate(reply, &page_text(html), &[], &[]).is_ok());
     }
 
     #[test]
@@ -1284,7 +1555,7 @@ mod tests {
                     entrypoints on service bindings, and method calls on Durable Object \
                     stubs.</p></body></html>";
         let reply = "# T\nByline\n\ncelld implements the Workers [JS RPC\nsystem](https://example.com/rpc): named entrypoints on service bindings,\nand method calls on Durable Object stubs.";
-        assert!(fidelity_gate(reply, &page_text(html), &[]).is_ok());
+        assert!(fidelity_gate(reply, &page_text(html), &[], &[]).is_ok());
     }
 
     #[test]
@@ -1292,9 +1563,9 @@ mod tests {
         let html = "<html><pre><span>let</span> x = 1;\nlet y = 2;</pre></html>";
         let pres = pre_runs(html);
         let exact = "# T\nB\n\n```js\nlet x = 1;\nlet y = 2;\n```";
-        assert!(fidelity_gate(exact, &page_text(html), &pres).is_ok());
+        assert!(fidelity_gate(exact, &page_text(html), &pres, &[]).is_ok());
         let edited = "# T\nB\n\n```js\nlet x = 1;\nlet y = 3;\n```";
-        assert!(fidelity_gate(edited, &page_text(html), &pres).is_err());
+        assert!(fidelity_gate(edited, &page_text(html), &pres, &[]).is_err());
     }
 
     #[test]
@@ -1335,5 +1606,147 @@ mod tests {
         let new_pos = out.find("## New").unwrap();
         let old_pos = out.find("## Old entry").unwrap();
         assert!(new_pos < old_pos);
+    }
+
+    fn numbered_paragraph(tag: &str, words: usize) -> String {
+        (0..words)
+            .map(|i| format!("{tag}w{i}"))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    fn page_of(paragraphs: &[&str]) -> String {
+        let body: String = paragraphs.iter().map(|p| format!("<p>{p}</p>")).collect();
+        format!("<html><body>{body}</body></html>")
+    }
+
+    fn gate(reply: &str, page: &str) -> Result<()> {
+        fidelity_gate(reply, &page_text(page), &[], &article_paragraphs(page))
+    }
+
+    #[test]
+    fn gate_rejects_a_dropped_paragraph() {
+        let (a, b, c) = (
+            numbered_paragraph("a", 60),
+            numbered_paragraph("b", 260),
+            numbered_paragraph("c", 60),
+        );
+        let page = page_of(&[&a, &b, &c]);
+        assert!(gate(&format!("# T\nByline\n\n{a}\n\n{b}\n\n{c}"), &page).is_ok());
+        let err = gate(&format!("# T\nByline\n\n{a}\n\n{c}"), &page)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("260 consecutive page words"), "{err}");
+        assert!(err.contains("starting 'bw0 bw1"), "{err}");
+    }
+
+    #[test]
+    fn article_region_is_never_chrome() {
+        let body = numbered_paragraph("a", 60);
+        let html = format!(
+            "<div class=\"share-wrap\"><article class=\"newsletter-post\"><p>{body}</p></article></div>"
+        );
+        assert_eq!(article_paragraphs(&html).len(), 1);
+        let html = format!("<article><div class=\"share\"><p>{body}</p></div></article>");
+        assert!(article_paragraphs(&html).is_empty());
+    }
+
+    #[test]
+    fn gate_rejects_a_dropped_last_paragraph() {
+        let (a, b, c) = (
+            numbered_paragraph("a", 60),
+            numbered_paragraph("b", 60),
+            numbered_paragraph("c", 260),
+        );
+        let page = page_of(&[&a, &b, &c]);
+        let err = gate(&format!("# T\nByline\n\n{a}\n\n{b}"), &page)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("260 page words at the end"), "{err}");
+        assert!(err.contains("starting 'cw0 cw1"), "{err}");
+    }
+
+    #[test]
+    fn gate_ignores_related_cards_and_author_bios() {
+        let (a, b) = (numbered_paragraph("a", 120), numbered_paragraph("b", 260));
+        let cards: String = (0..4)
+            .map(|i| {
+                format!(
+                    "<div class=\"card\"><p>{}</p></div>",
+                    numbered_paragraph(&format!("card{i}"), 60)
+                )
+            })
+            .collect();
+        let bios: String = (0..3)
+            .map(|i| {
+                format!(
+                    "<div class=\"authors-grid\"><p>{}</p></div>",
+                    numbered_paragraph(&format!("bio{i}"), 80)
+                )
+            })
+            .collect();
+        let page = format!(
+            "<html><body><main><article><article><p>{a}</p><p>{b}</p></article>\
+             <div class=\"Related-content\">{cards}</div></article>{bios}\
+             <footer><p>{}</p></footer></main></body></html>",
+            numbered_paragraph("legal", 250)
+        );
+        assert!(gate(&format!("# T\nByline\n\n{a}\n\n{b}"), &page).is_ok());
+        let err = gate(&format!("# T\nByline\n\n{a}"), &page)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("260 page words at the end"), "{err}");
+    }
+
+    #[test]
+    fn gate_rejects_dropped_first_paragraphs() {
+        let (a, b, c) = (
+            numbered_paragraph("a", 260),
+            numbered_paragraph("b", 60),
+            numbered_paragraph("c", 60),
+        );
+        let page = page_of(&[&a, &b, &c]);
+        let err = gate(&format!("# T\nByline\n\n{b}\n\n{c}"), &page)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("260 page words at the start"), "{err}");
+    }
+
+    #[test]
+    fn gate_accepts_a_lede_repeated_in_a_related_card() {
+        let (a, b, c) = (
+            numbered_paragraph("a", 60),
+            numbered_paragraph("b", 60),
+            numbered_paragraph("c", 60),
+        );
+        let page =
+            format!("<html><body><p>{a}</p><p>{b}</p><p>{c}</p><p>Related: {a}</p></body></html>");
+        assert!(gate(&format!("# T\nByline\n\n{a}\n\n{b}\n\n{c}"), &page).is_ok());
+    }
+
+    #[test]
+    fn gate_rejects_swapped_paragraphs() {
+        let (a, b, c) = (
+            numbered_paragraph("a", 30),
+            numbered_paragraph("b", 30),
+            numbered_paragraph("c", 30),
+        );
+        let page = page_of(&[&a, &b, &c]);
+        let swapped = format!("# T\nByline\n\n{b}\n\n{a}\n\n{c}");
+        let err = fidelity_gate(&swapped, &page_text(&page), &[], &[])
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("out of page order"), "{err}");
+    }
+
+    #[test]
+    fn gate_accepts_a_page_with_short_in_body_chrome() {
+        let (a, b) = (numbered_paragraph("a", 90), numbered_paragraph("b", 90));
+        let page = format!(
+            "<html><body><p>{a}</p><figure><figcaption>Figure 1 A caption the capture may drop</figcaption></figure>\
+             <div>Share this article on Twitter Facebook LinkedIn or copy the link</div><p>{b}</p></body></html>"
+        );
+        let reply = format!("# T\nByline\n\n{a}\n\n{b}");
+        assert!(gate(&reply, &page).is_ok());
     }
 }
