@@ -1,4 +1,5 @@
 use super::layout::{FileRow, Layout};
+use crate::critic::text::Run;
 use crate::model::manifest::Edition;
 use crate::package::archive::archive_tree;
 use crate::package::preflight::FigurePlacement;
@@ -15,6 +16,7 @@ pub struct Publish<'a> {
     pub edition: &'a Edition,
     pub layout: Layout,
     pub interior: Vec<u8>,
+    pub runs: Vec<Vec<Run>>,
     pub staged: &'a Path,
     pub assets: &'a Path,
     pub render_dir: &'a Path,
@@ -126,15 +128,15 @@ fn manifest(p: &Publish) -> Result<Value> {
 
 pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
     let work = p.work;
-    let (front, back, picture) = super::cover::faces(p.staged, p.assets, p.edition, work)?;
+    let faces = super::cover::faces(p.staged, p.assets, p.edition, work)?;
     std::fs::create_dir_all(p.out_dir)?;
     let cover = p.out_dir.join("cover.png");
-    std::fs::write(&cover, picture)?;
+    std::fs::write(&cover, &faces.picture)?;
     let reader = work.join("reader.pdf");
     std::fs::write(work.join("interior.pdf"), &p.interior)?;
     std::fs::write(
         &reader,
-        super::cover::replace_outer_pages(&p.interior, &front, &back)?,
+        super::cover::replace_outer_pages(&p.interior, &faces.front, &faces.back)?,
     )?;
     let figures = placements(&p.layout, &p.staged.canonicalize()?);
     let cover_art = p
@@ -143,7 +145,10 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         .as_deref()
         .map(Path::canonicalize)
         .transpose()?;
-    let fonts = crate::trace::text_font_map();
+    let mut runs = p.runs.clone();
+    let last = runs.len() - 1;
+    runs[0] = faces.front_runs;
+    runs[last] = faces.back_runs;
     let written = package_release(Release {
         reader_pdf: &reader,
         destination: p.out_dir,
@@ -157,7 +162,7 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         editorial_pages: p.layout.editorial_pages.map(|n| n as i64),
         edition_id: &p.edition.id,
         recorded_review: None,
-        fonts: &fonts,
+        runs: &runs,
     })?;
     let package = archive_tree(p.out_dir, &p.out_dir.join("package.zip"))?;
     let report: Value = serde_json::from_str(&std::fs::read_to_string(

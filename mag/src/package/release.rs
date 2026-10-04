@@ -6,12 +6,12 @@ use serde_json::{json, Value};
 
 use crate::critic::inspect::{PageInspection, RASTER_DPI};
 use crate::critic::rules::{self, Critique, Inputs, PageAnnotation};
+use crate::critic::text::Run;
 use crate::impose::{
     cover_wrap_plan, impose_a5_on_a4, imposed_reader_page_plan, A4_LANDSCAPE_POINTS,
 };
 use crate::package::contact::write_contact_sheets;
 use crate::package::preflight::{inspect_package, FigurePlacement, PackagePdfs, Pdf};
-use crate::trace::TextFace;
 
 const REVIEW_INSTRUCTIONS: &str = "Inspect every page on the contact sheets, then reopen every crop from its exact file path at original resolution. Do not approve from a resized preview. Automated checks do not judge typographic rhythm, visual hierarchy, or aesthetic quality. For an illustrated opener, verify the orange rectangle begins down and right: white remains outside the black frame at the top-right before the shadow begins and at the bottom-left before it begins. The crops/ set enlarges every opener block, placed figure, printed tail band, and flagged region at 300 ppi so type quality and locked geometry are judged from source pixels rather than thumbnails.";
 const INTERIOR_RATIONALE: &str = "Interior sides re-impose reader pages that the reader pass already rasterizes and judges; imposition order is proven by exact left/right text pairing, so per-side rasters would only add build time.";
@@ -29,7 +29,7 @@ pub struct Release<'a> {
     pub editorial_pages: Option<i64>,
     pub edition_id: &'a str,
     pub recorded_review: Option<&'a Value>,
-    pub fonts: &'a BTreeMap<String, TextFace>,
+    pub runs: &'a [Vec<Run>],
 }
 
 pub fn sha256(path: &Path) -> Result<String> {
@@ -275,7 +275,7 @@ fn inspect(release: &Release, legs: &Legs) -> Result<(PathBuf, Vec<PathBuf>)> {
         toc: release.toc,
         article_pages: release.article_pages,
         editorial_pages: release.editorial_pages,
-        fonts: release.fonts,
+        runs: release.runs,
     })?;
     let review_dir = root.join("render-review");
     let reader_sheets = write_contact_sheets(

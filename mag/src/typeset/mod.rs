@@ -8,6 +8,7 @@ pub(crate) mod layout;
 pub(crate) mod legible;
 pub(crate) mod media;
 pub(crate) mod release;
+pub(crate) mod runs;
 pub(crate) mod runt;
 pub(crate) mod template;
 pub(crate) mod tone;

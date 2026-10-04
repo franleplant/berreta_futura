@@ -63,7 +63,7 @@ const FONT_ALIASES: [(&str, &str, &str); 12] = [
     ),
 ];
 
-pub(crate) fn text_font_map() -> BTreeMap<String, TextFace> {
+pub fn text_font_map() -> BTreeMap<String, TextFace> {
     FONT_ALIASES
         .iter()
         .map(|(alias, face, file)| {

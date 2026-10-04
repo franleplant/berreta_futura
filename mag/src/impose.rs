@@ -1,5 +1,5 @@
 use super::model::shared::quoted;
-use super::trace::{authored, num};
+use super::pdf_text::page_resources;
 use anyhow::{bail, Context, Result};
 use lopdf::content::Content;
 use lopdf::{Dictionary, Document, Object, ObjectId};
@@ -84,23 +84,18 @@ struct SourcePage {
 }
 
 pub fn impose_a5_on_a4(reader_pdf: &Path, output: &Path, section: &str) -> Result<PathBuf> {
-    let raw =
-        std::fs::read(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
     let mut doc =
-        Document::load_mem(&raw).with_context(|| format!("reading {}", reader_pdf.display()))?;
+        Document::load(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
     let page_ids: Vec<ObjectId> = doc.get_pages().into_values().collect();
     let plan = if section == "cover" {
         cover_wrap_plan(page_ids.len())?
     } else {
         imposed_reader_page_plan(&section_reader_pages(page_ids.len(), section)?)
     };
-    let sources = {
-        let _exact = authored(&doc, &raw)?;
-        page_ids
-            .iter()
-            .map(|id| source_page(&doc, *id))
-            .collect::<Result<Vec<_>>>()?
-    };
+    let sources = page_ids
+        .iter()
+        .map(|id| source_page(&doc, *id))
+        .collect::<Result<Vec<_>>>()?;
     let sheets = plan
         .iter()
         .map(|spread| sheet(&sources, *spread))
@@ -128,7 +123,7 @@ fn page_box(doc: &Document, id: ObjectId, key: &[u8]) -> Result<Option<[f64; 4]>
             let array = doc.dereference(value)?.1.as_array()?;
             let mut out = [0.0; 4];
             for (slot, item) in out.iter_mut().zip(array) {
-                *slot = num(doc.dereference(item)?.1).with_context(|| {
+                *slot = number(doc.dereference(item)?.1).with_context(|| {
                     format!("{} on object {current:?}", String::from_utf8_lossy(key))
                 })?;
             }
@@ -142,20 +137,17 @@ fn page_box(doc: &Document, id: ObjectId, key: &[u8]) -> Result<Option<[f64; 4]>
     bail!("the page tree is deeper than {PAGE_TREE_DEPTH} levels or loops through /Parent")
 }
 
-fn page_resources(doc: &Document, id: ObjectId) -> Result<Dictionary> {
-    let (direct, inherited) = doc.get_page_resources(id)?;
-    let mut merged = Dictionary::new();
-    for source in inherited
-        .iter()
-        .filter_map(|id| doc.get_dictionary(*id).ok())
-        .chain(direct)
-    {
-        for (key, value) in source {
-            let resolved = doc.dereference(value).map(|(_, object)| object);
-            merged.set(key.clone(), resolved.unwrap_or(value).clone());
-        }
+fn number(object: &Object) -> Result<f64> {
+    match object {
+        Object::Integer(value) => Ok(*value as f64),
+        Object::Real(value) => Ok(value.to_string().parse()?),
+        other => bail!("expected a number, got {other:?}"),
     }
-    Ok(merged)
+}
+
+pub fn page_scale(media: [f64; 4]) -> f64 {
+    let (width, height) = (media[2] - media[0], media[3] - media[1]);
+    (A4_LANDSCAPE_POINTS.0 / 2.0 / width).min(A4_LANDSCAPE_POINTS.1 / height)
 }
 
 fn sheet(
@@ -168,9 +160,7 @@ fn sheet(
     for (number, x) in [(spread.0, 0.0), (spread.1, half)] {
         let Some(number) = number else { continue };
         let source = &sources[number - 1];
-        let width = source.media[2] - source.media[0];
-        let height = source.media[3] - source.media[1];
-        let scale = (half / width).min(A4_LANDSCAPE_POINTS.1 / height);
+        let scale = page_scale(source.media);
         let renames = merge_resources(&mut resources, &source.resources);
         let placed = place(source, scale, x, &renames)?;
         content = Some(match content {

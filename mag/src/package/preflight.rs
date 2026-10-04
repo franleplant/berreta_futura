@@ -523,6 +523,7 @@ mod tests {
 
     fn glyph(x: f64, y: f64, size: f64) -> Glyph {
         Glyph {
+            device_x: x,
             x,
             y,
             w: 0.5 * size,

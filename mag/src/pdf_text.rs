@@ -1,3 +1,4 @@
+use crate::impose::PAGE_TREE_DEPTH;
 use anyhow::{bail, Context, Result};
 use lopdf::content::Content;
 use lopdf::{Dictionary, Document, Object, ObjectId};
@@ -13,11 +14,11 @@ static CMAP_TOKEN: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"<([0-9A-Fa-f\s]*)>|\[|\]|[A-Za-z]+").unwrap());
 
 type M = [f64; 6];
-const PAGE_TREE_DEPTH: usize = 64;
 const ID: M = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
 #[derive(Clone, Debug)]
 pub struct Glyph {
+    pub device_x: f64,
     pub x: f64,
     pub y: f64,
     pub w: f64,
@@ -57,19 +58,28 @@ pub fn transcribe_bytes(bytes: &[u8]) -> Result<String> {
 }
 
 pub fn page_glyphs(pdf: &Path) -> Result<Vec<Vec<Glyph>>> {
+    read_glyphs(pdf, false)
+}
+
+pub fn page_glyphs_with_hidden(pdf: &Path) -> Result<Vec<Vec<Glyph>>> {
+    read_glyphs(pdf, true)
+}
+
+fn read_glyphs(pdf: &Path, hidden: bool) -> Result<Vec<Vec<Glyph>>> {
     let doc = Document::load(pdf).with_context(|| format!("reading {}", pdf.display()))?;
     let mut fonts = BTreeMap::new();
     doc.get_pages()
         .into_iter()
         .map(|(n, id)| {
-            let it = interpret_page(&doc, id, &mut fonts).with_context(|| format!("page {n}"))?;
+            let it = interpret_page(&doc, id, &mut fonts, hidden)
+                .with_context(|| format!("page {n}"))?;
             Ok(it.glyphs)
         })
         .collect()
 }
 
 fn read_page(doc: &Document, id: ObjectId, fonts: &mut FontCache) -> Result<Vec<String>> {
-    let it = interpret_page(doc, id, fonts)?;
+    let it = interpret_page(doc, id, fonts, false)?;
     if let Some((_, what)) = it
         .voids
         .iter()
@@ -95,6 +105,7 @@ fn interpret_page<'a>(
     doc: &'a Document,
     id: ObjectId,
     fonts: &'a mut FontCache,
+    hidden: bool,
 ) -> Result<Interp<'a>> {
     let mut it = Interp {
         doc,
@@ -103,6 +114,7 @@ fn interpret_page<'a>(
         rules: Vec::new(),
         voids: Vec::new(),
         invisible: 0,
+        hidden,
         images: 0,
         gs: Gs::fresh(),
         stack: Vec::new(),
@@ -122,19 +134,22 @@ fn touches(v: &Glyph, g: &Glyph) -> bool {
         && v.x < g.x + g.w + reach
 }
 
-fn page_resources(doc: &Document, id: ObjectId) -> Result<Dictionary> {
-    let mut node = doc.get_dictionary(id).ok();
+pub(crate) fn page_resources(doc: &Document, id: ObjectId) -> Result<Dictionary> {
+    let mut chain = vec![];
+    let mut node = id;
     for _ in 0..PAGE_TREE_DEPTH {
-        let Some(d) = node else {
-            return Ok(Dictionary::new());
-        };
-        if let Ok(r) = d.get(b"Resources") {
-            return Ok(deref(doc, r).as_dict().cloned().unwrap_or_default());
+        let page = doc.get_dictionary(node)?;
+        if let Ok(resources) = page.get(b"Resources") {
+            chain.push(deref(doc, resources).as_dict()?);
         }
-        node = d
-            .get(b"Parent")
-            .ok()
-            .and_then(|p| deref(doc, p).as_dict().ok());
+        let Ok(Object::Reference(parent)) = page.get(b"Parent") else {
+            let mut merged = Dictionary::new();
+            for (key, value) in chain.into_iter().rev().flatten() {
+                merged.set(key.clone(), deref(doc, value).clone());
+            }
+            return Ok(merged);
+        };
+        node = *parent;
     }
     bail!("the page tree is deeper than {PAGE_TREE_DEPTH} levels or loops through /Parent")
 }
@@ -654,6 +669,7 @@ struct Interp<'a> {
     rules: Vec<Rule>,
     voids: Vec<(Glyph, String)>,
     invisible: usize,
+    hidden: bool,
     images: usize,
     gs: Gs,
     stack: Vec<Gs>,
@@ -850,7 +866,7 @@ impl Interp<'_> {
                 font.name
             );
         }
-        if matches!(g.mode, 3 | 7) {
+        if matches!(g.mode, 3 | 7) && !self.hidden {
             self.invisible += 1;
         } else if text.is_empty() {
             let at = place(&trm, w0, text, false, false)?;
@@ -953,6 +969,7 @@ fn place(trm: &M, w0: f64, text: String, mono: bool, spaced: bool) -> Result<Gly
     let (x, y) = rot(ox, oy);
     let (x2, _) = rot(ex, ey);
     Ok(Glyph {
+        device_x: ox,
         x,
         y,
         w: (x2 - x).max(0.0),
@@ -1384,5 +1401,49 @@ mod tests {
         leaf.set("Parent", Object::Reference(root));
         doc.objects.insert(page, Object::Dictionary(leaf));
         assert!(page_resources(&doc, page).expect("found").has(b"Marker"));
+    }
+
+    #[test]
+    fn a_page_whose_resources_lack_the_shown_font_is_refused() {
+        let mut doc = Document::with_version("1.5");
+        let content = doc.add_object(lopdf::Stream::new(
+            Dictionary::new(),
+            b"BT /F1 12 Tf (x) Tj ET".to_vec(),
+        ));
+        let mut page = Dictionary::new();
+        page.set("Contents", Object::Reference(content));
+        let id = doc.add_object(Object::Dictionary(page));
+        let error = interpret_page(&doc, id, &mut BTreeMap::new(), false)
+            .err()
+            .expect("a missing font is refused");
+        assert!(error.to_string().contains("/F1"), "{error}");
+    }
+
+    #[test]
+    fn hidden_text_is_read_only_when_asked_for() {
+        let mut doc = Document::with_version("1.5");
+        let content = doc.add_object(lopdf::Stream::new(
+            Dictionary::new(),
+            b"BT /F1 12 Tf 3 Tr 10 700 Td (Cover) Tj ET".to_vec(),
+        ));
+        let mut font = Dictionary::new();
+        font.set("Type", "Font");
+        font.set("Subtype", "Type1");
+        font.set("BaseFont", "Helvetica");
+        let mut fonts = Dictionary::new();
+        fonts.set("F1", Object::Dictionary(font));
+        let mut resources = Dictionary::new();
+        resources.set("Font", Object::Dictionary(fonts));
+        let mut page = Dictionary::new();
+        page.set("Contents", Object::Reference(content));
+        page.set("Resources", Object::Dictionary(resources));
+        let id = doc.add_object(Object::Dictionary(page));
+        let read = |hidden| {
+            interpret_page(&doc, id, &mut BTreeMap::new(), hidden)
+                .expect("page reads")
+                .glyphs
+                .len()
+        };
+        assert_eq!((read(false), read(true)), (0, 5));
     }
 }

@@ -13,11 +13,12 @@ use crate::critic::inspect::{
 use crate::critic::metrics::{
     decode_rgb, ordered_map, resize, round_half_even, round_places, worker_count, Rgb,
 };
-use crate::critic::text::page_text;
+use crate::critic::text::{page_text, Run};
 use crate::impose::{
-    cover_wrap_plan, imposed_reader_page_plan, section_reader_pages, A4_LANDSCAPE_POINTS,
+    cover_wrap_plan, imposed_reader_page_plan, page_scale, section_reader_pages,
+    A4_LANDSCAPE_POINTS,
 };
-use crate::trace::{trace_elements, Element, TextFace};
+use crate::pdf_text::{page_glyphs_with_hidden, Glyph};
 
 pub const GEOMETRY_TOLERANCE: f64 = 0.75;
 pub const VOID_DOWNSAMPLE: u32 = 8;
@@ -640,24 +641,37 @@ pub fn normalized(raw: &str) -> String {
         .join(" ")
 }
 
-pub fn spread_text(elements: &[Element], media: [f64; 4]) -> String {
+pub fn spread_text(glyphs: &[Glyph], media: [f64; 4]) -> String {
     let middle = if media[2] - media[0] > media[3] - media[1] {
         f64::midpoint(media[0], media[2])
     } else {
         f64::INFINITY
     };
-    let (left, right): (Vec<_>, Vec<_>) = elements
-        .iter()
-        .filter_map(|element| match element {
-            Element::Text { s, m, .. } => Some((s.as_str(), m[4] as f64 / 100.0)),
-            _ => None,
-        })
-        .partition(|(_, x)| *x < middle);
-    left.into_iter()
-        .chain(right)
-        .map(|(s, _)| s)
-        .collect::<Vec<_>>()
-        .join(" ")
+    let (left, right): (Vec<_>, Vec<_>) = glyphs.iter().partition(|glyph| glyph.device_x < middle);
+    normalized(
+        &left
+            .into_iter()
+            .chain(right)
+            .fold(
+                (String::new(), None::<&Glyph>),
+                |(mut text, previous), glyph| {
+                    if previous.is_some_and(|before| starts_word(before, glyph)) {
+                        text.push(' ');
+                    }
+                    text.push_str(&glyph.text);
+                    (text, Some(glyph))
+                },
+            )
+            .0,
+    )
+}
+
+fn starts_word(before: &Glyph, glyph: &Glyph) -> bool {
+    let reach = 0.3 * before.size.max(glyph.size);
+    glyph.spaced
+        || (glyph.y - before.y).abs() > reach
+        || glyph.x - (before.x + before.w) > reach
+        || glyph.x < before.x
 }
 
 #[derive(Debug, Clone)]
@@ -720,18 +734,51 @@ fn media_boxes(pdf: &Path) -> Result<Vec<[f64; 4]>> {
     Ok(boxes)
 }
 
-pub fn read_leg(pdf: &Path, fonts: &BTreeMap<String, TextFace>) -> Result<Leg> {
+pub fn read_leg(pdf: &Path, runs: &[Vec<Run>]) -> Result<Leg> {
     let media = media_boxes(pdf)?;
-    let traced = trace_elements(pdf, 1, media.len() as u32, fonts)?;
+    let normalized = page_glyphs_with_hidden(pdf)?
+        .iter()
+        .zip(&media)
+        .map(|(glyphs, box_points)| spread_text(glyphs, *box_points))
+        .collect();
     Ok(Leg {
-        raw: traced.iter().map(|page| page_text(page)).collect(),
-        normalized: traced
-            .iter()
-            .zip(&media)
-            .map(|(page, box_points)| normalized(&spread_text(page, *box_points)))
+        raw: (0..media.len())
+            .map(|index| {
+                runs.get(index)
+                    .map_or_else(String::new, |page| page_text(page))
+            })
             .collect(),
+        normalized,
         media,
     })
+}
+
+fn imposed_runs(reader: &Leg, runs: &[Vec<Run>], section: &str) -> Result<Vec<Vec<Run>>> {
+    let plan = if section == "cover" {
+        cover_wrap_plan(runs.len())?
+    } else {
+        imposed_reader_page_plan(&section_reader_pages(runs.len(), section)?)
+    };
+    let half = A4_LANDSCAPE_POINTS.0 / 2.0;
+    Ok(plan
+        .into_iter()
+        .map(|(left, right)| {
+            [(left, 0.0), (right, half)]
+                .into_iter()
+                .filter_map(|(page, shift)| Some((page?, shift)))
+                .flat_map(|(page, shift)| {
+                    let scale = page_scale(reader.media[page - 1]);
+                    runs[page - 1].iter().map(move |run| Run {
+                        text: run.text.clone(),
+                        x: run.x * scale + shift,
+                        y: run.y * scale,
+                        width: run.width * scale,
+                        size: run.size * scale,
+                    })
+                })
+                .collect()
+        })
+        .collect())
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -1787,7 +1834,7 @@ pub struct Inputs<'a> {
     pub toc: &'a BTreeMap<String, usize>,
     pub article_pages: &'a BTreeMap<String, usize>,
     pub editorial_pages: Option<i64>,
-    pub fonts: &'a BTreeMap<String, TextFace>,
+    pub runs: &'a [Vec<Run>],
 }
 
 pub struct Critique {
@@ -1853,11 +1900,14 @@ pub fn geometry(page_count: usize, toc: &BTreeMap<String, usize>) -> Geometry {
 }
 
 fn read_legs(inputs: &Inputs) -> Result<Legs> {
+    let reader = read_leg(inputs.reader_pdf, inputs.runs)?;
+    let imposed =
+        |pdf: &Path, section: &str| read_leg(pdf, &imposed_runs(&reader, inputs.runs, section)?);
     Ok(Legs {
-        reader: read_leg(inputs.reader_pdf, inputs.fonts)?,
-        booklet: read_leg(inputs.booklet_pdf, inputs.fonts)?,
-        interior: read_leg(inputs.interior_booklet_pdf, inputs.fonts)?,
-        cover: read_leg(inputs.cover_booklet_pdf, inputs.fonts)?,
+        booklet: imposed(inputs.booklet_pdf, "all")?,
+        interior: imposed(inputs.interior_booklet_pdf, "interior")?,
+        cover: imposed(inputs.cover_booklet_pdf, "cover")?,
+        reader,
     })
 }
 

@@ -103,7 +103,7 @@ fn object_stream_reader(media: &str) -> Vec<u8> {
 }
 
 #[test]
-fn a_reader_whose_pages_live_in_an_object_stream_imposes_at_authored_precision() {
+fn a_reader_whose_pages_live_in_an_object_stream_imposes() {
     let reader = std::env::temp_dir().join(format!("wp02w-objstm-{}.pdf", std::process::id()));
     std::fs::write(&reader, object_stream_reader("0 0 419.527559 595.275591")).expect("written");
     assert!(Document::load(&reader)
@@ -117,8 +117,8 @@ fn a_reader_whose_pages_live_in_an_object_stream_imposes_at_authored_precision()
     let first = *imposed.get_pages().values().next().expect("a sheet");
     let content = String::from_utf8_lossy(&imposed.get_page_content(first)).into_owned();
     assert!(
-        content.contains("q\n1.00000002 0 0 1.00000002 420.9449 0 cm"),
-        "exact 595.2756 / 595.275591 = 1.0000000151, f32 would give 1.00000004: {content}"
+        content.contains("q\n1 0 0 1 420.9449 0 cm"),
+        "the media box reads at its shortest f32 form, 595.2756: {content}"
     );
 }
 

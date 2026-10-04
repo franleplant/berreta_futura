@@ -6,6 +6,7 @@ use crate::cover::svg::{
     HonoredPlate, Palette, Tab, Wordmark, PAGE_HEIGHT, PAGE_WIDTH,
 };
 use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cover_tab_issue};
+use crate::critic::text::Run;
 use crate::model::manifest::Edition;
 use anyhow::{bail, Context, Result};
 use lopdf::{Document, Object, StringFormat};
@@ -458,12 +459,28 @@ fn back(
     Ok((svg, face))
 }
 
-pub fn faces(
-    root: &Path,
-    assets: &Path,
-    edition: &Edition,
-    work: &Path,
-) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+pub struct Faces {
+    pub front: Vec<u8>,
+    pub back: Vec<u8>,
+    pub picture: Vec<u8>,
+    pub front_runs: Vec<Run>,
+    pub back_runs: Vec<Run>,
+}
+
+fn runs(face: &Face) -> Vec<Run> {
+    face.text
+        .iter()
+        .map(|line| Run {
+            text: line.value.clone(),
+            x: line.x,
+            y: line.y,
+            width: 0.0,
+            size: line.size,
+        })
+        .collect()
+}
+
+pub fn faces(root: &Path, assets: &Path, edition: &Edition, work: &Path) -> Result<Faces> {
     let (design, back_design) = design(root)?;
     let mut fonts = Fonts::load(assets)?;
     let inter = std::fs::read(assets.join("fonts/inter/Inter-Regular.ttf"))?;
@@ -476,16 +493,22 @@ pub fn faces(
         &mut Serif::open(assets)?,
         edition,
     )?;
-    let mut out = Vec::new();
-    for (name, (svg, face)) in [("front", front), ("back", back)] {
+    let compile = |name: &str, (svg, face): (String, Face)| -> Result<(Vec<u8>, Vec<Run>)> {
         std::fs::write(work.join(format!("{name}.svg")), &svg)?;
         let pixmap = raster::render(&raster::raster_svg(&svg, 300))?;
         let bytes = pdf::write(&face, &pixmap, &inter)?;
         std::fs::write(work.join(format!("{name}.pdf")), &bytes)?;
-        out.push(bytes);
-    }
-    let back = out.pop().context("two faces")?;
-    Ok((out.pop().context("two faces")?, back, picture))
+        Ok((bytes, runs(&face)))
+    };
+    let (front, front_runs) = compile("front", front)?;
+    let (back, back_runs) = compile("back", back)?;
+    Ok(Faces {
+        front,
+        back,
+        picture,
+        front_runs,
+        back_runs,
+    })
 }
 
 fn cover_page(reader: &mut Document, face: &[u8]) -> Result<lopdf::Dictionary> {

@@ -16,7 +16,6 @@ pub mod publish;
 pub mod render;
 pub mod site;
 pub mod sourcecodes;
-pub mod trace;
 pub mod translate;
 mod typeset;
 mod util;

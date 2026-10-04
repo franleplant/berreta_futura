@@ -1,7 +1,18 @@
-use crate::trace::{Element, GLYPH_QUANTUM};
-
 const SAME_LINE_TOLERANCE: i64 = 100;
 const WORD_GAP_FRACTION: f64 = 0.15;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Run {
+    pub text: String,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub size: f64,
+}
+
+fn hundredths(value: f64) -> i64 {
+    (value * 100.0).round() as i64
+}
 
 struct Show {
     y: i64,
@@ -11,25 +22,18 @@ struct Show {
     text: String,
 }
 
-fn shows(elements: &[Element]) -> Vec<Show> {
-    let mut out = vec![];
-    for element in elements {
-        if let Element::Text {
-            s, m, size, pen, ..
-        } = element
-        {
-            if s.trim().is_empty() {
-                continue;
-            }
-            out.push(Show {
-                y: m[5],
-                x: m[4],
-                width: (pen[0] as f64 * GLYPH_QUANTUM * 100.0).round() as i64,
-                size: *size,
-                text: s.clone(),
-            });
-        }
-    }
+fn shows(runs: &[Run]) -> Vec<Show> {
+    let mut out: Vec<Show> = runs
+        .iter()
+        .filter(|run| !run.text.trim().is_empty())
+        .map(|run| Show {
+            y: hundredths(run.y),
+            x: hundredths(run.x),
+            width: hundredths(run.width),
+            size: hundredths(run.size),
+            text: run.text.clone(),
+        })
+        .collect();
     out.sort_by(|a, b| b.y.cmp(&a.y).then(a.x.cmp(&b.x)));
     out
 }
@@ -47,9 +51,9 @@ fn separator(previous: &Show, next: &Show) -> &'static str {
     }
 }
 
-pub fn page_lines(elements: &[Element]) -> Vec<String> {
+pub fn page_lines(runs: &[Run]) -> Vec<String> {
     let mut groups: Vec<Vec<Show>> = vec![];
-    for show in shows(elements) {
+    for show in shows(runs) {
         match groups.last_mut() {
             Some(group) if (group[0].y - show.y).abs() <= SAME_LINE_TOLERANCE => group.push(show),
             _ => groups.push(vec![show]),
@@ -69,8 +73,8 @@ pub fn page_lines(elements: &[Element]) -> Vec<String> {
         .collect()
 }
 
-pub(crate) fn page_text(elements: &[Element]) -> String {
-    page_lines(elements).join("\n")
+pub(crate) fn page_text(runs: &[Run]) -> String {
+    page_lines(runs).join("\n")
 }
 
 pub(crate) fn body_text_lines(text: &str) -> usize {
@@ -82,32 +86,15 @@ pub(crate) fn body_text_lines(text: &str) -> usize {
 
 #[cfg(test)]
 mod writer_independent {
-    use super::page_text;
-    use crate::trace::{Color, Element, GLYPH_QUANTUM};
+    use super::{page_text, Run};
 
-    fn show(s: &str, x_pt: f64, y_pt: f64, advance_pt: f64) -> Element {
-        let glyphs = s.chars().count();
-        let step = advance_pt / glyphs.saturating_sub(1).max(1) as f64;
-        let (x, y) = ((x_pt * 100.0).round() as i64, (y_pt * 100.0).round() as i64);
-        Element::Text {
-            s: s.into(),
-            font: "t".into(),
-            size: 1000,
-            fill: Color {
-                family: "DeviceGray".into(),
-                rgb: [0, 0, 0],
-            },
-            glyphs,
-            gids: vec![],
-            m: [1000, 0, 0, 1000, x, y],
-            tr: 0,
-            clip: vec![],
-            origin: [x, y],
-            offs: (0..glyphs)
-                .map(|i| [(step * i as f64 / GLYPH_QUANTUM).round() as i64, 0])
-                .collect(),
-            units: s.chars().map(String::from).collect(),
-            pen: [(step * glyphs as f64 / GLYPH_QUANTUM).round() as i64, 0],
+    fn show(text: &str, x: f64, y: f64, width: f64) -> Run {
+        Run {
+            text: text.into(),
+            x,
+            y,
+            width,
+            size: 10.0,
         }
     }
 

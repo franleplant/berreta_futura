@@ -26,7 +26,8 @@ for parity. WP-4.3 measures the shipping hyphenation setting.
 Edition 011 shipped on Typst, and on 2026-09-25 Fran retired the Python
 renderer: `src/magazine/`, `--engine weasyprint`, `mag parity`, the parity
 ladder, the Python oracles, `pyproject.toml`, and `uv.lock` are gone. The
-tracer the render critic reads PDFs with survives as `mag/src/trace/`.
+render critic now reads the Typst frames (`mag/src/typeset/runs.rs`) and
+the PDF glyphs (`mag/src/pdf_text.rs`); the old tracer is gone.
 Editions 001-009 can no longer be re-rendered byte-faithfully; their
 committed PDFs are the record. Committed test expectations are now
 regression snapshots of the Rust output.

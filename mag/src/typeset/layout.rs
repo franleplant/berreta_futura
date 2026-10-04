@@ -656,6 +656,7 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
         edition,
         layout,
         interior: crate::typeset::template::pdf(document)?,
+        runs: super::runs::pages(document),
         staged: request.staged,
         assets: request.assets,
         render_dir: request.render_dir,
@@ -1361,5 +1362,25 @@ mod tests {
         assert_eq!(controls.len(), 4, "{controls:?}");
         near(controls[0], 2.0 * 2.5 * (1.0 - 0.55));
         assert!((controls[0] - 2.0 * 2.5 * (1.0 - 0.552_284_75)).abs() > 8e-3);
+    }
+
+    #[test]
+    fn page_runs_carry_pdf_coordinates_from_the_bottom_left() {
+        let body = para("Alpha.");
+        let (x, y, width) = word(&laid(&body), "Alpha.");
+        let document = compiled(&piece_run(&body));
+        let (index, run) = crate::typeset::runs::pages(&document)
+            .into_iter()
+            .enumerate()
+            .find_map(|(index, page)| {
+                page.into_iter()
+                    .find(|run| run.text == "Alpha.")
+                    .map(|run| (index, run))
+            })
+            .expect("the paragraph is a run");
+        let height = document.pages()[index].frame.height().to_pt();
+        near(run.x, x);
+        near(run.y, height - (y - 1e4 * index as f64));
+        near(run.width, width);
     }
 }
