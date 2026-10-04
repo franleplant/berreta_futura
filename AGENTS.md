@@ -7,7 +7,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 ## Pipeline
 
 - `mag` (Rust, in `mag/`) is the CLI: `capture`, `plan`, `produce`, `art`,
-  `translate`, `render`, `site`, `publish`. Build with `cargo build`, run from the repo root.
+  `translate`, `render`, `epub`, `site`, `publish`. Build with `cargo build`, run from the repo root.
 - The pipeline leads: every step prints the next command when it finishes.
   Follow that, not the previous edition. The order is `mag capture` (writes
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
@@ -29,6 +29,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (`pdfs: {en: {url, bytes, sha256}}`); without one the issue page has no
   PDF link. It refuses to write a page that drops any manuscript block,
   figure, or extract.
+- `mag render` also writes the typeset front cover as `<lang>/cover.png` in
+  its render dir. `mag epub NNN [--lang en] [--cover file]` packages that
+  language as a reflowable EPUB 3 for Apple Books: the newest tracked run's
+  manuscripts, figures, and extracts through the site's HTML walk (same
+  drop check), embedded Source Serif, and the newest render's cover. It
+  writes `editions/NNN/epub/<publication>-NNN-<lang>.epub`; committing that
+  file is what makes `mag site` copy it and link it on the issue page.
 - `mag publish NNN --pdf <file> [--lang en] [--dry-run]` ships an approved
   PDF: it uploads the file unchanged to Google Drive at `[site] pdf_remote`
   (`rclone`, the owner's local `gdrive` remote) as

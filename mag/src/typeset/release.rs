@@ -113,7 +113,10 @@ fn manifest(p: &Publish) -> Result<Value> {
 
 pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
     let work = p.work;
-    let (front, back) = super::cover::faces(p.staged, p.assets, p.edition, work)?;
+    let (front, back, picture) = super::cover::faces(p.staged, p.assets, p.edition, work)?;
+    std::fs::create_dir_all(p.out_dir)?;
+    let cover = p.out_dir.join("cover.png");
+    std::fs::write(&cover, picture)?;
     let reader = work.join("reader.pdf");
     std::fs::write(work.join("interior.pdf"), &p.interior)?;
     std::fs::write(
@@ -152,7 +155,7 @@ pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
         .as_str()
         .context("render-critic.json has no result")?
         .to_string();
-    let files: Vec<PathBuf> = written.into_iter().chain([package]).collect();
+    let files: Vec<PathBuf> = written.into_iter().chain([package, cover]).collect();
     Ok((
         files
             .iter()

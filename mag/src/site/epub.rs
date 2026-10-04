@@ -26,15 +26,26 @@ pub(crate) struct EpubArgs {
     pub lang: String,
     #[arg(
         long,
-        help = "Cover image (PNG or JPEG) to use instead of the edition's cover art"
+        help = "Cover image (PNG or JPEG) to use instead of the newest render's cover.png"
     )]
     pub cover: Option<PathBuf>,
-    #[arg(
-        long,
-        default_value = "output/epub",
-        help = "Directory to write the .epub into"
-    )]
-    pub out: PathBuf,
+}
+
+fn rendered_cover(dir: &Path, language: &str) -> Option<PathBuf> {
+    let mut renders: Vec<PathBuf> = fs::read_dir(dir)
+        .ok()?
+        .filter_map(|entry| Some(entry.ok()?.path()))
+        .filter(|path| {
+            path.file_name()
+                .is_some_and(|n| n.to_string_lossy().starts_with("render-"))
+        })
+        .collect();
+    renders.sort();
+    renders
+        .into_iter()
+        .rev()
+        .map(|render| render.join(language).join("cover.png"))
+        .find(|cover| cover.is_file())
 }
 
 fn jpeg(path: &Path) -> Result<(Vec<u8>, u32, u32)> {
@@ -162,6 +173,19 @@ fn write(target: &Path, opf: String, files: Vec<(String, Vec<u8>)>) -> Result<()
     Ok(())
 }
 
+fn cover(args: &EpubArgs, dir: &Path, language: &str) -> Result<PathBuf> {
+    args.cover
+        .clone()
+        .or_else(|| rendered_cover(dir, language))
+        .with_context(|| {
+            format!(
+                "no rendered {language} cover in {}: run `mag render {}` first, or pass --cover",
+                dir.display(),
+                args.edition
+            )
+        })
+}
+
 pub fn run(args: &EpubArgs) -> Result<i32> {
     let root = std::env::current_dir()?.canonicalize()?;
     let site = super::config(&root)?;
@@ -176,11 +200,8 @@ pub fn run(args: &EpubArgs) -> Result<i32> {
         files: Vec::new(),
         manifest: Vec::new(),
     };
-    let cover = args
-        .cover
-        .clone()
-        .or_else(|| edition.cover_art.clone())
-        .context("no --cover and the edition has no cover art")?;
+    let dir = crate::render::resolve_edition_dir(&args.edition)?;
+    let cover = cover(args, &dir, language)?;
     let (bytes, _, _) = jpeg(&cover)?;
     book.add("images/cover.jpg", "image/jpeg", "cover-image", bytes);
     let images = images(edition, &mut book)?;
@@ -242,8 +263,8 @@ pub fn run(args: &EpubArgs) -> Result<i32> {
         );
     }
     let opf = package(edition, &book, &spine, &site.base_url);
-    fs::create_dir_all(&args.out)?;
-    let target = args.out.join(format!(
+    fs::create_dir_all(dir.join("epub"))?;
+    let target = dir.join("epub").join(format!(
         "{}-{}-{language}.epub",
         slug(&edition.publication_name),
         edition.id
@@ -257,7 +278,7 @@ pub fn run(args: &EpubArgs) -> Result<i32> {
         target.display()
     );
     println!(
-        "\nnext: AirDrop {} to an iPhone, or open it in Books on this Mac",
+        "\nnext: open {} in Books to check it, then commit it; `mag site` links a committed EPUB on the issue page",
         target.display()
     );
     Ok(0)

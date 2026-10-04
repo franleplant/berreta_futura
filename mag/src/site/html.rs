@@ -38,6 +38,8 @@ fn say(language: &str, key: &str) -> &'static str {
         "issues" => "Issues",
         "pdf" if spanish => "Descargar el PDF",
         "pdf" => "Download the PDF",
+        "epub" if spanish => "Descargar el EPUB",
+        "epub" => "Download the EPUB",
         "original" if spanish => "Leer el original",
         "original" => "Read the original",
         "next" if spanish => "Siguiente",
@@ -563,12 +565,13 @@ struct Issued<'a> {
     edition: &'a Edition,
     pieces: Vec<Piece<'a>>,
     pdf: Option<&'a super::Pdf>,
+    epub: Option<&'a super::Epub>,
     others: Vec<&'a str>,
 }
 
 impl Issued<'_> {
     fn dir(&self) -> String {
-        format!("{}{}/", prefix(&self.edition.language), self.edition.id)
+        issue_dir(self.edition)
     }
 
     fn issue_label(&self) -> String {
@@ -619,6 +622,27 @@ impl Issued<'_> {
     }
 }
 
+pub fn issue_dir(edition: &Edition) -> String {
+    format!("{}{}/", prefix(&edition.language), edition.id)
+}
+
+fn ebook(language: &str, epub: Option<&super::Epub>) -> String {
+    let Some(epub) = epub else {
+        return String::new();
+    };
+    let name = epub
+        .path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+    format!(
+        "<p class=\"download\"><a href=\"{}\" download type=\"application/epub+zip\">{} <span>(EPUB, {})</span></a></p>",
+        esc(&name),
+        say(language, "epub"),
+        megabytes(epub.bytes)
+    )
+}
+
 fn download(language: &str, pdf: Option<&super::Pdf>) -> String {
     pdf.map_or(String::new(), |pdf| {
         format!(
@@ -654,7 +678,7 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
             )
         })
         .collect();
-    let pdf = download(language, issued.pdf);
+    let pdf = download(language, issued.pdf) + &ebook(language, issued.epub);
     let body = format!(
         "<section class=\"issue\">\n{}\n<div class=\"issue-head\"><p class=\"kicker\">{} · <time datetime=\"{}\">{}</time></p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{}\"><h2>{}</h2><ol>{entries}</ol></nav>",
         issued.cover(&ctx, true),
@@ -942,6 +966,7 @@ pub fn pages(
                 edition,
                 pieces: pieces(edition)?,
                 pdf: issue.pdfs.get(&edition.language),
+                epub: issue.epubs.get(&edition.language),
                 others: languages
                     .iter()
                     .copied()
