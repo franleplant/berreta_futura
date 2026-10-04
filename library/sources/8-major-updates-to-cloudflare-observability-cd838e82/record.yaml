@@ -1,0 +1,8 @@
+id: 8-major-updates-to-cloudflare-observability-cd838e82
+title: '8 major updates to Cloudflare Observability'
+author: 'Nevi Shah, Arti Kumar, Tom Benn, Sahidya Devadoss'
+url: https://blog.cloudflare.com/one-observability-platform/
+captured_at: '2026-10-03T01:17:01Z'
+published_at: '2026-10-02'
+tags: []
+synopsis: 'Cloudflare announces eight updates that unify logs, traces, a SQL API, alerts, analytics, dashboards, and Logpush into one observability platform with new volume-based pricing starting December 1, 2026.'

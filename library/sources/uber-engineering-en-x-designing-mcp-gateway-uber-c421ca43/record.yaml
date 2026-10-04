@@ -1,0 +1,8 @@
+id: uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43
+title: 'Designing MCP Gateway: Uber''s MCP Management Platform'
+author: 'Uber Engineering'
+url: https://x.com/UberEng/status/2106071967619322330
+captured_at: '2026-10-03T01:20:27Z'
+published_at: '2026-10-02'
+tags: []
+synopsis: 'Uber describes the MCP Gateway, a central control plane and data plane that discovers internal APIs and native MCP servers, translates MCP calls to HTTP, gRPC, and TChannel, enforces security, and now hosts over 800 MCP servers and 5000 tools.'

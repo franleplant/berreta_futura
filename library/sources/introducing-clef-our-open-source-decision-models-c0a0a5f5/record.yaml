@@ -1,0 +1,8 @@
+id: introducing-clef-our-open-source-decision-models-c0a0a5f5
+title: 'Introducing Clef: our open-source decision models, and new RL fine-tuning platform'
+author: 'Michelle Chen, Alex Reneau, Kevin Flansburg'
+url: https://blog.cloudflare.com/clef-decision-models/
+captured_at: '2026-10-03T01:17:43Z'
+published_at: '2026-10-01'
+tags: []
+synopsis: 'Cloudflare releases Clef and Clef-flash, open-source decision models hosted on Workers AI that return typed, probability-scored answers quickly and are Jev-API compatible, and introduces an RL fine-tuning service built on its AI platform.'

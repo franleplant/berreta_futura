@@ -152,4 +152,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - Verification: `cargo test` in `mag/` (also runs the comment check). Committed expectations are regression snapshots of the
   Rust output; the web port re-blesses with `MAG_BLESS=1` after an intended
   change.
-- Work on the branch the user asks for and commit coherent checkpoints.
+- NEVER switch to a feature branch; always work on main unless a human
+  requested otherwise. Commit coherent checkpoints.
+- Assume there are other agents working in this very same local repo; don't
+  interfere with them.

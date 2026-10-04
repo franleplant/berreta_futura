@@ -1,0 +1,211 @@
+# Edition 13 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 013`.
+# Article order here is the reading order; reorder freely.
+id: '013'
+issue_number: 13
+title: Pull the Yellow Handle
+subtitle: 'Cloudflare''s eight observability updates and Clef decision models, a managed Cloudflare OS, Uber''s gateway to 5000 MCP tools, and Harel''s statecharts in two parts'
+publication_date: '2026-10-03'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Pull the Yellow Handle
+  deck: 'Cloudflare''s eight observability updates and Clef decision models, a managed Cloudflare OS, Uber''s gateway to 5000 MCP tools, and Harel''s statecharts in two parts'
+  back_text: Take a Citizen Quartz Multi-Alarm III. While it is updating the month, press d, then b, and hold both. A statechart of boxes inside boxes says you land back in time, one month ahead, beeper beeping, light on. Try it. That is exactly what the watch does.
+  art_path: TODO
+articles:
+- id: 8-major-updates-to-cloudflare-observability
+  title: 8 major updates to Cloudflare Observability
+  short_title: 8 major updates to Cloudflare Observability
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Nevi Shah, Arti Kumar, Tom Benn, Sahidya Devadoss
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - 8-major-updates-to-cloudflare-observability-cd838e82
+  manuscript: editions/013/articles/8-major-updates-to-cloudflare-observability.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   8-major-updates-to-cloudflare-observability-cd838e82 media/001.png: 
+  #   8-major-updates-to-cloudflare-observability-cd838e82 media/002.png: 
+  #   8-major-updates-to-cloudflare-observability-cd838e82 media/003.png: 
+  #   8-major-updates-to-cloudflare-observability-cd838e82 media/004.png: 
+  #   8-major-updates-to-cloudflare-observability-cd838e82 media/005.png: 
+  #   8-major-updates-to-cloudflare-observability-cd838e82 media/006.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: introducing-clef-our-open-source-decision-models
+  title: 'Introducing Clef: our open-source decision models, and new RL fine-tuning platform'
+  short_title: 'Introducing Clef: our open-source decision models, and new RL fine-tuning platform'
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Michelle Chen, Alex Reneau, Kevin Flansburg
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - introducing-clef-our-open-source-decision-models-c0a0a5f5
+  manuscript: editions/013/articles/introducing-clef-our-open-source-decision-models.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   introducing-clef-our-open-source-decision-models-c0a0a5f5 media/001.png: decision-index-vs-latency.png
+  #   introducing-clef-our-open-source-decision-models-c0a0a5f5 media/002.png: 
+  #   introducing-clef-our-open-source-decision-models-c0a0a5f5 media/003.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: cloudflare-os-your-company-s-agent-workspace-man
+  title: 'Cloudflare OS: your company’s agent workspace, managed for you'
+  short_title: 'Cloudflare OS: your company’s agent workspace, managed for you'
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Phillip Jones
+  author_note: TODO
+  content_mode: verbatim
+  source_ids:
+  - cloudflare-os-your-company-s-agent-workspace-man-32af5c2a
+  manuscript: editions/013/articles/cloudflare-os-your-company-s-agent-workspace-man.md
+  figures:
+  - id: figure-1
+    source_id: cloudflare-os-your-company-s-agent-workspace-man-32af5c2a
+    path: media/001.png
+    caption: TODO
+    alt_text: TODO
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: uber-engineering-en-x-designing-mcp-gateway-uber
+  title: 'Designing MCP Gateway: Uber''s MCP Management Platform'
+  short_title: 'Designing MCP Gateway: Uber''s MCP Management Platform'
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Uber Engineering
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43
+  manuscript: editions/013/articles/uber-engineering-en-x-designing-mcp-gateway-uber.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43 media/001.jpg: 
+  #   uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43 media/002.jpg: 
+  #   uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43 media/003.jpg: 
+  #   uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43 media/004.jpg: 
+  #   uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43 media/005.jpg: 
+  #   uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43 media/006.jpg: 
+  #   uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43 media/007.jpg: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: statecharts-depth-and-orthogonality
+  title: 'Statecharts, Part 1: Depth and Orthogonality'
+  short_title: 'Statecharts, Part 1: Depth and Orthogonality'
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: David Harel
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - statecharts-a-visual-formalism-for-complex-syste-7833c2fd
+  manuscript: editions/013/articles/statecharts-depth-and-orthogonality.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-01.png: Fig. 1.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-02.png: Fig. 2.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-03.png: Fig. 3.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-04.png: Fig. 4.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-05.png: Fig. 5.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-06.png: Fig. 6.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-07.png: Fig. 7.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-08.png: Fig. 8.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-09.png: Fig. 9.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-10.png: Fig. 10.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-11.png: Fig. 11.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-12.png: Fig. 12.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-13.png: Fig. 13.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-14.png: Fig. 14.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-15.png: Fig. 15.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-16.png: Fig. 16.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-17.png: Fig. 17.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-18.png: Fig. 18.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-19.png: Fig. 19.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-20.png: Fig. 20.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-21.png: Fig. 21.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-22.png: Fig. 22.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-23.png: Fig. 23.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-24.png: Fig. 24.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-25.png: Fig. 25.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-26.png: Fig. 26.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-27.png: Fig. 27.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-28.png: Fig. 28.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-29.png: Fig. 29.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-30.png: Fig. 30.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-32.png: Fig. 32.
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: statecharts-actions-extensions-and-practice
+  title: 'Statecharts, Part 2: Actions, Extensions, and Practice'
+  short_title: 'Statecharts, Part 2: Actions, Extensions, and Practice'
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: David Harel
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - statecharts-a-visual-formalism-for-complex-syste-7833c2fd
+  manuscript: editions/013/articles/statecharts-actions-extensions-and-practice.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-31.png: Fig. 31.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-33.png: Fig. 33.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-34.png: Fig. 34.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-35.png: Fig. 35.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-36.png: Fig. 36.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-37.png: Fig. 37.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-38.png: Fig. 38.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-39.png: Fig. 39.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-40.png: Fig. 40.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-41.png: Fig. 41.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-42.png: Fig. 42.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-43.png: Fig. 43.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-44.png: Fig. 44.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-45.png: Fig. 45.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-46.png: Fig. 46.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-47.png: Fig. 47.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-48.png: Fig. 48.
+  #   statecharts-a-visual-formalism-for-complex-syste-7833c2fd media/fig-49.png: Fig. 49.
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+tail_art_fit: contain
+closing_plates: []

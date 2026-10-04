@@ -1,0 +1,8 @@
+id: statecharts-a-visual-formalism-for-complex-syste-7833c2fd
+title: 'Statecharts: A Visual Formalism for Complex Systems'
+author: 'David Harel'
+url: https://www.state-machine.com/doc/Harel87.pdf
+captured_at: '2026-10-03T01:30:58Z'
+published_at: '1987-06-01'
+tags: []
+synopsis: 'Harel extends state machines and state diagrams with hierarchy, concurrency and broadcast communication, producing statecharts: a compact, modular visual formalism for specifying complex reactive systems, worked through a Citizen digital wristwatch.'

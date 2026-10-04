@@ -359,15 +359,15 @@ fn normalize_code(s: &str) -> String {
 
 fn meta_content(html: &str, keys: &[&str]) -> Option<String> {
     for key in keys {
+        let value = r#"content=(?:"([^"]+)"|'([^']+)')"#;
         for pat in [
-            format!(r#"(?i)<meta[^>]+(?:property|name)=["']{key}["'][^>]+content=["']([^"']+)"#),
-            format!(
-                r#"(?i)<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']{key}["']"#
-            ),
+            format!(r#"(?i)<meta[^>]+(?:property|name)=["']{key}["'][^>]+{value}"#),
+            format!(r#"(?i)<meta[^>]+{value}[^>]+(?:property|name)=["']{key}["']"#),
             format!(r#""{key}"\s*:\s*"([^"]+)""#),
         ] {
             if let Some(c) = Regex::new(&pat).unwrap().captures(html) {
-                return Some(decode_entities(c[1].trim()));
+                let m = c.get(1).or(c.get(2)).expect("one alternative matched");
+                return Some(decode_entities(m.as_str().trim()));
             }
         }
     }
@@ -381,6 +381,10 @@ pub(crate) fn page_title(html: &str) -> Option<String> {
             .captures(html)
             .map(|c| decode_entities(c[1].trim()))
     })?;
+    let raw = Regex::new(r#"^.+ X: "(.+)" / X$"#)
+        .unwrap()
+        .captures(&raw)
+        .map_or(raw.clone(), |c| c[1].to_string());
 
     let head = Regex::new(r"\s+[|\u{2022}\u{00b7}]\s+")
         .unwrap()
@@ -1040,6 +1044,15 @@ mod tests {
         reader.next_frame(&mut pixels).expect("a frame");
         assert_eq!((reader.info().width, reader.info().height), (3, 2));
         assert_eq!(&pixels[..6], &[255, 0, 0, 0, 255, 0]);
+    }
+
+    #[test]
+    fn an_x_post_title_unwraps_and_keeps_its_apostrophe() {
+        let html = "<meta content=\"Uber Engineering en X: &quot;Designing MCP Gateway Uber's MCP Management Platform&quot; / X\" property=\"og:title\">";
+        assert_eq!(
+            page_title(html).unwrap(),
+            "Designing MCP Gateway Uber's MCP Management Platform"
+        );
     }
 
     #[test]
