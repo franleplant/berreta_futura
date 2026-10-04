@@ -1,0 +1,8 @@
+id: evals-how-to-know-whether-an-ai-system-actually-a5c96be7
+title: 'Evals: how to know whether an AI system actually works'
+author: 'Sergii Makarevych'
+url: https://x.com/sermakarevich/status/2106453816757354947
+captured_at: '2026-10-04T01:24:27Z'
+published_at: '2026-10-03'
+tags: []
+synopsis: 'The article explains what evals are and how to build trustworthy ones for LLM-based systems, zooming from a single-ticket loop through inputs and gold answers, error analysis, code graders, model judges and their biases, statistical honesty, RAG and agent grading, public benchmarks, and operational habits, using a bike-shop support assistant as a running example.'

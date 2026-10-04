@@ -18,7 +18,26 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
-_Collecting: `013` (5 queued)._
+_Collecting: `013` (7 queued)._
+
+## Evals: how to know whether an AI system actually works — Sergii Makarevych
+
+- ID: `evals-how-to-know-whether-an-ai-system-actually-a5c96be7`
+- Source: https://x.com/sermakarevich/status/2106453816757354947
+- Published: 2026-10-03
+- Captured: 2026-10-04T01:24:27Z
+- Release: queued for `013`
+
+The article explains what evals are and how to build trustworthy ones for LLM-based systems, zooming from a single-ticket loop through inputs and gold answers, error analysis, code graders, model judges and their biases, statistical honesty, RAG and agent grading, public benchmarks, and operational habits, using a bike-shop support assistant as a running example.
+
+## MCP Events — OpenAI
+
+- ID: `mcp-events-plugins-d29e87e0`
+- Source: https://developers.openai.com/plugins/build/mcp-events
+- Captured: 2026-10-04T01:22:39Z
+- Release: queued for `013`
+
+This guide explains how to implement MCP Events on an MCP server so ChatGPT can subscribe to events, verify callbacks, receive signed webhook deliveries, manage subscription lifetimes, and test the full lifecycle.
 
 ## Statecharts: A Visual Formalism for Complex Systems — David Harel
 

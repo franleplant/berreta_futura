@@ -1,0 +1,7 @@
+id: mcp-events-plugins-d29e87e0
+title: 'MCP Events'
+author: 'OpenAI'
+url: https://developers.openai.com/plugins/build/mcp-events
+captured_at: '2026-10-04T01:22:39Z'
+tags: []
+synopsis: 'This guide explains how to implement MCP Events on an MCP server so ChatGPT can subscribe to events, verify callbacks, receive signed webhook deliveries, manage subscription lifetimes, and test the full lifecycle.'

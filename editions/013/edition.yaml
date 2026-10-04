@@ -207,5 +207,50 @@ articles:
     alt_text: TODO
     credit: Illustration generated for this edition.
   tail_art_path: TODO
+- id: mcp-events-plugins
+  title: MCP Events
+  short_title: MCP Events
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: TODO
+  content_mode: verbatim
+  source_ids:
+  - mcp-events-plugins-d29e87e0
+  manuscript: editions/013/articles/mcp-events-plugins.md
+  figures:
+  - id: figure-1
+    source_id: mcp-events-plugins-d29e87e0
+    path: media/001.png
+    caption: Plugin details showing message.created and comment.created events alongside MCP tools.
+    alt_text: Plugin details showing message.created and comment.created events alongside MCP tools.
+    anchor: Test in ChatGPT
+    layout: evidence_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: evals-how-to-know-whether-an-ai-system-actually
+  title: 'Evals: how to know whether an AI system actually works'
+  short_title: 'Evals: how to know whether an AI system actually works'
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Sergii Makarevych
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - evals-how-to-know-whether-an-ai-system-actually-a5c96be7
+  manuscript: editions/013/articles/evals-how-to-know-whether-an-ai-system-actually.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   evals-how-to-know-whether-an-ai-system-actually-a5c96be7 media/001.jpg: Imagen
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
 tail_art_fit: contain
 closing_plates: []
