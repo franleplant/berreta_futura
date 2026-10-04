@@ -1717,6 +1717,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
+ "serde_path_to_error",
  "sha2",
  "tiny-skia",
  "toml",

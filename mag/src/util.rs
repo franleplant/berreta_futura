@@ -8,10 +8,6 @@ pub(crate) fn read(path: &Path) -> Result<String> {
     fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
 }
 
-pub(crate) fn read_yaml(path: &Path) -> Result<serde_norway::Value> {
-    serde_norway::from_str(&read(path)?).with_context(|| format!("parsing {}", path.display()))
-}
-
 pub(crate) fn prompts_path(file: &str) -> PathBuf {
     PathBuf::from("prompts").join(file)
 }

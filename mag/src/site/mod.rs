@@ -5,6 +5,8 @@ mod images;
 mod logo;
 
 use crate::model::manifest::{load_translation, Edition};
+use crate::model::shared::parse_yaml;
+use crate::model::spec::EditionFile;
 use crate::render::{request, resolve_edition_dir, RenderArgs};
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -275,16 +277,15 @@ fn scratch_root() -> PathBuf {
 pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
-    let yaml: serde_norway::Value =
-        serde_norway::from_str(&committed_text(root, &format!("{rel}/edition.yaml"))?)?;
-    let articles: Vec<String> = yaml["articles"]
-        .as_sequence()
+    let yaml: EditionFile = parse_yaml(&committed_text(root, &format!("{rel}/edition.yaml"))?)?;
+    let articles: Vec<String> = yaml
+        .articles
         .into_iter()
-        .flatten()
-        .filter_map(|article| article["id"].as_str().map(str::to_string))
+        .map(|article| article.id)
+        .filter(|id| !id.is_empty())
         .collect();
     let tracked = tracked_files(root, &rel)?;
-    let run = newest_tracked_run(&tracked, &rel, &articles, yaml.get("editorial").is_some())
+    let run = newest_tracked_run(&tracked, &rel, &articles, yaml.editorial.is_some())
         .with_context(|| format!("{rel} has no git-tracked complete run"))?;
     let scratch = scratch_root().join(id);
     if scratch.exists() {

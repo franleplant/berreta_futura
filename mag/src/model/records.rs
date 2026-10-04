@@ -1,10 +1,8 @@
 use super::kinds::{ExtractStyle, FigureFit, FigureLayout, FigureTone};
-use super::shared::{quoted, show, Result, ValidationError};
-use regex::Regex;
-use serde_norway::Value;
+use super::shared::{quoted, read_spec, Result, ValidationError};
+use super::spec::{ExtractRow, FigureRow, LocalizedExtractRow, LocalizedFigureRow, SourceRecord};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
-use std::sync::LazyLock;
 
 pub const ARTICLE_FILENAME: &str = "article.md";
 
@@ -30,292 +28,65 @@ pub(crate) fn slug(text: &str) -> String {
     }
 }
 
-static TIMESTAMP_DETECT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}(?:[Tt]|[ \t]+)[0-9]{1,2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]*)?(?:[ \t]*(?:Z|[-+][0-9]{1,2}(?::[0-9]{2})?))?)$").unwrap()
-});
-
-static TIMESTAMP_PARSE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(?P<year>[0-9]{4})-(?P<month>[0-9]{1,2})-(?P<day>[0-9]{1,2})(?:(?:[Tt]|[ \t]+)(?P<hour>[0-9]{1,2}):(?P<minute>[0-9]{2}):(?P<second>[0-9]{2})(?:\.(?P<fraction>[0-9]*))?(?:[ \t]*(?:(?P<utc>Z)|(?P<sign>[-+])(?P<tzhour>[0-9]{1,2})(?::(?P<tzminute>[0-9]{2}))?))?)?$").unwrap()
-});
-
-pub fn yaml_timestamp_isoformat(text: &str) -> Option<String> {
-    if !TIMESTAMP_DETECT.is_match(text) {
-        return None;
-    }
-    let captures = TIMESTAMP_PARSE.captures(text)?;
-    let number = |name: &str| -> u32 {
-        captures
-            .name(name)
-            .map(|found| found.as_str().parse().unwrap_or_default())
-            .unwrap_or_default()
-    };
-    let year = number("year");
-    let month = number("month");
-    let day = number("day");
-    let date = format!("{year:04}-{month:02}-{day:02}");
-    if captures.name("hour").is_none() {
-        return Some(date);
-    }
-    let mut rendered = format!(
-        "{date}T{:02}:{:02}:{:02}",
-        number("hour"),
-        number("minute"),
-        number("second")
-    );
-    if let Some(found) = captures.name("fraction") {
-        let mut digits: String = found.as_str().chars().take(6).collect();
-        while digits.len() < 6 {
-            digits.push('0');
-        }
-        let micro: u32 = digits.parse().unwrap_or_default();
-        if micro != 0 {
-            rendered.push_str(&format!(".{micro:06}"));
-        }
-    }
-    if captures.name("utc").is_some() {
-        rendered.push_str("+00:00");
-    } else if let Some(sign) = captures.name("sign") {
-        rendered.push_str(&format!(
-            "{}{:02}:{:02}",
-            sign.as_str(),
-            number("tzhour"),
-            number("tzminute")
-        ));
-    }
-    Some(rendered)
-}
-
-fn plain_scalar(text: &str, key: &str) -> Option<String> {
-    for line in text.lines() {
-        let Some(rest) = line.strip_prefix(key) else {
-            continue;
-        };
-        let Some(rest) = rest.strip_prefix(':') else {
-            continue;
-        };
-        if line.starts_with(char::is_whitespace) {
-            continue;
-        }
-        let value = match rest.find(" #") {
-            Some(mark) => &rest[..mark],
-            None => rest,
-        };
-        let value = value.trim();
-        if value.is_empty() || value.starts_with('\'') || value.starts_with('"') {
-            return None;
-        }
-        return Some(value.to_string());
-    }
-    None
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SourceRecord {
-    pub id: String,
-    pub url: String,
-    pub title: String,
-    pub captured_at: String,
-    pub author: Option<String>,
-    pub published_at: Option<String>,
-    pub tags: Option<Vec<String>>,
-    pub synopsis: Option<String>,
-    pub notes: Option<String>,
-}
-
-fn text_field(value: Option<&Value>, key: &str) -> Result<Option<String>> {
-    match value {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::String(text)) => Ok(Some(text.clone())),
-        Some(other) => Err(ValidationError::one(format!(
-            "Source record field {key} must be a string, got: {other:?}"
-        ))),
-    }
-}
-
-fn filled(value: Option<&String>) -> bool {
-    value.is_some_and(|text| !text.is_empty())
-}
-
-impl SourceRecord {
-    pub fn from_value(data: &Value, document: Option<&str>) -> Result<Self> {
-        let Value::Mapping(mapping) = data else {
-            return Err(ValidationError::one("Source record must be a mapping"));
-        };
-        let get = |key: &str| mapping.get(Value::String(key.to_string()));
-        let url = resolve_url(mapping)?;
-        let mut published_origin = "published_at";
-        let mut published_at = text_field(get("published_at"), "published_at")?;
-        if !filled(published_at.as_ref()) {
-            published_origin = "publication_date";
-            published_at = text_field(get("publication_date"), "publication_date")?;
-        }
-        let mut captured_at = text_field(get("captured_at"), "captured_at")?;
-        coerce_timestamp(document, "captured_at", &mut captured_at);
-        coerce_timestamp(document, published_origin, &mut published_at);
-        let metadata = match get("metadata") {
-            Some(Value::Mapping(inner)) => Some(inner),
-            _ => None,
-        };
-        let tags = resolve_tags(mapping, metadata)?;
-        let synopsis = resolve_synopsis(mapping, metadata)?;
-        let notes = match get("notes") {
-            None => Some(String::new()),
-            Some(value) => text_field(Some(value), "notes")?,
-        };
-        let id = text_field(get("id"), "id")?;
-        let title = text_field(get("title"), "title")?;
-        let missing: Vec<&str> = [
-            ("id", filled(id.as_ref())),
-            ("url", filled(url.as_ref())),
-            ("title", filled(title.as_ref())),
-            ("captured_at", filled(captured_at.as_ref())),
-        ]
-        .into_iter()
-        .filter(|(_, present)| !present)
-        .map(|(name, _)| name)
-        .collect();
-        if !missing.is_empty() {
-            return Err(ValidationError::one(format!(
-                "Source record missing: {}",
-                missing.join(", ")
-            )));
-        }
-        Ok(Self {
-            id: id.unwrap_or_default(),
-            url: url.unwrap_or_default(),
-            title: title.unwrap_or_default(),
-            captured_at: captured_at.unwrap_or_default(),
-            author: text_field(get("author"), "author")?,
-            published_at,
-            tags,
-            synopsis,
-            notes,
-        })
-    }
-}
-
-fn mapping_get<'a>(mapping: &'a serde_norway::Mapping, key: &str) -> Option<&'a Value> {
-    mapping.get(Value::String(key.to_string()))
-}
-
-fn resolve_url(mapping: &serde_norway::Mapping) -> Result<Option<String>> {
-    for key in ["url", "canonical_url", "submitted_url"] {
-        let value = text_field(mapping_get(mapping, key), key)?;
-        if filled(value.as_ref()) {
-            return Ok(value);
-        }
-    }
-    Ok(None)
-}
-
-fn coerce_timestamp(document: Option<&str>, key: &str, slot: &mut Option<String>) {
-    let Some(text) = document else { return };
-    let Some(current) = slot.clone() else { return };
-    let Some(raw) = plain_scalar(text, key) else {
-        return;
-    };
-    if raw == current {
-        if let Some(coerced) = yaml_timestamp_isoformat(&raw) {
-            *slot = Some(coerced);
-        }
-    }
-}
-
-fn resolve_tags(
-    mapping: &serde_norway::Mapping,
-    metadata: Option<&serde_norway::Mapping>,
-) -> Result<Option<Vec<String>>> {
-    let value = match mapping_get(mapping, "tags") {
-        Some(value) => Some(value),
-        None => metadata.and_then(|inner| mapping_get(inner, "tags")),
-    };
-    match value {
-        Some(Value::Null) => Ok(None),
-        Some(Value::Sequence(items)) => Ok(Some(string_list(items, "tags")?)),
-        Some(other) => Err(ValidationError::one(format!(
-            "Source record field tags must be a list, got: {other:?}"
-        ))),
-        None => Ok(Some(Vec::new())),
-    }
-}
-
-fn resolve_synopsis(
-    mapping: &serde_norway::Mapping,
-    metadata: Option<&serde_norway::Mapping>,
-) -> Result<Option<String>> {
-    match mapping_get(mapping, "synopsis") {
-        Some(value) => text_field(Some(value), "synopsis"),
-        None => match metadata.and_then(|inner| mapping_get(inner, "synopsis")) {
-            Some(value) => text_field(Some(value), "synopsis"),
-            None => Ok(Some(String::new())),
-        },
-    }
-}
-
-fn string_list(items: &[Value], key: &str) -> Result<Vec<String>> {
-    items
-        .iter()
-        .map(|item| match item {
-            Value::String(text) => Ok(text.clone()),
-            other => Err(ValidationError::one(format!(
-                "Source record field {key} must hold strings, got: {other:?}"
-            ))),
-        })
-        .collect()
-}
-
 fn record_glob(name: &str) -> bool {
     name.starts_with("record.y") && name.ends_with("ml") && name.len() >= "record.yml".len()
+}
+
+fn record_paths(sources_dir: &Path) -> Result<Vec<PathBuf>> {
+    let unreadable = |path: &Path, error: std::io::Error| {
+        ValidationError::one(format!("Cannot read {path:?}: {error}"))
+    };
+    let mut paths = Vec::new();
+    for entry in std::fs::read_dir(sources_dir).map_err(|error| unreadable(sources_dir, error))? {
+        let dir = entry
+            .map_err(|error| unreadable(sources_dir, error))?
+            .path();
+        if !dir.is_dir() {
+            continue;
+        }
+        for file in std::fs::read_dir(&dir).map_err(|error| unreadable(&dir, error))? {
+            let file = file.map_err(|error| unreadable(&dir, error))?.path();
+            let name = file
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned());
+            if file.is_file() && name.is_some_and(|name| record_glob(&name)) {
+                paths.push(file);
+            }
+        }
+    }
+    paths.sort();
+    Ok(paths)
 }
 
 pub fn load_records(sources_dir: &Path) -> Result<Vec<SourceRecord>> {
     if !sources_dir.exists() {
         return Ok(Vec::new());
     }
-    let mut paths: Vec<PathBuf> = Vec::new();
-    let entries = std::fs::read_dir(sources_dir)
-        .map_err(|error| ValidationError::one(format!("Cannot read {sources_dir:?}: {error}")))?;
-    for entry in entries {
-        let entry =
-            entry.map_err(|error| ValidationError::one(format!("Cannot read entry: {error}")))?;
-        if !entry.path().is_dir() {
-            continue;
-        }
-        let inner = std::fs::read_dir(entry.path()).map_err(|error| {
-            ValidationError::one(format!("Cannot read {:?}: {error}", entry.path()))
-        })?;
-        for candidate in inner {
-            let candidate = candidate
-                .map_err(|error| ValidationError::one(format!("Cannot read entry: {error}")))?;
-            let name = candidate.file_name().to_string_lossy().into_owned();
-            if record_glob(&name) && candidate.path().is_file() {
-                paths.push(candidate.path());
-            }
-        }
-    }
-    paths.sort();
     let mut records = Vec::new();
-    for path in &paths {
-        let text = std::fs::read_to_string(path)
-            .map_err(|error| ValidationError::one(format!("Cannot read {path:?}: {error}")))?;
-        let data: Value = serde_norway::from_str(&text)
-            .map_err(|error| ValidationError::one(format!("Cannot read {path:?}: {error}")))?;
-        if !matches!(data, Value::Mapping(_)) {
+    for path in record_paths(sources_dir)? {
+        let record: SourceRecord = read_spec(&path)?;
+        let missing = blanks(&[
+            ("id", record.id.is_empty()),
+            ("url", record.url.is_empty()),
+            ("title", record.title.is_empty()),
+            ("captured_at", record.captured_at.is_empty()),
+        ]);
+        if !missing.is_empty() {
             return Err(ValidationError::one(format!(
-                "{path:?} must contain a mapping"
+                "Source record {path:?} missing: {}",
+                missing.join(", ")
             )));
         }
-        records.push(SourceRecord::from_value(&data, Some(&text))?);
+        records.push(record);
     }
-    let mut seen: BTreeMap<String, String> = BTreeMap::new();
+    let mut seen: BTreeMap<&str, &str> = BTreeMap::new();
     for record in &records {
-        if let Some(first) = seen.get(&record.url) {
+        if let Some(first) = seen.insert(&record.url, &record.id) {
             return Err(ValidationError::one(format!(
                 "Duplicate URL in {first} and {}",
                 record.id
             )));
         }
-        seen.insert(record.url.clone(), record.id.clone());
     }
     records.sort_by(|left, right| {
         right
@@ -324,6 +95,14 @@ pub fn load_records(sources_dir: &Path) -> Result<Vec<SourceRecord>> {
             .then_with(|| right.id.cmp(&left.id))
     });
     Ok(records)
+}
+
+pub(crate) fn blanks<'a>(fields: &[(&'a str, bool)]) -> Vec<&'a str> {
+    fields
+        .iter()
+        .filter(|(_, blank)| *blank)
+        .map(|(name, _)| *name)
+        .collect()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -372,36 +151,6 @@ pub fn semantic_headings(path: &Path) -> Result<BTreeSet<String>> {
     Ok(headings)
 }
 
-fn row_text(name: &str, value: Option<&Value>) -> Result<String> {
-    match value {
-        None | Some(Value::Null) => Ok(String::new()),
-        Some(Value::String(text)) => Ok(text.clone()),
-        Some(other) => Err(ValidationError::one(format!(
-            "Figure and extract field {name} must be text, not {}",
-            show(other)
-        ))),
-    }
-}
-
-fn row_field(row: &serde_norway::Mapping, name: &str) -> Result<String> {
-    row_text(name, row.get(Value::String(name.to_string())))
-}
-
-fn rows_of(rows: Option<&Value>) -> Option<&Vec<Value>> {
-    match rows {
-        Some(Value::Sequence(items)) => Some(items),
-        _ => None,
-    }
-}
-
-fn is_absent(rows: Option<&Value>) -> bool {
-    match rows {
-        None | Some(Value::Null) => true,
-        Some(Value::Sequence(items)) => items.is_empty(),
-        _ => false,
-    }
-}
-
 fn path_parts(value: &str) -> Vec<&str> {
     value
         .split('/')
@@ -414,6 +163,21 @@ fn unsafe_path(value: &str) -> bool {
     parts.is_empty() || value.starts_with('/') || parts.contains(&"..")
 }
 
+fn check_anchor(
+    label: &str,
+    anchor: &str,
+    headings: &BTreeSet<String>,
+    allow_unanchored: bool,
+    errors: &mut Vec<String>,
+) {
+    if anchor != "__opener__" && !headings.contains(anchor) && !allow_unanchored {
+        errors.push(format!(
+            "{label} anchor does not match an article heading: {}",
+            quoted(anchor)
+        ));
+    }
+}
+
 pub struct FigureRequest<'a> {
     pub root: &'a Path,
     pub article_id: &'a str,
@@ -423,65 +187,45 @@ pub struct FigureRequest<'a> {
     pub verbatim: bool,
 }
 
-pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<Vec<Figure>> {
-    if is_absent(rows) {
+pub fn resolve_figures(request: &FigureRequest, rows: &[FigureRow]) -> Result<Vec<Figure>> {
+    if rows.is_empty() {
         return Ok(Vec::new());
     }
-    let Some(items) = rows_of(rows) else {
-        return Err(ValidationError::one(format!(
-            "Article {} figures must be a list",
-            request.article_id
-        )));
-    };
-    if items.len() > 3 && !request.verbatim {
+    if rows.len() > 3 && !request.verbatim {
         return Err(ValidationError::one(format!(
             "Article {} selects {} figures; maximum is 3",
             request.article_id,
-            items.len()
+            rows.len()
         )));
     }
     let mut errors: Vec<String> = Vec::new();
     let mut figures: Vec<Figure> = Vec::new();
-    let mut seen: BTreeSet<String> = BTreeSet::new();
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
     let headings = semantic_headings(request.manuscript)?;
-    for (index, row) in items.iter().enumerate() {
+    for (index, row) in rows.iter().enumerate() {
         let label = format!("Article {} figure {}", request.article_id, index + 1);
-        let Value::Mapping(mapping) = row else {
-            errors.push(format!("{label} must be a mapping"));
-            continue;
-        };
-        let names = [
-            "id",
-            "source_id",
-            "path",
-            "caption",
-            "credit",
-            "alt_text",
-            "anchor",
-            "layout",
-            "tone",
-            "fit",
-        ];
-        let mut fields: BTreeMap<&str, String> = BTreeMap::new();
-        for name in names {
-            fields.insert(name, row_field(mapping, name)?.trim().to_string());
-        }
-        let missing: Vec<&str> = names
-            .into_iter()
-            .filter(|name| !["credit", "tone", "fit"].contains(name) && fields[name].is_empty())
-            .collect();
+        let blank = |text: &str| text.trim().is_empty();
+        let missing = blanks(&[
+            ("id", blank(&row.id)),
+            ("source_id", blank(&row.source_id)),
+            ("path", blank(&row.path)),
+            ("caption", blank(&row.caption)),
+            ("alt_text", blank(&row.alt_text)),
+            ("anchor", blank(&row.anchor)),
+            ("layout", row.layout.is_none()),
+        ]);
         if !missing.is_empty() {
             errors.push(format!("{label} missing: {}", missing.join(", ")));
             continue;
         }
-        if seen.contains(&fields["id"]) {
+        if !seen.insert(row.id.trim()) {
             errors.push(format!(
                 "Article {} has duplicate figure id: {}",
-                request.article_id, fields["id"]
+                request.article_id,
+                row.id.trim()
             ));
         }
-        seen.insert(fields["id"].clone());
-        if let Some(figure) = resolve_figure(request, &label, &fields, &headings, &mut errors) {
+        if let Some(figure) = resolve_figure(request, &label, row, &headings, &mut errors) {
             figures.push(figure);
         }
     }
@@ -494,58 +238,25 @@ pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<
 fn resolve_figure(
     request: &FigureRequest,
     label: &str,
-    fields: &BTreeMap<&str, String>,
+    row: &FigureRow,
     headings: &BTreeSet<String>,
     errors: &mut Vec<String>,
 ) -> Option<Figure> {
-    if !request
-        .article_source_ids
-        .iter()
-        .any(|candidate| candidate == &fields["source_id"])
-    {
+    let source_id = row.source_id.trim();
+    if !request.article_source_ids.iter().any(|id| id == source_id) {
         errors.push(format!(
             "{label} source_id must be one of the article source_ids"
         ));
     }
-    let relative = fields["path"].clone();
-    if unsafe_path(&relative) {
-        errors.push(format!(
-            "{label} has unsafe path: {}",
-            quoted(&fields["path"])
-        ));
+    let relative = row.path.trim();
+    if unsafe_path(relative) {
+        errors.push(format!("{label} has unsafe path: {}", quoted(relative)));
         return None;
     }
-    let layout = kind(
-        FigureLayout::parse(&fields["layout"]),
-        label,
-        "layout",
-        errors,
-    );
-    let tone = kind(
-        FigureTone::parse(or_auto(&fields["tone"])),
-        label,
-        "tone",
-        errors,
-    );
-    let fit = kind(
-        FigureFit::parse(or_auto(&fields["fit"])),
-        label,
-        "fit",
-        errors,
-    );
-    let anchor = fields["anchor"].clone();
-    if anchor != "__opener__" && !headings.contains(&anchor) && !request.allow_unanchored {
-        errors.push(format!(
-            "{label} anchor does not match an article heading: {}",
-            quoted(&anchor)
-        ));
-    }
-    let mut path = request
-        .root
-        .join("library")
-        .join("sources")
-        .join(&fields["source_id"]);
-    for part in path_parts(&relative) {
+    let anchor = row.anchor.trim().to_string();
+    check_anchor(label, &anchor, headings, request.allow_unanchored, errors);
+    let mut path = request.root.join("library").join("sources").join(source_id);
+    for part in path_parts(relative) {
         path = path.join(part);
     }
     if !path.is_file() {
@@ -553,36 +264,17 @@ fn resolve_figure(
         return None;
     }
     Some(Figure {
-        id: fields["id"].clone(),
-        source_id: fields["source_id"].clone(),
+        id: row.id.trim().to_string(),
+        source_id: source_id.to_string(),
         path,
-        caption: fields["caption"].clone(),
-        credit: fields["credit"].clone(),
-        alt_text: fields["alt_text"].clone(),
+        caption: row.caption.trim().to_string(),
+        credit: row.credit.trim().to_string(),
+        alt_text: row.alt_text.trim().to_string(),
         anchor,
-        layout: layout?,
-        tone: tone?,
-        fit: fit?,
+        layout: row.layout?,
+        tone: row.tone.unwrap_or(FigureTone::Auto),
+        fit: row.fit.unwrap_or(FigureFit::Auto),
     })
-}
-
-fn or_auto(field: &str) -> &str {
-    if field.is_empty() {
-        "auto"
-    } else {
-        field
-    }
-}
-
-fn kind<T>(
-    parsed: std::result::Result<T, String>,
-    label: &str,
-    field: &str,
-    errors: &mut Vec<String>,
-) -> Option<T> {
-    parsed
-        .map_err(|reason| errors.push(format!("{label} has invalid {field}: {reason}")))
-        .ok()
 }
 
 pub struct ExtractRequest<'a> {
@@ -593,98 +285,73 @@ pub struct ExtractRequest<'a> {
     pub allow_unanchored: bool,
 }
 
-pub fn resolve_extracts(request: &ExtractRequest, rows: Option<&Value>) -> Result<Vec<Extract>> {
-    if is_absent(rows) {
+pub fn resolve_extracts(request: &ExtractRequest, rows: &[ExtractRow]) -> Result<Vec<Extract>> {
+    if rows.is_empty() {
         return Ok(Vec::new());
     }
-    let Some(items) = rows_of(rows) else {
-        return Err(ValidationError::one(format!(
-            "Article {} extracts must be a list",
-            request.article_id
-        )));
-    };
-    if items.len() > 2 {
+    if rows.len() > 2 {
         return Err(ValidationError::one(format!(
             "Article {} selects {} extracts; maximum is 2",
             request.article_id,
-            items.len()
+            rows.len()
         )));
     }
     let mut errors: Vec<String> = Vec::new();
     let mut extracts: Vec<Extract> = Vec::new();
-    let mut seen: BTreeSet<String> = BTreeSet::new();
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
     let manuscript_text = std::fs::read_to_string(request.manuscript).map_err(|error| {
         ValidationError::one(format!("Cannot read {:?}: {error}", request.manuscript))
     })?;
     let headings = semantic_headings(request.manuscript)?;
-    for (index, row) in items.iter().enumerate() {
+    for (index, row) in rows.iter().enumerate() {
         let label = format!("Article {} extract {}", request.article_id, index + 1);
-        let Value::Mapping(mapping) = row else {
-            errors.push(format!("{label} must be a mapping"));
-            continue;
-        };
-        let mut fields: BTreeMap<&str, String> = BTreeMap::new();
-        for name in ["id", "source_id", "style", "caption", "anchor"] {
-            fields.insert(name, row_field(mapping, name)?.trim().to_string());
-        }
-        for name in ["begin", "end"] {
-            fields.insert(name, row_field(mapping, name)?);
-        }
-        let order = [
-            "id",
-            "source_id",
-            "begin",
-            "end",
-            "style",
-            "caption",
-            "anchor",
-        ];
-        let missing: Vec<&str> = order
-            .into_iter()
-            .filter(|name| fields[name].is_empty())
-            .collect();
-        if !missing.is_empty() {
+        let blank = |text: &str| text.trim().is_empty();
+        let missing = blanks(&[
+            ("id", blank(&row.id)),
+            ("source_id", blank(&row.source_id)),
+            ("begin", row.begin.is_empty()),
+            ("end", row.end.is_empty()),
+            ("style", row.style.is_none()),
+            ("caption", blank(&row.caption)),
+            ("anchor", blank(&row.anchor)),
+        ]);
+        let (Some(style), true) = (row.style, missing.is_empty()) else {
             errors.push(format!("{label} missing: {}", missing.join(", ")));
             continue;
-        }
-        if seen.contains(&fields["id"]) {
+        };
+        if !seen.insert(row.id.trim()) {
             errors.push(format!(
                 "Article {} has duplicate extract id: {}",
-                request.article_id, fields["id"]
+                request.article_id,
+                row.id.trim()
             ));
         }
-        seen.insert(fields["id"].clone());
-        if !request
-            .article_source_ids
-            .iter()
-            .any(|candidate| candidate == &fields["source_id"])
-        {
+        let source_id = row.source_id.trim();
+        if !request.article_source_ids.iter().any(|id| id == source_id) {
             errors.push(format!(
                 "{label} source_id must be one of the article source_ids"
             ));
             continue;
         }
-        let style = check_extract_style(
+        let anchor = row.anchor.trim().to_string();
+        check_anchor(
             &label,
-            &fields,
+            &anchor,
             &headings,
             request.allow_unanchored,
             &mut errors,
         );
-        let Some(text) = extract_run(request.root, &label, &fields, &mut errors) else {
+        let Some(text) = extract_run(request.root, &label, row, &mut errors) else {
             continue;
         };
         check_extract_text(&label, style, &text, &manuscript_text, &mut errors);
-        let Some(style) = style else {
-            continue;
-        };
         extracts.push(Extract {
-            id: fields["id"].clone(),
-            source_id: fields["source_id"].clone(),
+            id: row.id.trim().to_string(),
+            source_id: source_id.to_string(),
             text,
             style,
-            caption: fields["caption"].clone(),
-            anchor: fields["anchor"].clone(),
+            caption: row.caption.trim().to_string(),
+            anchor,
         });
     }
     if !errors.is_empty() {
@@ -693,39 +360,16 @@ pub fn resolve_extracts(request: &ExtractRequest, rows: Option<&Value>) -> Resul
     Ok(extracts)
 }
 
-fn check_extract_style(
-    label: &str,
-    fields: &BTreeMap<&str, String>,
-    headings: &BTreeSet<String>,
-    allow_unanchored: bool,
-    errors: &mut Vec<String>,
-) -> Option<ExtractStyle> {
-    let style = kind(
-        ExtractStyle::parse(&fields["style"]),
-        label,
-        "style",
-        errors,
-    );
-    let anchor = &fields["anchor"];
-    if anchor != "__opener__" && !headings.contains(anchor) && !allow_unanchored {
-        errors.push(format!(
-            "{label} anchor does not match an article heading: {}",
-            quoted(anchor)
-        ));
-    }
-    style
-}
-
 fn extract_run(
     root: &Path,
     label: &str,
-    fields: &BTreeMap<&str, String>,
+    row: &ExtractRow,
     errors: &mut Vec<String>,
 ) -> Option<String> {
     let source_path = root
         .join("library")
         .join("sources")
-        .join(&fields["source_id"])
+        .join(row.source_id.trim())
         .join(ARTICLE_FILENAME);
     if !source_path.is_file() {
         errors.push(format!(
@@ -735,9 +379,8 @@ fn extract_run(
         return None;
     }
     let source_text = std::fs::read_to_string(&source_path).ok()?;
-    let begin = &fields["begin"];
-    let end = &fields["end"];
-    let begins = source_text.matches(begin.as_str()).count();
+    let (begin, end) = (row.begin.as_str(), row.end.as_str());
+    let begins = source_text.matches(begin).count();
     if begins != 1 {
         errors.push(format!(
             "{label} begin marker must occur exactly once in the source (found {begins}): {}",
@@ -745,9 +388,9 @@ fn extract_run(
         ));
         return None;
     }
-    let start = source_text.find(begin.as_str())?;
+    let start = source_text.find(begin)?;
     let tail = &source_text[start..];
-    let ends = tail.matches(end.as_str()).count();
+    let ends = tail.matches(end).count();
     if ends != 1 {
         errors.push(format!(
             "{label} end marker must occur exactly once at or after begin (found {ends}): {}",
@@ -755,18 +398,18 @@ fn extract_run(
         ));
         return None;
     }
-    let stop = start + tail.find(end.as_str())? + end.len();
+    let stop = start + tail.find(end)? + end.len();
     Some(source_text[start..stop].to_string())
 }
 
 fn check_extract_text(
     label: &str,
-    style: Option<ExtractStyle>,
+    style: ExtractStyle,
     text: &str,
     manuscript_text: &str,
     errors: &mut Vec<String>,
 ) {
-    if style == Some(ExtractStyle::Code) && (text.contains('\t') || text.contains("  ")) {
+    if style == ExtractStyle::Code && (text.contains('\t') || text.contains("  ")) {
         errors.push(format!(
             "{label} run carries layout-significant whitespace (tabs or space runs), which a wrapping code panel cannot preserve; use begin/end markers that avoid it or style: quote"
         ));
@@ -778,58 +421,73 @@ fn check_extract_text(
     }
 }
 
+fn localized_rows<'a, T>(
+    base_ids: Vec<&str>,
+    rows: Option<&'a [T]>,
+    id_of: impl Fn(&T) -> &str,
+    article_id: &str,
+    language: &str,
+    noun: &str,
+) -> Result<BTreeMap<&'a str, &'a T>> {
+    if base_ids.is_empty() {
+        return match rows.unwrap_or_default() {
+            [] => Ok(BTreeMap::new()),
+            _ => Err(ValidationError::one(format!(
+                "Translation {language} article {article_id} has {noun} absent from English"
+            ))),
+        };
+    }
+    let Some(rows) = rows else {
+        return Err(ValidationError::one(format!(
+            "Translation {language} article {article_id} {noun} must be a list"
+        )));
+    };
+    let by_id: BTreeMap<&str, &T> = rows
+        .iter()
+        .map(|row| (id_of(row), row))
+        .filter(|(id, _)| !id.is_empty())
+        .collect();
+    let expected: BTreeSet<&str> = base_ids.into_iter().collect();
+    let present: BTreeSet<&str> = by_id.keys().copied().collect();
+    let mut errors = Vec::new();
+    for (state, ids) in [
+        ("is missing", expected.difference(&present)),
+        ("has unknown", present.difference(&expected)),
+    ] {
+        let ids: Vec<&str> = ids.copied().collect();
+        if !ids.is_empty() {
+            errors.push(format!(
+                "Translation {language} article {article_id} {state} {noun}: {}",
+                ids.join(", ")
+            ));
+        }
+    }
+    match errors.is_empty() {
+        true => Ok(by_id),
+        false => Err(ValidationError(errors)),
+    }
+}
+
 pub fn localize_figures(
     base: &[Figure],
-    rows: Option<&Value>,
+    rows: Option<&[LocalizedFigureRow]>,
     article_id: &str,
     manuscript: &Path,
     language: &str,
 ) -> Result<Vec<Figure>> {
     let language = quoted(language);
-    if base.is_empty() {
-        if !is_absent(rows) {
-            return Err(ValidationError::one(format!(
-                "Translation {language} article {article_id} has figures absent from English"
-            )));
-        }
-        return Ok(Vec::new());
-    }
-    let items = match rows {
-        Some(Value::Sequence(items)) => items.clone(),
-        _ => {
-            return Err(ValidationError::one(format!(
-                "Translation {language} article {article_id} figures must be a list"
-            )))
-        }
-    };
-    let mut errors: Vec<String> = Vec::new();
-    let by_id = index_rows(&items);
-    let expected: BTreeSet<String> = base.iter().map(|figure| figure.id.clone()).collect();
-    compare_ids(
-        &by_id,
-        &expected,
-        article_id,
-        &language,
-        "figures",
-        &mut errors,
-    );
+    let ids = base.iter().map(|figure| figure.id.as_str()).collect();
+    let by_id = localized_rows(ids, rows, |row| &row.id, article_id, &language, "figures")?;
     let headings = semantic_headings(manuscript)?;
+    let mut errors: Vec<String> = Vec::new();
     let mut localized = Vec::new();
     for figure in base {
-        let Some(row) = by_id.get(&figure.id) else {
-            continue;
-        };
-        let caption = row_field(row, "caption")?.trim().to_string();
-        let credit = {
-            let value = row_field(row, "credit")?.trim().to_string();
-            if value.is_empty() {
-                figure.credit.clone()
-            } else {
-                value
-            }
-        };
-        let alt_text = row_field(row, "alt_text")?.trim().to_string();
-        let anchor = row_field(row, "anchor")?.trim().to_string();
+        let row = by_id[figure.id.as_str()];
+        let (caption, alt_text, anchor) = (
+            row.caption.trim().to_string(),
+            row.alt_text.trim().to_string(),
+            row.anchor.trim().to_string(),
+        );
         if caption.is_empty() || alt_text.is_empty() || anchor.is_empty() {
             errors.push(format!(
                 "Translation {language} figure {} requires caption, alt_text, and anchor",
@@ -842,6 +500,10 @@ pub fn localize_figures(
                 figure.id
             ));
         }
+        let credit = match row.credit.trim() {
+            "" => figure.credit.clone(),
+            credit => credit.to_string(),
+        };
         localized.push(Figure {
             caption,
             credit,
@@ -850,55 +512,31 @@ pub fn localize_figures(
             ..figure.clone()
         });
     }
-    if !errors.is_empty() {
-        return Err(ValidationError(errors));
+    match errors.is_empty() {
+        true => Ok(localized),
+        false => Err(ValidationError(errors)),
     }
-    Ok(localized)
 }
 
 pub fn localize_extracts(
     base: &[Extract],
-    rows: Option<&Value>,
+    rows: Option<&[LocalizedExtractRow]>,
     article_id: &str,
     manuscript: &Path,
     language: &str,
 ) -> Result<Vec<Extract>> {
     let language = quoted(language);
-    if base.is_empty() {
-        if !is_absent(rows) {
-            return Err(ValidationError::one(format!(
-                "Translation {language} article {article_id} has extracts absent from English"
-            )));
-        }
-        return Ok(Vec::new());
-    }
-    let items = match rows {
-        Some(Value::Sequence(items)) => items.clone(),
-        _ => {
-            return Err(ValidationError::one(format!(
-                "Translation {language} article {article_id} extracts must be a list"
-            )))
-        }
-    };
-    let mut errors: Vec<String> = Vec::new();
-    let by_id = index_rows(&items);
-    let expected: BTreeSet<String> = base.iter().map(|extract| extract.id.clone()).collect();
-    compare_ids(
-        &by_id,
-        &expected,
-        article_id,
-        &language,
-        "extracts",
-        &mut errors,
-    );
+    let ids = base.iter().map(|extract| extract.id.as_str()).collect();
+    let by_id = localized_rows(ids, rows, |row| &row.id, article_id, &language, "extracts")?;
     let headings = semantic_headings(manuscript)?;
+    let mut errors: Vec<String> = Vec::new();
     let mut localized = Vec::new();
     for extract in base {
-        let Some(row) = by_id.get(&extract.id) else {
-            continue;
-        };
-        let caption = row_field(row, "caption")?.trim().to_string();
-        let anchor = row_field(row, "anchor")?.trim().to_string();
+        let row = by_id[extract.id.as_str()];
+        let (caption, anchor) = (
+            row.caption.trim().to_string(),
+            row.anchor.trim().to_string(),
+        );
         if caption.is_empty() || anchor.is_empty() {
             errors.push(format!(
                 "Translation {language} extract {} requires caption and anchor",
@@ -917,56 +555,8 @@ pub fn localize_extracts(
             ..extract.clone()
         });
     }
-    if !errors.is_empty() {
-        return Err(ValidationError(errors));
-    }
-    Ok(localized)
-}
-
-fn index_rows(items: &[Value]) -> BTreeMap<String, serde_norway::Mapping> {
-    let mut by_id = BTreeMap::new();
-    for item in items {
-        let Value::Mapping(mapping) = item else {
-            continue;
-        };
-        let Some(id) = mapping.get(Value::String("id".into())) else {
-            continue;
-        };
-        let Ok(text) = row_text("id", Some(id)) else {
-            continue;
-        };
-        if text.is_empty() {
-            continue;
-        }
-        by_id.insert(text, mapping.clone());
-    }
-    by_id
-}
-
-fn compare_ids(
-    by_id: &BTreeMap<String, serde_norway::Mapping>,
-    expected: &BTreeSet<String>,
-    article_id: &str,
-    language: &str,
-    kind: &str,
-    errors: &mut Vec<String>,
-) {
-    let present: BTreeSet<String> = by_id.keys().cloned().collect();
-    if &present == expected {
-        return;
-    }
-    let missing: Vec<String> = expected.difference(&present).cloned().collect();
-    let extra: Vec<String> = present.difference(expected).cloned().collect();
-    if !missing.is_empty() {
-        errors.push(format!(
-            "Translation {language} article {article_id} is missing {kind}: {}",
-            missing.join(", ")
-        ));
-    }
-    if !extra.is_empty() {
-        errors.push(format!(
-            "Translation {language} article {article_id} has unknown {kind}: {}",
-            extra.join(", ")
-        ));
+    match errors.is_empty() {
+        true => Ok(localized),
+        false => Err(ValidationError(errors)),
     }
 }

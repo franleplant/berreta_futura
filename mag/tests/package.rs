@@ -33,38 +33,6 @@ fn contact_sheets_cover_every_page_and_an_empty_list_writes_none() {
 }
 
 #[test]
-fn adopting_the_rendered_layout_moves_only_a_present_non_null_ledger() {
-    let adopt =
-        |mut manifest: Value| release::adopt_rendered_layout(&mut manifest).map(|()| manifest);
-    let ledger = json!([{"article": "a", "art": "t1"}]);
-    assert_eq!(
-        adopt(json!({"edition": {"id": "010", "_rendered_tail_arts": ledger}})).unwrap(),
-        json!({"edition": {"id": "010"}, "layout": {"tail_arts": ledger}})
-    );
-    assert_eq!(
-        adopt(json!({"edition": {"_rendered_tail_arts": ledger}, "layout": {"toc": {}}})).unwrap(),
-        json!({"edition": {}, "layout": {"toc": {}, "tail_arts": ledger}})
-    );
-    assert_eq!(
-        adopt(json!({"edition": {"_rendered_tail_arts": null}})).unwrap(),
-        json!({"edition": {}})
-    );
-    for untouched in [
-        json!({"edition": "010"}),
-        json!({"edition": {"id": 1}}),
-        json!({"layout": 1}),
-    ] {
-        assert_eq!(adopt(untouched.clone()).unwrap(), untouched);
-    }
-    let error =
-        adopt(json!({"edition": {"_rendered_tail_arts": ledger}, "layout": []})).unwrap_err();
-    assert_eq!(
-        error.to_string(),
-        "manifest layout must be a mapping to adopt the rendered tail arts"
-    );
-}
-
-#[test]
 fn visual_review_status_covers_every_recorded_review_branch() {
     let dir = scratch("review");
     let (reader, booklet) = (dir.join("reader.pdf"), dir.join("booklet.pdf"));

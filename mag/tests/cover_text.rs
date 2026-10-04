@@ -1,8 +1,8 @@
 use mag::cover::text;
 use mag::model::manifest;
 
+use mag::model::spec::Cover;
 use manifest::{Article, Edition};
-use serde_norway::{Mapping, Value};
 use std::path::PathBuf;
 
 fn article(author: &str) -> Article {
@@ -28,7 +28,7 @@ fn article(author: &str) -> Article {
     }
 }
 
-fn edition(authors: &[&str], cover: Mapping, language: &str, issue: &str, name: &str) -> Edition {
+fn edition(authors: &[&str], cover: Cover, language: &str, issue: &str, name: &str) -> Edition {
     Edition {
         id: "010".to_string(),
         publication_name: name.to_string(),
@@ -36,19 +36,14 @@ fn edition(authors: &[&str], cover: Mapping, language: &str, issue: &str, name: 
         title: String::new(),
         publication_date: String::new(),
         language: language.to_string(),
-        locale: String::new(),
-        editorial: None,
         articles: authors.iter().map(|value| article(value)).collect(),
-        sections: Vec::new(),
         cover,
-        cover_art: None,
-        closing_plates: Vec::new(),
-        raw: Value::Null,
+        ..Edition::default()
     }
 }
 
 fn plain(authors: &[&str]) -> Edition {
-    edition(authors, Mapping::new(), "en", "010", "Berreta Futura")
+    edition(authors, Cover::default(), "en", "010", "Berreta Futura")
 }
 
 #[test]
@@ -77,7 +72,7 @@ fn the_issue_tab_follows_the_language_and_pads_the_number() {
     let issue = |language, number| {
         text::cover_tab_issue(&edition(
             &[],
-            Mapping::new(),
+            Cover::default(),
             language,
             number,
             "Berreta Futura",
@@ -89,7 +84,12 @@ fn the_issue_tab_follows_the_language_and_pads_the_number() {
 
 #[test]
 fn the_identity_tab_upper_cases_the_publication_name() {
-    let identity =
-        text::cover_tab_identity(&edition(&[], Mapping::new(), "en", "010", "berreta futura"));
+    let identity = text::cover_tab_identity(&edition(
+        &[],
+        Cover::default(),
+        "en",
+        "010",
+        "berreta futura",
+    ));
     assert_eq!(identity, "BERRETA FUTURA / BUENOS AIRES");
 }

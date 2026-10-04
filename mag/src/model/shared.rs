@@ -58,16 +58,6 @@ pub(crate) fn text(value: Option<&Value>) -> &str {
     value.and_then(Value::as_str).unwrap_or_default()
 }
 
-pub(crate) fn filled(value: Option<&Value>) -> bool {
-    match value {
-        None | Some(Value::Null) => false,
-        Some(Value::String(text)) => !text.is_empty(),
-        Some(Value::Sequence(items)) => !items.is_empty(),
-        Some(Value::Mapping(mapping)) => !mapping.is_empty(),
-        Some(_) => true,
-    }
-}
-
 pub(crate) fn quoted(value: &str) -> String {
     format!("{value:?}")
 }
@@ -76,54 +66,17 @@ pub(crate) fn show(value: &Value) -> String {
     serde_json::to_string(value).unwrap_or_default()
 }
 
-pub(crate) fn check_text(row: &Value, keys: &[&str], context: &str, errors: &mut Vec<String>) {
-    for key in keys {
-        if let Some(value) = row
-            .get(*key)
-            .filter(|value| !matches!(value, Value::Null | Value::String(_)))
-        {
-            errors.push(format!("{context} {key} must be text, not {}", show(value)));
-        }
-    }
-}
-
-fn first_tag(value: &Value) -> Option<String> {
-    match value {
-        Value::Tagged(tagged) => Some(tagged.tag.to_string()),
-        Value::Sequence(items) => items.iter().find_map(first_tag),
-        Value::Mapping(mapping) => mapping
-            .iter()
-            .find_map(|(key, item)| first_tag(key).or_else(|| first_tag(item))),
-        _ => None,
-    }
-}
-
-pub fn load_structured(path: &Path) -> Result<Value> {
-    let text = std::fs::read_to_string(path).map_err(|error| {
-        ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
-    })?;
-    let data: Value = if path.extension().is_some_and(|suffix| suffix == "json") {
-        serde_json::from_str(&text).map_err(|error| {
-            ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
-        })?
-    } else {
-        load_yaml(&text).map_err(|error| {
-            ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
-        })?
+pub fn read_spec<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
+    let unreadable = |error: &dyn fmt::Display| {
+        ValidationError::one(format!("Cannot read {}: {error}", path.display()))
     };
-    if let Some(tag) = first_tag(&data) {
-        return Err(ValidationError(vec![format!(
-            "Cannot read {}: could not determine a constructor for the tag '{tag}'",
-            path.display()
-        )]));
-    }
-    if !matches!(data, Value::Mapping(_)) {
-        return Err(ValidationError(vec![format!(
-            "{} must contain a mapping",
-            path.display()
-        )]));
-    }
-    Ok(data)
+    let text = std::fs::read_to_string(path).map_err(|error| unreadable(&error))?;
+    parse_yaml(&text).map_err(|error| unreadable(&error))
+}
+
+pub fn parse_yaml<T: serde::de::DeserializeOwned>(text: &str) -> anyhow::Result<T> {
+    let value: serde_norway::Value = serde_norway::from_str(text)?;
+    Ok(serde_path_to_error::deserialize(value)?)
 }
 
 pub const ROSTER_CLAMP_LIMIT: usize = 54;
@@ -206,13 +159,6 @@ pub fn ui(language: &str, key: &str) -> String {
         || key.replace(['_', '-'], " ").to_uppercase(),
         |(_, value)| (*value).to_string(),
     )
-}
-
-pub fn article_opener_format(raw: &Value) -> String {
-    match raw.get("format") {
-        Some(Value::Mapping(format)) => text(format.get("article_opener")).trim().to_string(),
-        _ => String::new(),
-    }
 }
 
 pub fn anchor_key(value: &str) -> String {

@@ -1,4 +1,5 @@
 use mag::model::shared;
+use mag::model::spec::EditionFile;
 use serde_norway::{Mapping, Value};
 
 fn yaml(text: &str) -> Value {
@@ -39,34 +40,34 @@ fn anchor_keys_trim_and_lowercase() {
 }
 
 #[test]
-fn the_article_opener_format_is_empty_unless_declared_as_text() {
-    let format = |text: &str| shared::article_opener_format(&yaml(text));
-    assert_eq!(
-        format("format: {article_opener: ' illustrated_paper_spots_v1 '}"),
-        "illustrated_paper_spots_v1"
-    );
-    assert_eq!(format("format: {article_opener: null}"), "");
-    assert_eq!(format("format: {article_opener: ''}"), "");
-    assert_eq!(format("format: {}"), "");
-    assert_eq!(format("format: illustrated_paper_spots_v1"), "");
-    assert_eq!(format("title: x"), "");
-}
-
-#[test]
-fn structured_files_load_null_and_refuse_every_tag() {
-    let dir = std::env::temp_dir().join(format!("mag-load-structured-{}", std::process::id()));
+fn typed_spec_files_load_null_and_refuse_unknown_keys() {
+    let dir = std::env::temp_dir().join(format!("mag-read-spec-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("the scratch directory is writable");
     let path = dir.join("case.yaml");
     let load = |text: &str| {
         std::fs::write(&path, text).expect("the case is writable");
-        shared::load_structured(&path)
+        shared::read_spec::<EditionFile>(&path)
     };
-    let data = load("label: ~\ntitle: T\n").expect("a null label loads");
-    assert_eq!(data.get("label"), Some(&Value::Null));
-    assert_eq!(data.get("title"), Some(&Value::from("T")));
+    let data = load("subtitle: ~\ntitle: T\n").expect("a null subtitle loads");
+    assert_eq!((data.subtitle, data.title), (None, "T".to_string()));
     let quoted = load("title: \"a !!null b\"\n").expect("a quoted tag is text");
-    assert_eq!(quoted.get("title"), Some(&Value::from("a !!null b")));
-    for header in ["label: !!null\n", "label: !custom x\n"] {
-        assert!(load(header).is_err(), "{header}");
+    assert_eq!(quoted.title, "a !!null b");
+    let stale = load("title: T\nstale_key: 1\n").expect_err("an unknown key is refused");
+    assert!(
+        stale.to_string().contains("unknown field `stale_key`"),
+        "{stale}"
+    );
+    for text in [
+        "subtitle: 5\n",
+        "title: ~\n",
+        "title: null\n",
+        "id: 12\n",
+        "sources: [3]\n",
+    ] {
+        let error = load(text).expect_err("a non-text scalar is refused");
+        assert!(error.to_string().contains(": invalid type"), "{error}");
     }
+    let path_error = load("subtitle: 5\n").unwrap_err();
+    assert!(path_error.to_string().contains("subtitle"), "{path_error}");
+    assert_eq!(load("issue_number: 13\n").unwrap().issue_number, "13");
 }

@@ -1,5 +1,8 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::model::kinds::ArtPurpose;
+use crate::model::manifest::art_slots;
+use crate::model::shared::parse_yaml;
+use crate::model::spec::EditionFile;
 use crate::produce::{self, INLINE_PREAMBLE};
 use crate::util::{escape_html, parallel, prompts_path, read};
 use anyhow::{anyhow, bail, ensure, Context, Result};
@@ -169,11 +172,8 @@ struct BriefsDoc {
 }
 
 fn art_direction_section(edition_yaml_text: &str) -> Result<Option<(String, String)>> {
-    let doc: serde_norway::Value = serde_norway::from_str(edition_yaml_text)
-        .context("parsing edition.yaml for art_direction_path")?;
-    let Some(path) = doc.get("art_direction_path").and_then(|v| v.as_str()) else {
-        return Ok(None);
-    };
+    let doc: EditionFile = parse_yaml(edition_yaml_text).context("parsing edition.yaml")?;
+    let path = doc.art_direction_path.unwrap_or_default();
     let path = path.trim();
     if path.is_empty() {
         return Ok(None);
@@ -778,33 +778,6 @@ struct ShowcaseItem {
     verdicts: Vec<MemberVerdict>,
 }
 
-pub fn selected_art_paths(edition_yaml: &serde_norway::Value) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut push = |v: Option<&serde_norway::Value>| {
-        if let Some(s) = v.and_then(|v| v.as_str()) {
-            if !s.trim().is_empty() {
-                out.push(s.to_string());
-            }
-        }
-    };
-    push(edition_yaml.get("cover").and_then(|c| c.get("art_path")));
-    if let Some(articles) = edition_yaml.get("articles").and_then(|v| v.as_sequence()) {
-        for article in articles {
-            push(article.get("opener_art").and_then(|o| o.get("path")));
-            push(article.get("tail_art_path"));
-        }
-    }
-    if let Some(plates) = edition_yaml
-        .get("closing_plates")
-        .and_then(|v| v.as_sequence())
-    {
-        for plate in plates {
-            push(plate.get("art_path"));
-        }
-    }
-    out
-}
-
 fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec<ShowcaseItem>> {
     let rounds_root = edition_dir.join("art").join("rounds");
     let mut round_dirs: Vec<PathBuf> = match fs::read_dir(&rounds_root) {
@@ -912,25 +885,17 @@ fn showcase_frame(edition_dir: &Path, edition_label: &str) -> Result<(CoverFrame
     if !edition_yaml_path.exists() {
         return Ok((cover_frame, Vec::new()));
     }
-    let doc: serde_norway::Value = serde_norway::from_str(&read(&edition_yaml_path)?)
+    let doc: EditionFile = parse_yaml(&read(&edition_yaml_path)?)
         .with_context(|| format!("parsing {}", edition_yaml_path.display()))?;
-    if let Some(h) = doc
-        .get("cover")
-        .and_then(|c| c.get("headline"))
-        .and_then(|v| v.as_str())
-    {
-        cover_frame.headline = h.to_string();
+    if let Some(headline) = doc.cover.headline.clone() {
+        cover_frame.headline = headline;
     }
-    if let Some(n) = doc
-        .get("issue_number")
-        .and_then(serde_norway::Value::as_u64)
-    {
-        cover_frame.issue = format!("{n:03}");
+    if let Ok(number) = doc.issue_number.parse::<u64>() {
+        cover_frame.issue = format!("{number:03}");
     }
-    if let Some(d) = doc.get("publication_date").and_then(|v| v.as_str()) {
-        cover_frame.date = d.replace('-', " ");
-    }
-    Ok((cover_frame, selected_art_paths(&doc)))
+    cover_frame.date = doc.publication_date.replace('-', " ");
+    let selected = art_slots(&doc).into_iter().map(|(_, path)| path).collect();
+    Ok((cover_frame, selected))
 }
 
 fn cover_frame_html(cover_frame: &CoverFrame, item: &ShowcaseItem, img_tag: &str) -> String {
@@ -2049,17 +2014,9 @@ fn parse_only_articles(
     if ids.is_empty() {
         bail!("--articles was given but named no article ids");
     }
-    let doc: serde_norway::Value = serde_norway::from_str(edition_yaml_text)
-        .context("parsing edition.yaml for article ids")?;
-    let known: Vec<String> = doc
-        .get("articles")
-        .and_then(|v| v.as_sequence())
-        .map(|s| {
-            s.iter()
-                .filter_map(|a| a.get("id").and_then(|v| v.as_str()).map(str::to_string))
-                .collect()
-        })
-        .unwrap_or_default();
+    let doc: EditionFile =
+        parse_yaml(edition_yaml_text).context("parsing edition.yaml for article ids")?;
+    let known: Vec<String> = doc.articles.into_iter().map(|article| article.id).collect();
     for id in &ids {
         if !known.contains(id) {
             bail!(

@@ -9,7 +9,6 @@ use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cov
 use crate::model::manifest::Edition;
 use anyhow::{bail, Context, Result};
 use lopdf::{Document, Object, StringFormat};
-use serde_norway::Value;
 use std::path::Path;
 
 pub const DESIGN_TOML: &str = "design/covers/canto-vivo/design.toml";
@@ -256,15 +255,6 @@ fn copy(edition: &Edition) -> Copy {
     }
 }
 
-fn cover_field(edition: &Edition, key: &str, fallback: &str) -> String {
-    edition
-        .cover
-        .get(key)
-        .and_then(Value::as_str)
-        .unwrap_or(fallback)
-        .to_string()
-}
-
 fn rgb(hex: &str) -> Result<(f64, f64, f64)> {
     let channel = |at: usize| {
         u8::from_str_radix(hex.get(at..at + 2).unwrap_or(""), 16)
@@ -314,7 +304,11 @@ fn placeholder(design: &Design) -> String {
 }
 
 fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(String, Face)> {
-    let headline = cover_field(edition, "headline", &edition.title);
+    let headline = edition
+        .cover
+        .headline
+        .clone()
+        .unwrap_or_else(|| edition.title.clone());
     let text = CoverText {
         headline: headline.clone(),
         date_line: cover_date(&edition.publication_date),
@@ -324,11 +318,10 @@ fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(Strin
     };
     let layout = edition
         .cover
-        .get("layout")
-        .and_then(Value::as_str)
+        .layout
+        .clone()
         .filter(|layout| !layout.is_empty())
-        .unwrap_or("framed")
-        .to_string();
+        .unwrap_or_else(|| "framed".to_string());
     let mut builder = Builder { design, fonts };
     let svg = match (edition.cover_art.as_deref(), layout.as_str()) {
         (Some(art), _) => builder.materialize(&layout, &text, art)?,
@@ -403,7 +396,11 @@ fn back(
     edition: &Edition,
 ) -> Result<(String, Face)> {
     let copy = copy(edition);
-    let statement = cover_field(edition, "back_text", copy.statement)
+    let statement = edition
+        .cover
+        .back_text
+        .as_deref()
+        .unwrap_or(copy.statement)
         .trim()
         .to_string();
     let text = BackText {
@@ -544,6 +541,7 @@ pub fn replace_outer_pages(interior: &[u8], front: &[u8], back: &[u8]) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::spec::Cover;
     use lopdf::{dictionary, Stream};
     use std::path::PathBuf;
 
@@ -560,13 +558,7 @@ mod tests {
             publication_date: "2026-09-13".into(),
             language: language.into(),
             locale: language.into(),
-            editorial: None,
-            articles: vec![],
-            sections: vec![],
-            cover: serde_norway::Mapping::new(),
-            cover_art: None,
-            closing_plates: vec![],
-            raw: serde_norway::Value::Null,
+            ..Edition::default()
         }
     }
 
@@ -621,8 +613,10 @@ mod tests {
         let assets = root().join("mag/assets");
         let (design, _) = super::design(&root()).expect("design.toml loads");
         let framed = |layout: &str| {
-            let mut cover = serde_norway::Mapping::new();
-            cover.insert("layout".into(), layout.into());
+            let cover = Cover {
+                layout: Some(layout.to_string()),
+                ..Cover::default()
+            };
             let edition = Edition {
                 cover,
                 ..edition("es")
@@ -639,7 +633,7 @@ mod tests {
         assert!(framed("footer_caption").is_err() && framed("honored_plate").is_err());
     }
 
-    fn back_face(language: &str, cover: serde_norway::Mapping) -> (String, Face) {
+    fn back_face(language: &str, cover: Cover) -> (String, Face) {
         let assets = root().join("mag/assets");
         let (design, back_design) = design(&root()).expect("design.toml loads");
         let mut fonts = Fonts::load(&assets).expect("cover faces load");
@@ -660,7 +654,7 @@ mod tests {
     #[test]
     fn the_back_cover_text_layer_carries_each_languages_copy() {
         let values = |language| {
-            back_face(language, serde_norway::Mapping::new())
+            back_face(language, Cover::default())
                 .1
                 .text
                 .into_iter()
@@ -690,7 +684,7 @@ mod tests {
 
     #[test]
     fn the_back_cover_rasterizes_at_a5_and_300_dpi() {
-        let (svg, _) = back_face("en", serde_norway::Mapping::new());
+        let (svg, _) = back_face("en", Cover::default());
         let pixmap = raster::render(&raster::raster_svg(&svg, 300)).expect("back rasterizes");
         assert_eq!((pixmap.width(), pixmap.height()), (1748, 2480));
     }

@@ -1,6 +1,7 @@
+use crate::model::shared::read_spec;
+use crate::model::spec::{EditionFile, SourceRecord};
 use crate::package::release::json_text;
-use crate::util::read_yaml;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use qrcodegen::{DataTooLong, Mask, QrCode, QrCodeEcc, QrSegment, QrSegmentMode, Version};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
@@ -260,36 +261,28 @@ pub fn web_svg(payload: &str) -> Result<String> {
 }
 
 fn sources(root: &Path, edition: &str) -> Result<Vec<(String, String, f64)>> {
-    let manifest = read_yaml(&root.join("editions").join(edition).join("edition.yaml"))?;
+    let manifest: EditionFile =
+        read_spec(&root.join("editions").join(edition).join("edition.yaml"))?;
+    ensure!(
+        !manifest.articles.is_empty(),
+        "edition.yaml carries no articles list"
+    );
     let mut rows: Vec<(String, String, f64)> = Vec::new();
-    for article in manifest["articles"]
-        .as_sequence()
-        .context("edition.yaml carries no articles list")?
-    {
-        let room = if article["opener_art"].is_null() {
-            PLAIN_ROOM
-        } else {
-            ILLUSTRATED_ROOM
+    for article in &manifest.articles {
+        let room = match article.opener_art {
+            None => PLAIN_ROOM,
+            Some(_) => ILLUSTRATED_ROOM,
         };
-        let first = article["source_ids"]
-            .as_sequence()
-            .and_then(|ids| ids.first());
-        let source_id = first
-            .unwrap_or(&article["id"])
-            .as_str()
-            .context("article without an id")?
-            .to_string();
-        let record = read_yaml(
+        let source_id = article.source_ids.first().unwrap_or(&article.id);
+        ensure!(!source_id.is_empty(), "article without an id");
+        let record: SourceRecord = read_spec(
             &root
                 .join("library/sources")
-                .join(&source_id)
+                .join(source_id)
                 .join("record.yaml"),
         )?;
-        match record["url"].as_str() {
-            Some(url) if !url.is_empty() && !rows.iter().any(|row| row.0 == source_id) => {
-                rows.push((source_id, url.to_string(), room));
-            }
-            _ => {}
+        if !record.url.is_empty() && !rows.iter().any(|row| &row.0 == source_id) {
+            rows.push((source_id.clone(), record.url, room));
         }
     }
     Ok(rows)

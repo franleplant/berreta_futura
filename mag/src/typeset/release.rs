@@ -87,6 +87,34 @@ fn file_row(path: &Path, root: &Path) -> Value {
     json!({"path": relative, "mediaType": media_type, "kind": kind})
 }
 
+fn edition_summary(edition: &Edition) -> Result<Value> {
+    let articles: Vec<Value> = edition
+        .articles
+        .iter()
+        .map(|article| {
+            json!({
+                "id": article.id,
+                "title": article.title,
+                "short_title": article.short_title,
+                "author": article.author,
+                "content_mode": article.content_mode,
+                "source_ids": article.source_ids,
+            })
+        })
+        .collect();
+    Ok(json!({
+        "id": edition.id,
+        "issue_number": edition.issue_number,
+        "title": edition.title,
+        "subtitle": edition.subtitle,
+        "publication_date": edition.publication_date,
+        "cover": serde_json::to_value(&edition.cover)?,
+        "format": serde_json::to_value(&edition.format)?,
+        "tail_art_fit": edition.tail_art_fit,
+        "articles": articles,
+    }))
+}
+
 fn manifest(p: &Publish) -> Result<Value> {
     let ids: Vec<&str> = p.request["inputs"]
         .as_array()
@@ -103,7 +131,7 @@ fn manifest(p: &Publish) -> Result<Value> {
             "locale": p.edition.locale,
             "available_languages": p.request["languages"],
         },
-        "edition": serde_json::to_value(&p.edition.raw)?,
+        "edition": edition_summary(p.edition)?,
         "inputs": {"artifact_ids": ids},
         "layout": p.layout,
         "studio_release_ready": false,

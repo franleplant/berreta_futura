@@ -1,6 +1,6 @@
 use mag::model::records::{load_records, resolve_extracts, Extract, ExtractRequest};
 use mag::model::shared::ValidationError;
-use serde_norway::Value;
+use mag::model::spec::ExtractRow;
 use std::path::{Path, PathBuf};
 
 fn root() -> PathBuf {
@@ -8,10 +8,10 @@ fn root() -> PathBuf {
 }
 
 fn resolve(manuscript: &str, begin: &str, end: &str, style: &str) -> Result<Vec<Extract>, String> {
-    let rows: Value = serde_norway::from_str(&format!(
+    let rows: Vec<ExtractRow> = serde_norway::from_str(&format!(
         "[{{id: x1, source_id: src-a, begin: '{begin}', end: '{end}', style: {style}, caption: c, anchor: Beta Heading}}]"
     ))
-    .expect("the row parses");
+    .map_err(|error| error.to_string())?;
     let root = root();
     let request = ExtractRequest {
         root: &root,
@@ -20,7 +20,7 @@ fn resolve(manuscript: &str, begin: &str, end: &str, style: &str) -> Result<Vec<
         manuscript: &root.join("manuscripts").join(manuscript),
         allow_unanchored: false,
     };
-    resolve_extracts(&request, Some(&rows)).map_err(|ValidationError(errors)| errors.join("|"))
+    resolve_extracts(&request, &rows).map_err(|ValidationError(errors)| errors.join("|"))
 }
 
 #[test]
@@ -58,11 +58,10 @@ fn a_run_the_manuscript_already_carries_is_refused() {
 }
 
 #[test]
-fn an_invalid_style_and_a_verbatim_run_report_both_errors() {
+fn an_invalid_style_is_refused_with_its_field_path() {
     let error = resolve("dup.md", "QUOTE-START", "QUOTE-END", "poster").expect_err("refused");
-    assert!(error.contains("style"), "{error}");
     assert!(
-        error.contains("already appears verbatim in the manuscript"),
+        error.contains("[0].style: unknown variant `poster`"),
         "{error}"
     );
 }

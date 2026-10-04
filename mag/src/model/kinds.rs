@@ -1,14 +1,18 @@
 use clap::ValueEnum;
 
 macro_rules! kinds {
-    ($($name:ident { $($variant:ident = $text:literal),+ })+) => {$(
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum, serde::Serialize, serde::Deserialize)]
+    ($($name:ident { $first:ident = $first_text:literal $(, $variant:ident = $text:literal)* $(,)? })+) => {$(
+        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, ValueEnum, serde::Serialize, serde::Deserialize)]
         pub enum $name {
+            #[default]
+            #[serde(rename = $first_text)]
+            #[value(name = $first_text)]
+            $first,
             $(
                 #[serde(rename = $text)]
                 #[value(name = $text)]
                 $variant
-            ),+
+            ),*
         }
 
         impl std::fmt::Display for $name {
@@ -18,11 +22,12 @@ macro_rules! kinds {
         }
 
         impl $name {
-            pub const ALL: &'static [Self] = &[$(Self::$variant),+];
+            pub const ALL: &'static [Self] = &[Self::$first $(, Self::$variant)*];
 
             pub fn as_str(self) -> &'static str {
                 match self {
-                    $(Self::$variant => $text),+
+                    Self::$first => $first_text,
+                    $(Self::$variant => $text),*
                 }
             }
 

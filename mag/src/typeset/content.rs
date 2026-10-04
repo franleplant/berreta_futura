@@ -6,8 +6,8 @@ use crate::model::kinds::ExtractStyle;
 use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
-    anchor_key, article_opener_format, clamp_roster, content_label, is_name_roster,
-    is_reference_heading, quoted, scalar_label, show, text, ui, Result, ValidationError,
+    anchor_key, clamp_roster, content_label, is_name_roster, is_reference_heading, quoted,
+    scalar_label, ui, Result, ValidationError,
 };
 use crate::sourcecodes::source_code_directory;
 use crate::typeset::estimate::Metrics;
@@ -102,7 +102,7 @@ pub fn compose(
         metrics: &Metrics::load(fonts)?,
         keeps,
         standfirsts: Cell::new(0),
-        illustrated: article_opener_format(&edition.raw) == ILLUSTRATED,
+        illustrated: edition.format.article_opener.as_deref().map(str::trim) == Some(ILLUSTRATED),
         native: hyphenation.native(&edition.locale),
         hyphenator: Hyphenator::for_locale(&edition.locale)
             .transpose()
@@ -213,7 +213,7 @@ impl Writer<'_> {
         let mut files = Vec::new();
         let mut main = String::from("#import \"/template.typ\": *\n\n");
         main.push_str(&self.header());
-        main.push_str(&self.closing_plates()?);
+        main.push_str(&self.closing_plates());
         main.push_str(&self.contents()?);
         if let Some(editorial) = &self.edition.editorial {
             let document = read_manuscript(&editorial.path)?;
@@ -256,7 +256,7 @@ impl Writer<'_> {
 
     fn header(&self) -> String {
         let edition = self.edition;
-        let subtitle = text(edition.raw.get("subtitle")).trim().to_string();
+        let subtitle = &edition.subtitle;
         format!(
             "#set document(title: {})\n#set text({})\n\n#edition-header[\n  #publication-name{}\n  \
              #issue-line{}\n  #edition-title{}\n{}  #edition-date{}\n]\n\n",
@@ -268,7 +268,7 @@ impl Writer<'_> {
             if subtitle.is_empty() {
                 String::new()
             } else {
-                format!("  #edition-subtitle{}\n", self.said(&subtitle))
+                format!("  #edition-subtitle{}\n", self.said(subtitle))
             },
             self.said(&edition.publication_date),
         )
@@ -677,16 +677,11 @@ impl Writer<'_> {
 
     fn tail_art(&self, article: &Article, path: &Path) -> Result<String> {
         let (width, height) = pixels(path)?;
-        let fit = self
-            .edition
-            .raw
-            .get("tail_art_fit")
-            .and_then(|v| v.as_str());
         Ok(format!(
             "#tail-art(article: {}, path: {}, pixels: ({width}, {height}), fit: {})\n\n",
             string_literal(&article.id),
             path_literal(path),
-            string_literal(fit.unwrap_or("cover").trim()),
+            string_literal(self.edition.tail_art_fit.as_str()),
         ))
     }
 
@@ -833,28 +828,12 @@ impl Writer<'_> {
         }
     }
 
-    fn closing_plates(&self) -> Result<String> {
-        let target = self
-            .edition
-            .raw
-            .get("format")
-            .and_then(|value| value.get("target_pages"))
-            .filter(|value| !value.is_null())
-            .map_or(Ok(0), |value| {
-                value.as_i64().ok_or_else(|| {
-                    ValidationError::one(format!(
-                        "format.target_pages must be a number, not {}",
-                        show(value)
-                    ))
-                })
-            })?;
-        let target = if target == 0 {
-            "none".to_string()
-        } else {
-            target.to_string()
+    fn closing_plates(&self) -> String {
+        let target = match self.edition.format.target_pages.unwrap_or(0) {
+            0 => "none".to_string(),
+            pages => pages.to_string(),
         };
-        Ok(self
-            .edition
+        self.edition
             .closing_plates
             .iter()
             .enumerate()
@@ -867,7 +846,7 @@ impl Writer<'_> {
                 )
             })
             .chain(["#closing-signature(none)\n".to_string()])
-            .collect())
+            .collect()
     }
 }
 
@@ -1687,7 +1666,7 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_subtitle_prints_nothing_and_a_number_is_refused() {
+    fn an_empty_subtitle_prints_nothing_and_a_list_is_refused() {
         let root = mutated(
             "empty-subtitle",
             "900",
@@ -1700,14 +1679,14 @@ mod tests {
         let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
         assert!(!text.contains("edition-subtitle") && !text.contains("None"));
         let root = mutated(
-            "numeric-subtitle",
+            "list-subtitle",
             "900",
             &[(
                 "subtitle: A fixture subtitle for the edition header.",
-                "subtitle: 5",
+                "subtitle: [5]",
             )],
         );
-        assert!(refusal_of(&root, "900").contains("Edition subtitle must be text, not 5"));
+        assert!(refusal_of(&root, "900").contains("subtitle: invalid type: sequence"));
     }
 
     #[test]

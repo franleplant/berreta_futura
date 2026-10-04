@@ -1,5 +1,4 @@
 use crate::model::manifest::Edition;
-use crate::model::shared::text;
 use std::collections::BTreeSet;
 
 pub fn cover_date(value: &str) -> String {
@@ -23,7 +22,13 @@ pub fn cover_contributors(edition: &Edition) -> String {
     if !authors.is_empty() {
         return authors.join(" / ").to_uppercase();
     }
-    text(edition.cover.get("deck")).trim().to_string()
+    edition
+        .cover
+        .deck
+        .as_deref()
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 fn lead_author(author: &str) -> String {

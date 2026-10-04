@@ -1,5 +1,7 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::model::kinds::ContentMode;
+use crate::model::shared::parse_yaml;
+use crate::model::spec::EditionFile;
 use crate::util::{parallel, prompts_path, read};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -601,12 +603,8 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
 
 fn append_missing_articles(path: &Path, edition_id: &str, plan: &Plan) -> Result<String> {
     let text = read(path)?;
-    let spec: serde_norway::Value = serde_norway::from_str(&text)?;
-    let have: HashSet<&str> = spec
-        .get("articles")
-        .and_then(|v| v.as_sequence())
-        .map(|s| s.iter().filter_map(|a| a.get("id")?.as_str()).collect())
-        .unwrap_or_default();
+    let spec: EditionFile = parse_yaml(&text)?;
+    let have: HashSet<&str> = spec.articles.iter().map(|a| a.id.as_str()).collect();
     let mut rows = String::new();
     let mut added = Vec::new();
     for a in &plan.articles {
@@ -632,6 +630,8 @@ fn append_missing_articles(path: &Path, edition_id: &str, plan: &Plan) -> Result
         .position(|l| l.chars().next().is_some_and(|c| c.is_ascii_alphabetic()))
         .map_or(lines.len(), |i| articles_at + 1 + i);
     let out = lines[..insert_at].join("\n") + "\n" + &rows + &lines[insert_at..].join("\n") + "\n";
+    parse_yaml::<EditionFile>(&out)
+        .with_context(|| format!("{} no longer parses after adding articles", path.display()))?;
     write_atomic(path, out)?;
     Ok(format!(
         "added {} to {} (fill their TODOs)",
@@ -876,15 +876,13 @@ fn front_matter(
     if !text.lines().any(|line| front_todo(line).is_some()) {
         return Ok(false);
     }
-    let edition: serde_norway::Value = serde_norway::from_str(&text)?;
-    let finals = edition["articles"]
-        .as_sequence()
-        .into_iter()
-        .flatten()
-        .filter_map(|a| Some((a["id"].as_str()?, a["title"].as_str()?)))
-        .map(|(id, title)| {
-            let body = read(&run_dir.join("articles").join(id).join("final.md"))?;
-            Ok(section(title, strip_frontmatter(&body)))
+    let edition: EditionFile = parse_yaml(&text)?;
+    let finals = edition
+        .articles
+        .iter()
+        .map(|article| {
+            let body = read(&run_dir.join("articles").join(&article.id).join("final.md"))?;
+            Ok(section(&article.title, strip_frontmatter(&body)))
         })
         .collect::<Result<Vec<_>>>()?
         .join("\n");
@@ -894,6 +892,8 @@ fn front_matter(
     );
     let drafted = caller.call_with_parse("front-matter", model, &prompt, parse_front_matter)?;
     let filled = fill_todos(&read(edition_yaml)?, &drafted);
+    parse_yaml::<EditionFile>(&filled)
+        .with_context(|| format!("{} no longer parses after drafting", edition_yaml.display()))?;
     write_atomic(edition_yaml, filled)?;
     Ok(true)
 }

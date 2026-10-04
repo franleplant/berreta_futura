@@ -1,12 +1,15 @@
+use crate::model::manifest::art_slots;
+use crate::model::spec::EditionFile;
 use anyhow::{ensure, Result};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 const ROUNDS: &str = "art/rounds/";
 
-pub fn round_paths(edition_yaml: &serde_norway::Value) -> Vec<String> {
-    crate::art::selected_art_paths(edition_yaml)
+pub fn round_paths(edition: &EditionFile) -> Vec<String> {
+    art_slots(edition)
         .into_iter()
+        .map(|(_, path)| path)
         .filter(|path| path.contains(ROUNDS))
         .collect()
 }
@@ -52,7 +55,7 @@ pub fn picked_from(pick: &str, candidate: &Path) -> bool {
     })
 }
 
-pub fn refuse_rounds(edition_yaml: &serde_norway::Value, edition: &str) -> Result<()> {
+pub fn refuse_rounds(edition_yaml: &EditionFile, edition: &str) -> Result<()> {
     let rounds = round_paths(edition_yaml);
     ensure!(
         rounds.is_empty(),

@@ -354,15 +354,6 @@ pub fn emitted_figures(tree: &Tree) -> Vec<(String, String)> {
     out
 }
 
-fn format_int(edition: &Edition, key: &str, default: i64) -> i64 {
-    edition
-        .raw
-        .get("format")
-        .and_then(|f| f.get(key))
-        .and_then(serde_norway::Value::as_i64)
-        .unwrap_or(default)
-}
-
 fn page_cap(mode: ContentMode) -> usize {
     if mode == ContentMode::Verbatim {
         10
@@ -493,13 +484,13 @@ pub fn manifest_layout(
         "design_direction": DESIGN,
         "cover_art_size_points": null,
         "article_terminal_balance": {},
-        "maximum_article_pages": format_int(edition, "max_article_pages", 7),
+        "maximum_article_pages": edition.format.max_article_pages.unwrap_or(7),
         "article_pages": measured.article_pages(),
         "toc": measured.toc(),
         "article_opener_fits": measured.opener_fits(),
         "article_page_caps": by_article(&|a| json!(page_cap(a.content_mode))),
         "article_content_modes": by_article(&|a| json!(a.content_mode.as_str())),
-        "maximum_editorial_pages": format_int(edition, "max_editorial_pages", 2),
+        "maximum_editorial_pages": edition.format.max_editorial_pages.unwrap_or(2),
         "editorial_pages": measured.editorial_pages(),
         "figures": figures(edition, measured, tree, root)?,
         "tail_arts": edition

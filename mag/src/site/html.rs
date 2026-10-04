@@ -582,11 +582,7 @@ impl Issued<'_> {
     }
 
     fn subtitle(&self) -> String {
-        self.edition.raw["subtitle"]
-            .as_str()
-            .unwrap_or_default()
-            .trim()
-            .to_string()
+        self.edition.subtitle.clone()
     }
 
     fn cover(&self, ctx: &Ctx, eager: bool) -> String {
@@ -880,7 +876,7 @@ pub fn title_page(edition: &Edition) -> String {
         escape_html(&format!("{} {}", ui(language, "issue"), edition.issue_number)),
         date(language, &edition.publication_date),
         prose(&edition.title),
-        prose(edition.raw["subtitle"].as_str().unwrap_or_default().trim()),
+        prose(&edition.subtitle),
         escape_html(&edition.publication_name)
     )
 }

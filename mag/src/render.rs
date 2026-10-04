@@ -1,7 +1,9 @@
 use crate::caller::{Caller, ModelSpec};
 use crate::model::kinds::RenderOperation;
-use crate::util::read_yaml;
-use anyhow::{anyhow, bail, Context, Result};
+use crate::model::manifest::art_slots;
+use crate::model::shared::read_spec;
+use crate::model::spec::{ArticleRow, EditionFile, TranslationFile};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -159,10 +161,6 @@ fn resolve_field(raw: &str, manifest_dir: &Path) -> PathBuf {
     }
 }
 
-fn str_field<'a>(v: &'a serde_norway::Value, key: &str) -> Option<&'a str> {
-    v.get(key).and_then(|x| x.as_str())
-}
-
 pub(crate) fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     let exact = PathBuf::from("editions").join(edition);
     if exact.is_dir() {
@@ -214,36 +212,36 @@ pub(crate) fn publication_name(repo_root: &Path) -> Result<String> {
         .context("magazine.toml needs [publication] name")
 }
 
-fn stage_article_figures(staging: &mut Staging, article: &serde_norway::Value) -> Result<()> {
-    let article_id = str_field(article, "id").unwrap_or("<unknown article>");
-    let Some(figures) = article.get("figures").and_then(|v| v.as_sequence()) else {
-        return Ok(());
-    };
-    for figure in figures {
-        let figure_id = str_field(figure, "id").unwrap_or("<unknown figure>");
-        let sid = str_field(figure, "source_id").ok_or_else(|| {
-            anyhow!("article '{article_id}' figure '{figure_id}' missing source_id")
-        })?;
-        let path = str_field(figure, "path")
-            .ok_or_else(|| anyhow!("article '{article_id}' figure '{figure_id}' missing path"))?;
-        staging.add(&PathBuf::from("library/sources").join(sid).join(path));
+fn stage_article_figures(staging: &mut Staging, article: &ArticleRow) -> Result<()> {
+    for figure in &article.figures {
+        for (field, value) in [("source_id", &figure.source_id), ("path", &figure.path)] {
+            ensure!(
+                !value.is_empty(),
+                "article '{}' figure '{}' missing {field}",
+                article.id,
+                figure.id
+            );
+        }
+        staging.add(
+            &PathBuf::from("library/sources")
+                .join(&figure.source_id)
+                .join(&figure.path),
+        );
     }
     Ok(())
 }
 
-fn stage_article_extracts(staging: &mut Staging, article: &serde_norway::Value) -> Result<()> {
-    let article_id = str_field(article, "id").unwrap_or("<unknown article>");
-    let Some(extracts) = article.get("extracts").and_then(|v| v.as_sequence()) else {
-        return Ok(());
-    };
-    for extract in extracts {
-        let extract_id = str_field(extract, "id").unwrap_or("<unknown extract>");
-        let sid = str_field(extract, "source_id").ok_or_else(|| {
-            anyhow!("article '{article_id}' extract '{extract_id}' missing source_id")
-        })?;
+fn stage_article_extracts(staging: &mut Staging, article: &ArticleRow) -> Result<()> {
+    for extract in &article.extracts {
+        ensure!(
+            !extract.source_id.is_empty(),
+            "article '{}' extract '{}' missing source_id",
+            article.id,
+            extract.id
+        );
         staging.add(
             &PathBuf::from("library/sources")
-                .join(sid)
+                .join(&extract.source_id)
                 .join("article.md"),
         );
     }
@@ -293,39 +291,30 @@ struct PendingFigures {
     meta: String,
 }
 
-fn pending_figures(article: &serde_norway::Value, headings: &[String]) -> PendingFigures {
+fn pending_figures(article: &ArticleRow, headings: &[String]) -> PendingFigures {
     let mut pending = PendingFigures {
         idx: Vec::new(),
         ids: Vec::new(),
         anchors: Vec::new(),
         meta: String::new(),
     };
-    let figs = article
-        .get("figures")
-        .and_then(|v| v.as_sequence())
-        .into_iter()
-        .flatten();
-    for (i, fig) in figs.enumerate() {
-        let anchor = str_field(fig, "anchor").unwrap_or("");
+    for (i, figure) in article.figures.iter().enumerate() {
+        let anchor = figure.anchor.as_str();
         if anchor.is_empty() || anchor == "__opener__" || headings.iter().any(|h| h == anchor) {
             continue;
         }
-        let fig_id = str_field(fig, "id")
-            .unwrap_or("<unknown-figure>")
-            .to_string();
-        pending.meta += &format!("- id: {fig_id}\n");
-        for key in ["caption", "alt_text", "rationale", "anchor"] {
-            if let Some(v) = str_field(fig, key) {
-                let label = if key == "anchor" {
-                    "previous_section"
-                } else {
-                    key
-                };
-                pending.meta += &format!("  {label}: {v}\n");
+        pending.meta += &format!("- id: {}\n", figure.id);
+        for (label, value) in [
+            ("caption", &figure.caption),
+            ("alt_text", &figure.alt_text),
+            ("previous_section", &figure.anchor),
+        ] {
+            if !value.is_empty() {
+                pending.meta += &format!("  {label}: {value}\n");
             }
         }
         pending.idx.push(i);
-        pending.ids.push(fig_id);
+        pending.ids.push(figure.id.clone());
         pending.anchors.push(anchor.to_string());
     }
     pending
@@ -338,7 +327,7 @@ fn resolve_article_anchors(
     manuscript_path: &Path,
     headings: &[String],
     pending: &PendingFigures,
-    article: &mut serde_norway::Value,
+    article: &mut ArticleRow,
 ) -> Result<AnchorOutcome> {
     let mut outcome = AnchorOutcome {
         changed: false,
@@ -372,22 +361,14 @@ fn resolve_article_anchors(
         )?
     };
 
-    let figs = article
-        .get_mut("figures")
-        .and_then(|v| v.as_sequence_mut())
-        .expect("figures existed in the pending scan");
+    let figs = &mut article.figures;
     let mut drop_idx: HashSet<usize> = HashSet::new();
     for ((&i, fig_id), resolution) in pending.idx.iter().zip(pending_ids).zip(resolutions) {
-        let old = str_field(&figs[i], "anchor").unwrap_or("?").to_string();
+        let old = figs[i].anchor.clone();
         match resolution {
             Some(heading) => {
                 println!("  re-anchored {article_id}:{fig_id} '{old}' -> '{heading}'");
-                if let Some(map) = figs[i].as_mapping_mut() {
-                    map.insert(
-                        serde_norway::Value::String("anchor".to_string()),
-                        serde_norway::Value::String(heading),
-                    );
-                }
+                figs[i].anchor = heading;
                 outcome.changed = true;
             }
             None => {
@@ -492,9 +473,8 @@ pub struct RenderArgs {
 struct EditionInputs {
     dir: PathBuf,
     yaml_path: PathBuf,
-    yaml: serde_norway::Value,
+    yaml: EditionFile,
     id: String,
-    articles: Vec<serde_norway::Value>,
     article_ids: Vec<String>,
 }
 
@@ -504,26 +484,26 @@ fn load_edition(edition: &str) -> Result<EditionInputs> {
     if !yaml_path.exists() {
         bail!("{} not found", yaml_path.display());
     }
-    let yaml = read_yaml(&yaml_path)?;
-    let id = str_field(&yaml, "id").map_or_else(
-        || dir.file_name().unwrap().to_string_lossy().to_string(),
-        str::to_string,
+    let yaml: EditionFile = read_spec(&yaml_path)?;
+    ensure!(
+        !yaml.articles.is_empty(),
+        "edition.yaml missing 'articles' list"
     );
-    let articles = yaml
-        .get("articles")
-        .and_then(|v| v.as_sequence())
-        .ok_or_else(|| anyhow!("edition.yaml missing 'articles' list"))?
-        .clone();
-    let article_ids = articles
+    let id = match yaml.id.as_str() {
+        "" => dir.file_name().unwrap().to_string_lossy().to_string(),
+        id => id.to_string(),
+    };
+    let article_ids = yaml
+        .articles
         .iter()
-        .filter_map(|a| str_field(a, "id").map(str::to_string))
+        .filter(|article| !article.id.is_empty())
+        .map(|article| article.id.clone())
         .collect();
     Ok(EditionInputs {
         dir,
         yaml_path,
         yaml,
         id,
-        articles,
         article_ids,
     })
 }
@@ -556,7 +536,6 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
         yaml_path: edition_yaml_path,
         yaml: edition_yaml,
         id: edition_id,
-        articles,
         article_ids,
     } = load_edition(&args.edition)?;
     crate::picks::refuse_rounds(&edition_yaml, &args.edition)?;
@@ -591,10 +570,10 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
     }
     let languages = stage_translation(&mut staging, &edition_dir, &repo_root, langs)?;
     stage_source_records(&mut staging, &edition_yaml, &repo_root);
-    for article in &articles {
+    for article in &edition_yaml.articles {
         stage_article_figures(&mut staging, article)?;
     }
-    for article in &articles {
+    for article in &edition_yaml.articles {
         stage_article_extracts(&mut staging, article)?;
     }
     if !staging.refused.is_empty() {
@@ -621,9 +600,10 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
             .filter(|_| operation == RenderOperation::MeasureArticle)
             .map(str::to_string),
         edition_id,
-        primary_language: str_field(&edition_yaml, "language")
-            .unwrap_or("en")
-            .to_string(),
+        primary_language: edition_yaml
+            .language
+            .clone()
+            .unwrap_or_else(|| "en".to_string()),
         languages,
         publication_name: publication_name(&repo_root)?,
         renderer: RENDERER.to_string(),
@@ -670,9 +650,9 @@ fn pick_content_run(
     run_flag: Option<&str>,
     edition_dir: &Path,
     article_ids: &[String],
-    edition_yaml: &serde_norway::Value,
+    edition_yaml: &EditionFile,
 ) -> Result<Option<PathBuf>> {
-    let needs_editorial = str_field(edition_yaml, "editorial").is_some();
+    let needs_editorial = edition_yaml.editorial.is_some();
     let content_run = match run_flag {
         Some(dir) => {
             let dir = PathBuf::from(dir);
@@ -697,22 +677,20 @@ fn pick_content_run(
 fn patch_anchors(
     run: &Path,
     render_dir: &Path,
-    edition_yaml: &serde_norway::Value,
+    edition_yaml: &EditionFile,
     anchor_model: &ModelSpec,
     no_model: bool,
 ) -> Result<Option<PathBuf>> {
-    let mut scans: HashMap<String, (Vec<String>, PendingFigures)> = HashMap::new();
+    let mut scans: HashMap<&str, (Vec<String>, PendingFigures)> = HashMap::new();
     let mut stale: Vec<String> = Vec::new();
-    for article in articles_of(edition_yaml) {
-        let Some(id) = str_field(article, "id") else {
-            continue;
-        };
+    for article in edition_yaml.articles.iter().filter(|a| !a.id.is_empty()) {
+        let id = article.id.as_str();
         let headings = manuscript_headings(&run.join("articles").join(id).join("final.md"));
         let pending = pending_figures(article, &headings);
         for (fig_id, anchor) in pending.ids.iter().zip(&pending.anchors) {
             stale.push(format!("{id}:{fig_id} (anchor '{anchor}')"));
         }
-        scans.insert(id.to_string(), (headings, pending));
+        scans.insert(id, (headings, pending));
     }
     println!("  pending anchors: {}", stale.len());
     if no_model && !stale.is_empty() {
@@ -727,30 +705,23 @@ fn patch_anchors(
     let mut patched = edition_yaml.clone();
     let mut changed = false;
     let mut dropped: Vec<String> = Vec::new();
-    if let Some(list) = patched
-        .get_mut("articles")
-        .and_then(|v| v.as_sequence_mut())
-    {
-        for article in list.iter_mut() {
-            let Some(id) = str_field(article, "id").map(str::to_string) else {
-                continue;
-            };
-            let Some((headings, pending)) = scans.get(&id) else {
-                continue;
-            };
-            let manuscript_path = run.join("articles").join(&id).join("final.md");
-            let outcome = resolve_article_anchors(
-                &caller,
-                anchor_model,
-                &id,
-                &manuscript_path,
-                headings,
-                pending,
-                article,
-            )?;
-            changed |= outcome.changed;
-            dropped.extend(outcome.dropped);
-        }
+    for article in &mut patched.articles {
+        let id = article.id.clone();
+        let Some((headings, pending)) = scans.get(id.as_str()) else {
+            continue;
+        };
+        let manuscript_path = run.join("articles").join(&id).join("final.md");
+        let outcome = resolve_article_anchors(
+            &caller,
+            anchor_model,
+            &id,
+            &manuscript_path,
+            headings,
+            pending,
+            article,
+        )?;
+        changed |= outcome.changed;
+        dropped.extend(outcome.dropped);
     }
     if !dropped.is_empty() {
         println!(
@@ -771,7 +742,7 @@ fn patch_anchors(
 
 fn stage_manuscripts(
     staging: &mut Staging,
-    edition_yaml: &serde_norway::Value,
+    edition_yaml: &EditionFile,
     edition_dir: &Path,
     content_run: Option<&Path>,
 ) {
@@ -779,30 +750,20 @@ fn stage_manuscripts(
         Some(run) => staging.add_mapped(&run.join(from_run), &declared),
         None => staging.add(&declared),
     };
-    if let Some(editorial) = str_field(edition_yaml, "editorial") {
+    if let Some(editorial) = &edition_yaml.editorial {
         stage(
             resolve_field(editorial, edition_dir),
             PathBuf::from("editorial/final.md"),
         );
     }
-    for article in articles_of(edition_yaml) {
-        if let (Some(id), Some(manuscript)) =
-            (str_field(article, "id"), str_field(article, "manuscript"))
-        {
+    for article in &edition_yaml.articles {
+        if !article.id.is_empty() && !article.manuscript.is_empty() {
             stage(
-                resolve_field(manuscript, edition_dir),
-                PathBuf::from("articles").join(id).join("final.md"),
+                resolve_field(&article.manuscript, edition_dir),
+                PathBuf::from("articles").join(&article.id).join("final.md"),
             );
         }
     }
-}
-
-fn articles_of(edition_yaml: &serde_norway::Value) -> impl Iterator<Item = &serde_norway::Value> {
-    edition_yaml
-        .get("articles")
-        .and_then(|v| v.as_sequence())
-        .into_iter()
-        .flatten()
 }
 
 fn stage_source_codes(staging: &mut Staging, edition_dir: &Path, repo_root: &Path) {
@@ -821,24 +782,9 @@ fn stage_source_codes(staging: &mut Staging, edition_dir: &Path, repo_root: &Pat
     }
 }
 
-fn stage_art(staging: &mut Staging, edition_yaml: &serde_norway::Value, edition_dir: &Path) {
-    let cover = edition_yaml
-        .get("cover")
-        .and_then(|c| str_field(c, "art_path"));
-    let plates = edition_yaml
-        .get("closing_plates")
-        .and_then(|v| v.as_sequence())
-        .into_iter()
-        .flatten()
-        .filter_map(|plate| str_field(plate, "art_path"));
-    let article_art = articles_of(edition_yaml).flat_map(|article| {
-        let opener = article.get("opener_art").and_then(|o| str_field(o, "path"));
-        opener
-            .into_iter()
-            .chain(str_field(article, "tail_art_path"))
-    });
-    for path in cover.into_iter().chain(article_art).chain(plates) {
-        staging.add(&resolve_field(path, edition_dir));
+fn stage_art(staging: &mut Staging, edition_yaml: &EditionFile, edition_dir: &Path) {
+    for (_, path) in art_slots(edition_yaml) {
+        staging.add(&resolve_field(&path, edition_dir));
     }
 }
 
@@ -855,42 +801,25 @@ fn stage_translation(
     if !has_translation {
         return Ok(vec!["en".to_string()]);
     }
-    let translation_yaml = read_yaml(&translation_yaml_path)?;
+    let translation_yaml: TranslationFile = read_spec(&translation_yaml_path)?;
     staging.add(&translation_yaml_path);
     stage_source_codes(staging, &translation_dir, repo_root);
-    if let Some(editorial_path) = translation_yaml
-        .get("editorial")
-        .and_then(|e| str_field(e, "path"))
-    {
-        staging.add(&resolve_field(editorial_path, &translation_dir));
+    if let Some(editorial) = &translation_yaml.editorial {
+        staging.add(&resolve_field(&editorial.path, &translation_dir));
     }
-    for t_article in articles_of(&translation_yaml) {
-        if let Some(manuscript) = str_field(t_article, "manuscript") {
-            staging.add(&resolve_field(manuscript, &translation_dir));
+    for article in translation_yaml.articles.iter().flatten() {
+        if !article.manuscript.is_empty() {
+            staging.add(&resolve_field(&article.manuscript, &translation_dir));
         }
     }
     Ok(vec!["en".to_string(), "es".to_string()])
 }
 
-fn stage_source_records(
-    staging: &mut Staging,
-    edition_yaml: &serde_norway::Value,
-    repo_root: &Path,
-) {
-    let top = edition_yaml
-        .get("sources")
-        .and_then(|v| v.as_sequence())
-        .into_iter()
-        .flatten();
-    let per_article = articles_of(edition_yaml).flat_map(|a| {
-        a.get("source_ids")
-            .and_then(|v| v.as_sequence())
-            .into_iter()
-            .flatten()
-    });
-    let mut seen: HashSet<String> = HashSet::new();
-    for sid in top.chain(per_article).filter_map(|s| s.as_str()) {
-        if !seen.insert(sid.to_string()) {
+fn stage_source_records(staging: &mut Staging, edition_yaml: &EditionFile, repo_root: &Path) {
+    let per_article = edition_yaml.articles.iter().flat_map(|a| &a.source_ids);
+    let mut seen: HashSet<&String> = HashSet::new();
+    for sid in edition_yaml.sources.iter().chain(per_article) {
+        if !seen.insert(sid) {
             continue;
         }
         let record_path = PathBuf::from("library/sources")

@@ -1,7 +1,6 @@
 use mag::model::manifest;
 use mag::model::records;
 use manifest::{load_edition, load_translation, Edition, LoadOptions, Records};
-use serde_json::{json, Value as Json};
 use std::collections::BTreeSet;
 use std::path::Path;
 
@@ -22,17 +21,16 @@ fn a_translated_figure_path_stays_source_relative_as_in_the_base_edition() {
     };
     let base = load_edition(&root, "906", &known, &options).expect("906 loads");
     let es = load_translation(&root, &base, "es").expect("906 es loads");
-    let paths = |edition: &Edition| -> Vec<Json> {
-        serde_norway::from_value::<Json>(edition.raw.clone()).expect("raw is data")["articles"]
-            .as_array()
-            .expect("articles")
+    let paths = |edition: &Edition| -> Vec<std::path::PathBuf> {
+        edition
+            .articles
             .iter()
-            .flat_map(|article| article["figures"].as_array().cloned().unwrap_or_default())
-            .map(|figure| figure["path"].clone())
+            .flat_map(|a| &a.figures)
+            .map(|f| f.path.clone())
             .collect()
     };
-    assert_eq!(paths(&es), vec![json!("media/diagram.png")]);
     assert_eq!(paths(&es), paths(&base));
+    assert!(paths(&es)[0].ends_with("library/sources/fixture-source-a/media/diagram.png"));
     assert!(es
         .articles
         .iter()
@@ -41,11 +39,15 @@ fn a_translated_figure_path_stays_source_relative_as_in_the_base_edition() {
 }
 
 #[test]
-fn a_non_text_article_opener_is_a_load_error() {
+fn an_unknown_article_opener_is_a_load_error() {
     let root = std::env::temp_dir().join("mag-opener-format-test");
     let dir = root.join("editions/907");
     std::fs::create_dir_all(&dir).expect("temp edition dir");
-    std::fs::write(dir.join("edition.yaml"), "format:\n  article_opener: 5\n").expect("write");
+    std::fs::write(
+        dir.join("edition.yaml"),
+        "format:\n  article_opener: bogus\n",
+    )
+    .expect("write");
     let options = LoadOptions {
         publication_name: "Magazine",
         source_records: None,
@@ -56,5 +58,5 @@ fn a_non_text_article_opener_is_a_load_error() {
     assert!(error
         .0
         .iter()
-        .any(|message| message == "Edition format article_opener must be text, not 5"));
+        .any(|message| message == "Edition has invalid format.article_opener: bogus"));
 }

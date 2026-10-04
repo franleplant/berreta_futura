@@ -1,15 +1,16 @@
 use super::doc::{block_signature, parse_publication_document, Block};
 use super::kinds::{ContentMode, TailArtFit};
 use super::records::{
-    localize_extracts, localize_figures, resolve_extracts, resolve_figures, Extract,
-    ExtractRequest, Figure, FigureRequest, SourceRecord,
+    blanks, localize_extracts, localize_figures, resolve_extracts, resolve_figures, Extract,
+    ExtractRequest, Figure, FigureRequest,
 };
-use super::shared::{
-    check_text, filled, load_structured, normalize, quoted, safe_project_path, show, text, Result,
-    ValidationError,
+use super::shared::{normalize, quoted, read_spec, safe_project_path, Result, ValidationError};
+use super::spec::{
+    ArticleRow, Cover, EditionFile, Format, OpenerArtRow, SectionRow, SourceRecord,
+    TranslatedArticleRow, TranslationFile,
 };
 use regex::Regex;
-use serde_norway::{Mapping, Value};
+use serde_norway::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 use std::sync::LazyLock;
@@ -90,22 +91,24 @@ pub struct ClosingPlate {
     pub art_path: PathBuf,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Edition {
     pub id: String,
     pub publication_name: String,
     pub issue_number: String,
     pub title: String,
+    pub subtitle: String,
     pub publication_date: String,
     pub language: String,
     pub locale: String,
     pub editorial: Option<Editorial>,
     pub articles: Vec<Article>,
     pub sections: Vec<Section>,
-    pub cover: Mapping,
+    pub cover: Cover,
     pub cover_art: Option<PathBuf>,
     pub closing_plates: Vec<ClosingPlate>,
-    pub raw: Value,
+    pub format: Format,
+    pub tail_art_fit: TailArtFit,
 }
 
 pub struct LoadOptions<'a> {
@@ -134,6 +137,21 @@ struct ArticleContext<'a> {
     options: &'a LoadOptions<'a>,
 }
 
+fn gather<T>(result: Result<T>, errors: &mut Vec<String>) -> Option<T> {
+    result
+        .map_err(|ValidationError(messages)| errors.extend(messages))
+        .ok()
+}
+
+fn clean(value: Option<&str>) -> String {
+    value.unwrap_or_default().trim().to_string()
+}
+
+fn unknown_sources(ids: &[String], known: &BTreeSet<String>) -> Vec<String> {
+    let unknown: BTreeSet<&String> = ids.iter().filter(|id| !known.contains(*id)).collect();
+    unknown.into_iter().cloned().collect()
+}
+
 pub fn load_edition(
     root: &Path,
     edition_id: &str,
@@ -147,10 +165,9 @@ pub fn load_edition(
             manifest_path.display()
         )]));
     }
-    let data = load_structured(&manifest_path)?;
+    let spec: EditionFile = read_spec(&manifest_path)?;
     let mut errors: Vec<String> = Vec::new();
-    check_edition_header(&data, edition_id, known_sources, &mut errors);
-    let illustrated = edition_opener_format(&data, &mut errors);
+    let illustrated = check_edition_header(&spec, edition_id, known_sources, &mut errors);
     let edition_dir = manifest_path
         .parent()
         .expect("the manifest sits inside the edition directory")
@@ -162,158 +179,86 @@ pub fn load_edition(
         illustrated,
         options,
     };
-    let articles = load_articles(&context, &data, &mut errors);
-    let editorial = load_edition_editorial(root, &edition_dir, &data, &mut errors);
-    let sections = load_sections(root, &edition_dir, &data, &mut errors);
-    let (cover, cover_art) = load_cover(root, &edition_dir, &data, &mut errors);
-    let closing_plates = load_closing_plates(
-        root,
-        &edition_dir,
-        &data,
-        &mut errors,
-        options.allow_missing_art,
-    );
-    check_unique_art(&data, &mut errors);
+    let articles = load_articles(&context, &spec.articles, &mut errors);
+    let editorial = load_edition_editorial(root, &edition_dir, &spec, &mut errors);
+    let sections = load_sections(root, &edition_dir, &spec.sections, &mut errors);
+    let cover_art = load_cover_art(root, &edition_dir, &spec.cover, &mut errors);
+    let closing_plates = load_closing_plates(&context, &spec.closing_plates, &mut errors);
+    check_unique_art(&spec, &mut errors);
     if !errors.is_empty() {
         return Err(ValidationError(errors));
     }
-    let language = or_default(data.get("language"), "en");
+    let language = spec.language.filter(|text| !text.is_empty());
+    let language = language.unwrap_or_else(|| "en".to_string());
     Ok(Edition {
-        id: text(data.get("id")).to_string(),
+        id: spec.id,
         publication_name: options.publication_name.to_string(),
-        issue_number: match data.get("issue_number") {
-            Some(Value::Number(number)) => number.to_string(),
-            other => text(other).to_string(),
-        },
-        title: text(data.get("title")).to_string(),
-        publication_date: text(data.get("publication_date")).to_string(),
-        locale: if filled(data.get("locale")) {
-            text(data.get("locale")).to_string()
-        } else {
-            language.clone()
-        },
+        issue_number: spec.issue_number,
+        title: spec.title,
+        subtitle: clean(spec.subtitle.as_deref()),
+        publication_date: spec.publication_date,
+        locale: spec
+            .locale
+            .filter(|text| !text.is_empty())
+            .unwrap_or_else(|| language.clone()),
         language,
         editorial,
         articles,
         sections,
-        cover,
+        cover: spec.cover,
         cover_art,
         closing_plates,
-        raw: data,
+        format: spec.format,
+        tail_art_fit: spec.tail_art_fit.unwrap_or_default(),
     })
 }
 
-fn or_default(value: Option<&Value>, fallback: &str) -> String {
-    if filled(value) {
-        text(value).to_string()
-    } else {
-        fallback.to_string()
-    }
-}
-
 fn check_edition_header(
-    data: &Value,
+    spec: &EditionFile,
     edition_id: &str,
     known_sources: &BTreeSet<String>,
     errors: &mut Vec<String>,
-) {
-    for key in ["id", "issue_number", "title", "publication_date"] {
-        if blank_header_field(data.get(key)) {
-            errors.push(format!("Edition missing required field: {key}"));
-        }
-    }
-    check_text(
-        data,
-        &[
-            "id",
-            "title",
-            "publication_date",
-            "locale",
-            "language",
-            "subtitle",
-        ],
-        "Edition",
-        errors,
+) -> bool {
+    let missing = blanks(&[
+        ("id", spec.id.is_empty()),
+        ("issue_number", spec.issue_number.is_empty()),
+        ("title", spec.title.is_empty()),
+        ("publication_date", spec.publication_date.is_empty()),
+    ]);
+    errors.extend(
+        missing
+            .iter()
+            .map(|key| format!("Edition missing required field: {key}")),
     );
-    if matches!(
-        data.get("issue_number"),
-        Some(Value::Bool(_) | Value::Sequence(_) | Value::Mapping(_))
-    ) {
-        errors.push("Edition issue_number must be text or a number".to_string());
-    }
-    if !matches!(data.get("id"), Some(Value::String(text)) if text == edition_id) {
+    if spec.id != edition_id {
         errors.push(format!(
             "Edition id {} does not match directory {}",
-            repr_option(data.get("id")),
+            quoted(&spec.id),
             quoted(edition_id)
         ));
     }
-    check_declared_sources(data.get("sources"), known_sources, errors);
-    if !filled(data.get("sections")) && !filled(data.get("articles")) {
+    if spec.sources.iter().any(|id| id.trim().is_empty()) {
+        errors.push("Edition sources must contain non-empty source id strings".to_string());
+    } else {
+        let unknown = unknown_sources(&spec.sources, known_sources);
+        if !unknown.is_empty() {
+            errors.push(format!(
+                "Edition references unknown sources: {}",
+                unknown.join(", ")
+            ));
+        }
+    }
+    if spec.sections.is_empty() && spec.articles.is_empty() {
         errors.push("Edition requires either sections or articles".to_string());
     }
-}
-
-fn check_declared_sources(
-    declared: Option<&Value>,
-    known_sources: &BTreeSet<String>,
-    errors: &mut Vec<String>,
-) {
-    let rows = match declared {
-        None => &Vec::new(),
-        Some(Value::Sequence(items)) => items,
-        Some(_) => {
-            errors.push("Edition sources must be a list".to_string());
-            return;
-        }
-    };
-    if rows
-        .iter()
-        .any(|value| !matches!(value, Value::String(text) if !text.trim().is_empty()))
-    {
-        errors.push("Edition sources must contain non-empty source id strings".to_string());
-        return;
-    }
-    let unknown: Vec<String> = rows
-        .iter()
-        .filter_map(|value| value.as_str())
-        .filter(|value| !known_sources.contains(*value))
-        .map(str::to_string)
-        .collect::<BTreeSet<String>>()
-        .into_iter()
-        .collect();
-    if !unknown.is_empty() {
+    let opener = clean(spec.format.article_opener.as_deref());
+    if !opener.is_empty() && opener != ILLUSTRATED_OPENER {
         errors.push(format!(
-            "Edition references unknown sources: {}",
-            unknown.join(", ")
+            "Edition has invalid format.article_opener: {opener}"
         ));
     }
-}
-
-fn edition_opener_format(data: &Value, errors: &mut Vec<String>) -> bool {
-    let edition_format = match data.get("format") {
-        None | Some(Value::Null) => Value::Mapping(Mapping::new()),
-        Some(value @ Value::Mapping(_)) => value.clone(),
-        Some(_) => {
-            errors.push("Edition format must be a mapping".to_string());
-            Value::Mapping(Mapping::new())
-        }
-    };
-    check_text(
-        &edition_format,
-        &["article_opener"],
-        "Edition format",
-        errors,
-    );
-    let article_opener = text(edition_format.get("article_opener"));
-    let article_opener = article_opener.trim();
-    if !article_opener.is_empty() && article_opener != ILLUSTRATED_OPENER {
-        errors.push(format!(
-            "Edition has invalid format.article_opener: {article_opener}"
-        ));
-    }
-    let illustrated = article_opener == ILLUSTRATED_OPENER;
-    if illustrated && text(data.get("art_direction_path")).trim().is_empty() {
+    let illustrated = opener == ILLUSTRATED_OPENER;
+    if illustrated && clean(spec.art_direction_path.as_deref()).is_empty() {
         errors.push(format!(
             "Edition format.article_opener {ILLUSTRATED_OPENER} requires art_direction_path"
         ));
@@ -321,17 +266,12 @@ fn edition_opener_format(data: &Value, errors: &mut Vec<String>) -> bool {
     illustrated
 }
 
-fn load_articles(context: &ArticleContext, data: &Value, errors: &mut Vec<String>) -> Vec<Article> {
-    let empty = Vec::new();
-    let rows = match data.get("articles") {
-        None => &empty,
-        Some(Value::Sequence(items)) => items,
-        Some(_) => {
-            errors.push("Edition articles must be a list".to_string());
-            &empty
-        }
-    };
-    let mut ids: BTreeSet<String> = BTreeSet::new();
+fn load_articles(
+    context: &ArticleContext,
+    rows: &[ArticleRow],
+    errors: &mut Vec<String>,
+) -> Vec<Article> {
+    let mut ids: BTreeSet<&str> = BTreeSet::new();
     let mut articles: Vec<Article> = Vec::new();
     for (index, row) in rows.iter().enumerate() {
         if let Some(article) = load_article(context, index, row, &mut ids, errors) {
@@ -341,166 +281,103 @@ fn load_articles(context: &ArticleContext, data: &Value, errors: &mut Vec<String
     articles
 }
 
-fn article_identity(
-    index: usize,
-    row: &Value,
-    errors: &mut Vec<String>,
-) -> Option<(String, String, Vec<String>)> {
-    if !matches!(row, Value::Mapping(_)) {
-        errors.push(format!("Article {} must be a mapping", index + 1));
-        return None;
+fn article_label(index: usize, row: &ArticleRow) -> String {
+    match row.id.is_empty() {
+        true => format!("Article {}", index + 1),
+        false => format!("Article {}", row.id),
     }
-    let label = match row.get("id") {
-        Some(Value::String(id)) => format!("Article {id}"),
-        _ => format!("Article {}", index + 1),
-    };
-    let missing: Vec<&str> = [
-        "id",
-        "title",
-        "short_title",
-        "opener_variant",
-        "author",
-        "source_ids",
-        "manuscript",
-    ]
-    .into_iter()
-    .filter(|key| !filled(row.get(*key)))
-    .collect();
+}
+
+fn article_identity(index: usize, row: &ArticleRow, errors: &mut Vec<String>) -> Option<String> {
+    let label = article_label(index, row);
+    let missing = blanks(&[
+        ("id", row.id.is_empty()),
+        ("title", row.title.is_empty()),
+        ("short_title", row.short_title.is_empty()),
+        ("opener_variant", row.opener_variant.is_empty()),
+        ("author", row.author.is_empty()),
+        ("source_ids", row.source_ids.is_empty()),
+        ("manuscript", row.manuscript.is_empty()),
+    ]);
     if !missing.is_empty() {
         errors.push(format!("{label} missing: {}", missing.join(", ")));
         return None;
     }
-    check_text(
-        row,
-        &[
-            "title",
-            "short_title",
-            "opener_variant",
-            "author",
-            "author_note",
-            "display_emphasis",
-            "content_mode",
-        ],
-        &label,
-        errors,
-    );
-    let Some(Value::String(article_id)) = row.get("id") else {
-        errors.push(format!(
-            "Article {} id must be a non-empty string",
-            index + 1
-        ));
-        return None;
-    };
-    if article_id.trim().is_empty() {
+    if row.id.trim().is_empty() {
         errors.push(format!(
             "Article {} id must be a non-empty string",
             index + 1
         ));
         return None;
     }
-    let source_ids = article_source_ids(row.get("source_ids"));
-    if source_ids.is_empty() {
+    if row.source_ids.iter().any(|id| id.trim().is_empty()) {
         errors.push(format!(
             "{label} source_ids must be a non-empty list of strings"
         ));
         return None;
     }
-    Some((label, article_id.clone(), source_ids))
+    Some(label)
 }
 
-fn article_source_ids(declared: Option<&Value>) -> Vec<String> {
-    let Some(Value::Sequence(items)) = declared else {
-        return Vec::new();
-    };
-    if items.is_empty()
-        || items
-            .iter()
-            .any(|value| !matches!(value, Value::String(text) if !text.trim().is_empty()))
-    {
-        return Vec::new();
-    }
-    items
-        .iter()
-        .filter_map(|value| value.as_str().map(str::to_string))
-        .collect()
-}
-
-fn article_author_note(label: &str, row: &Value, errors: &mut Vec<String>) -> (String, bool) {
-    let author_note = text(row.get("author_note")).trim().to_string();
-    if author_note.contains('\n') || author_note.chars().count() > 160 {
+fn check_note_length(label: &str, note: &str, errors: &mut Vec<String>) {
+    if note.contains('\n') || note.chars().count() > 160 {
         errors.push(format!(
             "{label} author_note must be a single line of at most 160 characters"
         ));
     }
-    let author = text(row.get("author")).to_string();
-    let house_byline = HOUSE_BYLINES.contains(&author.trim().to_lowercase().as_str());
+}
+
+fn article_author_note(label: &str, row: &ArticleRow, errors: &mut Vec<String>) -> (String, bool) {
+    let author_note = clean(row.author_note.as_deref());
+    check_note_length(label, &author_note, errors);
+    let house_byline = HOUSE_BYLINES.contains(&row.author.trim().to_lowercase().as_str());
     if !author_note.is_empty() && house_byline {
         errors.push(format!(
             "{label} must omit author_note for the self-explanatory house byline {}",
-            quoted(&author)
+            quoted(&row.author)
         ));
     }
     (author_note, house_byline)
 }
 
 fn article_paths(
-    root: &Path,
-    edition_dir: &Path,
-    row: &Value,
+    context: &ArticleContext,
+    row: &ArticleRow,
     errors: &mut Vec<String>,
-    allow_missing_art: bool,
 ) -> Option<(PathBuf, Option<PathBuf>)> {
-    let manuscript = match edition_path(root, edition_dir, row.get("manuscript"), true) {
-        Ok(path) => path,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            return None;
+    let (root, dir) = (context.root, context.edition_dir);
+    let manuscript = gather(edition_path(root, dir, &row.manuscript, true), errors)?;
+    let tail_art = match row.tail_art_path.as_deref().filter(|path| !path.is_empty()) {
+        Some(path) => {
+            let must_exist = !context.options.allow_missing_art;
+            Some(gather(edition_path(root, dir, path, must_exist), errors)?)
         }
+        None => None,
     };
-    if !filled(row.get("tail_art_path")) {
-        return Some((manuscript, None));
-    }
-    match edition_path(
-        root,
-        edition_dir,
-        row.get("tail_art_path"),
-        !allow_missing_art,
-    ) {
-        Ok(path) => Some((manuscript, Some(path))),
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            None
-        }
-    }
+    Some((manuscript, tail_art))
 }
 
 fn article_opener_art(
-    root: &Path,
-    edition_dir: &Path,
+    context: &ArticleContext,
     label: &str,
-    row: &Value,
+    row: &ArticleRow,
     errors: &mut Vec<String>,
-    allow_missing_art: bool,
 ) -> Option<ArticleOpenerArt> {
-    let raw = row.get("opener_art");
-    let Some(Value::Mapping(mapping)) = raw else {
+    let Some(art) = row
+        .opener_art
+        .as_ref()
+        .filter(|art| **art != OpenerArtRow::default())
+    else {
         errors.push(format!(
             "{label} requires a non-empty opener_art mapping for format.article_opener {ILLUSTRATED_OPENER}"
         ));
         return None;
     };
-    if mapping.is_empty() {
-        errors.push(format!(
-            "{label} requires a non-empty opener_art mapping for format.article_opener {ILLUSTRATED_OPENER}"
-        ));
-        return None;
-    }
-    let missing: Vec<&str> = ["path", "alt_text", "credit"]
-        .into_iter()
-        .filter(|key| {
-            !matches!(raw.and_then(|value| value.get(*key)), Some(Value::String(text)) if !text.trim().is_empty())
-        })
-        .collect();
+    let missing = blanks(&[
+        ("path", art.path.trim().is_empty()),
+        ("alt_text", art.alt_text.trim().is_empty()),
+        ("credit", art.credit.trim().is_empty()),
+    ]);
     if !missing.is_empty() {
         errors.push(format!(
             "{label} opener_art requires non-empty {}",
@@ -508,40 +385,20 @@ fn article_opener_art(
         ));
         return None;
     }
-    let path = match edition_path(
-        root,
-        edition_dir,
-        raw.and_then(|value| value.get("path")),
-        !allow_missing_art,
-    ) {
-        Ok(path) => path,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            return None;
-        }
-    };
+    let must_exist = !context.options.allow_missing_art;
+    let path = edition_path(context.root, context.edition_dir, &art.path, must_exist);
     Some(ArticleOpenerArt {
-        path,
-        alt_text: text(raw.and_then(|value| value.get("alt_text")))
-            .trim()
-            .to_string(),
-        credit: text(raw.and_then(|value| value.get("credit")))
-            .trim()
-            .to_string(),
+        path: gather(path, errors)?,
+        alt_text: art.alt_text.trim().to_string(),
+        credit: art.credit.trim().to_string(),
     })
 }
 
 fn check_illustrated_opener(label: &str, manuscript: &Path, errors: &mut Vec<String>) {
-    let text = match std::fs::read_to_string(manuscript) {
-        Ok(text) => text,
-        Err(error) => {
-            errors.push(format!(
-                "{label} manuscript cannot be parsed as a publication document: {error}"
-            ));
-            return;
-        }
-    };
-    match parse_publication_document(&text) {
+    let text = std::fs::read_to_string(manuscript).map_err(|error| error.to_string());
+    let document =
+        text.and_then(|text| parse_publication_document(&text).map_err(|error| error.to_string()));
+    match document {
         Err(error) => errors.push(format!(
             "{label} manuscript cannot be parsed as a publication document: {error}"
         )),
@@ -555,56 +412,19 @@ fn check_illustrated_opener(label: &str, manuscript: &Path, errors: &mut Vec<Str
     }
 }
 
-fn article_key_ideas(
+fn check_titles(
     label: &str,
-    row: &Value,
-    tail_art: Option<&PathBuf>,
+    title: &str,
+    short_title: &str,
+    display_emphasis: &str,
     errors: &mut Vec<String>,
-) -> Vec<String> {
-    let ideas = match key_ideas(label, row.get("key_ideas")) {
-        Ok(ideas) => ideas,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            Vec::new()
-        }
-    };
-    if !ideas.is_empty() && tail_art.is_some() {
-        errors.push(format!(
-            "{label} declares both key_ideas and tail_art_path; an article closes with one object, not two -- drop whichever the piece needs less"
-        ));
-    }
-    ideas
-}
-
-struct Display {
-    content_mode: ContentMode,
-    minimum_reader_pages: i64,
-    display_emphasis: String,
-    short_title: String,
-    opener_variant: String,
-}
-
-fn article_display(label: &str, row: &Value, errors: &mut Vec<String>) -> Display {
-    let content_mode = ContentMode::parse(text(row.get("content_mode"))).unwrap_or_else(|reason| {
-        errors.push(format!("{label} has invalid content_mode: {reason}"));
-        ContentMode::Article
-    });
-    let minimum_reader_pages = to_int(row.get("minimum_reader_pages"))
-        .filter(|pages| (1..=7).contains(pages))
-        .unwrap_or_else(|| {
-            errors.push(format!(
-                "{label} minimum_reader_pages must be an integer from 1 to 7"
-            ));
-            1
-        });
-    let title = text(row.get("title")).to_lowercase();
-    let display_emphasis = text(row.get("display_emphasis")).trim().to_string();
+) {
+    let title = title.to_lowercase();
     if !display_emphasis.is_empty() && !title.contains(&display_emphasis.to_lowercase()) {
         errors.push(format!(
             "{label} display_emphasis must occur in its localized title"
         ));
     }
-    let short_title = text(row.get("short_title")).trim().to_string();
     if short_title.contains('\n') || short_title.chars().count() > 40 {
         errors.push(format!(
             "{label} short_title must be a single line of at most 40 characters"
@@ -614,183 +434,127 @@ fn article_display(label: &str, row: &Value, errors: &mut Vec<String>) -> Displa
             "{label} short_title must occur in its localized title"
         ));
     }
-    let opener_variant = text(row.get("opener_variant")).trim().to_string();
-    if !OPENER_VARIANTS.contains(&opener_variant.as_str()) {
+}
+
+fn article_display(
+    label: &str,
+    row: &ArticleRow,
+    errors: &mut Vec<String>,
+) -> (ContentMode, i64, String, String) {
+    let content_mode = row.content_mode.unwrap_or_else(|| {
         errors.push(format!(
-            "{label} has invalid opener_variant: {opener_variant}"
+            "{label} has invalid content_mode: missing, expected one of {}",
+            ContentMode::names()
+        ));
+        ContentMode::Article
+    });
+    let pages = row.minimum_reader_pages.unwrap_or(1);
+    if !(1..=7).contains(&pages) {
+        errors.push(format!(
+            "{label} minimum_reader_pages must be an integer from 1 to 7"
         ));
     }
-    Display {
-        content_mode,
-        minimum_reader_pages,
-        display_emphasis,
-        short_title,
-        opener_variant,
+    let display_emphasis = clean(row.display_emphasis.as_deref());
+    let short_title = row.short_title.trim().to_string();
+    check_titles(label, &row.title, &short_title, &display_emphasis, errors);
+    if !OPENER_VARIANTS.contains(&row.opener_variant.trim()) {
+        errors.push(format!(
+            "{label} has invalid opener_variant: {}",
+            row.opener_variant.trim()
+        ));
     }
+    (content_mode, pages, display_emphasis, short_title)
 }
 
-fn article_media(
-    root: &Path,
-    article_id: &str,
-    source_ids: &[String],
-    manuscript: &Path,
-    row: &Value,
-    errors: &mut Vec<String>,
-    allow_unanchored: bool,
-) -> (Vec<Figure>, Vec<Extract>) {
-    let figures = match resolve_figures(
-        &FigureRequest {
-            root,
-            article_id,
-            article_source_ids: source_ids,
-            manuscript,
-            allow_unanchored,
-            verbatim: ContentMode::parse(text(row.get("content_mode")))
-                == Ok(ContentMode::Verbatim),
-        },
-        row.get("figures"),
-    ) {
-        Ok(figures) => figures,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            Vec::new()
-        }
-    };
-    let extracts = match resolve_extracts(
-        &ExtractRequest {
-            root,
-            article_id,
-            article_source_ids: source_ids,
-            manuscript,
-            allow_unanchored,
-        },
-        row.get("extracts"),
-    ) {
-        Ok(extracts) => extracts,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            Vec::new()
-        }
-    };
-    (figures, extracts)
-}
-
-fn load_article(
+fn load_article<'a>(
     context: &ArticleContext,
     index: usize,
-    row: &Value,
-    ids: &mut BTreeSet<String>,
+    row: &'a ArticleRow,
+    ids: &mut BTreeSet<&'a str>,
     errors: &mut Vec<String>,
 ) -> Option<Article> {
-    let (label, article_id, source_ids) = article_identity(index, row, errors)?;
+    let label = article_identity(index, row, errors)?;
     let (author_note, house_byline) = article_author_note(&label, row, errors);
-    if ids.contains(&article_id) {
-        errors.push(format!("Duplicate article id: {article_id}"));
+    if !ids.insert(&row.id) {
+        errors.push(format!("Duplicate article id: {}", row.id));
     }
-    ids.insert(article_id.clone());
-    let unknown: Vec<String> = source_ids
-        .iter()
-        .filter(|value| !context.known_sources.contains(*value))
-        .cloned()
-        .collect::<BTreeSet<String>>()
-        .into_iter()
-        .collect();
+    let unknown = unknown_sources(&row.source_ids, context.known_sources);
     if !unknown.is_empty() {
         errors.push(format!(
             "{label} references unknown sources: {}",
             unknown.join(", ")
         ));
     }
-    let (manuscript, tail_art) = article_paths(
-        context.root,
-        context.edition_dir,
-        row,
-        errors,
-        context.options.allow_missing_art,
-    )?;
-    let opener_art = load_opener_art(
-        context,
-        &label,
-        row,
-        &manuscript,
-        &author_note,
-        house_byline,
-        errors,
-    );
-    let ideas = article_key_ideas(&label, row, tail_art.as_ref(), errors);
-    let display = article_display(&label, row, errors);
+    let (manuscript, tail_art) = article_paths(context, row, errors)?;
+    let mut opener_art = None;
+    if context.illustrated {
+        if author_note.is_empty() && !house_byline {
+            errors.push(format!(
+                "{label} requires author_note for format.article_opener {ILLUSTRATED_OPENER}"
+            ));
+        }
+        opener_art = article_opener_art(context, &label, row, errors);
+        check_illustrated_opener(&label, &manuscript, errors);
+    }
+    let key_ideas = gather(key_ideas(&label, row.key_ideas.as_deref()), errors).unwrap_or_default();
+    if !key_ideas.is_empty() && tail_art.is_some() {
+        errors.push(format!(
+            "{label} declares both key_ideas and tail_art_path; an article closes with one object, not two -- drop whichever the piece needs less"
+        ));
+    }
+    let (content_mode, minimum_reader_pages, display_emphasis, short_title) =
+        article_display(&label, row, errors);
     check_verbatim_title(
         &label,
         row,
-        &source_ids,
-        display.content_mode,
+        content_mode,
         context.options.source_records,
         errors,
     );
-    let (figures, extracts) = article_media(
-        context.root,
-        &article_id,
-        &source_ids,
-        &manuscript,
-        row,
-        errors,
-        context.options.allow_unanchored_figures,
-    );
+    let allow_unanchored = context.options.allow_unanchored_figures;
+    let figures = FigureRequest {
+        root: context.root,
+        article_id: &row.id,
+        article_source_ids: &row.source_ids,
+        manuscript: &manuscript,
+        allow_unanchored,
+        verbatim: content_mode == ContentMode::Verbatim,
+    };
+    let extracts = ExtractRequest {
+        root: context.root,
+        article_id: &row.id,
+        article_source_ids: &row.source_ids,
+        manuscript: &manuscript,
+        allow_unanchored,
+    };
+    let figures = gather(resolve_figures(&figures, &row.figures), errors).unwrap_or_default();
+    let extracts = gather(resolve_extracts(&extracts, &row.extracts), errors).unwrap_or_default();
+    let records = context.options.source_records;
     Some(Article {
-        id: article_id,
-        title: text(row.get("title")).to_string(),
-        short_title: display.short_title,
-        display_emphasis: display.display_emphasis,
-        opener_variant: display.opener_variant,
-        author: text(row.get("author")).to_string(),
+        id: row.id.clone(),
+        title: row.title.clone(),
+        short_title,
+        display_emphasis,
+        opener_variant: row.opener_variant.trim().to_string(),
+        author: row.author.clone(),
         author_note,
-        source_url: primary_source_url(&source_ids, context.options.source_records),
-        dateline: representative_dateline(&source_ids, context.options.source_records),
-        source_ids,
+        source_url: primary_source_url(&row.source_ids, records),
+        dateline: representative_dateline(&row.source_ids, records),
+        source_ids: row.source_ids.clone(),
         manuscript,
-        content_mode: display.content_mode,
+        content_mode,
         figures,
-        minimum_reader_pages: display.minimum_reader_pages,
+        minimum_reader_pages,
         tail_art,
         opener_art,
-        key_ideas: ideas,
+        key_ideas,
         extracts,
     })
 }
 
-fn load_opener_art(
-    context: &ArticleContext,
-    label: &str,
-    row: &Value,
-    manuscript: &Path,
-    author_note: &str,
-    house_byline: bool,
-    errors: &mut Vec<String>,
-) -> Option<ArticleOpenerArt> {
-    if !context.illustrated {
-        return None;
-    }
-    if author_note.is_empty() && !house_byline {
-        errors.push(format!(
-            "{label} requires author_note for format.article_opener {ILLUSTRATED_OPENER}"
-        ));
-    }
-    let opener_art = article_opener_art(
-        context.root,
-        context.edition_dir,
-        label,
-        row,
-        errors,
-        context.options.allow_missing_art,
-    );
-    check_illustrated_opener(label, manuscript, errors);
-    opener_art
-}
-
 fn check_verbatim_title(
     label: &str,
-    row: &Value,
-    source_ids: &[String],
+    row: &ArticleRow,
     content_mode: ContentMode,
     source_records: Option<&Records>,
     errors: &mut Vec<String>,
@@ -798,17 +562,16 @@ fn check_verbatim_title(
     if content_mode != ContentMode::Verbatim {
         return;
     }
-    if source_ids.len() != 1 {
+    let [source_id] = row.source_ids.as_slice() else {
         errors.push(format!(
             "{label} verbatim articles carry exactly one source"
         ));
         return;
-    }
-    let Some(record) = source_records.and_then(|records| records.get(&source_ids[0])) else {
+    };
+    let Some(record) = source_records.and_then(|records| records.get(source_id)) else {
         return;
     };
-    let title = text(row.get("title")).to_string();
-    if title.trim() != record.title.trim() {
+    if row.title.trim() != record.title.trim() {
         errors.push(format!(
             "{label} verbatim title must stay the captured source title {}",
             quoted(&record.title)
@@ -819,38 +582,21 @@ fn check_verbatim_title(
 fn load_edition_editorial(
     root: &Path,
     edition_dir: &Path,
-    data: &Value,
+    spec: &EditionFile,
     errors: &mut Vec<String>,
 ) -> Option<Editorial> {
-    if !filled(data.get("editorial")) {
-        return None;
-    }
-    let outcome = edition_path(root, edition_dir, data.get("editorial"), true)
-        .and_then(|path| load_editorial(&path));
-    match outcome {
-        Ok(editorial) => Some(editorial),
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            None
-        }
-    }
+    let declared = spec.editorial.as_deref().filter(|path| !path.is_empty())?;
+    let path =
+        edition_path(root, edition_dir, declared, true).and_then(|path| load_editorial(&path));
+    gather(path, errors)
 }
 
 fn load_sections(
     root: &Path,
     edition_dir: &Path,
-    data: &Value,
+    rows: &[SectionRow],
     errors: &mut Vec<String>,
 ) -> Vec<Section> {
-    let empty = Vec::new();
-    let rows = match data.get("sections") {
-        None | Some(Value::Null) => &empty,
-        Some(Value::Sequence(items)) => items,
-        Some(_) => {
-            errors.push("Edition sections must be a list".to_string());
-            &empty
-        }
-    };
     let mut sections: Vec<Section> = Vec::new();
     for (index, row) in rows.iter().enumerate() {
         if let Some(section) = load_section(root, edition_dir, index, row, errors) {
@@ -864,95 +610,46 @@ fn load_section(
     root: &Path,
     edition_dir: &Path,
     index: usize,
-    row: &Value,
+    row: &SectionRow,
     errors: &mut Vec<String>,
 ) -> Option<Section> {
-    if !matches!(row, Value::Mapping(_)) || !filled(row.get("kind")) || !filled(row.get("path")) {
+    if row.kind.is_empty() || row.path.is_empty() {
         errors.push(format!("Section {} requires kind and path", index + 1));
         return None;
     }
-    check_text(
-        row,
-        &["kind", "title"],
-        &format!("Section {}", index + 1),
-        errors,
-    );
-    let kind = text(row.get("kind")).to_string();
-    if kind.trim().to_lowercase() == "colophon" {
+    if row.kind.trim().to_lowercase() == "colophon" {
         errors.push("Colophon sections are no longer supported".to_string());
         return None;
     }
-    if !SECTION_KINDS.contains(&kind.as_str()) {
+    if !SECTION_KINDS.contains(&row.kind.as_str()) {
         errors.push(format!(
             "Section {} has unknown kind {}; the known kinds are {}",
             index + 1,
-            quoted(&kind),
+            quoted(&row.kind),
             SECTION_KINDS.join(", ")
         ));
         return None;
     }
-    match edition_path(root, edition_dir, row.get("path"), true) {
-        Ok(path) => Some(Section {
-            title: if filled(row.get("title")) {
-                text(row.get("title")).to_string()
-            } else {
-                section_title(&kind)
-            },
-            kind,
-            path,
-        }),
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            None
-        }
-    }
+    let path = gather(edition_path(root, edition_dir, &row.path, true), errors)?;
+    let title = match row.title.as_deref().filter(|title| !title.is_empty()) {
+        Some(title) => title.to_string(),
+        None => section_title(&row.kind),
+    };
+    Some(Section {
+        kind: row.kind.clone(),
+        title,
+        path,
+    })
 }
 
-fn load_cover(
+fn load_cover_art(
     root: &Path,
     edition_dir: &Path,
-    data: &Value,
+    cover: &Cover,
     errors: &mut Vec<String>,
-) -> (Mapping, Option<PathBuf>) {
-    check_text(
-        &data["cover"],
-        &[
-            "headline",
-            "deck",
-            "edition_label",
-            "back_text",
-            "footer_caption",
-            "layout",
-        ],
-        "Edition cover",
-        errors,
-    );
-    let cover = match data.get("cover") {
-        None | Some(Value::Null) => Mapping::new(),
-        Some(Value::Mapping(mapping)) => mapping.clone(),
-        Some(_) => {
-            errors.push("Edition cover must be a mapping".to_string());
-            Mapping::new()
-        }
-    };
-    let tail_art_fit = or_default(data.get("tail_art_fit"), "cover");
-    if TailArtFit::parse(tail_art_fit.trim()).is_err() {
-        errors.push(format!(
-            "Edition tail_art_fit must be one of {}",
-            TailArtFit::names()
-        ));
-    }
-    let art_path = cover.get(Value::String("art_path".to_string()));
-    if !filled(art_path) {
-        return (cover, None);
-    }
-    match edition_path(root, edition_dir, art_path, true) {
-        Ok(path) => (cover, Some(path)),
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            (cover, None)
-        }
-    }
+) -> Option<PathBuf> {
+    let art_path = cover.art_path.as_deref().filter(|path| !path.is_empty())?;
+    gather(edition_path(root, edition_dir, art_path, true), errors)
 }
 
 fn art_variant_stem(path: &str) -> String {
@@ -971,51 +668,32 @@ fn art_variant_stem(path: &str) -> String {
     }
 }
 
-fn art_slots(data: &Value) -> Vec<(String, String)> {
+pub fn art_slots(spec: &EditionFile) -> Vec<(String, String)> {
     let mut slots: Vec<(String, String)> = Vec::new();
-    if let Some(Value::String(path)) = data.get("cover").and_then(|cover| cover.get("art_path")) {
-        if !path.trim().is_empty() {
-            slots.push(("cover".to_string(), path.clone()));
+    let mut push = |label: String, path: Option<&str>| {
+        if let Some(path) = path.filter(|path| !path.trim().is_empty()) {
+            slots.push((label, path.to_string()));
         }
+    };
+    push("cover".to_string(), spec.cover.art_path.as_deref());
+    for row in &spec.articles {
+        let opener = row.opener_art.as_ref().map(|art| art.path.as_str());
+        push(format!("article {} opener", row.id), opener);
+        push(
+            format!("article {} tail", row.id),
+            row.tail_art_path.as_deref(),
+        );
     }
-    if let Some(Value::Sequence(rows)) = data.get("articles") {
-        for row in rows {
-            if !matches!(row, Value::Mapping(_)) {
-                continue;
-            }
-            let id = text(row.get("id")).to_string();
-            if let Some(Value::String(path)) = row.get("opener_art").and_then(|art| art.get("path"))
-            {
-                if !path.trim().is_empty() {
-                    slots.push((format!("article {id} opener"), path.clone()));
-                }
-            }
-            if let Some(Value::String(path)) = row.get("tail_art_path") {
-                if !path.trim().is_empty() {
-                    slots.push((format!("article {id} tail"), path.clone()));
-                }
-            }
-        }
-    }
-    if let Some(Value::Sequence(plates)) = data.get("closing_plates") {
-        for plate in plates {
-            if let (Value::Mapping(_), Some(Value::String(path))) = (plate, plate.get("art_path")) {
-                slots.push((
-                    format!(
-                        "closing plate {}",
-                        repr_option(plate.get("title").filter(|value| !value.is_null()))
-                    ),
-                    path.clone(),
-                ));
-            }
-        }
+    for plate in &spec.closing_plates {
+        let label = format!("closing plate {}", quoted(&plate.title));
+        push(label, Some(&plate.art_path));
     }
     slots
 }
 
-fn check_unique_art(data: &Value, errors: &mut Vec<String>) {
+fn check_unique_art(spec: &EditionFile, errors: &mut Vec<String>) {
     let mut seen: BTreeMap<String, String> = BTreeMap::new();
-    for (label, path) in art_slots(data) {
+    for (label, path) in art_slots(spec) {
         for key in [path.clone(), art_variant_stem(&path)] {
             if let Some(owner) = seen.get(&key) {
                 if owner != &label {
@@ -1031,36 +709,38 @@ fn check_unique_art(data: &Value, errors: &mut Vec<String>) {
 }
 
 fn load_closing_plates(
-    root: &Path,
-    edition_dir: &Path,
-    data: &Value,
+    context: &ArticleContext,
+    rows: &[super::spec::PlateRow],
     errors: &mut Vec<String>,
-    allow_missing_art: bool,
 ) -> Vec<ClosingPlate> {
-    let empty = Vec::new();
-    let rows = match data.get("closing_plates") {
-        None | Some(Value::Null) => &empty,
-        Some(Value::Sequence(items)) => items,
-        Some(_) => {
-            errors.push("Edition closing_plates must be a list".to_string());
-            &empty
-        }
-    };
     let mut plates: Vec<ClosingPlate> = Vec::new();
-    let mut titles: BTreeSet<String> = BTreeSet::new();
-    let mut paths: BTreeSet<PathBuf> = BTreeSet::new();
     for (index, row) in rows.iter().enumerate() {
-        closing_plate(
-            root,
-            edition_dir,
-            index + 1,
-            row,
-            allow_missing_art,
-            &mut titles,
-            &mut paths,
-            &mut plates,
-            errors,
-        );
+        let number = index + 1;
+        if row.title.is_empty() || row.art_path.is_empty() {
+            errors.push(format!(
+                "Closing plate {number} requires title and art_path"
+            ));
+            continue;
+        }
+        let must_exist = !context.options.allow_missing_art;
+        let path = edition_path(context.root, context.edition_dir, &row.art_path, must_exist);
+        let Some(art_path) = gather(path, errors) else {
+            continue;
+        };
+        let title = row.title.trim().to_string();
+        if plates
+            .iter()
+            .any(|plate| plate.title.to_lowercase() == title.to_lowercase())
+        {
+            errors.push(format!("Closing plate title must be unique: {title}"));
+        }
+        if plates.iter().any(|plate| plate.art_path == art_path) {
+            errors.push(format!(
+                "Closing plate art_path must be unique: {}",
+                row.art_path
+            ));
+        }
+        plates.push(ClosingPlate { title, art_path });
     }
     if !rows.is_empty() && rows.len() < 3 {
         errors.push(
@@ -1068,50 +748,6 @@ fn load_closing_plates(
         );
     }
     plates
-}
-
-#[allow(clippy::too_many_arguments)]
-fn closing_plate(
-    root: &Path,
-    edition_dir: &Path,
-    number: usize,
-    row: &Value,
-    allow_missing_art: bool,
-    titles: &mut BTreeSet<String>,
-    paths: &mut BTreeSet<PathBuf>,
-    plates: &mut Vec<ClosingPlate>,
-    errors: &mut Vec<String>,
-) {
-    if !matches!(row, Value::Mapping(_))
-        || !filled(row.get("title"))
-        || !filled(row.get("art_path"))
-    {
-        errors.push(format!(
-            "Closing plate {number} requires title and art_path"
-        ));
-        return;
-    }
-    check_text(row, &["title"], &format!("Closing plate {number}"), errors);
-    let title = text(row.get("title")).trim().to_string();
-    let art_path = match edition_path(root, edition_dir, row.get("art_path"), !allow_missing_art) {
-        Ok(path) => path,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            return;
-        }
-    };
-    if titles.contains(&title.to_lowercase()) {
-        errors.push(format!("Closing plate title must be unique: {title}"));
-    }
-    if paths.contains(&art_path) {
-        errors.push(format!(
-            "Closing plate art_path must be unique: {}",
-            text(row.get("art_path"))
-        ));
-    }
-    titles.insert(title.to_lowercase());
-    paths.insert(art_path.clone());
-    plates.push(ClosingPlate { title, art_path });
 }
 
 pub fn load_translation(root: &Path, base: &Edition, language: &str) -> Result<Edition> {
@@ -1128,194 +764,141 @@ pub fn load_translation(root: &Path, base: &Edition, language: &str) -> Result<E
             relative_display(&manifest_path, root)
         )]));
     }
-    let data = load_structured(&manifest_path)?;
+    let spec: TranslationFile = read_spec(&manifest_path)?;
     let mut errors: Vec<String> = Vec::new();
-    let cover = translation_header(&data, base, language, &mut errors);
+    translation_header(&spec, base, language, &mut errors);
     let editorial =
-        translation_editorial(root, &translation_dir, &data, base, language, &mut errors);
-    let articles = translation_articles(root, &translation_dir, &data, base, language, &mut errors);
-    let closing_plates = translation_closing_plates(&data, base, language, &mut errors);
-    let sections = translation_sections(root, &translation_dir, &data, base, language, &mut errors);
+        translation_editorial(root, &translation_dir, &spec, base, language, &mut errors);
+    let articles = translation_articles(root, &translation_dir, &spec, base, language, &mut errors);
+    let closing_plates = translation_closing_plates(&spec, base, language, &mut errors);
+    let sections = translation_sections(root, &translation_dir, &spec, base, language, &mut errors);
     if !errors.is_empty() {
         return Err(ValidationError(errors));
     }
-    let raw = translation_raw(
-        root,
-        &data,
-        base,
-        language,
-        &cover,
-        editorial.as_ref(),
-        &articles,
-        &closing_plates,
-        &sections,
-    );
+    let filled = |text: Option<String>| text.filter(|text| !text.is_empty());
     Ok(Edition {
-        id: base.id.clone(),
-        publication_name: base.publication_name.clone(),
-        issue_number: base.issue_number.clone(),
-        title: or_default(data.get("title"), &base.title),
-        publication_date: base.publication_date.clone(),
+        title: filled(spec.title).unwrap_or_else(|| base.title.clone()),
+        subtitle: clean(spec.subtitle.as_deref()),
         language: language.to_string(),
-        locale: or_default(data.get("locale"), language),
+        locale: filled(spec.locale).unwrap_or_else(|| language.to_string()),
         editorial,
         articles,
         sections,
-        cover,
-        cover_art: base.cover_art.clone(),
+        cover: spec.cover,
         closing_plates,
-        raw,
+        ..base.clone()
     })
 }
 
 fn translation_header(
-    data: &Value,
+    spec: &TranslationFile,
     base: &Edition,
     language: &str,
     errors: &mut Vec<String>,
-) -> Mapping {
-    if text(data.get("language")) != language {
+) {
+    if spec.language != language {
         errors.push(format!(
-            "Translation language {} does not match directory {}",
-            repr_option(data.get("language").filter(|value| !value.is_null())),
+            "Translation {} does not match directory {}",
+            quoted(&spec.language),
             quoted(language)
         ));
     }
-    if text(data.get("source_language")) != base.language {
+    if spec.source_language != base.language {
         errors.push(format!(
             "Translation source_language must be {}",
             quoted(&base.language)
         ));
     }
-    check_text(
-        &data["cover"],
-        &[
-            "headline",
-            "deck",
+    if spec.cover == Cover::default() {
+        errors.push(format!(
+            "Translation {} requires translated cover copy",
+            quoted(language)
+        ));
+    }
+    let declared = |text: &Option<String>| text.as_deref().is_some_and(|text| !text.is_empty());
+    for (key, base_text, text) in [
+        ("headline", &base.cover.headline, &spec.cover.headline),
+        ("deck", &base.cover.deck, &spec.cover.deck),
+        (
             "edition_label",
-            "back_text",
-            "footer_caption",
-            "layout",
-        ],
-        "Translation cover",
-        errors,
-    );
-    let cover = match data.get("cover") {
-        Some(Value::Mapping(mapping)) => mapping.clone(),
-        _ => {
-            errors.push(format!(
-                "Translation {} requires translated cover copy",
-                quoted(language)
-            ));
-            Mapping::new()
-        }
-    };
-    for key in ["headline", "deck", "edition_label", "back_text"] {
-        let declared = base.cover.get(Value::String(key.to_string()));
-        if filled(declared) && !filled(cover.get(Value::String(key.to_string()))) {
+            &base.cover.edition_label,
+            &spec.cover.edition_label,
+        ),
+        ("back_text", &base.cover.back_text, &spec.cover.back_text),
+    ] {
+        if declared(base_text) && !declared(text) {
             errors.push(format!(
                 "Translation {} cover is missing {key}",
                 quoted(language)
             ));
         }
     }
-    cover
 }
 
 fn translation_editorial(
     root: &Path,
     translation_dir: &Path,
-    data: &Value,
+    spec: &TranslationFile,
     base: &Edition,
     language: &str,
     errors: &mut Vec<String>,
 ) -> Option<Editorial> {
     let source = base.editorial.as_ref()?;
-    let row = data.get("editorial");
-    if !matches!(row, Some(Value::Mapping(_))) || !filled(row.and_then(|row| row.get("path"))) {
+    let Some(row) = spec.editorial.as_ref().filter(|row| !row.path.is_empty()) else {
         errors.push(format!(
             "Translation {} requires an editorial path",
             quoted(language)
         ));
         return None;
-    }
-    let path = match edition_path(
-        root,
-        translation_dir,
-        row.and_then(|row| row.get("path")),
-        true,
-    ) {
-        Ok(path) => path,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            return None;
-        }
     };
+    let path = gather(edition_path(root, translation_dir, &row.path, true), errors)?;
     validate_translation_file(
         &source.path,
         &path,
         &format!("Translation {} editorial", quoted(language)),
         errors,
     );
-    match load_editorial(&path) {
-        Ok(editorial) => Some(editorial),
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            None
-        }
-    }
+    gather(load_editorial(&path), errors)
 }
 
 fn translation_articles(
     root: &Path,
     translation_dir: &Path,
-    data: &Value,
+    spec: &TranslationFile,
     base: &Edition,
     language: &str,
     errors: &mut Vec<String>,
 ) -> Vec<Article> {
-    let empty = Vec::new();
-    let rows = match data.get("articles") {
-        Some(Value::Sequence(items)) => items,
-        _ => {
-            errors.push(format!(
-                "Translation {} articles must be a list",
-                quoted(language)
-            ));
-            &empty
-        }
+    let Some(rows) = spec.articles.as_ref() else {
+        errors.push(format!(
+            "Translation {} articles must be a list",
+            quoted(language)
+        ));
+        return Vec::new();
     };
-    let mut translated_by_id: BTreeMap<String, &Value> = BTreeMap::new();
-    for row in rows {
-        check_text(row, &["id"], "Translation article", errors);
-        if matches!(row, Value::Mapping(_)) && filled(row.get("id")) {
-            translated_by_id
-                .entry(text(row.get("id")).to_string())
-                .or_insert(row);
+    let mut translated_by_id: BTreeMap<&str, &TranslatedArticleRow> = BTreeMap::new();
+    for row in rows.iter().filter(|row| !row.id.is_empty()) {
+        translated_by_id.entry(&row.id).or_insert(row);
+    }
+    let base_ids: BTreeSet<&str> = base.articles.iter().map(|item| item.id.as_str()).collect();
+    let translated_ids: BTreeSet<&str> = translated_by_id.keys().copied().collect();
+    for (state, ids) in [
+        ("is missing", base_ids.difference(&translated_ids)),
+        ("has unknown", translated_ids.difference(&base_ids)),
+    ] {
+        let ids: Vec<&str> = ids.copied().collect();
+        if !ids.is_empty() {
+            errors.push(format!(
+                "Translation {} {state} articles: {}",
+                quoted(language),
+                ids.join(", ")
+            ));
         }
-    }
-    let base_ids: BTreeSet<String> = base.articles.iter().map(|item| item.id.clone()).collect();
-    let translated_ids: BTreeSet<String> = translated_by_id.keys().cloned().collect();
-    let missing: Vec<String> = base_ids.difference(&translated_ids).cloned().collect();
-    let extra: Vec<String> = translated_ids.difference(&base_ids).cloned().collect();
-    if !missing.is_empty() {
-        errors.push(format!(
-            "Translation {} is missing articles: {}",
-            quoted(language),
-            missing.join(", ")
-        ));
-    }
-    if !extra.is_empty() {
-        errors.push(format!(
-            "Translation {} has unknown articles: {}",
-            quoted(language),
-            extra.join(", ")
-        ));
     }
     base.articles
         .iter()
         .filter_map(|article| {
-            translated_by_id.get(&article.id).and_then(|row| {
+            translated_by_id.get(article.id.as_str()).and_then(|row| {
                 translation_article(root, translation_dir, article, row, language, errors)
             })
         })
@@ -1324,11 +907,11 @@ fn translation_articles(
 
 fn translation_author_note(
     article: &Article,
-    row: &Value,
+    row: &TranslatedArticleRow,
     prefix: &str,
     errors: &mut Vec<String>,
 ) -> String {
-    let author_note = text(row.get("author_note")).trim().to_string();
+    let author_note = clean(row.author_note.as_deref());
     if !article.author_note.is_empty() && author_note.is_empty() {
         errors.push(format!(
             "{prefix} requires author_note because the source article has one"
@@ -1338,51 +921,20 @@ fn translation_author_note(
             "{prefix} must omit author_note because the source article omits it"
         ));
     }
-    if author_note.contains('\n') || author_note.chars().count() > 160 {
-        errors.push(format!(
-            "{prefix} author_note must be a single line of at most 160 characters"
-        ));
-    }
+    check_note_length(prefix, &author_note, errors);
     author_note
-}
-
-fn translation_titles(row: &Value, prefix: &str, errors: &mut Vec<String>) -> (String, String) {
-    let title = text(row.get("title")).to_lowercase();
-    let display_emphasis = text(row.get("display_emphasis")).trim().to_string();
-    if !display_emphasis.is_empty() && !title.contains(&display_emphasis.to_lowercase()) {
-        errors.push(format!(
-            "{prefix} display_emphasis must occur in its localized title"
-        ));
-    }
-    let short_title = text(row.get("short_title")).trim().to_string();
-    if short_title.contains('\n') || short_title.chars().count() > 40 {
-        errors.push(format!(
-            "{prefix} short_title must be a single line of at most 40 characters"
-        ));
-    } else if !title.contains(&short_title.to_lowercase()) {
-        errors.push(format!(
-            "{prefix} short_title must occur in its localized title"
-        ));
-    }
-    (display_emphasis, short_title)
 }
 
 fn translation_key_ideas(
     article: &Article,
-    row: &Value,
+    row: &TranslatedArticleRow,
     prefix: &str,
     errors: &mut Vec<String>,
 ) -> Vec<String> {
-    if article.key_ideas.is_empty() && row.get("key_ideas").is_none() {
+    if article.key_ideas.is_empty() && row.key_ideas.is_none() {
         return Vec::new();
     }
-    let ideas = match key_ideas(prefix, row.get("key_ideas")) {
-        Ok(ideas) => ideas,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            Vec::new()
-        }
-    };
+    let ideas = gather(key_ideas(prefix, row.key_ideas.as_deref()), errors).unwrap_or_default();
     if article.key_ideas.is_empty() {
         errors.push(format!(
             "{prefix} must omit key_ideas because the source article omits them"
@@ -1401,118 +953,75 @@ fn translation_key_ideas(
     ideas
 }
 
-fn translation_media(
-    article: &Article,
-    row: &Value,
-    manuscript: &Path,
-    language: &str,
-    errors: &mut Vec<String>,
-) -> (Vec<Figure>, Vec<Extract>) {
-    let figures = match localize_figures(
-        &article.figures,
-        row.get("figures"),
-        &article.id,
-        manuscript,
-        language,
-    ) {
-        Ok(figures) => figures,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            Vec::new()
-        }
-    };
-    let extracts = match localize_extracts(
-        &article.extracts,
-        row.get("extracts"),
-        &article.id,
-        manuscript,
-        language,
-    ) {
-        Ok(extracts) => extracts,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            Vec::new()
-        }
-    };
-    (figures, extracts)
-}
-
 fn translation_article(
     root: &Path,
     translation_dir: &Path,
     article: &Article,
-    row: &Value,
+    row: &TranslatedArticleRow,
     language: &str,
     errors: &mut Vec<String>,
 ) -> Option<Article> {
     let prefix = format!("Translation {} article {}", quoted(language), article.id);
-    if !filled(row.get("title"))
-        || !filled(row.get("short_title"))
-        || !filled(row.get("manuscript"))
-    {
+    let missing = blanks(&[
+        ("title", row.title.is_empty()),
+        ("short_title", row.short_title.is_empty()),
+        ("manuscript", row.manuscript.is_empty()),
+    ]);
+    if !missing.is_empty() {
         errors.push(format!(
             "{prefix} requires title, short_title, and manuscript"
         ));
         return None;
     }
-    check_text(
-        row,
-        &[
-            "title",
-            "short_title",
-            "author",
-            "author_note",
-            "display_emphasis",
-        ],
-        &prefix,
-        errors,
-    );
     let author_note = translation_author_note(article, row, &prefix, errors);
-    let author = match row.get("author") {
+    let author = match row.author.as_deref() {
         None => article.author.clone(),
-        Some(value) => {
-            let author = text(Some(value)).trim().to_string();
-            if author.is_empty() {
-                errors.push(format!("{prefix} author cannot be blank"));
-            }
-            author
+        Some(author) if author.trim().is_empty() => {
+            errors.push(format!("{prefix} author cannot be blank"));
+            String::new()
         }
+        Some(author) => author.trim().to_string(),
     };
-    let (display_emphasis, short_title) = translation_titles(row, &prefix, errors);
-    let ideas = translation_key_ideas(article, row, &prefix, errors);
-    let manuscript = match edition_path(root, translation_dir, row.get("manuscript"), true) {
-        Ok(path) => path,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            return None;
-        }
-    };
+    let display_emphasis = clean(row.display_emphasis.as_deref());
+    let short_title = row.short_title.trim().to_string();
+    check_titles(&prefix, &row.title, &short_title, &display_emphasis, errors);
+    let key_ideas = translation_key_ideas(article, row, &prefix, errors);
+    let manuscript = gather(
+        edition_path(root, translation_dir, &row.manuscript, true),
+        errors,
+    )?;
     validate_translation_file(&article.manuscript, &manuscript, &prefix, errors);
-    let (figures, extracts) = translation_media(article, row, &manuscript, language, errors);
+    let figures = localize_figures(
+        &article.figures,
+        row.figures.as_deref(),
+        &article.id,
+        &manuscript,
+        language,
+    );
+    let extracts = localize_extracts(
+        &article.extracts,
+        row.extracts.as_deref(),
+        &article.id,
+        &manuscript,
+        language,
+    );
     Some(Article {
-        id: article.id.clone(),
-        title: text(row.get("title")).to_string(),
+        title: row.title.clone(),
         short_title,
         display_emphasis,
-        opener_variant: article.opener_variant.clone(),
         author,
         author_note,
-        source_ids: article.source_ids.clone(),
         manuscript,
-        content_mode: article.content_mode,
-        figures,
-        minimum_reader_pages: article.minimum_reader_pages,
-        tail_art: article.tail_art.clone(),
-        source_url: article.source_url.clone(),
-        opener_art: article.opener_art.clone(),
-        key_ideas: ideas,
+        figures: gather(figures, errors).unwrap_or_default(),
+        key_ideas,
         dateline: None,
-        extracts,
+        extracts: gather(extracts, errors).unwrap_or_default(),
+        ..article.clone()
     })
 }
 
 fn translation_closing_plates(
-    data: &Value,
+    spec: &TranslationFile,
     base: &Edition,
     language: &str,
     errors: &mut Vec<String>,
@@ -1520,64 +1029,49 @@ fn translation_closing_plates(
     if base.closing_plates.is_empty() {
         return Vec::new();
     }
-    let rows = match data.get("closing_plate_titles") {
-        Some(Value::Sequence(items)) if items.len() == base.closing_plates.len() => items,
-        _ => {
-            errors.push(format!(
-                "Translation {} requires exactly {} closing_plate_titles",
-                quoted(language),
-                base.closing_plates.len()
-            ));
-            return Vec::new();
-        }
-    };
-    let titles: Vec<String> = rows
+    let titles: Vec<String> = spec
+        .closing_plate_titles
         .iter()
-        .map(|value| text(Some(value)).trim().to_string())
+        .map(|title| title.trim().to_string())
         .collect();
-    if titles.iter().any(String::is_empty) {
-        errors.push(format!(
-            "Translation {} closing_plate_titles cannot be blank",
-            quoted(language)
-        ));
-        return Vec::new();
-    }
     let folded: BTreeSet<String> = titles.iter().map(|title| title.to_lowercase()).collect();
-    if folded.len() != titles.len() {
-        errors.push(format!(
-            "Translation {} closing_plate_titles must be unique",
-            quoted(language)
-        ));
-        return Vec::new();
-    }
-    titles
-        .into_iter()
-        .zip(base.closing_plates.iter())
-        .map(|(title, plate)| ClosingPlate {
-            title,
-            art_path: plate.art_path.clone(),
-        })
-        .collect()
+    let problem = if titles.len() != base.closing_plates.len() {
+        format!(
+            "requires exactly {} closing_plate_titles",
+            base.closing_plates.len()
+        )
+    } else if titles.iter().any(String::is_empty) {
+        "closing_plate_titles cannot be blank".to_string()
+    } else if folded.len() != titles.len() {
+        "closing_plate_titles must be unique".to_string()
+    } else {
+        return titles
+            .into_iter()
+            .zip(&base.closing_plates)
+            .map(|(title, plate)| ClosingPlate {
+                title,
+                art_path: plate.art_path.clone(),
+            })
+            .collect();
+    };
+    errors.push(format!("Translation {} {problem}", quoted(language)));
+    Vec::new()
 }
 
 fn translation_sections(
     root: &Path,
     translation_dir: &Path,
-    data: &Value,
+    spec: &TranslationFile,
     base: &Edition,
     language: &str,
     errors: &mut Vec<String>,
 ) -> Vec<Section> {
-    let empty = Vec::new();
-    let rows = match data.get("sections") {
-        Some(Value::Sequence(items)) => items,
-        _ => {
-            errors.push(format!(
-                "Translation {} sections must be a list",
-                quoted(language)
-            ));
-            &empty
-        }
+    let Some(rows) = spec.sections.as_ref() else {
+        errors.push(format!(
+            "Translation {} sections must be a list",
+            quoted(language)
+        ));
+        return Vec::new();
     };
     if rows.len() != base.sections.len() {
         errors.push(format!(
@@ -1587,324 +1081,31 @@ fn translation_sections(
         ));
     }
     let mut sections: Vec<Section> = Vec::new();
-    for (index, section) in base.sections.iter().enumerate() {
-        let Some(row) = rows
-            .get(index)
-            .filter(|row| matches!(row, Value::Mapping(_)))
+    for (index, (section, row)) in base.sections.iter().zip(rows).enumerate() {
+        let title = row.title.as_deref().filter(|title| !title.is_empty());
+        let (Some(title), true, false) = (title, row.kind == section.kind, row.path.is_empty())
+        else {
+            errors.push(format!(
+                "Translation {} section {} must preserve kind {} and provide title and path",
+                quoted(language),
+                index + 1,
+                quoted(&section.kind)
+            ));
+            continue;
+        };
+        let Some(path) = gather(edition_path(root, translation_dir, &row.path, true), errors)
         else {
             continue;
         };
-        if let Some(translated) =
-            translation_section(root, translation_dir, index, section, row, language, errors)
-        {
-            sections.push(translated);
-        }
+        let label = format!("Translation {} section {}", quoted(language), index + 1);
+        validate_translation_file(&section.path, &path, &label, errors);
+        sections.push(Section {
+            kind: section.kind.clone(),
+            title: title.to_string(),
+            path,
+        });
     }
     sections
-}
-
-fn translation_section(
-    root: &Path,
-    translation_dir: &Path,
-    index: usize,
-    section: &Section,
-    row: &Value,
-    language: &str,
-    errors: &mut Vec<String>,
-) -> Option<Section> {
-    let kind_matches =
-        matches!(row.get("kind"), Some(Value::String(kind)) if kind == &section.kind);
-    check_text(row, &["title"], "Translation section", errors);
-    if !kind_matches || !filled(row.get("title")) || !filled(row.get("path")) {
-        errors.push(format!(
-            "Translation {} section {} must preserve kind {} and provide title and path",
-            quoted(language),
-            index + 1,
-            quoted(&section.kind)
-        ));
-        return None;
-    }
-    let path = match edition_path(root, translation_dir, row.get("path"), true) {
-        Ok(path) => path,
-        Err(ValidationError(messages)) => {
-            errors.extend(messages);
-            return None;
-        }
-    };
-    validate_translation_file(
-        &section.path,
-        &path,
-        &format!("Translation {} section {}", quoted(language), index + 1),
-        errors,
-    );
-    Some(Section {
-        kind: section.kind.clone(),
-        title: text(row.get("title")).to_string(),
-        path,
-    })
-}
-
-fn relative_posix(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
-}
-
-fn translation_article_raw(root: &Path, article: &Article) -> Value {
-    let mut row = Mapping::new();
-    insert(&mut row, "id", Value::String(article.id.clone()));
-    insert(&mut row, "title", Value::String(article.title.clone()));
-    insert(
-        &mut row,
-        "short_title",
-        Value::String(article.short_title.clone()),
-    );
-    insert(
-        &mut row,
-        "display_emphasis",
-        Value::String(article.display_emphasis.clone()),
-    );
-    insert(
-        &mut row,
-        "opener_variant",
-        Value::String(article.opener_variant.clone()),
-    );
-    insert(&mut row, "author", Value::String(article.author.clone()));
-    insert(
-        &mut row,
-        "author_note",
-        Value::String(article.author_note.clone()),
-    );
-    insert(
-        &mut row,
-        "content_mode",
-        Value::String(article.content_mode.as_str().to_string()),
-    );
-    insert(
-        &mut row,
-        "source_ids",
-        Value::Sequence(
-            article
-                .source_ids
-                .iter()
-                .map(|id| Value::String(id.clone()))
-                .collect(),
-        ),
-    );
-    insert(
-        &mut row,
-        "manuscript",
-        Value::String(relative_posix(&article.manuscript, root)),
-    );
-    insert(
-        &mut row,
-        "tail_art_path",
-        match article.tail_art.as_ref() {
-            Some(path) => Value::String(relative_posix(path, root)),
-            None => Value::Null,
-        },
-    );
-    if !article.key_ideas.is_empty() {
-        insert(
-            &mut row,
-            "key_ideas",
-            Value::Sequence(
-                article
-                    .key_ideas
-                    .iter()
-                    .map(|idea| Value::String(idea.clone()))
-                    .collect(),
-            ),
-        );
-    }
-    if let Some(art) = article.opener_art.as_ref() {
-        let mut opener = Mapping::new();
-        insert(
-            &mut opener,
-            "path",
-            Value::String(relative_posix(&art.path, root)),
-        );
-        insert(&mut opener, "alt_text", Value::String(art.alt_text.clone()));
-        insert(&mut opener, "credit", Value::String(art.credit.clone()));
-        insert(&mut row, "opener_art", Value::Mapping(opener));
-    }
-    insert(
-        &mut row,
-        "figures",
-        Value::Sequence(
-            article
-                .figures
-                .iter()
-                .map(|figure| figure_raw(root, figure))
-                .collect(),
-        ),
-    );
-    if !article.extracts.is_empty() {
-        insert(
-            &mut row,
-            "extracts",
-            Value::Sequence(article.extracts.iter().map(extract_raw).collect()),
-        );
-    }
-    Value::Mapping(row)
-}
-
-fn figure_raw(root: &Path, figure: &Figure) -> Value {
-    let source = root.join("library").join("sources").join(&figure.source_id);
-    let mut row = Mapping::new();
-    insert(&mut row, "id", Value::String(figure.id.clone()));
-    insert(
-        &mut row,
-        "source_id",
-        Value::String(figure.source_id.clone()),
-    );
-    insert(
-        &mut row,
-        "path",
-        Value::String(relative_posix(&figure.path, &source)),
-    );
-    insert(&mut row, "caption", Value::String(figure.caption.clone()));
-    insert(&mut row, "credit", Value::String(figure.credit.clone()));
-    insert(&mut row, "alt_text", Value::String(figure.alt_text.clone()));
-    insert(&mut row, "anchor", Value::String(figure.anchor.clone()));
-    insert(
-        &mut row,
-        "layout",
-        Value::String(figure.layout.as_str().to_string()),
-    );
-    Value::Mapping(row)
-}
-
-fn extract_raw(extract: &Extract) -> Value {
-    let mut row = Mapping::new();
-    insert(&mut row, "id", Value::String(extract.id.clone()));
-    insert(
-        &mut row,
-        "source_id",
-        Value::String(extract.source_id.clone()),
-    );
-    insert(
-        &mut row,
-        "style",
-        Value::String(extract.style.as_str().to_string()),
-    );
-    insert(&mut row, "caption", Value::String(extract.caption.clone()));
-    insert(&mut row, "anchor", Value::String(extract.anchor.clone()));
-    Value::Mapping(row)
-}
-
-fn insert(mapping: &mut Mapping, key: &str, value: Value) {
-    mapping.insert(Value::String(key.to_string()), value);
-}
-
-#[allow(clippy::too_many_arguments)]
-fn translation_raw(
-    root: &Path,
-    data: &Value,
-    base: &Edition,
-    language: &str,
-    cover: &Mapping,
-    editorial: Option<&Editorial>,
-    articles: &[Article],
-    closing_plates: &[ClosingPlate],
-    sections: &[Section],
-) -> Value {
-    let Value::Mapping(mut raw) = base.raw.clone() else {
-        return base.raw.clone();
-    };
-    insert(
-        &mut raw,
-        "title",
-        Value::String(or_default(data.get("title"), &base.title)),
-    );
-    insert(
-        &mut raw,
-        "subtitle",
-        Value::String(or_default(data.get("subtitle"), "")),
-    );
-    insert(&mut raw, "language", Value::String(language.to_string()));
-    insert(
-        &mut raw,
-        "locale",
-        Value::String(or_default(data.get("locale"), language)),
-    );
-    let mut translation = Mapping::new();
-    insert(
-        &mut translation,
-        "source_language",
-        Value::String(base.language.clone()),
-    );
-    insert(
-        &mut translation,
-        "fallback_locale",
-        data.get("fallback_locale").cloned().unwrap_or(Value::Null),
-    );
-    insert(
-        &mut translation,
-        "policy",
-        data.get("policy").cloned().unwrap_or(Value::Null),
-    );
-    insert(&mut raw, "translation", Value::Mapping(translation));
-    insert(&mut raw, "cover", Value::Mapping(cover.clone()));
-    insert(
-        &mut raw,
-        "closing_plates",
-        Value::Sequence(
-            closing_plates
-                .iter()
-                .map(|plate| {
-                    let mut row = Mapping::new();
-                    insert(&mut row, "title", Value::String(plate.title.clone()));
-                    insert(
-                        &mut row,
-                        "art_path",
-                        Value::String(relative_posix(&plate.art_path, root)),
-                    );
-                    Value::Mapping(row)
-                })
-                .collect(),
-        ),
-    );
-    insert(
-        &mut raw,
-        "editorial",
-        match editorial {
-            Some(editorial) => Value::String(relative_posix(&editorial.path, root)),
-            None => Value::Null,
-        },
-    );
-    insert(
-        &mut raw,
-        "articles",
-        Value::Sequence(
-            articles
-                .iter()
-                .map(|article| translation_article_raw(root, article))
-                .collect(),
-        ),
-    );
-    insert(
-        &mut raw,
-        "sections",
-        Value::Sequence(
-            sections
-                .iter()
-                .map(|section| {
-                    let mut row = Mapping::new();
-                    insert(&mut row, "kind", Value::String(section.kind.clone()));
-                    insert(&mut row, "title", Value::String(section.title.clone()));
-                    insert(
-                        &mut row,
-                        "path",
-                        Value::String(relative_posix(&section.path, root)),
-                    );
-                    Value::Mapping(row)
-                })
-                .collect(),
-        ),
-    );
-    Value::Mapping(raw)
 }
 
 fn markdown_signature(path: &Path) -> std::result::Result<Vec<String>, String> {
@@ -2040,24 +1241,15 @@ fn relative_display(path: &Path, root: &Path) -> String {
         .to_string()
 }
 
-fn edition_path(
-    root: &Path,
-    edition_dir: &Path,
-    value: Option<&Value>,
-    must_exist: bool,
-) -> Result<PathBuf> {
-    let text = match value {
-        Some(Value::String(text)) if !text.trim().is_empty() => text.clone(),
-        other => {
-            return Err(ValidationError(vec![format!(
-                "Referenced path must be a non-empty string, got {}",
-                repr_option(other)
-            )]))
-        }
-    };
-    let path = Path::new(&text);
+fn edition_path(root: &Path, edition_dir: &Path, text: &str, must_exist: bool) -> Result<PathBuf> {
+    if text.trim().is_empty() {
+        return Err(ValidationError::one(
+            "Referenced path must be a non-empty string",
+        ));
+    }
+    let path = Path::new(text);
     if path.components().next() == Some(Component::Normal("editions".as_ref())) {
-        return safe_project_path(root, &text, must_exist);
+        return safe_project_path(root, text, must_exist);
     }
     let candidate = normalize(&edition_dir.join(path));
     let root = normalize(root);
@@ -2075,36 +1267,28 @@ fn edition_path(
     Ok(candidate)
 }
 
-fn key_ideas(label: &str, value: Option<&Value>) -> Result<Vec<String>> {
-    let items = match value {
-        None | Some(Value::Null) => return Ok(Vec::new()),
-        Some(Value::Sequence(items)) => items,
-        Some(_) => {
-            return Err(ValidationError(vec![format!(
-                "{label} key_ideas must be a non-empty list of single-line strings"
-            )]))
-        }
+fn key_ideas(label: &str, items: Option<&[String]>) -> Result<Vec<String>> {
+    let Some(items) = items else {
+        return Ok(Vec::new());
     };
-    let invalid = items.iter().any(|item| {
-        !matches!(item, Value::String(text) if !text.trim().is_empty() && !text.contains('\n'))
-    });
-    if items.is_empty() || invalid {
-        return Err(ValidationError(vec![format!(
+    if items.is_empty()
+        || items
+            .iter()
+            .any(|item| item.trim().is_empty() || item.contains('\n'))
+    {
+        return Err(ValidationError::one(format!(
             "{label} key_ideas must be a non-empty list of single-line strings"
-        )]));
+        )));
     }
-    let ideas: Vec<String> = items
-        .iter()
-        .filter_map(|item| item.as_str().map(|text| text.trim().to_string()))
-        .collect();
+    let ideas: Vec<String> = items.iter().map(|item| item.trim().to_string()).collect();
     let words: usize = ideas
         .iter()
         .map(|idea| idea.split_whitespace().count())
         .sum();
     if words > KEY_IDEAS_WORD_BUDGET {
-        return Err(ValidationError(vec![format!(
+        return Err(ValidationError::one(format!(
             "{label} key_ideas run to {words} words; the budget is {KEY_IDEAS_WORD_BUDGET}. State the claims a reader needs to use the thing, not a summary of the piece"
-        )]));
+        )));
     }
     Ok(ideas)
 }
@@ -2171,12 +1355,8 @@ fn load_editorial(path: &Path) -> Result<Editorial> {
     Ok(Editorial {
         path: path.to_path_buf(),
         title,
-        byline: or_default(metadata.get("byline"), "The editors")
-            .trim()
-            .to_string(),
-        label: or_default(metadata.get("label"), "ORIGINAL EDITORIAL")
-            .trim()
-            .to_string(),
+        byline: frontmatter_text(&metadata, "byline", "The editors"),
+        label: frontmatter_text(&metadata, "label", "ORIGINAL EDITORIAL"),
     })
 }
 
@@ -2191,24 +1371,9 @@ pub fn source_code_payload(url: &str) -> String {
     payload.strip_prefix("www.").unwrap_or(payload).to_string()
 }
 
-fn blank_header_field(value: Option<&Value>) -> bool {
-    match value {
-        None | Some(Value::Null) => true,
-        Some(Value::String(text)) => text.is_empty(),
-        Some(Value::Sequence(items)) => items.is_empty(),
-        _ => false,
+fn frontmatter_text(metadata: &Value, key: &str, fallback: &str) -> String {
+    match metadata.get(key).and_then(Value::as_str) {
+        Some(text) if !text.is_empty() => text.trim().to_string(),
+        _ => fallback.to_string(),
     }
-}
-
-fn to_int(value: Option<&Value>) -> Option<i64> {
-    match value {
-        None | Some(Value::Null) => Some(1),
-        Some(Value::Number(number)) => number.as_i64(),
-        Some(Value::String(text)) => text.trim().parse().ok(),
-        Some(_) => None,
-    }
-}
-
-fn repr_option(value: Option<&Value>) -> String {
-    value.map_or_else(|| "missing".to_string(), show)
 }

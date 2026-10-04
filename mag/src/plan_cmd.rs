@@ -1,5 +1,7 @@
 use crate::caller::write_atomic;
 use crate::model::kinds::ContentMode;
+use crate::model::shared::read_spec;
+use crate::model::spec::SourceRecord;
 use crate::util::read;
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use std::fs;
@@ -179,14 +181,13 @@ fn row_from_record(
     let record_path = PathBuf::from("library/sources")
         .join(sid)
         .join("record.yaml");
-    let record: serde_norway::Value = serde_norway::from_str(&read(&record_path)?)
-        .with_context(|| format!("parsing {}", record_path.display()))?;
-    let title = record
-        .get("title")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow!("source '{sid}' record.yaml has no title"))?;
-    let author = record.get("author").and_then(|v| v.as_str()).unwrap_or("");
-    Ok((article_row(sid, title, author, mode), mode))
+    let record: SourceRecord = read_spec(&record_path)?;
+    ensure!(
+        !record.title.is_empty(),
+        "source '{sid}' record.yaml has no title"
+    );
+    let author = record.author.unwrap_or_default();
+    Ok((article_row(sid, &record.title, &author, mode), mode))
 }
 
 fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
