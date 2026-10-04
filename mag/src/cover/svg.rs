@@ -13,8 +13,6 @@ pub const MARK_SVG: &str = include_str!("../../assets/brand/mark.svg");
 pub const MARK_SQUARE_SVG: &str = include_str!("../../assets/brand/mark-square.svg");
 const WORDMARK_INSET: (f64, f64) = (2.85, -28.91);
 const WORDMARK_HEIGHT: f64 = 75.13;
-const BOX_FILL: &str = "fill=\"var(--box, #0a0b0d)\"";
-const DARK_EDGE: &str = "stroke=\"var(--ink)\" stroke-opacity=\"0.35\" stroke-width=\"0.73\"";
 
 pub struct Palette {
     pub paper: String,
@@ -260,10 +258,7 @@ impl Builder<'_> {
         let (x, y) = (spot.x + WORDMARK_INSET.0, spot.top + WORDMARK_INSET.1);
         let max_width = PAGE_WIDTH - self.design.tab.width - spot.right_reserve - WORDMARK_INSET.0;
         let scale = (WORDMARK_HEIGHT / vh).min(max_width / vw);
-        let mut body = brand_body(WORDMARK_SVG).to_string();
-        if on_dark {
-            body = body.replacen(BOX_FILL, &format!("{BOX_FILL} {DARK_EDGE}"), 1);
-        }
+        let body = brand_body(WORDMARK_SVG).to_string();
         let head = if on_dark { &colors.paper } else { &colors.ink };
         let body = paint(&body, |name| match name {
             "ink" => Some(head.as_str()),
