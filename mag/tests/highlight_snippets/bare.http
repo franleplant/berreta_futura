@@ -1,2 +1,0 @@
-GET /health HTTP/3
-Accept: */*

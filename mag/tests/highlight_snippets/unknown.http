@@ -1,4 +1,0 @@
-PUT /files/report.bin HTTP/1.0
-Content-Type: application/x-unknown-thing
-
-binary-ish <body> & stuff

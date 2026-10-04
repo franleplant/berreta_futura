@@ -1,0 +1,1469 @@
+briefs:
+- id: opener-one-month-without-ai
+  purpose: opener
+  article_id: one-month-without-ai
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: Pedro, with a firm decided face, holds a pulled
+    power plug at the end of a cable; Maro sags beside him, eyes drooping into sleepy curves, dozing upright;
+    Flopaz, calm, holds out a yellow pencil and a plain paper notebook to Pedro. Props: the cable and
+    plug, the pencil, the notebook. Setting barely suggested: one soft dusty-lavender wash behind the
+    three, one pale wall-socket edge at the left, one soft cast shadow under them. Nothing else. The washes
+    stop short of the frame edges and fade into warm off-white paper; the cast is drawn large, filling
+    most of the frame height, with calm empty paper around them. Landscape frame 1.71:1, 1760x1024, cropped
+    object-fit cover: keep every head, hand, and essential prop well inside the frame with headroom. Entirely
+    wordless; the notebook pages are blank. Pedro, Maro, and Flopaz are the only characters, each drawn
+    exactly to their cast descriptions; nobody else appears. Strong silhouettes and expressions legible
+    at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters,
+    furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard, beige,
+    sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances, decorative
+    montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering, painterly
+    concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels, speech
+    balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: Pedro unplugs Maro for a month while Flopaz offers pencil and paper instead.
+  composition: 'Three large figures in a row on paper: Pedro center with the plug, sleepy Maro left, Flopaz
+    right holding out the notebook, one lavender wash and one socket edge behind.'
+  alt_text: Pedro pulls Maro's plug and Maro dozes with sleepy eyes while Flopaz hands Pedro a pencil
+    and a paper notebook.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-one-month-without-ai
+  purpose: tail
+  article_id: one-month-without-ai
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: Pedro and Flopaz lie on their stomachs
+    side by side, writing in paper notebooks with pencils, absorbed; Maro sits curled up asleep beside
+    them, eyes closed as two soft curves, the unplugged cable coiled loosely at Maro''s feet. Setting
+    barely suggested: a single horizontal stroke of muted-green ground under them and one soft cast shadow.
+    Nothing else. The wash stops short of the frame and fades into warm off-white paper; the figures are
+    large, filling most of the strip''s height, with calm empty paper at both ends. Wide 3:1 landscape
+    strip, 2160x720, never square or 2:1: all action in the middle band and inside the safe horizontal
+    crop. Entirely wordless; notebook pages show only loose scribble-free blank lines. Pedro, Maro, and
+    Flopaz are the only characters, each drawn to their cast descriptions; nobody else appears. Strong
+    silhouettes legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves,
+    pegboards, posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat
+    yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced
+    appliances, decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy
+    anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs,
+    captions, labels, speech balloons, and any franchise character, blue robotic cat, or copied gadget,
+    costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: Pedro and Flopaz write by hand while unplugged Maro sleeps beside them.
+  composition: 'Wide strip: the two children lying head to head across the middle band, Maro curled at
+    the right, one green ground stroke beneath.'
+  alt_text: Pedro and Flopaz lie on the ground writing in paper notebooks while Maro sleeps curled beside
+    them, its cable coiled.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-spending-your-effort
+  purpose: opener
+  article_id: using-claude-code-spending-your-effort-claude-de
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: Maro stands in the middle resting one mitten hand
+    on a big round unmarked dial on a short post, head turning between the other two; at left Flopaz holds
+    up a tiny folded paper boat between finger and thumb; at right Pedro staggers under a huge cardboard
+    bridge carried over his head, cheeks puffed. The dial face has no numbers or marks, only a pointer.
+    Setting barely suggested: one soft cobalt wash low behind the figures, one soft cast shadow. Nothing
+    else. The washes stop short of the frame edges and fade into warm off-white paper; the cast is drawn
+    large, filling most of the frame height, with calm empty paper around them. Landscape frame 1.71:1,
+    1760x1024, cropped object-fit cover: keep every head, hand, the bridge ends, and the boat well inside
+    the frame with headroom. Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each
+    drawn exactly to their cast descriptions; nobody else appears. Strong silhouettes and expressions
+    legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards,
+    posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard,
+    beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances,
+    decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, numerals, captions,
+    labels, speech balloons, and any franchise character, blue robotic cat, or copied gadget, costume,
+    or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: Maro sets the effort dial between Flopaz's tiny paper boat and Pedro's huge cardboard bridge.
+  composition: Maro and the dial centered, Flopaz small-gesture left, Pedro under the oversized bridge
+    right, one cobalt wash low behind.
+  alt_text: Maro rests a mitten on a big round dial, looking from Flopaz's tiny paper boat to the huge
+    cardboard bridge Pedro is carrying.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-spending-your-effort
+  purpose: tail
+  article_id: using-claude-code-spending-your-effort-claude-de
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: Pedro has set the cardboard bridge
+    down across a narrow stream and sits on it catching his breath, smiling; Flopaz kneels at the bank
+    launching the tiny paper boat, which floats under the bridge; Maro stands between them on the bank,
+    mitten raised in a little wave to the boat. Setting barely suggested: a single horizontal stroke of
+    softened cyan water and one soft cast shadow. Nothing else. The wash stops short of the frame and
+    fades into warm off-white paper; the figures are large, filling most of the strip''s height, with
+    calm empty paper at both ends. Wide 3:1 landscape strip, 2160x720, never square or 2:1: all action
+    in the middle band and inside the safe horizontal crop. Entirely wordless. Pedro, Maro, and Flopaz
+    are the only characters, each drawn to their cast descriptions; nobody else appears. Strong silhouettes
+    legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards,
+    posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard,
+    beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances,
+    decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The big bridge and the tiny boat each find their use over the same small stream.
+  composition: 'Wide strip: one cyan water stroke across the middle, the cardboard bridge spanning it
+    with Pedro seated, Flopaz launching the boat left, Maro waving right.'
+  alt_text: Pedro rests on his cardboard bridge over a narrow stream while Flopaz's paper boat floats
+    beneath it and Maro waves.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-eval-hillclimbing
+  purpose: opener
+  article_id: automating-eval-design-and-hillclimbing-with-cla
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: Maro climbs a slope planting small blank coral
+    flags, one at each higher step behind it, reaching to plant the next; Flopaz crouches lower on the
+    slope holding a wooden spirit level against the ground, eyeing the bubble; Pedro stands at the foot
+    handing a coiled rope up toward Maro. Setting barely suggested: one rising muted green wash for the
+    slope, rising left to right and never a landscape, and one soft cast shadow. Nothing else. The washes
+    stop short of the frame edges and fade into warm off-white paper; the cast is drawn large, filling
+    most of the frame height, with calm empty paper around them. Landscape frame 1.71:1, 1760x1024, cropped
+    object-fit cover: keep every head, hand, and the top flag well inside the frame with headroom. Entirely
+    wordless; flags are plain cloth. Pedro, Maro, and Flopaz are the only characters, each drawn exactly
+    to their cast descriptions; nobody else appears. Strong silhouettes and expressions legible at A5,
+    print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture
+    sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia,
+    or bright cyan field filling the frame, extra humans or robots, robot-faced appliances, decorative
+    montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering, painterly
+    concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels, speech
+    balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: Maro climbs step by checked step, flagging each gain, with Flopaz measuring and Pedro supporting.
+  composition: 'A green slope wash rising left to right: Pedro at the foot, Flopaz mid-slope with the
+    level, Maro near the top planting a flag.'
+  alt_text: Maro climbs a grassy hill planting small flags at each higher step while Flopaz checks the
+    slope with a spirit level and Pedro hands up a rope.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-eval-hillclimbing
+  purpose: tail
+  article_id: automating-eval-design-and-hillclimbing-with-cla
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: at the end of the climb, Maro plants
+    one last small coral flag and leans on it; Flopaz sits beside it checking the spirit level, which
+    now rests level; Pedro sits on the coiled rope, legs stretched out, catching his breath. A short row
+    of small flags trails back down to the left. Setting barely suggested: a single gently rising stroke
+    of muted-green ground and one soft cast shadow. Nothing else. The wash stops short of the frame and
+    fades into warm off-white paper; the figures are large, filling most of the strip''s height, with
+    calm empty paper at both ends. Wide 3:1 landscape strip, 2160x720, never square or 2:1: all action
+    in the middle band and inside the safe horizontal crop. Entirely wordless; flags are plain cloth.
+    Pedro, Maro, and Flopaz are the only characters, each drawn to their cast descriptions; nobody else
+    appears. Strong silhouettes legible at A5, print-friendly contrast. Avoid: detailed or full-bleed
+    backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital line art,
+    cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans
+    or robots, robot-faced appliances, decorative montages or filler patterns, steampunk clutter, excessive
+    crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons, and any franchise character, blue robotic cat,
+    or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The trio rests at the top of the climb beside the last flag.
+  composition: 'Wide strip: a green ground stroke rising gently to the right, a trail of flags at left,
+    the trio grouped at center-right around the final flag.'
+  alt_text: Maro plants a last flag at the top of a gentle slope while Flopaz checks her level and Pedro
+    rests on the coiled rope.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-tla
+  purpose: opener
+  article_id: the-internet-discovers-tla-now-what
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a simple cardboard marble run with three branching
+    chutes stands in the middle; Flopaz on one side and Maro on the other each drop a coloured marble
+    into a different top opening, so every branch carries one; Pedro crouches low at the bottom exit,
+    chin near the ground, eyes wide, watching for a jam. Keep the marble run simple, a few tape joins,
+    three chutes, no maze. Setting barely suggested: one soft dusty-lavender wash behind the run and one
+    soft cast shadow. Nothing else. The washes stop short of the frame edges and fade into warm off-white
+    paper; the cast is drawn large, filling most of the frame height, with calm empty paper around them.
+    Landscape frame 1.71:1, 1760x1024, cropped object-fit cover: keep every head, hand, and the top of
+    the run well inside the frame with headroom. Entirely wordless. Pedro, Maro, and Flopaz are the only
+    characters, each drawn exactly to their cast descriptions; nobody else appears. Strong silhouettes
+    and expressions legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds,
+    shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading,
+    a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans or robots,
+    robot-faced appliances, decorative montages or filler patterns, steampunk clutter, excessive crosshatching,
+    glossy anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface
+    glyphs, captions, labels, speech balloons, and any franchise character, blue robotic cat, or copied
+    gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: Flopaz and Maro test every branch of the marble run while Pedro watches the exit for a jam.
+  composition: The three-chute run centered, Flopaz left and Maro right dropping marbles at the top, Pedro
+    crouched at the bottom exit, one lavender wash behind.
+  alt_text: Flopaz and Maro drop marbles into every branch of a cardboard marble run while Pedro crouches
+    at the bottom, watching for a jam.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-tla
+  purpose: tail
+  article_id: the-internet-discovers-tla-now-what
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: a long low cardboard chute runs across
+    the strip ending in a shallow tray; three coloured marbles have arrived safely in the tray; Pedro
+    kneels by the tray pointing at them, pleased; Flopaz sits on the ground nodding; Maro lifts both mittens
+    in a small cheer. Setting barely suggested: a single horizontal stroke of ground and one soft cast
+    shadow. Nothing else. The wash stops short of the frame and fades into warm off-white paper; the figures
+    are large, filling most of the strip''s height, with calm empty paper at both ends. Wide 3:1 landscape
+    strip, 2160x720, never square or 2:1: all action in the middle band and inside the safe horizontal
+    crop. Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each drawn to their cast
+    descriptions; nobody else appears. Strong silhouettes legible at A5, print-friendly contrast. Avoid:
+    detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: 'Every marble arrives in the tray: the run has no jam.'
+  composition: 'Wide strip: the chute running left to right along the middle band into a tray, Pedro at
+    the tray, Flopaz and Maro beside it.'
+  alt_text: Three marbles rest safely in the tray at the end of a long cardboard chute while Pedro points,
+    Flopaz nods, and Maro cheers.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-gemini-argon
+  purpose: opener
+  article_id: gemini-4-argon-our-next-era-of-frontier-intellig
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: Pedro and Flopaz, arms raised together, release
+    a large round dusty-lavender balloon that glows softly from within; Maro plants both feet and leans
+    back, holding the taut tether in both mittens as the balloon tugs upward. Setting barely suggested,
+    the hour is dusk: one soft cobalt wash patch behind the balloon and one soft cast shadow under the
+    cast. No sky gradient, no horizon. Nothing else. The washes stop short of the frame edges and fade
+    into warm off-white paper; the cast is drawn large, filling most of the frame height, with calm empty
+    paper around them. Landscape frame 1.71:1, 1760x1024, cropped object-fit cover: keep the whole balloon,
+    every head, and every hand well inside the frame with headroom. Entirely wordless. Pedro, Maro, and
+    Flopaz are the only characters, each drawn exactly to their cast descriptions; nobody else appears.
+    Strong silhouettes and expressions legible at A5, print-friendly contrast. Avoid: detailed or full-bleed
+    backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital line art,
+    cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans
+    or robots, robot-faced appliances, decorative montages or filler patterns, steampunk clutter, excessive
+    crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing,
+    interface glyphs, captions, labels, speech balloons, and any franchise character, blue robotic cat,
+    or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: Pedro and Flopaz release a glowing new balloon while Maro holds the tether steady.
+  composition: The balloon upper center inside a cobalt wash patch, Pedro and Flopaz below reaching up,
+    Maro braced at right on the tether.
+  alt_text: Pedro and Flopaz release a large glowing lavender balloon into the dusk while Maro braces
+    his feet and holds the tether.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-gemini-argon
+  purpose: tail
+  article_id: gemini-4-argon-our-next-era-of-frontier-intellig
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: the glowing lavender balloon floats
+    calmly at the right of the strip at the end of its tether; Maro sits on the ground winding the tether
+    slowly on a small hand reel; Pedro and Flopaz sit beside Maro, chins on knees, gazing up at the balloon.
+    Setting barely suggested: a single horizontal stroke of ground and one soft cast shadow; the balloon''s
+    soft glow is the only light. Nothing else. The wash stops short of the frame and fades into warm off-white
+    paper; the figures are large, filling most of the strip''s height, with calm empty paper at both ends.
+    Wide 3:1 landscape strip, 2160x720, never square or 2:1: all action, including the whole balloon,
+    in the middle band and inside the safe horizontal crop. Entirely wordless. Pedro, Maro, and Flopaz
+    are the only characters, each drawn to their cast descriptions; nobody else appears. Strong silhouettes
+    legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards,
+    posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard,
+    beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances,
+    decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The trio sits and watches the balloon float, Maro reeling the tether in.
+  composition: 'Wide strip: the three seated at left-center on a ground stroke, the tether rising to the
+    balloon at right.'
+  alt_text: Maro winds the tether on a small reel while Pedro and Flopaz sit beside him watching the glowing
+    lavender balloon float.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-glm-cyber
+  purpose: opener
+  article_id: glm-5-3-and-the-spread-of-advanced-cyber-capabil
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: at left Pedro holds up a small faceless tin toy
+    with a crank that has just cut a fresh brass key, grinning proudly; in the middle Flopaz leans in
+    and studies the new key through a round magnifier, brow raised; at right Maro rushes, one foot off
+    the ground, to fit a big sturdy cobalt padlock onto the hasp of a shed door. Setting barely suggested:
+    one wooden shed-door edge in a brick-coral wash at the right, one soft cast shadow. Nothing else.
+    The washes stop short of the frame edges and fade into warm off-white paper; the cast is drawn large,
+    filling most of the frame height, with calm empty paper around them. Landscape frame 1.71:1, 1760x1024,
+    cropped object-fit cover: keep every head, hand, the key, and the padlock well inside the frame with
+    headroom. Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each drawn exactly to
+    their cast descriptions; nobody else appears, and the tin toy has no face. Strong silhouettes and
+    expressions legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves,
+    pegboards, posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat
+    yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced
+    appliances, decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy
+    anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs,
+    captions, labels, speech balloons, and any franchise character, blue robotic cat, or copied gadget,
+    costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: A cheap toy now copies keys, so Maro races to fit a stronger lock.
+  composition: 'Left to right: Pedro with the tin toy, Flopaz with the magnifier, Maro lunging to the
+    shed-door edge with the padlock.'
+  alt_text: Pedro shows a tin toy that copies keys, Flopaz studies the freshly cut key through a magnifier,
+    and Maro rushes to fit a stronger lock on the shed.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-glm-cyber
+  purpose: tail
+  article_id: glm-5-3-and-the-spread-of-advanced-cyber-capabil
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: Maro clicks the sturdy cobalt padlock
+    shut on a shed-door hasp and pats it; Flopaz tries the freshly cut brass key in it and finds it does
+    not fit, looking satisfied; Pedro, sheepish, tucks the faceless tin key-copying toy into his pocket.
+    Setting barely suggested: one brick-coral shed-door edge at the right, a single stroke of ground,
+    one soft cast shadow. Nothing else. The washes stop short of the frame and fade into warm off-white
+    paper; the figures are large, filling most of the strip''s height, with calm empty paper at both ends.
+    Wide 3:1 landscape strip, 2160x720, never square or 2:1: all action in the middle band and inside
+    the safe horizontal crop. Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each
+    drawn to their cast descriptions; nobody else appears. Strong silhouettes legible at A5, print-friendly
+    contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets,
+    sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or
+    bright cyan field filling the frame, extra humans or robots, robot-faced appliances, decorative montages
+    or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering, painterly
+    concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels, speech
+    balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: 'The new lock holds: the copied key no longer fits.'
+  composition: 'Wide strip: Pedro pocketing the toy at left, Flopaz testing the key center, Maro at the
+    door edge with the padlock right.'
+  alt_text: Maro snaps a sturdy padlock shut on the shed, Flopaz finds the copied key no longer fits,
+    and Pedro pockets the tin toy.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-introducing-dots
+  purpose: opener
+  article_id: introducing-dots
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a plain corkboard, its frame edge visible, holds
+    five blank white task cards, each pinned by one round magnet in a different color: rose, cobalt, muted
+    green, ochre, lavender. Maro reaches up and slides one magnet and its card to a new spot; Flopaz pins
+    up another card with a magnet; Pedro, beside her, passes her the next blank card. The corkboard is
+    the only prop besides cards and magnets, drawn as a simple ochre rectangle with loose edges. One soft
+    cast shadow below. Nothing else. The washes stop short of the frame edges and fade into warm off-white
+    paper; the cast is drawn large, filling most of the frame height, with calm empty paper around them.
+    Landscape frame 1.71:1, 1760x1024, cropped object-fit cover: keep every head, hand, and all five cards
+    well inside the frame with headroom. Entirely wordless; the cards are blank. Pedro, Maro, and Flopaz
+    are the only characters, each drawn exactly to their cast descriptions; nobody else appears, and the
+    magnets have no faces. Strong silhouettes and expressions legible at A5, print-friendly contrast.
+    Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: Five colored dots each hold a task, and the trio keeps them moving.
+  composition: Corkboard center-back with five magnet-pinned cards, Maro left moving one, Flopaz and Pedro
+    right pinning and passing cards.
+  alt_text: Five colored round magnets hold blank task cards on a corkboard; Maro moves one while Flopaz
+    pins up another and Pedro passes her a card.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-introducing-dots
+  purpose: tail
+  article_id: introducing-dots
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: the day''s tasks are done. Maro squares
+    a neat stack of five blank cards; Pedro and Flopaz sit cross-legged on the floor beside Maro, dropping
+    five round magnets, rose, cobalt, muted green, ochre, and lavender, one by one into a small open tin,
+    smiling. Setting barely suggested: a single horizontal stroke of floor and one soft cast shadow. Nothing
+    else. The wash stops short of the frame and fades into warm off-white paper; the figures are large,
+    filling most of the strip''s height, with calm empty paper at both ends. Wide 3:1 landscape strip,
+    2160x720, never square or 2:1: all action in the middle band and inside the safe horizontal crop.
+    Entirely wordless; cards blank. Pedro, Maro, and Flopaz are the only characters, each drawn to their
+    cast descriptions; nobody else appears. Strong silhouettes legible at A5, print-friendly contrast.
+    Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: Tasks finished, the trio puts the five colored magnets away.
+  composition: 'Wide strip: Pedro and Flopaz seated center with the tin between them, Maro at right squaring
+    the card stack.'
+  alt_text: Maro stacks five finished cards while Pedro and Flopaz drop the five colored magnets into
+    a tin.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-openai-rare
+  purpose: opener
+  article_id: openai-understands-something-important-and-rare
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a small plank lemonade stand with a brick-coral
+    awning edge; Maro stands behind it pouring lemonade from a big glass jug into a cup; Pedro and Flopaz
+    lean on the counter, Pedro holding out a full cup, Flopaz stacking empty ones. A deep worn path, one
+    bare ochre stroke cut through a muted-green grass wash, curves from the left edge of the paper straight
+    to the stand. Setting barely suggested: that one grass wash with its worn path and one soft cast shadow.
+    Nothing else. The washes stop short of the frame edges and fade into warm off-white paper; the cast
+    and stand are drawn large, filling most of the frame height, with calm empty paper around them. Landscape
+    frame 1.71:1, 1760x1024, cropped object-fit cover: keep every head, hand, the jug, and the path''s
+    arrival at the stand well inside the frame with headroom. Entirely wordless; the stand carries no
+    sign. Pedro, Maro, and Flopaz are the only characters, each drawn exactly to their cast descriptions;
+    nobody else appears. Strong silhouettes and expressions legible at A5, print-friendly contrast. Avoid:
+    detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: So many customers came that the path to the trio's lemonade stand is worn deep.
+  composition: Stand right of center with the trio at it, the worn path curving in from the left across
+    a single grass wash.
+  alt_text: A deep path worn through the grass leads to the trio's lemonade stand, where Maro pours lemonade
+    and Pedro and Flopaz serve at the counter.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-openai-rare
+  purpose: tail
+  article_id: openai-understands-something-important-and-rare
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: Pedro and Flopaz carry a big glass
+    jug of lemonade between them by its handle, walking along a worn path; Maro follows carrying a stack
+    of paper cups, stepping exactly in their tracks. The path is one long bare ochre stroke running the
+    width of the strip, worn deep into a thin band of muted-green grass. One soft cast shadow. Nothing
+    else. The washes stop short of the frame and fade into warm off-white paper; the figures are large,
+    filling most of the strip''s height, with calm empty paper at both ends. Wide 3:1 landscape strip,
+    2160x720, never square or 2:1: all action in the middle band and inside the safe horizontal crop.
+    Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each drawn to their cast descriptions;
+    nobody else appears. Strong silhouettes legible at A5, print-friendly contrast. Avoid: detailed or
+    full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital
+    line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame,
+    extra humans or robots, robot-faced appliances, decorative montages or filler patterns, steampunk
+    clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk, photorealism,
+    pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise character,
+    blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The trio carries more lemonade down the well-worn path.
+  composition: 'Wide strip: the path stroke running across the middle band, Pedro and Flopaz with the
+    jug center-left, Maro following at right.'
+  alt_text: Pedro and Flopaz carry a big jug of lemonade along the worn path while Maro follows with a
+    stack of cups.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-openclaw-enterprise
+  purpose: opener
+  article_id: openclaw-enterprise-the-open-agent-platform-open
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: three rooms suggested as a simple cutaway, only
+    two thin charcoal wall lines dividing three pale washes, softened cyan, dusty lavender, muted green;
+    in the left room Pedro writes at a small plain desk; in the right room Flopaz writes at another; in
+    the middle room Maro stretches a long coral claw grabber through a wall gap to lift a sheet from Pedro''s
+    desk toward a shared table where a small stack of papers waits. Props: two small desks, one table,
+    papers, the grabber. One soft cast shadow per room. Nothing else. The washes stop short of the frame
+    edges and fade into warm off-white paper; the cast is drawn large, filling most of the frame height,
+    with calm empty paper around them. Landscape frame 1.71:1, 1760x1024, cropped object-fit cover: keep
+    every head, hand, and the grabber tip well inside the frame with headroom. Entirely wordless; papers
+    blank. Pedro, Maro, and Flopaz are the only characters, each drawn exactly to their cast descriptions;
+    nobody else appears. Strong silhouettes and expressions legible at A5, print-friendly contrast. Avoid:
+    detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: Pedro and Flopaz work in separate rooms while Maro passes their work to one shared table.
+  composition: 'Three side-by-side wash panels split by two wall lines: Pedro left, Maro center with the
+    claw grabber and shared table, Flopaz right.'
+  alt_text: A cutaway of three rooms where Pedro and Flopaz work at separate desks and Maro uses a coral
+    claw grabber to pass their papers to a shared table.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-openclaw-enterprise
+  purpose: tail
+  article_id: openclaw-enterprise-the-open-agent-platform-open
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: all three gather at the shared table;
+    Pedro and Flopaz lean over one neat stack of blank papers, comparing pages and smiling; Maro stands
+    beside them, the coral claw grabber resting on its shoulder like a tool after work. Setting barely
+    suggested: a single horizontal floor stroke, the table''s edge, and one soft cast shadow. Nothing
+    else. The wash stops short of the frame and fades into warm off-white paper; the figures are large,
+    filling most of the strip''s height, with calm empty paper at both ends. Wide 3:1 landscape strip,
+    2160x720, never square or 2:1: all action in the middle band and inside the safe horizontal crop.
+    Entirely wordless; papers blank. Pedro, Maro, and Flopaz are the only characters, each drawn to their
+    cast descriptions; nobody else appears. Strong silhouettes legible at A5, print-friendly contrast.
+    Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The separate work comes together at the shared table.
+  composition: 'Wide strip: the table edge centered, Pedro and Flopaz over the stack, Maro at right with
+    the grabber on its shoulder.'
+  alt_text: Pedro and Flopaz compare pages at the shared table while Maro rests the coral claw grabber
+    on his shoulder.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-cloudflare-containers
+  purpose: opener
+  article_id: cloudflare-containers-rebuilt-to-scale-agent-san
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: Maro flings open the hinged sides of a wooden crate,
+    which fall flat and unfold into a low sandbox full of warm-ochre sand; Pedro at left clicks a big
+    round stopwatch, eyebrows up; Flopaz is already kneeling in the sand, calmly patting a small sandcastle
+    into shape. The stopwatch face has no numerals. Setting barely suggested: the ochre sand wash, one
+    soft cast shadow. Nothing else. The washes stop short of the frame edges and fade into warm off-white
+    paper; the cast is drawn large, filling most of the frame height, with calm empty paper around them.
+    Landscape frame 1.71:1, 1760x1024, cropped object-fit cover: keep every head, hand, the stopwatch,
+    and the crate sides well inside the frame with headroom. Entirely wordless. Pedro, Maro, and Flopaz
+    are the only characters, each drawn exactly to their cast descriptions; nobody else appears. Strong
+    silhouettes and expressions legible at A5, print-friendly contrast. Avoid: detailed or full-bleed
+    backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital line art,
+    cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans
+    or robots, robot-faced appliances, decorative montages or filler patterns, steampunk clutter, excessive
+    crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing,
+    interface glyphs, numerals, captions, labels, speech balloons, and any franchise character, blue robotic
+    cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: A crate opens into a ready sandbox faster than Pedro can time it.
+  composition: The unfolding crate-sandbox center, Maro behind flinging the sides open, Pedro left with
+    the stopwatch, Flopaz in the sand building.
+  alt_text: Maro flings open a wooden crate that unfolds into a sandbox while Pedro clicks a stopwatch
+    and Flopaz already shapes a sandcastle inside.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-cloudflare-containers
+  purpose: tail
+  article_id: cloudflare-containers-rebuilt-to-scale-agent-san
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: play is over; Maro folds the wooden
+    crate''s sides back up around the sand, neat as a box again; Flopaz sets a last shell on top of her
+    finished sandcastle, now resting beside the crate on its own; Pedro shows the stopped, unnumbered
+    stopwatch to them, impressed. Setting barely suggested: a single horizontal stroke of ochre sand and
+    one soft cast shadow. Nothing else. The wash stops short of the frame and fades into warm off-white
+    paper; the figures are large, filling most of the strip''s height, with calm empty paper at both ends.
+    Wide 3:1 landscape strip, 2160x720, never square or 2:1: all action in the middle band and inside
+    the safe horizontal crop. Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each
+    drawn to their cast descriptions; nobody else appears. Strong silhouettes legible at A5, print-friendly
+    contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets,
+    sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or
+    bright cyan field filling the frame, extra humans or robots, robot-faced appliances, decorative montages
+    or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering, painterly
+    concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, numerals, captions, labels,
+    speech balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The sandbox folds back into a crate as quickly as it opened.
+  composition: 'Wide strip: Pedro with stopwatch left, Flopaz and the sandcastle center, Maro closing
+    the crate right.'
+  alt_text: Maro folds the crate shut again while Flopaz tops her sandcastle with a shell and Pedro shows
+    the stopwatch.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-production-issues
+  purpose: opener
+  article_id: detect-and-send-production-issues-straight-to-yo
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a round cobalt water tank on short legs springs
+    a small leak, a thin cyan jet arcing out; a taut string runs from a float by the leak to Maro''s antenna
+    and tugs it sideways; Maro leaps toward the tank mid-air, a round coral patch held out in one mitten;
+    Flopaz points at the leak; Pedro stands back with arms folded and a delighted grin, watching his string
+    alarm work. Setting barely suggested: one soft cyan puddle wash under the tank and one soft cast shadow.
+    Nothing else. The washes stop short of the frame edges and fade into warm off-white paper; the cast
+    is drawn large, filling most of the frame height, with calm empty paper around them. Landscape frame
+    1.71:1, 1760x1024, cropped object-fit cover: keep every head, hand, the antenna, and the leak well
+    inside the frame with headroom. Entirely wordless. Pedro, Maro, and Flopaz are the only characters,
+    each drawn exactly to their cast descriptions; nobody else appears. Strong silhouettes and expressions
+    legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards,
+    posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard,
+    beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances,
+    decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: A leak trips Pedro's string alarm and Maro leaps straight to it with a patch.
+  composition: Tank at left with the leak, the string running to Maro leaping center, Flopaz pointing
+    and Pedro watching at right.
+  alt_text: A water tank springs a leak; a string alarm tugs Maro's antenna and he leaps toward it with
+    a patch while Flopaz points and Pedro watches his alarm work.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-production-issues
+  purpose: tail
+  article_id: detect-and-send-production-issues-straight-to-yo
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: the cobalt water tank stands at left
+    with a round coral patch over the leak; Maro presses the patch flat with both mittens; Flopaz runs
+    a finger around its edge, checking it is dry; Pedro, at right, carefully re-ties the string alarm
+    from the tank to Maro''s antenna. Setting barely suggested: a single horizontal stroke of ground,
+    a small drying cyan puddle, and one soft cast shadow. Nothing else. The wash stops short of the frame
+    and fades into warm off-white paper; the figures are large, filling most of the strip''s height, with
+    calm empty paper at both ends. Wide 3:1 landscape strip, 2160x720, never square or 2:1: all action
+    in the middle band and inside the safe horizontal crop. Entirely wordless. Pedro, Maro, and Flopaz
+    are the only characters, each drawn to their cast descriptions; nobody else appears. Strong silhouettes
+    legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards,
+    posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard,
+    beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances,
+    decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The leak is patched and the alarm reset for the next one.
+  composition: 'Wide strip: the patched tank left, Maro and Flopaz at the patch center, Pedro re-tying
+    the string right.'
+  alt_text: Maro presses a patch over the tank's leak, Flopaz checks it, and Pedro re-ties the string
+    alarm to Maro's antenna.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: opener-introducing-forge
+  purpose: opener
+  article_id: introducing-forge-the-open-source-pipeline-for-g
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a simple faceless cobalt crank machine, like a
+    hand pasta roller, stands in the middle; Pedro at left feeds one flat sheet of pale dough into its
+    rollers; Maro turns the big crank handle with both mittens; Flopaz at right catches three golden cookies
+    dropping out, one shaped like a key, one like a book, one like a toolbox. Setting barely suggested:
+    one soft muted-green wash behind the machine, one soft cast shadow. Nothing else. The washes stop
+    short of the frame edges and fade into warm off-white paper; the cast is drawn large, filling most
+    of the frame height, with calm empty paper around them. Landscape frame 1.71:1, 1760x1024, cropped
+    object-fit cover: keep every head, hand, and all three cookies well inside the frame with headroom.
+    Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each drawn exactly to their cast
+    descriptions; nobody else appears. Strong silhouettes and expressions legible at A5, print-friendly
+    contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets,
+    sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or
+    bright cyan field filling the frame, extra humans or robots, robot-faced appliances, decorative montages
+    or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering, painterly
+    concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels, speech
+    balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — draw exactly as specified, never redesign: Pedro, a school-age boy: black tousled
+    hair, big round glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never
+    a hat, never another hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded
+    rectangular body; black face screen with two friendly curved white eyes; cobalt side panels, shoulder
+    joints, mitten hands, and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch
+    at the waist. Never a single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions,
+    or extra limbs. Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail
+    with straight bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top;
+    white socks, muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails,
+    never a hat, never glasses.'
+  subject: One sheet of dough goes in and comes out as a key, a book, and a toolbox.
+  composition: Crank machine centered, Pedro feeding dough left, Maro cranking behind, Flopaz catching
+    the three cookies right.
+  alt_text: Pedro feeds one sheet of dough into a crank machine Maro turns, and Flopaz catches the cookies
+    that come out shaped like a key, a book, and a toolbox.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: tail-introducing-forge
+  purpose: tail
+  article_id: introducing-forge-the-open-source-pipeline-for-g
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a quiet coda: Pedro, Maro, and Flopaz sit in a
+    row on the ground sharing cookies from one plate held in Flopaz''s lap; Pedro bites a key-shaped cookie,
+    Flopaz holds up a book-shaped one, Maro holds a toolbox-shaped cookie up to its screen face, admiring
+    it. Setting barely suggested: a single horizontal stroke of ground and one soft cast shadow. Nothing
+    else. The wash stops short of the frame and fades into warm off-white paper; the figures are large,
+    filling most of the strip''s height, with calm empty paper at both ends. Wide 3:1 landscape strip,
+    2160x720, never square or 2:1: all action in the middle band and inside the safe horizontal crop.
+    Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each drawn to their cast descriptions;
+    nobody else appears. Strong silhouettes legible at A5, print-friendly contrast. Avoid: detailed or
+    full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital
+    line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame,
+    extra humans or robots, robot-faced appliances, decorative montages or filler patterns, steampunk
+    clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk, photorealism,
+    pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise character,
+    blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Tails may drift toward the edition''s quieter register: softer light, Pedro and Flopaz reading a few
+    years older, wardrobe following the hour and season instead of the canon outfits. Identity anchors
+    hold: Pedro''s black tousled hair, round glasses and face; Maro''s black screen face with two curved
+    white eyes, rounded silhouette and antenna; Flopaz''s chestnut side ponytail and bangs.'
+  subject: The trio shares the key, book, and toolbox cookies from one batch.
+  composition: 'Wide strip: the three seated in a row across the middle band, the plate in Flopaz''s lap
+    at center.'
+  alt_text: Pedro, Flopaz, and Maro sit in a row sharing cookies shaped like a key, a book, and a toolbox.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: closing-night-lamp
+  purpose: closing
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, a night plate: Maro stands holding up a small round
+    lamp, its warm ochre glow falling as one pool of light; inside the pool Pedro and Flopaz sit close
+    on the floor sharing one open picture book with blank pages, sleepy and content. Setting barely suggested:
+    one tall window shape in soft cobalt wash above them and the single pool of lamplight, one soft cast
+    shadow. Nothing else. The washes stop short of the frame and fade into warm off-white paper; the figures
+    are large, filling most of the page height, with calm empty paper around them. Portrait full-page
+    plate, 1:1.41, 1536x2160, poster weight, a genuinely vertical composition from window to floor; never
+    square. Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each drawn to their cast
+    descriptions; nobody else appears. Strong silhouettes legible at A5, print-friendly contrast. Avoid:
+    detailed or full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Closing plates carry the same license as tails at full-page poster weight: mood leads, identity anchors
+    hold.'
+  subject: Maro holds the lamp while Pedro and Flopaz read at night.
+  composition: 'Vertical: a cobalt window shape at top, Maro standing with the lamp, the two children
+    reading in the pool of light below.'
+  alt_text: At night, Maro holds up a small lamp whose glow pools around Pedro and Flopaz as they share
+    a picture book beneath a window.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: closing-tall-kite
+  purpose: closing
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a tall narrow brick-coral and lavender kite with
+    a long ribboned tail climbs into the upper page; its string runs down in one clean line to Maro, who
+    braces and lets out string from a hand reel; Pedro runs ahead, arm up, having just let it go; Flopaz
+    shades her eyes and watches it rise. Setting barely suggested: one soft cyan wash patch around the
+    kite and a single stroke of muted-green ground under the cast, one soft cast shadow. No horizon, no
+    clouds. Nothing else. The washes stop short of the frame and fade into warm off-white paper; the cast
+    is drawn large in the lower half, with calm empty paper around them. Portrait full-page plate, 1:1.41,
+    1536x2160, poster weight, a genuinely vertical composition from kite to ground; never square. Entirely
+    wordless. Pedro, Maro, and Flopaz are the only characters, each drawn to their cast descriptions;
+    nobody else appears. Strong silhouettes legible at A5, print-friendly contrast. Avoid: detailed or
+    full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital
+    line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame,
+    extra humans or robots, robot-faced appliances, decorative montages or filler patterns, steampunk
+    clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk, photorealism,
+    pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise character,
+    blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Closing plates carry the same license as tails at full-page poster weight: mood leads, identity anchors
+    hold.'
+  subject: The trio sends a tall kite climbing up the page.
+  composition: 'Vertical: the kite in the upper third, its string falling to Maro in the lower half, Pedro
+    and Flopaz beside.'
+  alt_text: A tall kite climbs high on its string as Maro lets out the reel, Pedro runs with an arm raised,
+    and Flopaz watches it rise.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: closing-treehouse-ladder
+  purpose: closing
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a rope ladder hangs down the page beside one tall
+    tree-trunk edge; at the top, a single plank edge of a treehouse floor, where Maro leans out and reaches
+    a mitten down; Pedro is halfway up the ladder, reaching for Maro''s hand; Flopaz stands at the bottom
+    holding the ladder steady and looking up. Setting barely suggested: the trunk edge in one brick-coral
+    and ochre wash, a few muted-green leaf daubs near the plank, one soft cast shadow. Nothing else. The
+    washes stop short of the frame and fade into warm off-white paper; the figures are large, with calm
+    empty paper around them. Portrait full-page plate, 1:1.41, 1536x2160, poster weight, a genuinely vertical
+    composition from plank to ground; never square. Entirely wordless. Pedro, Maro, and Flopaz are the
+    only characters, each drawn to their cast descriptions; nobody else appears. Strong silhouettes legible
+    at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards, posters,
+    furniture sets, sunsets, panoramas, full trees or forests, crisp digital line art, cel shading, a
+    flat yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans or robots,
+    robot-faced appliances, decorative montages or filler patterns, steampunk clutter, excessive crosshatching,
+    glossy anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface
+    glyphs, captions, labels, speech balloons, and any franchise character, blue robotic cat, or copied
+    gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Closing plates carry the same license as tails at full-page poster weight: mood leads, identity anchors
+    hold.'
+  subject: Pedro climbs the treehouse ladder between Maro's hand above and Flopaz's steady hold below.
+  composition: 'Vertical: Maro at the top plank, Pedro mid-ladder, Flopaz at the foot, all along one tall
+    trunk edge.'
+  alt_text: Pedro climbs a rope ladder up a tree toward Maro, who reaches down from the treehouse, while
+    Flopaz holds the ladder steady below.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: closing-deep-well
+  purpose: closing
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: the round stone rim of an old well sits in the
+    upper half of the page; Pedro and Flopaz lean over the rim side by side, peering down, hair falling
+    forward; Maro holds the rope with both mittens, lowering a small wooden bucket. Below the rim, a soft
+    cobalt wash suggests the long shaft going down the page, ending in one small bright cyan glint of
+    water near the bottom. Setting barely suggested: the rim, the shaft wash, the glint, one soft cast
+    shadow. Nothing else. The washes stop short of the frame and fade into warm off-white paper; the figures
+    are large, with calm empty paper around them. Portrait full-page plate, 1:1.41, 1536x2160, poster
+    weight, a genuinely vertical composition from rim to water; never square. Entirely wordless. Pedro,
+    Maro, and Flopaz are the only characters, each drawn to their cast descriptions; nobody else appears.
+    Strong silhouettes legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds,
+    shelves, pegboards, posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading,
+    a flat yellow, mustard, beige, sepia, or bright cyan field filling the frame, extra humans or robots,
+    robot-faced appliances, decorative montages or filler patterns, steampunk clutter, excessive crosshatching,
+    glossy anime rendering, painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface
+    glyphs, captions, labels, speech balloons, and any franchise character, blue robotic cat, or copied
+    gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Closing plates carry the same license as tails at full-page poster weight: mood leads, identity anchors
+    hold.'
+  subject: Pedro and Flopaz peer down a deep well while Maro lowers the bucket.
+  composition: 'Vertical: the well rim and trio in the upper half, the cobalt shaft wash falling to a
+    small water glint low on the page.'
+  alt_text: Pedro and Flopaz lean over a stone well and peer down while Maro lowers a bucket toward a
+    glint of water far below.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: closing-block-tower
+  purpose: closing
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene: a tall, slightly wobbling tower of plain wooden
+    blocks in coral, cobalt, green, and ochre rises up the page; Pedro sits on Maro''s shoulders, stretching
+    up on tiptoe of concentration to set the very top block; Maro stands steady, arms out for balance;
+    Flopaz kneels at the base, both hands steadying the bottom blocks, eyes on the top. Blocks are blank
+    with no letters. Setting barely suggested: a single stroke of floor and one soft cast shadow. Nothing
+    else. The washes stop short of the frame and fade into warm off-white paper; the figures are large,
+    with calm empty paper around them. Portrait full-page plate, 1:1.41, 1536x2160, poster weight, a genuinely
+    vertical composition from top block to floor; never square. Entirely wordless. Pedro, Maro, and Flopaz
+    are the only characters, each drawn to their cast descriptions; nobody else appears. Strong silhouettes
+    legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards,
+    posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard,
+    beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances,
+    decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism, pseudo-writing, letters on blocks, interface
+    glyphs, captions, labels, speech balloons, and any franchise character, blue robotic cat, or copied
+    gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Closing plates carry the same license as tails at full-page poster weight: mood leads, identity anchors
+    hold.'
+  subject: Standing on Maro's shoulders, Pedro sets the top block while Flopaz steadies the base.
+  composition: 'Vertical: the block tower rising from floor to upper page, Pedro on Maro at its top, Flopaz
+    kneeling at its base.'
+  alt_text: Pedro sits on Maro's shoulders to set the top block on a tall tower while Flopaz steadies
+    the base.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: closing-puddle-leap
+  purpose: closing
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, after rain: Pedro is caught mid-leap high over
+    a wide puddle, arms flung out, legs tucked; Flopaz runs up behind, about to jump too; Maro already
+    stands in the puddle, splashing, both mittens up, a crown of droplets around its feet. The puddle
+    mirrors Pedro''s leap in a soft wobbling reflection. Setting barely suggested: the one cyan and cobalt
+    puddle wash and one soft cast shadow. No street, no buildings. Nothing else. The washes stop short
+    of the frame and fade into warm off-white paper; the figures are large, with calm empty paper around
+    them. Portrait full-page plate, 1:1.41, 1536x2160, poster weight, a genuinely vertical composition
+    from the airborne Pedro to his reflection; never square. Entirely wordless. Pedro, Maro, and Flopaz
+    are the only characters, each drawn to their cast descriptions; nobody else appears. Strong silhouettes
+    legible at A5, print-friendly contrast. Avoid: detailed or full-bleed backgrounds, shelves, pegboards,
+    posters, furniture sets, sunsets, panoramas, crisp digital line art, cel shading, a flat yellow, mustard,
+    beige, sepia, or bright cyan field filling the frame, extra humans or robots, robot-faced appliances,
+    decorative montages or filler patterns, steampunk clutter, excessive crosshatching, glossy anime rendering,
+    painterly concept art, neon cyberpunk, photorealism, pseudo-writing, interface glyphs, captions, labels,
+    speech balloons, and any franchise character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Closing plates carry the same license as tails at full-page poster weight: mood leads, identity anchors
+    hold.'
+  subject: Pedro leaps a puddle, Flopaz about to follow, while Maro splashes right in.
+  composition: 'Vertical: Pedro airborne in the upper half, the puddle with Maro and the reflection below,
+    Flopaz running in from one side.'
+  alt_text: Pedro leaps high over a puddle with Flopaz running to follow while Maro splashes in the water
+    below.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
+- id: closing-sled-run
+  purpose: closing
+  prompt: 'Original family-friendly children''s science-comedy manga illustration, synthetic and naive,
+    never a rendered scene: simple charcoal contours, rounded readable expressions, economical watercolor
+    washes, minimal hatching, restrained halftone, slight pigment variation, subtle paper tooth, quiet
+    print grain. Gentle historical magazine color at low to medium saturation: softened cyan and cobalt,
+    brick coral, muted green, dusty lavender, small warm-ochre accents, charcoal ink, warm off-white paper,
+    at least three distinct non-neutral colors. Scene, winter: one wooden sled with a brick-coral runner
+    rushes down a steep snowy slope along a strong diagonal from upper left to lower right; Maro sits
+    in front gripping the rope, antenna streaming back; Pedro behind with arms around Maro, mouth open
+    in a whoop; Flopaz at the back, scarf flying, laughing. Winter scarves and mittens are fine. Setting
+    barely suggested: the white slope is the paper itself, edged by one diagonal soft-cobalt shadow stroke
+    and a puff of kicked-up snow behind the sled. Nothing else. The washes stop short of the frame and
+    fade into warm off-white paper; the figures are large, with calm empty paper around them. Portrait
+    full-page plate, 1:1.41, 1536x2160, poster weight, a genuinely vertical composition; never square.
+    Entirely wordless. Pedro, Maro, and Flopaz are the only characters, each drawn to their cast descriptions;
+    nobody else appears. Strong silhouettes legible at A5, print-friendly contrast. Avoid: detailed or
+    full-bleed backgrounds, shelves, pegboards, posters, furniture sets, sunsets, panoramas, pine forests,
+    crisp digital line art, cel shading, a flat yellow, mustard, beige, sepia, or bright cyan field filling
+    the frame, extra humans or robots, robot-faced appliances, decorative montages or filler patterns,
+    steampunk clutter, excessive crosshatching, glossy anime rendering, painterly concept art, neon cyberpunk,
+    photorealism, pseudo-writing, interface glyphs, captions, labels, speech balloons, and any franchise
+    character, blue robotic cat, or copied gadget, costume, or face.
+
+
+    Recurring cast — identities below are canon: Pedro, a school-age boy: black tousled hair, big round
+    glasses, teal crew-neck top, khaki shorts, red sneakers. Always this outfit. Never a hat, never another
+    hairstyle. Maro, a small helper robot, waist-high to Pedro: off-white rounded rectangular body; black
+    face screen with two friendly curved white eyes; cobalt side panels, shoulder joints, mitten hands,
+    and rounded feet; one short antenna with a cobalt ball tip; coral tool pouch at the waist. Never a
+    single eye, a visor face, tank treads, wheels, tin-toy styling, humanoid proportions, or extra limbs.
+    Flopaz, a school-age girl, Pedro''s height: chestnut-brown hair in one low side ponytail with straight
+    bangs; soft rose-pink pinafore dress with side pockets over a white short-sleeve top; white socks,
+    muted-green flat shoes. Calm and observant. Always this outfit. Never twin pigtails, never a hat,
+    never glasses.
+
+
+    This slot is licensed to vary presentation, overriding the fixed outfits above where they conflict:
+    Closing plates carry the same license as tails at full-page poster weight: mood leads, identity anchors
+    hold.'
+  subject: The trio rides one sled down a steep snowy run.
+  composition: Vertical page cut by one steep diagonal slope, the sled with Maro, Pedro, and Flopaz mid-run,
+    a snow puff trailing.
+  alt_text: Maro, Pedro, and Flopaz ride one sled down a steep snowy slope, Flopaz's scarf flying behind.
+  credit: Illustration generated for this edition.
+  cast_references:
+  - art-directions/references/story-led-boy-and-robot-cast.png
