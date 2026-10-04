@@ -49,6 +49,44 @@ fn source_text(source_id: &str) -> Result<String> {
     read(&path)
 }
 
+fn unique_at(text: &str, marker: &str) -> Result<usize> {
+    match text
+        .match_indices(marker)
+        .map(|(i, _)| i)
+        .collect::<Vec<_>>()[..]
+    {
+        [at] => Ok(at),
+        ref hits => bail!(
+            "source_range marker {marker:?} must occur exactly once, found {}",
+            hits.len()
+        ),
+    }
+}
+
+fn ranged(text: String, range: Option<&serde_yaml::Value>) -> Result<String> {
+    let Some(range) = range else {
+        return Ok(text);
+    };
+    let marker = |k: &str| range.get(k).and_then(|v| v.as_str());
+    let begin = marker("begin").ok_or_else(|| anyhow!("source_range needs a begin marker"))?;
+    let start = unique_at(&text, begin)?;
+    let stop = match marker("end") {
+        Some(end) => {
+            let stop = unique_at(&text, end)?;
+            if stop <= start {
+                bail!("source_range end {end:?} comes before begin {begin:?}");
+            }
+            stop
+        }
+        None => text.len(),
+    };
+    Ok(text[start..stop].trim_end().to_string() + "\n")
+}
+
+fn ranged_source(source_id: &str, range: Option<&serde_yaml::Value>) -> Result<String> {
+    ranged(source_text(source_id)?, range)
+}
+
 fn value_to_string(v: &serde_yaml::Value) -> Option<String> {
     match v {
         serde_yaml::Value::String(s) => Some(s.clone()),
@@ -435,11 +473,8 @@ struct SourceImage {
     anchor: String,
 }
 
-fn source_images(sid: &str) -> Vec<SourceImage> {
-    let path = PathBuf::from("library/sources")
-        .join(sid)
-        .join("article.md");
-    fs::read_to_string(&path)
+fn source_images(sid: &str, range: Option<&serde_yaml::Value>) -> Vec<SourceImage> {
+    ranged_source(sid, range)
         .map(|text| images_in(&text))
         .unwrap_or_default()
 }
@@ -471,11 +506,11 @@ fn images_in(text: &str) -> Vec<SourceImage> {
     out
 }
 
-fn verbatim_figures(sids: &[String]) -> String {
+fn verbatim_figures(sids: &[String], range: Option<&serde_yaml::Value>) -> String {
     let rows: Vec<String> = sids
         .iter()
         .flat_map(|sid| {
-            source_images(sid)
+            source_images(sid, range)
                 .into_iter()
                 .map(move |image| (sid, image))
         })
@@ -565,11 +600,11 @@ fn scaffold_edition_yaml(
             }
         }
         if get("content_mode") == "verbatim" {
-            y += &verbatim_figures(&sids);
+            y += &verbatim_figures(&sids, a.get("source_range"));
         } else {
             let mut any = false;
             for sid in &sids {
-                for image in source_images(sid) {
+                for image in source_images(sid, a.get("source_range")) {
                     if !any {
                         y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures\n  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.\n";
                         any = true;
@@ -692,7 +727,7 @@ fn write_articles(
                     .as_str()
                     .ok_or_else(|| anyhow!("non-string source id in article '{id}'"))?
                     .to_string();
-                let text = source_text(&sid)?;
+                let text = ranged_source(&sid, article_owned.get("source_range"))?;
                 sources.push((sid, text));
             }
             produce_piece(
@@ -859,6 +894,24 @@ fn print_next_steps(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_range_slices_between_unique_markers() {
+        let text = "# T\n\n## 1. Intro\nA\n\n## 2. Depth\nB\n\n## 3. End\nC\n".to_string();
+        let range: serde_yaml::Value =
+            serde_yaml::from_str("{begin: '## 2. Depth', end: '## 3. End'}").unwrap();
+        assert_eq!(
+            ranged(text.clone(), Some(&range)).unwrap(),
+            "## 2. Depth\nB\n"
+        );
+        let open: serde_yaml::Value = serde_yaml::from_str("{begin: '## 3. End'}").unwrap();
+        assert_eq!(ranged(text.clone(), Some(&open)).unwrap(), "## 3. End\nC\n");
+        let ambiguous: serde_yaml::Value = serde_yaml::from_str("{begin: '## '}").unwrap();
+        assert!(ranged(text.clone(), Some(&ambiguous)).is_err());
+        let backwards: serde_yaml::Value =
+            serde_yaml::from_str("{begin: '## 3. End', end: '## 1. Intro'}").unwrap();
+        assert!(ranged(text, Some(&backwards)).is_err());
+    }
 
     #[test]
     fn em_dash_composed_prose_is_a_violation() {

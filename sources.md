@@ -18,6 +18,58 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `013` (5 queued)._
+
+## Statecharts: A Visual Formalism for Complex Systems — David Harel
+
+- ID: `statecharts-a-visual-formalism-for-complex-syste-7833c2fd`
+- Source: https://www.state-machine.com/doc/Harel87.pdf
+- Published: 1987-06-01
+- Captured: 2026-10-03T01:30:58Z
+- Release: queued for `013`
+
+Harel extends state machines and state diagrams with hierarchy, concurrency and broadcast communication, producing statecharts: a compact, modular visual formalism for specifying complex reactive systems, worked through a Citizen digital wristwatch.
+
+## Designing MCP Gateway: Uber's MCP Management Platform — Uber Engineering
+
+- ID: `uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43`
+- Source: https://x.com/UberEng/status/2106071967619322330
+- Published: 2026-10-02
+- Captured: 2026-10-03T01:20:27Z
+- Release: queued for `013`
+
+Uber describes the MCP Gateway, a central control plane and data plane that discovers internal APIs and native MCP servers, translates MCP calls to HTTP, gRPC, and TChannel, enforces security, and now hosts over 800 MCP servers and 5000 tools.
+
+## Cloudflare OS: your company’s agent workspace, managed for you — Phillip Jones
+
+- ID: `cloudflare-os-your-company-s-agent-workspace-man-32af5c2a`
+- Source: https://blog.cloudflare.com/managed-cloudflare-os/
+- Published: 2026-10-01
+- Captured: 2026-10-03T01:18:02Z
+- Release: queued for `013`
+
+Cloudflare opens a waitlist for fully managed Cloudflare OS deployments and highlights new features including mounting Git repos, deeper Google Workspace integration, and export to common file formats.
+
+## Introducing Clef: our open-source decision models, and new RL fine-tuning platform — Michelle Chen, Alex Reneau, Kevin Flansburg
+
+- ID: `introducing-clef-our-open-source-decision-models-c0a0a5f5`
+- Source: https://blog.cloudflare.com/clef-decision-models/
+- Published: 2026-10-01
+- Captured: 2026-10-03T01:17:43Z
+- Release: queued for `013`
+
+Cloudflare releases Clef and Clef-flash, open-source decision models hosted on Workers AI that return typed, probability-scored answers quickly and are Jev-API compatible, and introduces an RL fine-tuning service built on its AI platform.
+
+## 8 major updates to Cloudflare Observability — Nevi Shah, Arti Kumar, Tom Benn, Sahidya Devadoss
+
+- ID: `8-major-updates-to-cloudflare-observability-cd838e82`
+- Source: https://blog.cloudflare.com/one-observability-platform/
+- Published: 2026-10-02
+- Captured: 2026-10-03T01:17:01Z
+- Release: queued for `013`
+
+Cloudflare announces eight updates that unify logs, traces, a SQL API, alerts, analytics, dashboards, and Logpush into one observability platform with new volume-based pricing starting December 1, 2026.
+
 ## Introducing dots — OpenAI
 
 - ID: `introducing-dots-39c7a6b0`

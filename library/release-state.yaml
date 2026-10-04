@@ -1,5 +1,5 @@
 schema_version: 2
-intake_edition_id: '012'
+intake_edition_id: '013'
 collecting_editions:
 - id: '005'
   issue_number: 5
@@ -119,6 +119,15 @@ collecting_editions:
   - openai-understands-something-important-and-rare-49eba89b
   - gemini-4-argon-our-next-era-of-frontier-intellig-6381db25
   - introducing-dots-39c7a6b0
+- id: '013'
+  issue_number: 13
+  status: collecting
+  source_ids:
+  - 8-major-updates-to-cloudflare-observability-cd838e82
+  - introducing-clef-our-open-source-decision-models-c0a0a5f5
+  - cloudflare-os-your-company-s-agent-workspace-man-32af5c2a
+  - uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43
+  - statecharts-a-visual-formalism-for-complex-syste-7833c2fd
 released_editions:
 - id: 001-the-work-left-to-us
   issue_number: 1
