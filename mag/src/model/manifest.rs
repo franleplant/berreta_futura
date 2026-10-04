@@ -4,8 +4,8 @@ use super::records::{
     ExtractRequest, Figure, FigureRequest, SourceRecord,
 };
 use super::shared::{
-    load_structured, normalize, py_casefold, py_repr, py_repr_value, py_str, safe_project_path,
-    PyStrip, Result, ValidationError,
+    check_text, filled, load_structured, normalize, quoted, safe_project_path, show, text, Result,
+    ValidationError,
 };
 use regex::Regex;
 use serde_yaml::{Mapping, Value};
@@ -180,13 +180,16 @@ pub fn load_edition(
     }
     let language = or_default(data.get("language"), "en");
     Ok(Edition {
-        id: py_str(data.get("id").unwrap_or(&Value::Null)),
+        id: text(data.get("id")).to_string(),
         publication_name: options.publication_name.to_string(),
-        issue_number: py_str(data.get("issue_number").unwrap_or(&Value::Null)),
-        title: py_str(data.get("title").unwrap_or(&Value::Null)),
-        publication_date: py_str(data.get("publication_date").unwrap_or(&Value::Null)),
-        locale: if truthy(data.get("locale")) {
-            py_str(data.get("locale").unwrap_or(&Value::Null))
+        issue_number: match data.get("issue_number") {
+            Some(Value::Number(number)) => number.to_string(),
+            other => text(other).to_string(),
+        },
+        title: text(data.get("title")).to_string(),
+        publication_date: text(data.get("publication_date")).to_string(),
+        locale: if filled(data.get("locale")) {
+            text(data.get("locale")).to_string()
         } else {
             language.clone()
         },
@@ -202,8 +205,8 @@ pub fn load_edition(
 }
 
 fn or_default(value: Option<&Value>, fallback: &str) -> String {
-    if truthy(value) {
-        py_str(value.expect("a truthy value is present"))
+    if filled(value) {
+        text(value).to_string()
     } else {
         fallback.to_string()
     }
@@ -220,15 +223,34 @@ fn check_edition_header(
             errors.push(format!("Edition missing required field: {key}"));
         }
     }
+    check_text(
+        data,
+        &[
+            "id",
+            "title",
+            "publication_date",
+            "locale",
+            "language",
+            "subtitle",
+        ],
+        "Edition",
+        errors,
+    );
+    if matches!(
+        data.get("issue_number"),
+        Some(Value::Bool(_) | Value::Sequence(_) | Value::Mapping(_))
+    ) {
+        errors.push("Edition issue_number must be text or a number".to_string());
+    }
     if !matches!(data.get("id"), Some(Value::String(text)) if text == edition_id) {
         errors.push(format!(
             "Edition id {} does not match directory {}",
             repr_option(data.get("id")),
-            py_repr(edition_id)
+            quoted(edition_id)
         ));
     }
     check_declared_sources(data.get("sources"), known_sources, errors);
-    if !truthy(data.get("sections")) && !truthy(data.get("articles")) {
+    if !filled(data.get("sections")) && !filled(data.get("articles")) {
         errors.push("Edition requires either sections or articles".to_string());
     }
 }
@@ -248,7 +270,7 @@ fn check_declared_sources(
     };
     if rows
         .iter()
-        .any(|value| !matches!(value, Value::String(text) if !text.py_trim().is_empty()))
+        .any(|value| !matches!(value, Value::String(text) if !text.trim().is_empty()))
     {
         errors.push("Edition sources must contain non-empty source id strings".to_string());
         return;
@@ -278,19 +300,21 @@ fn edition_opener_format(data: &Value, errors: &mut Vec<String>) -> bool {
             Value::Mapping(Mapping::new())
         }
     };
-    let article_opener = or_empty(edition_format.get("article_opener"));
-    let article_opener = article_opener.py_trim();
+    check_text(
+        &edition_format,
+        &["article_opener"],
+        "Edition format",
+        errors,
+    );
+    let article_opener = text(edition_format.get("article_opener"));
+    let article_opener = article_opener.trim();
     if !article_opener.is_empty() && article_opener != ILLUSTRATED_OPENER {
         errors.push(format!(
             "Edition has invalid format.article_opener: {article_opener}"
         ));
     }
     let illustrated = article_opener == ILLUSTRATED_OPENER;
-    if illustrated
-        && or_empty(data.get("art_direction_path"))
-            .py_trim()
-            .is_empty()
-    {
+    if illustrated && text(data.get("art_direction_path")).trim().is_empty() {
         errors.push(format!(
             "Edition format.article_opener {ILLUSTRATED_OPENER} requires art_direction_path"
         ));
@@ -328,7 +352,7 @@ fn article_identity(
         return None;
     }
     let label = match row.get("id") {
-        Some(value) if !matches!(value, Value::Null) => format!("Article {}", py_str(value)),
+        Some(Value::String(id)) => format!("Article {id}"),
         _ => format!("Article {}", index + 1),
     };
     let missing: Vec<&str> = [
@@ -341,12 +365,26 @@ fn article_identity(
         "manuscript",
     ]
     .into_iter()
-    .filter(|key| !truthy(row.get(*key)))
+    .filter(|key| !filled(row.get(*key)))
     .collect();
     if !missing.is_empty() {
         errors.push(format!("{label} missing: {}", missing.join(", ")));
         return None;
     }
+    check_text(
+        row,
+        &[
+            "title",
+            "short_title",
+            "opener_variant",
+            "author",
+            "author_note",
+            "display_emphasis",
+            "content_mode",
+        ],
+        &label,
+        errors,
+    );
     let Some(Value::String(article_id)) = row.get("id") else {
         errors.push(format!(
             "Article {} id must be a non-empty string",
@@ -354,7 +392,7 @@ fn article_identity(
         ));
         return None;
     };
-    if article_id.py_trim().is_empty() {
+    if article_id.trim().is_empty() {
         errors.push(format!(
             "Article {} id must be a non-empty string",
             index + 1
@@ -378,7 +416,7 @@ fn article_source_ids(declared: Option<&Value>) -> Vec<String> {
     if items.is_empty()
         || items
             .iter()
-            .any(|value| !matches!(value, Value::String(text) if !text.py_trim().is_empty()))
+            .any(|value| !matches!(value, Value::String(text) if !text.trim().is_empty()))
     {
         return Vec::new();
     }
@@ -389,18 +427,18 @@ fn article_source_ids(declared: Option<&Value>) -> Vec<String> {
 }
 
 fn article_author_note(label: &str, row: &Value, errors: &mut Vec<String>) -> (String, bool) {
-    let author_note = or_empty(row.get("author_note")).py_trim().to_string();
+    let author_note = text(row.get("author_note")).trim().to_string();
     if author_note.contains('\n') || author_note.chars().count() > 160 {
         errors.push(format!(
             "{label} author_note must be a single line of at most 160 characters"
         ));
     }
-    let author = py_str(row.get("author").unwrap_or(&Value::Null));
-    let house_byline = HOUSE_BYLINES.contains(&py_casefold(author.py_trim()).as_str());
+    let author = text(row.get("author")).to_string();
+    let house_byline = HOUSE_BYLINES.contains(&author.trim().to_lowercase().as_str());
     if !author_note.is_empty() && house_byline {
         errors.push(format!(
             "{label} must omit author_note for the self-explanatory house byline {}",
-            py_repr(&author)
+            quoted(&author)
         ));
     }
     (author_note, house_byline)
@@ -420,7 +458,7 @@ fn article_paths(
             return None;
         }
     };
-    if !truthy(row.get("tail_art_path")) {
+    if !filled(row.get("tail_art_path")) {
         return Some((manuscript, None));
     }
     match edition_path(
@@ -461,7 +499,7 @@ fn article_opener_art(
     let missing: Vec<&str> = ["path", "alt_text", "credit"]
         .into_iter()
         .filter(|key| {
-            !matches!(raw.and_then(|value| value.get(*key)), Some(Value::String(text)) if !text.py_trim().is_empty())
+            !matches!(raw.and_then(|value| value.get(*key)), Some(Value::String(text)) if !text.trim().is_empty())
         })
         .collect();
     if !missing.is_empty() {
@@ -485,11 +523,11 @@ fn article_opener_art(
     };
     Some(ArticleOpenerArt {
         path,
-        alt_text: or_empty(raw.and_then(|value| value.get("alt_text")))
-            .py_trim()
+        alt_text: text(raw.and_then(|value| value.get("alt_text")))
+            .trim()
             .to_string(),
-        credit: or_empty(raw.and_then(|value| value.get("credit")))
-            .py_trim()
+        credit: text(raw.and_then(|value| value.get("credit")))
+            .trim()
             .to_string(),
     })
 }
@@ -550,35 +588,37 @@ struct Display {
 fn article_display(label: &str, row: &Value, errors: &mut Vec<String>) -> Display {
     let content_mode = match row.get("content_mode") {
         None => "faithful_edit".to_string(),
-        Some(value) => py_str(value),
+        Some(value) => text(Some(value)).to_string(),
     };
     if !CONTENT_MODES.contains(&content_mode.as_str()) {
         errors.push(format!("{label} has invalid content_mode: {content_mode}"));
     }
-    let minimum_reader_pages = to_int(row.get("minimum_reader_pages"));
-    if !(1..=7).contains(&minimum_reader_pages) {
-        errors.push(format!(
-            "{label} minimum_reader_pages must be an integer from 1 to 7"
-        ));
-    }
-    let title = py_casefold(&py_str(row.get("title").unwrap_or(&Value::Null)));
-    let display_emphasis = or_empty(row.get("display_emphasis")).py_trim().to_string();
-    if !display_emphasis.is_empty() && !title.contains(&py_casefold(&display_emphasis)) {
+    let minimum_reader_pages = to_int(row.get("minimum_reader_pages"))
+        .filter(|pages| (1..=7).contains(pages))
+        .unwrap_or_else(|| {
+            errors.push(format!(
+                "{label} minimum_reader_pages must be an integer from 1 to 7"
+            ));
+            1
+        });
+    let title = text(row.get("title")).to_lowercase();
+    let display_emphasis = text(row.get("display_emphasis")).trim().to_string();
+    if !display_emphasis.is_empty() && !title.contains(&display_emphasis.to_lowercase()) {
         errors.push(format!(
             "{label} display_emphasis must occur in its localized title"
         ));
     }
-    let short_title = or_empty(row.get("short_title")).py_trim().to_string();
+    let short_title = text(row.get("short_title")).trim().to_string();
     if short_title.contains('\n') || short_title.chars().count() > 40 {
         errors.push(format!(
             "{label} short_title must be a single line of at most 40 characters"
         ));
-    } else if !title.contains(&py_casefold(&short_title)) {
+    } else if !title.contains(&short_title.to_lowercase()) {
         errors.push(format!(
             "{label} short_title must occur in its localized title"
         ));
     }
-    let opener_variant = or_empty(row.get("opener_variant")).py_trim().to_string();
+    let opener_variant = text(row.get("opener_variant")).trim().to_string();
     if !OPENER_VARIANTS.contains(&opener_variant.as_str()) {
         errors.push(format!(
             "{label} has invalid opener_variant: {opener_variant}"
@@ -701,11 +741,11 @@ fn load_article(
     );
     Some(Article {
         id: article_id,
-        title: py_str(row.get("title").unwrap_or(&Value::Null)),
+        title: text(row.get("title")).to_string(),
         short_title: display.short_title,
         display_emphasis: display.display_emphasis,
         opener_variant: display.opener_variant,
-        author: py_str(row.get("author").unwrap_or(&Value::Null)),
+        author: text(row.get("author")).to_string(),
         author_note,
         source_url: primary_source_url(&source_ids, context.options.source_records),
         dateline: representative_dateline(&source_ids, context.options.source_records),
@@ -770,11 +810,11 @@ fn check_verbatim_title(
     let Some(record) = source_records.and_then(|records| records.get(&source_ids[0])) else {
         return;
     };
-    let title = py_str(row.get("title").unwrap_or(&Value::Null));
-    if title.py_trim() != record.title.py_trim() {
+    let title = text(row.get("title")).to_string();
+    if title.trim() != record.title.trim() {
         errors.push(format!(
             "{label} verbatim title must stay the captured source title {}",
-            py_repr(&record.title)
+            quoted(&record.title)
         ));
     }
 }
@@ -785,7 +825,7 @@ fn load_edition_editorial(
     data: &Value,
     errors: &mut Vec<String>,
 ) -> Option<Editorial> {
-    if !truthy(data.get("editorial")) {
+    if !filled(data.get("editorial")) {
         return None;
     }
     let outcome = edition_path(root, edition_dir, data.get("editorial"), true)
@@ -830,12 +870,18 @@ fn load_section(
     row: &Value,
     errors: &mut Vec<String>,
 ) -> Option<Section> {
-    if !matches!(row, Value::Mapping(_)) || !truthy(row.get("kind")) || !truthy(row.get("path")) {
+    if !matches!(row, Value::Mapping(_)) || !filled(row.get("kind")) || !filled(row.get("path")) {
         errors.push(format!("Section {} requires kind and path", index + 1));
         return None;
     }
-    let kind = py_str(row.get("kind").expect("the kind is present"));
-    if py_casefold(kind.py_trim()) == "colophon" {
+    check_text(
+        row,
+        &["kind", "title"],
+        &format!("Section {}", index + 1),
+        errors,
+    );
+    let kind = text(row.get("kind")).to_string();
+    if kind.trim().to_lowercase() == "colophon" {
         errors.push("Colophon sections are no longer supported".to_string());
         return None;
     }
@@ -843,15 +889,15 @@ fn load_section(
         errors.push(format!(
             "Section {} has unknown kind {}; the known kinds are {}",
             index + 1,
-            py_repr(&kind),
+            quoted(&kind),
             SECTION_KINDS.join(", ")
         ));
         return None;
     }
     match edition_path(root, edition_dir, row.get("path"), true) {
         Ok(path) => Some(Section {
-            title: if truthy(row.get("title")) {
-                py_str(row.get("title").expect("the title is present"))
+            title: if filled(row.get("title")) {
+                text(row.get("title")).to_string()
             } else {
                 section_title(&kind)
             },
@@ -871,6 +917,19 @@ fn load_cover(
     data: &Value,
     errors: &mut Vec<String>,
 ) -> (Mapping, Option<PathBuf>) {
+    check_text(
+        &data["cover"],
+        &[
+            "headline",
+            "deck",
+            "edition_label",
+            "back_text",
+            "footer_caption",
+            "layout",
+        ],
+        "Edition cover",
+        errors,
+    );
     let cover = match data.get("cover") {
         None | Some(Value::Null) => Mapping::new(),
         Some(Value::Mapping(mapping)) => mapping.clone(),
@@ -880,11 +939,11 @@ fn load_cover(
         }
     };
     let tail_art_fit = or_default(data.get("tail_art_fit"), "cover");
-    if !["cover", "contain"].contains(&tail_art_fit.py_trim()) {
+    if !["cover", "contain"].contains(&tail_art_fit.trim()) {
         errors.push("Edition tail_art_fit must be cover or contain".to_string());
     }
     let art_path = cover.get(Value::String("art_path".to_string()));
-    if !truthy(art_path) {
+    if !filled(art_path) {
         return (cover, None);
     }
     match edition_path(root, edition_dir, art_path, true) {
@@ -915,7 +974,7 @@ fn art_variant_stem(path: &str) -> String {
 fn art_slots(data: &Value) -> Vec<(String, String)> {
     let mut slots: Vec<(String, String)> = Vec::new();
     if let Some(Value::String(path)) = data.get("cover").and_then(|cover| cover.get("art_path")) {
-        if !path.py_trim().is_empty() {
+        if !path.trim().is_empty() {
             slots.push(("cover".to_string(), path.clone()));
         }
     }
@@ -924,15 +983,15 @@ fn art_slots(data: &Value) -> Vec<(String, String)> {
             if !matches!(row, Value::Mapping(_)) {
                 continue;
             }
-            let id = py_str(row.get("id").unwrap_or(&Value::Null));
+            let id = text(row.get("id")).to_string();
             if let Some(Value::String(path)) = row.get("opener_art").and_then(|art| art.get("path"))
             {
-                if !path.py_trim().is_empty() {
+                if !path.trim().is_empty() {
                     slots.push((format!("article {id} opener"), path.clone()));
                 }
             }
             if let Some(Value::String(path)) = row.get("tail_art_path") {
-                if !path.py_trim().is_empty() {
+                if !path.trim().is_empty() {
                     slots.push((format!("article {id} tail"), path.clone()));
                 }
             }
@@ -1024,17 +1083,16 @@ fn closing_plate(
     errors: &mut Vec<String>,
 ) {
     if !matches!(row, Value::Mapping(_))
-        || !truthy(row.get("title"))
-        || !truthy(row.get("art_path"))
+        || !filled(row.get("title"))
+        || !filled(row.get("art_path"))
     {
         errors.push(format!(
             "Closing plate {number} requires title and art_path"
         ));
         return;
     }
-    let title = py_str(row.get("title").expect("the title is present"))
-        .py_trim()
-        .to_string();
+    check_text(row, &["title"], &format!("Closing plate {number}"), errors);
+    let title = text(row.get("title")).trim().to_string();
     let art_path = match edition_path(root, edition_dir, row.get("art_path"), !allow_missing_art) {
         Ok(path) => path,
         Err(ValidationError(messages)) => {
@@ -1042,16 +1100,16 @@ fn closing_plate(
             return;
         }
     };
-    if titles.contains(&py_casefold(&title)) {
+    if titles.contains(&title.to_lowercase()) {
         errors.push(format!("Closing plate title must be unique: {title}"));
     }
     if paths.contains(&art_path) {
         errors.push(format!(
             "Closing plate art_path must be unique: {}",
-            py_str(row.get("art_path").expect("the art path is present"))
+            text(row.get("art_path"))
         ));
     }
-    titles.insert(py_casefold(&title));
+    titles.insert(title.to_lowercase());
     paths.insert(art_path.clone());
     plates.push(ClosingPlate { title, art_path });
 }
@@ -1066,7 +1124,7 @@ pub fn load_translation(root: &Path, base: &Edition, language: &str) -> Result<E
     if !manifest_path.is_file() {
         return Err(ValidationError(vec![format!(
             "Required {} translation manifest not found: {}",
-            py_repr(language),
+            quoted(language),
             relative_display(&manifest_path, root)
         )]));
     }
@@ -1116,35 +1174,48 @@ fn translation_header(
     language: &str,
     errors: &mut Vec<String>,
 ) -> Mapping {
-    if or_empty(data.get("language")) != language {
+    if text(data.get("language")) != language {
         errors.push(format!(
             "Translation language {} does not match directory {}",
             repr_option(data.get("language").filter(|value| !value.is_null())),
-            py_repr(language)
+            quoted(language)
         ));
     }
-    if or_empty(data.get("source_language")) != base.language {
+    if text(data.get("source_language")) != base.language {
         errors.push(format!(
             "Translation source_language must be {}",
-            py_repr(&base.language)
+            quoted(&base.language)
         ));
     }
+    check_text(
+        &data["cover"],
+        &[
+            "headline",
+            "deck",
+            "edition_label",
+            "back_text",
+            "footer_caption",
+            "layout",
+        ],
+        "Translation cover",
+        errors,
+    );
     let cover = match data.get("cover") {
         Some(Value::Mapping(mapping)) => mapping.clone(),
         _ => {
             errors.push(format!(
                 "Translation {} requires translated cover copy",
-                py_repr(language)
+                quoted(language)
             ));
             Mapping::new()
         }
     };
     for key in ["headline", "deck", "edition_label", "back_text"] {
         let declared = base.cover.get(Value::String(key.to_string()));
-        if truthy(declared) && !truthy(cover.get(Value::String(key.to_string()))) {
+        if filled(declared) && !filled(cover.get(Value::String(key.to_string()))) {
             errors.push(format!(
                 "Translation {} cover is missing {key}",
-                py_repr(language)
+                quoted(language)
             ));
         }
     }
@@ -1161,10 +1232,10 @@ fn translation_editorial(
 ) -> Option<Editorial> {
     let source = base.editorial.as_ref()?;
     let row = data.get("editorial");
-    if !matches!(row, Some(Value::Mapping(_))) || !truthy(row.and_then(|row| row.get("path"))) {
+    if !matches!(row, Some(Value::Mapping(_))) || !filled(row.and_then(|row| row.get("path"))) {
         errors.push(format!(
             "Translation {} requires an editorial path",
-            py_repr(language)
+            quoted(language)
         ));
         return None;
     }
@@ -1183,7 +1254,7 @@ fn translation_editorial(
     validate_translation_file(
         &source.path,
         &path,
-        &format!("Translation {} editorial", py_repr(language)),
+        &format!("Translation {} editorial", quoted(language)),
         errors,
     );
     match load_editorial(&path) {
@@ -1209,16 +1280,17 @@ fn translation_articles(
         _ => {
             errors.push(format!(
                 "Translation {} articles must be a list",
-                py_repr(language)
+                quoted(language)
             ));
             &empty
         }
     };
     let mut translated_by_id: BTreeMap<String, &Value> = BTreeMap::new();
     for row in rows {
-        if matches!(row, Value::Mapping(_)) && truthy(row.get("id")) {
+        check_text(row, &["id"], "Translation article", errors);
+        if matches!(row, Value::Mapping(_)) && filled(row.get("id")) {
             translated_by_id
-                .entry(py_str(row.get("id").expect("the id is present")))
+                .entry(text(row.get("id")).to_string())
                 .or_insert(row);
         }
     }
@@ -1229,14 +1301,14 @@ fn translation_articles(
     if !missing.is_empty() {
         errors.push(format!(
             "Translation {} is missing articles: {}",
-            py_repr(language),
+            quoted(language),
             missing.join(", ")
         ));
     }
     if !extra.is_empty() {
         errors.push(format!(
             "Translation {} has unknown articles: {}",
-            py_repr(language),
+            quoted(language),
             extra.join(", ")
         ));
     }
@@ -1256,7 +1328,7 @@ fn translation_author_note(
     prefix: &str,
     errors: &mut Vec<String>,
 ) -> String {
-    let author_note = or_empty(row.get("author_note")).py_trim().to_string();
+    let author_note = text(row.get("author_note")).trim().to_string();
     if !article.author_note.is_empty() && author_note.is_empty() {
         errors.push(format!(
             "{prefix} requires author_note because the source article has one"
@@ -1275,19 +1347,19 @@ fn translation_author_note(
 }
 
 fn translation_titles(row: &Value, prefix: &str, errors: &mut Vec<String>) -> (String, String) {
-    let title = py_casefold(&py_str(row.get("title").unwrap_or(&Value::Null)));
-    let display_emphasis = or_empty(row.get("display_emphasis")).py_trim().to_string();
-    if !display_emphasis.is_empty() && !title.contains(&py_casefold(&display_emphasis)) {
+    let title = text(row.get("title")).to_lowercase();
+    let display_emphasis = text(row.get("display_emphasis")).trim().to_string();
+    if !display_emphasis.is_empty() && !title.contains(&display_emphasis.to_lowercase()) {
         errors.push(format!(
             "{prefix} display_emphasis must occur in its localized title"
         ));
     }
-    let short_title = or_empty(row.get("short_title")).py_trim().to_string();
+    let short_title = text(row.get("short_title")).trim().to_string();
     if short_title.contains('\n') || short_title.chars().count() > 40 {
         errors.push(format!(
             "{prefix} short_title must be a single line of at most 40 characters"
         ));
-    } else if !title.contains(&py_casefold(&short_title)) {
+    } else if !title.contains(&short_title.to_lowercase()) {
         errors.push(format!(
             "{prefix} short_title must occur in its localized title"
         ));
@@ -1373,25 +1445,33 @@ fn translation_article(
     language: &str,
     errors: &mut Vec<String>,
 ) -> Option<Article> {
-    let prefix = format!("Translation {} article {}", py_repr(language), article.id);
-    if !truthy(row.get("title"))
-        || !truthy(row.get("short_title"))
-        || !truthy(row.get("manuscript"))
+    let prefix = format!("Translation {} article {}", quoted(language), article.id);
+    if !filled(row.get("title"))
+        || !filled(row.get("short_title"))
+        || !filled(row.get("manuscript"))
     {
         errors.push(format!(
             "{prefix} requires title, short_title, and manuscript"
         ));
         return None;
     }
+    check_text(
+        row,
+        &[
+            "title",
+            "short_title",
+            "author",
+            "author_note",
+            "display_emphasis",
+        ],
+        &prefix,
+        errors,
+    );
     let author_note = translation_author_note(article, row, &prefix, errors);
     let author = match row.get("author") {
         None => article.author.clone(),
         Some(value) => {
-            let author = if truthy(Some(value)) {
-                py_str(value).py_trim().to_string()
-            } else {
-                String::new()
-            };
+            let author = text(Some(value)).trim().to_string();
             if author.is_empty() {
                 errors.push(format!("{prefix} author cannot be blank"));
             }
@@ -1411,7 +1491,7 @@ fn translation_article(
     let (figures, extracts) = translation_media(article, row, &manuscript, language, errors);
     Some(Article {
         id: article.id.clone(),
-        title: py_str(row.get("title").expect("the title is present")),
+        title: text(row.get("title")).to_string(),
         short_title,
         display_emphasis,
         opener_variant: article.opener_variant.clone(),
@@ -1445,7 +1525,7 @@ fn translation_closing_plates(
         _ => {
             errors.push(format!(
                 "Translation {} requires exactly {} closing_plate_titles",
-                py_repr(language),
+                quoted(language),
                 base.closing_plates.len()
             ));
             return Vec::new();
@@ -1453,20 +1533,20 @@ fn translation_closing_plates(
     };
     let titles: Vec<String> = rows
         .iter()
-        .map(|value| py_str(value).py_trim().to_string())
+        .map(|value| text(Some(value)).trim().to_string())
         .collect();
     if titles.iter().any(String::is_empty) {
         errors.push(format!(
             "Translation {} closing_plate_titles cannot be blank",
-            py_repr(language)
+            quoted(language)
         ));
         return Vec::new();
     }
-    let folded: BTreeSet<String> = titles.iter().map(|title| py_casefold(title)).collect();
+    let folded: BTreeSet<String> = titles.iter().map(|title| title.to_lowercase()).collect();
     if folded.len() != titles.len() {
         errors.push(format!(
             "Translation {} closing_plate_titles must be unique",
-            py_repr(language)
+            quoted(language)
         ));
         return Vec::new();
     }
@@ -1494,7 +1574,7 @@ fn translation_sections(
         _ => {
             errors.push(format!(
                 "Translation {} sections must be a list",
-                py_repr(language)
+                quoted(language)
             ));
             &empty
         }
@@ -1502,7 +1582,7 @@ fn translation_sections(
     if rows.len() != base.sections.len() {
         errors.push(format!(
             "Translation {} must contain exactly {} sections",
-            py_repr(language),
+            quoted(language),
             base.sections.len()
         ));
     }
@@ -1534,12 +1614,13 @@ fn translation_section(
 ) -> Option<Section> {
     let kind_matches =
         matches!(row.get("kind"), Some(Value::String(kind)) if kind == &section.kind);
-    if !kind_matches || !truthy(row.get("title")) || !truthy(row.get("path")) {
+    check_text(row, &["title"], "Translation section", errors);
+    if !kind_matches || !filled(row.get("title")) || !filled(row.get("path")) {
         errors.push(format!(
             "Translation {} section {} must preserve kind {} and provide title and path",
-            py_repr(language),
+            quoted(language),
             index + 1,
-            py_repr(&section.kind)
+            quoted(&section.kind)
         ));
         return None;
     }
@@ -1553,12 +1634,12 @@ fn translation_section(
     validate_translation_file(
         &section.path,
         &path,
-        &format!("Translation {} section {}", py_repr(language), index + 1),
+        &format!("Translation {} section {}", quoted(language), index + 1),
         errors,
     );
     Some(Section {
         kind: section.kind.clone(),
-        title: py_str(row.get("title").expect("the title is present")),
+        title: text(row.get("title")).to_string(),
         path,
     })
 }
@@ -1925,7 +2006,7 @@ fn representative_dateline(source_ids: &[String], records: Option<&Records>) -> 
         .iter()
         .filter_map(|id| records.get(id))
         .filter_map(|record| record.published_at.as_ref())
-        .map(|value| value.py_trim().to_string())
+        .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .max()?;
     let parts: Vec<&str> = newest.split('-').collect();
@@ -1938,7 +2019,7 @@ fn representative_dateline(source_ids: &[String], records: Option<&Records>) -> 
 fn primary_source_url(source_ids: &[String], records: Option<&Records>) -> Option<String> {
     let records = records?;
     let record = records.get(source_ids.first()?)?;
-    let url = record.url.py_trim();
+    let url = record.url.trim();
     if url.is_empty() {
         None
     } else {
@@ -1960,7 +2041,7 @@ fn edition_path(
     must_exist: bool,
 ) -> Result<PathBuf> {
     let text = match value {
-        Some(Value::String(text)) if !text.py_trim().is_empty() => text.clone(),
+        Some(Value::String(text)) if !text.trim().is_empty() => text.clone(),
         other => {
             return Err(ValidationError(vec![format!(
                 "Referenced path must be a non-empty string, got {}",
@@ -1999,7 +2080,7 @@ fn key_ideas(label: &str, value: Option<&Value>) -> Result<Vec<String>> {
         }
     };
     let invalid = items.iter().any(|item| {
-        !matches!(item, Value::String(text) if !text.py_trim().is_empty() && !text.contains('\n'))
+        !matches!(item, Value::String(text) if !text.trim().is_empty() && !text.contains('\n'))
     });
     if items.is_empty() || invalid {
         return Err(ValidationError(vec![format!(
@@ -2008,7 +2089,7 @@ fn key_ideas(label: &str, value: Option<&Value>) -> Result<Vec<String>> {
     }
     let ideas: Vec<String> = items
         .iter()
-        .filter_map(|item| item.as_str().map(|text| text.py_trim().to_string()))
+        .filter_map(|item| item.as_str().map(|text| text.trim().to_string()))
         .collect();
     let words: usize = ideas
         .iter()
@@ -2073,7 +2154,7 @@ fn load_editorial(path: &Path) -> Result<Editorial> {
         )])
     })?;
     let title = match metadata.get("title") {
-        Some(value) if !py_str(value).py_trim().is_empty() => py_str(value).py_trim().to_string(),
+        Some(Value::String(title)) if !title.trim().is_empty() => title.trim().to_string(),
         _ => {
             return Err(ValidationError(vec![format!(
                 "Editorial requires a non-empty title: {}",
@@ -2085,16 +2166,16 @@ fn load_editorial(path: &Path) -> Result<Editorial> {
         path: path.to_path_buf(),
         title,
         byline: or_default(metadata.get("byline"), "The editors")
-            .py_trim()
+            .trim()
             .to_string(),
         label: or_default(metadata.get("label"), "ORIGINAL EDITORIAL")
-            .py_trim()
+            .trim()
             .to_string(),
     })
 }
 
 pub fn source_code_payload(url: &str) -> String {
-    let mut payload = url.py_trim();
+    let mut payload = url.trim();
     for scheme in ["https://", "http://"] {
         if let Some(rest) = payload.strip_prefix(scheme) {
             payload = rest;
@@ -2113,42 +2194,15 @@ fn blank_header_field(value: Option<&Value>) -> bool {
     }
 }
 
-fn truthy(value: Option<&Value>) -> bool {
+fn to_int(value: Option<&Value>) -> Option<i64> {
     match value {
-        None | Some(Value::Null) => false,
-        Some(Value::Bool(flag)) => *flag,
-        Some(Value::Number(number)) => number.as_f64().is_some_and(|value| value != 0.0),
-        Some(Value::String(text)) => !text.is_empty(),
-        Some(Value::Sequence(items)) => !items.is_empty(),
-        Some(Value::Mapping(mapping)) => !mapping.is_empty(),
-        Some(Value::Tagged(tagged)) => truthy(Some(&tagged.value)),
-    }
-}
-
-fn or_empty(value: Option<&Value>) -> String {
-    if truthy(value) {
-        py_str(value.expect("a truthy value is present"))
-    } else {
-        String::new()
-    }
-}
-
-fn to_int(value: Option<&Value>) -> i64 {
-    match value {
-        None => 1,
-        Some(Value::Bool(flag)) => i64::from(*flag),
-        Some(Value::Number(number)) => number
-            .as_i64()
-            .or_else(|| number.as_f64().map(|value| value.trunc() as i64))
-            .unwrap_or(0),
-        Some(Value::String(text)) => text.py_trim().parse::<i64>().unwrap_or(0),
-        Some(_) => 0,
+        None | Some(Value::Null) => Some(1),
+        Some(Value::Number(number)) => number.as_i64(),
+        Some(Value::String(text)) => text.trim().parse().ok(),
+        Some(_) => None,
     }
 }
 
 fn repr_option(value: Option<&Value>) -> String {
-    match value {
-        None => "None".to_string(),
-        Some(value) => py_repr_value(value),
-    }
+    value.map_or_else(|| "missing".to_string(), show)
 }

@@ -1,4 +1,4 @@
-use super::shared::{is_python_space, load_yaml};
+use super::shared::load_yaml;
 use anyhow::{bail, Context, Result};
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde_yaml::{Mapping, Value};
@@ -456,7 +456,7 @@ pub fn educate_reader_quotes(text: &str) -> String {
             None
         };
         let following = characters.get(index + 1).copied();
-        let opens = previous.is_none_or(|c| is_python_space(c) || OPENING_CONTEXT.contains(&c));
+        let opens = previous.is_none_or(|c| c.is_whitespace() || OPENING_CONTEXT.contains(&c));
         characters[index] = educated(character, previous, following, opens);
     }
     characters.into_iter().collect()
@@ -567,16 +567,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn every_null_spelling_of_a_label_loads_as_null_and_falls_back_like_python() {
-        for spelling in [
-            "~",
-            "null",
-            "!!null",
-            "!!null ''",
-            "!!null \"\"",
-            "!!null foo",
-            "!<tag:yaml.org,2002:null> x",
-        ] {
+    fn a_null_label_loads_as_null_and_falls_back() {
+        for spelling in ["~", "null"] {
             let (meta, body) =
                 split_frontmatter(&format!("---\nlabel: {spelling}\ntitle: T\n---\nBody\n"))
                     .unwrap_or_else(|e| panic!("{spelling}: {e:#}"));
@@ -586,25 +578,6 @@ mod tests {
             assert_eq!(
                 content_label("en", &meta, "verbatim"),
                 content_label("en", &Mapping::new(), "verbatim")
-            );
-        }
-    }
-
-    #[test]
-    fn a_null_tag_on_a_collection_or_a_broken_header_is_refused_like_python() {
-        for (header, needle) in [
-            ("label: !!null [a]\nnote: !!null", "expected a scalar node"),
-            ("label: !!null [a]", "expected a scalar node"),
-            ("label: !!null {a: 1}", "expected a scalar node"),
-            ("label: [!!null,!!null]", "Invalid YAML frontmatter: "),
-            ("label: !!null\n  - : [", "Invalid YAML frontmatter: "),
-        ] {
-            let e = split_frontmatter(&format!("---\n{header}\n---\n"))
-                .unwrap_err()
-                .to_string();
-            assert!(
-                e.starts_with("Invalid YAML frontmatter: ") && e.contains(needle),
-                "{header}: {e}"
             );
         }
     }

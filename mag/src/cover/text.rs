@@ -1,6 +1,5 @@
 use crate::model::manifest::Edition;
-use crate::model::shared::{py_casefold, py_str, py_strip, py_upper, py_zfill};
-use serde_yaml::Mapping;
+use crate::model::shared::text;
 use std::collections::BTreeSet;
 
 pub fn cover_date(value: &str) -> String {
@@ -16,15 +15,15 @@ pub fn cover_contributors(edition: &Edition) -> String {
     let mut authors: Vec<String> = Vec::new();
     let mut seen: BTreeSet<String> = BTreeSet::new();
     for article in &edition.articles {
-        let author = lead_author(py_strip(&article.author));
-        if !author.is_empty() && seen.insert(py_casefold(&author)) {
+        let author = lead_author(article.author.trim());
+        if !author.is_empty() && seen.insert(author.to_lowercase()) {
             authors.push(author);
         }
     }
     if !authors.is_empty() {
-        return py_upper(&authors.join(" / "));
+        return authors.join(" / ").to_uppercase();
     }
-    py_strip(&deck(&edition.cover)).to_string()
+    text(edition.cover.get("deck")).trim().to_string()
 }
 
 fn lead_author(author: &str) -> String {
@@ -40,19 +39,15 @@ fn lead_author(author: &str) -> String {
     }
 }
 
-fn deck(cover: &Mapping) -> String {
-    cover.get("deck").map(py_str).unwrap_or_default()
-}
-
 pub fn cover_tab_issue(edition: &Edition) -> String {
     let label = if edition.language.split('-').next() == Some("en") {
         "ISSUE"
     } else {
         "N\u{da}MERO"
     };
-    format!("{label} {}", py_zfill(&edition.issue_number, 3))
+    format!("{label} {:0>3}", edition.issue_number)
 }
 
 pub fn cover_tab_identity(edition: &Edition) -> String {
-    format!("{} / BUENOS AIRES", py_upper(&edition.publication_name))
+    format!("{} / BUENOS AIRES", edition.publication_name.to_uppercase())
 }

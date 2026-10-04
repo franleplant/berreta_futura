@@ -61,72 +61,11 @@ pub fn sha256(path: &Path) -> Result<String> {
     Ok(hex::encode(Sha256::digest(bytes)))
 }
 
-fn py_float(value: f64) -> String {
-    if !value.is_finite() {
-        return if value.is_nan() {
-            "NaN"
-        } else if value > 0.0 {
-            "Infinity"
-        } else {
-            "-Infinity"
-        }
-        .into();
-    }
-    let scientific = format!("{value:e}");
-    let (mantissa, exponent) = scientific.split_once('e').unwrap_or((&scientific, "0"));
-    let exponent: i32 = exponent.parse().unwrap_or(0);
-    if (-4..16).contains(&exponent) {
-        let plain = format!("{value}");
-        return if plain.contains('.') {
-            plain
-        } else {
-            format!("{plain}.0")
-        };
-    }
-    let sign = if exponent < 0 { '-' } else { '+' };
-    format!("{mantissa}e{sign}{:02}", exponent.abs())
-}
-
-fn write_json(value: &Value, depth: usize, out: &mut String) {
-    let pad = |level: usize| format!("\n{}", "  ".repeat(level));
-    match value {
-        Value::Number(number) => match number.as_f64().filter(|_| number.is_f64()) {
-            Some(float) => out.push_str(&py_float(float)),
-            None => out.push_str(&number.to_string()),
-        },
-        Value::Array(items) if !items.is_empty() => {
-            out.push('[');
-            for (index, item) in items.iter().enumerate() {
-                out.push_str(if index == 0 { "" } else { "," });
-                out.push_str(&pad(depth + 1));
-                write_json(item, depth + 1, out);
-            }
-            out.push_str(&pad(depth));
-            out.push(']');
-        }
-        Value::Object(map) if !map.is_empty() => {
-            let mut keys: Vec<&String> = map.keys().collect();
-            keys.sort();
-            out.push('{');
-            for (index, key) in keys.into_iter().enumerate() {
-                out.push_str(if index == 0 { "" } else { "," });
-                out.push_str(&pad(depth + 1));
-                out.push_str(&Value::String(key.clone()).to_string());
-                out.push_str(": ");
-                write_json(&map[key], depth + 1, out);
-            }
-            out.push_str(&pad(depth));
-            out.push('}');
-        }
-        other => out.push_str(&other.to_string()),
-    }
-}
-
-pub fn py_json(value: &Value) -> String {
-    let mut out = String::new();
-    write_json(value, 0, &mut out);
-    out.push('\n');
-    out
+pub(crate) fn json_text(value: &Value) -> String {
+    format!(
+        "{}\n",
+        serde_json::to_string_pretty(value).expect("a json value serializes")
+    )
 }
 
 fn write(path: &Path, text: &str) -> Result<()> {
@@ -373,7 +312,7 @@ fn inspect(release: &Release, legs: &Legs) -> Result<(PathBuf, Vec<PathBuf>)> {
     )?;
     let report = render_report(release, &critique, legs, (&reader_sheets, &booklet_sheets))?;
     let path = root.join("render-critic.json");
-    write(&path, &py_json(&report))?;
+    write(&path, &json_text(&report))?;
     if critique.result == "fail" {
         let codes: Vec<&str> = critique
             .issues
@@ -414,7 +353,7 @@ pub fn package_release(mut release: Release) -> Result<Vec<PathBuf>> {
     let interior = impose_a5_on_a4(&reader, &root.join("booklet-a4-interior.pdf"), "interior")?;
     let cover = impose_a5_on_a4(&reader, &root.join("booklet-a4-cover.pdf"), "cover")?;
     let manifest = root.join("edition-manifest.json");
-    write(&manifest, &py_json(&release.manifest))?;
+    write(&manifest, &json_text(&release.manifest))?;
     let legs = Legs {
         booklet: &booklet,
         interior: &interior,
@@ -452,7 +391,7 @@ pub fn package_release(mut release: Release) -> Result<Vec<PathBuf>> {
         release.figure_placements,
         release.language,
     )?;
-    write(&preflight, &py_json(&facts))?;
+    write(&preflight, &json_text(&facts))?;
     let mut files: Vec<PathBuf> = [
         reader,
         booklet,

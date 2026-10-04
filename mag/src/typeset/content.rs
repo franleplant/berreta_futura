@@ -6,7 +6,7 @@ use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, S
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
     anchor_key, article_opener_format, clamp_roster, content_label, is_name_roster,
-    is_reference_heading, py_repr, py_str, scalar_label, ui, Result, ValidationError,
+    is_reference_heading, quoted, scalar_label, show, text, ui, Result, ValidationError,
 };
 use crate::sourcecodes::source_code_directory;
 use crate::typeset::estimate::Metrics;
@@ -255,12 +255,7 @@ impl Writer<'_> {
 
     fn header(&self) -> String {
         let edition = self.edition;
-        let subtitle = edition
-            .raw
-            .get("subtitle")
-            .map(py_str)
-            .map(|value| value.trim().to_string())
-            .unwrap_or_default();
+        let subtitle = text(edition.raw.get("subtitle")).trim().to_string();
         format!(
             "#set document(title: {})\n#set text({})\n\n#edition-header[\n  #publication-name{}\n  \
              #issue-line{}\n  #edition-title{}\n{}  #edition-date{}\n]\n\n",
@@ -288,7 +283,7 @@ impl Writer<'_> {
                     "Contents title {} ({} characters) would wrap onto the entry's author \
                      line; shorten the article title to {CONTENTS_TITLE_LIMIT} characters \
                      or fewer.",
-                    py_repr(&entry.title),
+                    quoted(&entry.title),
                     entry.title.chars().count()
                 )
             })
@@ -838,19 +833,20 @@ impl Writer<'_> {
     }
 
     fn closing_plates(&self) -> Result<String> {
-        let target = match self
+        let target = self
             .edition
             .raw
             .get("format")
             .and_then(|value| value.get("target_pages"))
-            .map(py_str)
-            .filter(|value| !matches!(value.trim(), "" | "None" | "False"))
-        {
-            Some(value) => value.trim().parse::<i64>().map_err(|_| {
-                ValidationError::one(format!("format.target_pages {value:?} is not an integer"))
-            })?,
-            None => 0,
-        };
+            .filter(|value| !value.is_null())
+            .map_or(Ok(0), |value| {
+                value.as_i64().ok_or_else(|| {
+                    ValidationError::one(format!(
+                        "format.target_pages must be a number, not {}",
+                        show(value)
+                    ))
+                })
+            })?;
         let target = if target == 0 {
             "none".to_string()
         } else {
@@ -1665,13 +1661,12 @@ mod tests {
     #[test]
     fn a_container_label_refuses_the_edition_instead_of_printing_brackets() {
         for (label, refusal) in [
-            ("!!null", None),
+            ("~", None),
             ("[]", Some("Frontmatter label must be text, not []")),
             (
                 "{a: 1}",
-                Some("Frontmatter label must be text, not {'a': 1}"),
+                Some("Frontmatter label must be text, not {\"a\":1}"),
             ),
-            ("!!null [a]", Some("expected a scalar node for !!null")),
         ] {
             let root = mutated("container-label", "900", &[]);
             let manuscript = root.join("editions/900/articles/plain-opener-article.md");
@@ -1688,6 +1683,30 @@ mod tests {
                 (outcome, _) => panic!("label {label}: {:?}", outcome.map(|_| ())),
             }
         }
+    }
+
+    #[test]
+    fn an_empty_subtitle_prints_nothing_and_a_number_is_refused() {
+        let root = mutated(
+            "empty-subtitle",
+            "900",
+            &[(
+                "subtitle: A fixture subtitle for the edition header.",
+                "subtitle:",
+            )],
+        );
+        let tree = pipeline(&inputs(&root, "900")).expect("an empty subtitle loads");
+        let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
+        assert!(!text.contains("edition-subtitle") && !text.contains("None"));
+        let root = mutated(
+            "numeric-subtitle",
+            "900",
+            &[(
+                "subtitle: A fixture subtitle for the edition header.",
+                "subtitle: 5",
+            )],
+        );
+        assert!(refusal_of(&root, "900").contains("Edition subtitle must be text, not 5"));
     }
 
     #[test]

@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 
 use crate::critic::metrics::{decode_rgb, luma601, ordered_map, round_places, worker_count, Rgb};
 use crate::critic::text::body_text_lines;
-use crate::model::shared::py_strip;
 
 pub const RASTER_DPI: u32 = 144;
 pub const WHITE_THRESHOLD: u8 = 245;
@@ -140,7 +139,7 @@ impl PageInspection {
 
 pub(crate) fn standalone_punctuation_lines(text: &str) -> Vec<String> {
     text.lines()
-        .map(py_strip)
+        .map(str::trim)
         .filter(|line| {
             !line.is_empty()
                 && line
@@ -161,7 +160,7 @@ pub fn inspect_page(path: &Path, page_number: usize, text: &str) -> Result<PageI
     let presence_pixels = histogram(&presence_mask)[255] as usize;
     let presence_bbox = getbbox(&presence_mask);
     let pure_white = extrema(&gray) == Some((255, 255));
-    let stripped = py_strip(text);
+    let stripped = text.trim();
     let ratio = match total_pixels {
         0 => 0.0,
         total => ink_pixels as f64 / total as f64,

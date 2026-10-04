@@ -7,9 +7,9 @@ use crate::cover::svg::{
 };
 use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cover_tab_issue};
 use crate::model::manifest::Edition;
-use crate::model::shared::{py_str, py_strip, py_upper, py_zfill, raw_or};
 use anyhow::{bail, Context, Result};
 use lopdf::{Document, Object, StringFormat};
+use serde_yaml::Value;
 use std::path::Path;
 
 pub const DESIGN_TOML: &str = "design/covers/canto-vivo/design.toml";
@@ -260,7 +260,9 @@ fn cover_field(edition: &Edition, key: &str, fallback: &str) -> String {
     edition
         .cover
         .get(key)
-        .map_or_else(|| fallback.to_string(), py_str)
+        .and_then(Value::as_str)
+        .unwrap_or(fallback)
+        .to_string()
 }
 
 fn rgb(hex: &str) -> Result<(f64, f64, f64)> {
@@ -320,7 +322,13 @@ fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(Strin
         tab_issue: cover_tab_issue(edition),
         tab_identity: cover_tab_identity(edition),
     };
-    let layout = raw_or(edition.cover.get("layout"), "framed");
+    let layout = edition
+        .cover
+        .get("layout")
+        .and_then(Value::as_str)
+        .filter(|layout| !layout.is_empty())
+        .unwrap_or("framed")
+        .to_string();
     let mut builder = Builder { design, fonts };
     let svg = match (edition.cover_art.as_deref(), layout.as_str()) {
         (Some(art), _) => builder.materialize(&layout, &text, art)?,
@@ -332,7 +340,7 @@ fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(Strin
     let (deck, footer) = (&design.deck, &design.footer);
     let mut lines = vec![
         line(
-            py_upper(&edition.publication_name),
+            edition.publication_name.to_uppercase(),
             38.0,
             PAGE_HEIGHT - 55.0,
             22.0,
@@ -340,7 +348,7 @@ fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(Strin
             Some(0.0),
         ),
         line(
-            py_upper(&headline),
+            headline.to_uppercase(),
             44.0,
             PAGE_HEIGHT - 151.0,
             16.0,
@@ -395,16 +403,18 @@ fn back(
     edition: &Edition,
 ) -> Result<(String, Face)> {
     let copy = copy(edition);
-    let statement = py_strip(&cover_field(edition, "back_text", copy.statement)).to_string();
+    let statement = cover_field(edition, "back_text", copy.statement)
+        .trim()
+        .to_string();
     let text = BackText {
         mass: copy.mass.map(str::to_string),
         statement: statement.clone(),
         slug: format!("{} / {}", copy.end, cover_date(&edition.publication_date)),
         identity: format!(
-            "{} / {} {} / BUENOS AIRES",
-            py_upper(&edition.publication_name),
+            "{} / {} {:0>3} / BUENOS AIRES",
+            edition.publication_name.to_uppercase(),
             copy.issue,
-            py_zfill(&edition.issue_number, 3)
+            edition.issue_number
         ),
     };
     let svg = back_svg(design, back, fonts, serif, &text)?;
@@ -561,7 +571,7 @@ mod tests {
     }
 
     #[test]
-    fn a_missing_design_toml_or_layout_table_takes_the_python_compilers_defaults() {
+    fn a_missing_design_toml_or_layout_table_takes_the_built_in_defaults() {
         let bare = std::env::temp_dir().join(format!("mag-no-design-{}", std::process::id()));
         let (design, back) = super::design(&bare).expect("the built-in design loads");
         let art = (

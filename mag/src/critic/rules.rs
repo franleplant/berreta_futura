@@ -14,7 +14,6 @@ use crate::critic::text::page_text;
 use crate::impose::{
     cover_wrap_plan, imposed_reader_page_plan, section_reader_pages, A4_LANDSCAPE_POINTS,
 };
-use crate::model::shared::is_python_space;
 use crate::trace::{trace_elements, Element, TextFace};
 
 pub const GEOMETRY_TOLERANCE: f64 = 0.75;
@@ -640,7 +639,7 @@ fn offset_verdict(
 }
 
 pub fn normalized(raw: &str) -> String {
-    raw.split(is_python_space)
+    raw.split(char::is_whitespace)
         .filter(|piece| !piece.is_empty())
         .collect::<Vec<_>>()
         .join(" ")
@@ -803,17 +802,6 @@ pub fn booklet_spread_checks(
         .collect()
 }
 
-fn json_truthy(value: Option<&Value>) -> bool {
-    match value {
-        None | Some(Value::Null) => false,
-        Some(Value::Bool(flag)) => *flag,
-        Some(Value::Number(number)) => number.as_f64().is_some_and(|value| value != 0.0),
-        Some(Value::String(text)) => !text.is_empty(),
-        Some(Value::Array(items)) => !items.is_empty(),
-        Some(Value::Object(map)) => !map.is_empty(),
-    }
-}
-
 fn numeric(value: Option<&Value>) -> Option<f64> {
     match value {
         Some(Value::Bool(flag)) => Some(f64::from(u8::from(*flag))),
@@ -867,17 +855,16 @@ pub fn printed_tail_bands(
 ) -> BTreeMap<usize, f64> {
     let mut bands = BTreeMap::new();
     for entry in rows_of(layout, "tail_arts") {
-        if !entry.is_object() || !json_truthy(entry.get("printed")) {
+        if !entry.is_object() || entry["printed"] != true {
             continue;
         }
-        let article = match entry.get("article") {
-            Some(Value::String(text)) => text.clone(),
-            Some(Value::Null) | None => "None".to_string(),
-            Some(other) => other.to_string(),
-        };
+        let article = entry
+            .get("article")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
         if let (Some(height), Some(page)) = (
             numeric(entry.get("height_points")),
-            article_last_pages.get(&article),
+            article_last_pages.get(article),
         ) {
             bands.insert(*page, height);
         }
@@ -1293,7 +1280,7 @@ pub fn stub_and_tail_issues(
         if !entry.is_object() {
             continue;
         }
-        if json_truthy(entry.get("declared")) && !json_truthy(entry.get("printed")) {
+        if entry["declared"] == true && entry["printed"] != true {
             let article = match entry.get("article").and_then(Value::as_str) {
                 Some(text) if !text.is_empty() => text,
                 _ => "unknown article",

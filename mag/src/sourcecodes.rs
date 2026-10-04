@@ -1,3 +1,4 @@
+use crate::package::release::json_text;
 use anyhow::{bail, Context, Result};
 use qrcodegen::{DataTooLong, Mask, QrCode, QrCodeEcc, QrSegment, QrSegmentMode, Version};
 use serde_json::{json, Value};
@@ -286,36 +287,6 @@ fn sources(root: &Path, edition: &str) -> Result<Vec<(String, String, f64)>> {
     Ok(rows)
 }
 
-fn py_json(value: &Value, depth: usize, out: &mut String) {
-    let pad = |level: usize| format!("\n{}", "  ".repeat(level));
-    match value {
-        Value::Array(items) if !items.is_empty() => {
-            out.push('[');
-            for (index, item) in items.iter().enumerate() {
-                out.push_str(if index == 0 { "" } else { "," });
-                out.push_str(&pad(depth + 1));
-                py_json(item, depth + 1, out);
-            }
-            out.push_str(&pad(depth));
-            out.push(']');
-        }
-        Value::Object(map) if !map.is_empty() => {
-            out.push('{');
-            let mut keys: Vec<&String> = map.keys().collect();
-            keys.sort();
-            for (index, key) in keys.into_iter().enumerate() {
-                out.push_str(if index == 0 { "" } else { "," });
-                out.push_str(&pad(depth + 1));
-                out.push_str(&format!("{}: ", Value::String(key.clone())));
-                py_json(&map[key], depth + 1, out);
-            }
-            out.push_str(&pad(depth));
-            out.push('}');
-        }
-        other => out.push_str(&other.to_string()),
-    }
-}
-
 fn ascii(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -344,11 +315,9 @@ pub fn build(root: &Path, edition: &str) -> Result<(Files, usize)> {
         codes.push(json!({"payload": payload, "source_id": source_id, "svg": name, "print": fitted(payload, room)?}));
     }
     let declines = codes.iter().filter(|code| code["print"].is_null()).count();
-    let mut index = String::new();
-    py_json(&json!({"codes": codes}), 0, &mut index);
     files.push((
         "codes.json".to_string(),
-        format!("{}\n", ascii(&index)).into_bytes(),
+        ascii(&json_text(&json!({"codes": codes}))).into_bytes(),
     ));
     Ok((files, declines))
 }

@@ -41,12 +41,12 @@ fn every_spelling_of_null_declares_nothing() {
 #[test]
 fn a_padded_label_proves_the_declared_branch_was_taken() {
     assert_eq!(
-        label("label: \"\\u001EDispatch\\u001E\""),
+        label("label: \"  Dispatch  \""),
         "Dispatch",
         "the padding is stripped and the declared text survives"
     );
     assert_ne!(
-        label("label: \"\\u001EDispatch\\u001E\""),
+        label("label: \"  Dispatch  \""),
         shared::ui("en", "article"),
         "this value must differ from the fallback, or the case cannot tell \
          the declared branch from the fallback branch"

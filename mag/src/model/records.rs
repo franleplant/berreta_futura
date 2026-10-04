@@ -1,4 +1,4 @@
-use super::shared::{py_repr, PyStrip, Result, ValidationError};
+use super::shared::{quoted, show, Result, ValidationError};
 use regex::Regex;
 use serde_yaml::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -143,7 +143,7 @@ fn text_field(value: Option<&Value>, key: &str) -> Result<Option<String>> {
     }
 }
 
-fn truthy(value: Option<&String>) -> bool {
+fn filled(value: Option<&String>) -> bool {
     value.is_some_and(|text| !text.is_empty())
 }
 
@@ -156,7 +156,7 @@ impl SourceRecord {
         let url = resolve_url(mapping)?;
         let mut published_origin = "published_at";
         let mut published_at = text_field(get("published_at"), "published_at")?;
-        if !truthy(published_at.as_ref()) {
+        if !filled(published_at.as_ref()) {
             published_origin = "publication_date";
             published_at = text_field(get("publication_date"), "publication_date")?;
         }
@@ -176,10 +176,10 @@ impl SourceRecord {
         let id = text_field(get("id"), "id")?;
         let title = text_field(get("title"), "title")?;
         let missing: Vec<&str> = [
-            ("id", truthy(id.as_ref())),
-            ("url", truthy(url.as_ref())),
-            ("title", truthy(title.as_ref())),
-            ("captured_at", truthy(captured_at.as_ref())),
+            ("id", filled(id.as_ref())),
+            ("url", filled(url.as_ref())),
+            ("title", filled(title.as_ref())),
+            ("captured_at", filled(captured_at.as_ref())),
         ]
         .into_iter()
         .filter(|(_, present)| !present)
@@ -212,7 +212,7 @@ fn mapping_get<'a>(mapping: &'a serde_yaml::Mapping, key: &str) -> Option<&'a Va
 fn resolve_url(mapping: &serde_yaml::Mapping) -> Result<Option<String>> {
     for key in ["url", "canonical_url", "submitted_url"] {
         let value = text_field(mapping_get(mapping, key), key)?;
-        if truthy(value.as_ref()) {
+        if filled(value.as_ref()) {
             return Ok(value);
         }
     }
@@ -391,8 +391,8 @@ pub fn semantic_headings(path: &Path) -> Result<BTreeSet<String>> {
     }) {
         for prefix in ["## ", "### "] {
             if let Some(rest) = line.strip_prefix(prefix) {
-                if !rest.py_trim().is_empty() {
-                    headings.insert(rest.py_trim().to_string());
+                if !rest.trim().is_empty() {
+                    headings.insert(rest.trim().to_string());
                 }
             }
         }
@@ -400,40 +400,19 @@ pub fn semantic_headings(path: &Path) -> Result<BTreeSet<String>> {
     Ok(headings)
 }
 
-fn python_text(value: Option<&Value>) -> Result<String> {
-    Ok(match value {
-        None | Some(Value::Null) => String::new(),
-        Some(Value::Bool(false)) => String::new(),
-        Some(Value::Bool(true)) => "True".to_string(),
-        Some(Value::String(text)) => text.clone(),
-        Some(Value::Number(number)) => {
-            if number.is_f64() {
-                let float = number.as_f64().unwrap_or_default();
-                if float == 0.0 {
-                    String::new()
-                } else if float.fract() == 0.0 && float.is_finite() {
-                    format!("{float:.1}")
-                } else {
-                    format!("{float}")
-                }
-            } else if number.as_i64() == Some(0) || number.as_u64() == Some(0) {
-                String::new()
-            } else {
-                number.to_string()
-            }
-        }
-        Some(Value::Sequence(items)) if items.is_empty() => String::new(),
-        Some(Value::Mapping(items)) if items.is_empty() => String::new(),
-        Some(other) => {
-            return Err(ValidationError::one(format!(
-                "Figure and extract fields must be scalars, got: {other:?}"
-            )))
-        }
-    })
+fn row_text(name: &str, value: Option<&Value>) -> Result<String> {
+    match value {
+        None | Some(Value::Null) => Ok(String::new()),
+        Some(Value::String(text)) => Ok(text.clone()),
+        Some(other) => Err(ValidationError::one(format!(
+            "Figure and extract field {name} must be text, not {}",
+            show(other)
+        ))),
+    }
 }
 
 fn row_field(row: &serde_yaml::Mapping, name: &str) -> Result<String> {
-    python_text(row.get(Value::String(name.to_string())))
+    row_text(name, row.get(Value::String(name.to_string())))
 }
 
 fn rows_of(rows: Option<&Value>) -> Option<&Vec<Value>> {
@@ -513,7 +492,7 @@ pub fn resolve_figures(request: &FigureRequest, rows: Option<&Value>) -> Result<
         ];
         let mut fields: BTreeMap<&str, String> = BTreeMap::new();
         for name in names {
-            fields.insert(name, row_field(mapping, name)?.py_trim().to_string());
+            fields.insert(name, row_field(mapping, name)?.trim().to_string());
         }
         let missing: Vec<&str> = names
             .into_iter()
@@ -560,7 +539,7 @@ fn resolve_figure(
     if unsafe_path(&relative) {
         errors.push(format!(
             "{label} has unsafe path: {}",
-            py_repr(&fields["path"])
+            quoted(&fields["path"])
         ));
         return None;
     }
@@ -592,7 +571,7 @@ fn resolve_figure(
     if anchor != "__opener__" && !headings.contains(&anchor) && !request.allow_unanchored {
         errors.push(format!(
             "{label} anchor does not match an article heading: {}",
-            py_repr(&anchor)
+            quoted(&anchor)
         ));
     }
     let mut path = request
@@ -661,7 +640,7 @@ pub fn resolve_extracts(request: &ExtractRequest, rows: Option<&Value>) -> Resul
         };
         let mut fields: BTreeMap<&str, String> = BTreeMap::new();
         for name in ["id", "source_id", "style", "caption", "anchor"] {
-            fields.insert(name, row_field(mapping, name)?.py_trim().to_string());
+            fields.insert(name, row_field(mapping, name)?.trim().to_string());
         }
         for name in ["begin", "end"] {
             fields.insert(name, row_field(mapping, name)?);
@@ -744,13 +723,13 @@ fn check_extract_style(
     if !EXTRACT_STYLES.contains(&style.as_str()) {
         errors.push(format!(
             "{label} has invalid style: {}; known: ['code', 'quote']",
-            py_repr(style)
+            quoted(style)
         ));
     }
     if anchor != "__opener__" && !headings.contains(anchor) && !allow_unanchored {
         errors.push(format!(
             "{label} anchor does not match an article heading: {}",
-            py_repr(anchor)
+            quoted(anchor)
         ));
     }
 }
@@ -780,7 +759,7 @@ fn extract_run(
     if begins != 1 {
         errors.push(format!(
             "{label} begin marker must occur exactly once in the source (found {begins}): {}",
-            py_repr(begin)
+            quoted(begin)
         ));
         return None;
     }
@@ -790,7 +769,7 @@ fn extract_run(
     if ends != 1 {
         errors.push(format!(
             "{label} end marker must occur exactly once at or after begin (found {ends}): {}",
-            py_repr(end)
+            quoted(end)
         ));
         return None;
     }
@@ -824,7 +803,7 @@ pub fn localize_figures(
     manuscript: &Path,
     language: &str,
 ) -> Result<Vec<Figure>> {
-    let language = py_repr(language);
+    let language = quoted(language);
     if base.is_empty() {
         if !is_absent(rows) {
             return Err(ValidationError::one(format!(
@@ -858,17 +837,17 @@ pub fn localize_figures(
         let Some(row) = by_id.get(&figure.id) else {
             continue;
         };
-        let caption = row_field(row, "caption")?.py_trim().to_string();
+        let caption = row_field(row, "caption")?.trim().to_string();
         let credit = {
-            let value = row_field(row, "credit")?.py_trim().to_string();
+            let value = row_field(row, "credit")?.trim().to_string();
             if value.is_empty() {
                 figure.credit.clone()
             } else {
                 value
             }
         };
-        let alt_text = row_field(row, "alt_text")?.py_trim().to_string();
-        let anchor = row_field(row, "anchor")?.py_trim().to_string();
+        let alt_text = row_field(row, "alt_text")?.trim().to_string();
+        let anchor = row_field(row, "anchor")?.trim().to_string();
         if caption.is_empty() || alt_text.is_empty() || anchor.is_empty() {
             errors.push(format!(
                 "Translation {language} figure {} requires caption, alt_text, and anchor",
@@ -902,7 +881,7 @@ pub fn localize_extracts(
     manuscript: &Path,
     language: &str,
 ) -> Result<Vec<Extract>> {
-    let language = py_repr(language);
+    let language = quoted(language);
     if base.is_empty() {
         if !is_absent(rows) {
             return Err(ValidationError::one(format!(
@@ -936,8 +915,8 @@ pub fn localize_extracts(
         let Some(row) = by_id.get(&extract.id) else {
             continue;
         };
-        let caption = row_field(row, "caption")?.py_trim().to_string();
-        let anchor = row_field(row, "anchor")?.py_trim().to_string();
+        let caption = row_field(row, "caption")?.trim().to_string();
+        let anchor = row_field(row, "anchor")?.trim().to_string();
         if caption.is_empty() || anchor.is_empty() {
             errors.push(format!(
                 "Translation {language} extract {} requires caption and anchor",
@@ -971,7 +950,7 @@ fn index_rows(items: &[Value]) -> BTreeMap<String, serde_yaml::Mapping> {
         let Some(id) = mapping.get(Value::String("id".into())) else {
             continue;
         };
-        let Ok(text) = python_text(Some(id)) else {
+        let Ok(text) = row_text("id", Some(id)) else {
             continue;
         };
         if text.is_empty() {

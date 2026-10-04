@@ -445,7 +445,7 @@ impl Call {
                     ctx.indent = ctx.indent_stack.pop().unwrap_or(-1);
                 }
                 if ctx.next_indent > ctx.indent {
-                    let cut = py_index(text.len(), ctx.indent);
+                    let cut = clamped_index(text.len(), ctx.indent);
                     text[cut..].clone_into(&mut extra);
                     text.truncate(cut);
                 }
@@ -463,7 +463,7 @@ impl Call {
     }
 }
 
-fn py_index(len: usize, index: i64) -> usize {
+fn clamped_index(len: usize, index: i64) -> usize {
     match index < 0 {
         true => len.saturating_sub(index.unsigned_abs() as usize),
         false => (index as usize).min(len),

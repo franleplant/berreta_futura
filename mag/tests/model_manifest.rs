@@ -39,3 +39,22 @@ fn a_translated_figure_path_stays_source_relative_as_in_the_base_edition() {
         .flat_map(|a| &a.figures)
         .all(|f| f.path.is_absolute()));
 }
+
+#[test]
+fn a_non_text_article_opener_is_a_load_error() {
+    let root = std::env::temp_dir().join("mag-opener-format-test");
+    let dir = root.join("editions/907");
+    std::fs::create_dir_all(&dir).expect("temp edition dir");
+    std::fs::write(dir.join("edition.yaml"), "format:\n  article_opener: 5\n").expect("write");
+    let options = LoadOptions {
+        publication_name: "Magazine",
+        source_records: None,
+        allow_missing_art: false,
+        allow_unanchored_figures: false,
+    };
+    let error = load_edition(&root, "907", &BTreeSet::new(), &options).expect_err("refused");
+    assert!(error
+        .0
+        .iter()
+        .any(|message| message == "Edition format article_opener must be text, not 5"));
+}

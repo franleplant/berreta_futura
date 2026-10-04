@@ -1,4 +1,4 @@
-use super::model::shared::py_repr;
+use super::model::shared::quoted;
 use super::trace::{authored, num};
 use anyhow::{bail, Context, Result};
 use lopdf::content::Content;
@@ -42,7 +42,7 @@ pub fn section_reader_pages(page_count: usize, section: &str) -> Result<Vec<usiz
     if !BOOKLET_SECTIONS.contains(&section) {
         bail!(
             "Unknown booklet section {}; expected one of ('all', 'interior', 'cover').",
-            py_repr(section)
+            quoted(section)
         );
     }
     if section == "all" {
