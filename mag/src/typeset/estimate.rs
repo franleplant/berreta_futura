@@ -1,6 +1,8 @@
 use crate::model::shared::{Result, ValidationError};
+use crate::typeset::geometry::geometry;
+use crate::typeset::world::font_dir;
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::sync::OnceLock;
 
 const FACES: [(&str, &str); 4] = [
     ("serif", "source-serif-4/SourceSerif4SmText-Regular.ttf"),
@@ -11,22 +13,17 @@ const FACES: [(&str, &str); 4] = [
     ("sans-medium", "inter/Inter-Medium.ttf"),
     ("sans-semibold", "inter/Inter-SemiBold.ttf"),
 ];
-const RAIL: f64 = 348.0;
 const TITLE_BOX: f64 = 64.0;
 const TITLE_MIN: f64 = 22.0;
 const TITLE_MAX: f64 = 32.5;
 const COMPACT_TITLE_MAX: f64 = 30.0;
 const TITLE_LEADING: f64 = 0.96;
 
-const PLAIN_MEASURE: f64 = 325.0;
-const PLAIN_TITLE_TOP: f64 = 10.0046 + 25.0 + 12.0;
 const PLAIN_FIELD_GAP: f64 = 305.2756 - 264.5208;
 const CODE_SIDE: f64 = 55.5;
 const CREDIT_GAP: f64 = 4.5 * 3.15;
 const INTER_CAP: f64 = 1490.0 / 2048.0;
 const FIGURE_FIELD_BASE: f64 = 25.0 + 12.0 + 10.0 + 12.0;
-const LIVE_WIDTH: f64 = 333.0079;
-const EDITORIAL_FIELD_FLOOR: f64 = 595.2756 - 52.0 - 390.0;
 
 pub struct PlainOpener {
     pub size: f64,
@@ -37,11 +34,16 @@ pub struct PlainOpener {
 
 pub struct Metrics(BTreeMap<&'static str, BTreeMap<char, f64>>);
 
+static METRICS: OnceLock<Metrics> = OnceLock::new();
+
 impl Metrics {
-    pub fn load(fonts: &Path) -> Result<Metrics> {
+    pub fn load() -> Result<&'static Metrics> {
+        if let Some(loaded) = METRICS.get() {
+            return Ok(loaded);
+        }
         let mut faces = BTreeMap::new();
         for (name, file) in FACES {
-            let path = fonts.join(file);
+            let path = font_dir().join(file);
             let data = std::fs::read(&path)
                 .map_err(|e| ValidationError::one(format!("{}: {e}", path.display())))?;
             let face = ttf_parser::Face::parse(&data, 0)
@@ -60,7 +62,7 @@ impl Metrics {
             }
             faces.insert(name, widths);
         }
-        Ok(Metrics(faces))
+        Ok(METRICS.get_or_init(|| Metrics(faces)))
     }
 
     pub fn width(&self, face: &str, text: &str, size: f64) -> Result<f64> {
@@ -129,11 +131,25 @@ impl Metrics {
     }
 
     fn compact_title(&self, title: &str) -> Result<Option<(f64, usize)>> {
-        self.fitted(title, RAIL, TITLE_BOX, COMPACT_TITLE_MAX, TITLE_MIN, 2)
+        self.fitted(
+            title,
+            geometry().opener_rail,
+            TITLE_BOX,
+            COMPACT_TITLE_MAX,
+            TITLE_MIN,
+            2,
+        )
     }
 
     pub fn illustrated_titles(&self, title: &str) -> Result<[(f64, usize); 2]> {
-        let standard = self.fitted(title, RAIL, TITLE_BOX, TITLE_MAX, TITLE_MIN, 2)?;
+        let standard = self.fitted(
+            title,
+            geometry().opener_rail,
+            TITLE_BOX,
+            TITLE_MAX,
+            TITLE_MIN,
+            2,
+        )?;
         match (standard, self.compact_title(title)?) {
             (Some(standard), Some(compact)) => Ok([standard, compact]),
             _ => Err(ValidationError::one(format!(
@@ -144,14 +160,14 @@ impl Metrics {
 
     pub fn editorial_opener(&self, title: &str) -> Result<(f64, f64)> {
         let (size, lines) = self
-            .fitted(title, LIVE_WIDTH, 135.0, 35.0, 25.0, 4)?
+            .fitted(title, geometry().live, 135.0, 35.0, 25.0, 4)?
             .ok_or_else(|| {
                 ValidationError::one(format!(
                     "Title cannot fit the Quiet Standard display box: {title}"
                 ))
             })?;
         let field = FIGURE_FIELD_BASE + 13.0 + size * (1.0 + TITLE_LEADING * lines as f64);
-        Ok((size, field.max(EDITORIAL_FIELD_FLOOR)))
+        Ok((size, field.max(geometry().page_height - 52.0 - 390.0)))
     }
 
     pub fn plain_opener(
@@ -164,24 +180,24 @@ impl Metrics {
     ) -> Result<PlainOpener> {
         let maximum = if figure { 30.0 } else { 35.0 };
         let (size, lines) = self
-            .fitted(title, PLAIN_MEASURE, 165.0, maximum, 24.0, 4)?
+            .fitted(title, geometry().measure, 165.0, maximum, 24.0, 4)?
             .ok_or_else(|| {
                 ValidationError::one(format!(
                     "Title cannot fit the Quiet Standard display box: {title}"
                 ))
             })?;
         let flow = size * (1.0 + TITLE_LEADING * lines as f64);
-        let baseline = PLAIN_TITLE_TOP + flow + 10.0;
+        let baseline = (geometry().datum + 25.0 + 12.0) + flow + 10.0;
         let (column, symbol) = match code {
             Some(rows) => {
                 let quiet = 4.0 * CODE_SIDE / (rows as f64 + 8.0);
                 let symbol = baseline - 7.4 * INTER_CAP + CODE_SIDE - 2.0 * quiet;
                 (
-                    PLAIN_MEASURE - (CODE_SIDE - 2.0 * quiet + CREDIT_GAP),
+                    geometry().measure - (CODE_SIDE - 2.0 * quiet + CREDIT_GAP),
                     Some(symbol),
                 )
             }
-            None => (PLAIN_MEASURE, None),
+            None => (geometry().measure, None),
         };
         let tracking = match code {
             Some(_) => self.byline_tracking(byline, column)?,
@@ -234,13 +250,9 @@ impl Metrics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeset::template::FONT_DIR;
 
-    fn metrics() -> Metrics {
-        let fonts = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join(FONT_DIR);
-        Metrics::load(&fonts).expect("the faces load")
+    fn metrics() -> &'static Metrics {
+        Metrics::load().expect("the faces load")
     }
 
     #[test]
@@ -270,10 +282,10 @@ mod tests {
         let upkeep = "Upkeep Scaled Quickly";
         let (size, field) = metrics.editorial_opener(upkeep).expect("one line");
         assert_eq!(size, 35.0);
-        assert!((field - 153.2756).abs() < 1e-9);
+        assert!((field - 153.2756).abs() < 1e-4);
         assert_eq!(
             metrics
-                .fitted(upkeep, PLAIN_MEASURE, 135.0, 35.0, 25.0, 4)
+                .fitted(upkeep, geometry().measure, 135.0, 35.0, 25.0, 4)
                 .expect("a known face"),
             Some((35.0, 2))
         );

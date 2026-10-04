@@ -2,6 +2,7 @@ use crate::typeset::content::{File, Tree};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 use typst::diag::{FileError, FileResult};
 use typst::foundations::{Bytes, Datetime, Duration};
 use typst::text::{Font, FontBook};
@@ -14,10 +15,17 @@ pub const TEMPLATE: &str = "/template.typ";
 pub const PRELUDE: &str = "#import \"/template.typ\": *\n";
 const RASTERS: [&str; 3] = [".png", ".jpg", ".jpeg"];
 
-pub struct Sources {
+struct Shared {
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Vec<Font>,
+    rasters: Mutex<HashMap<FileId, FileResult<Bytes>>>,
+}
+
+static SHARED: OnceLock<Shared> = OnceLock::new();
+
+pub struct Sources {
+    shared: &'static Shared,
     main: FileId,
     texts: HashMap<FileId, Source>,
 }
@@ -52,9 +60,25 @@ fn faces(dir: &Path) -> Result<Vec<Font>> {
     Ok(fonts)
 }
 
+pub fn font_dir() -> &'static Path {
+    Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts"))
+}
+
+fn shared() -> Result<&'static Shared> {
+    if let Some(loaded) = SHARED.get() {
+        return Ok(loaded);
+    }
+    let fonts = faces(font_dir())?;
+    Ok(SHARED.get_or_init(|| Shared {
+        library: LazyHash::new(Library::default()),
+        book: LazyHash::new(FontBook::from_fonts(&fonts)),
+        fonts,
+        rasters: Mutex::default(),
+    }))
+}
+
 impl Sources {
-    pub fn new(tree: &Tree, template: &str, root: &str, font_dir: &Path) -> Result<Self> {
-        let fonts = faces(font_dir)?;
+    pub fn new(tree: &Tree, template: &str, root: &str) -> Result<Self> {
         let mut texts = HashMap::new();
         for File { path, source } in &tree.files {
             let file = id(&format!("/{path}"))?;
@@ -65,9 +89,7 @@ impl Sources {
             texts.insert(file, Source::new(file, text.to_string()));
         }
         Ok(Self {
-            library: LazyHash::new(Library::default()),
-            book: LazyHash::new(FontBook::from_fonts(&fonts)),
-            fonts,
+            shared: shared()?,
             main: id(ROOT)?,
             texts,
         })
@@ -76,11 +98,11 @@ impl Sources {
 
 impl World for Sources {
     fn library(&self) -> &LazyHash<Library> {
-        &self.library
+        &self.shared.library
     }
 
     fn book(&self) -> &LazyHash<FontBook> {
-        &self.book
+        &self.shared.book
     }
 
     fn main(&self) -> FileId {
@@ -100,16 +122,25 @@ impl World for Sources {
             .iter()
             .any(|kind| path.to_lowercase().ends_with(kind))
         {
-            return std::fs::read(path)
-                .map(Bytes::new)
-                .map_err(|error| FileError::from_io(error, Path::new(path)));
+            return self
+                .shared
+                .rasters
+                .lock()
+                .expect("the raster cache is not poisoned")
+                .entry(file)
+                .or_insert_with(|| {
+                    std::fs::read(path)
+                        .map(Bytes::new)
+                        .map_err(|error| FileError::from_io(error, Path::new(path)))
+                })
+                .clone();
         }
         self.source(file)
             .map(|source| Bytes::from_string(source.text().to_string()))
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        self.fonts.get(index).cloned()
+        self.shared.fonts.get(index).cloned()
     }
 
     fn today(&self, _offset: Option<Duration>) -> Option<Datetime> {

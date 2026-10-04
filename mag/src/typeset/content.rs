@@ -13,6 +13,7 @@ use crate::sourcecodes::source_code_directory;
 use crate::typeset::estimate::Metrics;
 use crate::typeset::hyphen::{Hyphenation, Hyphenator};
 use crate::typeset::media::pixels;
+use crate::typeset::world::font_dir;
 use std::cell::Cell;
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -62,7 +63,6 @@ pub struct Inputs<'a> {
     pub root: &'a Path,
     pub edition_id: &'a str,
     pub publication_name: &'a str,
-    pub fonts: &'a Path,
     pub allow_missing_art: bool,
     pub allow_unanchored_figures: bool,
 }
@@ -87,19 +87,18 @@ pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
             allow_unanchored_figures: inputs.allow_unanchored_figures,
         },
     )?;
-    compose(&edition, inputs.fonts, Hyphenation::PLAIN, &[])
+    compose(&edition, Hyphenation::PLAIN, &[])
 }
 
 pub fn compose(
     edition: &Edition,
-    fonts: &Path,
     hyphenation: Hyphenation,
     keeps: &[Option<usize>],
 ) -> Result<Tree> {
-    let settable = settable_codepoints(fonts).map_err(|error| refusal(&error))?;
+    let settable = settable_codepoints(font_dir()).map_err(|error| refusal(&error))?;
     let tree = Writer {
         edition,
-        metrics: &Metrics::load(fonts)?,
+        metrics: Metrics::load()?,
         keeps,
         standfirsts: Cell::new(0),
         illustrated: edition.format.article_opener.as_deref().map(str::trim) == Some(ILLUSTRATED),
@@ -1258,10 +1257,6 @@ mod tests {
             .to_path_buf()
     }
 
-    fn fonts() -> PathBuf {
-        repository().join("mag/assets/fonts")
-    }
-
     fn fixtures() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/typeset_fixtures")
     }
@@ -1276,7 +1271,6 @@ mod tests {
             root,
             edition_id: Box::leak(edition_id.to_string().into_boxed_str()),
             publication_name: PUBLICATION,
-            fonts: Box::leak(fonts().into_boxed_path()),
             allow_missing_art: false,
             allow_unanchored_figures: false,
         }
@@ -1474,22 +1468,21 @@ mod tests {
         let root = corpus();
         let base = crate::typeset::layout::edition(&root, "906", PUBLICATION).expect("906 loads");
         let es = crate::model::manifest::load_translation(&root, &base, "es").expect("es loads");
-        let tree =
-            compose(&es, &fonts(), Hyphenation::PLAIN, &[]).expect("the Spanish edition composes");
+        let tree = compose(&es, Hyphenation::PLAIN, &[]).expect("the Spanish edition composes");
         let text: String = tree.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#set text(lang: \"es\", region: \"AR\")"));
         assert!(text.contains("[Artículo 01]"));
         assert!(text.contains("res\u{ad}pon\u{ad}sa\u{ad}bi\u{ad}li\u{ad}dad"));
         assert!(text.contains("level: 2)[Dónde se dividen las palabras]"));
         assert!(text.contains("Una columna justificada corta las palabras"));
-        let english = compose(&base, &fonts(), Hyphenation::PLAIN, &[])
-            .expect("the English edition composes");
+        let english =
+            compose(&base, Hyphenation::PLAIN, &[]).expect("the English edition composes");
         assert!(english.files.iter().all(|f| !f.source.contains('\u{ad}')));
         let native = Hyphenation {
             english: true,
             ..Hyphenation::PLAIN
         };
-        let hyphenated = compose(&base, &fonts(), native, &[]).expect("it composes");
+        let hyphenated = compose(&base, native, &[]).expect("it composes");
         let text: String = hyphenated.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#text(hyphenate: true)[A cache budget limits"));
         assert!(text.contains("level: 2)[Budgets]"));

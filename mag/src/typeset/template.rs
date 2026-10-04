@@ -2,7 +2,6 @@ use crate::typeset::content::{compose, File, Tree};
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
-use std::path::Path;
 use typst::foundations::{Smart, Value};
 use typst::introspection::MetadataElem;
 use typst::layout::{Frame, FrameItem};
@@ -11,22 +10,20 @@ use typst_pdf::{PdfOptions, PdfStandards};
 
 pub const TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template.typ");
 pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
-pub const FONT_DIR: &str = "mag/assets/fonts";
 const IDENT: &str = "mag-typeset-reader";
 
-pub fn world(tree: &Tree, font_dir: &Path) -> Result<Sources> {
-    Sources::new(tree, TEMPLATE_TYP, ROOT_TYP, font_dir)
+pub fn world(tree: &Tree) -> Result<Sources> {
+    Sources::new(tree, TEMPLATE_TYP, ROOT_TYP)
 }
 
 pub fn composed(
     edition: &crate::model::manifest::Edition,
-    font_dir: &Path,
     hyphenation: Hyphenation,
 ) -> Result<Tree> {
-    let tree = compose(edition, font_dir, hyphenation, &[])?;
-    let keeps = standfirst_keeps(&document(&world(&tree, font_dir)?)?);
+    let tree = compose(edition, hyphenation, &[])?;
+    let keeps = standfirst_keeps(&document(&world(&tree)?)?);
     Ok(match keeps.iter().any(Option::is_some) {
-        true => compose(edition, font_dir, hyphenation, &keeps)?,
+        true => compose(edition, hyphenation, &keeps)?,
         false => tree,
     })
 }
@@ -49,12 +46,8 @@ pub fn standfirst_keeps(document: &PagedDocument) -> Vec<Option<usize>> {
 
 const PLATE_CONTENT: &str = "#closing-signature(none)\n";
 
-pub fn paginate(
-    tree: Tree,
-    font_dir: &Path,
-    hyphenation: Hyphenation,
-) -> Result<(Tree, PagedDocument)> {
-    let (tree, bare) = crate::typeset::runt::bound(tree, font_dir, hyphenation)?;
+pub fn paginate(tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDocument)> {
+    let (tree, bare) = crate::typeset::runt::bound(tree, hyphenation)?;
     let content =
         bare.pages().len().checked_sub(2).ok_or_else(|| {
             anyhow::anyhow!("the bare document has fewer than the two cover pages")
@@ -70,7 +63,7 @@ pub fn paginate(
     let tree = Tree {
         files: files.collect(),
     };
-    let plated = document(&world(&tree, font_dir)?)?;
+    let plated = document(&world(&tree)?)?;
     let plates = plated
         .introspector()
         .elements()
@@ -106,6 +99,7 @@ static SEEN: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
 
 pub fn document(world: &Sources) -> Result<PagedDocument> {
     let compiled = typst::compile::<PagedDocument>(world);
+    typst::comemo::evict(10);
     for warning in &compiled.warnings {
         let mut seen = SEEN.lock().expect("the warning list is not poisoned");
         if !seen.contains(&warning.message.to_string()) {
@@ -187,7 +181,7 @@ mod tests {
     use crate::typeset::content::{pipeline, File, Inputs};
     use lopdf::{Document, Object};
     use std::collections::BTreeSet;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use typst::layout::{Abs, Point, Size};
     use typst::visualize::{FillRule, Paint};
 
@@ -200,28 +194,20 @@ mod tests {
     const MEASURE_FLOOR_PT: f64 = 325.010_000;
     const MEASURE_CEILING_PT: f64 = 325.040_000;
 
-    fn roots() -> (&'static Path, &'static Path) {
-        let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let repo = crate_dir
-            .parent()
-            .expect("the crate sits inside the repository");
-        (
-            Box::leak(
-                crate_dir
-                    .join("tests/typeset_fixtures/corpus")
-                    .into_boxed_path(),
-            ),
-            Box::leak(repo.join(FONT_DIR).into_boxed_path()),
+    fn roots() -> &'static Path {
+        Box::leak(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("tests/typeset_fixtures/corpus")
+                .into_boxed_path(),
         )
     }
 
     fn fixture_tree(edition_id: &'static str) -> Tree {
-        let (root, font_dir) = roots();
+        let root = roots();
         pipeline(&Inputs {
             root,
             edition_id,
             publication_name: "Fixture Press",
-            fonts: font_dir,
             allow_missing_art: false,
             allow_unanchored_figures: false,
         })
@@ -229,9 +215,8 @@ mod tests {
     }
 
     fn fixture_pdf(edition_id: &'static str) -> Vec<u8> {
-        let (_, font_dir) = roots();
         let tree = fixture_tree(edition_id);
-        compile(&world(&tree, font_dir).expect("the world builds")).expect("the fixture compiles")
+        compile(&world(&tree).expect("the world builds")).expect("the fixture compiles")
     }
 
     fn media_boxes(pdf: &[u8]) -> Vec<[f64; 4]> {
@@ -279,20 +264,13 @@ mod tests {
     }
 
     fn pages_of(tree: &Tree, template: &str) -> Result<usize> {
-        let (_, font_dir) = roots();
-        let world = Sources::new(tree, template, ROOT_TYP, font_dir)?;
+        let world = Sources::new(tree, template, ROOT_TYP)?;
         Ok(media_boxes(&compile(&world)?).len())
     }
 
     fn refusal(main: &str) -> String {
-        let (_, font_dir) = roots();
-        let world = Sources::new(
-            &synthetic(main.to_string()),
-            TEMPLATE_TYP,
-            ROOT_TYP,
-            font_dir,
-        )
-        .expect("the world builds");
+        let world = Sources::new(&synthetic(main.to_string()), TEMPLATE_TYP, ROOT_TYP)
+            .expect("the world builds");
         let Err(error) = document(&world) else {
             panic!("the document is refused");
         };
@@ -490,11 +468,10 @@ mod tests {
 
     #[test]
     fn the_page_cap_refuses_an_article_past_seven_reader_pages() {
-        let (_, font_dir) = roots();
         let tree = fixture_tree("901");
         let capped = TEMPLATE_TYP.replace("#let ARTICLE-PAGE-CAP = 7", "#let ARTICLE-PAGE-CAP = 1");
         assert_ne!(capped, TEMPLATE_TYP, "the cap constant moved");
-        let world = Sources::new(&tree, &capped, ROOT_TYP, font_dir).expect("the world builds");
+        let world = Sources::new(&tree, &capped, ROOT_TYP).expect("the world builds");
         let error = compile(&world).expect_err("a one-page cap must refuse the fixture");
         assert!(
             error.to_string().contains("the hard cap is 1"),
@@ -506,13 +483,12 @@ mod tests {
 
     #[test]
     fn a_verbatim_piece_is_not_refused_by_the_article_cap() {
-        let (_, font_dir) = roots();
         let tree = synthetic(format!(
             "#piece(id: \"p\", kind: \"verbatim\", short-title: \"P\", opener: \"plain\")[\n{}]\n",
             prose(400)
         ));
         let capped = TEMPLATE_TYP.replace("#let ARTICLE-PAGE-CAP = 7", "#let ARTICLE-PAGE-CAP = 1");
-        let world = Sources::new(&tree, &capped, ROOT_TYP, font_dir).expect("the world builds");
+        let world = Sources::new(&tree, &capped, ROOT_TYP).expect("the world builds");
         assert!(
             compile(&world).is_ok(),
             "a verbatim overrun is a warning in render.py:2085-2091, never a refusal"
@@ -521,7 +497,7 @@ mod tests {
             "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n{}]\n",
             prose(400)
         ));
-        let world = Sources::new(&article, &capped, ROOT_TYP, font_dir).expect("the world builds");
+        let world = Sources::new(&article, &capped, ROOT_TYP).expect("the world builds");
         assert!(
             compile(&world).is_err(),
             "the same run under kind article must be refused, or the branch is vacuous"
@@ -530,7 +506,6 @@ mod tests {
 
     #[test]
     fn the_opener_title_is_set_with_its_tracking() {
-        let (_, font_dir) = roots();
         let tree = fixture_tree("901");
         let untracked = TEMPLATE_TYP.replace(
             "#let OPENER-TITLE-TRACKING = -0.045",
@@ -538,7 +513,7 @@ mod tests {
         );
         assert_ne!(untracked, TEMPLATE_TYP, "the tracking constant moved");
         let render = |template: &str| {
-            compile(&Sources::new(&tree, template, ROOT_TYP, font_dir).expect("the world builds"))
+            compile(&Sources::new(&tree, template, ROOT_TYP).expect("the world builds"))
                 .expect("the opener run compiles")
         };
         assert_ne!(
@@ -550,7 +525,6 @@ mod tests {
 
     #[test]
     fn the_illustrated_opener_owns_its_own_page() {
-        let (_, font_dir) = roots();
         let tree = fixture_tree("901");
         let plain = TEMPLATE_TYP.replace(
             "#let ILLUSTRATED = \"illustrated_paper_spots_v1\"",
@@ -558,7 +532,7 @@ mod tests {
         );
         assert_ne!(plain, TEMPLATE_TYP, "the opener name moved");
         let illustrated = pages_of(&tree, TEMPLATE_TYP).expect("the illustrated run compiles");
-        let flowed = Sources::new(&tree, &plain, ROOT_TYP, font_dir)
+        let flowed = Sources::new(&tree, &plain, ROOT_TYP)
             .and_then(|world| compile(&world))
             .map(|pdf| media_boxes(&pdf).len())
             .expect("the flowed run compiles");
@@ -706,8 +680,7 @@ mod tests {
     }
 
     fn laid(tree: &Tree, template: &str) -> Vec<Vec<Mark>> {
-        let (_, font_dir) = roots();
-        let world = Sources::new(tree, template, ROOT_TYP, font_dir).expect("the world builds");
+        let world = Sources::new(tree, template, ROOT_TYP).expect("the world builds");
         document(&world)
             .expect("the run compiles")
             .pages()
@@ -850,9 +823,8 @@ mod tests {
     }
 
     fn settled(tree: Tree) -> (Tree, Vec<Vec<Mark>>) {
-        let (_, font_dir) = roots();
-        let (tree, doc) = crate::typeset::runt::bound(tree, font_dir, Hyphenation::PLAIN)
-            .expect("the run settles");
+        let (tree, doc) =
+            crate::typeset::runt::bound(tree, Hyphenation::PLAIN).expect("the run settles");
         let pages = doc.pages().iter().map(|page| {
             let mut out = vec![];
             marks(&page.frame, Point::zero(), &mut out);
@@ -1014,7 +986,6 @@ mod tests {
 
     #[test]
     fn a_jpeg_figure_is_embedded_as_its_own_bytes_exif_and_all() {
-        let (_, font_dir) = roots();
         let path = format!(
             "{}/tests/typeset_fixtures/media/exif.jpg",
             env!("CARGO_MANIFEST_DIR")
@@ -1030,7 +1001,7 @@ mod tests {
              layout: \"evidence_band\", word: \"Figure\", alt: \"a\", path: \"{path}\", pixels: (24, 16))\
              [#figure-caption[Cap.]]\n]\n"
         ));
-        let pdf = compile(&world(&tree, font_dir).expect("the world builds")).expect("it compiles");
+        let pdf = compile(&world(&tree).expect("the world builds")).expect("it compiles");
         let doc = Document::load_mem(&pdf).expect("the emitted bytes are a PDF");
         let embedded: Vec<&[u8]> = doc
             .objects
@@ -1107,9 +1078,8 @@ mod tests {
 
     #[test]
     fn closing_plates_close_the_signature_in_the_adapter_s_slots_and_order() {
-        let (_, font_dir) = roots();
         let paged = |articles, plates| {
-            paginate(plated(articles, plates), font_dir, Hyphenation::PLAIN)
+            paginate(plated(articles, plates), Hyphenation::PLAIN)
                 .map(|(_, doc)| pdf(&doc).expect("a PDF"))
         };
         let pdf = paged(2, 7).expect("the plated run compiles");
@@ -1124,9 +1094,8 @@ mod tests {
             format!("{short:#}").contains("needs 7 closing plates"),
             "{short:#}"
         );
-        let unpaged =
-            compile(&Sources::new(&plated(2, 7), TEMPLATE_TYP, ROOT_TYP, font_dir).unwrap())
-                .expect("the bare run compiles");
+        let unpaged = compile(&Sources::new(&plated(2, 7), TEMPLATE_TYP, ROOT_TYP).unwrap())
+            .expect("the bare run compiles");
         assert!(
             plate_pages(&unpaged).is_empty(),
             "plates print before the content is measured"
@@ -1274,9 +1243,8 @@ mod tests {
     }
 
     fn opener_paints(template: &str) -> Vec<String> {
-        let (_, font_dir) = roots();
-        let world = Sources::new(&fixture_tree("901"), template, ROOT_TYP, font_dir)
-            .expect("the world builds");
+        let world =
+            Sources::new(&fixture_tree("901"), template, ROOT_TYP).expect("the world builds");
         let document = document(&world).expect("the fixture compiles");
         document
             .pages()
@@ -1408,11 +1376,9 @@ mod tests {
 
     #[test]
     fn the_reader_carries_its_title_and_a_bookmark_per_heading_nested_by_heading_level() {
-        let (_, font_dir) = roots();
         for edition_id in ["900", "901"] {
             let tree = fixture_tree(edition_id);
-            let pdf =
-                compile(&world(&tree, font_dir).expect("the world builds")).expect("it compiles");
+            let pdf = compile(&world(&tree).expect("the world builds")).expect("it compiles");
             let (title, found) = outline(&pdf);
             let want = expected_outline(&tree);
             assert!(want.len() >= 3, "fixture {edition_id} carries {want:?}");
@@ -1470,8 +1436,7 @@ mod tests {
     #[test]
     fn the_fixture_with_tail_art_settles_and_draws_the_end_tick() {
         let tree = fixture_tree("900");
-        let compiled =
-            typst::compile::<PagedDocument>(&world(&tree, roots().1).expect("the world builds"));
+        let compiled = typst::compile::<PagedDocument>(&world(&tree).expect("the world builds"));
         let unsettled: Vec<_> = compiled
             .warnings
             .iter()
@@ -1512,8 +1477,8 @@ mod tests {
 
     #[test]
     fn every_body_image_is_clipped_to_its_own_box() {
-        let doc = document(&world(&fixture_tree("900"), roots().1).expect("the world builds"))
-            .expect("it compiles");
+        let doc =
+            document(&world(&fixture_tree("900")).expect("the world builds")).expect("it compiles");
         let mut found = vec![];
         for page in doc.pages() {
             clipped_images(&page.frame, None, &mut found);
@@ -1574,8 +1539,7 @@ mod tests {
     }
 
     fn page_marks(tree: &Tree, keep: impl Fn(&[Mark]) -> bool) -> Vec<Vec<Mark>> {
-        let (_, font_dir) = roots();
-        let world = world(tree, font_dir).expect("the world builds");
+        let world = world(tree).expect("the world builds");
         document(&world)
             .expect("the fixture compiles")
             .pages()
@@ -1650,9 +1614,7 @@ mod tests {
             "if ink == none { run } else { text(fill: ink, run) }",
             "run",
         );
-        let (_, font_dir) = roots();
-        let world = Sources::new(&fixture_tree("902"), &plain, ROOT_TYP, font_dir)
-            .expect("the world builds");
+        let world = Sources::new(&fixture_tree("902"), &plain, ROOT_TYP).expect("the world builds");
         let mut flat = vec![];
         for page in document(&world).expect("it compiles").pages() {
             marks(&page.frame, Point::zero(), &mut flat);
@@ -1892,10 +1854,8 @@ mod tests {
 
     #[test]
     fn the_reader_declares_the_edition_locale_as_its_language() {
-        let (_, font_dir) = roots();
         let lang = |tree: &Tree| {
-            let pdf =
-                compile(&world(tree, font_dir).expect("the world builds")).expect("it compiles");
+            let pdf = compile(&world(tree).expect("the world builds")).expect("it compiles");
             let doc = Document::load_mem(&pdf).expect("a PDF");
             match doc.catalog().and_then(|c| c.get(b"Lang")) {
                 Ok(Object::String(bytes, _)) => String::from_utf8_lossy(bytes).into_owned(),

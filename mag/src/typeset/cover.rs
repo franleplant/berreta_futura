@@ -718,7 +718,7 @@ mod tests {
             marker.as_bytes().to_vec(),
         ));
         document
-            .add_object(dictionary! {"Type" => "Page", "Parent" => parent, "Contents" => contents, "MediaBox" => vec![0.into(), 0.into(), 419.527559.into(), 595.275591.into()]})
+            .add_object(dictionary! {"Type" => "Page", "Parent" => parent, "Contents" => contents, "MediaBox" => vec![0.into(), 0.into(), PAGE_WIDTH.into(), PAGE_HEIGHT.into()]})
             .into()
     }
 

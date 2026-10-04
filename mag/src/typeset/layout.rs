@@ -2,9 +2,9 @@ use crate::model::kinds::{ContentMode, RenderOperation};
 use crate::model::manifest::{load_edition, Edition, LoadOptions, Records};
 use crate::model::records::load_records;
 use crate::typeset::content::Tree;
+use crate::typeset::geometry::geometry;
 use crate::typeset::legible::{ENLARGED, ENLARGED_MIN_PPI};
 use crate::typeset::media::pixels;
-use crate::typeset::template::TEMPLATE_TYP;
 use anyhow::{bail, Context, Result};
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -59,14 +59,6 @@ pub struct Measured {
     pub total_pages: usize,
     pub page_height: f64,
     pub content_bottom: f64,
-}
-
-pub(crate) fn declared_pt(name: &str) -> Result<f64> {
-    let prefix = format!("#let {name} = ");
-    TEMPLATE_TYP
-        .lines()
-        .find_map(|line| line.strip_prefix(&prefix)?.strip_suffix("pt")?.parse().ok())
-        .with_context(|| format!("the template declares no {name} in points"))
 }
 
 fn placed(value: &Typed, page: usize, x: f64, y: f64) -> Result<Placed> {
@@ -237,7 +229,7 @@ pub fn measure(document: &PagedDocument) -> Result<Measured> {
         tails,
         total_pages: document.pages().len(),
         page_height,
-        content_bottom: page_height - declared_pt("MARGIN-BOTTOM")?,
+        content_bottom: page_height - geometry().margin_bottom,
     })
 }
 
@@ -421,10 +413,9 @@ pub fn emitted_figures(tree: &Tree) -> Vec<(String, String)> {
 }
 
 fn page_cap(mode: ContentMode) -> usize {
-    if mode == ContentMode::Verbatim {
-        10
-    } else {
-        7
+    match mode {
+        ContentMode::Verbatim => geometry().verbatim_cap,
+        _ => geometry().article_cap,
     }
 }
 
@@ -522,7 +513,7 @@ fn tail_art(article: &crate::model::manifest::Article, measured: &Measured) -> R
     };
     let printed = tail.is_some_and(|t| t.printed);
     if let (Some(path), Some(t)) = (&article.tail_art, tail.filter(|t| t.printed)) {
-        let ppi = effective_ppi(pixels(path)?, declared_pt("MEASURE")?, t.height);
+        let ppi = effective_ppi(pixels(path)?, geometry().measure, t.height);
         if ppi < MIN_FIGURE_PPI {
             bail!(
                 "Article tail art {} resolves to {ppi:.1} ppi; the minimum is {MIN_FIGURE_PPI:.0} ppi",
@@ -675,37 +666,26 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
 mod tests {
     use super::*;
     use crate::typeset::content::{pipeline, File, Inputs};
-    use crate::typeset::template::{self, FONT_DIR, ROOT_TYP};
+    use crate::typeset::template::{self, ROOT_TYP};
     use crate::typeset::world::Sources;
     use std::collections::BTreeSet;
     use std::path::PathBuf;
 
-    fn roots() -> (PathBuf, PathBuf) {
-        let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let repo = crate_dir
-            .parent()
-            .expect("the crate sits inside the repository")
-            .to_path_buf();
-        (
-            crate_dir.join("tests/typeset_fixtures/corpus"),
-            repo.join(FONT_DIR),
-        )
+    fn root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/typeset_fixtures/corpus")
     }
 
     fn compiled(tree: &Tree) -> PagedDocument {
-        let (_, fonts) = roots();
-        let world =
-            Sources::new(tree, template::TEMPLATE_TYP, ROOT_TYP, &fonts).expect("the world builds");
+        let world = Sources::new(tree, template::TEMPLATE_TYP, ROOT_TYP).expect("the world builds");
         template::document(&world).expect("the tree compiles")
     }
 
     fn fixture(edition_id: &str) -> (Tree, PagedDocument, Edition, PathBuf) {
-        let (root, fonts) = roots();
+        let root = root();
         let tree = pipeline(&Inputs {
             root: &root,
             edition_id,
             publication_name: "Fixture Press",
-            fonts: &fonts,
             allow_missing_art: false,
             allow_unanchored_figures: false,
         })

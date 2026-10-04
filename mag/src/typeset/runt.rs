@@ -1,10 +1,10 @@
 use crate::typeset::content::{File, Tree};
 use crate::typeset::estimate::Metrics;
+use crate::typeset::geometry::geometry;
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::template::{document, world};
 use crate::typeset::world::PRELUDE;
 use anyhow::{bail, Result};
-use std::path::Path;
 use typst::introspection::{Location, Tag};
 use typst::layout::{FrameItem, Point, Transform};
 use typst::text::TextItem;
@@ -12,13 +12,7 @@ use typst::{World, WorldExt};
 use typst_layout::PagedDocument;
 use typst_syntax::{FileId, Span};
 
-const PROSE: [(&str, f64); 3] = [
-    ("mag-prose", 0.0),
-    ("mag-prose-band", 4.00395),
-    ("mag-prose-compact", -32.5),
-];
-const MEASURE: f64 = 325.0;
-const COLUMN_RIGHT: f64 = 4.00395 + MEASURE;
+const PROSE: [&str; 3] = ["mag-prose", "mag-prose-band", "mag-prose-compact"];
 const RUNT_MEASURE_FRACTION: f64 = 0.15;
 const RUNT_MAX_RAG_FRACTION: f64 = 0.33;
 const PASSES: usize = 6;
@@ -110,11 +104,11 @@ fn walk(
             FrameItem::Tag(Tag::Start(content, _)) => {
                 let edge = content
                     .label()
-                    .and_then(|l| PROSE.iter().find(|(name, _)| *name == l.resolve().as_str()));
-                if let (Some((_, shift)), Some(loc)) = (edge, content.location()) {
+                    .and_then(|l| PROSE.iter().position(|name| *name == l.resolve().as_str()));
+                if let (Some(edge), Some(loc)) = (edge, content.location()) {
                     open.push(loc);
                     if !blocks.iter().any(|(l, _)| *l == loc) {
-                        let right = right + shift;
+                        let right = right + [0.0, geometry().rail, -geometry().compact_inset][edge];
                         blocks.push((
                             loc,
                             Block {
@@ -231,7 +225,7 @@ fn prose_blocks(doc: &PagedDocument) -> Vec<(Location, Block)> {
             &items[..body],
             Point::zero(),
             page,
-            margin + COLUMN_RIGHT,
+            margin + geometry().rail + geometry().measure,
             &mut open,
             &mut blocks,
         );
@@ -395,16 +389,12 @@ fn bind(tree: Tree, found: &[Edit]) -> Tree {
     }
 }
 
-pub fn bound(
-    mut tree: Tree,
-    font_dir: &Path,
-    hyphenation: Hyphenation,
-) -> Result<(Tree, PagedDocument)> {
-    let metrics = Metrics::load(font_dir).map_err(|e| anyhow::anyhow!("{e}"))?;
+pub fn bound(mut tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDocument)> {
+    let metrics = Metrics::load().map_err(|e| anyhow::anyhow!("{e}"))?;
     for _ in 0..PASSES {
-        let sources = world(&tree, font_dir)?;
+        let sources = world(&tree)?;
         let doc = document(&sources)?;
-        let runts = binds(&doc, &sources, &metrics, hyphenation.english)?.into_iter();
+        let runts = binds(&doc, &sources, metrics, hyphenation.english)?.into_iter();
         let ladders = match hyphenation.limit_ladders {
             true => laddered(&doc, &sources),
             false => Vec::new(),
@@ -425,8 +415,6 @@ pub fn bound(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::typeset::template::FONT_DIR;
-    use std::path::PathBuf;
 
     const RUNT: &str = "7\\:10\\:25 AM EST\\, July 30\\. A malformed BMP from a RIPE address\\, \
         presenting as Chrome 131\\.0\\.0 on Windows 10\\. We initially assumed whoever built it had \
@@ -436,13 +424,6 @@ mod tests {
         Ethiack\\, one of the vulnerability’s discoverers\\, pointed out in a public exchange with \
         me on X that this PoC was the first to use a malformed BMP\\.";
     const FULL: &str = "A closing line that ends well inside the measure\\.";
-
-    fn reader_fonts() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .expect("the crate sits in the repository")
-            .join(FONT_DIR)
-    }
 
     fn piece() -> Tree {
         Tree {
@@ -514,9 +495,8 @@ mod tests {
 
     #[test]
     fn a_band_caption_is_bound_on_the_band_s_own_measure() {
-        let fonts = reader_fonts();
-        let (band, _) = bound(captioned("evidence_band_prose"), &fonts, Hyphenation::PLAIN)
-            .expect("the binds settle");
+        let (band, _) =
+            bound(captioned("evidence_band_prose"), Hyphenation::PLAIN).expect("the binds settle");
         assert!(
             !band.files[0].source.contains("effort goes\\.")
                 && band.files[0]
@@ -526,7 +506,7 @@ mod tests {
             band.files[0].source
         );
         let (column, _) =
-            bound(captioned("column_plate"), &fonts, Hyphenation::PLAIN).expect("the binds settle");
+            bound(captioned("column_plate"), Hyphenation::PLAIN).expect("the binds settle");
         assert!(
             column.files[0].source.contains("effort goes\\."),
             "{}",
@@ -536,14 +516,12 @@ mod tests {
 
     #[test]
     fn a_one_word_last_line_is_bound_to_its_neighbour_as_the_adapter_binds_it() {
-        let fonts = reader_fonts();
-        let bare =
-            document(&world(&piece(), &fonts).expect("the world builds")).expect("it compiles");
+        let bare = document(&world(&piece()).expect("the world builds")).expect("it compiles");
         assert_eq!(
             last_lines(&bare),
             ["BMP.", "A closing line that ends well inside the measure."]
         );
-        let (tree, doc) = bound(piece(), &fonts, Hyphenation::PLAIN).expect("the binds settle");
+        let (tree, doc) = bound(piece(), Hyphenation::PLAIN).expect("the binds settle");
         let source = &tree.files[0].source;
         assert!(source.contains("malformed\\u{a0}BMP\\."), "{source}");
         assert_eq!(source.matches(NO_BREAK).count(), 1, "{source}");

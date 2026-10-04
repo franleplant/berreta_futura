@@ -1,6 +1,6 @@
 use crate::model::kinds::{FigureFit, FigureLayout};
 use crate::model::manifest::Edition;
-use crate::typeset::layout::declared_pt;
+use crate::typeset::geometry::geometry;
 use crate::typeset::media::pixels;
 use anyhow::{Context, Result};
 use std::path::Path;
@@ -12,7 +12,6 @@ pub const ENLARGED: [FigureLayout; 2] = [FigureLayout::FullBand, FigureLayout::R
 const MIN_WORDS: usize = 8;
 const MIN_CONFIDENCE: f64 = 60.0;
 const CACHE: &str = ".magazine/legibility";
-const PAGE_WIDTH_PT: f64 = 148.0 / 25.4 * 72.0;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Geometry {
@@ -34,17 +33,18 @@ pub struct Change {
 }
 
 impl Geometry {
-    pub fn from_template() -> Result<Self> {
-        Ok(Self {
-            live: PAGE_WIDTH_PT - declared_pt("MARGIN-INNER")? - declared_pt("MARGIN-OUTER")?,
-            measure: declared_pt("MEASURE")?,
-            inset: declared_pt("COMPACT-BAND-INSET")?,
-            cap: declared_pt("FIGURE-MAX-HEIGHT")?,
-            compact_cap: declared_pt("COMPACT-FIGURE-MAX-HEIGHT")?,
-            full_cap: declared_pt("FULL-FIGURE-MAX-HEIGHT")?,
-            plate_length: declared_pt("ROTATED-PLATE-LENGTH")?,
-            plate_depth: declared_pt("ROTATED-PLATE-DEPTH")?,
-        })
+    pub fn from_template() -> Self {
+        let g = geometry();
+        Self {
+            live: g.live,
+            measure: g.measure,
+            inset: g.compact_inset,
+            cap: g.figure_cap,
+            compact_cap: g.compact_figure_cap,
+            full_cap: g.full_figure_cap,
+            plate_length: g.plate_length,
+            plate_depth: g.plate_depth,
+        }
     }
 
     pub fn width(&self, layout: FigureLayout, (w, h): (u32, u32)) -> f64 {
@@ -111,7 +111,7 @@ fn require(binary: &str) -> Result<()> {
 }
 
 pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
-    let geometry = Geometry::from_template()?;
+    let geometry = Geometry::from_template();
     for article in &mut edition.articles {
         for figure in &mut article.figures {
             let fixed = figure.fit == FigureFit::Keep
@@ -189,7 +189,7 @@ mod tests {
     use super::*;
 
     fn g() -> Geometry {
-        Geometry::from_template().expect("the template declares the figure geometry")
+        Geometry::from_template()
     }
 
     fn at(height: f64) -> Vec<f64> {

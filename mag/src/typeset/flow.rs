@@ -1,5 +1,5 @@
 use crate::typeset::content::Tree;
-use crate::typeset::layout::declared_pt;
+use crate::typeset::geometry::geometry;
 use crate::typeset::runt::Edit;
 use crate::typeset::world::id;
 use anyhow::Result;
@@ -307,17 +307,18 @@ fn plate_cuts(doc: &PagedDocument, world: &dyn World) -> Result<Vec<Edit>> {
 }
 
 pub fn edits(doc: &PagedDocument, world: &dyn World, tree: &Tree) -> Result<Vec<Edit>> {
+    let d = geometry();
     let g = Page {
-        top: declared_pt("MARGIN-TOP")?,
+        top: d.margin_top,
         bottom: doc
             .pages()
             .first()
             .map_or(0.0, |p| p.frame.height().to_pt())
-            - declared_pt("MARGIN-BOTTOM")?,
-        datum: declared_pt("DATUM")?,
-        epsilon: declared_pt("PAGE-TOP-EPSILON")?,
-        above: HEADING_ABOVE + declared_pt("PARAGRAPH-AFTER")?,
-        lines: declared_pt("BODY-LEADING")?,
+            - d.margin_bottom,
+        datum: d.datum,
+        epsilon: d.epsilon,
+        above: HEADING_ABOVE + d.paragraph_after,
+        lines: d.body_leading,
     };
     Ok([floats(doc, world, tree, &g), plate_cuts(doc, world)?].concat())
 }

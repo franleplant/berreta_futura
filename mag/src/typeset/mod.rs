@@ -3,6 +3,7 @@ pub(crate) mod content;
 pub(crate) mod cover;
 pub(crate) mod estimate;
 pub(crate) mod flow;
+pub(crate) mod geometry;
 pub(crate) mod hyphen;
 pub(crate) mod layout;
 pub(crate) mod legible;
@@ -119,9 +120,8 @@ fn render_language(
     let out_dir = render_dir.join(&edition.language);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     println!("out dir: {}", out_dir.display());
-    let fonts = repo_root.join(template::FONT_DIR);
-    let tree = template::composed(edition, &fonts, hyphenation)?;
-    let (tree, document) = template::paginate(tree, &fonts, hyphenation)?;
+    let tree = template::composed(edition, hyphenation)?;
+    let (tree, document) = template::paginate(tree, hyphenation)?;
     for file in &tree.files {
         let path = work.join(&file.path);
         let parent = path.parent().context("a tree file has no parent")?;
