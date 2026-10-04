@@ -3,7 +3,6 @@ use crate::model::records::slug;
 use crate::render::{publication_name, resolve_edition_dir};
 use crate::site::{config, publish_record, Pdf};
 use anyhow::{ensure, Context, Result};
-use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -102,5 +101,5 @@ fn digest(path: &Path) -> Result<(u64, String)> {
         "{} is not a PDF (no %PDF- header)",
         path.display()
     );
-    Ok((bytes.len() as u64, hex::encode(Sha256::digest(&bytes))))
+    Ok((bytes.len() as u64, crate::util::sha256_hex(&bytes)))
 }

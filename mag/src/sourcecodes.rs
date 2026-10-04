@@ -1,9 +1,23 @@
 use crate::package::release::json_text;
+use crate::util::read_yaml;
 use anyhow::{bail, Context, Result};
 use qrcodegen::{DataTooLong, Mask, QrCode, QrCodeEcc, QrSegment, QrSegmentMode, Version};
 use serde_json::{json, Value};
-use serde_norway::Value as Yaml;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+
+#[derive(clap::Args)]
+pub struct SourceCodesArgs {
+    pub edition: String,
+    #[arg(
+        long,
+        help = "Regenerate in memory and compare with the committed files instead of writing"
+    )]
+    pub check: bool,
+}
+
+static UNSAFE_FILENAME_CHAR: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"[^A-Za-z0-9._-]").unwrap());
 
 const ILLUSTRATED_ROOM: f64 = 41.0;
 const PLAIN_ROOM: f64 = 55.5;
@@ -245,14 +259,8 @@ pub fn web_svg(payload: &str) -> Result<String> {
     ))
 }
 
-fn yaml(path: &Path) -> Result<Yaml> {
-    let text =
-        std::fs::read_to_string(path).with_context(|| format!("cannot read {}", path.display()))?;
-    serde_norway::from_str(&text).with_context(|| format!("cannot parse {}", path.display()))
-}
-
 fn sources(root: &Path, edition: &str) -> Result<Vec<(String, String, f64)>> {
-    let manifest = yaml(&root.join("editions").join(edition).join("edition.yaml"))?;
+    let manifest = read_yaml(&root.join("editions").join(edition).join("edition.yaml"))?;
     let mut rows: Vec<(String, String, f64)> = Vec::new();
     for article in manifest["articles"]
         .as_sequence()
@@ -271,7 +279,7 @@ fn sources(root: &Path, edition: &str) -> Result<Vec<(String, String, f64)>> {
             .as_str()
             .context("article without an id")?
             .to_string();
-        let record = yaml(
+        let record = read_yaml(
             &root
                 .join("library/sources")
                 .join(&source_id)
@@ -303,13 +311,12 @@ fn ascii(text: &str) -> String {
 }
 
 pub fn build(root: &Path, edition: &str) -> Result<(Files, usize)> {
-    let unsafe_chars = regex::Regex::new(r"[^A-Za-z0-9._-]").expect("static regex");
     let (mut files, mut codes) = (Files::new(), Vec::new());
     for (source_id, url, room) in sources(root, edition)? {
         let payload = payload(&url);
         let name = format!(
             "source-code-{}.svg",
-            unsafe_chars.replace_all(&source_id, "-")
+            UNSAFE_FILENAME_CHAR.replace_all(&source_id, "-")
         );
         files.push((name.clone(), web_svg(payload)?.into_bytes()));
         codes.push(json!({"payload": payload, "source_id": source_id, "svg": name, "print": fitted(payload, room)?}));
@@ -342,7 +349,8 @@ pub fn differences(files: &Files, directory: &Path) -> Result<Vec<String>> {
         .collect())
 }
 
-pub fn run(edition: &str, check: bool) -> Result<i32> {
+pub fn run(args: &SourceCodesArgs) -> Result<i32> {
+    let (edition, check) = (args.edition.as_str(), args.check);
     let directory = Path::new("editions").join(edition).join("source-codes");
     let (files, declines) = build(Path::new("."), edition)?;
     if check {

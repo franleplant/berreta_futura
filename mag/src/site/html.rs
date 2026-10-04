@@ -6,9 +6,13 @@ use crate::model::doc::{
 use crate::model::manifest::{Article, Edition};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{anchor_key, content_label, ui};
+use crate::util::escape_html;
 use anyhow::{Context, Result};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+
+static HTML_TAG: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new("<[^>]*>").unwrap());
 
 const OPENER: &str = "__opener__";
 const BODY_SIZES: &str = "(min-width: 44rem) 40rem, calc(100vw - 2.5rem)";
@@ -17,16 +21,8 @@ const COVER_SIZES: &str = "(min-width: 52rem) 24rem, 80vw";
 
 type Images = BTreeMap<PathBuf, Image>;
 
-fn esc(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-}
-
 fn prose(value: &str) -> String {
-    esc(&educate_reader_quotes(value))
+    escape_html(&educate_reader_quotes(value))
 }
 
 fn say(language: &str, key: &str) -> &'static str {
@@ -187,7 +183,7 @@ impl Ctx<'_> {
                 image.src(),
                 image.width,
                 image.height,
-                esc(alt)
+                escape_html(alt)
             );
         }
         let srcset: Vec<String> = image
@@ -206,7 +202,7 @@ impl Ctx<'_> {
             srcset.join(", "),
             image.width,
             image.height,
-            esc(alt)
+            escape_html(alt)
         )
     }
 
@@ -229,7 +225,7 @@ impl Ctx<'_> {
         };
         format!(
             "<figure class=\"figure\" id=\"figure-{}\">{}<figcaption>{}{credit}</figcaption></figure>",
-            esc(&figure.id),
+            escape_html(&figure.id),
             self.zoomable(&figure.path, &figure.alt_text, BODY_SIZES),
             prose(&figure.caption)
         )
@@ -237,7 +233,7 @@ impl Ctx<'_> {
 
     fn extract(&self, language: &str, extract: &Extract) -> String {
         let body = match extract.style.as_str() {
-            "code" => format!("<pre><code>{}</code></pre>", esc(&extract.text)),
+            "code" => format!("<pre><code>{}</code></pre>", escape_html(&extract.text)),
             _ => format!(
                 "<blockquote>{}</blockquote>",
                 extract
@@ -245,14 +241,14 @@ impl Ctx<'_> {
                     .split("\n\n")
                     .map(str::trim)
                     .filter(|p| !p.is_empty())
-                    .map(|p| format!("<p>{}</p>", esc(p)))
+                    .map(|p| format!("<p>{}</p>", escape_html(p)))
                     .collect::<String>()
             ),
         };
         format!(
             "<figure class=\"extract\" id=\"extract-{}\"><p class=\"extract-label\">{}</p>{body}<figcaption>{}</figcaption></figure>",
-            esc(&extract.id),
-            esc(&ui(language, "verbatim")),
+            escape_html(&extract.id),
+            escape_html(&ui(language, "verbatim")),
             prose(&extract.caption)
         )
     }
@@ -265,17 +261,17 @@ fn inline(inlines: &[Inline]) -> String {
             Inline::Text(value) => prose(value),
             Inline::Emphasis(children) => format!("<em>{}</em>", inline(children)),
             Inline::Strong(children) => format!("<strong>{}</strong>", inline(children)),
-            Inline::Code(value) => format!("<code>{}</code>", esc(value)),
+            Inline::Code(value) => format!("<code>{}</code>", escape_html(value)),
             Inline::Link {
                 destination,
                 title,
                 children,
             } => format!(
                 "<a href=\"{}\"{}>{}</a>",
-                esc(destination),
+                escape_html(destination),
                 title
                     .as_deref()
-                    .map(|t| format!(" title=\"{}\"", esc(t)))
+                    .map(|t| format!(" title=\"{}\"", escape_html(t)))
                     .unwrap_or_default(),
                 inline(children)
             ),
@@ -289,7 +285,7 @@ fn code(code: &str, info: &str) -> Result<String> {
     let language = info.split_whitespace().next().unwrap_or("");
     let class = match language {
         "" => String::new(),
-        language => format!(" class=\"language-{}\"", esc(language)),
+        language => format!(" class=\"language-{}\"", escape_html(language)),
     };
     let tail = &code[code.trim_end_matches('\n').len()..];
     Ok(format!(
@@ -386,8 +382,7 @@ fn body(ctx: &Ctx, language: &str, piece: &Piece) -> Result<String> {
 }
 
 fn markup_free(html: &str) -> String {
-    regex::Regex::new("<[^>]*>")
-        .expect("a fixed pattern")
+    HTML_TAG
         .replace_all(html, "")
         .replace("&lt;", "<")
         .replace("&gt;", ">")
@@ -439,8 +434,8 @@ pub fn dropped(piece: &Piece, html: &str) -> Vec<String> {
         .for_each(|b| expected(b, &mut want));
     for figure in piece.article.iter().flat_map(|a| &a.figures) {
         want.push((educate_reader_quotes(&figure.caption), false));
-        if !html.contains(&format!("id=\"figure-{}\"", esc(&figure.id)))
-            || !html.contains(&format!("alt=\"{}\"", esc(&figure.alt_text)))
+        if !html.contains(&format!("id=\"figure-{}\"", escape_html(&figure.id)))
+            || !html.contains(&format!("alt=\"{}\"", escape_html(&figure.alt_text)))
         {
             want.push((format!("figure {}", figure.id), true));
         }
@@ -478,20 +473,23 @@ fn document(page: &Page, site: &SiteConfig, (name, logo): (&str, &str), root: &s
     let base = site.base_url.trim_end_matches('/');
     let url = format!("{base}/{}", page.path);
     let mut head = vec![
-        format!("<title>{}</title>", esc(&page.title)),
+        format!("<title>{}</title>", escape_html(&page.title)),
         format!(
             "<meta name=\"description\" content=\"{}\">",
-            esc(&page.description)
+            escape_html(&page.description)
         ),
         format!("<link rel=\"canonical\" href=\"{url}\">"),
-        format!("<meta property=\"og:site_name\" content=\"{}\">", esc(name)),
+        format!(
+            "<meta property=\"og:site_name\" content=\"{}\">",
+            escape_html(name)
+        ),
         format!(
             "<meta property=\"og:title\" content=\"{}\">",
-            esc(&page.title)
+            escape_html(&page.title)
         ),
         format!(
             "<meta property=\"og:description\" content=\"{}\">",
-            esc(&page.description)
+            escape_html(&page.description)
         ),
         format!("<meta property=\"og:url\" content=\"{url}\">"),
         "<meta property=\"og:type\" content=\"article\">".to_string(),
@@ -526,9 +524,9 @@ fn document(page: &Page, site: &SiteConfig, (name, logo): (&str, &str), root: &s
 <header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}{switch}</header>\n\
 <main>\n{body}\n</main>\n\
 <footer class=\"colophon\"><a href=\"{home}\">{name}</a></footer>\n</body>\n</html>\n",
-        lang = esc(&page.language),
+        lang = escape_html(&page.language),
         head = head.join("\n"),
-        name = esc(name),
+        name = escape_html(name),
         crumb = page.crumb,
         body = page.body,
     )
@@ -637,7 +635,7 @@ fn ebook(language: &str, epub: Option<&super::Epub>) -> String {
         .unwrap_or_default();
     format!(
         "<p class=\"download\"><a href=\"{}\" download type=\"application/epub+zip\">{} <span>(EPUB, {})</span></a></p>",
-        esc(&name),
+        escape_html(&name),
         say(language, "epub"),
         megabytes(epub.bytes)
     )
@@ -647,7 +645,7 @@ fn download(language: &str, pdf: Option<&super::Pdf>) -> String {
     pdf.map_or(String::new(), |pdf| {
         format!(
             "<p class=\"download\"><a href=\"{}\" download>{} <span>(PDF, {})</span></a></p>",
-            esc(&pdf.url),
+            escape_html(&pdf.url),
             say(language, "pdf"),
             megabytes(pdf.bytes)
         )
@@ -672,7 +670,7 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
             };
             format!(
                 "<li><a href=\"{}/\"><span class=\"kicker\">{}</span><span class=\"entry-title\">{}</span>{author}</a></li>",
-                esc(&piece.slug),
+                escape_html(&piece.slug),
                 prose(&piece.kicker),
                 prose(&piece.title)
             )
@@ -682,13 +680,13 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
     let body = format!(
         "<section class=\"issue\">\n{}\n<div class=\"issue-head\"><p class=\"kicker\">{} · <time datetime=\"{}\">{}</time></p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{}\"><h2>{}</h2><ol>{entries}</ol></nav>",
         issued.cover(&ctx, true),
-        esc(&issued.issue_label()),
-        esc(&issued.edition.publication_date),
+        escape_html(&issued.issue_label()),
+        escape_html(&issued.edition.publication_date),
         date(language, &issued.edition.publication_date),
         prose(&issued.edition.title),
         prose(&issued.subtitle()),
-        esc(&ui(language, "contents")),
-        esc(&ui(language, "contents")),
+        escape_html(&ui(language, "contents")),
+        escape_html(&ui(language, "contents")),
     );
     Page {
         alternate: issued.alternate(&path),
@@ -718,7 +716,7 @@ fn article_head(ctx: &Ctx, language: &str, piece: &Piece) -> String {
         .article
         .and_then(|a| a.dateline.as_deref())
         .filter(|d| !d.is_empty())
-        .map(|d| format!(" · {}", esc(d)))
+        .map(|d| format!(" · {}", escape_html(d)))
         .unwrap_or_default();
     out.push(format!(
         "<p class=\"kicker\">{}{dateline}</p>",
@@ -728,7 +726,7 @@ fn article_head(ctx: &Ctx, language: &str, piece: &Piece) -> String {
     if !piece.author.is_empty() {
         out.push(format!(
             "<p class=\"byline\">{} {}</p>",
-            esc(&ui(language, "by")),
+            escape_html(&ui(language, "by")),
             prose(&piece.author)
         ));
     }
@@ -751,9 +749,9 @@ fn article_head(ctx: &Ctx, language: &str, piece: &Piece) -> String {
             .unwrap_or_default();
         out.push(format!(
             "<p class=\"source\"><a href=\"{}\">{} <span>{}</span></a></p>",
-            esc(url),
+            escape_html(url),
             say(language, "original"),
-            esc(&host)
+            escape_html(&host)
         ));
     }
     out.join("\n")
@@ -767,7 +765,7 @@ fn article_tail(ctx: &Ctx, language: &str, article: Option<&Article>) -> String 
         true => String::new(),
         false => format!(
             "<aside class=\"key-ideas\"><h2>{}</h2><ul>{}</ul></aside>\n",
-            esc(&ui(language, "key_ideas")),
+            escape_html(&ui(language, "key_ideas")),
             article
                 .key_ideas
                 .iter()
@@ -790,7 +788,7 @@ fn pager(issued: &Issued, index: usize) -> String {
         let piece = issued.pieces.get(index.checked_add_signed(offset)?)?;
         Some(format!(
             "<a rel=\"{rel}\" href=\"../{}/\"><span class=\"kicker\">{}</span>{}</a>",
-            esc(&piece.slug),
+            escape_html(&piece.slug),
             say(language, key),
             prose(&piece.title)
         ))
@@ -842,7 +840,7 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
         image,
         crumb: format!(
             "<a class=\"crumb\" href=\"../\">{}</a>",
-            esc(&issued.issue_label())
+            escape_html(&issued.issue_label())
         ),
         language: language.clone(),
         path,
@@ -878,11 +876,11 @@ pub fn title_page(edition: &Edition) -> String {
     let language = &edition.language;
     format!(
         "<section class=\"title-page\"><p class=\"kicker\">{} · {}</p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n<p class=\"masthead-name\">{}</p></section>",
-        esc(&format!("{} {}", ui(language, "issue"), edition.issue_number)),
+        escape_html(&format!("{} {}", ui(language, "issue"), edition.issue_number)),
         date(language, &edition.publication_date),
         prose(&edition.title),
         prose(edition.raw["subtitle"].as_str().unwrap_or_default().trim()),
-        esc(&edition.publication_name)
+        escape_html(&edition.publication_name)
     )
 }
 
@@ -899,8 +897,8 @@ fn index_page(language: &str, issued: &[&Issued], images: &Images, other: Option
         .map(|i| {
             format!(
                 "<li><a href=\"{}/\"><span class=\"kicker\">{}</span><span class=\"entry-title\">{}</span><span class=\"entry-author\">{}</span></a></li>",
-                esc(&i.edition.id),
-                esc(&i.issue_label()),
+                escape_html(&i.edition.id),
+                escape_html(&i.issue_label()),
                 prose(&i.edition.title),
                 date(language, &i.edition.publication_date)
             )
@@ -908,10 +906,10 @@ fn index_page(language: &str, issued: &[&Issued], images: &Images, other: Option
         .collect();
     let body = format!(
         "<section class=\"issue front\">\n<a class=\"cover-link\" href=\"{id}/\">{cover}</a>\n<div class=\"issue-head\"><p class=\"kicker\">{label} · <time datetime=\"{iso}\">{when}</time></p>\n<h1><a href=\"{id}/\">{title}</a></h1>\n<p class=\"subtitle\">{subtitle}</p>\n<p class=\"read\"><a href=\"{id}/\">{read}</a></p></div>\n</section>\n<nav class=\"contents\" aria-label=\"{issues}\"><h2>{issues}</h2><ol>{rows}</ol></nav>",
-        id = esc(&latest.edition.id),
+        id = escape_html(&latest.edition.id),
         cover = latest.cover(&ctx, true),
-        label = esc(&latest.issue_label()),
-        iso = esc(&latest.edition.publication_date),
+        label = escape_html(&latest.issue_label()),
+        iso = escape_html(&latest.edition.publication_date),
         when = date(language, &latest.edition.publication_date),
         title = prose(&latest.edition.title),
         subtitle = prose(&latest.subtitle()),

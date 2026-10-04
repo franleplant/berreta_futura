@@ -171,32 +171,33 @@ fn words(line: &Line) -> Vec<String> {
         .collect()
 }
 
-fn runt(block: &Block, metrics: &Metrics, english: bool) -> Option<(Anchor, Anchor)> {
+fn runt(block: &Block, metrics: &Metrics, english: bool) -> Result<Option<(Anchor, Anchor)>> {
     let mut lines: Vec<_> = block.lines.iter().collect();
-    lines.sort_by(|a, b| {
-        (a.0, a.1)
-            .partial_cmp(&(b.0, b.1))
-            .expect("finite baselines")
-    });
+    lines.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.total_cmp(&b.1)));
     let lines: Vec<&Line> = lines.into_iter().map(|(_, _, l)| l).collect();
     let [.., previous, last] = lines.as_slice() else {
-        return None;
+        return Ok(None);
     };
     let (runt, before) = (words(last), words(previous));
+    let (Some(prior), Some(first)) = (before.last(), runt.first()) else {
+        return Ok(None);
+    };
     let measure = block.right - lines.iter().map(|l| l.x0).fold(f64::MAX, f64::min);
     let size = block.size;
-    let prior = before.last()?;
     let hyphen = (block.hyphenates || english) && prior.ends_with(['-', '\u{2010}', '\u{ad}']);
     let width = last.x1 - last.x0;
-    let pair = metrics.width("serif", &format!("{prior}\u{a0}{}", runt.first()?), size);
-    let opened =
-        measure - (previous.x1 - previous.x0 - metrics.width("serif", &format!(" {prior}"), size));
-    (runt.len() == 1
+    let pair = metrics.width("serif", &format!("{prior}\u{a0}{first}"), size)?;
+    let opened = measure
+        - (previous.x1 - previous.x0 - metrics.width("serif", &format!(" {prior}"), size)?);
+    let fits = runt.len() == 1
         && !hyphen
         && width <= measure * RUNT_MEASURE_FRACTION
         && pair <= measure
-        && opened <= measure * RUNT_MAX_RAG_FRACTION)
-        .then_some((previous.last.as_ref()?.1, last.first.as_ref()?.1))
+        && opened <= measure * RUNT_MAX_RAG_FRACTION;
+    Ok(fits
+        .then(|| previous.last.as_ref().zip(last.first.as_ref()))
+        .flatten()
+        .map(|(start, end)| (start.1, end.1)))
 }
 
 fn gap(sources: &dyn World, (from, to): (Anchor, Anchor)) -> Option<(FileId, usize, usize)> {
@@ -243,23 +244,19 @@ fn binds(
     sources: &dyn World,
     metrics: &Metrics,
     english: bool,
-) -> Vec<(FileId, usize, usize)> {
-    prose_blocks(doc)
-        .iter()
-        .filter_map(|(_, block)| runt(block, metrics, english))
-        .filter_map(|anchors| gap(sources, anchors))
-        .collect()
+) -> Result<Vec<(FileId, usize, usize)>> {
+    let mut gaps = Vec::new();
+    for (_, block) in &prose_blocks(doc) {
+        gaps.extend(runt(block, metrics, english)?.and_then(|anchors| gap(sources, anchors)));
+    }
+    Ok(gaps)
 }
 
 type Row = (f64, Vec<(f64, String, String)>, Option<Anchor>);
 
 fn ordered(block: &Block) -> Vec<Row> {
     let mut lines: Vec<_> = block.lines.iter().collect();
-    lines.sort_by(|a, b| {
-        (a.0, a.1)
-            .partial_cmp(&(b.0, b.1))
-            .expect("finite baselines")
-    });
+    lines.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.total_cmp(&b.1)));
     lines
         .into_iter()
         .map(|(_, _, line)| {
@@ -359,7 +356,7 @@ pub fn ladder_warnings(doc: &PagedDocument, edition: &str) -> Vec<String> {
         .enumerate()
         .flat_map(|(key, (_, block))| {
             let mut pages: Vec<_> = block.lines.iter().map(|(p, y, _)| (*p, *y)).collect();
-            pages.sort_by(|a, b| a.partial_cmp(b).expect("finite baselines"));
+            pages.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.total_cmp(&b.1)));
             let rows = ordered(block);
             ladders(&rows).into_iter().map(move |run| {
                 let sample: String = rows[run.start].1.iter().map(|(_, t, _)| t.as_str()).collect();
@@ -407,7 +404,7 @@ pub fn bound(
     for _ in 0..PASSES {
         let sources = world(&tree, font_dir)?;
         let doc = document(&sources)?;
-        let runts = binds(&doc, &sources, &metrics, hyphenation.english).into_iter();
+        let runts = binds(&doc, &sources, &metrics, hyphenation.english)?.into_iter();
         let ladders = match hyphenation.limit_ladders {
             true => laddered(&doc, &sources),
             false => Vec::new(),
@@ -475,7 +472,7 @@ mod tests {
             .iter()
             .map(|(_, b)| {
                 let mut lines: Vec<_> = b.lines.iter().collect();
-                lines.sort_by(|a, b| (a.0, a.1).partial_cmp(&(b.0, b.1)).expect("finite"));
+                lines.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.total_cmp(&b.1)));
                 words(&lines.last().expect("a line").2).join(" ")
             })
             .collect()

@@ -1,5 +1,15 @@
 use regex::Regex;
+use std::sync::LazyLock;
 use std::sync::OnceLock;
+
+static JSON_LINE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"^(//.*|"[^"]*"\s*:.*|[\[\]{},]+|"[^"]*",?|[-\d.eE+]+,?|(true|false|null),?|\{\s*".*\}),?$"#).unwrap()
+});
+static HTTP_LINE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(HTTP/[\d.]+ \d{3}\b|(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) \S+ HTTP/[\d.]+$)")
+        .unwrap()
+});
+static BIBTEX_ENTRY: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^@\w+\{").unwrap());
 
 type Signatures = &'static [(&'static str, i32)];
 type Compiled = Vec<(&'static str, Vec<(Regex, i32)>)>;
@@ -223,19 +233,15 @@ fn compiled() -> &'static Compiled {
 }
 
 fn json(lines: &[&str]) -> bool {
-    let line = Regex::new(r#"^(//.*|"[^"]*"\s*:.*|[\[\]{},]+|"[^"]*",?|[-\d.eE+]+,?|(true|false|null),?|\{\s*".*\}),?$"#)
-        .unwrap();
     let body: Vec<&&str> = lines.iter().filter(|l| !l.starts_with("//")).collect();
     body.first().is_some_and(|l| l.starts_with(['{', '[']))
         && body.last().is_some_and(|l| l.ends_with(['}', ']']))
         && lines.iter().any(|l| l.contains("\":"))
-        && lines.iter().all(|l| line.is_match(l))
+        && lines.iter().all(|l| JSON_LINE.is_match(l))
 }
 
 fn http(first: &str) -> bool {
-    Regex::new(r"^(HTTP/[\d.]+ \d{3}\b|(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) \S+ HTTP/[\d.]+$)")
-        .unwrap()
-        .is_match(first)
+    HTTP_LINE.is_match(first)
 }
 
 pub fn guess(code: &str) -> Option<&'static str> {
@@ -245,7 +251,7 @@ pub fn guess(code: &str) -> Option<&'static str> {
         .filter(|l| !l.is_empty())
         .collect();
     let first = lines.first()?;
-    if Regex::new(r"^@\w+\{").unwrap().is_match(first) {
+    if BIBTEX_ENTRY.is_match(first) {
         return None;
     }
     if http(first) {

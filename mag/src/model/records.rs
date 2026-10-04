@@ -3,7 +3,7 @@ use regex::Regex;
 use serde_norway::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 
 pub const ARTICLE_FILENAME: &str = "article.md";
 
@@ -29,31 +29,19 @@ pub(crate) fn slug(text: &str) -> String {
     }
 }
 
-fn timestamp_detect() -> &'static Regex {
-    static PATTERN: OnceLock<Regex> = OnceLock::new();
-    PATTERN.get_or_init(|| {
-        Regex::new(
-            r"^(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}(?:[Tt]|[ \t]+)[0-9]{1,2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]*)?(?:[ \t]*(?:Z|[-+][0-9]{1,2}(?::[0-9]{2})?))?)$",
-        )
-        .expect("the pattern compiles")
-    })
-}
+static TIMESTAMP_DETECT: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}(?:[Tt]|[ \t]+)[0-9]{1,2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]*)?(?:[ \t]*(?:Z|[-+][0-9]{1,2}(?::[0-9]{2})?))?)$").unwrap()
+});
 
-fn timestamp_parse() -> &'static Regex {
-    static PATTERN: OnceLock<Regex> = OnceLock::new();
-    PATTERN.get_or_init(|| {
-        Regex::new(
-            r"^(?P<year>[0-9]{4})-(?P<month>[0-9]{1,2})-(?P<day>[0-9]{1,2})(?:(?:[Tt]|[ \t]+)(?P<hour>[0-9]{1,2}):(?P<minute>[0-9]{2}):(?P<second>[0-9]{2})(?:\.(?P<fraction>[0-9]*))?(?:[ \t]*(?:(?P<utc>Z)|(?P<sign>[-+])(?P<tzhour>[0-9]{1,2})(?::(?P<tzminute>[0-9]{2}))?))?)?$",
-        )
-        .expect("the pattern compiles")
-    })
-}
+static TIMESTAMP_PARSE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(?P<year>[0-9]{4})-(?P<month>[0-9]{1,2})-(?P<day>[0-9]{1,2})(?:(?:[Tt]|[ \t]+)(?P<hour>[0-9]{1,2}):(?P<minute>[0-9]{2}):(?P<second>[0-9]{2})(?:\.(?P<fraction>[0-9]*))?(?:[ \t]*(?:(?P<utc>Z)|(?P<sign>[-+])(?P<tzhour>[0-9]{1,2})(?::(?P<tzminute>[0-9]{2}))?))?)?$").unwrap()
+});
 
 pub fn yaml_timestamp_isoformat(text: &str) -> Option<String> {
-    if !timestamp_detect().is_match(text) {
+    if !TIMESTAMP_DETECT.is_match(text) {
         return None;
     }
-    let captures = timestamp_parse().captures(text)?;
+    let captures = TIMESTAMP_PARSE.captures(text)?;
     let number = |name: &str| -> u32 {
         captures
             .name(name)

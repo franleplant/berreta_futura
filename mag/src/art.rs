@@ -1,5 +1,6 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::produce::{self, INLINE_PREAMBLE};
+use crate::util::{escape_html, parallel, prompts_path, read};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -8,18 +9,105 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::LazyLock;
 use std::sync::Mutex;
 use std::thread;
 
+#[derive(clap::Args)]
+pub struct ArtArgs {
+    pub edition: String,
+    #[arg(long = "gen-cmd", default_value = DEFAULT_GEN_CMD, help = "Shell command for one image; {prompt}, {out}, {ref}, {size} must each be a whole word (bare or quoted) and expand to quoted MAG_* variables")]
+    pub gen_cmd: String,
+    #[arg(long, default_value_t = 4, help = "How many candidates per art brief")]
+    pub candidates: u32,
+    #[arg(long, default_value = "opus")]
+    pub model: String,
+    #[arg(
+        long = "dry-run",
+        help = "Propose briefs and write generate.sh, but spend no image credits"
+    )]
+    pub dry_run: bool,
+    #[arg(
+        long,
+        help = "Only rebuild art/showcase.html from the rounds on disk (no model call, no generation)"
+    )]
+    pub showcase: bool,
+    #[arg(
+        long,
+        help = "Scope this round to some purposes (comma-separated: cover,opener,tail,closing); earlier briefs for them are treated as rejected and fed back as what not to repeat"
+    )]
+    pub only: Option<String>,
+    #[arg(
+        long,
+        help = "Editor's note appended to the brief prompt (why the last round was rejected, direction for this one)"
+    )]
+    pub note: Option<String>,
+    #[arg(
+        long,
+        help = "Scope this round to opener and tail briefs for these edition.yaml article ids (comma-separated): for articles added after the slate was generated"
+    )]
+    pub articles: Option<String>,
+    #[arg(
+        long = "resume-round",
+        help = "Complete an interrupted round dir: reuse its briefs.yaml, keep candidates already on disk, generate only the missing ones, then finish the round"
+    )]
+    pub resume_round: Option<String>,
+    #[arg(
+        long,
+        help = "Convert the art edition.yaml names under art/rounds/ (which stay out of git) to JPEGs in art/picks/ and point edition.yaml at them; run after picking"
+    )]
+    pub promote: bool,
+}
+
+#[derive(clap::Args)]
+pub struct CastSheetArgs {
+    #[arg(help = "The art direction file whose direction.cast to sheet")]
+    pub direction: PathBuf,
+    #[arg(long = "gen-cmd", required_unless_present_any = ["dry_run", "showcase"], help = "Shell command for one image; {prompt}, {out}, {ref}, {size} must each be a whole word (bare or quoted) and expand to quoted MAG_* variables")]
+    pub gen_cmd: Option<String>,
+    #[arg(
+        long,
+        default_value_t = 4,
+        help = "How many sheet candidates to render"
+    )]
+    pub candidates: u32,
+    #[arg(
+        long = "dry-run",
+        help = "Write the prompt and generate.sh, but spend no image credits"
+    )]
+    pub dry_run: bool,
+    #[arg(
+        long,
+        help = "Only rebuild the direction's cast showcase.html from the rounds on disk"
+    )]
+    pub showcase: bool,
+    #[arg(long, help = "Editor's note appended to the sheet prompt")]
+    pub note: Option<String>,
+}
+
+#[derive(clap::Args)]
+pub struct CastCheckArgs {
+    pub edition: String,
+    #[arg(
+        long,
+        help = "Round stamp to check, or 'all' (default: the newest round)"
+    )]
+    pub round: Option<String>,
+    #[arg(
+        long,
+        help = "Art direction file to take the cast from (default: the edition's art_direction_path)"
+    )]
+    pub direction: Option<PathBuf>,
+    #[arg(long, default_value = "sonnet", help = "Vision-capable judge model")]
+    pub model: String,
+}
+
+static YAML_FENCE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)```ya?ml\s*\n(.*?)```").unwrap());
+static KEBAB_ID: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap());
+
 const GEN_CONCURRENCY: usize = 8;
-
-fn read(path: &Path) -> Result<String> {
-    fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
-}
-
-fn prompts_path(file: &str) -> PathBuf {
-    PathBuf::from("prompts").join(file)
-}
 
 fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
     let direct = PathBuf::from("editions").join(edition);
@@ -336,8 +424,7 @@ fn build_brief_prompt(
 }
 
 fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
-    let re = Regex::new(r"(?s)```ya?ml\s*\n(.*?)```").unwrap();
-    let fence = re
+    let fence = YAML_FENCE
         .captures_iter(reply)
         .last()
         .map(|c| c[1].to_string())
@@ -347,13 +434,12 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
     if doc.briefs.is_empty() {
         bail!("{label}: 'briefs' list is empty");
     }
-    let id_re = Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap();
     let mut seen = HashSet::new();
     for b in &doc.briefs {
         if b.prompt.trim().is_empty() {
             bail!("{label}: every brief needs a non-empty prompt");
         }
-        if !id_re.is_match(&b.id) {
+        if !KEBAB_ID.is_match(&b.id) {
             bail!(
                 "{label}: brief id '{}' must be lowercase letters and digits joined by single hyphens",
                 b.id
@@ -591,13 +677,6 @@ fn generate_all(
     Ok(results.into_iter().map(|(_, item)| item).collect())
 }
 
-fn html_escape(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-}
-
 fn write_proof_sheet(
     round_dir: &Path,
     edition_label: &str,
@@ -613,10 +692,10 @@ fn write_proof_sheet(
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
     html += &format!(
         "<title>Art proof sheet: {}</title>\n",
-        html_escape(edition_label)
+        escape_html(edition_label)
     );
     html += PROOF_SHEET_CSS;
-    html += &format!("<h1>Art proof sheet: {}</h1>\n", html_escape(edition_label));
+    html += &format!("<h1>Art proof sheet: {}</h1>\n", escape_html(edition_label));
     html += "<div class=\"grid\">\n";
     for item in generated {
         let prompt = prompts_by_id
@@ -627,19 +706,19 @@ fn write_proof_sheet(
         if item.ok {
             html += &format!(
                 "<img src=\"{}\" loading=\"lazy\">\n",
-                html_escape(&item.file)
+                escape_html(&item.file)
             );
         } else {
             html += "<div class=\"failed\">FAILED</div>\n";
         }
         html += &format!(
             "<figcaption>{}, variant {}</figcaption>\n",
-            html_escape(&item.brief),
+            escape_html(&item.brief),
             item.variant
         );
         html += &format!(
             "<details><summary>prompt</summary><pre>{}</pre></details>\n",
-            html_escape(prompt)
+            escape_html(prompt)
         );
         html += "</figure>\n";
     }
@@ -830,23 +909,23 @@ fn cover_frame_html(cover_frame: &CoverFrame, item: &ShowcaseItem, img_tag: &str
          <div class=\"cf-credits\">COVER CANDIDATE / {brief} v{variant}</div>\
          <div class=\"cf-date\">{date}</div>\
          </div>\n",
-        issue = html_escape(&cover_frame.issue),
-        publication = html_escape(&cover_frame.publication.to_uppercase()),
+        issue = escape_html(&cover_frame.issue),
+        publication = escape_html(&cover_frame.publication.to_uppercase()),
         masthead = cover_frame
             .publication
             .split_whitespace()
             .enumerate()
             .map(|(i, w)| if i == 0 {
-                format!("<span class=\"cf-m1\">{}</span>", html_escape(w))
+                format!("<span class=\"cf-m1\">{}</span>", escape_html(w))
             } else {
-                format!("<span class=\"cf-m2\">{}</span>", html_escape(w))
+                format!("<span class=\"cf-m2\">{}</span>", escape_html(w))
             })
             .collect::<String>(),
-        first = html_escape(first),
-        rest = html_escape(&rest),
-        brief = html_escape(&item.brief_id),
+        first = escape_html(first),
+        rest = escape_html(&rest),
+        brief = escape_html(&item.brief_id),
         variant = item.variant,
-        date = html_escape(&cover_frame.date),
+        date = escape_html(&cover_frame.date),
     )
 }
 
@@ -881,8 +960,8 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
     html += &format!(
         "<figure class=\"{}\" data-path=\"{}\" data-slot=\"{}\">\n",
         classes.join(" "),
-        html_escape(&repo_path),
-        html_escape(&slot)
+        escape_html(&repo_path),
+        escape_html(&slot)
     );
     if item.selected {
         html += "<span class=\"badge\">SELECTED</span>\n";
@@ -891,13 +970,13 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
         let names: Vec<&str> = off.iter().map(|v| v.name.as_str()).collect();
         html += &format!(
             "<span class=\"offbadge\">OFF-MODEL: {}</span>\n",
-            html_escape(&names.join(", "))
+            escape_html(&names.join(", "))
         );
     }
     let img_tag = format!(
         "<img src=\"rounds/{}/{}\" loading=\"lazy\">",
-        html_escape(&item.round),
-        html_escape(&item.file)
+        escape_html(&item.round),
+        escape_html(&item.file)
     );
     if item.purpose == "cover" {
         html += &cover_frame_html(cover_frame, item, &img_tag);
@@ -907,17 +986,17 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
     }
     html += &format!(
         "<figcaption>{} v{} ({})</figcaption>\n",
-        html_escape(&item.brief_id),
+        escape_html(&item.brief_id),
         item.variant,
-        html_escape(&item.round)
+        escape_html(&item.round)
     );
     html += &format!(
         "<div class=\"btnrow\"><a href=\"rounds/{}/{}\" target=\"_blank\">view</a>\
          <button data-copy=\"path\">copy path</button>\
          <button data-copy=\"preview\">preview cmd</button>\
          <button data-copy=\"finder\">finder cmd</button></div>\n",
-        html_escape(&item.round),
-        html_escape(&item.file)
+        escape_html(&item.round),
+        escape_html(&item.file)
     );
     if !item.verdicts.is_empty() {
         let lines: Vec<String> = item
@@ -927,13 +1006,13 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
             .collect();
         html += &format!(
             "<div class=\"verdicts\">{}</div>\n",
-            html_escape(&lines.join(" · "))
+            escape_html(&lines.join(" · "))
         );
     }
     if !item.prompt.is_empty() {
         html += &format!(
             "<details><summary>prompt</summary><pre>{}</pre></details>\n",
-            html_escape(&item.prompt)
+            escape_html(&item.prompt)
         );
     }
     html += "</figure>\n";
@@ -1036,11 +1115,11 @@ fn showcase_sections(
                 let article_note = item
                     .article_id
                     .as_deref()
-                    .map(|a| format!(": {}", html_escape(a)))
+                    .map(|a| format!(": {}", escape_html(a)))
                     .unwrap_or_default();
                 html += &format!(
                     "<h3>{}{article_note}</h3>\n<div class=\"grid\">\n",
-                    html_escape(&item.brief_id)
+                    escape_html(&item.brief_id)
                 );
                 open = true;
             }
@@ -1061,7 +1140,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
     html += &format!(
         "<title>Art showcase: {}</title>\n",
-        html_escape(edition_label)
+        escape_html(edition_label)
     );
     html += SHOWCASE_CSS;
     let mut rounds: Vec<&str> = items.iter().map(|i| i.round.as_str()).collect();
@@ -1071,7 +1150,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
         .iter()
         .map(|r| {
             let n = items.iter().filter(|i| i.round == *r).count();
-            format!("{} ({n})", html_escape(r))
+            format!("{} ({n})", escape_html(r))
         })
         .collect::<Vec<_>>()
         .join(" · ");
@@ -1084,7 +1163,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
          The bar below copies commands to run from the repo root, and \
          edition.yaml lines for the picks. Give feedback per image as \
          <code>brief-id vN (round)</code>.</p>\n",
-        html_escape(edition_label),
+        escape_html(edition_label),
         items.len()
     );
 
@@ -1320,12 +1399,12 @@ fn cast_round_cells(round_dir: &Path, canon: &[(String, Vec<u8>)]) -> Result<Str
         }
         cells += &format!(
             "<a href=\"{0}/{1}\" target=\"_blank\"><img src=\"{0}/{1}\" loading=\"lazy\"></a>\n",
-            html_escape(&round_name),
-            html_escape(file)
+            escape_html(&round_name),
+            escape_html(file)
         );
         cells += &format!(
             "<figcaption>v{variant} ({})</figcaption>\n</figure>\n",
-            html_escape(&round_name)
+            escape_html(&round_name)
         );
     }
     Ok(cells)
@@ -1360,14 +1439,14 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
 
     let mut html = String::new();
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
-    html += &format!("<title>Cast: {}</title>\n", html_escape(&stem));
+    html += &format!("<title>Cast: {}</title>\n", escape_html(&stem));
     html += CAST_SHOWCASE_CSS;
-    html += &format!("<h1>Cast: {}</h1>\n", html_escape(&stem));
+    html += &format!("<h1>Cast: {}</h1>\n", escape_html(&stem));
     html += &format!(
         "<p class=\"hint\">Judge the designs, not the poses. Approve a new sheet by \
          copying it over the <code>reference:</code> path in {} (the CANON badge \
          marks the variant whose bytes match the installed reference).</p>\n",
-        html_escape(&direction_path.display().to_string())
+        escape_html(&direction_path.display().to_string())
     );
 
     html += "<h2>Current canon</h2>\n";
@@ -1380,9 +1459,9 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
             let href = cast_ref_href(r);
             html += &format!(
                 "<a href=\"{0}\" target=\"_blank\"><img src=\"{0}\" loading=\"lazy\"></a>\n",
-                html_escape(&href)
+                escape_html(&href)
             );
-            html += &format!("<figcaption>{}</figcaption>\n</figure>\n", html_escape(r));
+            html += &format!("<figcaption>{}</figcaption>\n</figure>\n", escape_html(r));
         }
         html += "</div>\n";
     }
@@ -1395,7 +1474,7 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
             any_round = true;
             html += &format!(
                 "<h2>Round {}</h2>\n<div class=\"grid\">\n{cells}</div>\n",
-                html_escape(&round_name)
+                escape_html(&round_name)
             );
         }
     }
@@ -1410,14 +1489,11 @@ pub fn write_cast_showcase(direction_path: &Path) -> Result<PathBuf> {
     Ok(path)
 }
 
-pub fn cast_sheet_run(
-    direction_path: &Path,
-    gen_cmd: Option<&str>,
-    candidates: u32,
-    dry_run: bool,
-    showcase_only: bool,
-    note: Option<&str>,
-) -> Result<i32> {
+pub fn cast_sheet_run(args: &CastSheetArgs) -> Result<i32> {
+    let direction_path = args.direction.as_path();
+    let gen_cmd = args.gen_cmd.as_deref();
+    let (candidates, dry_run, showcase_only) = (args.candidates, args.dry_run, args.showcase);
+    let note = args.note.as_deref();
     if showcase_only {
         let path = write_cast_showcase(direction_path)?;
         println!("cast showcase rebuilt: {}", path.display());
@@ -1598,8 +1674,7 @@ fn extract_verdicts(reply: &str, label: &str, cast: &[CastMember]) -> Result<Vec
     struct Doc {
         verdicts: Vec<MemberVerdict>,
     }
-    let re = Regex::new(r"(?s)```ya?ml\s*\n(.*?)```").unwrap();
-    let fence = re
+    let fence = YAML_FENCE
         .captures_iter(reply)
         .last()
         .map(|c| c[1].to_string())
@@ -1695,12 +1770,11 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
     Ok(out)
 }
 
-pub fn cast_check_run(
-    edition: &str,
-    round_filter: Option<&str>,
-    direction_override: Option<&Path>,
-    model: &ModelSpec,
-) -> Result<i32> {
+pub fn cast_check_run(args: &CastCheckArgs) -> Result<i32> {
+    let edition = args.edition.as_str();
+    let round_filter = args.round.as_deref();
+    let direction_override = args.direction.as_deref();
+    let model = &ModelSpec::parse(&args.model)?;
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_label = edition_dir
         .file_name()
@@ -1767,38 +1841,26 @@ fn check_round(
     }
     println!("{round_name}: checking {} image(s)", targets.len());
     let caller = Caller::new(round_dir);
-    let results = Mutex::new(Vec::new());
-    let errors = Mutex::new(Vec::new());
-    thread::scope(|s| {
-        for t in &targets {
-            let caller = &caller;
-            let results = &results;
-            let errors = &errors;
-            s.spawn(move || {
-                let abs = match t.round_dir.join(&t.file).canonicalize() {
-                    Ok(p) => p,
-                    Err(e) => {
-                        errors.lock().unwrap().push(format!("{}: {e}", t.file));
-                        return;
-                    }
-                };
-                let label = format!("cast-check {}", t.file);
-                let prompt =
-                    cast_check_prompt(cast, &abs, license.get(&t.purpose).map(String::as_str));
-                match caller.call_with_parse_images(&label, model, &prompt, &[abs], |r| {
-                    extract_verdicts(r, &label, cast)
-                }) {
-                    Ok(verdicts) => results.lock().unwrap().push(CastCheckResult {
-                        file: t.file.clone(),
-                        verdicts,
-                    }),
-                    Err(e) => errors.lock().unwrap().push(format!("{}: {e:#}", t.file)),
-                }
-            });
-        }
+    let outcomes = parallel(&targets, |t| {
+        let abs = t.round_dir.join(&t.file).canonicalize()?;
+        let label = format!("cast-check {}", t.file);
+        let prompt = cast_check_prompt(cast, &abs, license.get(&t.purpose).map(String::as_str));
+        let verdicts = caller.call_with_parse_images(&label, model, &prompt, &[abs], |r| {
+            extract_verdicts(r, &label, cast)
+        })?;
+        Ok(CastCheckResult {
+            file: t.file.clone(),
+            verdicts,
+        })
     });
-    let fresh = results.into_inner().unwrap();
-    let errors = errors.into_inner().unwrap();
+    let mut fresh = Vec::new();
+    let mut errors = Vec::new();
+    for (t, outcome) in targets.iter().zip(outcomes) {
+        match outcome {
+            Ok(r) => fresh.push(r),
+            Err(e) => errors.push(format!("{}: {e:#}", t.file)),
+        }
+    }
 
     let check_path = round_dir.join("cast-check.yaml");
     let mut by_file: HashMap<String, CastCheckResult> = if check_path.exists() {
@@ -1896,7 +1958,7 @@ and essential prop well inside the frame with headroom, since nothing outside \
 prints. tail: a 3:1 strip, 2160x720. closing: portrait 1:1.41 (an A5 page), \
 1536x2160. Never describe a composition as square unless it is the cover.\n";
 
-pub struct ArtRun<'a> {
+struct ArtRun<'a> {
     pub edition: &'a str,
     pub gen_cmd: Option<&'a str>,
     pub candidates: u32,
@@ -2075,7 +2137,24 @@ fn dry_run_report(
     Ok(0)
 }
 
-pub fn run(opts: &ArtRun) -> Result<i32> {
+pub fn run(args: &ArtArgs) -> Result<i32> {
+    let model = ModelSpec::parse(&args.model)?;
+    run_round(&ArtRun {
+        edition: &args.edition,
+        gen_cmd: Some(args.gen_cmd.as_str()),
+        candidates: args.candidates,
+        model: &model,
+        dry_run: args.dry_run,
+        showcase_only: args.showcase,
+        only: args.only.as_deref(),
+        note: args.note.as_deref(),
+        articles: args.articles.as_deref(),
+        resume_round: args.resume_round.as_deref(),
+        promote: args.promote,
+    })
+}
+
+fn run_round(opts: &ArtRun) -> Result<i32> {
     let ArtRun {
         edition,
         gen_cmd,

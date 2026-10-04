@@ -1,4 +1,5 @@
 use crate::capture;
+use crate::util::{escape_html, parallel};
 use anyhow::{Context, Result};
 use ego_tree::NodeId;
 use regex::Regex;
@@ -6,7 +7,21 @@ use scraper::{Html, Selector};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use url::Url;
+
+static PDF_PAGE_COUNT: LazyLock<regex::bytes::Regex> =
+    LazyLock::new(|| regex::bytes::Regex::new(r"/Count (\d+)").unwrap());
+static IMG_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?is)<img\b[^>]*>").unwrap());
+static ANCHOR_HREF: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?is)(<a\b[^>]*\bhref=["'])([^"'#][^"']*)(["'])"#).unwrap());
+static SVG_BLOCK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?is)<svg\b.*?</svg>").unwrap());
+static OPEN_TAG: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"<([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>").unwrap());
+static H1_OPEN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)<h1[\s>]").unwrap());
+static HTML_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
+static STYLE_BLOCK: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?is)<style\b[^>]*>.*?</style>").unwrap());
 
 const JUNK: &str = "script, noscript, iframe, video, audio, embed, object, form, button, input, \
 select, textarea, canvas, dialog, template, .related-posts, .related-wrapper, .related, \
@@ -67,12 +82,31 @@ hr { border: 0; border-top: 0.3mm solid #ccc; margin: 1.2em 0; }
 {counterstyles}
 </style>";
 
+#[derive(clap::Args)]
 pub struct PrintArgs {
     pub url: String,
+    #[arg(
+        long,
+        help = "Saved HTML to clean instead of fetching the URL (for pages curl cannot reach: login walls, JS-rendered apps)"
+    )]
     pub html: Option<PathBuf>,
+    #[arg(long, help = "Output directory (default: output/print/<slug>)")]
     pub out: Option<PathBuf>,
+    #[arg(
+        long,
+        help = "Browser binary for the PDF step (default: first Chrome/Chromium found)"
+    )]
     pub chrome: Option<PathBuf>,
+    #[arg(
+        long = "image-cap",
+        help = "Fixed image height cap in mm (default: try 130, 110, 90 and keep the densest PDF)"
+    )]
     pub image_cap: Option<u32>,
+    #[arg(
+        long,
+        default_value = "a5",
+        help = "Page layout: a5 (booklet: two A5 pages per landscape A4 sheet), columns (A4 two columns), single (A4 one column)"
+    )]
     pub layout: String,
 }
 
@@ -182,8 +216,7 @@ fn pdf_pages(pdf: &Path) -> Result<usize> {
 }
 
 fn max_count(bytes: &[u8]) -> Option<usize> {
-    regex::bytes::Regex::new(r"/Count (\d+)")
-        .unwrap()
+    PDF_PAGE_COUNT
         .captures_iter(bytes)
         .filter_map(|c| std::str::from_utf8(&c[1]).ok().and_then(|n| n.parse().ok()))
         .max()
@@ -359,7 +392,7 @@ fn related(doc: &Html, a: NodeId, b: NodeId) -> bool {
 
 fn attr(tag: &str, name: &str) -> Option<String> {
     Regex::new(&format!(r#"(?i)\b{name}\s*=\s*["']([^"']*)["']"#))
-        .unwrap()
+        .expect("an attribute name makes a valid pattern")
         .captures(tag)
         .map(|c| c[1].to_string())
 }
@@ -403,9 +436,8 @@ fn rebuild_img(tag: &str, src: &str) -> String {
 }
 
 fn localize_images(html: &str, base: &Url, dir: &Path) -> Result<(String, usize)> {
-    let tag_re = Regex::new(r"(?is)<img\b[^>]*>").unwrap();
     let mut urls: Vec<String> = Vec::new();
-    for m in tag_re.find_iter(html) {
+    for m in IMG_TAG.find_iter(html) {
         if attr(m.as_str(), "src").is_some_and(|s| s.starts_with("data:")) {
             continue;
         }
@@ -418,7 +450,7 @@ fn localize_images(html: &str, base: &Url, dir: &Path) -> Result<(String, usize)
     let assets = dir.join("assets");
     fs::create_dir_all(&assets)?;
     let local = download_all(&urls, &assets);
-    let out = tag_re.replace_all(html, |c: &regex::Captures| {
+    let out = IMG_TAG.replace_all(html, |c: &regex::Captures| {
         let tag = c.get(0).unwrap().as_str();
         if attr(tag, "src").is_some_and(|s| s.starts_with("data:")) {
             return tag.to_string();
@@ -432,15 +464,9 @@ fn localize_images(html: &str, base: &Url, dir: &Path) -> Result<(String, usize)
 }
 
 fn download_all(urls: &[String], assets: &Path) -> HashMap<String, String> {
-    let results: Vec<Result<PathBuf>> = std::thread::scope(|s| {
-        let handles: Vec<_> = urls
-            .iter()
-            .enumerate()
-            .map(|(i, u)| {
-                s.spawn(move || capture::curl_image(u, &assets.join(format!("{:03}", i + 1))))
-            })
-            .collect();
-        handles.into_iter().map(|h| h.join().unwrap()).collect()
+    let indexed: Vec<(usize, &String)> = urls.iter().enumerate().collect();
+    let results = parallel(&indexed, |(i, u)| {
+        capture::curl_image(u, &assets.join(format!("{:03}", i + 1)))
     });
     let mut map = HashMap::new();
     for (u, r) in urls.iter().zip(results) {
@@ -456,8 +482,7 @@ fn download_all(urls: &[String], assets: &Path) -> HashMap<String, String> {
 }
 
 fn absolutize_hrefs(html: &str, base: &Url) -> String {
-    Regex::new(r#"(?is)(<a\b[^>]*\bhref=["'])([^"'#][^"']*)(["'])"#)
-        .unwrap()
+    ANCHOR_HREF
         .replace_all(html, |c: &regex::Captures| {
             base.join(&c[2])
                 .map_or_else(|_| c[0].to_string(), |u| format!("{}{}{}", &c[1], u, &c[3]))
@@ -479,21 +504,13 @@ fn reader_content(doc: &Html) -> String {
     }
 }
 
-fn escape_text(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-}
-
 fn strip_attrs(html: &str) -> String {
     let mut svgs: Vec<String> = Vec::new();
-    let svg_re = Regex::new(r"(?is)<svg\b.*?</svg>").unwrap();
-    let stashed = svg_re.replace_all(html, |c: &regex::Captures| {
+    let stashed = SVG_BLOCK.replace_all(html, |c: &regex::Captures| {
         svgs.push(c[0].to_string());
         format!("\u{1}{}\u{1}", svgs.len() - 1)
     });
-    let tag = Regex::new(r"<([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>").unwrap();
-    let mut out = tag
+    let mut out = OPEN_TAG
         .replace_all(&stashed, |c: &regex::Captures| {
             let name = c[1].to_lowercase();
             let keep: &[&str] = match name.as_str() {
@@ -518,22 +535,16 @@ fn strip_attrs(html: &str) -> String {
 }
 
 fn ensure_h1(html: &str, title: &str) -> String {
-    if Regex::new(r"(?i)<h1[\s>]").unwrap().is_match(html) {
+    if H1_OPEN.is_match(html) {
         html.to_string()
     } else {
-        format!("<h1>{}</h1>\n{html}", escape_text(title))
+        format!("<h1>{}</h1>\n{html}", escape_html(title))
     }
 }
 
 fn finish(html: &str, base: &Url, title: &str, cap: u32, lay: &Layout) -> String {
-    let s = Regex::new(r"(?s)<!--.*?-->")
-        .unwrap()
-        .replace_all(html, " ")
-        .into_owned();
-    let s = Regex::new(r"(?is)<style\b[^>]*>.*?</style>")
-        .unwrap()
-        .replace_all(&s, " ")
-        .into_owned();
+    let s = HTML_COMMENT.replace_all(html, " ").into_owned();
+    let s = STYLE_BLOCK.replace_all(&s, " ").into_owned();
     let s = strip_attrs(&s);
     let s = absolutize_hrefs(&s, base);
     let s = ensure_h1(&s, title);
@@ -548,7 +559,7 @@ fn finish(html: &str, base: &Url, title: &str, cap: u32, lay: &Layout) -> String
     format!(
         "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{}</title>\n\
 {css}\n</head>\n<body>\n{s}\n</body>\n</html>\n",
-        escape_text(title)
+        escape_html(title)
     )
 }
 

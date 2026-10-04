@@ -1,6 +1,7 @@
 use super::html::{art_paths, chapter, pieces, title_page};
 use super::images::{flatten, Image};
 use crate::model::manifest::Edition;
+use crate::util::escape_html;
 use anyhow::{Context, Result};
 use image::imageops::FilterType;
 use std::collections::BTreeMap;
@@ -62,16 +63,8 @@ fn jpeg(path: &Path) -> Result<(Vec<u8>, u32, u32)> {
 fn xhtml(language: &str, title: &str, body: &str) -> String {
     format!(
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\" lang=\"{language}\" xml:lang=\"{language}\">\n<head>\n<meta charset=\"utf-8\"/>\n<title>{}</title>\n<link rel=\"stylesheet\" href=\"style.css\"/>\n</head>\n<body>\n{body}\n</body>\n</html>\n",
-        escape(title)
+        escape_html(title)
     )
-}
-
-fn escape(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
 }
 
 fn slug(name: &str) -> String {
@@ -130,10 +123,10 @@ fn package(edition: &Edition, book: &Book, spine: &[String], base_url: &str) -> 
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"uid\" xml:lang=\"{language}\">\n<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n<dc:identifier id=\"uid\">{}/{}/{language}</dc:identifier>\n<dc:title>{}: {}</dc:title>\n<dc:creator>{}</dc:creator>\n<dc:publisher>{}</dc:publisher>\n<dc:language>{language}</dc:language>\n<dc:date>{}</dc:date>\n<meta property=\"dcterms:modified\">{}T00:00:00Z</meta>\n<meta name=\"cover\" content=\"f0\"/>\n</metadata>\n<manifest>\n{}\n</manifest>\n<spine>{itemrefs}</spine>\n</package>\n",
         base_url.trim_end_matches('/'),
         edition.id,
-        escape(&edition.publication_name),
-        escape(&edition.title),
-        escape(&edition.publication_name),
-        escape(&edition.publication_name),
+        escape_html(&edition.publication_name),
+        escape_html(&edition.title),
+        escape_html(&edition.publication_name),
+        escape_html(&edition.publication_name),
         edition.publication_date,
         edition.publication_date,
         book.manifest.join("\n"),
@@ -224,7 +217,7 @@ pub fn run(args: &EpubArgs) -> Result<i32> {
     };
     let cover_body = format!(
         "<section class=\"cover-page\" epub:type=\"cover\"><img src=\"images/cover.jpg\" alt=\"{}\"/></section>",
-        escape(&edition.title)
+        escape_html(&edition.title)
     );
     add_page(&mut book, "cover.xhtml", &edition.title, &cover_body, false);
     add_page(
@@ -241,14 +234,14 @@ pub fn run(args: &EpubArgs) -> Result<i32> {
             format!(
                 "<li><a href=\"{}.xhtml\">{}</a></li>",
                 p.slug,
-                escape(&p.title)
+                escape_html(&p.title)
             )
         })
         .collect();
     let nav = format!(
         "<nav epub:type=\"toc\" id=\"toc\"><h2>{}</h2><ol><li><a href=\"cover.xhtml\">{}</a></li>{contents}</ol></nav>\n<nav epub:type=\"landmarks\" hidden=\"hidden\"><ol><li><a epub:type=\"cover\" href=\"cover.xhtml\">Cover</a></li><li><a epub:type=\"bodymatter\" href=\"{}.xhtml\">Start</a></li></ol></nav>",
-        escape(&crate::model::shared::ui(language, "contents")),
-        escape(&edition.title),
+        escape_html(&crate::model::shared::ui(language, "contents")),
+        escape_html(&edition.title),
         pieces.first().map_or("title", |p| p.slug.as_str())
     );
     add_page(&mut book, "nav.xhtml", &edition.title, &nav, true);

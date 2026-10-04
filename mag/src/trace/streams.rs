@@ -4,7 +4,6 @@ use flate2::read::ZlibDecoder;
 use lopdf::content::Content;
 use lopdf::{Dictionary, Document, Object, ObjectId};
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 use std::io::Read;
 use std::rc::Rc;
@@ -128,7 +127,7 @@ fn paint(space: Space, args: &[Object]) -> Result<Color> {
 }
 
 fn icc_space(doc: &Document, stream: &lopdf::Stream) -> Result<Space> {
-    let digest = hex::encode(Sha256::digest(decode_stream(doc, stream)?));
+    let digest = crate::util::sha256_hex(decode_stream(doc, stream)?);
     let n = num(resolve(doc, stream.dict.get(b"N")?)?)?;
     let space = match (digest.as_str(), n as u8) {
         (SRGB_V4_SHA256, _) | (_, 3) => DEVICE_RGB,
@@ -1698,7 +1697,7 @@ fn decode_image(doc: &Document, stream: &lopdf::Stream) -> Result<String> {
         }
         rgba.push(a);
     }
-    Ok(hex::encode(Sha256::digest(&rgba)))
+    Ok(crate::util::sha256_hex(&rgba))
 }
 
 #[cfg(test)]

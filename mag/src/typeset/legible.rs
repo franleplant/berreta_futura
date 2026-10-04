@@ -2,7 +2,6 @@ use crate::model::manifest::Edition;
 use crate::typeset::layout::declared_pt;
 use crate::typeset::media::pixels;
 use anyhow::{Context, Result};
-use sha2::{Digest, Sha256};
 use std::path::Path;
 use std::process::Command;
 
@@ -135,9 +134,7 @@ pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
 
 fn word_heights(path: &Path, repo_root: &Path) -> Result<Vec<f64>> {
     let bytes = std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
-    let cached = repo_root
-        .join(CACHE)
-        .join(hex::encode(Sha256::digest(&bytes)));
+    let cached = repo_root.join(CACHE).join(crate::util::sha256_hex(&bytes));
     if let Ok(text) = std::fs::read_to_string(&cached) {
         return Ok(text.lines().filter_map(|l| l.parse().ok()).collect());
     }

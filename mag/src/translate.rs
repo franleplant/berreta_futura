@@ -1,16 +1,23 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::produce::{section, INLINE_PREAMBLE};
+use crate::util::{parallel, prompts_path, read};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::thread;
+use std::sync::LazyLock;
 
-fn read(path: &Path) -> Result<String> {
-    fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
+#[derive(clap::Args)]
+pub struct TranslateArgs {
+    pub run_dir: PathBuf,
+    #[arg(long, default_value = "codex:gpt-5.6-luna")]
+    pub model: String,
 }
+
+static JSON_FENCE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)```json\s*\n(.*)```").unwrap());
 
 #[derive(Clone)]
 struct PieceJob {
@@ -65,7 +72,7 @@ fn discover_jobs(run_dir: &Path) -> Result<Vec<PieceJob>> {
 }
 
 fn build_prompt(piece_id: &str, manuscript: &str) -> Result<String> {
-    let lens_path = PathBuf::from("prompts").join("translation-es.md");
+    let lens_path = prompts_path("translation-es.md");
     let mut out = String::new();
     out += INLINE_PREAMBLE;
     out += &section("prompts/translation-es.md", &read(&lens_path)?);
@@ -100,8 +107,7 @@ fn fenced_blocks(markdown: &str) -> Vec<String> {
 }
 
 fn parse_translation(reply: &str, english: &str, label: &str) -> Result<String> {
-    let re = Regex::new(r"(?s)```json\s*\n(.*)```").unwrap();
-    let fence = re
+    let fence = JSON_FENCE
         .captures_iter(reply)
         .last()
         .map(|c| c[1].trim().to_string())
@@ -169,7 +175,8 @@ fn translate_piece(caller: &Caller, model: &ModelSpec, job: &PieceJob) -> Result
     })
 }
 
-pub fn run(run_dir: &Path, model: &ModelSpec) -> Result<i32> {
+pub fn run(args: &TranslateArgs) -> Result<i32> {
+    let (run_dir, model) = (args.run_dir.as_path(), &ModelSpec::parse(&args.model)?);
     let jobs = discover_jobs(run_dir)?;
     let translations_root = run_dir.join("translations").join("es");
     fs::create_dir_all(translations_root.join("articles"))
@@ -177,33 +184,17 @@ pub fn run(run_dir: &Path, model: &ModelSpec) -> Result<i32> {
 
     let caller = Arc::new(Caller::new(run_dir));
 
-    let mut handles = Vec::new();
-    for job in &jobs {
-        let caller = Arc::clone(&caller);
-        let model = model.clone();
-        let job = job.clone();
-        handles.push(thread::spawn(move || -> Result<PieceTranslation> {
-            translate_piece(&caller, &model, &job)
-        }));
-    }
-
     let mut results = Vec::with_capacity(jobs.len());
     let mut failures: Vec<(String, String)> = Vec::new();
-    for (job, handle) in jobs.iter().zip(handles) {
-        match handle.join() {
-            Ok(Ok(status)) => results.push(status),
-            Ok(Err(e)) => {
+    for (job, result) in jobs
+        .iter()
+        .zip(parallel(&jobs, |job| translate_piece(&caller, model, job)))
+    {
+        match result {
+            Ok(status) => results.push(status),
+            Err(e) => {
                 eprintln!("  FAILED {}: {e}", job.id);
                 failures.push((job.id.clone(), e.to_string()));
-                results.push(PieceTranslation {
-                    piece: job.id.clone(),
-                    state: "failed".to_string(),
-                    words: 0,
-                });
-            }
-            Err(_) => {
-                eprintln!("  FAILED {}: worker thread panicked", job.id);
-                failures.push((job.id.clone(), "worker thread panicked".to_string()));
                 results.push(PieceTranslation {
                     piece: job.id.clone(),
                     state: "failed".to_string(),

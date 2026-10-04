@@ -2,6 +2,10 @@ use anyhow::{anyhow, bail, Result};
 use fancy_regex::{Captures, Regex};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::sync::LazyLock;
+
+static CONTENT_TYPE_SUFFIX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(.*)/.*\+(.*)$").unwrap());
 
 pub struct Lexer {
     states: HashMap<String, Vec<Rule>>,
@@ -195,7 +199,7 @@ fn http(kind: &str, classes: &[String], m: &Captures, ctx: &mut Context) -> Resu
     }
     let content = m[0].to_owned();
     let content_type = ctx.content_type.clone().unwrap_or_default();
-    let general = Regex::new(r"^(.*)/.*\+(.*)$")?.replace(&content_type, "$1/$2");
+    let general = CONTENT_TYPE_SUFFIX.replace(&content_type, "$1/$2");
     let mut candidates = vec![content_type.clone()];
     if content_type.contains('+') {
         candidates.push(general.into_owned());

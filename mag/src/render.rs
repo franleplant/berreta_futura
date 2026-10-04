@@ -1,4 +1,5 @@
 use crate::caller::{Caller, ModelSpec};
+use crate::util::read_yaml;
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
@@ -156,11 +157,6 @@ fn resolve_field(raw: &str, manifest_dir: &Path) -> PathBuf {
     } else {
         manifest_dir.join(raw)
     }
-}
-
-fn read_yaml(path: &Path) -> Result<serde_norway::Value> {
-    let text = fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
-    serde_norway::from_str(&text).with_context(|| format!("parsing {}", path.display()))
 }
 
 fn str_field<'a>(v: &'a serde_norway::Value, key: &str) -> Option<&'a str> {

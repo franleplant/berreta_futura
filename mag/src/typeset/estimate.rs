@@ -63,26 +63,30 @@ impl Metrics {
         Ok(Metrics(faces))
     }
 
-    pub fn width(&self, face: &str, text: &str, size: f64) -> f64 {
-        let widths = &self.0[face];
-        text.chars()
+    pub fn width(&self, face: &str, text: &str, size: f64) -> Result<f64> {
+        let widths = self
+            .0
+            .get(face)
+            .ok_or_else(|| ValidationError::one(format!("unknown font face {face:?}")))?;
+        Ok(text
+            .chars()
             .map(|c| widths.get(&c).unwrap_or(&0.0))
             .sum::<f64>()
-            * size
+            * size)
     }
 
-    pub fn wrap(&self, text: &str, face: &str, size: f64, width: f64) -> Vec<String> {
+    pub fn wrap(&self, text: &str, face: &str, size: f64, width: f64) -> Result<Vec<String>> {
         let cleaned: String = text.chars().filter(|c| !matches!(c, '*' | '`')).collect();
         let mut words = Vec::new();
         for word in cleaned.split_whitespace() {
-            if self.width(face, word, size) <= width {
+            if self.width(face, word, size)? <= width {
                 words.push(word.to_string());
                 continue;
             }
             let mut chunk = String::new();
             for c in word.chars() {
                 let proposed = format!("{chunk}{c}");
-                if !chunk.is_empty() && self.width(face, &proposed, size) > width {
+                if !chunk.is_empty() && self.width(face, &proposed, size)? > width {
                     words.push(std::mem::replace(&mut chunk, c.to_string()));
                 } else {
                     chunk = proposed;
@@ -94,14 +98,14 @@ impl Metrics {
         let mut current = String::new();
         for word in words {
             let proposed = format!("{current} {word}").trim().to_string();
-            if !current.is_empty() && self.width(face, &proposed, size) > width {
+            if !current.is_empty() && self.width(face, &proposed, size)? > width {
                 lines.push(std::mem::replace(&mut current, word));
             } else {
                 current = proposed;
             }
         }
         lines.push(current);
-        lines
+        Ok(lines)
     }
 
     fn fitted(
@@ -112,25 +116,25 @@ impl Metrics {
         max: f64,
         min: f64,
         lines: usize,
-    ) -> Option<(f64, usize)> {
+    ) -> Result<Option<(f64, usize)>> {
         let mut size = max;
         while size >= min {
-            let count = self.wrap(title, "serif-display", size, width).len();
+            let count = self.wrap(title, "serif-display", size, width)?.len();
             if count <= lines && size + (count as f64 - 1.0) * size * TITLE_LEADING <= box_height {
-                return Some((size, count));
+                return Ok(Some((size, count)));
             }
             size -= 0.5;
         }
-        None
+        Ok(None)
     }
 
-    fn compact_title(&self, title: &str) -> Option<(f64, usize)> {
+    fn compact_title(&self, title: &str) -> Result<Option<(f64, usize)>> {
         self.fitted(title, RAIL, TITLE_BOX, COMPACT_TITLE_MAX, TITLE_MIN, 2)
     }
 
     pub fn illustrated_titles(&self, title: &str) -> Result<[(f64, usize); 2]> {
-        let standard = self.fitted(title, RAIL, TITLE_BOX, TITLE_MAX, TITLE_MIN, 2);
-        match (standard, self.compact_title(title)) {
+        let standard = self.fitted(title, RAIL, TITLE_BOX, TITLE_MAX, TITLE_MIN, 2)?;
+        match (standard, self.compact_title(title)?) {
             (Some(standard), Some(compact)) => Ok([standard, compact]),
             _ => Err(ValidationError::one(format!(
                 "Title cannot fit the Quiet Standard display box: {title}"
@@ -140,7 +144,7 @@ impl Metrics {
 
     pub fn editorial_opener(&self, title: &str) -> Result<(f64, f64)> {
         let (size, lines) = self
-            .fitted(title, LIVE_WIDTH, 135.0, 35.0, 25.0, 4)
+            .fitted(title, LIVE_WIDTH, 135.0, 35.0, 25.0, 4)?
             .ok_or_else(|| {
                 ValidationError::one(format!(
                     "Title cannot fit the Quiet Standard display box: {title}"
@@ -160,7 +164,7 @@ impl Metrics {
     ) -> Result<PlainOpener> {
         let maximum = if figure { 30.0 } else { 35.0 };
         let (size, lines) = self
-            .fitted(title, PLAIN_MEASURE, 165.0, maximum, 24.0, 4)
+            .fitted(title, PLAIN_MEASURE, 165.0, maximum, 24.0, 4)?
             .ok_or_else(|| {
                 ValidationError::one(format!(
                     "Title cannot fit the Quiet Standard display box: {title}"
@@ -189,7 +193,7 @@ impl Metrics {
             true => (title_field.max(floor), (floor - title_field).max(0.0)),
             false => {
                 let foot = symbol.unwrap_or(baseline).max(baseline);
-                (self.credit_foot(baseline, foot, note, column), 0.0)
+                (self.credit_foot(baseline, foot, note, column)?, 0.0)
             }
         };
         Ok(PlainOpener {
@@ -202,7 +206,7 @@ impl Metrics {
 
     fn byline_tracking(&self, byline: &str, column: f64) -> Result<f64> {
         let text = byline.trim().to_uppercase();
-        let width = self.width("sans-semibold", &text, 7.4);
+        let width = self.width("sans-semibold", &text, 7.4)?;
         if width > 0.0 && column / width < 0.78 {
             return Err(ValidationError::one(format!(
                 "Article byline {text:?} reaches past the {column:.2}pt credit column beside its \
@@ -216,14 +220,14 @@ impl Metrics {
         })
     }
 
-    fn credit_foot(&self, baseline: f64, foot: f64, note: &str, column: f64) -> f64 {
-        let note_lines = self.wrap(note, "sans-medium", 6.8, column).len() as f64;
+    fn credit_foot(&self, baseline: f64, foot: f64, note: &str, column: f64) -> Result<f64> {
+        let note_lines = self.wrap(note, "sans-medium", 6.8, column)?.len() as f64;
         let note_foot = baseline + 12.0 + (note_lines - 1.0) * 9.45 + 6.8 * 0.2412109375;
-        (if note.trim().is_empty() {
+        Ok((if note.trim().is_empty() {
             foot
         } else {
             foot.max(note_foot)
-        }) + PLAIN_FIELD_GAP
+        }) + PLAIN_FIELD_GAP)
     }
 }
 
@@ -268,7 +272,9 @@ mod tests {
         assert_eq!(size, 35.0);
         assert!((field - 153.2756).abs() < 1e-9);
         assert_eq!(
-            metrics.fitted(upkeep, PLAIN_MEASURE, 135.0, 35.0, 25.0, 4),
+            metrics
+                .fitted(upkeep, PLAIN_MEASURE, 135.0, 35.0, 25.0, 4)
+                .expect("a known face"),
             Some((35.0, 2))
         );
         assert!(metrics

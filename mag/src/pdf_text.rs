@@ -4,7 +4,13 @@ use lopdf::{Dictionary, Document, Object, ObjectId};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::LazyLock;
 use unicode_normalization::UnicodeNormalization;
+
+static TYPE1_ENCODING_1: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"dup\s+(\d+)\s*/([^\s/\[\]{}()<>]+)\s+put").unwrap());
+static CMAP_TOKEN: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"<([0-9A-Fa-f\s]*)>|\[|\]|[A-Za-z]+").unwrap());
 
 type M = [f64; 6];
 const PAGE_TREE_DEPTH: usize = 64;
@@ -499,8 +505,8 @@ fn type1_encoding(data: &[u8]) -> BTreeMap<u32, String> {
             })
             .collect();
     }
-    let re = regex::Regex::new(r"dup\s+(\d+)\s*/([^\s/\[\]{}()<>]+)\s+put").unwrap();
-    re.captures_iter(&text)
+    TYPE1_ENCODING_1
+        .captures_iter(&text)
         .filter_map(|c| Some((c[1].parse().ok()?, agl(&c[2])?)))
         .collect()
 }
@@ -552,8 +558,7 @@ fn utf16(hex: &str) -> String {
 
 fn parse_cmap(text: &str) -> BTreeMap<u32, String> {
     let mut out = BTreeMap::new();
-    let tok = regex::Regex::new(r"<([0-9A-Fa-f\s]*)>|\[|\]|[A-Za-z]+").unwrap();
-    let toks: Vec<String> = tok
+    let toks: Vec<String> = CMAP_TOKEN
         .find_iter(text)
         .map(|m| m.as_str().chars().filter(|c| !c.is_whitespace()).collect())
         .collect();

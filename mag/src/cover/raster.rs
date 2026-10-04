@@ -2,24 +2,28 @@ use anyhow::{anyhow, Result};
 use regex::Regex;
 
 use super::svg::{PAGE_HEIGHT, PAGE_WIDTH};
+use std::sync::LazyLock;
+
+static SIZE_ATTRS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new("width=\"[^\"]+\" height=\"[^\"]+\"").unwrap());
 
 fn blank_slot(svg: &str, slot: &str) -> String {
     let pattern = Regex::new(&format!(
         "(<rect data-slot=\"{slot}\"[^>]*?) fill=\"[^\"]+\""
     ))
-    .expect("static pattern");
+    .expect("a slot name makes a valid pattern");
     pattern.replace(svg, "$1 fill=\"none\"").into_owned()
 }
 
 pub fn sized(svg: &str, dpi: u32) -> String {
     let pixel_width = (PAGE_WIDTH / 72.0 * f64::from(dpi)).round() as u32;
     let pixel_height = (PAGE_HEIGHT / 72.0 * f64::from(dpi)).round() as u32;
-    let size = Regex::new("width=\"[^\"]+\" height=\"[^\"]+\"").expect("static pattern");
-    size.replace(
-        svg,
-        format!("width=\"{pixel_width}\" height=\"{pixel_height}\"").as_str(),
-    )
-    .into_owned()
+    SIZE_ATTRS
+        .replace(
+            svg,
+            format!("width=\"{pixel_width}\" height=\"{pixel_height}\"").as_str(),
+        )
+        .into_owned()
 }
 
 pub fn raster_svg(svg: &str, dpi: u32) -> String {

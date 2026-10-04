@@ -541,7 +541,7 @@ pub fn analyze_print_contrast(source: &Rgb) -> PrintContrastAnalysis {
             mark_contrasts.push(contrast);
         }
     }
-    mark_contrasts.sort_by(|a, b| a.partial_cmp(b).expect("contrast ratios are finite"));
+    mark_contrasts.sort_by(f64::total_cmp);
     let mark_ratio = mark_contrasts.len() as f64 / total as f64;
     let contrast = if mark_contrasts.is_empty() {
         21.0
@@ -722,7 +722,6 @@ mod exif_tests {
 #[cfg(test)]
 mod thumbnail_tests {
     use super::{thumbnail, Rgb};
-    use sha2::{Digest, Sha256};
 
     fn pattern(width: u32, height: u32) -> Rgb {
         let data = (0..height)
@@ -751,7 +750,7 @@ mod thumbnail_tests {
             "{} {} {}",
             image.width,
             image.height,
-            hex::encode(Sha256::digest(&image.data))
+            crate::util::sha256_hex(&image.data)
         );
         assert_eq!(ours, PINNED);
     }

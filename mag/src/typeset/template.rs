@@ -55,7 +55,10 @@ pub fn paginate(
     hyphenation: Hyphenation,
 ) -> Result<(Tree, PagedDocument)> {
     let (tree, bare) = crate::typeset::runt::bound(tree, font_dir, hyphenation)?;
-    let content = bare.pages().len() - 2;
+    let content =
+        bare.pages().len().checked_sub(2).ok_or_else(|| {
+            anyhow::anyhow!("the bare document has fewer than the two cover pages")
+        })?;
     let files = tree.files.into_iter().map(|file| File {
         source: file.source.replacen(
             PLATE_CONTENT,

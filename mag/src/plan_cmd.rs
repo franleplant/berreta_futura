@@ -1,10 +1,12 @@
 use crate::caller::write_atomic;
+use crate::util::read;
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use std::fs;
 use std::path::PathBuf;
 
-fn read(path: &std::path::Path) -> Result<String> {
-    fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
+#[derive(clap::Args)]
+pub struct PlanArgs {
+    pub edition: String,
 }
 
 fn matching_edition_dirs(edition: &str) -> Result<Vec<PathBuf>> {
@@ -359,7 +361,8 @@ pub fn add_source(
     Ok(())
 }
 
-pub fn propose_plan(edition: &str) -> Result<i32> {
+pub fn run(args: &PlanArgs) -> Result<i32> {
+    let edition = args.edition.as_str();
     let out_path = plan_path_for(edition)?;
 
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;

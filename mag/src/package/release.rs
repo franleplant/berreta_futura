@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 
 use crate::critic::inspect::{PageInspection, RASTER_DPI};
 use crate::critic::rules::{self, Critique, Inputs, Issue, PageAnnotation, Spread};
@@ -58,7 +57,7 @@ pub fn adopt_rendered_layout(manifest: &mut Value) -> Result<()> {
 
 pub fn sha256(path: &Path) -> Result<String> {
     let bytes = std::fs::read(path).with_context(|| format!("cannot read {}", path.display()))?;
-    Ok(hex::encode(Sha256::digest(bytes)))
+    Ok(crate::util::sha256_hex(bytes))
 }
 
 pub(crate) fn json_text(value: &Value) -> String {

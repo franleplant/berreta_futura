@@ -11,7 +11,7 @@ use regex::Regex;
 use serde_norway::{Mapping, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 
 pub const CONTENT_MODES: [&str; 3] = ["article", "in_a_nutshell", "verbatim"];
 
@@ -1966,25 +1966,23 @@ fn compare_markdown_invariants(
     }
 }
 
+static LINKS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\(([^)]+)\)").unwrap());
+static FENCED: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)```[^\n]*\n(.*?)\n```").unwrap());
+static INLINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"`([^`\n]+)`").unwrap());
+
 fn markdown_invariants(path: &Path) -> (Vec<String>, Vec<String>, Vec<String>) {
-    static LINKS: OnceLock<Regex> = OnceLock::new();
-    static FENCED: OnceLock<Regex> = OnceLock::new();
-    static INLINE: OnceLock<Regex> = OnceLock::new();
-    let links = LINKS.get_or_init(|| Regex::new(r"\[[^\]]+\]\(([^)]+)\)").expect("a valid regex"));
-    let fenced =
-        FENCED.get_or_init(|| Regex::new(r"(?s)```[^\n]*\n(.*?)\n```").expect("a valid regex"));
-    let inline = INLINE.get_or_init(|| Regex::new(r"`([^`\n]+)`").expect("a valid regex"));
     let text = std::fs::read_to_string(path).unwrap_or_default();
-    let link_targets = links
+    let link_targets = LINKS
         .captures_iter(&text)
         .map(|found| found[1].to_string())
         .collect();
-    let fenced_blocks: Vec<String> = fenced
+    let fenced_blocks: Vec<String> = FENCED
         .captures_iter(&text)
         .map(|found| found[1].to_string())
         .collect();
-    let without_fences = fenced.replace_all(&text, "");
-    let inline_code = inline
+    let without_fences = FENCED.replace_all(&text, "");
+    let inline_code = INLINE
         .captures_iter(&without_fences)
         .filter(|found| {
             let whole = found.get(0).expect("the whole match exists");

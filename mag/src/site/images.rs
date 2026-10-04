@@ -3,7 +3,6 @@ use image::codecs::jpeg::JpegEncoder;
 use image::codecs::webp::WebPEncoder;
 use image::imageops::FilterType;
 use image::{ExtendedColorType, RgbImage};
-use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -71,7 +70,7 @@ fn widths(width: u32) -> Vec<u32> {
 
 fn encode(path: &Path, out: &Path) -> Result<Image> {
     let source = flatten(path)?;
-    let stem = hex::encode(&Sha256::digest(std::fs::read(path)?)[..8]);
+    let stem = crate::util::sha256_hex(std::fs::read(path)?)[..16].to_string();
     let (w, h) = source.dimensions();
     let sized: Vec<RgbImage> = widths(w)
         .into_iter()

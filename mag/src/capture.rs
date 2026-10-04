@@ -2,10 +2,49 @@ use crate::caller::{self, write_atomic, Caller, ModelSpec};
 use crate::pdf_text;
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
-use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::LazyLock;
+
+static CHARSET_DECL: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)charset\s*=\s*[\x22']?([\w.:-]+)").unwrap());
+static META_CHARSET: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)<meta[^>]+charset\s*=\s*[\x22']?\s*([\w.:-]+)").unwrap());
+static NUMERIC_ENTITY: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"&#(x?)([0-9a-fA-F]+);").unwrap());
+static SR_ONLY_SPAN: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?is)<span\b[^>]*class="[^"]*\bsr-only\b[^"]*"[^>]*>.*?</span>"#).unwrap()
+});
+static HTML_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<[^>]*>").unwrap());
+static HTML_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
+static DATA_URI_SRC: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?s)\bsrc="data:[^"]*""#).unwrap());
+static BLANK_LINE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n{3,}").unwrap());
+static PRE_BLOCK: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?is)<pre\b[^>]*>(.*?)</pre>").unwrap());
+static LANGUAGE_CLASS: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(?:language|lang|highlight-source|highlight)-([\w+#.-]+)$").unwrap()
+});
+static BARE_LANGUAGE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-z0-9][\w+#.-]*$").unwrap());
+static TITLE_ELEMENT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?is)<title[^>]*>(.*?)</title>").unwrap());
+static X_POST_TITLE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"^.+ X: "(.+)" / X$"#).unwrap());
+static TITLE_SEPARATOR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\s+[|\u{2022}\u{00b7}]\s+").unwrap());
+static DATETIME_ATTR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"datetime=["'](\d{4}-\d{2}-\d{2})"#).unwrap());
+static NUMBERED_ITEM: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\s").unwrap());
+static CODE_FENCE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)```[^\n]*\n(.*?)```").unwrap());
+static MD_LINK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap());
+static MD_IMAGE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"!\[([^\]]*)\]\([^)]*\)").unwrap());
+static REMOTE_MD_IMAGE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"!\[[^\]]*\]\((https?://[^)\s]+)\)").unwrap());
+static MD_IMAGE_TARGET: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"!\[[^\]]*\]\(([^)]+)\)").unwrap());
 
 const RAW_DIR: &str = ".magazine/capture";
 const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
@@ -45,7 +84,7 @@ pub fn source_id(title: &str, url: &str) -> String {
     }
     let slug: String = slug.trim_matches('-').chars().take(48).collect();
     let slug = slug.trim_end_matches('-');
-    let hash = hex::encode(Sha256::digest(url.as_bytes()));
+    let hash = crate::util::sha256_hex(url.as_bytes());
     format!("{slug}-{}", &hash[..8])
 }
 
@@ -75,13 +114,10 @@ pub(crate) fn curl_text(url: &str) -> Result<String> {
 }
 
 fn declared_charset(body: &[u8], content_type: &str) -> Option<String> {
-    let header = Regex::new(r"(?i)charset\s*=\s*[\x22']?([\w.:-]+)").expect("the pattern compiles");
-    let meta = Regex::new(r"(?i)<meta[^>]+charset\s*=\s*[\x22']?\s*([\w.:-]+)")
-        .expect("the pattern compiles");
     let head = String::from_utf8_lossy(&body[..body.len().min(4096)]).into_owned();
-    header
+    CHARSET_DECL
         .captures(content_type)
-        .or_else(|| meta.captures(&head))
+        .or_else(|| META_CHARSET.captures(&head))
         .map(|c| c[1].to_string())
 }
 
@@ -181,8 +217,7 @@ fn decode_entities(s: &str) -> String {
     for (from, to) in named {
         out = out.replace(from, to);
     }
-    let numeric = Regex::new(r"&#(x?)([0-9a-fA-F]+);").unwrap();
-    numeric
+    NUMERIC_ENTITY
         .replace_all(&out, |c: &regex::Captures| {
             let radix = if c[1].is_empty() { 10 } else { 16 };
             u32::from_str_radix(&c[2], radix)
@@ -196,16 +231,13 @@ fn decode_entities(s: &str) -> String {
 
 fn strip_block(html: &str, tag: &str) -> String {
     Regex::new(&format!(r"(?is)<{tag}\b.*?</{tag}>"))
-        .unwrap()
+        .expect("a tag name makes a valid pattern")
         .replace_all(html, " ")
         .into_owned()
 }
 
 fn strip_sr_only(html: &str) -> String {
-    Regex::new(r#"(?is)<span\b[^>]*class="[^"]*\bsr-only\b[^"]*"[^>]*>.*?</span>"#)
-        .unwrap()
-        .replace_all(html, " ")
-        .into_owned()
+    SR_ONLY_SPAN.replace_all(html, " ").into_owned()
 }
 
 fn visible_html(html: &str) -> String {
@@ -213,14 +245,11 @@ fn visible_html(html: &str) -> String {
     for tag in ["script", "style", "svg", "noscript"] {
         s = strip_block(&s, tag);
     }
-    Regex::new(r"(?s)<!--.*?-->")
-        .unwrap()
-        .replace_all(&s, " ")
-        .into_owned()
+    HTML_COMMENT.replace_all(&s, " ").into_owned()
 }
 
 fn plain_text(html: &str) -> String {
-    let stripped = Regex::new(r"(?s)<[^>]*>").unwrap().replace_all(html, " ");
+    let stripped = HTML_TAG.replace_all(html, " ");
     normalize_ws(&decode_entities(&stripped))
 }
 
@@ -297,18 +326,9 @@ fn page_for_model(html: &str) -> String {
     for tag in ["script", "style", "svg", "noscript", "head"] {
         s = strip_block(&s, tag);
     }
-    s = Regex::new(r"(?s)<!--.*?-->")
-        .unwrap()
-        .replace_all(&s, " ")
-        .into_owned();
-    s = Regex::new(r#"(?s)\bsrc="data:[^"]*""#)
-        .unwrap()
-        .replace_all(&s, "")
-        .into_owned();
-    Regex::new(r"\n{3,}")
-        .unwrap()
-        .replace_all(&s, "\n\n")
-        .into_owned()
+    s = HTML_COMMENT.replace_all(&s, " ").into_owned();
+    s = DATA_URI_SRC.replace_all(&s, "").into_owned();
+    BLANK_LINE_RUN.replace_all(&s, "\n\n").into_owned()
 }
 
 fn normalize_ws(s: &str) -> String {
@@ -329,18 +349,16 @@ fn comparison_form(s: &str) -> String {
 }
 
 fn pre_runs(html: &str) -> Vec<String> {
-    Regex::new(r"(?is)<pre\b[^>]*>(.*?)</pre>")
-        .unwrap()
+    PRE_BLOCK
         .captures_iter(html)
         .map(|c| {
-            let inner = Regex::new(r"(?s)<[^>]*>").unwrap().replace_all(&c[1], "");
+            let inner = HTML_TAG.replace_all(&c[1], "");
             normalize_code(&decode_entities(&inner))
         })
         .collect()
 }
 
 fn marked_language(element: scraper::ElementRef) -> Option<String> {
-    let class = Regex::new(r"^(?:language|lang|highlight-source|highlight)-([\w+#.-]+)$").unwrap();
     let value = element.value();
     let named = [value.attr("data-lang"), value.attr("data-language")];
     named
@@ -350,13 +368,11 @@ fn marked_language(element: scraper::ElementRef) -> Option<String> {
         .chain(
             value
                 .classes()
-                .filter_map(|c| class.captures(c).map(|m| m[1].to_owned())),
+                .filter_map(|c| LANGUAGE_CLASS.captures(c).map(|m| m[1].to_owned())),
         )
         .map(|language| language.to_lowercase())
         .find(|language| {
-            Regex::new(r"^[a-z0-9][\w+#.-]*$")
-                .unwrap()
-                .is_match(language)
+            BARE_LANGUAGE.is_match(language)
                 && !["none", "plain", "default", "undefined", "null"].contains(&language.as_str())
         })
 }
@@ -432,7 +448,8 @@ fn meta_content(html: &str, keys: &[&str]) -> Option<String> {
             format!(r#"(?i)<meta[^>]+{value}[^>]+(?:property|name)=["']{key}["']"#),
             format!(r#""{key}"\s*:\s*"([^"]+)""#),
         ] {
-            if let Some(c) = Regex::new(&pat).unwrap().captures(html) {
+            let pattern = Regex::new(&pat).expect("a meta key makes a valid pattern");
+            if let Some(c) = pattern.captures(html) {
                 let m = c.get(1).or(c.get(2)).expect("one alternative matched");
                 return Some(decode_entities(m.as_str().trim()));
             }
@@ -443,18 +460,15 @@ fn meta_content(html: &str, keys: &[&str]) -> Option<String> {
 
 pub(crate) fn page_title(html: &str) -> Option<String> {
     let raw = meta_content(html, &["og:title"]).or_else(|| {
-        Regex::new(r"(?is)<title[^>]*>(.*?)</title>")
-            .unwrap()
+        TITLE_ELEMENT
             .captures(html)
             .map(|c| decode_entities(c[1].trim()))
     })?;
-    let raw = Regex::new(r#"^.+ X: "(.+)" / X$"#)
-        .unwrap()
+    let raw = X_POST_TITLE
         .captures(&raw)
         .map_or(raw.clone(), |c| c[1].to_string());
 
-    let head = Regex::new(r"\s+[|\u{2022}\u{00b7}]\s+")
-        .unwrap()
+    let head = TITLE_SEPARATOR
         .split(&raw)
         .next()
         .unwrap_or(&raw)
@@ -477,12 +491,7 @@ pub(crate) fn page_title(html: &str) -> Option<String> {
 fn page_published(html: &str) -> Option<String> {
     meta_content(html, &["article:published_time", "datePublished"])
         .map(|s| s.chars().take(10).collect())
-        .or_else(|| {
-            Regex::new(r#"datetime=["'](\d{4}-\d{2}-\d{2})"#)
-                .unwrap()
-                .captures(html)
-                .map(|c| c[1].to_string())
-        })
+        .or_else(|| DATETIME_ATTR.captures(html).map(|c| c[1].to_string()))
 }
 
 struct Extraction {
@@ -610,7 +619,6 @@ fn edge_spans(text: &str, run: &str) -> Vec<(usize, usize)> {
 }
 
 fn recall(body: &str, covers: &[String], page: &Folded) -> Recall {
-    let ordinal = Regex::new(r"^\d+\.\s").unwrap();
     let mut spans = Vec::new();
     let mut r = Recall {
         misses: Vec::new(),
@@ -628,7 +636,7 @@ fn recall(body: &str, covers: &[String], page: &Folded) -> Recall {
         let t = line.trim();
         let structural = i < 3 || t.starts_with(['#', '|']) || t.starts_with("![");
         let t = t.trim_start_matches(['-', '*', '>', '#']).trim_start();
-        let t = ordinal.replace(t, "").replace(PROSE_FOLD, "");
+        let t = NUMBERED_ITEM.replace(t, "").replace(PROSE_FOLD, "");
         let words: Vec<&str> = t.split_whitespace().collect();
         if structural || words.len() < 5 {
             for cell in t.split('|') {
@@ -682,9 +690,8 @@ fn fidelity_gate(
     pres: &[String],
     paragraphs: &[String],
 ) -> Result<()> {
-    let fence = Regex::new(r"(?s)```[^\n]*\n(.*?)```").unwrap();
     let mut covers = Vec::new();
-    for block in fence.captures_iter(article) {
+    for block in CODE_FENCE.captures_iter(article) {
         let code = normalize_code(&block[1]);
         if code.is_empty() {
             continue;
@@ -705,17 +712,14 @@ fn fidelity_gate(
                 .map(|c| comparison_form(&c).replace(PROSE_FOLD, "")),
         );
     }
-
-    let link = Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
-    let image = Regex::new(r"!\[([^\]]*)\]\([^)]*\)").unwrap();
     covers.extend(
-        image
+        MD_IMAGE
             .captures_iter(article)
             .map(|c| comparison_form(&c[1]).replace(PROSE_FOLD, "")),
     );
-    let body = fence.replace_all(article, " ");
-    let body = image.replace_all(&body, " ");
-    let body = link.replace_all(&body, "$1");
+    let body = CODE_FENCE.replace_all(article, " ");
+    let body = MD_IMAGE.replace_all(&body, " ");
+    let body = MD_LINK.replace_all(&body, "$1");
 
     let page = fold_page(haystack);
     let r = recall(&body, &covers, &page);
@@ -758,8 +762,7 @@ fn fidelity_gate(
 }
 
 fn edge_check(article: &str, paragraphs: &[String]) -> Result<()> {
-    let link = Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
-    let folded = comparison_form(&link.replace_all(article, "$1")).replace(PROSE_FOLD, "");
+    let folded = comparison_form(&MD_LINK.replace_all(article, "$1")).replace(PROSE_FOLD, "");
     let covered: Vec<bool> = paragraphs
         .iter()
         .map(|p| {
@@ -973,7 +976,7 @@ fn capture_prompt(html: &str, url: &str) -> Result<String> {
     Ok(format!(
         "<page>\n{}\n</page>\n\n{}\n",
         page_for_model(html),
-        fs::read_to_string(crate::produce::prompts_path("capture.md"))
+        fs::read_to_string(crate::util::prompts_path("capture.md"))
             .context("reading prompts/capture.md")?
             .replace("{url}", url)
             .trim()
@@ -1037,9 +1040,8 @@ fn intake_edition(release_state: &str) -> Option<String> {
 }
 
 fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
-    let re = Regex::new(r"!\[[^\]]*\]\((https?://[^)\s]+)\)").unwrap();
     let mut mapping: Vec<(String, String)> = Vec::new();
-    for c in re.captures_iter(article) {
+    for c in REMOTE_MD_IMAGE.captures_iter(article) {
         let url = c[1].to_string();
         if mapping.iter().any(|(u, _)| *u == url) {
             continue;
@@ -1053,8 +1055,7 @@ fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
     for (url, local) in &mapping {
         out = out.replace(&format!("({url})"), &format!("({local})"));
     }
-    let any_image = Regex::new(r"!\[[^\]]*\]\(([^)]+)\)").unwrap();
-    for c in any_image.captures_iter(&out) {
+    for c in MD_IMAGE_TARGET.captures_iter(&out) {
         if !c[1].starts_with("media/") {
             bail!("article still references a non-local image: {}", &c[1]);
         }
@@ -1062,16 +1063,39 @@ fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
     Ok((out, mapping.len()))
 }
 
+#[derive(clap::Args)]
 pub struct CaptureArgs {
     pub url: String,
+    #[arg(
+        long,
+        help = "Collecting edition to queue into (default: the intake edition; created, and made the intake edition, if it does not exist)"
+    )]
     pub edition: Option<String>,
+    #[arg(long, help = "Comma-separated tags for record.yaml")]
     pub tags: Option<String>,
+    #[arg(long, help = "Override the extracted title")]
     pub title: Option<String>,
+    #[arg(long, help = "Override the extracted author")]
     pub author: Option<String>,
+    #[arg(long, help = "Override the extracted publish date (YYYY-MM-DD)")]
     pub published: Option<String>,
+    #[arg(
+        long,
+        help = "Saved HTML to capture from instead of fetching the URL (for pages curl cannot reach: login walls, JS-rendered apps). The URL is still recorded and still derives the source id"
+    )]
     pub html: Option<PathBuf>,
+    #[arg(
+        long,
+        help = "Join this existing article row in the edition's plan.yaml instead of getting a row of its own"
+    )]
     pub article: Option<String>,
+    #[arg(
+        long,
+        help = "Content mode for the new plan row: article, in_a_nutshell, or verbatim (default: verbatim when the source fits seven reader pages, else article)"
+    )]
     pub mode: Option<String>,
+    #[arg(long, default_value = "sonnet")]
+    pub model: String,
 }
 
 fn pdf_to_extraction(pdf: &Path) -> Result<Extraction> {
@@ -1189,7 +1213,8 @@ fn write_raw(pdf: Option<&PathBuf>, html: &str, sid: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
+pub fn run(args: &CaptureArgs) -> Result<i32> {
+    let spec = &ModelSpec::parse(&args.model)?;
     let (url, edition, tags, mode) = (
         args.url.as_str(),
         args.edition.as_deref(),

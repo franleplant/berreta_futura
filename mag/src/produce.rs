@@ -1,12 +1,27 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
+use crate::util::{parallel, prompts_path, read};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::thread;
+use std::sync::LazyLock;
 use std::time::Instant;
+
+#[derive(clap::Args)]
+pub struct ProduceArgs {
+    pub plan: PathBuf,
+    #[arg(long, help = "Existing run dir; pieces with final.md are skipped")]
+    pub resume: Option<PathBuf>,
+    #[arg(long, help = "Comma-separated article ids")]
+    pub only: Option<String>,
+    #[arg(long = "writer-model", default_value = "opus")]
+    pub writer_model: String,
+}
+
+static IMAGE_LINE: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"^!\[[^\]]*\]\([^)]*\)\s*$").unwrap());
 
 pub const INLINE_PREAMBLE: &str = "You are running non-interactively with NO file access and NO tools. Every\ndocument you need is inlined below. If an included instruction tells you to\nread a file or path, the content of that file is already included here;\nnever claim to have read anything that is not inlined.";
 
@@ -20,20 +35,6 @@ fn writer_prompt_file(mode: &str) -> Result<&'static str> {
         "in_a_nutshell" => Ok("in-a-nutshell.md"),
         other => bail!("unknown content_mode '{other}'"),
     }
-}
-
-fn read(path: &Path) -> Result<String> {
-    fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
-}
-
-pub(crate) fn prompts_path(file: &str) -> PathBuf {
-    let local = PathBuf::from("prompts").join(file);
-    if local.exists() {
-        return local;
-    }
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../prompts")
-        .join(file)
 }
 
 fn source_text(source_id: &str) -> Result<String> {
@@ -112,7 +113,16 @@ fn writer_prompt(article: &serde_norway::Value, sources: &[(String, String)]) ->
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("article missing content_mode"))?;
     let file = writer_prompt_file(mode)?;
-    let mut prompt = read(&prompts_path(file))?.trim().to_string();
+    fill_prompt(&read(&prompts_path(file))?, file, article, sources)
+}
+
+fn fill_prompt(
+    template: &str,
+    file: &str,
+    article: &serde_norway::Value,
+    sources: &[(String, String)],
+) -> Result<String> {
+    let mut prompt = template.trim().to_string();
     if let Some(title) = article.get("title").and_then(|v| v.as_str()) {
         prompt = prompt.replace("{topic}", title);
     }
@@ -319,7 +329,6 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
             sources.len()
         );
     };
-    let image = regex::Regex::new(r"^!\[[^\]]*\]\([^)]*\)\s*$").unwrap();
     let mut lines = text.lines().skip_while(|l| l.trim().is_empty()).peekable();
     if lines.peek().is_some_and(|l| l.starts_with("# ")) {
         lines.next();
@@ -333,7 +342,7 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
             lines.next();
         }
     }
-    let body: Vec<&str> = lines.filter(|l| !image.is_match(l)).collect();
+    let body: Vec<&str> = lines.filter(|l| !IMAGE_LINE.is_match(l)).collect();
     Ok(body.join("\n").trim().to_string() + "\n")
 }
 
@@ -662,12 +671,15 @@ fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> R
     Ok(format!("scaffolded {}", path.display()))
 }
 
-pub fn run_edition(
-    plan_path: &Path,
-    resume: Option<PathBuf>,
-    only: Option<&HashSet<String>>,
-    writer_model: &ModelSpec,
-) -> Result<i32> {
+pub fn run(args: &ProduceArgs) -> Result<i32> {
+    let plan_path = args.plan.as_path();
+    let resume = args.resume.clone();
+    let only_set: Option<HashSet<String>> = args
+        .only
+        .as_ref()
+        .map(|s| s.split(',').map(|x| x.trim().to_string()).collect());
+    let only = only_set.as_ref();
+    let writer_model = &ModelSpec::parse(&args.writer_model)?;
     let plan_text = read(plan_path)?;
     let plan: Plan = serde_norway::from_str(&plan_text).context("parsing plan.yaml")?;
     let edition_id = plan
@@ -752,59 +764,40 @@ fn write_articles(
     articles: &[serde_norway::Value],
     writer_model: &ModelSpec,
 ) -> (Vec<PieceStatus>, Failures) {
-    let mut handles = Vec::new();
-    for article in articles {
-        let article_owned = article.clone();
-        let caller = Arc::clone(caller);
-        let run_dir = run_dir.to_path_buf();
-        let writer_model = writer_model.clone();
-        handles.push(thread::spawn(move || -> Result<PieceStatus> {
-            let id = article_owned
-                .get("id")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| anyhow!("article missing id"))?
+    let results = parallel(articles, |article| {
+        let id = article
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("article missing id"))?;
+        let source_ids = article
+            .get("source_ids")
+            .and_then(|v| v.as_sequence())
+            .ok_or_else(|| anyhow!("article '{id}' missing source_ids"))?;
+        let mut sources = Vec::new();
+        for sid_v in source_ids {
+            let sid = sid_v
+                .as_str()
+                .ok_or_else(|| anyhow!("non-string source id in article '{id}'"))?
                 .to_string();
-            let source_ids = article_owned
-                .get("source_ids")
-                .and_then(|v| v.as_sequence())
-                .ok_or_else(|| anyhow!("article '{id}' missing source_ids"))?;
-            let mut sources = Vec::new();
-            for sid_v in source_ids {
-                let sid = sid_v
-                    .as_str()
-                    .ok_or_else(|| anyhow!("non-string source id in article '{id}'"))?
-                    .to_string();
-                let text = ranged_source(&sid, article_owned.get("source_range"))?;
-                sources.push((sid, text));
-            }
-            produce_piece(
-                &caller,
-                &run_dir,
-                &id,
-                &article_owned,
-                &sources,
-                &writer_model,
-            )
-        }));
-    }
+            let text = ranged_source(&sid, article.get("source_range"))?;
+            sources.push((sid, text));
+        }
+        produce_piece(caller, run_dir, id, article, &sources, writer_model)
+    });
 
     let mut statuses = Vec::new();
     let mut failures = Vec::new();
-    for (article, handle) in articles.iter().zip(handles) {
+    for (article, result) in articles.iter().zip(results) {
         let id = article
             .get("id")
             .and_then(|v| v.as_str())
             .unwrap_or("?")
             .to_string();
-        match handle.join() {
-            Ok(Ok(status)) => statuses.push(status),
-            Ok(Err(e)) => {
+        match result {
+            Ok(status) => statuses.push(status),
+            Err(e) => {
                 eprintln!("  FAILED {id}: {e}");
                 failures.push((id, e.to_string()));
-            }
-            Err(_) => {
-                eprintln!("  FAILED {id}: worker thread panicked");
-                failures.push((id, "worker thread panicked".to_string()));
             }
         }
     }
@@ -1054,6 +1047,14 @@ mod tests {
         assert_eq!(v, vec!["Bad \u{2014} line.".to_string()]);
     }
 
+    fn test_prompt(article: &serde_norway::Value, sources: &[(String, String)]) -> String {
+        let file = writer_prompt_file(article["content_mode"].as_str().unwrap()).unwrap();
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../prompts")
+            .join(file);
+        fill_prompt(&read(&path).unwrap(), file, article, sources).unwrap()
+    }
+
     fn article_row() -> serde_norway::Value {
         serde_norway::from_str(
             "id: mcp\ntitle: MCP in a Nutshell\ncontent_mode: in_a_nutshell\nsource_ids: [a-1, b-2]\n",
@@ -1066,7 +1067,7 @@ mod tests {
         let sources = vec![("a-1".to_string(), "SOURCE TEXT".to_string())];
         let row: serde_norway::Value =
             serde_norway::from_str("content_mode: article\ntitle: T\n").unwrap();
-        let p = writer_prompt(&row, &sources).unwrap();
+        let p = test_prompt(&row, &sources);
         assert!(p.starts_with("<sources>\n\nSOURCE TEXT\n\n</sources>\n\n"));
         assert!(p.contains("90% orwell"));
     }
@@ -1074,7 +1075,7 @@ mod tests {
     #[test]
     fn nutshell_prompt_substitutes_topic() {
         let sources = vec![("a-1".to_string(), "S".to_string())];
-        let p = writer_prompt(&article_row(), &sources).unwrap();
+        let p = test_prompt(&article_row(), &sources);
         assert!(p.contains("MCP in a Nutshell, covered in <sources>."));
         assert!(!p.contains("{topic}"));
     }

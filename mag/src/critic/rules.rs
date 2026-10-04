@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use crate::critic::inspect::{
     difference, grayscale, inspect_page, point_below, render_review_pages, rgb_histogram, Gray,
@@ -41,7 +42,8 @@ pub const CROP_CAPTION_ALLOWANCE_POINTS: f64 = 48.0;
 pub const STUB_CROP_HEIGHT_POINTS: f64 = 220.0;
 pub const TAIL_FALLBACK_CROP_HEIGHT_POINTS: f64 = 300.0;
 pub const DEFAULT_ARTICLE_PAGE_CAP: i64 = 7;
-const COVER_PLACEHOLDER: &str = r"(?i)(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)";
+static COVER_PLACEHOLDER: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"(?i)(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)").unwrap());
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Issue {
@@ -1370,8 +1372,7 @@ pub fn contents_issues(
     } else {
         ""
     };
-    let placeholder = regex::Regex::new(COVER_PLACEHOLDER).expect("the pattern compiles");
-    if placeholder.is_match(cover_text) {
+    if COVER_PLACEHOLDER.is_match(cover_text) {
         recorder.at(
             "cover-placeholder-copy",
             "error",
