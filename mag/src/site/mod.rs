@@ -84,7 +84,16 @@ pub fn publish_record(path: &Path) -> Result<PublishRecord> {
     }
 }
 
+struct Scratch;
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        fs::remove_dir_all(scratch_root()).ok();
+    }
+}
+
 pub fn run(args: &SiteArgs) -> Result<i32> {
+    let _scratch = Scratch;
     let root = std::env::current_dir()?.canonicalize()?;
     let site = config(&root)?;
     let mut issues = site
@@ -258,6 +267,10 @@ pub fn newest_tracked_run(
         .map(str::to_string)
 }
 
+fn scratch_root() -> PathBuf {
+    std::env::temp_dir().join(format!("mag-site-{}", std::process::id()))
+}
+
 pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
@@ -272,7 +285,7 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let tracked = tracked_files(root, &rel)?;
     let run = newest_tracked_run(&tracked, &rel, &articles, yaml.get("editorial").is_some())
         .with_context(|| format!("{rel} has no git-tracked complete run"))?;
-    let scratch = root.join(".magazine/site").join(id);
+    let scratch = scratch_root().join(id);
     if scratch.exists() {
         fs::remove_dir_all(&scratch)?;
     }
@@ -284,6 +297,7 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
         run: Some(format!("{rel}/{run}")),
         anchor_model: "haiku".to_string(),
         no_model: true,
+        no_legibility: true,
     };
     let request = request(&args, root, &scratch)?;
     let inputs: Vec<String> = request

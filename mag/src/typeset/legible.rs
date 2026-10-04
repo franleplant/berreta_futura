@@ -86,6 +86,21 @@ pub fn decide(heights: &[f64], pixels: (u32, u32), layout: &str, g: &Geometry) -
         })
 }
 
+pub fn require_tesseract() -> Result<()> {
+    require("tesseract")
+}
+
+fn require(binary: &str) -> Result<()> {
+    Command::new(binary)
+        .arg("--version")
+        .output()
+        .context(
+            "tesseract is not installed, so small diagram text cannot be checked \
+             (brew install tesseract, or pass --no-legibility to render with figure layouts as declared)",
+        )
+        .map(drop)
+}
+
 pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
     let geometry = Geometry::from_template()?;
     for article in &mut edition.articles {
@@ -96,9 +111,7 @@ pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
             if fixed {
                 continue;
             }
-            let Some(heights) = word_heights(&figure.path, repo_root)? else {
-                return Ok(edition);
-            };
+            let heights = word_heights(&figure.path, repo_root)?;
             let size = pixels(&figure.path)?;
             let Some(change) = decide(&heights, size, &figure.layout, &geometry) else {
                 continue;
@@ -120,25 +133,19 @@ pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
     Ok(edition)
 }
 
-fn word_heights(path: &Path, repo_root: &Path) -> Result<Option<Vec<f64>>> {
+fn word_heights(path: &Path, repo_root: &Path) -> Result<Vec<f64>> {
     let bytes = std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
     let cached = repo_root
         .join(CACHE)
         .join(hex::encode(Sha256::digest(&bytes)));
     if let Ok(text) = std::fs::read_to_string(&cached) {
-        return Ok(Some(text.lines().filter_map(|l| l.parse().ok()).collect()));
+        return Ok(text.lines().filter_map(|l| l.parse().ok()).collect());
     }
-    let Ok(out) = Command::new("tesseract")
+    let out = Command::new("tesseract")
         .arg(path)
         .args(["-", "--psm", "11", "tsv"])
         .output()
-    else {
-        println!(
-            "warning: legibility: tesseract is not installed; figure layouts stay as declared \
-             and small diagram text is not checked (brew install tesseract)"
-        );
-        return Ok(None);
-    };
+        .context("running tesseract")?;
     anyhow::ensure!(
         out.status.success(),
         "tesseract failed on {}: {}",
@@ -153,7 +160,7 @@ fn word_heights(path: &Path, repo_root: &Path) -> Result<Option<Vec<f64>>> {
     )?;
     let lines: String = heights.iter().map(|h| format!("{h}\n")).collect();
     std::fs::write(&cached, lines)?;
-    Ok(Some(heights))
+    Ok(heights)
 }
 
 fn words(tsv: &str) -> Vec<f64> {
@@ -203,6 +210,13 @@ mod tests {
         assert_eq!(change.layout, "full_band");
         assert!(change.after < LEGIBLE_TEXT_PT, "{change:?}");
         assert!(g().width("rotated_plate", (1053, 1027)) < g().width("full_band", (1053, 1027)));
+    }
+
+    #[test]
+    fn a_missing_tesseract_is_refused_up_front_with_the_way_out() {
+        let error = require("no-such-tesseract-binary").expect_err("it is missing");
+        assert!(error.to_string().contains("--no-legibility"), "{error}");
+        assert!(require("sh").is_ok());
     }
 
     #[test]

@@ -37,6 +37,7 @@ pub(crate) fn curl_text(url: &str) -> Result<String> {
     let fetch = |extra: &[&str]| {
         Command::new("curl")
             .args(["-sL", "--max-time", "90", "-A", USER_AGENT, "--fail"])
+            .args(["-w", "\n%{content_type}"])
             .args(extra)
             .arg(url)
             .output()
@@ -52,7 +53,32 @@ pub(crate) fn curl_text(url: &str) -> Result<String> {
             out.status.code().unwrap_or(-1)
         );
     }
-    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    let split = out.stdout.iter().rposition(|b| *b == b'\n').unwrap_or(0);
+    let (body, content_type) = out.stdout.split_at(split);
+    decode_page(body, &String::from_utf8_lossy(content_type))
+}
+
+fn declared_charset(body: &[u8], content_type: &str) -> Option<String> {
+    let header = Regex::new(r"(?i)charset\s*=\s*[\x22']?([\w.:-]+)").expect("the pattern compiles");
+    let meta = Regex::new(r"(?i)<meta[^>]+charset\s*=\s*[\x22']?\s*([\w.:-]+)")
+        .expect("the pattern compiles");
+    let head = String::from_utf8_lossy(&body[..body.len().min(4096)]).into_owned();
+    header
+        .captures(content_type)
+        .or_else(|| meta.captures(&head))
+        .map(|c| c[1].to_string())
+}
+
+pub fn decode_page(body: &[u8], content_type: &str) -> Result<String> {
+    let Some(label) = declared_charset(body, content_type) else {
+        return Ok(match encoding_rs::Encoding::for_bom(body) {
+            Some((encoding, _)) => encoding.decode(body).0.into_owned(),
+            None => String::from_utf8_lossy(body).into_owned(),
+        });
+    };
+    let encoding = encoding_rs::Encoding::for_label(label.as_bytes())
+        .with_context(|| format!("the page declares the unknown charset {label:?}"))?;
+    Ok(encoding.decode(body).0.into_owned())
 }
 
 pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
@@ -883,7 +909,7 @@ fn fetched_pdf(url: &str) -> Result<Option<PathBuf>> {
     Ok(magic.starts_with(b"%PDF").then_some(tmp))
 }
 
-fn transcribe(html: &str, url: &str, sid: &str, spec: &ModelSpec) -> Result<(Extraction, f64)> {
+fn transcribe(html: &str, url: &str, sid: &str, spec: &ModelSpec) -> Result<(Extraction, String)> {
     let haystack = page_text(html);
     let pres = pre_runs(html);
     let prompt = capture_prompt(html, url)?;
@@ -891,7 +917,7 @@ fn transcribe(html: &str, url: &str, sid: &str, spec: &ModelSpec) -> Result<(Ext
     let extraction = caller.call_with_parse(&format!("capture {sid}"), spec, &prompt, |reply| {
         parse_reply(reply, &haystack, &pres)
     })?;
-    Ok((extraction, caller.total_cost()))
+    Ok((extraction, caller.cost_label()))
 }
 
 type ResolvedInput = (Option<PathBuf>, String, Option<Extraction>);
@@ -909,7 +935,8 @@ fn resolve_input(html_file: Option<&Path>, url: &str) -> Result<ResolvedInput> {
         None => {
             let html = match html_file {
                 Some(p) => {
-                    fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?
+                    let bytes = fs::read(p).with_context(|| format!("reading {}", p.display()))?;
+                    decode_page(&bytes, "")?
                 }
                 None => curl_text(url)?,
             };
@@ -984,7 +1011,7 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
     let (extraction, model_cost) = match pre_extraction {
         Some(e) => {
             println!("    pdf text converted directly, no model call");
-            (e, 0.0)
+            (e, "$0.00".to_string())
         }
         None => transcribe(&html, url, &sid, spec)?,
     };
@@ -1035,7 +1062,7 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
 
     let words = article.split_whitespace().count();
     println!(
-        "  captured: {words} words, {image_count} images, queued for {edition} (${model_cost:.2})"
+        "  captured: {words} words, {image_count} images, queued for {edition} ({model_cost})"
     );
     Ok(0)
 }
@@ -1043,6 +1070,36 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_latin1_page_is_decoded_by_its_header_or_its_meta_tag() {
+        let page = b"<html><head><meta charset=\"iso-8859-1\"></head>caf\xe9</html>";
+        assert!(decode_page(page, "text/html")
+            .unwrap()
+            .ends_with("caf\u{e9}</html>"));
+        let bare = b"caf\xe9";
+        assert_eq!(
+            decode_page(bare, "text/html; charset=ISO-8859-1").unwrap(),
+            "caf\u{e9}"
+        );
+    }
+
+    #[test]
+    fn a_page_without_a_charset_is_utf8_and_an_unknown_charset_fails() {
+        assert_eq!(
+            decode_page("caf\u{e9}".as_bytes(), "text/html").unwrap(),
+            "caf\u{e9}"
+        );
+        let error = decode_page(b"x", "text/html; charset=klingon").unwrap_err();
+        assert!(error.to_string().contains("klingon"), "{error}");
+    }
+
+    #[test]
+    fn a_bom_picks_the_encoding_and_a_utf8_bom_is_stripped() {
+        assert_eq!(decode_page(b"\xef\xbb\xbfhi", "").unwrap(), "hi");
+        assert_eq!(decode_page(b"\xff\xfeh\x00i\x00", "").unwrap(), "hi");
+        assert_eq!(decode_page(b"\xfe\xff\x00h\x00i", "").unwrap(), "hi");
+    }
 
     #[test]
     fn a_webp_becomes_a_png_of_the_same_pixels() {

@@ -1759,6 +1759,7 @@ dependencies = [
  "base64 0.22.1",
  "clap",
  "ego-tree",
+ "encoding_rs",
  "fancy-regex",
  "flate2",
  "gif 0.13.3",

@@ -42,7 +42,13 @@ fn files(dir: &Path, root: &Path, out: &mut BTreeMap<String, Vec<u8>>) {
 fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_bytes_twice() {
     let base = std::env::temp_dir().join(format!("mag-site-{}", std::process::id()));
     let (first, second) = (base.join("a"), base.join("b"));
+    let live = repository().join(".magazine/site");
+    let existed = live.exists();
     let log = build(&first);
+    assert!(
+        existed || !live.exists(),
+        "the site build wrote into the live .magazine/site"
+    );
     build(&second);
     let run = log
         .lines()

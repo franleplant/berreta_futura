@@ -7,7 +7,7 @@ use serde_json::{json, Map, Value};
 
 use crate::capture::pdf_text::{page_glyphs, Glyph};
 use crate::critic::metrics::{prepare_print_image, round_places, PreparedPrintImage};
-use crate::impose::{section_reader_pages, A4_LANDSCAPE_POINTS};
+use crate::impose::{section_reader_pages, A4_LANDSCAPE_POINTS, PAGE_TREE_DEPTH};
 
 pub const A5_POINTS: (f64, f64) = (419.5276, 595.2756);
 
@@ -124,7 +124,8 @@ fn raster_dimensions(path: Option<&Path>) -> Option<(u32, u32)> {
 
 fn inherited_media_box(document: &Document, page: ObjectId) -> Result<(f64, f64)> {
     let mut current = Some(page);
-    while let Some(id) = current {
+    for _ in 0..PAGE_TREE_DEPTH {
+        let Some(id) = current else { break };
         let dictionary = document.get_dictionary(id)?;
         if let Ok(entry) = dictionary.get(b"MediaBox") {
             let items = document.dereference(entry)?.1.as_array()?;
@@ -143,7 +144,9 @@ fn inherited_media_box(document: &Document, page: ObjectId) -> Result<(f64, f64)
             .ok()
             .and_then(|parent| parent.as_reference().ok());
     }
-    anyhow::bail!("page {page:?} has no MediaBox")
+    anyhow::bail!(
+        "page {page:?} has no MediaBox within {PAGE_TREE_DEPTH} /Parent levels (or its page tree loops)"
+    )
 }
 
 pub(crate) struct Pdf {
@@ -496,6 +499,24 @@ pub fn inspect_package(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn looping_page() -> (Document, ObjectId) {
+        let mut doc = Document::with_version("1.5");
+        let (a, b) = (doc.new_object_id(), doc.new_object_id());
+        for (id, parent) in [(a, b), (b, a)] {
+            let mut node = lopdf::Dictionary::new();
+            node.set("Parent", Object::Reference(parent));
+            doc.objects.insert(id, Object::Dictionary(node));
+        }
+        (doc, a)
+    }
+
+    #[test]
+    fn a_parent_cycle_without_a_media_box_is_refused() {
+        let (doc, page) = looping_page();
+        let error = inherited_media_box(&doc, page).expect_err("a cycle is refused");
+        assert!(error.to_string().contains("/Parent"), "{error}");
+    }
 
     fn glyph(x: f64, y: f64, size: f64) -> Glyph {
         Glyph {

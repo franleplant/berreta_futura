@@ -7,6 +7,7 @@ use std::rc::Rc;
 use unicode_normalization::UnicodeNormalization;
 
 type M = [f64; 6];
+const PAGE_TREE_DEPTH: usize = 64;
 const ID: M = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
 #[derive(Clone, Debug)]
@@ -102,7 +103,7 @@ fn interpret_page<'a>(
         depth: 0,
         pending_space: false,
     };
-    let res = page_resources(doc, id);
+    let res = page_resources(doc, id)?;
     it.interpret(&doc.get_page_content_with_limit(id, usize::MAX)?, &res)?;
     Ok(it)
 }
@@ -115,18 +116,21 @@ fn touches(v: &Glyph, g: &Glyph) -> bool {
         && v.x < g.x + g.w + reach
 }
 
-fn page_resources(doc: &Document, id: ObjectId) -> Dictionary {
+fn page_resources(doc: &Document, id: ObjectId) -> Result<Dictionary> {
     let mut node = doc.get_dictionary(id).ok();
-    while let Some(d) = node {
+    for _ in 0..PAGE_TREE_DEPTH {
+        let Some(d) = node else {
+            return Ok(Dictionary::new());
+        };
         if let Ok(r) = d.get(b"Resources") {
-            return deref(doc, r).as_dict().cloned().unwrap_or_default();
+            return Ok(deref(doc, r).as_dict().cloned().unwrap_or_default());
         }
         node = d
             .get(b"Parent")
             .ok()
             .and_then(|p| deref(doc, p).as_dict().ok());
     }
-    Dictionary::new()
+    bail!("the page tree is deeper than {PAGE_TREE_DEPTH} levels or loops through /Parent")
 }
 
 fn deref<'a>(doc: &'a Document, o: &'a Object) -> &'a Object {
@@ -1338,4 +1342,42 @@ fn code(block: &[Line]) -> String {
     }
     out.push("```".to_string());
     out.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn loop_of_pages() -> (Document, ObjectId) {
+        let mut doc = Document::with_version("1.5");
+        let (a, b) = (doc.new_object_id(), doc.new_object_id());
+        for (id, parent) in [(a, b), (b, a)] {
+            let mut node = Dictionary::new();
+            node.set("Parent", Object::Reference(parent));
+            doc.objects.insert(id, Object::Dictionary(node));
+        }
+        (doc, a)
+    }
+
+    #[test]
+    fn a_parent_cycle_is_refused_instead_of_walked_forever() {
+        let (doc, page) = loop_of_pages();
+        let error = page_resources(&doc, page).expect_err("a cycle is refused");
+        assert!(error.to_string().contains("/Parent"), "{error}");
+    }
+
+    #[test]
+    fn resources_inherited_through_the_page_tree_are_found() {
+        let (mut doc, page) = loop_of_pages();
+        let mut resources = Dictionary::new();
+        resources.set("Marker", Object::Integer(1));
+        let root = doc.new_object_id();
+        let mut node = Dictionary::new();
+        node.set("Resources", Object::Dictionary(resources));
+        doc.objects.insert(root, Object::Dictionary(node));
+        let mut leaf = Dictionary::new();
+        leaf.set("Parent", Object::Reference(root));
+        doc.objects.insert(page, Object::Dictionary(leaf));
+        assert!(page_resources(&doc, page).expect("found").has(b"Marker"));
+    }
 }

@@ -15,6 +15,7 @@ select, textarea, canvas, dialog, template, .related-posts, .related-wrapper, .r
 .skip-link, .read-next, .site-header, .site-footer, .kg-video-card, .kg-embed-card, \
 .kg-audio-card, .kg-file-card, .kg-signup-card, .kg-cta-card, [class*=\"bookmark\"]";
 const CHROME: &str = "header, nav, footer, aside";
+const CHROME_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(180);
 const CAPS_MM: [u32; 3] = [130, 110, 90];
 const CHROME_APPS: [&str; 4] = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -131,7 +132,10 @@ pub fn run(args: &PrintArgs) -> Result<i32> {
     let lay = layout(&args.layout)?;
     let base = Url::parse(&args.url).context("parsing url")?;
     let raw = match &args.html {
-        Some(p) => fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?,
+        Some(p) => capture::decode_page(
+            &fs::read(p).with_context(|| format!("reading {}", p.display()))?,
+            "",
+        )?,
         None => capture::curl_text(&args.url)?,
     };
     let title = capture::page_title(&raw).unwrap_or_else(|| "untitled".to_string());
@@ -206,16 +210,21 @@ fn chrome_binary(flag: Option<&Path>) -> Result<PathBuf> {
     anyhow::bail!("no Chrome or Chromium found for PDF output; pass --chrome <browser binary>")
 }
 
+fn file_url(path: &Path) -> Result<String> {
+    url::Url::from_file_path(path)
+        .map(String::from)
+        .map_err(|()| anyhow::anyhow!("{} is not an absolute file path", path.display()))
+}
+
 fn print_pdf(chrome: &Path, index: &Path, pdf: &Path) -> Result<()> {
-    let abs = index.canonicalize()?;
-    let out = std::process::Command::new(chrome)
-        .args(["--headless=new", "--disable-gpu", "--no-pdf-header-footer"])
+    let mut cmd = std::process::Command::new(chrome);
+    cmd.args(["--headless=new", "--disable-gpu", "--no-pdf-header-footer"])
         .arg(format!("--print-to-pdf={}", pdf.display()))
-        .arg(format!("file://{}", abs.display()))
-        .output()
-        .context("spawning chrome for pdf print")?;
-    if !out.status.success() || !pdf.exists() {
-        let err = String::from_utf8_lossy(&out.stderr);
+        .arg(file_url(&index.canonicalize()?)?);
+    let (status, err) = crate::caller::run_with_timeout(cmd, CHROME_TIMEOUT)
+        .context("chrome pdf print did not finish")?;
+    if !status.success() || !pdf.exists() {
+        let err = String::from_utf8_lossy(&err);
         anyhow::bail!(
             "chrome pdf print failed: {}",
             err.lines().last().unwrap_or("")
@@ -546,6 +555,13 @@ fn finish(html: &str, base: &Url, title: &str, cap: u32, lay: &Layout) -> String
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_path_with_spaces_and_hashes_becomes_a_percent_encoded_file_url() {
+        let url = file_url(Path::new("/tmp/my print/a#b?.html")).expect("absolute");
+        assert_eq!(url, "file:///tmp/my%20print/a%23b%3F.html");
+        assert!(file_url(Path::new("relative.html")).is_err());
+    }
 
     #[test]
     fn clean_strips_chrome_and_keeps_article() {

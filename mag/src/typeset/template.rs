@@ -111,20 +111,36 @@ pub fn compile(world: &Sources) -> Result<Vec<u8>> {
     pdf(&document(world)?)
 }
 
+static SEEN: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
 pub fn document(world: &Sources) -> Result<PagedDocument> {
     let compiled = typst::compile::<PagedDocument>(world);
-    if let Some(warning) = compiled
+    for warning in &compiled.warnings {
+        let mut seen = SEEN.lock().expect("the warning list is not poisoned");
+        if !seen.contains(&warning.message.to_string()) {
+            eprintln!("warning: typst: {}", warning.message);
+            seen.push(warning.message.to_string());
+        }
+    }
+    if let Some(font) = compiled
         .warnings
         .iter()
-        .find(|w| w.message.contains("did not converge"))
+        .find(|w| w.message.starts_with("unknown font family"))
     {
-        eprintln!(
-            "warning: the Typst reader did not settle: {}",
-            warning.message
+        bail!(
+            "the Typst reader asks for a font it does not have: {}",
+            font.message
         );
     }
     match compiled.output {
-        Ok(document) => Ok(document),
+        Ok(document) => match document
+            .pages()
+            .iter()
+            .find_map(|p| missing_glyph(&p.frame))
+        {
+            Some(text) => bail!("the Typst reader has no glyph for {text:?} in any bundled font"),
+            None => Ok(document),
+        },
         Err(errors) => bail!(
             "the Typst reader template did not compile:\n  {}",
             joined(errors.iter().map(|e| format!(
@@ -141,6 +157,18 @@ pub fn document(world: &Sources) -> Result<PagedDocument> {
             )))
         ),
     }
+}
+
+fn missing_glyph(frame: &Frame) -> Option<String> {
+    frame.items().find_map(|(_, item)| match item {
+        FrameItem::Text(text) => text
+            .glyphs
+            .iter()
+            .find(|glyph| glyph.id == 0)
+            .map(|glyph| text.text[glyph.range()].to_string()),
+        FrameItem::Group(group) => missing_glyph(&group.frame),
+        _ => None,
+    })
 }
 
 type Run = (Point, Size);
@@ -590,6 +618,33 @@ mod tests {
         let (_, font_dir) = roots();
         let world = Sources::new(tree, template, ROOT_TYP, font_dir)?;
         Ok(media_boxes(&compile(&world)?).len())
+    }
+
+    fn refusal(main: &str) -> String {
+        let (_, font_dir) = roots();
+        let world = Sources::new(
+            &synthetic(main.to_string()),
+            TEMPLATE_TYP,
+            ROOT_TYP,
+            font_dir,
+        )
+        .expect("the world builds");
+        let Err(error) = document(&world) else {
+            panic!("the document is refused");
+        };
+        error.to_string()
+    }
+
+    #[test]
+    fn an_unknown_font_family_fails_the_render() {
+        let error = refusal("#set text(font: \"No Such Family\")\nHello\n");
+        assert!(error.contains("no such family"), "{error}");
+    }
+
+    #[test]
+    fn a_character_no_bundled_font_covers_fails_the_render() {
+        let error = refusal("Hello \u{10FFFD} world\n");
+        assert!(error.contains("10fffd"), "{error}");
     }
 
     fn prose(lines: usize) -> String {

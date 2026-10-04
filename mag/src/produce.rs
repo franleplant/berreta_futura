@@ -823,9 +823,9 @@ fn summary_lines(
         format!("# Run summary: edition {edition_id}"),
         String::new(),
         format!(
-            "- {} model calls, ${:.2}, {:.1} minutes",
+            "- {} model calls, {}, {:.1} minutes",
             caller.calls(),
-            caller.total_cost(),
+            caller.cost_label(),
             minutes
         ),
         format!("- writer `{}`", writer_model.full),

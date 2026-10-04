@@ -49,6 +49,7 @@ struct Staging {
     seen: HashSet<String>,
     rows: Vec<InputRow>,
     missing: Vec<String>,
+    refused: Vec<String>,
 }
 
 impl Staging {
@@ -58,12 +59,13 @@ impl Staging {
             seen: HashSet::new(),
             rows: Vec::new(),
             missing: Vec::new(),
+            refused: Vec::new(),
         }
     }
 
     fn add(&mut self, rel: &Path) {
         let target = rel.to_string_lossy().replace('\\', "/");
-        if !self.seen.insert(target.clone()) {
+        if !self.seen.insert(target.clone()) || self.refuse(rel) {
             return;
         }
         let abs = self.repo_root.join(rel);
@@ -78,11 +80,21 @@ impl Staging {
         });
     }
 
+    fn refuse(&mut self, target: &Path) -> bool {
+        let unsafe_path = !crate::typeset::contained(target);
+        if unsafe_path {
+            self.refused
+                .push(target.to_string_lossy().replace('\\', "/"));
+        }
+        unsafe_path
+    }
+
     fn add_mapped(&mut self, source: &Path, target: &Path) {
-        let target = target.to_string_lossy().replace('\\', "/");
-        if !self.seen.insert(target.clone()) {
+        let target_text = target.to_string_lossy().replace('\\', "/");
+        if !self.seen.insert(target_text.clone()) || self.refuse(target) {
             return;
         }
+        let target = target_text;
         let abs = self.repo_root.join(source);
         if !abs.exists() {
             self.missing
@@ -486,6 +498,11 @@ pub(crate) struct RenderArgs {
         help = "Refuse model calls: abort listing pending figure anchors instead of patching them"
     )]
     pub no_model: bool,
+    #[arg(
+        long = "no-legibility",
+        help = "Render without the tesseract legibility check: figure layouts stay as declared"
+    )]
+    pub no_legibility: bool,
 }
 
 struct EditionInputs {
@@ -535,7 +552,7 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
     let edition_dir = resolve_edition_dir(&args.edition)?;
     let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
     let request = request(args, &repo_root, &render_dir)?;
-    run_typst(&repo_root, &render_dir, &request)
+    run_typst(&repo_root, &render_dir, &request, !args.no_legibility)
 }
 
 pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) -> Result<Request> {
@@ -602,6 +619,12 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
     for article in &articles {
         stage_article_extracts(&mut staging, article)?;
     }
+    if !staging.refused.is_empty() {
+        bail!(
+            "edition '{edition_id}' names paths that are absolute or climb out with '..':\n  {}",
+            staging.refused.join("\n  ")
+        );
+    }
     if !staging.missing.is_empty() {
         staging.missing.sort();
         staging.missing.dedup();
@@ -631,9 +654,14 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
     })
 }
 
-fn run_typst(repo_root: &Path, render_dir: &Path, request: &Request) -> Result<i32> {
+fn run_typst(
+    repo_root: &Path,
+    render_dir: &Path,
+    request: &Request,
+    legibility: bool,
+) -> Result<i32> {
     let json = serde_json::to_string(request)?;
-    let value = crate::typeset::run_request(repo_root, render_dir, &json)?;
+    let value = crate::typeset::run_request(repo_root, render_dir, &json, legibility)?;
     let result = render_dir.join("result.json");
     fs::write(&result, serde_json::to_string_pretty(&value)? + "\n")
         .with_context(|| format!("writing {}", result.display()))?;
@@ -906,8 +934,18 @@ fn next_step(pdf_dir: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{close_typst, next_step, parse_anchor_reply};
-    use std::path::Path;
+    use super::{close_typst, next_step, parse_anchor_reply, Staging};
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn staging_refuses_parent_and_absolute_targets_without_recording_them() {
+        let mut staging = Staging::new(PathBuf::from("/repo"));
+        staging.add(Path::new("library/../../etc/passwd"));
+        staging.add(Path::new("/etc/passwd"));
+        staging.add_mapped(Path::new("a"), Path::new("../b"));
+        assert_eq!(staging.refused.len(), 3);
+        assert!(staging.rows.is_empty() && staging.missing.is_empty());
+    }
 
     #[test]
     fn next_step_points_to_translate() {

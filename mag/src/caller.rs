@@ -207,7 +207,7 @@ enum CallError {
     Timeout(String),
 }
 
-type Reply = (String, f64, f64);
+type Reply = (String, Option<f64>, f64);
 
 pub struct Caller {
     sem: Semaphore,
@@ -215,6 +215,7 @@ pub struct Caller {
     log_lock: Mutex<()>,
     root: std::path::PathBuf,
     total_cost: Mutex<f64>,
+    unpriced: AtomicUsize,
     calls: AtomicUsize,
     backoff: Duration,
 }
@@ -227,13 +228,19 @@ impl Caller {
             log_lock: Mutex::new(()),
             root: std::env::current_dir().unwrap_or_else(|_| ".".into()),
             total_cost: Mutex::new(0.0),
+            unpriced: AtomicUsize::new(0),
             calls: AtomicUsize::new(0),
             backoff: Duration::from_secs(2),
         }
     }
 
-    pub fn total_cost(&self) -> f64 {
-        *self.total_cost.lock().unwrap()
+    pub fn cost_label(&self) -> String {
+        let known = *self.total_cost.lock().unwrap();
+        match self.unpriced.load(Ordering::SeqCst) {
+            0 => format!("${known:.2}"),
+            n if n == self.calls() => "cost unknown".to_string(),
+            n => format!("${known:.2} plus {n} call(s) of unknown cost"),
+        }
     }
 
     pub fn calls(&self) -> usize {
@@ -297,7 +304,12 @@ impl Caller {
                 }
             };
             transport = None;
-            *self.total_cost.lock().unwrap() += cost;
+            match cost {
+                Some(usd) => *self.total_cost.lock().unwrap() += usd,
+                None => {
+                    self.unpriced.fetch_add(1, Ordering::SeqCst);
+                }
+            }
             self.calls.fetch_add(1, Ordering::SeqCst);
             match parse(&result_text) {
                 Ok(parsed) => {
@@ -343,14 +355,14 @@ impl Caller {
         label: &str,
         spec: &ModelSpec,
         seconds: f64,
-        cost: f64,
+        cost: Option<f64>,
         attempt: u32,
     ) -> Result<()> {
         let line = serde_json::json!({
             "label": label,
             "model": spec.full,
             "seconds": round1(seconds),
-            "usd": round4(cost),
+            "usd": cost.map(round4),
             "attempt": attempt,
         });
         {
@@ -362,7 +374,8 @@ impl Caller {
                 .with_context(|| format!("opening {}", self.log_path.display()))?;
             writeln!(f, "{line}")?;
         }
-        println!("    {label} [{}] {seconds:.0}s ${cost:.2}", spec.full);
+        let shown = cost.map_or_else(|| "cost unknown".to_string(), |usd| format!("${usd:.2}"));
+        println!("    {label} [{}] {seconds:.0}s {shown}", spec.full);
         std::io::stdout().flush().ok();
         Ok(())
     }
@@ -515,6 +528,19 @@ fn kill_descendants(pid: u32) {
     }
 }
 
+pub(crate) fn run_with_timeout(
+    mut cmd: Command,
+    timeout: Duration,
+) -> Result<(ExitStatus, Vec<u8>)> {
+    cmd.stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    match run_child(cmd, String::new(), timeout) {
+        Ok((status, _, err)) => Ok((status, err)),
+        Err(CallError::Transport(e) | CallError::Timeout(e)) => bail!("{e}"),
+    }
+}
+
 fn run_child(
     mut cmd: Command,
     payload: String,
@@ -554,7 +580,11 @@ fn truncated(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).chars().take(300).collect()
 }
 
-fn parse_claude(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f64), String> {
+fn parse_claude(
+    out: &[u8],
+    err: &[u8],
+    status: ExitStatus,
+) -> Result<(String, Option<f64>), String> {
     let data: serde_json::Value = serde_json::from_slice(out).map_err(|_| {
         format!(
             "non-JSON output (exit {}): {}",
@@ -573,8 +603,7 @@ fn parse_claude(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f
     }
     let cost = data
         .get("total_cost_usd")
-        .and_then(serde_json::Value::as_f64)
-        .unwrap_or(0.0);
+        .and_then(serde_json::Value::as_f64);
     let result = data
         .get("result")
         .and_then(|v| v.as_str())
@@ -587,7 +616,7 @@ fn parse_codex(
     out_path: &PathBuf,
     err: &[u8],
     status: ExitStatus,
-) -> Result<(String, f64), String> {
+) -> Result<(String, Option<f64>), String> {
     if !status.success() {
         return Err(format!("codex exited with {status}: {}", truncated(err)));
     }
@@ -596,10 +625,14 @@ fn parse_codex(
     if reply.trim().is_empty() {
         return Err("codex final message was empty".to_string());
     }
-    Ok((reply, 0.0))
+    Ok((reply, None))
 }
 
-fn parse_ollama(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f64), String> {
+fn parse_ollama(
+    out: &[u8],
+    err: &[u8],
+    status: ExitStatus,
+) -> Result<(String, Option<f64>), String> {
     if !status.success() {
         return Err(format!(
             "ollama call exited with {status}: {}",
@@ -616,7 +649,7 @@ fn parse_ollama(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f
         .and_then(|v| v.as_str())
         .ok_or_else(|| "ollama reply had no 'response' field".to_string())?
         .to_string();
-    Ok((result, 0.0))
+    Ok((result, Some(0.0)))
 }
 
 #[cfg(test)]
@@ -684,6 +717,45 @@ mod tests {
     }
 
     #[test]
+    fn a_bounded_command_that_overruns_is_killed_and_reported() {
+        let mut cmd = Command::new("sh");
+        cmd.args(["-c", "sleep 30"]);
+        let started = Instant::now();
+        let error = run_with_timeout(cmd, Duration::from_millis(300)).expect_err("times out");
+        assert!(error.to_string().contains("after"), "{error}");
+        assert!(started.elapsed() < Duration::from_secs(10));
+        let mut quick = Command::new("sh");
+        quick.args(["-c", "exit 0"]);
+        assert!(run_with_timeout(quick, Duration::from_secs(10))
+            .unwrap()
+            .0
+            .success());
+    }
+
+    #[test]
+    fn a_codex_reply_has_unknown_cost_and_a_label_that_says_so() {
+        let dir = scratch("codex-cost");
+        let out = dir.join("out.txt");
+        std::fs::write(&out, "hola").unwrap();
+        let ok = Command::new("true").status().unwrap();
+        assert_eq!(
+            parse_codex(&out, &[], ok).unwrap(),
+            ("hola".to_string(), None)
+        );
+        let caller = Caller::new(&dir);
+        let reply = |cost| Ok(("x".to_string(), cost, 0.0));
+        let spec = ModelSpec::parse("codex:gpt-5").unwrap();
+        caller
+            .retry("a", &spec, "p", |r| Ok(r.to_string()), |_| reply(None))
+            .unwrap();
+        assert_eq!(caller.cost_label(), "cost unknown");
+        caller
+            .retry("b", &spec, "p", |r| Ok(r.to_string()), |_| reply(Some(0.5)))
+            .unwrap();
+        assert_eq!(caller.cost_label(), "$0.50 plus 1 call(s) of unknown cost");
+    }
+
+    #[test]
     fn timeout_returns_even_when_a_grandchild_holds_stdout() {
         let mut cmd = Command::new("sh");
         cmd.args(["-c", "sleep 30 & sleep 30"])
@@ -707,7 +779,7 @@ mod tests {
             if seen.len() < 3 {
                 Err(CallError::Transport("429".into()))
             } else {
-                Ok(("ok".to_string(), 0.0, 0.0))
+                Ok(("ok".to_string(), Some(0.0), 0.0))
             }
         };
         let got = caller.retry("t", &spec, "PROMPT", |r| Ok(r.to_string()), flaky);
@@ -730,7 +802,7 @@ mod tests {
         let prompts = Mutex::new(Vec::new());
         let run = |sent: &str| {
             prompts.lock().unwrap().push(sent.to_string());
-            Ok(("reply".to_string(), 0.0, 0.0))
+            Ok(("reply".to_string(), Some(0.0), 0.0))
         };
         let parse = |_: &str| -> Result<()> { bail!("bad shape") };
         assert!(caller.retry("t", &spec, "PROMPT", parse, run).is_err());

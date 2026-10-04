@@ -17,7 +17,7 @@ pub(crate) mod world;
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 fn field<'a>(request: &'a Value, key: &str) -> Result<&'a str> {
     request
@@ -26,11 +26,23 @@ fn field<'a>(request: &'a Value, key: &str) -> Result<&'a str> {
         .with_context(|| format!("the render request has no string field '{key}'"))
 }
 
+pub(crate) fn contained(path: &Path) -> bool {
+    path.components()
+        .all(|c| matches!(c, Component::Normal(_) | Component::CurDir))
+}
+
 fn stage(request: &Value, into: &Path) -> Result<usize> {
     let rows = request
         .get("inputs")
         .and_then(Value::as_array)
         .context("the render request has no inputs array")?;
+    for row in rows {
+        let target = field(row, "targetPath")?;
+        anyhow::ensure!(
+            contained(Path::new(target)),
+            "staged target {target:?} must be relative with no '..' components"
+        );
+    }
     for row in rows {
         let source = PathBuf::from(field(row, "sourcePath")?);
         let target = into.join(field(row, "targetPath")?);
@@ -46,6 +58,7 @@ pub(crate) fn run_request(
     repo_root: &Path,
     render_dir: &Path,
     request_json: &str,
+    legibility: bool,
 ) -> Result<Value> {
     let request: Value =
         serde_json::from_str(request_json).context("parsing the render request as JSON")?;
@@ -80,23 +93,23 @@ pub(crate) fn run_request(
         crate::render::toml_value(repo_root, "render", key)
     })
     .map_err(anyhow::Error::msg)?;
+    if legibility {
+        legible::require_tesseract()?;
+    }
     let mut result = serde_json::json!({"layouts": [], "files": [], "warnings": []});
     for language in languages {
-        let edition = art::print_art(
-            legible::enlarge(
-                tone::print_figures(
-                    match language == primary {
-                        true => base.clone(),
-                        false => {
-                            crate::model::manifest::load_translation(&staged, &base, language)?
-                        }
-                    },
-                    &staged,
-                )?,
-                repo_root,
-            )?,
+        let printed = tone::print_figures(
+            match language == primary {
+                true => base.clone(),
+                false => crate::model::manifest::load_translation(&staged, &base, language)?,
+            },
             &staged,
         )?;
+        let enlarged = match legibility {
+            true => legible::enlarge(printed, repo_root)?,
+            false => printed,
+        };
+        let edition = art::print_art(enlarged, &staged)?;
         let work = match language == primary {
             true => render_dir.join("typst"),
             false => render_dir.join(format!("typst-{language}")),
@@ -187,5 +200,33 @@ mod the_content_pipeline_is_reachable_from_outside_its_module {
 
     fn content_pipeline() -> fn(&Inputs) -> crate::model::shared::Result<Tree> {
         crate::typeset::content::pipeline
+    }
+}
+
+#[cfg(test)]
+mod staging_tests {
+    use super::*;
+
+    fn request(source: &Path, target: &str) -> Value {
+        serde_json::json!({"inputs": [{"sourcePath": source, "targetPath": target}]})
+    }
+
+    #[test]
+    fn a_target_that_climbs_out_or_is_absolute_is_refused_before_any_copy() {
+        let into = std::env::temp_dir().join(format!("mag-stage-{}", std::process::id()));
+        let source = std::env::temp_dir().join(format!("mag-stage-src-{}", std::process::id()));
+        std::fs::write(&source, "x").expect("writes the source");
+        for bad in ["../escape.txt", "a/../../escape.txt", "/tmp/escape.txt"] {
+            let error = stage(&request(&source, bad), &into).expect_err("refused");
+            assert!(error.to_string().contains("no '..'"), "{bad}: {error}");
+        }
+        assert!(!into.exists());
+        assert_eq!(
+            stage(&request(&source, "a/b.txt"), &into).expect("staged"),
+            1
+        );
+        assert!(into.join("a/b.txt").exists());
+        std::fs::remove_dir_all(&into).expect("cleanup");
+        std::fs::remove_file(&source).expect("cleanup");
     }
 }

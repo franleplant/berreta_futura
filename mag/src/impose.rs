@@ -9,6 +9,7 @@ pub const A4_LANDSCAPE_POINTS: (f64, f64) = (841.8898, 595.2756);
 
 pub const BOOKLET_SECTIONS: [&str; 3] = ["all", "interior", "cover"];
 
+pub(crate) const PAGE_TREE_DEPTH: usize = 64;
 const MERGED_RESOURCES: [&[u8]; 7] = [
     b"ExtGState",
     b"ColorSpace",
@@ -121,7 +122,7 @@ fn source_page(doc: &Document, id: ObjectId) -> Result<SourcePage> {
 
 fn page_box(doc: &Document, id: ObjectId, key: &[u8]) -> Result<Option<[f64; 4]>> {
     let mut current = id;
-    loop {
+    for _ in 0..PAGE_TREE_DEPTH {
         let dict = doc.get_dictionary(current)?;
         if let Ok(value) = dict.get(key) {
             let array = doc.dereference(value)?.1.as_array()?;
@@ -138,6 +139,7 @@ fn page_box(doc: &Document, id: ObjectId, key: &[u8]) -> Result<Option<[f64; 4]>
             _ => return Ok(None),
         }
     }
+    bail!("the page tree is deeper than {PAGE_TREE_DEPTH} levels or loops through /Parent")
 }
 
 fn page_resources(doc: &Document, id: ObjectId) -> Result<Dictionary> {
@@ -369,4 +371,27 @@ fn write_sheets(
     }
     doc.save(output)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn looping_page() -> (Document, ObjectId) {
+        let mut doc = Document::with_version("1.5");
+        let (a, b) = (doc.new_object_id(), doc.new_object_id());
+        for (id, parent) in [(a, b), (b, a)] {
+            let mut node = lopdf::Dictionary::new();
+            node.set("Parent", Object::Reference(parent));
+            doc.objects.insert(id, Object::Dictionary(node));
+        }
+        (doc, a)
+    }
+
+    #[test]
+    fn a_parent_cycle_is_refused_instead_of_walked_forever() {
+        let (doc, page) = looping_page();
+        let error = page_box(&doc, page, b"MediaBox").expect_err("a cycle is refused");
+        assert!(error.to_string().contains("/Parent"), "{error}");
+    }
 }

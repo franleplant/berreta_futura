@@ -3,7 +3,6 @@ use crate::produce::{section, INLINE_PREAMBLE};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -65,27 +64,42 @@ fn discover_jobs(run_dir: &Path) -> Result<Vec<PieceJob>> {
     Ok(jobs)
 }
 
-fn build_prompt(piece_id: &str, manuscript: &str, hash_hex: &str) -> Result<String> {
+fn build_prompt(piece_id: &str, manuscript: &str) -> Result<String> {
     let lens_path = PathBuf::from("prompts").join("translation-es.md");
     let mut out = String::new();
     out += INLINE_PREAMBLE;
     out += &section("prompts/translation-es.md", &read(&lens_path)?);
     out += &section(&format!("english manuscript: {piece_id}"), manuscript);
-    out += &format!("\nenglish_sha256: {hash_hex}\n");
-    out += "\nCompute nothing yourself; use the english_sha256 value given above exactly \
-            as provided, unchanged. Reply with exactly one fenced ```json code block \
-            containing a JSON object with exactly two keys: \"english_sha256\" (the value \
-            above, unchanged) and \"markdown\" (a JSON string holding the full Spanish \
-            translation). Do not include any other fenced ```json block in your reply.";
+    out += "\nReply with exactly one fenced ```json code block containing a JSON object \
+            with the key \"markdown\" (a JSON string holding the full Spanish translation). \
+            Do not include any other fenced ```json block in your reply.";
     Ok(out)
 }
 
-fn parse_translation(
-    reply: &str,
-    expected_hash: &str,
-    english_fence_count: usize,
-    label: &str,
-) -> Result<String> {
+fn fenced_blocks(markdown: &str) -> Vec<String> {
+    let mut blocks = Vec::new();
+    let mut open: Option<(char, usize, Vec<&str>)> = None;
+    for line in markdown.lines() {
+        let run = line.trim_start();
+        let mark = run.chars().next().filter(|c| matches!(c, '`' | '~'));
+        let len = mark.map_or(0, |m| run.chars().take_while(|c| *c == m).count());
+        match (&mut open, mark) {
+            (None, Some(m)) if len >= 3 => open = Some((m, len, vec![line])),
+            (Some((m, n, lines)), _) => {
+                lines.push(line);
+                if mark == Some(*m) && len >= *n && run.trim_end().len() == len {
+                    blocks.push(lines.join("\n"));
+                    open = None;
+                }
+            }
+            _ => {}
+        }
+    }
+    blocks.extend(open.map(|(_, _, lines)| lines.join("\n")));
+    blocks
+}
+
+fn parse_translation(reply: &str, english: &str, label: &str) -> Result<String> {
     let re = Regex::new(r"(?s)```json\s*\n(.*)```").unwrap();
     let fence = re
         .captures_iter(reply)
@@ -99,17 +113,6 @@ fn parse_translation(
         .as_object()
         .ok_or_else(|| anyhow!("{label}: json block is not an object"))?;
 
-    let got_hash = obj
-        .get("english_sha256")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow!("{label}: json missing string field 'english_sha256'"))?;
-    if got_hash != expected_hash {
-        bail!(
-            "{label}: english_sha256 mismatch: model must echo the provided hash \
-             unchanged (expected {expected_hash}, got {got_hash})"
-        );
-    }
-
     let markdown = obj
         .get("markdown")
         .and_then(|v| v.as_str())
@@ -118,11 +121,15 @@ fn parse_translation(
         bail!("{label}: markdown field is empty");
     }
 
-    let got_fence_count = markdown.matches("```").count();
-    if got_fence_count != english_fence_count {
+    let (want, got) = (fenced_blocks(english), fenced_blocks(markdown));
+    if want != got {
+        let at = want.iter().zip(&got).position(|(w, g)| w != g);
         bail!(
-            "{label}: fenced code block count mismatch: english input has \
-             {english_fence_count}, translation has {got_fence_count}"
+            "{label}: fenced code blocks must be copied byte for byte: english has {}, \
+             translation has {}{}",
+            want.len(),
+            got.len(),
+            at.map_or_else(String::new, |i| format!("; block {} differs", i + 1))
         );
     }
 
@@ -141,14 +148,12 @@ fn translate_piece(caller: &Caller, model: &ModelSpec, job: &PieceJob) -> Result
     }
 
     let manuscript = read(&job.source_path)?;
-    let hash_hex = hex::encode(Sha256::digest(manuscript.as_bytes()));
-    let english_fence_count = manuscript.matches("```").count();
-    let prompt = build_prompt(&job.id, &manuscript, &hash_hex)?;
+    let prompt = build_prompt(&job.id, &manuscript)?;
 
     let label = format!("translate:{}", job.id);
     let parse_label = job.id.clone();
     let markdown = caller.call_with_parse(&label, model, &prompt, |reply| {
-        parse_translation(reply, &hash_hex, english_fence_count, &parse_label)
+        parse_translation(reply, &manuscript, &parse_label)
     })?;
 
     if let Some(parent) = job.output_path.parent() {
@@ -220,10 +225,10 @@ pub fn run(run_dir: &Path, model: &ModelSpec) -> Result<i32> {
     })?;
 
     println!(
-        "{} pieces, {} calls, ${:.2}",
+        "{} pieces, {} calls, {}",
         jobs.len(),
         caller.calls(),
-        caller.total_cost()
+        caller.cost_label()
     );
 
     if !failures.is_empty() {
@@ -234,4 +239,52 @@ pub fn run(run_dir: &Path, model: &ModelSpec) -> Result<i32> {
     }
 
     Ok(if failures.is_empty() { 0 } else { 1 })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ENGLISH: &str = "Intro\n\n```rust\nlet x = 1;\n```\n\nOutro\n";
+
+    fn reply(markdown: &str) -> String {
+        format!(
+            "```json\n{}\n```",
+            serde_json::json!({ "markdown": markdown })
+        )
+    }
+
+    #[test]
+    fn a_translation_that_copies_its_code_byte_for_byte_is_accepted() {
+        let spanish = "Introduccion\n\n```rust\nlet x = 1;\n```\n\nCierre\n";
+        let got = parse_translation(&reply(spanish), ENGLISH, "t").expect("accepted");
+        assert_eq!(got, spanish);
+    }
+
+    #[test]
+    fn a_translation_that_edits_a_code_block_is_refused_even_when_the_fence_count_matches() {
+        let spanish = "Introduccion\n\n```rust\nlet x = 2;\n```\n\nCierre\n";
+        let error = parse_translation(&reply(spanish), ENGLISH, "t").expect_err("refused");
+        assert!(error.to_string().contains("block 1 differs"), "{error}");
+    }
+
+    #[test]
+    fn a_translation_that_drops_a_block_is_refused() {
+        let error = parse_translation(&reply("Solo texto\n"), ENGLISH, "t").expect_err("refused");
+        assert!(error.to_string().contains("english has 1"), "{error}");
+    }
+
+    #[test]
+    fn tilde_and_longer_fences_close_only_on_a_matching_fence() {
+        let md = "~~~\n```\nx\n```\n~~~\n\n````md\n```\ny\n```\n````\n";
+        assert_eq!(
+            fenced_blocks(md),
+            vec!["~~~\n```\nx\n```\n~~~", "````md\n```\ny\n```\n````"]
+        );
+    }
+
+    #[test]
+    fn the_reply_needs_no_hash_echo() {
+        assert!(parse_translation(&reply("Hola\n"), "Hello\n", "t").is_ok());
+    }
 }
