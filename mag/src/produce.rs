@@ -1,4 +1,5 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
+use crate::model::kinds::ContentMode;
 use crate::util::{parallel, prompts_path, read};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -29,12 +30,20 @@ pub(crate) fn section(title: &str, body: &str) -> String {
     format!("\n\n========== {title} ==========\n\n{}\n", body.trim())
 }
 
-fn writer_prompt_file(mode: &str) -> Result<&'static str> {
+fn writer_prompt_file(mode: ContentMode) -> Result<&'static str> {
     match mode {
-        "article" => Ok("article.md"),
-        "in_a_nutshell" => Ok("in-a-nutshell.md"),
-        other => bail!("unknown content_mode '{other}'"),
+        ContentMode::Article => Ok("article.md"),
+        ContentMode::InANutshell => Ok("in-a-nutshell.md"),
+        ContentMode::Verbatim => bail!("content_mode 'verbatim' has no writer prompt"),
     }
+}
+
+fn content_mode(article: &serde_norway::Value) -> Result<ContentMode> {
+    let mode = article
+        .get("content_mode")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| anyhow!("article missing content_mode"))?;
+    ContentMode::parse(mode).map_err(|e| anyhow!("content_mode {e}"))
 }
 
 fn source_text(source_id: &str) -> Result<String> {
@@ -108,11 +117,7 @@ fn sources_block(sources: &[(String, String)]) -> String {
 }
 
 fn writer_prompt(article: &serde_norway::Value, sources: &[(String, String)]) -> Result<String> {
-    let mode = article
-        .get("content_mode")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow!("article missing content_mode"))?;
-    let file = writer_prompt_file(mode)?;
+    let file = writer_prompt_file(content_mode(article)?)?;
     fill_prompt(&read(&prompts_path(file))?, file, article, sources)
 }
 
@@ -347,10 +352,7 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
 }
 
 fn article_frontmatter(article: &serde_norway::Value) -> Result<String> {
-    let mode = article
-        .get("content_mode")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow!("article missing content_mode"))?;
+    let mode = content_mode(article)?.as_str();
     let source_ids = article
         .get("source_ids")
         .and_then(|v| v.as_sequence())
@@ -408,8 +410,7 @@ fn produce_piece(
     }
 
     {
-        let mode = article.get("content_mode").and_then(|v| v.as_str());
-        if mode == Some("verbatim") {
+        if content_mode(article)? == ContentMode::Verbatim {
             let body = verbatim_body(sources)?;
             write_atomic(&final_path, article_frontmatter(article)? + &body)?;
             let status = PieceStatus {
@@ -578,7 +579,7 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
             y += &format!("  {line}\n");
         }
     }
-    if get("content_mode") == "verbatim" {
+    if content_mode(a).is_ok_and(|mode| mode == ContentMode::Verbatim) {
         y += &verbatim_figures(&sids, a.get("source_range"));
     } else {
         let mut any = false;
@@ -1048,7 +1049,7 @@ mod tests {
     }
 
     fn test_prompt(article: &serde_norway::Value, sources: &[(String, String)]) -> String {
-        let file = writer_prompt_file(article["content_mode"].as_str().unwrap()).unwrap();
+        let file = writer_prompt_file(content_mode(article).unwrap()).unwrap();
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../prompts")
             .join(file);

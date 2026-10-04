@@ -1,3 +1,4 @@
+use crate::model::kinds::{ContentMode, RenderOperation};
 use crate::model::manifest::{load_edition, Edition, LoadOptions, Records};
 use crate::model::records::load_records;
 use crate::typeset::content::Tree;
@@ -362,8 +363,8 @@ fn format_int(edition: &Edition, key: &str, default: i64) -> i64 {
         .unwrap_or(default)
 }
 
-fn page_cap(mode: &str) -> usize {
-    if mode == "verbatim" {
+fn page_cap(mode: ContentMode) -> usize {
+    if mode == ContentMode::Verbatim {
         10
     } else {
         7
@@ -402,7 +403,7 @@ fn figures(edition: &Edition, measured: &Measured, tree: &Tree, root: &Path) -> 
             true => effective_ppi((width, height), placed.height, placed.width),
             false => effective_ppi((width, height), placed.width, placed.height),
         };
-        let floor = match ENLARGED.contains(&figure.layout.as_str()) {
+        let floor = match ENLARGED.contains(&figure.layout) {
             true => ENLARGED_MIN_PPI,
             false => MIN_FIGURE_PPI,
         };
@@ -496,8 +497,8 @@ pub fn manifest_layout(
         "article_pages": measured.article_pages(),
         "toc": measured.toc(),
         "article_opener_fits": measured.opener_fits(),
-        "article_page_caps": by_article(&|a| json!(page_cap(&a.content_mode))),
-        "article_content_modes": by_article(&|a| json!(a.content_mode)),
+        "article_page_caps": by_article(&|a| json!(page_cap(a.content_mode))),
+        "article_content_modes": by_article(&|a| json!(a.content_mode.as_str())),
         "maximum_editorial_pages": format_int(edition, "max_editorial_pages", 2),
         "editorial_pages": measured.editorial_pages(),
         "figures": figures(edition, measured, tree, root)?,
@@ -528,7 +529,7 @@ pub fn cap_warnings(layout: &Value) -> Vec<String> {
         .unwrap_or_default();
     pages
         .iter()
-        .filter(|(id, _)| layout["article_content_modes"][id.as_str()] == "verbatim")
+        .filter(|(id, _)| layout["article_content_modes"][id.as_str()] == ContentMode::Verbatim.as_str())
         .filter_map(|(id, count)| {
             let (count, cap) = (count.as_u64()?, layout["article_page_caps"][id].as_u64()?);
             (count > cap).then(|| {
@@ -563,7 +564,7 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
     let figures = layout["figures"].as_array().map_or(0, Vec::len);
     let row = |critic: &str| measured.row(&edition.language, figures, critic);
     let warnings = cap_warnings(&layout);
-    if request.operation != "render_edition" {
+    if request.operation != RenderOperation::RenderEdition.as_str() {
         let file = written(
             &request.out_dir.join("layout.json"),
             (serde_json::to_string_pretty(&json!({ "layout": layout }))? + "\n").as_bytes(),

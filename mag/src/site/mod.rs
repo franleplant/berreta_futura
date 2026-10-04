@@ -1,3 +1,4 @@
+use crate::model::kinds::RenderOperation;
 pub mod epub;
 mod html;
 mod images;
@@ -291,7 +292,7 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     }
     let args = RenderArgs {
         edition: id.to_string(),
-        operation: "render_edition".to_string(),
+        operation: RenderOperation::RenderEdition,
         article: None,
         langs: None,
         run: Some(format!("{rel}/{run}")),

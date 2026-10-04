@@ -2,6 +2,7 @@ use crate::model::doc::{
     educate_reader_quotes, fold_reader_characters, inline_text, is_settable,
     parse_publication_document, settable_codepoints, Block, Document, Inline,
 };
+use crate::model::kinds::ExtractStyle;
 use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
@@ -467,7 +468,7 @@ impl Writer<'_> {
             self.said(&content_label(
                 &self.edition.language,
                 &document.metadata,
-                &article.content_mode
+                article.content_mode.as_str()
             ))
         ));
         if let Some(dateline) = article.dateline.as_deref().filter(|d| !d.is_empty()) {
@@ -536,7 +537,7 @@ impl Writer<'_> {
              figure-layouts: {},\n  opener: {},\n  art: {art},\n  titles: {titles},\n)[\n{head}{label}  #piece-title{}\n  {}\n\
              {note}{provenance}{foot}",
             string_literal(&format!("article-{}", article.id)),
-            string_literal(&article.content_mode),
+            string_literal(article.content_mode.as_str()),
             string_literal(&article.short_title),
             string_array(&article.source_ids),
             string_array(&figure_layouts(article)),
@@ -666,7 +667,7 @@ impl Writer<'_> {
             string_literal(&figure.id),
             string_literal(&figure.source_id),
             string_literal(&figure.anchor),
-            string_literal(&figure.layout),
+            string_literal(figure.layout.as_str()),
             string_literal(&self.ui("figure")),
             string_literal(&figure.alt_text),
             path_literal(&figure.path),
@@ -690,7 +691,7 @@ impl Writer<'_> {
     }
 
     fn extract(&self, extract: &Extract) -> String {
-        let body = if extract.style == "code" {
+        let body = if extract.style == ExtractStyle::Code {
             format!(
                 "  #code-panel(collapse: true, {})",
                 raw_block(&fold_reader_characters(&extract.text))
@@ -710,7 +711,7 @@ impl Writer<'_> {
             string_literal(&extract.id),
             string_literal(&extract.source_id),
             string_literal(&extract.anchor),
-            string_literal(&extract.style),
+            string_literal(extract.style.as_str()),
             string_literal(&self.ui("verbatim")),
             self.body(&extract.caption),
         )
@@ -879,8 +880,8 @@ fn include_piece(files: &mut Vec<File>, path: String, source: String) -> String 
 fn figure_layouts(article: &Article) -> Vec<String> {
     let mut layouts: Vec<String> = Vec::new();
     for figure in &article.figures {
-        let layout = figure.layout.trim().to_string();
-        if !layout.is_empty() && !layouts.contains(&layout) {
+        let layout = figure.layout.to_string();
+        if !layouts.contains(&layout) {
             layouts.push(layout);
         }
     }

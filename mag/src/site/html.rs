@@ -3,6 +3,7 @@ use super::{Issue, SiteConfig};
 use crate::model::doc::{
     educate_reader_quotes, inline_text, parse_publication_document, Block, Document, Inline,
 };
+use crate::model::kinds::ExtractStyle;
 use crate::model::manifest::{Article, Edition};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{anchor_key, content_label, ui};
@@ -124,7 +125,7 @@ pub fn pieces(edition: &Edition) -> Result<Vec<Piece<'_>>> {
     }
     for (index, article) in edition.articles.iter().enumerate() {
         let document = read(&article.manuscript)?;
-        let label = content_label(language, &document.metadata, &article.content_mode);
+        let label = content_label(language, &document.metadata, article.content_mode.as_str());
         out.push(Piece {
             slug: article.id.clone(),
             kicker: format!("{} {:02} · {label}", ui(language, "feature"), index + 1),
@@ -232,9 +233,9 @@ impl Ctx<'_> {
     }
 
     fn extract(&self, language: &str, extract: &Extract) -> String {
-        let body = match extract.style.as_str() {
-            "code" => format!("<pre><code>{}</code></pre>", escape_html(&extract.text)),
-            _ => format!(
+        let body = match extract.style {
+            ExtractStyle::Code => format!("<pre><code>{}</code></pre>", escape_html(&extract.text)),
+            ExtractStyle::Quote => format!(
                 "<blockquote>{}</blockquote>",
                 extract
                     .text
@@ -441,7 +442,7 @@ pub fn dropped(piece: &Piece, html: &str) -> Vec<String> {
         }
     }
     for extract in piece.article.iter().flat_map(|a| &a.extracts) {
-        let verbatim = extract.style == "code";
+        let verbatim = extract.style == ExtractStyle::Code;
         want.push((extract.text.clone(), verbatim));
         want.push((educate_reader_quotes(&extract.caption), false));
     }

@@ -1,4 +1,5 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
+use crate::model::kinds::ArtPurpose;
 use crate::produce::{self, INLINE_PREAMBLE};
 use crate::util::{escape_html, parallel, prompts_path, read};
 use anyhow::{anyhow, bail, ensure, Context, Result};
@@ -145,7 +146,7 @@ fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
 struct Brief {
     id: String,
     #[serde(alias = "slot")]
-    purpose: String,
+    purpose: ArtPurpose,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     article_id: Option<String>,
     prompt: String,
@@ -200,7 +201,31 @@ fn cast_members(art_direction_text: &str) -> Result<Vec<CastMember>> {
     }
 }
 
-fn cast_license(art_direction_text: &str) -> Result<HashMap<String, String>> {
+fn slot_purpose(text: &str) -> Result<ArtPurpose, String> {
+    match ArtPurpose::parse(text) {
+        Ok(ArtPurpose::CastSheet) | Err(_) => {
+            Err(format!("{text:?} is not one of {}", join(SLOT_PURPOSES)))
+        }
+        Ok(purpose) => Ok(purpose),
+    }
+}
+
+const SLOT_PURPOSES: &[ArtPurpose] = &[
+    ArtPurpose::Cover,
+    ArtPurpose::Opener,
+    ArtPurpose::Tail,
+    ArtPurpose::Closing,
+];
+
+fn join(purposes: &[ArtPurpose]) -> String {
+    purposes
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn cast_license(art_direction_text: &str) -> Result<HashMap<ArtPurpose, String>> {
     let doc: serde_norway::Value = serde_norway::from_str(art_direction_text)
         .context("parsing art direction file for direction.cast_license")?;
     let map: HashMap<String, String> =
@@ -209,15 +234,15 @@ fn cast_license(art_direction_text: &str) -> Result<HashMap<String, String>> {
                 .context("direction.cast_license must map purposes to license text")?,
             None => HashMap::new(),
         };
-    for k in map.keys() {
-        if !matches!(k.as_str(), "cover" | "opener" | "tail" | "closing") {
-            bail!("direction.cast_license has unknown purpose '{k}'");
-        }
-    }
-    Ok(map)
+    map.into_iter()
+        .map(|(k, text)| match slot_purpose(&k) {
+            Ok(purpose) => Ok((purpose, text)),
+            Err(_) => bail!("direction.cast_license has unknown purpose '{k}'"),
+        })
+        .collect()
 }
 
-fn inject_cast(briefs: &mut [Brief], cast: &[CastMember], license: &HashMap<String, String>) {
+fn inject_cast(briefs: &mut [Brief], cast: &[CastMember], license: &HashMap<ArtPurpose, String>) {
     for brief in briefs.iter_mut() {
         let named: Vec<&CastMember> = cast
             .iter()
@@ -255,7 +280,7 @@ fn validate_cast_named(briefs: &[Brief], cast: &[CastMember], label: &str) -> Re
         return Ok(());
     }
     for b in briefs {
-        if b.purpose == "cover" {
+        if b.purpose == ArtPurpose::Cover {
             continue;
         }
         let names_one = cast
@@ -288,7 +313,7 @@ fn ensure_ref_placeholder(gen_cmd: &str, briefs: &[Brief]) -> Result<()> {
     Ok(())
 }
 
-fn previous_briefs(edition_dir: &Path, purposes: &[String]) -> Result<Vec<Brief>> {
+fn previous_briefs(edition_dir: &Path, purposes: &[ArtPurpose]) -> Result<Vec<Brief>> {
     let rounds_root = edition_dir.join("art").join("rounds");
     let mut round_dirs: Vec<PathBuf> = match fs::read_dir(&rounds_root) {
         Ok(entries) => entries
@@ -318,7 +343,7 @@ fn previous_briefs(edition_dir: &Path, purposes: &[String]) -> Result<Vec<Brief>
 fn build_brief_prompt(
     edition_yaml_text: &str,
     candidates: u32,
-    only: Option<&[String]>,
+    only: Option<&[ArtPurpose]>,
     articles: Option<&[String]>,
     rejected: &[Brief],
     note: Option<&str>,
@@ -386,7 +411,7 @@ fn build_brief_prompt(
                  You are not generating images yourself; a later pipeline \
                  step will run each brief through an image generator \
                  {candidates} time(s) to produce that many variants.\n\n",
-                    purposes.join(", ")
+                    join(purposes)
                 );
             }
             None => {
@@ -429,8 +454,21 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
         .last()
         .map(|c| c[1].to_string())
         .ok_or_else(|| anyhow!("{label}: reply contained no fenced yaml block"))?;
-    let doc: BriefsDoc = serde_norway::from_str(&fence)
-        .with_context(|| format!("{label}: invalid yaml, or no non-empty 'briefs' list"))?;
+    let invalid = |e: serde_norway::Error| {
+        anyhow!("{label}: invalid yaml, or no non-empty 'briefs' list: {e}")
+    };
+    let raw: serde_norway::Value = serde_norway::from_str(&fence).map_err(invalid)?;
+    for text in raw
+        .get("briefs")
+        .and_then(|b| b.as_sequence())
+        .into_iter()
+        .flatten()
+        .filter_map(|b| b.get("purpose").or_else(|| b.get("slot")))
+        .filter_map(|p| p.as_str())
+    {
+        slot_purpose(text).map_err(|e| anyhow!("{label}: brief purpose {e}"))?;
+    }
+    let doc: BriefsDoc = serde_norway::from_value(raw).map_err(invalid)?;
     if doc.briefs.is_empty() {
         bail!("{label}: 'briefs' list is empty");
     }
@@ -448,8 +486,8 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
         if !seen.insert(b.id.as_str()) {
             bail!("{label}: brief id '{}' is used more than once", b.id);
         }
-        let purpose = b.purpose.as_str();
-        if !matches!(purpose, "cover" | "opener" | "tail" | "closing") {
+        let purpose = b.purpose;
+        if !SLOT_PURPOSES.contains(&purpose) {
             bail!(
                 "{label}: brief '{}' has purpose '{purpose}', expected \
                  cover, opener, tail, or closing",
@@ -457,11 +495,11 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
             );
         }
         let article_id = b.article_id.as_deref().unwrap_or("").trim();
-        if matches!(purpose, "opener" | "tail") && article_id.is_empty() {
+        if matches!(purpose, ArtPurpose::Opener | ArtPurpose::Tail) && article_id.is_empty() {
             bail!("{label}: {purpose} brief '{}' needs an article_id", b.id);
         }
         let alt = b.alt_text.as_deref().unwrap_or("").trim();
-        if matches!(purpose, "opener" | "tail" | "closing") && alt.is_empty() {
+        if !matches!(purpose, ArtPurpose::Cover) && alt.is_empty() {
             bail!("{label}: {purpose} brief '{}' needs alt_text", b.id);
         }
     }
@@ -557,7 +595,7 @@ fn candidate_command(
             round_dir.join(&filename).to_string_lossy().into_owned(),
         ),
         ("MAG_REF", refs),
-        ("MAG_SIZE", size_for(&brief.purpose).to_string()),
+        ("MAG_SIZE", size_for(brief.purpose).to_string()),
     ];
     Ok((filename, expand_placeholders(gen_cmd)?, env))
 }
@@ -731,7 +769,7 @@ struct ShowcaseItem {
     round: String,
     file: String,
     brief_id: String,
-    purpose: String,
+    purpose: Option<ArtPurpose>,
     article_id: Option<String>,
     prompt: String,
     variant: u32,
@@ -819,8 +857,8 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
                 .and_then(serde_norway::Value::as_u64)
                 .unwrap_or(0) as u32;
             let (purpose, article_id, prompt) = match by_id.get(brief_id) {
-                Some(b) => (b.purpose.clone(), b.article_id.clone(), b.prompt.clone()),
-                None => ("unknown".to_string(), None, String::new()),
+                Some(b) => (Some(b.purpose), b.article_id.clone(), b.prompt.clone()),
+                None => (None, None, String::new()),
             };
             let repo_path = format!(
                 "{}/art/rounds/{round_name}/{file}",
@@ -949,13 +987,12 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
         item.round,
         item.file
     );
-    let slot = match item.purpose.as_str() {
-        "cover" => "cover".to_string(),
-        "closing" => format!("closing:{}", item.brief_id),
-        p => format!(
-            "{p}:{}",
-            item.article_id.as_deref().unwrap_or(&item.brief_id)
-        ),
+    let article_or_brief = item.article_id.as_deref().unwrap_or(&item.brief_id);
+    let slot = match item.purpose {
+        Some(ArtPurpose::Cover) => "cover".to_string(),
+        Some(ArtPurpose::Closing) => format!("closing:{}", item.brief_id),
+        Some(p) => format!("{p}:{article_or_brief}"),
+        None => format!("unknown:{article_or_brief}"),
     };
     html += &format!(
         "<figure class=\"{}\" data-path=\"{}\" data-slot=\"{}\">\n",
@@ -978,7 +1015,7 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
         escape_html(&item.round),
         escape_html(&item.file)
     );
-    if item.purpose == "cover" {
+    if item.purpose == Some(ArtPurpose::Cover) {
         html += &cover_frame_html(cover_frame, item, &img_tag);
     } else {
         html += &img_tag;
@@ -1086,16 +1123,16 @@ fn showcase_sections(
 ) -> String {
     let mut html = String::new();
     for (purpose, heading) in [
-        ("cover", "Cover"),
-        ("opener", "Article openers"),
-        ("tail", "Article tails"),
-        ("closing", "Closing plates"),
-        ("unknown", "Unmatched"),
+        (Some(ArtPurpose::Cover), "Cover"),
+        (Some(ArtPurpose::Opener), "Article openers"),
+        (Some(ArtPurpose::Tail), "Article tails"),
+        (Some(ArtPurpose::Closing), "Closing plates"),
+        (None, "Unmatched"),
     ] {
         let mut section: Vec<&ShowcaseItem> =
             items.iter().filter(|i| i.purpose == purpose).collect();
         if section.is_empty() {
-            if purpose != "unknown" {
+            if purpose.is_some() {
                 html += &format!("<h2>{heading}</h2>\n<p class=\"empty\">none generated yet</p>\n");
             }
             continue;
@@ -1524,7 +1561,7 @@ pub fn cast_sheet_run(args: &CastSheetArgs) -> Result<i32> {
     refs.dedup();
     let brief = Brief {
         id: format!("{stem}-cast-sheet"),
-        purpose: "cast-sheet".to_string(),
+        purpose: ArtPurpose::CastSheet,
         article_id: None,
         prompt: cast_sheet_prompt(direction, &cast, note),
         subject: None,
@@ -1721,7 +1758,7 @@ fn license_verdict(mut v: MemberVerdict) -> MemberVerdict {
 struct CheckTarget {
     round_dir: PathBuf,
     file: String,
-    purpose: String,
+    purpose: ArtPurpose,
 }
 
 fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarget>> {
@@ -1732,15 +1769,15 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
     }
     let briefs: BriefsDoc = serde_norway::from_str(&read(&briefs_path)?)
         .with_context(|| format!("parsing {}", briefs_path.display()))?;
-    let applies: HashMap<&str, (bool, &str)> = briefs
+    let applies: HashMap<&str, (bool, ArtPurpose)> = briefs
         .briefs
         .iter()
         .map(|b| {
-            let a = b.purpose != "cover"
+            let a = b.purpose != ArtPurpose::Cover
                 || cast
                     .iter()
                     .any(|m| b.prompt.to_lowercase().contains(&m.name.to_lowercase()));
-            (b.id.as_str(), (a, b.purpose.as_str()))
+            (b.id.as_str(), (a, b.purpose))
         })
         .collect();
     let round: serde_norway::Value = serde_norway::from_str(&read(&round_path)?)
@@ -1758,12 +1795,14 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
             .unwrap_or(false);
         let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
         let brief = item.get("brief").and_then(|v| v.as_str()).unwrap_or("");
-        let (applicable, purpose) = applies.get(brief).copied().unwrap_or((false, ""));
+        let Some(&(applicable, purpose)) = applies.get(brief) else {
+            continue;
+        };
         if ok && !file.is_empty() && round_dir.join(file).exists() && applicable {
             out.push(CheckTarget {
                 round_dir: round_dir.to_path_buf(),
                 file: file.to_string(),
-                purpose: purpose.to_string(),
+                purpose,
             });
         }
     }
@@ -1830,7 +1869,7 @@ fn select_rounds(rounds_root: &Path, round_filter: Option<&str>) -> Result<Vec<P
 fn check_round(
     round_dir: &Path,
     cast: &[CastMember],
-    license: &HashMap<String, String>,
+    license: &HashMap<ArtPurpose, String>,
     model: &ModelSpec,
 ) -> Result<bool> {
     let targets = check_targets(round_dir, cast)?;
@@ -1940,12 +1979,12 @@ fn write_round_yaml(
 
 pub const DEFAULT_GEN_CMD: &str = "tools/imagegen {prompt} --out {out} --ref {ref} --size {size}";
 
-fn size_for(purpose: &str) -> &'static str {
+fn size_for(purpose: ArtPurpose) -> &'static str {
     match purpose {
-        "cover" => "1440x2160",
-        "opener" => "1760x1024",
-        "tail" => "2160x720",
-        _ => "1536x2160",
+        ArtPurpose::Cover => "1440x2160",
+        ArtPurpose::Opener => "1760x1024",
+        ArtPurpose::Tail => "2160x720",
+        ArtPurpose::Closing | ArtPurpose::CastSheet => "1536x2160",
     }
 }
 
@@ -1972,20 +2011,19 @@ struct ArtRun<'a> {
     pub promote: bool,
 }
 
-fn parse_only_purposes(only: Option<&str>) -> Result<Option<Vec<String>>> {
+fn parse_only_purposes(only: Option<&str>) -> Result<Option<Vec<ArtPurpose>>> {
     let Some(raw) = only else {
         return Ok(None);
     };
-    let purposes: Vec<String> = raw
+    let purposes = raw
         .split(',')
-        .map(|s| s.trim().to_string())
+        .map(str::trim)
         .filter(|s| !s.is_empty())
-        .collect();
-    for p in &purposes {
-        if !matches!(p.as_str(), "cover" | "opener" | "tail" | "closing") {
-            bail!("--only accepts cover, opener, tail, closing; got '{p}'");
-        }
-    }
+        .map(|p| {
+            slot_purpose(p)
+                .map_err(|_| anyhow!("--only accepts {}; got '{p}'", join(SLOT_PURPOSES)))
+        })
+        .collect::<Result<Vec<_>>>()?;
     if purposes.is_empty() {
         bail!("--only was given but named no purposes");
     }
@@ -2035,7 +2073,7 @@ fn parse_only_articles(
 
 fn check_scope(
     briefs: &[Brief],
-    only_purposes: Option<&[String]>,
+    only_purposes: Option<&[ArtPurpose]>,
     only_articles: Option<&[String]>,
     label: &str,
 ) -> Result<()> {
@@ -2044,7 +2082,7 @@ fn check_scope(
             if !purposes.contains(&b.purpose) {
                 bail!(
                     "{label}: this round is scoped to {}; brief '{}' has purpose '{}'",
-                    purposes.join(", "),
+                    join(purposes),
                     b.id,
                     b.purpose
                 );
@@ -2054,7 +2092,9 @@ fn check_scope(
     if let Some(ids) = only_articles {
         for b in briefs {
             let aid = b.article_id.as_deref().unwrap_or("");
-            if !matches!(b.purpose.as_str(), "opener" | "tail") || !ids.iter().any(|i| i == aid) {
+            if !matches!(b.purpose, ArtPurpose::Opener | ArtPurpose::Tail)
+                || !ids.iter().any(|i| i == aid)
+            {
                 bail!(
                     "{label}: this round is scoped to opener/tail briefs for {}; brief '{}' is a {} for '{aid}'",
                     ids.join(", "),
@@ -2346,7 +2386,17 @@ mod tests {
     fn extract_briefs_rejects_unknown_purpose() {
         let reply = yaml_reply("briefs:\n- id: x\n  purpose: poster\n  prompt: p\n");
         let err = extract_briefs(&reply, "t").unwrap_err().to_string();
-        assert!(err.contains("purpose 'poster'"), "{err}");
+        assert!(err.contains("poster"), "{err}");
+    }
+
+    #[test]
+    fn extract_briefs_feedback_lists_only_slot_purposes() {
+        let reply = yaml_reply("briefs:\n- id: x\n  purpose: poster\n  prompt: p\n");
+        let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+        assert!(
+            err.contains("closing") && !err.contains("cast-sheet"),
+            "{err}"
+        );
     }
 
     #[test]
@@ -2373,7 +2423,7 @@ mod tests {
     fn candidate_command_substitutes_prompt_and_out() {
         let brief = Brief {
             id: "tail-a".into(),
-            purpose: "tail".into(),
+            purpose: ArtPurpose::Tail,
             article_id: Some("a".into()),
             prompt: "a robot's day".into(),
             subject: None,
@@ -2394,7 +2444,7 @@ mod tests {
     fn brief(id: &str, purpose: &str, prompt: &str) -> Brief {
         Brief {
             id: id.into(),
-            purpose: purpose.into(),
+            purpose: ArtPurpose::parse(purpose).unwrap(),
             article_id: None,
             prompt: prompt.into(),
             subject: None,
@@ -2473,8 +2523,8 @@ mod tests {
             prompt: "Pedro: a boy.".into(),
             reference: None,
         }];
-        let license: HashMap<String, String> =
-            [("tail".to_string(), "may age up".to_string())].into();
+        let license: HashMap<ArtPurpose, String> =
+            [(ArtPurpose::Tail, "may age up".to_string())].into();
         let mut briefs = vec![
             brief("opener-a", "opener", "Pedro reads"),
             brief("tail-a", "tail", "Pedro sleeps"),
@@ -2507,7 +2557,7 @@ mod tests {
     #[test]
     fn cast_license_parses_and_rejects_unknown_purposes() {
         let ok = cast_license("direction:\n  cast_license:\n    tail: quiet\n").unwrap();
-        assert_eq!(ok.get("tail").map(String::as_str), Some("quiet"));
+        assert_eq!(ok.get(&ArtPurpose::Tail).map(String::as_str), Some("quiet"));
         assert!(cast_license("direction:\n  name: x\n").unwrap().is_empty());
         let err = cast_license("direction:\n  cast_license:\n    poster: p\n").unwrap_err();
         assert!(err.to_string().contains("poster"), "{err}");
@@ -2791,7 +2841,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let briefs = vec![Brief {
             id: "cover-wildcard".into(),
-            purpose: "cover".into(),
+            purpose: ArtPurpose::Cover,
             article_id: None,
             prompt: "one improbable idea".into(),
             subject: None,

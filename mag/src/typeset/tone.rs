@@ -1,4 +1,5 @@
 use crate::critic::metrics::{decode_rgb, luma601, Rgb};
+use crate::model::kinds::FigureTone;
 use crate::model::manifest::Edition;
 use anyhow::{Context, Result};
 use std::path::Path;
@@ -30,7 +31,7 @@ pub fn print_figures(mut edition: Edition, staged: &Path) -> Result<Edition> {
         let out = staged
             .join("print")
             .join(format!("{}.png", relative.display()));
-        if out.is_file() || print_copy(&figure.path, &figure.tone, &out)? {
+        if out.is_file() || print_copy(&figure.path, figure.tone, &out)? {
             println!("print tone: inverted {} -> {}", figure.id, out.display());
             figure.path = out;
         }
@@ -38,12 +39,12 @@ pub fn print_figures(mut edition: Edition, staged: &Path) -> Result<Edition> {
     Ok(edition)
 }
 
-pub fn print_copy(path: &Path, tone: &str, out: &Path) -> Result<bool> {
-    if tone == "keep" {
+pub fn print_copy(path: &Path, tone: FigureTone, out: &Path) -> Result<bool> {
+    if tone == FigureTone::Keep {
         return Ok(false);
     }
     let image = decode(path)?;
-    if tone != "invert" && !dark_flat(&image) {
+    if tone != FigureTone::Invert && !dark_flat(&image) {
         return Ok(false);
     }
     let image = trim(&invert(&image));

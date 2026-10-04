@@ -1091,9 +1091,9 @@ pub struct CaptureArgs {
     pub article: Option<String>,
     #[arg(
         long,
-        help = "Content mode for the new plan row: article, in_a_nutshell, or verbatim (default: verbatim when the source fits seven reader pages, else article)"
+        help = "Content mode for the new plan row (default: verbatim when the source fits seven reader pages, else article)"
     )]
-    pub mode: Option<String>,
+    pub mode: Option<crate::model::kinds::ContentMode>,
     #[arg(long, default_value = "sonnet")]
     pub model: String,
 }
@@ -1219,7 +1219,7 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         args.url.as_str(),
         args.edition.as_deref(),
         args.tags.as_deref(),
-        args.mode.as_deref(),
+        args.mode,
     );
     let (title_override, author_override, published_override) = (
         args.title.as_deref(),
@@ -1227,14 +1227,6 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         args.published.as_deref(),
     );
     let (html_file, join_article) = (args.html.as_deref(), args.article.as_deref());
-    if let Some(mode) = mode {
-        if !crate::plan_cmd::CONTENT_MODES.contains(&mode) {
-            bail!(
-                "unknown --mode '{mode}'; one of: {}",
-                crate::plan_cmd::CONTENT_MODES.join(", ")
-            );
-        }
-    }
     let (pdf, html, pre_extraction) = resolve_input(html_file, url)?;
     let title = title_override
         .map(str::to_string)

@@ -1,4 +1,5 @@
 use super::doc::{block_signature, parse_publication_document, Block};
+use super::kinds::{ContentMode, TailArtFit};
 use super::records::{
     localize_extracts, localize_figures, resolve_extracts, resolve_figures, Extract,
     ExtractRequest, Figure, FigureRequest, SourceRecord,
@@ -12,8 +13,6 @@ use serde_norway::{Mapping, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 use std::sync::LazyLock;
-
-pub const CONTENT_MODES: [&str; 3] = ["article", "in_a_nutshell", "verbatim"];
 
 pub const SECTION_KINDS: [&str; 8] = [
     "original_editorial",
@@ -59,7 +58,7 @@ pub struct Article {
     pub author_note: String,
     pub source_ids: Vec<String>,
     pub manuscript: PathBuf,
-    pub content_mode: String,
+    pub content_mode: ContentMode,
     pub figures: Vec<Figure>,
     pub minimum_reader_pages: i64,
     pub tail_art: Option<PathBuf>,
@@ -578,7 +577,7 @@ fn article_key_ideas(
 }
 
 struct Display {
-    content_mode: String,
+    content_mode: ContentMode,
     minimum_reader_pages: i64,
     display_emphasis: String,
     short_title: String,
@@ -586,13 +585,10 @@ struct Display {
 }
 
 fn article_display(label: &str, row: &Value, errors: &mut Vec<String>) -> Display {
-    let content_mode = match row.get("content_mode") {
-        None => "faithful_edit".to_string(),
-        Some(value) => text(Some(value)).to_string(),
-    };
-    if !CONTENT_MODES.contains(&content_mode.as_str()) {
-        errors.push(format!("{label} has invalid content_mode: {content_mode}"));
-    }
+    let content_mode = ContentMode::parse(text(row.get("content_mode"))).unwrap_or_else(|reason| {
+        errors.push(format!("{label} has invalid content_mode: {reason}"));
+        ContentMode::Article
+    });
     let minimum_reader_pages = to_int(row.get("minimum_reader_pages"))
         .filter(|pages| (1..=7).contains(pages))
         .unwrap_or_else(|| {
@@ -649,7 +645,8 @@ fn article_media(
             article_source_ids: source_ids,
             manuscript,
             allow_unanchored,
-            verbatim: matches!(row.get("content_mode"), Some(Value::String(mode)) if mode == "verbatim"),
+            verbatim: ContentMode::parse(text(row.get("content_mode")))
+                == Ok(ContentMode::Verbatim),
         },
         row.get("figures"),
     ) {
@@ -726,7 +723,7 @@ fn load_article(
         &label,
         row,
         &source_ids,
-        &display.content_mode,
+        display.content_mode,
         context.options.source_records,
         errors,
     );
@@ -794,11 +791,11 @@ fn check_verbatim_title(
     label: &str,
     row: &Value,
     source_ids: &[String],
-    content_mode: &str,
+    content_mode: ContentMode,
     source_records: Option<&Records>,
     errors: &mut Vec<String>,
 ) {
-    if content_mode != "verbatim" {
+    if content_mode != ContentMode::Verbatim {
         return;
     }
     if source_ids.len() != 1 {
@@ -939,8 +936,11 @@ fn load_cover(
         }
     };
     let tail_art_fit = or_default(data.get("tail_art_fit"), "cover");
-    if !["cover", "contain"].contains(&tail_art_fit.trim()) {
-        errors.push("Edition tail_art_fit must be cover or contain".to_string());
+    if TailArtFit::parse(tail_art_fit.trim()).is_err() {
+        errors.push(format!(
+            "Edition tail_art_fit must be one of {}",
+            TailArtFit::names()
+        ));
     }
     let art_path = cover.get(Value::String("art_path".to_string()));
     if !filled(art_path) {
@@ -1499,7 +1499,7 @@ fn translation_article(
         author_note,
         source_ids: article.source_ids.clone(),
         manuscript,
-        content_mode: article.content_mode.clone(),
+        content_mode: article.content_mode,
         figures,
         minimum_reader_pages: article.minimum_reader_pages,
         tail_art: article.tail_art.clone(),
@@ -1679,7 +1679,7 @@ fn translation_article_raw(root: &Path, article: &Article) -> Value {
     insert(
         &mut row,
         "content_mode",
-        Value::String(article.content_mode.clone()),
+        Value::String(article.content_mode.as_str().to_string()),
     );
     insert(
         &mut row,
@@ -1768,7 +1768,11 @@ fn figure_raw(root: &Path, figure: &Figure) -> Value {
     insert(&mut row, "credit", Value::String(figure.credit.clone()));
     insert(&mut row, "alt_text", Value::String(figure.alt_text.clone()));
     insert(&mut row, "anchor", Value::String(figure.anchor.clone()));
-    insert(&mut row, "layout", Value::String(figure.layout.clone()));
+    insert(
+        &mut row,
+        "layout",
+        Value::String(figure.layout.as_str().to_string()),
+    );
     Value::Mapping(row)
 }
 
@@ -1780,7 +1784,11 @@ fn extract_raw(extract: &Extract) -> Value {
         "source_id",
         Value::String(extract.source_id.clone()),
     );
-    insert(&mut row, "style", Value::String(extract.style.clone()));
+    insert(
+        &mut row,
+        "style",
+        Value::String(extract.style.as_str().to_string()),
+    );
     insert(&mut row, "caption", Value::String(extract.caption.clone()));
     insert(&mut row, "anchor", Value::String(extract.anchor.clone()));
     Value::Mapping(row)

@@ -1,3 +1,4 @@
+use crate::model::kinds::{FigureFit, FigureLayout};
 use crate::model::manifest::Edition;
 use crate::typeset::layout::declared_pt;
 use crate::typeset::media::pixels;
@@ -7,7 +8,7 @@ use std::process::Command;
 
 pub const LEGIBLE_TEXT_PT: f64 = 4.0;
 pub const ENLARGED_MIN_PPI: f64 = 200.0;
-pub const ENLARGED: [&str; 2] = ["full_band", "rotated_plate"];
+pub const ENLARGED: [FigureLayout; 2] = [FigureLayout::FullBand, FigureLayout::RotatedPlate];
 const MIN_WORDS: usize = 8;
 const MIN_CONFIDENCE: f64 = 60.0;
 const CACHE: &str = ".magazine/legibility";
@@ -27,7 +28,7 @@ pub struct Geometry {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Change {
-    pub layout: &'static str,
+    pub layout: FigureLayout,
     pub before: f64,
     pub after: f64,
 }
@@ -46,19 +47,28 @@ impl Geometry {
         })
     }
 
-    pub fn width(&self, layout: &str, (w, h): (u32, u32)) -> f64 {
+    pub fn width(&self, layout: FigureLayout, (w, h): (u32, u32)) -> f64 {
         let (column, cap) = match layout {
-            "rotated_plate" => (self.plate_length, self.plate_depth),
-            "full_band" => (self.live, self.full_cap),
-            "evidence_band" | "evidence_band_prose" | "adaptive_band" => (self.live, self.cap),
-            "compact_band" => (self.measure - 2.0 * self.inset, self.compact_cap),
-            _ => (self.measure, self.cap),
+            FigureLayout::RotatedPlate => (self.plate_length, self.plate_depth),
+            FigureLayout::FullBand => (self.live, self.full_cap),
+            FigureLayout::EvidenceBand
+            | FigureLayout::EvidenceBandProse
+            | FigureLayout::AdaptiveBand => (self.live, self.cap),
+            FigureLayout::CompactBand => (self.measure - 2.0 * self.inset, self.compact_cap),
+            FigureLayout::ColumnPlate
+            | FigureLayout::LandscapePlate
+            | FigureLayout::LandscapePlateAfter => (self.measure, self.cap),
         };
         column.min(cap * f64::from(w) / f64::from(h))
     }
 }
 
-pub fn decide(heights: &[f64], pixels: (u32, u32), layout: &str, g: &Geometry) -> Option<Change> {
+pub fn decide(
+    heights: &[f64],
+    pixels: (u32, u32),
+    layout: FigureLayout,
+    g: &Geometry,
+) -> Option<Change> {
     if heights.len() < MIN_WORDS {
         return None;
     }
@@ -66,7 +76,7 @@ pub fn decide(heights: &[f64], pixels: (u32, u32), layout: &str, g: &Geometry) -
     sorted.sort_by(f64::total_cmp);
     let size = |width: f64| sorted[sorted.len() / 2] * width / f64::from(pixels.0);
     let before = size(g.width(layout, pixels));
-    let options: Vec<(&'static str, f64)> = ENLARGED
+    let options: Vec<(FigureLayout, f64)> = ENLARGED
         .into_iter()
         .map(|option| (option, g.width(option, pixels)))
         .filter(|(_, width)| f64::from(pixels.0) * 72.0 / width >= ENLARGED_MIN_PPI)
@@ -104,15 +114,15 @@ pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
     let geometry = Geometry::from_template()?;
     for article in &mut edition.articles {
         for figure in &mut article.figures {
-            let fixed = figure.fit == "keep"
-                || figure.layout == "rotated_plate"
+            let fixed = figure.fit == FigureFit::Keep
+                || figure.layout == FigureLayout::RotatedPlate
                 || figure.anchor == "__opener__";
             if fixed {
                 continue;
             }
             let heights = word_heights(&figure.path, repo_root)?;
             let size = pixels(&figure.path)?;
-            let Some(change) = decide(&heights, size, &figure.layout, &geometry) else {
+            let Some(change) = decide(&heights, size, figure.layout, &geometry) else {
                 continue;
             };
             println!(
@@ -126,7 +136,7 @@ pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
                     article.id, figure.id, change.after
                 );
             }
-            figure.layout = change.layout.to_string();
+            figure.layout = change.layout;
         }
     }
     Ok(edition)
@@ -188,25 +198,36 @@ mod tests {
 
     #[test]
     fn a_wide_diagram_already_at_full_width_becomes_a_rotated_plate() {
-        let change = decide(&at(27.0), (2842, 1357), "evidence_band", &g()).expect("it changes");
-        assert_eq!(change.layout, "rotated_plate");
+        let change =
+            decide(&at(27.0), (2842, 1357), FigureLayout::EvidenceBand, &g()).expect("it changes");
+        assert_eq!(change.layout, FigureLayout::RotatedPlate);
         assert!((3.1..3.2).contains(&change.before), "{change:?}");
         assert!(change.after >= LEGIBLE_TEXT_PT, "{change:?}");
     }
 
     #[test]
     fn a_height_capped_screenshot_grows_to_full_width_before_it_rotates() {
-        let change = decide(&at(15.0), (1080, 857), "evidence_band_prose", &g()).expect("it grows");
-        assert_eq!(change.layout, "full_band");
+        let change = decide(
+            &at(15.0),
+            (1080, 857),
+            FigureLayout::EvidenceBandProse,
+            &g(),
+        )
+        .expect("it grows");
+        assert_eq!(change.layout, FigureLayout::FullBand);
         assert!(change.before < 3.7 && change.after > 4.5, "{change:?}");
     }
 
     #[test]
     fn a_near_square_image_never_rotates_and_warns_through_its_best_size() {
-        let change = decide(&at(9.0), (1053, 1027), "evidence_band", &g()).expect("it grows");
-        assert_eq!(change.layout, "full_band");
+        let change =
+            decide(&at(9.0), (1053, 1027), FigureLayout::EvidenceBand, &g()).expect("it grows");
+        assert_eq!(change.layout, FigureLayout::FullBand);
         assert!(change.after < LEGIBLE_TEXT_PT, "{change:?}");
-        assert!(g().width("rotated_plate", (1053, 1027)) < g().width("full_band", (1053, 1027)));
+        assert!(
+            g().width(FigureLayout::RotatedPlate, (1053, 1027))
+                < g().width(FigureLayout::FullBand, (1053, 1027))
+        );
     }
 
     #[test]
@@ -218,13 +239,22 @@ mod tests {
 
     #[test]
     fn too_few_words_or_legible_text_leave_the_figure_alone() {
-        assert_eq!(decide(&[3.0; 7], (2842, 1357), "evidence_band", &g()), None);
-        assert_eq!(decide(&at(60.0), (2842, 1357), "evidence_band", &g()), None);
+        assert_eq!(
+            decide(&[3.0; 7], (2842, 1357), FigureLayout::EvidenceBand, &g()),
+            None
+        );
+        assert_eq!(
+            decide(&at(60.0), (2842, 1357), FigureLayout::EvidenceBand, &g()),
+            None
+        );
     }
 
     #[test]
     fn an_option_below_the_enlarged_ppi_floor_is_not_offered() {
-        assert_eq!(decide(&at(5.0), (600, 500), "column_plate", &g()), None);
+        assert_eq!(
+            decide(&at(5.0), (600, 500), FigureLayout::ColumnPlate, &g()),
+            None
+        );
     }
 
     #[test]

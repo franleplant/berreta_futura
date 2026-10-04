@@ -1,3 +1,4 @@
+use super::kinds::{ExtractStyle, FigureFit, FigureLayout, FigureTone};
 use super::shared::{quoted, show, Result, ValidationError};
 use regex::Regex;
 use serde_norway::Value;
@@ -325,23 +326,6 @@ pub fn load_records(sources_dir: &Path) -> Result<Vec<SourceRecord>> {
     Ok(records)
 }
 
-pub const FIGURE_LAYOUTS: [&str; 9] = [
-    "evidence_band",
-    "evidence_band_prose",
-    "adaptive_band",
-    "compact_band",
-    "column_plate",
-    "landscape_plate",
-    "landscape_plate_after",
-    "full_band",
-    "rotated_plate",
-];
-
-const FIGURE_TONES: [&str; 3] = ["auto", "keep", "invert"];
-const FIGURE_FITS: [&str; 2] = ["auto", "keep"];
-
-pub const EXTRACT_STYLES: [&str; 2] = ["code", "quote"];
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Figure {
     pub id: String,
@@ -351,9 +335,9 @@ pub struct Figure {
     pub credit: String,
     pub alt_text: String,
     pub anchor: String,
-    pub layout: String,
-    pub tone: String,
-    pub fit: String,
+    pub layout: FigureLayout,
+    pub tone: FigureTone,
+    pub fit: FigureFit,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -361,7 +345,7 @@ pub struct Extract {
     pub id: String,
     pub source_id: String,
     pub text: String,
-    pub style: String,
+    pub style: ExtractStyle,
     pub caption: String,
     pub anchor: String,
 }
@@ -531,30 +515,24 @@ fn resolve_figure(
         ));
         return None;
     }
-    if !FIGURE_LAYOUTS.contains(&fields["layout"].as_str()) {
-        let shown = if fields["layout"].is_empty() {
-            "<missing>".to_string()
-        } else {
-            fields["layout"].clone()
-        };
-        errors.push(format!("{label} has invalid layout: {shown}"));
-    }
-    let tone = match fields["tone"].as_str() {
-        "" => "auto".to_string(),
-        tone => tone.to_string(),
-    };
-    if !FIGURE_TONES.contains(&tone.as_str()) {
-        errors.push(format!(
-            "{label} has invalid tone: {tone} (auto, keep, or invert)"
-        ));
-    }
-    let fit = match fields["fit"].as_str() {
-        "" => "auto".to_string(),
-        fit => fit.to_string(),
-    };
-    if !FIGURE_FITS.contains(&fit.as_str()) {
-        errors.push(format!("{label} has invalid fit: {fit} (auto or keep)"));
-    }
+    let layout = kind(
+        FigureLayout::parse(&fields["layout"]),
+        label,
+        "layout",
+        errors,
+    );
+    let tone = kind(
+        FigureTone::parse(or_auto(&fields["tone"])),
+        label,
+        "tone",
+        errors,
+    );
+    let fit = kind(
+        FigureFit::parse(or_auto(&fields["fit"])),
+        label,
+        "fit",
+        errors,
+    );
     let anchor = fields["anchor"].clone();
     if anchor != "__opener__" && !headings.contains(&anchor) && !request.allow_unanchored {
         errors.push(format!(
@@ -582,10 +560,29 @@ fn resolve_figure(
         credit: fields["credit"].clone(),
         alt_text: fields["alt_text"].clone(),
         anchor,
-        layout: fields["layout"].clone(),
-        tone,
-        fit,
+        layout: layout?,
+        tone: tone?,
+        fit: fit?,
     })
+}
+
+fn or_auto(field: &str) -> &str {
+    if field.is_empty() {
+        "auto"
+    } else {
+        field
+    }
+}
+
+fn kind<T>(
+    parsed: std::result::Result<T, String>,
+    label: &str,
+    field: &str,
+    errors: &mut Vec<String>,
+) -> Option<T> {
+    parsed
+        .map_err(|reason| errors.push(format!("{label} has invalid {field}: {reason}")))
+        .ok()
 }
 
 pub struct ExtractRequest<'a> {
@@ -667,7 +664,7 @@ pub fn resolve_extracts(request: &ExtractRequest, rows: Option<&Value>) -> Resul
             ));
             continue;
         }
-        check_extract_style(
+        let style = check_extract_style(
             &label,
             &fields,
             &headings,
@@ -677,18 +674,15 @@ pub fn resolve_extracts(request: &ExtractRequest, rows: Option<&Value>) -> Resul
         let Some(text) = extract_run(request.root, &label, &fields, &mut errors) else {
             continue;
         };
-        check_extract_text(
-            &label,
-            &fields["style"],
-            &text,
-            &manuscript_text,
-            &mut errors,
-        );
+        check_extract_text(&label, style, &text, &manuscript_text, &mut errors);
+        let Some(style) = style else {
+            continue;
+        };
         extracts.push(Extract {
             id: fields["id"].clone(),
             source_id: fields["source_id"].clone(),
             text,
-            style: fields["style"].clone(),
+            style,
             caption: fields["caption"].clone(),
             anchor: fields["anchor"].clone(),
         });
@@ -705,21 +699,21 @@ fn check_extract_style(
     headings: &BTreeSet<String>,
     allow_unanchored: bool,
     errors: &mut Vec<String>,
-) {
-    let style = &fields["style"];
+) -> Option<ExtractStyle> {
+    let style = kind(
+        ExtractStyle::parse(&fields["style"]),
+        label,
+        "style",
+        errors,
+    );
     let anchor = &fields["anchor"];
-    if !EXTRACT_STYLES.contains(&style.as_str()) {
-        errors.push(format!(
-            "{label} has invalid style: {}; known: ['code', 'quote']",
-            quoted(style)
-        ));
-    }
     if anchor != "__opener__" && !headings.contains(anchor) && !allow_unanchored {
         errors.push(format!(
             "{label} anchor does not match an article heading: {}",
             quoted(anchor)
         ));
     }
+    style
 }
 
 fn extract_run(
@@ -767,12 +761,12 @@ fn extract_run(
 
 fn check_extract_text(
     label: &str,
-    style: &str,
+    style: Option<ExtractStyle>,
     text: &str,
     manuscript_text: &str,
     errors: &mut Vec<String>,
 ) {
-    if style == "code" && (text.contains('\t') || text.contains("  ")) {
+    if style == Some(ExtractStyle::Code) && (text.contains('\t') || text.contains("  ")) {
         errors.push(format!(
             "{label} run carries layout-significant whitespace (tabs or space runs), which a wrapping code panel cannot preserve; use begin/end markers that avoid it or style: quote"
         ));

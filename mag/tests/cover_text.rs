@@ -16,7 +16,7 @@ fn article(author: &str) -> Article {
         author_note: String::new(),
         source_ids: Vec::new(),
         manuscript: PathBuf::new(),
-        content_mode: String::new(),
+        content_mode: mag::model::kinds::ContentMode::Article,
         figures: Vec::new(),
         minimum_reader_pages: 0,
         tail_art: None,

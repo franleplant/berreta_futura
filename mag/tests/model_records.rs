@@ -58,6 +58,16 @@ fn a_run_the_manuscript_already_carries_is_refused() {
 }
 
 #[test]
+fn an_invalid_style_and_a_verbatim_run_report_both_errors() {
+    let error = resolve("dup.md", "QUOTE-START", "QUOTE-END", "poster").expect_err("refused");
+    assert!(error.contains("style"), "{error}");
+    assert!(
+        error.contains("already appears verbatim in the manuscript"),
+        "{error}"
+    );
+}
+
+#[test]
 fn a_code_run_with_layout_significant_whitespace_is_refused() {
     let error = resolve("en.md", "let x = 1;", "}", "code").expect_err("refused");
     assert!(error.contains("layout-significant whitespace"), "{error}");

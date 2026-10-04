@@ -1,4 +1,5 @@
 use crate::caller::write_atomic;
+use crate::model::kinds::ContentMode;
 use crate::util::read;
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use std::fs;
@@ -69,7 +70,12 @@ fn article_slug(source_id: &str) -> String {
     trimmed.trim_end_matches('-').to_string()
 }
 
-fn article_row(source_id: &str, title: &str, author: &str, mode: &str) -> serde_norway::Value {
+fn article_row(
+    source_id: &str,
+    title: &str,
+    author: &str,
+    mode: ContentMode,
+) -> serde_norway::Value {
     let mut row = serde_norway::Mapping::new();
     let mut set = |k: &str, v: serde_norway::Value| {
         row.insert(serde_norway::Value::String(k.to_string()), v);
@@ -79,7 +85,7 @@ fn article_row(source_id: &str, title: &str, author: &str, mode: &str) -> serde_
     set("author", serde_norway::Value::String(author.to_string()));
     set(
         "content_mode",
-        serde_norway::Value::String(mode.to_string()),
+        serde_norway::Value::String(mode.as_str().to_string()),
     );
     set(
         "source_ids",
@@ -146,23 +152,26 @@ fn append_rows(plan_text: &str, rows: &[serde_norway::Value]) -> Result<String> 
 const VERBATIM_AUTO_WORD_LIMIT: usize = 1750;
 const IMAGE_WORD_COST: usize = 210;
 
-fn mode_for_source_text(text: &str) -> &'static str {
+fn mode_for_source_text(text: &str) -> ContentMode {
     let cost = text.split_whitespace().count() + text.matches("![").count() * IMAGE_WORD_COST;
     if cost <= VERBATIM_AUTO_WORD_LIMIT {
-        "verbatim"
+        ContentMode::Verbatim
     } else {
-        "article"
+        ContentMode::Article
     }
 }
 
-fn default_mode(sid: &str) -> Result<&'static str> {
+fn default_mode(sid: &str) -> Result<ContentMode> {
     let path = PathBuf::from("library/sources")
         .join(sid)
         .join("article.md");
     Ok(mode_for_source_text(&read(&path)?))
 }
 
-fn row_from_record(sid: &str, mode: Option<&str>) -> Result<serde_norway::Value> {
+fn row_from_record(
+    sid: &str,
+    mode: Option<ContentMode>,
+) -> Result<(serde_norway::Value, ContentMode)> {
     let mode = match mode {
         Some(m) => m,
         None => default_mode(sid)?,
@@ -177,10 +186,8 @@ fn row_from_record(sid: &str, mode: Option<&str>) -> Result<serde_norway::Value>
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("source '{sid}' record.yaml has no title"))?;
     let author = record.get("author").and_then(|v| v.as_str()).unwrap_or("");
-    Ok(article_row(sid, title, author, mode))
+    Ok((article_row(sid, title, author, mode), mode))
 }
-
-pub const CONTENT_MODES: &[&str] = &["article", "in_a_nutshell", "verbatim"];
 
 fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     let lines: Vec<&str> = plan_text.lines().collect();
@@ -298,16 +305,8 @@ pub fn add_source(
     edition: &str,
     sid: &str,
     article: Option<&str>,
-    mode: Option<&str>,
+    mode: Option<ContentMode>,
 ) -> Result<()> {
-    if let Some(mode) = mode {
-        if !CONTENT_MODES.contains(&mode) {
-            bail!(
-                "unknown content mode '{mode}'; one of: {}",
-                CONTENT_MODES.join(", ")
-            );
-        }
-    }
     let out_path = plan_path_for(edition)?;
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
     let (edition_id, queued) = queued_source_ids(&release_state, edition)?;
@@ -317,10 +316,10 @@ pub fn add_source(
         for q in &queued {
             if q == sid {
                 if article.is_none() {
-                    articles.push(row_from_record(q, mode)?);
+                    articles.push(row_from_record(q, mode)?.0);
                 }
             } else {
-                articles.push(row_from_record(q, None)?);
+                articles.push(row_from_record(q, None)?.0);
             }
         }
         write_new_plan(&out_path, &edition_id, articles)?;
@@ -346,12 +345,7 @@ pub fn add_source(
             t
         }
         None => {
-            let row = row_from_record(sid, mode)?;
-            let mode = row
-                .get("content_mode")
-                .and_then(|v| v.as_str())
-                .unwrap_or("article")
-                .to_string();
+            let (row, mode) = row_from_record(sid, mode)?;
             let t = append_rows(&plan_text, &[row])?;
             println!("  plan: {sid} added as its own {mode} row");
             t
@@ -385,12 +379,7 @@ pub fn run(args: &PlanArgs) -> Result<i32> {
         }
         let mut rows = Vec::new();
         for sid in &missing {
-            let row = row_from_record(sid, None)?;
-            let mode = row
-                .get("content_mode")
-                .and_then(|v| v.as_str())
-                .unwrap_or("article")
-                .to_string();
+            let (row, mode) = row_from_record(sid, None)?;
             rows.push(row);
             println!("  added: {sid} ({mode})");
         }
@@ -407,12 +396,7 @@ pub fn run(args: &PlanArgs) -> Result<i32> {
 
     let mut articles = Vec::new();
     for sid in &source_ids {
-        let row = row_from_record(sid, None)?;
-        let mode = row
-            .get("content_mode")
-            .and_then(|v| v.as_str())
-            .unwrap_or("article")
-            .to_string();
+        let (row, mode) = row_from_record(sid, None)?;
         articles.push(row);
         println!("  queued: {sid} ({mode})");
     }
@@ -495,7 +479,7 @@ articles:
 
     #[test]
     fn append_rows_keeps_existing_text_and_adds_rows_at_the_end() {
-        let row = article_row("d-77778888", "New Piece", "Someone", "article");
+        let row = article_row("d-77778888", "New Piece", "Someone", ContentMode::Article);
         let out = append_rows(PLAN, &[row]).unwrap();
         assert!(out.starts_with("# hand-written header comment\n"));
         assert!(out.contains("- id: merged-nutshell"));
@@ -523,7 +507,7 @@ articles:
 edition:
   id: '006'
 ";
-        let row = article_row("d-77778888", "New Piece", "Someone", "article");
+        let row = article_row("d-77778888", "New Piece", "Someone", ContentMode::Article);
         let err = append_rows(plan, &[row]).unwrap_err().to_string();
         assert!(err.contains("add these rows by hand"), "{err}");
     }
@@ -566,11 +550,11 @@ edition:
     #[test]
     fn mode_for_source_text_promotes_when_it_fits_seven_pages() {
         let short = ["word"; 1700].join(" ");
-        assert_eq!(mode_for_source_text(&short), "verbatim");
+        assert_eq!(mode_for_source_text(&short), ContentMode::Verbatim);
         let long = ["word"; 1800].join(" ");
-        assert_eq!(mode_for_source_text(&long), "article");
+        assert_eq!(mode_for_source_text(&long), ContentMode::Article);
         let with_images = format!("{} ![a](m/1.png) ![b](m/2.png)", ["word"; 1400].join(" "));
-        assert_eq!(mode_for_source_text(&with_images), "article");
+        assert_eq!(mode_for_source_text(&with_images), ContentMode::Article);
     }
 
     #[test]
@@ -579,7 +563,7 @@ edition:
             "prime-agent-2c19ce14",
             "Prime Agent",
             "Prime Intellect Team",
-            "article",
+            ContentMode::Article,
         );
         assert_eq!(row.get("content_mode").unwrap().as_str(), Some("article"));
         assert_eq!(row.get("id").unwrap().as_str(), Some("prime-agent"));

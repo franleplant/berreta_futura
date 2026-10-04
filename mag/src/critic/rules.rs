@@ -1,3 +1,4 @@
+use crate::model::kinds::ContentMode;
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -1437,7 +1438,7 @@ fn article_cap_issues(
             .get("article_content_modes")
             .and_then(|modes| modes.get(slug))
             .and_then(Value::as_str)
-            == Some("verbatim");
+            == Some(ContentMode::Verbatim.as_str());
         recorder.whole(
             "article-page-cap",
             if verbatim { "review" } else { "error" },

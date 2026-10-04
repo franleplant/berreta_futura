@@ -1,4 +1,5 @@
 use crate::caller::{Caller, ModelSpec};
+use crate::model::kinds::RenderOperation;
 use crate::util::read_yaml;
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
@@ -7,7 +8,6 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-const OPERATIONS: [&str; 3] = ["measure_article", "measure_edition", "render_edition"];
 const SCHEMA_VERSION: u32 = 1;
 const RENDERER_CONTRACT_VERSION: &str = "magazine-renderer/1";
 const RENDERER: &str = "typst";
@@ -29,7 +29,7 @@ pub(crate) struct Request {
     schema_version: u32,
     #[serde(rename = "rendererContractVersion")]
     renderer_contract_version: String,
-    operation: String,
+    operation: RenderOperation,
     #[serde(rename = "articleId", skip_serializing_if = "Option::is_none")]
     article_id: Option<String>,
     #[serde(rename = "editionId")]
@@ -454,10 +454,11 @@ pub struct RenderArgs {
     pub edition: String,
     #[arg(
         long,
-        default_value = "render_edition",
-        help = "measure_article, measure_edition, or render_edition"
+        value_enum,
+        default_value_t = RenderOperation::RenderEdition,
+        help = "What to run"
     )]
-    pub operation: String,
+    pub operation: RenderOperation,
     #[arg(long, help = "Article id, required for measure_article")]
     pub article: Option<String>,
     #[arg(
@@ -539,18 +540,12 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
 }
 
 pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) -> Result<Request> {
-    let operation = args.operation.as_str();
+    let operation = args.operation;
     let article = args.article.as_deref();
     let langs = args.langs.as_deref();
     let run_flag = args.run.as_deref();
     let no_model = args.no_model;
-    if !OPERATIONS.contains(&operation) {
-        bail!(
-            "unknown operation '{operation}': expected one of {}",
-            OPERATIONS.join(", ")
-        );
-    }
-    if operation == "measure_article" && article.is_none() {
+    if operation == RenderOperation::MeasureArticle && article.is_none() {
         bail!("measure_article requires --article");
     }
 
@@ -565,7 +560,7 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
         article_ids,
     } = load_edition(&args.edition)?;
     crate::picks::refuse_rounds(&edition_yaml, &args.edition)?;
-    if let Some(wanted) = article.filter(|_| operation == "measure_article") {
+    if let Some(wanted) = article.filter(|_| operation == RenderOperation::MeasureArticle) {
         if !article_ids.iter().any(|id| id == wanted) {
             bail!(
                 "article '{wanted}' not found in edition '{edition_id}'; available: {}",
@@ -621,9 +616,9 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
     Ok(Request {
         schema_version: SCHEMA_VERSION,
         renderer_contract_version: RENDERER_CONTRACT_VERSION.to_string(),
-        operation: operation.to_string(),
+        operation,
         article_id: article
-            .filter(|_| operation == "measure_article")
+            .filter(|_| operation == RenderOperation::MeasureArticle)
             .map(str::to_string),
         edition_id,
         primary_language: str_field(&edition_yaml, "language")

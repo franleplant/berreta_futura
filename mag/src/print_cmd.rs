@@ -1,4 +1,5 @@
 use crate::capture;
+use crate::model::kinds::PrintLayout;
 use crate::util::{escape_html, parallel};
 use anyhow::{Context, Result};
 use ego_tree::NodeId;
@@ -104,10 +105,11 @@ pub struct PrintArgs {
     pub image_cap: Option<u32>,
     #[arg(
         long,
-        default_value = "a5",
-        help = "Page layout: a5 (booklet: two A5 pages per landscape A4 sheet), columns (A4 two columns), single (A4 one column)"
+        value_enum,
+        default_value_t = PrintLayout::A5,
+        help = "Page layout"
     )]
-    pub layout: String,
+    pub layout: PrintLayout,
 }
 
 struct Layout {
@@ -134,36 +136,35 @@ fn counter_styles() -> String {
     )
 }
 
-fn layout(name: &str) -> Result<&'static Layout> {
+fn layout(name: PrintLayout) -> &'static Layout {
     match name {
-        "single" => Ok(&Layout {
+        PrintLayout::Single => &Layout {
             page: "size: A4; margin: 18mm;",
             font: "11",
             body: "max-width: 150mm; margin: 0 auto;",
             h1: "",
             pagebox: "@bottom-center { content: counter(page); {foot} }",
-        }),
-        "columns" => Ok(&Layout {
+        },
+        PrintLayout::Columns => &Layout {
             page: "size: A4; margin: 14mm 12mm;",
             font: "9.5",
             body: "columns: 2; column-gap: 8mm;",
             h1: "column-span: all;",
             pagebox: "@bottom-center { content: counter(page); {foot} }",
-        }),
-        "a5" => Ok(&Layout {
+        },
+        PrintLayout::A5 => &Layout {
             page: "size: A4 landscape; margin: 12mm 11mm;",
             font: "9.5",
             body: "columns: 2; column-gap: 22mm;",
             h1: "",
             pagebox: "@bottom-left { content: counter(page, pageleft); {foot} } \
 @bottom-right { content: counter(page, pageright); {foot} }",
-        }),
-        other => anyhow::bail!("unknown --layout '{other}' (expected single, columns, or a5)"),
+        },
     }
 }
 
 pub fn run(args: &PrintArgs) -> Result<i32> {
-    let lay = layout(&args.layout)?;
+    let lay = layout(args.layout);
     let base = Url::parse(&args.url).context("parsing url")?;
     let raw = match &args.html {
         Some(p) => capture::decode_page(
@@ -628,21 +629,27 @@ https://g.com/r</a>.</p><p>pinned: <a href=\"https://x.com/a/1\">https://x.com/a
     #[test]
     fn layouts_resolve_and_unknown_fails() {
         let base = Url::parse("https://x.com/").unwrap();
-        let two = finish("<p>x</p>", &base, "T", 110, layout("columns").unwrap());
+        let two = finish("<p>x</p>", &base, "T", 110, layout(PrintLayout::Columns));
         assert!(two.contains("columns: 2;"));
         assert!(two.contains("column-span: all;"));
-        let five = finish("<p>x</p>", &base, "T", 110, layout("a5").unwrap());
+        let five = finish("<p>x</p>", &base, "T", 110, layout(PrintLayout::A5));
         assert!(five.contains("size: A4 landscape;"));
         assert!(five.contains("column-gap: 22mm;"));
         assert!(five.contains("counter(page, pageleft)"));
         assert!(five.contains("@counter-style pageright { system: fixed; symbols: \"2\" \"4\""));
-        assert!(layout("booklet").is_err());
+        assert!(PrintLayout::parse("booklet").is_err());
     }
 
     #[test]
     fn finish_builds_a_reader_page() {
         let base = Url::parse("https://x.com/").unwrap();
-        let out = finish("<p>x</p>", &base, "T & Co", 110, layout("single").unwrap());
+        let out = finish(
+            "<p>x</p>",
+            &base,
+            "T & Co",
+            110,
+            layout(PrintLayout::Single),
+        );
         assert!(out.contains("max-height: 110mm"));
         assert!(out.contains("@bottom-center { content: counter(page);"));
         assert!(!out.contains("{cap}"));
