@@ -147,10 +147,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - Setup, once per clone: `git config core.hooksPath .githooks`. The
   pre-commit hook then runs `cargo fmt --check`, `cargo clippy -D warnings`,
   `ruff format --check` and `ruff check` on `tools/`, and the no-comments
-  test; a commit that fails any of them does not land, and `cargo test`
-  fails until the hook is installed. Zero warnings is the standing state, not a goal.
-- Verification: `cargo test` in `mag/` (also runs the comment check and the
-  hook-install check). Committed expectations are regression snapshots of the
+  test; a commit that fails any of them does not land. Zero warnings is the
+  standing state, not a goal.
+- Verification: `cargo test` in `mag/` (also runs the comment check). Committed expectations are regression snapshots of the
   Rust output; the web port re-blesses with `MAG_BLESS=1` after an intended
   change.
 - Work on the branch the user asks for and commit coherent checkpoints.

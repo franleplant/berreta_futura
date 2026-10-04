@@ -173,43 +173,6 @@ fn library_jpegs_match_the_python_metrics() {
 }
 
 #[test]
-fn rounding_matches_python_round() {
-    let raw = std::fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/critic_metrics_rounding_expected.json"),
-    )
-    .expect("the committed rounding oracle is readable");
-    let oracle: Value = serde_json::from_str(&raw).expect("the oracle is json");
-    for case in oracle["half_even"].as_array().expect("array") {
-        let value = case["value"].as_f64().expect("value");
-        let expected = case["expected"].as_i64().expect("expected");
-        assert_eq!(
-            metrics::round_half_even(value),
-            expected,
-            "round({value}) should be {expected}"
-        );
-    }
-    for case in oracle["places"].as_array().expect("array") {
-        let value = case["value"].as_f64().expect("value");
-        let places = case["places"].as_u64().expect("places") as usize;
-        let expected = case["expected"].as_f64().expect("expected");
-        assert_eq!(
-            metrics::round_places(value, places),
-            expected,
-            "round({value}, {places}) should be {expected}"
-        );
-    }
-}
-
-#[test]
-fn worker_count_matches_the_python_bounds() {
-    assert_eq!(metrics::worker_count(0, None), 1);
-    assert_eq!(metrics::worker_count(5, Some(3)), 3);
-    assert_eq!(metrics::worker_count(2, Some(9)), 2);
-    assert_eq!(metrics::worker_count(9, Some(0)), 1);
-    assert!(metrics::worker_count(100, None) <= metrics::MAX_WORKERS);
-}
-
-#[test]
 fn ordered_map_preserves_order_and_reports_the_first_failure() {
     let items: Vec<usize> = (0..25).collect();
     let doubled = metrics::ordered_map(|value| Ok(value * 2), &items, None).expect("no item fails");

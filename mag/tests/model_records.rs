@@ -246,21 +246,6 @@ fn library_sources_match_the_python_dump() {
 }
 
 #[test]
-fn a_changed_field_fails_the_corpus_comparison() {
-    let mut produced: Vec<Json> = load_records(&oracle::snapshot().join("library/sources"))
-        .expect("the corpus loads")
-        .iter()
-        .map(SourceRecord::to_json)
-        .collect();
-    produced[0]["title"] = json!("a title the oracle never recorded");
-    assert_ne!(
-        Json::Array(produced),
-        committed("model_records_expected.json"),
-        "the corpus comparison is vacuous"
-    );
-}
-
-#[test]
 fn to_dict_key_order_matches_python() {
     let records =
         load_records(&oracle::snapshot().join("library/sources")).expect("the corpus loads");

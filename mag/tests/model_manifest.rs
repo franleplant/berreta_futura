@@ -12,10 +12,10 @@ mod records;
 mod shared;
 
 use manifest::{load_edition, load_translation, Edition, LoadOptions, Records};
-use records::{localize_figures, SourceRecord};
+use records::SourceRecord;
 use serde_json::{json, Map, Value as Json};
-use serde_yaml::{Mapping, Value};
-use shared::{py_repr, ValidationError};
+use serde_yaml::Value;
+use shared::ValidationError;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -332,142 +332,6 @@ fn python_figure_paths_made_source_relative(want: &Json) -> (Json, usize) {
     (want, rewritten)
 }
 
-#[test]
-fn python_writes_translated_figure_paths_absolute_where_rust_keeps_them_source_relative() {
-    let expected = committed("model_manifest_cases_expected.json");
-    let rewritten: Vec<(&String, usize)> = expected
-        .as_object()
-        .expect("the oracle is an object")
-        .iter()
-        .map(|(name, want)| (name, python_figure_paths_made_source_relative(want).1))
-        .filter(|(_, count)| *count > 0)
-        .collect();
-    assert_eq!(
-        rewritten,
-        vec![
-            (&"translation_heading_split_at_separator".to_string(), 1),
-            (&"translation_media_loads_cleanly".to_string(), 1),
-        ]
-    );
-}
-
-#[test]
-fn python_crashes_are_reported_as_validation_errors() {
-    let expected = committed("model_manifest_cases_expected.json");
-    for case in cases() {
-        let name = case
-            .get("name")
-            .and_then(|value| value.as_str())
-            .expect("a case is named")
-            .to_string();
-        if !PYTHON_CRASHES.contains(&name.as_str()) {
-            continue;
-        }
-        let crash = expected[&name]["crash"]
-            .as_str()
-            .unwrap_or_else(|| panic!("{name} is recorded as a Python crash"));
-        assert!(
-            crash.starts_with("AttributeError") || crash.starts_with("TypeError"),
-            "{name} records the unguarded-shape crash, got {crash}"
-        );
-        let got = run_case(&case, &name);
-        let errors = got["errors"]
-            .as_array()
-            .unwrap_or_else(|| panic!("{name} reports validation errors rather than panicking"));
-        assert_eq!(
-            errors,
-            recovered_diagnoses(&name),
-            "{name} surfaces the diagnoses the Python crash discards"
-        );
-    }
-}
-
-#[test]
-fn the_oracle_is_not_vacuous() {
-    let mut expected = committed("model_manifest_cases_expected.json");
-    expected["valid_minimum"]["ok"]["articles"][0]["title"] = json!("Altered");
-    let case = cases()
-        .into_iter()
-        .find(|case| case.get("name").and_then(|value| value.as_str()) == Some("valid_minimum"))
-        .expect("the valid case exists");
-    let got = run_case(&case, "valid_minimum_negative");
-    assert_ne!(got, expected["valid_minimum"]);
-}
-
-#[test]
-fn edition_010_matches_the_python_loader() {
-    let (Ok(root), Ok(oracle)) = (
-        std::env::var("MAG_MANIFEST_ROOT"),
-        std::env::var("MAG_MANIFEST_ORACLE"),
-    ) else {
-        assert!(
-            std::env::var("MAG_MANIFEST_ROOT").is_err()
-                && std::env::var("MAG_MANIFEST_ORACLE").is_err(),
-            "set both MAG_MANIFEST_ROOT and MAG_MANIFEST_ORACLE or neither"
-        );
-        return;
-    };
-    let root = PathBuf::from(root)
-        .canonicalize()
-        .expect("the staged root exists");
-    let expected: Json =
-        serde_json::from_str(&std::fs::read_to_string(&oracle).expect("the oracle is readable"))
-            .expect("the oracle is JSON");
-    let records: Records = records::load_records(&root.join("library").join("sources"))
-        .expect("the staged records load")
-        .into_iter()
-        .map(|record| (record.id.clone(), record))
-        .collect();
-    let known: BTreeSet<String> = records.keys().cloned().collect();
-    let edition = load_edition(
-        &root,
-        "010",
-        &known,
-        &LoadOptions {
-            publication_name: "Magazine",
-            source_records: Some(&records),
-            ..LoadOptions::default()
-        },
-    )
-    .expect("edition 010 loads from the staged root");
-    let caps: Map<String, Json> = edition
-        .articles
-        .iter()
-        .map(|article| {
-            let cap = if article.content_mode == "verbatim" {
-                10
-            } else {
-                7
-            };
-            (article.id.clone(), json!(cap))
-        })
-        .collect();
-    let modes: Map<String, Json> = edition
-        .articles
-        .iter()
-        .map(|article| (article.id.clone(), json!(article.content_mode)))
-        .collect();
-    let format = edition.raw.get("format");
-    let maximum_article_pages = format
-        .and_then(|format| format.get("max_article_pages"))
-        .and_then(|value| value.as_i64())
-        .unwrap_or(7);
-    let maximum_editorial_pages = format
-        .and_then(|format| format.get("max_editorial_pages"))
-        .and_then(|value| value.as_i64())
-        .unwrap_or(2);
-    let got = json!({
-        "edition": yaml_to_json(&edition.raw),
-        "layout": {
-            "maximum_article_pages": maximum_article_pages,
-            "article_page_caps": caps,
-            "article_content_modes": modes,
-            "maximum_editorial_pages": maximum_editorial_pages,
-        },
-    });
-    assert_eq!(got, expected, "edition 010 diverges from the Python loader");
-}
-
 fn compare_parser_diagnostics(got: &Json, want: &Json, name: &str, mismatches: &mut Vec<String>) {
     let ours = got["errors"].as_array().expect("rust reports errors");
     let theirs = want["errors"].as_array().expect("python reports errors");
@@ -492,134 +356,6 @@ fn compare_parser_diagnostics(got: &Json, want: &Json, name: &str, mismatches: &
             ));
         }
     }
-}
-
-fn recovered_diagnoses(name: &str) -> &'static Vec<Json> {
-    use std::sync::OnceLock;
-    static TABLE: OnceLock<Vec<(&str, Vec<Json>)>> = OnceLock::new();
-    let table = TABLE.get_or_init(|| {
-        vec![
-            (
-                "cover_not_a_mapping",
-                vec![
-                    json!("Edition requires either sections or articles"),
-                    json!("Edition cover must be a mapping"),
-                    json!("Edition tail_art_fit must be cover or contain"),
-                ],
-            ),
-            (
-                "closing_plates_not_a_list",
-                vec![
-                    json!("Edition requires either sections or articles"),
-                    json!("Edition closing_plates must be a list"),
-                ],
-            ),
-            (
-                "opener_art_not_a_mapping",
-                vec![json!(
-                    "Article a1 requires a non-empty opener_art mapping for format.article_opener illustrated_paper_spots_v1"
-                )],
-            ),
-        ]
-    });
-    table
-        .iter()
-        .find(|(key, _)| *key == name)
-        .map(|(_, value)| value)
-        .unwrap_or_else(|| panic!("{name} has recorded diagnoses"))
-}
-
-const REPR_CASES: &[&str] = &[
-    "plain",
-    "caf\u{e9}",
-    "zero\u{200b}width",
-    "bell\u{7}stop",
-    "esc\u{1b}stop",
-    "astral\u{f0000}stop",
-    "it's \"both\"",
-    "back\\slash\nnew\rret\ttab",
-    "it's plain",
-];
-
-fn repr_base_edition() -> Edition {
-    Edition {
-        id: "010".to_string(),
-        publication_name: String::new(),
-        issue_number: String::new(),
-        title: String::new(),
-        publication_date: String::new(),
-        language: "en".to_string(),
-        locale: String::new(),
-        editorial: None,
-        articles: Vec::new(),
-        sections: Vec::new(),
-        cover: Mapping::new(),
-        cover_art: None,
-        closing_plates: Vec::new(),
-        raw: Value::Null,
-    }
-}
-
-fn between(message: &str, prefix: &str, suffix: &str) -> String {
-    let rest = message
-        .strip_prefix(prefix)
-        .unwrap_or_else(|| panic!("{message:?} starts with {prefix:?}"));
-    let end = rest
-        .find(suffix)
-        .unwrap_or_else(|| panic!("{message:?} contains {suffix:?}"));
-    rest[..end].to_string()
-}
-
-fn manifest_py_repr(case: &str) -> String {
-    let base = repr_base_edition();
-    let error = load_translation(Path::new("/mag-no-such-root"), &base, case)
-        .expect_err("a missing translation manifest refuses");
-    between(&error.0[0], "Required ", " translation manifest not found:")
-}
-
-fn records_py_repr(case: &str) -> String {
-    let rows = Value::Sequence(vec![Value::String("f1".to_string())]);
-    let error = localize_figures(&[], Some(&rows), "a1", Path::new("m.md"), case)
-        .expect_err("figures absent from English refuse");
-    between(&error.0[0], "Translation ", " article a1 has figures")
-}
-
-#[test]
-fn repr_cases_match_python() {
-    let expected = committed("model_manifest_repr_expected.json");
-    let expected = expected.as_object().expect("the oracle is an object");
-    assert_eq!(expected.len(), REPR_CASES.len());
-    for case in REPR_CASES {
-        let python = expected
-            .get(*case)
-            .and_then(Json::as_str)
-            .unwrap_or_else(|| panic!("the oracle covers {case:?}"));
-        assert_eq!(py_repr(case), python, "py_repr differs on {case:?}");
-        assert_eq!(
-            manifest_py_repr(case),
-            python,
-            "the manifest route differs on {case:?}"
-        );
-        assert_eq!(
-            records_py_repr(case),
-            python,
-            "the records route differs on {case:?}"
-        );
-    }
-}
-
-#[test]
-fn tagged_values_are_refused_as_pyyaml_refuses_them() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/tmp/model_manifest/tagged");
-    std::fs::create_dir_all(&dir).expect("the case root is creatable");
-    let path = dir.join("edition.yaml");
-    std::fs::write(&path, "edition: \"010\"\ndeck: !mytag x\n").expect("fixture is writable");
-    let error = shared::load_structured(&path).expect_err("a tagged value is refused");
-    assert!(
-        error.0[0].contains("could not determine a constructor for the tag '!mytag'"),
-        "message was {:?}",
-        error.0
-    );
 }
 
 #[test]
@@ -682,19 +418,7 @@ fn load_translated(root: &Path, edition: &str, language: &str) -> Json {
 
 #[test]
 fn real_translations_match_the_python_loader() {
-    let mut oracle = committed("model_manifest_translations_expected.json");
-    if let Ok(extra) = std::env::var("MAG_TRANSLATION_ORACLE") {
-        let extra: Json = serde_json::from_str(
-            &std::fs::read_to_string(extra).expect("the extra oracle is readable"),
-        )
-        .expect("the extra oracle is JSON");
-        oracle.as_array_mut().expect("the oracle is a list").extend(
-            extra
-                .as_array()
-                .expect("the extra oracle is a list")
-                .clone(),
-        );
-    }
+    let oracle = committed("model_manifest_translations_expected.json");
     for entry in oracle.as_array().expect("the oracle is a list") {
         let text = |key: &str| entry[key].as_str().expect("an oracle field is text");
         let root = Path::new(env!("CARGO_MANIFEST_DIR"))

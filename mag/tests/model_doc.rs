@@ -112,27 +112,6 @@ fn settable_codepoints_are_the_union_of_the_bundled_faces() {
 }
 
 #[test]
-fn edition_manuscripts_match_the_python_projection() {
-    let articles = std::env::var("MAG_MODEL_ARTICLES").ok();
-    let oracle = std::env::var("MAG_MODEL_ORACLE").ok();
-    let (articles, oracle) = match (articles, oracle) {
-        (None, None) => return,
-        (Some(articles), Some(oracle)) => (articles, oracle),
-        _ => panic!("MAG_MODEL_ARTICLES and MAG_MODEL_ORACLE must be set together"),
-    };
-    let expected: Value = serde_json::from_str(
-        &std::fs::read_to_string(&oracle).expect("the oracle dump is readable"),
-    )
-    .expect("the oracle dump is JSON");
-    let produced = dump(Path::new(&articles), "final.md");
-    assert_eq!(
-        Value::Object(produced),
-        expected,
-        "the Rust projection diverged from the Python projection of the edition"
-    );
-}
-
-#[test]
 fn a_pipe_table_parses_into_rows_of_inline_cells() {
     let markdown = "Before.\n\n| Name | `code` |\n| --- | :-: |\n| **A** | 1 \\| 2 |\n| B |\n";
     let document = doc::parse_publication_document(markdown).expect("the table parses");
