@@ -1,4 +1,4 @@
-mod art;
+pub mod art;
 pub(crate) mod content;
 pub(crate) mod cover;
 pub(crate) mod estimate;
