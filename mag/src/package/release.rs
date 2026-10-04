@@ -5,12 +5,12 @@ use anyhow::{bail, Context, Result};
 use serde_json::{json, Value};
 
 use crate::critic::inspect::{PageInspection, RASTER_DPI};
-use crate::critic::rules::{self, Critique, Inputs, Issue, PageAnnotation, Spread};
+use crate::critic::rules::{self, Critique, Inputs, PageAnnotation};
 use crate::impose::{
     cover_wrap_plan, impose_a5_on_a4, imposed_reader_page_plan, A4_LANDSCAPE_POINTS,
 };
 use crate::package::contact::write_contact_sheets;
-use crate::package::preflight::{inspect_package, FigurePlacement, Pdf};
+use crate::package::preflight::{inspect_package, FigurePlacement, PackagePdfs, Pdf};
 use crate::trace::TextFace;
 
 const REVIEW_INSTRUCTIONS: &str = "Inspect every page on the contact sheets, then reopen every crop from its exact file path at original resolution. Do not approve from a resized preview. Automated checks do not judge typographic rhythm, visual hierarchy, or aesthetic quality. For an illustrated opener, verify the orange rectangle begins down and right: white remains outside the black frame at the top-right before the shadow begins and at the bottom-left before it begins. The crops/ set enlarges every opener block, placed figure, printed tail band, and flagged region at 300 ppi so type quality and locked geometry are judged from source pixels rather than thumbnails.";
@@ -140,9 +140,11 @@ fn booklet_sections(
     } else {
         0
     };
-    let spreads = |rows: &[Spread]| rows.iter().map(Spread::as_row).collect::<Vec<Value>>();
-    let inspected =
-        |rows: &[PageInspection]| rows.iter().map(PageInspection::row).collect::<Vec<Value>>();
+    let inspected = |rows: &[PageInspection]| {
+        rows.iter()
+            .map(|row| PageAnnotation::new(row.clone()))
+            .collect::<Vec<_>>()
+    };
     let sections = json!({
         "home_booklet": {
             "path": relative(legs.booklet, root),
@@ -151,7 +153,7 @@ fn booklet_sections(
             "binding": "saddle_stitch",
             "duplex_flip": "short_edge",
             "orientation": "upright",
-            "spreads": spreads(&critique.spreads),
+            "spreads": critique.spreads,
             "pages": inspected(&critique.booklet_pages),
         },
         "home_booklet_interior": {
@@ -165,7 +167,7 @@ fn booklet_sections(
             "duplex_flip": "short_edge",
             "rasterized": false,
             "rasterization_rationale": INTERIOR_RATIONALE,
-            "spreads": spreads(&critique.interior_spreads),
+            "spreads": critique.interior_spreads,
         },
         "home_booklet_cover": {
             "path": relative(legs.cover, root),
@@ -179,7 +181,7 @@ fn booklet_sections(
             "rasterized": true,
             "raster_page_count_matches": critique.rasters.cover_booklet.len() == cover.page_count(),
             "inside_cover_sides": critique.cover_booklet_inside_sides,
-            "spreads": spreads(&critique.cover_spreads),
+            "spreads": critique.cover_spreads,
             "pages": inspected(&critique.cover_booklet_pages),
         },
     });
@@ -250,9 +252,9 @@ fn render_report(
             "article_opener_offset_count_matches": critique.opener_offsets.len() == illustrated.len(),
             "article_opener_crop_fidelity": critique.opener_crop_fidelity,
         },
-        "issues": critique.issues.iter().map(Issue::as_row).collect::<Vec<Value>>(),
+        "issues": critique.issues,
         "summary": {"errors": errors, "review_items": reviews},
-        "pages": critique.pages.iter().map(PageAnnotation::as_row).collect::<Vec<Value>>(),
+        "pages": critique.pages,
         "visual_review": review,
     });
     for (key, value) in booklet_sections(critique, legs, root, page_count)? {
@@ -357,10 +359,12 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
     write(&studio, studio_note(release.language))?;
     let preflight = root.join("preflight.json");
     let facts = inspect_package(
-        &reader,
-        &booklet,
-        &interior,
-        &cover,
+        &PackagePdfs {
+            reader: &reader,
+            booklet: &booklet,
+            interior: &interior,
+            cover: &cover,
+        },
         release.cover_art,
         release.cover_art_size_points,
         release.figure_placements,

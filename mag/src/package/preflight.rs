@@ -396,21 +396,24 @@ fn figure_geometry(
     (invalid, collisions)
 }
 
-#[allow(clippy::too_many_arguments)]
+pub struct PackagePdfs<'a> {
+    pub reader: &'a Path,
+    pub booklet: &'a Path,
+    pub interior: &'a Path,
+    pub cover: &'a Path,
+}
+
 pub fn inspect_package(
-    reader_pdf: &Path,
-    booklet_pdf: &Path,
-    interior_booklet_pdf: &Path,
-    cover_booklet_pdf: &Path,
+    pdfs: &PackagePdfs,
     cover_art: Option<&Path>,
     cover_art_size_points: Option<(f64, f64)>,
     figure_placements: &[FigurePlacement],
     language: &str,
 ) -> Result<Value> {
-    let reader = Pdf::read(reader_pdf)?;
-    let booklet = Pdf::read(booklet_pdf)?;
-    let interior = Pdf::read(interior_booklet_pdf)?;
-    let cover = Pdf::read(cover_booklet_pdf)?;
+    let reader = Pdf::read(pdfs.reader)?;
+    let booklet = Pdf::read(pdfs.booklet)?;
+    let interior = Pdf::read(pdfs.interior)?;
+    let cover = Pdf::read(pdfs.cover)?;
     let cover_info = cover_facts(cover_art, cover_art_size_points);
 
     let mut rows = Vec::with_capacity(figure_placements.len());
@@ -447,7 +450,7 @@ pub fn inspect_package(
             }));
         }
     }
-    let glyphs = page_glyphs(reader_pdf)?;
+    let glyphs = page_glyphs(pdfs.reader)?;
     let (invalid_boxes, collisions) = figure_geometry(&rows, reader.page_count(), &glyphs);
 
     let messages = messages_for(language);

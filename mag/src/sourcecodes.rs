@@ -343,9 +343,11 @@ pub fn differences(files: &Files, directory: &Path) -> Result<Vec<String>> {
 }
 
 pub fn run(args: &SourceCodesArgs) -> Result<i32> {
-    let (edition, check) = (args.edition.as_str(), args.check);
+    let root = Path::new(".");
+    let resolved = crate::util::EditionId::resolve(root, &args.edition)?;
+    let (edition, check) = (resolved.as_str(), args.check);
     let directory = Path::new("editions").join(edition).join("source-codes");
-    let (files, declines) = build(Path::new("."), edition)?;
+    let (files, declines) = build(root, edition)?;
     if check {
         let differences = differences(&files, &directory)?;
         for line in &differences {

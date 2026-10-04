@@ -113,38 +113,6 @@ static KEBAB_ID: LazyLock<Regex> =
 
 const GEN_CONCURRENCY: usize = 8;
 
-fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
-    let direct = PathBuf::from("editions").join(edition);
-    if direct.is_dir() {
-        return Ok(direct);
-    }
-    let editions_root = Path::new("editions");
-    let mut matches = Vec::new();
-    for entry in fs::read_dir(editions_root)
-        .with_context(|| format!("reading {}", editions_root.display()))?
-    {
-        let entry = entry?;
-        if !entry.file_type()?.is_dir() {
-            continue;
-        }
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with(edition) {
-            matches.push(entry.path());
-        }
-    }
-    match matches.len() {
-        0 => bail!("no edition directory matching 'editions/{edition}' or 'editions/{edition}*'"),
-        1 => Ok(matches.remove(0)),
-        _ => {
-            let names: Vec<String> = matches.iter().map(|p| p.display().to_string()).collect();
-            bail!(
-                "edition '{edition}' matches multiple directories: {}",
-                names.join(", ")
-            )
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Brief {
     id: String,
@@ -1779,7 +1747,7 @@ pub fn cast_check_run(args: &CastCheckArgs) -> Result<i32> {
     let round_filter = args.round.as_deref();
     let direction_override = args.direction.as_deref();
     let model = &ModelSpec::parse(&args.model)?;
-    let edition_dir = resolve_edition_dir(edition)?;
+    let edition_dir = crate::render::resolve_edition_dir(edition)?;
     let edition_label = edition_dir
         .file_name()
         .map_or_else(|| edition.to_string(), |n| n.to_string_lossy().to_string());
@@ -2165,7 +2133,7 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
         resume_round: resume,
         promote,
     } = *opts;
-    let edition_dir = resolve_edition_dir(edition)?;
+    let edition_dir = crate::render::resolve_edition_dir(edition)?;
     let edition_label = edition_dir
         .file_name()
         .map_or_else(|| edition.to_string(), |n| n.to_string_lossy().to_string());

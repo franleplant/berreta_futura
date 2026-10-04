@@ -4,7 +4,7 @@ use anyhow::{bail, Context, Result};
 use base64::Engine as _;
 
 use super::art::{art_zones, extreme_pixels, graded_art, luminance, Zone};
-use super::outline::Outliner;
+use super::outline::{Outliner, Style};
 
 pub const PAGE_WIDTH: f64 = 419.527559;
 pub const PAGE_HEIGHT: f64 = 595.275591;
@@ -314,7 +314,7 @@ impl Builder<'_> {
         Ok(self
             .fonts
             .regular
-            .outline(text, x, baseline, size, fill, tracking, 100.0, None, "")?
+            .outline(text, x, baseline, &Style::new(size, fill, tracking))?
             .markup)
     }
 
@@ -349,12 +349,7 @@ impl Builder<'_> {
                 text,
                 right_edge - width,
                 baseline,
-                size,
-                fill,
-                tracking,
-                100.0,
-                None,
-                "",
+                &Style::new(size, fill, tracking),
             )?
             .markup)
     }
@@ -381,10 +376,12 @@ impl Builder<'_> {
                 103.0,
             ),
         ] {
-            let outlined = self
-                .fonts
-                .bold
-                .outline(value, 0.0, 0.0, size, &ink, tracking, scale, None, "")?;
+            let outlined = self.fonts.bold.outline(
+                value,
+                0.0,
+                0.0,
+                &Style::new(size, &ink, tracking).scaled(scale),
+            )?;
             let cross = band_x + band_width / 2.0 - (outlined.ascent - outlined.descent) / 2.0;
             out.push(format!(
                 "<g data-slot=\"{slot}\"><g transform=\"translate({cross:.5} {top:.5}) rotate(90)\">{}</g></g>",
@@ -464,12 +461,7 @@ impl Builder<'_> {
                 line,
                 self.design.headline.x + if odd { 23.0 } else { -0.65 },
                 baseline + if odd { 1.0 } else { 0.0 },
-                if odd { 28.0 } else { size },
-                &fill,
-                -1.35,
-                100.0,
-                stroke,
-                "",
+                &Style::new(if odd { 28.0 } else { size }, &fill, -1.35).stroked(stroke),
             )?;
             paths.push_str(&outlined.markup);
             baseline += leading;
@@ -493,12 +485,8 @@ impl Builder<'_> {
                 line,
                 x - if index == 0 { 0.65 } else { 0.0 },
                 baseline + index as f64 * self.design.deck.leading,
-                self.design.deck.size,
-                &ink,
-                self.design.deck.tracking,
-                self.design.deck.horizontal_scale,
-                None,
-                "",
+                &Style::new(self.design.deck.size, &ink, self.design.deck.tracking)
+                    .scaled(self.design.deck.horizontal_scale),
             )?;
             paths.push_str(&outlined.markup);
         }
@@ -559,12 +547,7 @@ impl Builder<'_> {
             &text.date_line,
             self.design.footer.x,
             PAGE_HEIGHT - self.design.footer.bottom,
-            self.design.footer.size,
-            &ink,
-            self.design.footer.tracking,
-            100.0,
-            None,
-            "",
+            &Style::new(self.design.footer.size, &ink, self.design.footer.tracking),
         )?;
         parts.push(format!("<g data-slot=\"footer\">{}</g>", outlined.markup));
         parts.extend(self.tab_labels(text)?);
@@ -612,12 +595,7 @@ impl Builder<'_> {
             &title,
             right_edge - width,
             PAGE_HEIGHT - footer + 22.0,
-            size,
-            &ink,
-            0.2,
-            100.0,
-            None,
-            "",
+            &Style::new(size, &ink, 0.2),
         )?;
         parts.push(format!("<g data-slot=\"headline\">{}</g>", outlined.markup));
         if !text.contributors.is_empty() {
@@ -733,12 +711,7 @@ impl Builder<'_> {
                 &title,
                 spec_margin,
                 PAGE_HEIGHT - 46.0,
-                size,
-                fill,
-                0.2,
-                100.0,
-                None,
-                "",
+                &Style::new(size, fill, 0.2),
             )?
             .markup;
         parts.push(format!("<g data-slot=\"headline\">{headline}</g>"));

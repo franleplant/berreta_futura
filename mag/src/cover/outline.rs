@@ -26,6 +26,38 @@ struct Builder {
     last_line_to_start: bool,
 }
 
+#[derive(Clone, Copy)]
+pub struct Style<'a> {
+    pub size: f64,
+    pub fill: &'a str,
+    pub tracking: f64,
+    pub horizontal_scale: f64,
+    pub stroke: Option<(&'a str, f64)>,
+}
+
+impl<'a> Style<'a> {
+    pub fn new(size: f64, fill: &'a str, tracking: f64) -> Self {
+        Self {
+            size,
+            fill,
+            tracking,
+            horizontal_scale: 100.0,
+            stroke: None,
+        }
+    }
+
+    pub fn scaled(self, horizontal_scale: f64) -> Self {
+        Self {
+            horizontal_scale,
+            ..self
+        }
+    }
+
+    pub fn stroked(self, stroke: Option<(&'a str, f64)>) -> Self {
+        Self { stroke, ..self }
+    }
+}
+
 impl Builder {
     fn new() -> Self {
         Self {
@@ -190,19 +222,20 @@ impl Outliner {
         Ok(lines)
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn outline(
         &mut self,
         text: &str,
         x: f64,
         baseline: f64,
-        size: f64,
-        fill: &str,
-        tracking: f64,
-        horizontal_scale: f64,
-        stroke: Option<(&str, f64)>,
-        extra_transform: &str,
+        style: &Style,
     ) -> Result<Outlined> {
+        let Style {
+            size,
+            fill,
+            tracking,
+            horizontal_scale,
+            stroke,
+        } = *style;
         let scale = size / self.units;
         let scale_x = scale * horizontal_scale / 100.0;
         let count = text.chars().count();
@@ -234,10 +267,9 @@ impl Outliner {
             }
         }
         let transform = format!(
-            "translate({x:.5} {baseline:.5}) {extra_transform} scale({scale_x:.8} {:.8})",
+            "translate({x:.5} {baseline:.5}) scale({scale_x:.8} {:.8})",
             -scale
         );
-        let transform = transform.trim().to_string();
         Ok(Outlined {
             markup: format!("<g transform=\"{transform}\">{paths}</g>"),
             ascent: self.ascent_units * scale,

@@ -2,33 +2,14 @@ use crate::caller::write_atomic;
 use crate::model::kinds::ContentMode;
 use crate::model::shared::read_spec;
 use crate::model::spec::SourceRecord;
-use crate::util::read;
+use crate::util::{read, EditionId};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(clap::Args)]
 pub struct PlanArgs {
     pub edition: String,
-}
-
-fn matching_edition_dirs(edition: &str) -> Result<Vec<PathBuf>> {
-    let root = PathBuf::from("editions");
-    let mut out = Vec::new();
-    if root.is_dir() {
-        for entry in fs::read_dir(&root).with_context(|| format!("reading {}", root.display()))? {
-            let path = entry?.path();
-            if path.is_dir() {
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    if name.starts_with(edition) {
-                        out.push(path);
-                    }
-                }
-            }
-        }
-    }
-    out.sort();
-    Ok(out)
 }
 
 pub fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<String>)> {
@@ -40,7 +21,7 @@ pub fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, 
         .ok_or_else(|| anyhow!("release-state.yaml has no collecting_editions list"))?;
     for entry in collecting {
         let id = entry.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        if !id.starts_with(edition) {
+        if id != edition {
             continue;
         }
         let sources = entry
@@ -59,7 +40,7 @@ pub fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, 
         }
         return Ok((id.to_string(), sources));
     }
-    bail!("no collecting edition matching '{edition}' in library/release-state.yaml")
+    bail!("no collecting edition '{edition}' in library/release-state.yaml")
 }
 
 fn article_slug(source_id: &str) -> String {
@@ -250,13 +231,49 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     Ok(joined)
 }
 
-fn plan_path_for(edition: &str) -> Result<PathBuf> {
-    let dirs = matching_edition_dirs(edition)?;
-    let out_dir = dirs
+fn plan_path_for(edition: &str) -> PathBuf {
+    PathBuf::from("editions").join(edition).join("plan.yaml")
+}
+
+fn known_editions(root: &Path, release_state: &str) -> Result<Vec<String>> {
+    let doc: serde_norway::Value =
+        serde_norway::from_str(release_state).context("parsing library/release-state.yaml")?;
+    let mut names: Vec<String> = doc
+        .get("collecting_editions")
+        .and_then(|v| v.as_sequence())
         .into_iter()
-        .next()
-        .unwrap_or_else(|| PathBuf::from("editions").join(edition));
-    Ok(out_dir.join("plan.yaml"))
+        .flatten()
+        .filter_map(|e| e.get("id").and_then(|v| v.as_str()).map(str::to_string))
+        .collect();
+    if let Ok(dirs) = fs::read_dir(root.join("editions")) {
+        names.extend(
+            dirs.flatten()
+                .filter(|e| e.path().is_dir())
+                .map(|e| e.file_name().to_string_lossy().to_string()),
+        );
+    }
+    names.sort();
+    names.dedup();
+    Ok(names)
+}
+
+fn resolve_planned(root: &Path, release_state: &str, given: &str) -> Result<EditionId> {
+    EditionId::pick(given, known_editions(root, release_state)?)
+}
+
+pub fn intake_edition_for(root: &Path, release_state: &str, given: &str) -> Result<String> {
+    let names = known_editions(root, release_state)?;
+    let hits: Vec<&str> = names
+        .iter()
+        .filter(|n| n.starts_with(given))
+        .map(String::as_str)
+        .collect();
+    ensure!(
+        hits.is_empty() || names.iter().any(|n| n == given),
+        "edition '{given}' is not an existing id but a prefix of {}; pass the full id",
+        hits.join(", ")
+    );
+    Ok(given.to_string())
 }
 
 fn write_new_plan(
@@ -289,7 +306,7 @@ fn write_new_plan(
 }
 
 pub fn check_join(edition: &str, article: &str) -> Result<()> {
-    let plan = plan_path_for(edition)?;
+    let plan = plan_path_for(edition);
     if plan.exists() {
         return join_article(&read(&plan)?, article, "preflight").map(drop);
     }
@@ -308,7 +325,7 @@ pub fn add_source(
     article: Option<&str>,
     mode: Option<ContentMode>,
 ) -> Result<()> {
-    let out_path = plan_path_for(edition)?;
+    let out_path = plan_path_for(edition);
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
     let (edition_id, queued) = queued_source_ids(&release_state, edition)?;
 
@@ -357,10 +374,10 @@ pub fn add_source(
 }
 
 pub fn run(args: &PlanArgs) -> Result<i32> {
-    let edition = args.edition.as_str();
-    let out_path = plan_path_for(edition)?;
-
     let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
+    let resolved = resolve_planned(Path::new("."), &release_state, &args.edition)?;
+    let edition = resolved.as_str();
+    let out_path = plan_path_for(edition);
     let (edition_id, source_ids) = queued_source_ids(&release_state, edition)?;
 
     if out_path.exists() {
@@ -443,6 +460,26 @@ released_editions: []
         let (id, sources) = queued_source_ids(yaml, "005").unwrap();
         assert_eq!(id, "005");
         assert_eq!(sources, vec!["a-11112222", "b-33334444"]);
+    }
+
+    #[test]
+    fn planned_edition_prefix_must_be_unambiguous() {
+        let yaml = "collecting_editions:\n- id: '990'\n  source_ids: [a]\n- id: '991'\n  source_ids: [b]\n";
+        let root = Path::new("/nonexistent");
+        assert!(resolve_planned(root, yaml, "99").is_err());
+        assert_eq!(resolve_planned(root, yaml, "991").unwrap().as_str(), "991");
+    }
+
+    #[test]
+    fn intake_refuses_a_prefix_of_existing_editions() {
+        let yaml = "collecting_editions:\n- id: '010'\n  source_ids: [a]\n- id: '011'\n  source_ids: [b]\n";
+        let root = Path::new("/nonexistent");
+        let err = intake_edition_for(root, yaml, "01")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("010, 011"));
+        assert_eq!(intake_edition_for(root, yaml, "010").unwrap(), "010");
+        assert_eq!(intake_edition_for(root, yaml, "099").unwrap(), "099");
     }
 
     #[test]

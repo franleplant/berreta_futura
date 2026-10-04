@@ -1,5 +1,6 @@
 use crate::model::kinds::ContentMode;
 use anyhow::{Context, Result};
+use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -46,30 +47,13 @@ pub const DEFAULT_ARTICLE_PAGE_CAP: i64 = 7;
 static COVER_PLACEHOLDER: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"(?i)(?:\.\.\.|\b(?:TODO|TBD)\b|\[insert\b)").unwrap());
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Issue {
     pub code: String,
     pub severity: String,
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub page: Option<usize>,
-}
-
-impl Issue {
-    pub fn as_row(&self) -> Value {
-        match self.page {
-            Some(page) => json!({
-                "code": self.code,
-                "severity": self.severity,
-                "message": self.message,
-                "page": page,
-            }),
-            None => json!({
-                "code": self.code,
-                "severity": self.severity,
-                "message": self.message,
-            }),
-        }
-    }
 }
 
 #[derive(Default)]
@@ -96,7 +80,7 @@ impl Recorder {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct Void {
     pub x_points: f64,
     pub y_points: f64,
@@ -106,20 +90,7 @@ pub struct Void {
     pub trailing: bool,
 }
 
-impl Void {
-    pub fn as_row(&self) -> Value {
-        json!({
-            "x_points": self.x_points,
-            "y_points": self.y_points,
-            "width_points": self.width_points,
-            "height_points": self.height_points,
-            "width_fraction": self.width_fraction,
-            "trailing": self.trailing,
-        })
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct TailBand {
     pub y_points: f64,
     pub height_points: f64,
@@ -129,21 +100,9 @@ pub struct TailBand {
     pub centered: bool,
 }
 
-impl TailBand {
-    pub fn as_row(&self) -> Value {
-        json!({
-            "y_points": self.y_points,
-            "height_points": self.height_points,
-            "declared_height_points": self.declared_height_points,
-            "gap_above_points": self.gap_above_points,
-            "gap_below_points": self.gap_below_points,
-            "centered": self.centered,
-        })
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PageAnnotation {
+    #[serde(flatten)]
     pub inspection: PageInspection,
     pub largest_void: Option<Void>,
     pub voids: Vec<Void>,
@@ -158,24 +117,6 @@ impl PageAnnotation {
             voids: vec![],
             tail_band: None,
         }
-    }
-
-    pub fn as_row(&self) -> Value {
-        let mut row = self.inspection.row();
-        let map = row.as_object_mut().expect("an inspection row is an object");
-        map.insert(
-            "largest_void".into(),
-            self.largest_void.map_or(Value::Null, |void| void.as_row()),
-        );
-        map.insert(
-            "voids".into(),
-            Value::Array(self.voids.iter().map(Void::as_row).collect()),
-        );
-        map.insert(
-            "tail_band".into(),
-            self.tail_band.map_or(Value::Null, |band| band.as_row()),
-        );
-        row
     }
 }
 
@@ -506,7 +447,53 @@ fn frame_message(frame_delta: Option<f64>, frames_match: bool) -> String {
     }
 }
 
-pub fn inspect_opener_crop_fidelity(crop_path: &Path, reader_page_path: &Path) -> Result<Value> {
+#[derive(Debug, Serialize)]
+pub struct OpenerFidelity {
+    pub pass: bool,
+    pub rgb_mae: f64,
+    pub maximum_rgb_mae: f64,
+    pub frame_edge_delta_inches: Option<f64>,
+    pub maximum_frame_edge_delta_inches: f64,
+    pub normalized_pixels: [u32; 2],
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct FidelityCheck {
+    pub page: usize,
+    pub path: String,
+    #[serde(flatten)]
+    pub measured: OpenerFidelity,
+}
+
+#[derive(Debug, Default, Serialize)]
+pub struct OpenerOffset {
+    pub pass: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frame_bbox_pixels: Option<[i64; 4]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset_pixels: Option<[i64; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extension_pixels: Option<[i64; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_offset_pixels: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tolerance_pixels: Option<f64>,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OffsetCheck {
+    pub article: String,
+    pub page: Option<usize>,
+    #[serde(flatten)]
+    pub measured: OpenerOffset,
+}
+
+pub fn inspect_opener_crop_fidelity(
+    crop_path: &Path,
+    reader_page_path: &Path,
+) -> Result<OpenerFidelity> {
     let reference = decode_rgb(reader_page_path)?;
     let source = decode_rgb(crop_path)?;
     let normalized = resize(
@@ -543,15 +530,18 @@ pub fn inspect_opener_crop_fidelity(crop_path: &Path, reader_page_path: &Path) -
     let passed = rgb_mae <= OPENER_CROP_FIDELITY_MAX_RGB_MAE
         && frames_match
         && frame_delta.is_none_or(|delta| delta <= OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES);
-    Ok(json!({
-        "pass": passed,
-        "rgb_mae": round_places(rgb_mae, 4),
-        "maximum_rgb_mae": OPENER_CROP_FIDELITY_MAX_RGB_MAE,
-        "frame_edge_delta_inches": frame_delta.map(|delta| round_places(delta, 4)),
-        "maximum_frame_edge_delta_inches": OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES,
-        "normalized_pixels": [reference.width, reference.height],
-        "message": format!("RGB MAE {rgb_mae:.2}/255; {}.", frame_message(frame_delta, frames_match)),
-    }))
+    Ok(OpenerFidelity {
+        pass: passed,
+        rgb_mae: round_places(rgb_mae, 4),
+        maximum_rgb_mae: OPENER_CROP_FIDELITY_MAX_RGB_MAE,
+        frame_edge_delta_inches: frame_delta.map(|delta| round_places(delta, 4)),
+        maximum_frame_edge_delta_inches: OPENER_CROP_FRAME_MAX_EDGE_DELTA_INCHES,
+        normalized_pixels: [reference.width, reference.height],
+        message: format!(
+            "RGB MAE {rgb_mae:.2}/255; {}.",
+            frame_message(frame_delta, frames_match)
+        ),
+    })
 }
 
 fn orange_at(image: &Rgb, x: u32, y: u32) -> bool {
@@ -559,14 +549,14 @@ fn orange_at(image: &Rgb, x: u32, y: u32) -> bool {
     image.data[at..at + 3] == OPENER_OFFSET_RGB
 }
 
-pub fn inspect_opener_offset(path: &Path) -> Result<Value> {
+pub fn inspect_opener_offset(path: &Path) -> Result<OpenerOffset> {
     let image = decode_rgb(path)?;
     let runs = frame_runs(&image, 0);
     if runs.is_empty() {
-        return Ok(json!({
-            "pass": false,
-            "message": "The critic could not locate the long near-black illustration frame.",
-        }));
+        return Ok(OpenerOffset {
+            message: "The critic could not locate the long near-black illustration frame.".into(),
+            ..OpenerOffset::default()
+        });
     }
     let frame = border_box(&runs).expect("a non-empty run list has a border box");
     let [left, top, right, bottom] = frame;
@@ -582,11 +572,13 @@ pub fn inspect_opener_offset(path: &Path) -> Result<Value> {
         .filter(|&(x, y)| orange_at(&image, x, y))
         .collect();
     if right_orange.is_empty() || bottom_orange.is_empty() {
-        return Ok(json!({
-            "pass": false,
-            "frame_bbox_pixels": [left, top, right, bottom],
-            "message": "The critic could not locate orange beyond both the frame's right and bottom edges.",
-        }));
+        return Ok(OpenerOffset {
+            frame_bbox_pixels: Some(frame.map(i64::from)),
+            message:
+                "The critic could not locate orange beyond both the frame's right and bottom edges."
+                    .into(),
+            ..OpenerOffset::default()
+        });
     }
     Ok(offset_verdict(frame, &right_orange, &bottom_orange))
 }
@@ -595,7 +587,7 @@ fn offset_verdict(
     frame: [u32; 4],
     right_orange: &[(u32, u32)],
     bottom_orange: &[(u32, u32)],
-) -> Value {
+) -> OpenerOffset {
     let [left, top, right, bottom] = frame.map(i64::from);
     let offset_x = bottom_orange
         .iter()
@@ -628,17 +620,17 @@ fn offset_verdict(
     let passed = values
         .iter()
         .all(|&value| (value as f64 - expected).abs() <= OPENER_OFFSET_TOLERANCE_PIXELS);
-    json!({
-        "pass": passed,
-        "frame_bbox_pixels": [left, top, right, bottom],
-        "offset_pixels": [offset_x, offset_y],
-        "extension_pixels": [extension_x, extension_y],
-        "expected_offset_pixels": round_places(expected, 2),
-        "tolerance_pixels": OPENER_OFFSET_TOLERANCE_PIXELS,
-        "message": format!(
+    OpenerOffset {
+        pass: passed,
+        frame_bbox_pixels: Some([left, top, right, bottom]),
+        offset_pixels: Some([offset_x, offset_y]),
+        extension_pixels: Some([extension_x, extension_y]),
+        expected_offset_pixels: Some(round_places(expected, 2)),
+        tolerance_pixels: Some(OPENER_OFFSET_TOLERANCE_PIXELS),
+        message: format!(
             "Measured orange start {offset_x}px right and {offset_y}px down, with {extension_x}px right and {extension_y}px bottom extension; expected {expected:.1}px on every edge."
         ),
-    })
+    }
 }
 
 pub fn normalized(raw: &str) -> String {
@@ -742,7 +734,7 @@ pub fn read_leg(pdf: &Path, fonts: &BTreeMap<String, TextFace>) -> Result<Leg> {
     })
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Spread {
     pub side: usize,
     pub sheet: usize,
@@ -750,19 +742,6 @@ pub struct Spread {
     pub left_reader_page: Option<usize>,
     pub right_reader_page: Option<usize>,
     pub text_order_matches: bool,
-}
-
-impl Spread {
-    pub fn as_row(&self) -> Value {
-        json!({
-            "side": self.side,
-            "sheet": self.sheet,
-            "face": self.face,
-            "left_reader_page": self.left_reader_page,
-            "right_reader_page": self.right_reader_page,
-            "text_order_matches": self.text_order_matches,
-        })
-    }
 }
 
 pub fn booklet_spread_checks(
@@ -1053,17 +1032,19 @@ pub fn opener_offset_checks(
     illustrated: &[String],
     toc: &BTreeMap<String, usize>,
     rendered_pages: &[PathBuf],
-) -> Result<Vec<Value>> {
+) -> Result<Vec<OffsetCheck>> {
     let mut checks = vec![];
     for article in illustrated {
         let page = toc.get(article).copied();
         let Some(page) = page.filter(|number| (1..=rendered_pages.len()).contains(number)) else {
-            checks.push(json!({
-                "article": article,
-                "page": page,
-                "pass": false,
-                "message": "The packaged opener declaration has no valid article start page in the contents map.",
-            }));
+            checks.push(OffsetCheck {
+                article: article.clone(),
+                page,
+                measured: OpenerOffset {
+                    message: "The packaged opener declaration has no valid article start page in the contents map.".into(),
+                    ..OpenerOffset::default()
+                },
+            });
             recorder.push(
                 "article-opener-offset-shadow",
                 "error",
@@ -1073,24 +1054,23 @@ pub fn opener_offset_checks(
             continue;
         };
         let measured = inspect_opener_offset(&rendered_pages[page - 1])?;
-        let mut row = json!({"article": article, "page": page});
-        let map = row.as_object_mut().expect("an object");
-        for (key, value) in measured.as_object().expect("a measurement object") {
-            map.insert(key.clone(), value.clone());
-        }
-        if !measured["pass"].as_bool().unwrap_or(false) {
+        if !measured.pass {
             recorder.at(
                 "article-opener-offset-shadow",
                 "error",
                 format!(
                     "Article '{article}' does not have a true {}pt down-right orange illustration offset. {}",
                     format_g(OPENER_OFFSET_POINTS),
-                    measured["message"].as_str().unwrap_or_default()
+                    measured.message
                 ),
                 page,
             );
         }
-        checks.push(row);
+        checks.push(OffsetCheck {
+            article: article.clone(),
+            page: Some(page),
+            measured,
+        });
     }
     Ok(checks)
 }
@@ -1677,12 +1657,22 @@ fn crop_box(image: &Rgb, region: [f64; 4]) -> Option<[u32; 4]> {
     (box_rect[2] > box_rect[0] && box_rect[3] > box_rect[1]).then_some(box_rect)
 }
 
+#[derive(Debug, Serialize)]
+pub struct CropRow {
+    pub path: String,
+    pub page: usize,
+    pub kind: String,
+    pub subject: Option<String>,
+    pub region_points: [f64; 4],
+    pub ppi: u32,
+}
+
 pub fn write_review_crops(
     reader_pdf: &Path,
     crops_dir: &Path,
     destination: &Path,
     specs: &[CropSpec],
-) -> Result<(Vec<PathBuf>, Vec<Value>)> {
+) -> Result<(Vec<PathBuf>, Vec<CropRow>)> {
     if specs.is_empty() {
         return Ok((vec![], vec![]));
     }
@@ -1713,7 +1703,7 @@ fn emit_crops(
     destination: &Path,
     specs: &[CropSpec],
     rendered: &BTreeMap<usize, PathBuf>,
-) -> Result<(Vec<PathBuf>, Vec<Value>)> {
+) -> Result<(Vec<PathBuf>, Vec<CropRow>)> {
     let mut used = BTreeSet::new();
     let mut outputs = vec![];
     let mut rows = vec![];
@@ -1726,64 +1716,64 @@ fn emit_crops(
         };
         write_png(&target, &crop_rgb(&image, box_rect))?;
         outputs.push(target.clone());
-        rows.push(json!({
-            "path": target.strip_prefix(destination).unwrap_or(&target).to_string_lossy(),
-            "page": spec.page,
-            "kind": spec.kind,
-            "subject": spec.subject,
-            "region_points": spec.region.map(|value| round_places(value, 1)),
-            "ppi": CROP_DPI,
-        }));
+        rows.push(CropRow {
+            path: target
+                .strip_prefix(destination)
+                .unwrap_or(&target)
+                .to_string_lossy()
+                .into_owned(),
+            page: spec.page,
+            kind: spec.kind.clone(),
+            subject: spec.subject.clone(),
+            region_points: spec.region.map(|value| round_places(value, 1)),
+            ppi: CROP_DPI,
+        });
     }
     Ok((outputs, rows))
 }
 
 pub fn opener_crop_fidelity_checks(
     recorder: &mut Recorder,
-    crop_rows: &[Value],
+    crop_rows: &[CropRow],
     rendered_pages: &[PathBuf],
     destination: &Path,
-) -> Result<Vec<Value>> {
+) -> Result<Vec<FidelityCheck>> {
     let mut checks = vec![];
     for crop in crop_rows {
-        if crop["kind"].as_str() != Some("opener") {
+        if crop.kind != "opener" {
             continue;
         }
-        let page = crop["page"].as_u64().unwrap_or(0) as usize;
+        let page = crop.page;
         if !(1..=rendered_pages.len()).contains(&page) {
             continue;
         }
-        let region = &crop["region_points"];
+        let region = crop.region_points;
         let reference = decode_rgb(&rendered_pages[page - 1])?;
-        let expected = [2usize, 3].map(|index| {
-            round_half_even(region[index].as_f64().unwrap_or(0.0) * f64::from(RASTER_DPI) / 72.0)
-        });
+        let expected =
+            [2usize, 3].map(|index| round_half_even(region[index] * f64::from(RASTER_DPI) / 72.0));
         if (i64::from(reference.width) - expected[0]).abs() > 1
             || (i64::from(reference.height) - expected[1]).abs() > 1
         {
             continue;
         }
-        let measured = inspect_opener_crop_fidelity(
-            &destination.join(crop["path"].as_str().unwrap_or_default()),
-            &rendered_pages[page - 1],
-        )?;
-        let mut row = json!({"page": page, "path": crop["path"]});
-        let map = row.as_object_mut().expect("an object");
-        for (key, value) in measured.as_object().expect("a measurement object") {
-            map.insert(key.clone(), value.clone());
-        }
-        if !measured["pass"].as_bool().unwrap_or(false) {
+        let measured =
+            inspect_opener_crop_fidelity(&destination.join(&crop.path), &rendered_pages[page - 1])?;
+        if !measured.pass {
             recorder.at(
                 "article-opener-crop-fidelity",
                 "error",
                 format!(
                     "Full-page opener crop for reader page {page} does not match the final-PDF page raster. {}",
-                    measured["message"].as_str().unwrap_or_default()
+                    measured.message
                 ),
                 page,
             );
         }
-        checks.push(row);
+        checks.push(FidelityCheck {
+            page,
+            path: crop.path.clone(),
+            measured,
+        });
     }
     Ok(checks)
 }
@@ -1813,9 +1803,9 @@ pub struct Critique {
     pub cover_spreads: Vec<Spread>,
     pub cover_booklet_inside_sides: BTreeSet<usize>,
     pub live_area_points: Option<[f64; 4]>,
-    pub opener_offsets: Vec<Value>,
-    pub opener_crop_fidelity: Vec<Value>,
-    pub crops: Vec<Value>,
+    pub opener_offsets: Vec<OffsetCheck>,
+    pub opener_crop_fidelity: Vec<FidelityCheck>,
+    pub crops: Vec<CropRow>,
     pub crop_paths: Vec<PathBuf>,
     pub rasters: ReviewRasters,
     pub contents_pages: i64,
@@ -1917,9 +1907,9 @@ fn prepare(inputs: &Inputs) -> Result<Prepared> {
 
 struct Placement {
     live_area_points: Option<[f64; 4]>,
-    crops: Vec<Value>,
+    crops: Vec<CropRow>,
     crop_paths: Vec<PathBuf>,
-    opener_crop_fidelity: Vec<Value>,
+    opener_crop_fidelity: Vec<FidelityCheck>,
 }
 
 fn placement_decisions(

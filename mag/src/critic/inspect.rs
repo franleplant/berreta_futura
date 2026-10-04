@@ -1,5 +1,5 @@
 use anyhow::{bail, Context, Result};
-use serde_json::{json, Value};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 
 use crate::critic::metrics::{decode_rgb, luma601, ordered_map, round_places, worker_count, Rgb};
@@ -99,7 +99,7 @@ pub fn difference(first: &Rgb, second: &Rgb) -> Result<Rgb> {
     })
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PageInspection {
     pub page: usize,
     pub pixel_dimensions: [u32; 2],
@@ -113,28 +113,6 @@ pub struct PageInspection {
     pub ink_free: bool,
     pub sparse: bool,
     pub standalone_punctuation_lines: Vec<String>,
-}
-
-impl PageInspection {
-    pub fn row(&self) -> Value {
-        json!({
-            "page": self.page,
-            "pixel_dimensions": self.pixel_dimensions,
-            "ink_ratio": self.ink_ratio,
-            "ink_bbox": self.ink_bbox,
-            "presence_ratio": self.presence_ratio,
-            "presence_bbox": self.presence_bbox,
-            "body_text_lines": self.body_text_lines,
-            "largest_void": Value::Null,
-            "voids": Value::Array(vec![]),
-            "tail_band": Value::Null,
-            "text_characters": self.text_characters,
-            "blank": self.blank,
-            "ink_free": self.ink_free,
-            "sparse": self.sparse,
-            "standalone_punctuation_lines": self.standalone_punctuation_lines,
-        })
-    }
 }
 
 pub(crate) fn standalone_punctuation_lines(text: &str) -> Vec<String> {

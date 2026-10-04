@@ -2,7 +2,7 @@ use std::path::Path;
 
 use anyhow::{bail, Context, Result};
 
-use super::outline::Outliner;
+use super::outline::{Outliner, Style};
 use super::svg::{escape, pyf, Design, Fonts, PAGE_HEIGHT, PAGE_WIDTH};
 
 pub struct Back {
@@ -100,7 +100,7 @@ fn statement(
                         back.panel_top + back.panel_padding + rise + index as f64 * leading;
                     markup += &serif
                         .font
-                        .outline(line, x, baseline, size, ink, -0.12, 100.0, None, "")?
+                        .outline(line, x, baseline, &Style::new(size, ink, -0.12))?
                         .markup;
                 }
                 return Ok(Statement { markup, block });
@@ -135,12 +135,7 @@ fn mass(back: &Back, fonts: &mut Fonts, design: &Design, words: &[String]) -> Re
                         word,
                         back.mass_x,
                         baseline,
-                        size,
-                        fill,
-                        back.mass_tracking,
-                        100.0,
-                        None,
-                        "",
+                        &Style::new(size, fill, back.mass_tracking),
                     )?
                     .markup;
             }
@@ -164,12 +159,7 @@ fn rail(back: &Back, fonts: &mut Fonts, ink: &str, identity: &str) -> Result<Str
                 identity,
                 0.0,
                 0.0,
-                back.rail_size,
-                ink,
-                back.rail_tracking,
-                scale,
-                None,
-                "",
+                &Style::new(back.rail_size, ink, back.rail_tracking).scaled(scale),
             )?;
             let x = PAGE_WIDTH - back.rail_width / 2.0 - (rail.ascent - rail.descent) / 2.0;
             return Ok(format!(
@@ -206,12 +196,7 @@ pub fn back_svg(
         &text.slug,
         back.slug_x,
         PAGE_HEIGHT - back.slug_bottom,
-        back.slug_size,
-        &colors.paper,
-        back.slug_tracking,
-        100.0,
-        None,
-        "",
+        &Style::new(back.slug_size, &colors.paper, back.slug_tracking),
     )?;
     let rail = rail(back, fonts, &colors.ink, &text.identity)?;
     let overdraw = back.overdraw;

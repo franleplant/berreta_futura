@@ -1245,6 +1245,7 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         .map(str::to_string)
         .or_else(|| intake_edition(&release_text))
         .ok_or_else(|| anyhow!("no --edition and no intake_edition_id in release-state.yaml"))?;
+    let edition = crate::plan_cmd::intake_edition_for(Path::new("."), &release_text, &edition)?;
     if let Some(article) = join_article {
         crate::plan_cmd::check_join(&edition, article)?;
     }

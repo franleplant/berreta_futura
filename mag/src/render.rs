@@ -3,6 +3,7 @@ use crate::model::kinds::RenderOperation;
 use crate::model::manifest::art_slots;
 use crate::model::shared::read_spec;
 use crate::model::spec::{ArticleRow, EditionFile, TranslationFile};
+use crate::util::EditionId;
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
@@ -162,37 +163,8 @@ fn resolve_field(raw: &str, manifest_dir: &Path) -> PathBuf {
 }
 
 pub(crate) fn resolve_edition_dir(edition: &str) -> Result<PathBuf> {
-    let exact = PathBuf::from("editions").join(edition);
-    if exact.is_dir() {
-        return Ok(exact);
-    }
-    let mut matches = Vec::new();
-    let dir = Path::new("editions");
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir).with_context(|| format!("reading {}", dir.display()))? {
-            let entry = entry?;
-            if !entry.path().is_dir() {
-                continue;
-            }
-            if entry.file_name().to_string_lossy().starts_with(edition) {
-                matches.push(entry.path());
-            }
-        }
-    }
-    match matches.len() {
-        0 => bail!(
-            "no edition directory found matching 'editions/{edition}' or 'editions/{edition}*'"
-        ),
-        1 => Ok(matches.remove(0)),
-        _ => {
-            matches.sort();
-            let names: Vec<String> = matches.iter().map(|p| p.display().to_string()).collect();
-            bail!(
-                "ambiguous edition '{edition}': matches {}",
-                names.join(", ")
-            )
-        }
-    }
+    let id = EditionId::resolve(Path::new("."), edition)?;
+    Ok(Path::new("editions").join(id.as_str()))
 }
 
 pub(crate) fn magazine_toml(repo_root: &Path) -> Result<toml::Table> {

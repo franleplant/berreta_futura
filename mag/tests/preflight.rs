@@ -1,6 +1,6 @@
 use lopdf::dictionary;
 use mag::package::preflight;
-use preflight::{inspect_package, FigurePlacement};
+use preflight::{inspect_package, FigurePlacement, PackagePdfs};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 
@@ -99,10 +99,12 @@ fn figure(id: &str, page: i64, path: &Path, box_points: Vec<f64>) -> FigurePlace
 
 fn inspect(bundle: &Bundle, figures: &[FigurePlacement], language: &str) -> Value {
     inspect_package(
-        &bundle.reader,
-        &bundle.booklet,
-        &bundle.interior,
-        &bundle.cover,
+        &PackagePdfs {
+            reader: &bundle.reader,
+            booklet: &bundle.booklet,
+            interior: &bundle.interior,
+            cover: &bundle.cover,
+        },
         None,
         None,
         figures,
@@ -176,10 +178,12 @@ fn cover_art_absence_and_unreadable_paths_yield_no_measurements() {
 
     let missing = scratch().join("absent.png");
     let report = inspect_package(
-        &deck.reader,
-        &deck.booklet,
-        &deck.interior,
-        &deck.cover,
+        &PackagePdfs {
+            reader: &deck.reader,
+            booklet: &deck.booklet,
+            interior: &deck.interior,
+            cover: &deck.cover,
+        },
         Some(&missing),
         None,
         &[],
@@ -192,10 +196,12 @@ fn cover_art_absence_and_unreadable_paths_yield_no_measurements() {
     let wrong_suffix = scratch().join("cover.tiff");
     std::fs::write(&wrong_suffix, b"not an image").expect("file writes");
     let report = inspect_package(
-        &deck.reader,
-        &deck.booklet,
-        &deck.interior,
-        &deck.cover,
+        &PackagePdfs {
+            reader: &deck.reader,
+            booklet: &deck.booklet,
+            interior: &deck.interior,
+            cover: &deck.cover,
+        },
         Some(&wrong_suffix),
         None,
         &[],
@@ -214,10 +220,12 @@ fn cover_resolution_target_decides_the_studio_blocker() {
     write_png(&high, 2400, 3400, |_, _| [255, 255, 255]);
 
     let report = inspect_package(
-        &deck.reader,
-        &deck.booklet,
-        &deck.interior,
-        &deck.cover,
+        &PackagePdfs {
+            reader: &deck.reader,
+            booklet: &deck.booklet,
+            interior: &deck.interior,
+            cover: &deck.cover,
+        },
         Some(&low),
         None,
         &[],
@@ -233,10 +241,12 @@ fn cover_resolution_target_decides_the_studio_blocker() {
         .any(|entry| entry.contains("Cover artwork")));
 
     let report = inspect_package(
-        &deck.reader,
-        &deck.booklet,
-        &deck.interior,
-        &deck.cover,
+        &PackagePdfs {
+            reader: &deck.reader,
+            booklet: &deck.booklet,
+            interior: &deck.interior,
+            cover: &deck.cover,
+        },
         Some(&high),
         None,
         &[],
@@ -256,10 +266,12 @@ fn placement_points_default_to_a5_and_honour_an_override() {
     write_png(&art, 1440, 2160, |_, _| [255, 255, 255]);
 
     let defaulted = inspect_package(
-        &deck.reader,
-        &deck.booklet,
-        &deck.interior,
-        &deck.cover,
+        &PackagePdfs {
+            reader: &deck.reader,
+            booklet: &deck.booklet,
+            interior: &deck.interior,
+            cover: &deck.cover,
+        },
         Some(&art),
         None,
         &[],
@@ -277,10 +289,12 @@ fn placement_points_default_to_a5_and_honour_an_override() {
     );
 
     let overridden = inspect_package(
-        &deck.reader,
-        &deck.booklet,
-        &deck.interior,
-        &deck.cover,
+        &PackagePdfs {
+            reader: &deck.reader,
+            booklet: &deck.booklet,
+            interior: &deck.interior,
+            cover: &deck.cover,
+        },
         Some(&art),
         Some((200.0, 300.0)),
         &[],
