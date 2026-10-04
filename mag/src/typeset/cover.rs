@@ -1,123 +1,89 @@
-use crate::cover::back::{back_svg, Back, BackText, Serif};
-use crate::cover::pdf::{self, Face, Line};
-use crate::cover::raster;
-use crate::cover::svg::{
-    pyf, Art, Builder, CoverText, Deck, Design, Fonts, Footer, FooterCaption, Headline,
-    HonoredPlate, Palette, Tab, Wordmark, PAGE_HEIGHT, PAGE_WIDTH,
-};
+use crate::cover::art::{art_zones, extreme_pixels, graded_art, luminance};
 use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cover_tab_issue};
-use crate::critic::text::Run;
 use crate::model::manifest::Edition;
-use anyhow::{bail, Context, Result};
-use lopdf::{Document, Object, StringFormat};
+use crate::typeset::content::string_literal;
+use anyhow::{bail, ensure, Context, Result};
+use serde_json::{json, Value};
 use std::path::Path;
+use typst::layout::{Frame, FrameItem, Point, Transform};
+use typst_layout::PagedDocument;
 
-pub const DESIGN_TOML: &str = "design/covers/canto-vivo/design.toml";
-const BUILT_IN: &str = r##"id = "canto-vivo/1"
-[color]
-paper = "#ffffff"
-ink = "#0a0b0d"
-violet = "#4b21c0"
-orange = "#f05738"
-[tab]
-width = 21.0
-overdraw = 1.5
-issue_top = 26.5
-identity_top = 433.5
-edge_reveal = 1.4
-[wordmark]
-x = 38.0
-top = 53.0
-right_reserve = 78.0
-[headline]
-x = 44.0
-top = 122.0
-width = 302.0
-[art]
-x = 85.25
-top = 221.85
-width = 249.35
-height = 248.65
-[deck]
-top = 493.0
-size = 5.5
-wrap_size = 6.7
-leading = 8.4
-horizontal_scale = 108.0
-tracking = 0.35
-[footer]
-x = 44.0
-bottom = 20.0
-size = 7.0
-tracking = 1.85
-[back]
-overdraw = 1.5
-rail_width = 42.0
-rail_top = 32.0
-rail_size = 8.0
-rail_tracking = 1.6
-mass_x = 6.0
-mass_top = 38.0
-mass_size = 116.0
-mass_leading = 84.68
-mass_tracking = -12.18
-panel_x = 38.0
-panel_top = 242.0
-panel_right = 62.0
-panel_bottom = 52.0
-panel_padding = 30.0
-statement_max_size = 24.0
-statement_min_size = 18.0
-statement_leading_ratio = 1.05
-slug_x = 38.0
-slug_bottom = 26.0
-slug_size = 7.0
-slug_tracking = 1.6
-"##;
-const NO_TABLE: toml::Value = toml::Value::Boolean(false);
-
-struct Table<'a>(&'a toml::Value, &'a str);
-
-impl Table<'_> {
-    fn at<'b>(root: &'b toml::Value, path: &'b str) -> Result<Table<'b>> {
-        let mut node = root;
-        for key in path.split('.') {
-            node = node
-                .get(key)
-                .with_context(|| format!("{DESIGN_TOML} has no [{path}] table"))?;
-        }
-        Ok(Table(node, path))
-    }
-
-    fn optional<'b>(root: &'b toml::Value, path: &'b str) -> Table<'b> {
-        Table::at(root, path).unwrap_or(Table(&NO_TABLE, path))
-    }
-
-    fn or(&self, key: &str, default: f64) -> Result<f64> {
-        match self.0.get(key) {
-            None => Ok(default),
-            Some(_) => self.f(key),
+pub fn confine(document: &PagedDocument) -> Result<()> {
+    let pages = document.pages();
+    for (number, page) in [(1, pages.first()), (pages.len(), pages.last())] {
+        let page = page.context("the document has no cover page")?;
+        let bounds = (page.frame.width().to_pt(), page.frame.height().to_pt());
+        let mut boxes = vec![];
+        ink(&page.frame, Transform::identity(), &mut boxes);
+        for (index, (text, at)) in boxes.iter().enumerate() {
+            ensure!(
+                at[0] >= -0.5
+                    && at[1] >= -0.5
+                    && at[2] <= bounds.0 + 0.5
+                    && at[3] <= bounds.1 + 0.5,
+                "Cover page {number} text leaves the page: {text}"
+            );
+            for (other, to) in &boxes[index + 1..] {
+                let across = at[2].min(to[2]) - at[0].max(to[0]);
+                let down = at[3].min(to[3]) - at[1].max(to[1]);
+                let least = (at[3] - at[1]).min(to[3] - to[1]);
+                ensure!(
+                    across <= 0.5 || down <= least / 3.0,
+                    "Cover page {number} text overprints: {text} / {other}"
+                );
+            }
         }
     }
+    Ok(())
+}
 
-    fn f(&self, key: &str) -> Result<f64> {
-        match self.0.get(key) {
-            Some(toml::Value::Float(value)) => Ok(*value),
-            Some(toml::Value::Integer(value)) => Ok(*value as f64),
-            _ => bail!("{DESIGN_TOML} [{}] {key} is not a number", self.1),
+fn ink(frame: &Frame, base: Transform, out: &mut Vec<(String, [f64; 4])>) {
+    for (at, item) in frame.items() {
+        let ts = base.pre_concat(Transform::translate(at.x, at.y));
+        match item {
+            FrameItem::Group(group) => ink(&group.frame, ts.pre_concat(group.transform), out),
+            FrameItem::Text(text) => {
+                let (width, size) = (text.width(), text.size);
+                let corners = [(0.0, -0.7), (1.0, -0.7), (0.0, 0.0), (1.0, 0.0)]
+                    .map(|(x, y)| Point::new(width * x, size * y).transform(ts));
+                let low = |f: fn(&Point) -> f64| corners.iter().map(f).fold(f64::MAX, f64::min);
+                let high = |f: fn(&Point) -> f64| corners.iter().map(f).fold(f64::MIN, f64::max);
+                out.push((
+                    text.text.to_string(),
+                    [
+                        low(|p| p.x.to_pt()),
+                        low(|p| p.y.to_pt()),
+                        high(|p| p.x.to_pt()),
+                        high(|p| p.y.to_pt()),
+                    ],
+                ));
+            }
+            _ => {}
         }
-    }
-
-    fn s(&self, key: &str) -> Result<String> {
-        self.0
-            .get(key)
-            .and_then(toml::Value::as_str)
-            .map(str::to_string)
-            .with_context(|| format!("{DESIGN_TOML} [{}] {key} is not a string", self.1))
     }
 }
 
-pub fn design(root: &Path) -> Result<(Design, Back)> {
+pub const DESIGN_TOML: &str = "design/covers/canto-vivo/design.toml";
+const BUILT_IN: &str = include_str!("../../../design/covers/canto-vivo/design.toml");
+const PAGE: (f64, f64) = (419.527_559, 595.275_591);
+const TABLES: [&str; 8] = [
+    "color", "tab", "wordmark", "headline", "art", "deck", "footer", "back",
+];
+
+fn layout_defaults() -> [(&'static str, Value); 2] {
+    [
+        (
+            "footer_caption",
+            json!({"margin": 25.0, "wordmark_scale": 0.8, "wordmark_dy": 6.0, "title_size": 26.0}),
+        ),
+        (
+            "honored_plate",
+            json!({"margin": 17.0, "footer": 64.0, "wordmark_scale": 0.5, "title_size": 19.0}),
+        ),
+    ]
+}
+
+pub fn design(root: &Path) -> Result<Value> {
     let path = root.join(DESIGN_TOML);
     let text = match path.is_file() {
         true => {
@@ -125,454 +91,213 @@ pub fn design(root: &Path) -> Result<(Design, Back)> {
         }
         false => BUILT_IN.to_string(),
     };
-    let doc: toml::Value =
+    let parsed: toml::Value =
         toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
-    let t = |name| Table::at(&doc, name);
-    let (color, tab, wordmark) = (t("color")?, t("tab")?, t("wordmark")?);
-    let caption = Table::optional(&doc, "layout.footer_caption");
-    let plate = Table::optional(&doc, "layout.honored_plate");
-    let (headline, art, deck, footer, back) = (
-        t("headline")?,
-        t("art")?,
-        t("deck")?,
-        t("footer")?,
-        t("back")?,
-    );
-    let design = Design {
-        id: doc
-            .get("id")
-            .and_then(toml::Value::as_str)
-            .context("design id")?
-            .to_string(),
-        colors: Palette {
-            paper: color.s("paper")?,
-            ink: color.s("ink")?,
-            orange: color.s("orange")?,
-            violet: color.s("violet")?,
-        },
-        tab: Tab {
-            width: tab.f("width")?,
-            edge_reveal: tab.f("edge_reveal")?,
-            issue_top: tab.f("issue_top")?,
-            identity_top: tab.f("identity_top")?,
-            overdraw: tab.f("overdraw")?,
-        },
-        wordmark: Wordmark {
-            x: wordmark.f("x")?,
-            top: wordmark.f("top")?,
-            right_reserve: wordmark.f("right_reserve")?,
-        },
-        footer_caption: FooterCaption {
-            margin: caption.or("margin", 25.0)?,
-            wordmark_scale: caption.or("wordmark_scale", 0.8)?,
-            wordmark_dy: caption.or("wordmark_dy", 6.0)?,
-            title_size: caption.or("title_size", 26.0)?,
-        },
-        headline: Headline {
-            x: headline.f("x")?,
-            top: headline.f("top")?,
-            width: headline.f("width")?,
-        },
-        art: Art {
-            x: art.f("x")?,
-            top: art.f("top")?,
-            width: art.f("width")?,
-            height: art.f("height")?,
-        },
-        deck: Deck {
-            top: deck.f("top")?,
-            size: deck.f("size")?,
-            wrap_size: deck.f("wrap_size")?,
-            leading: deck.f("leading")?,
-            horizontal_scale: deck.f("horizontal_scale")?,
-            tracking: deck.f("tracking")?,
-        },
-        footer: Footer {
-            x: footer.f("x")?,
-            bottom: footer.f("bottom")?,
-            size: footer.f("size")?,
-            tracking: footer.f("tracking")?,
-        },
-        honored_plate: HonoredPlate {
-            margin: plate.or("margin", 17.0)?,
-            footer: plate.or("footer", 64.0)?,
-            wordmark_scale: plate.or("wordmark_scale", 0.5)?,
-            title_size: plate.or("title_size", 19.0)?,
-        },
-    };
-    Ok((design, back_design(&back)?))
-}
-
-fn back_design(back: &Table) -> Result<Back> {
-    let b = |key| back.f(key);
-    Ok(Back {
-        overdraw: b("overdraw")?,
-        rail_width: b("rail_width")?,
-        rail_top: b("rail_top")?,
-        rail_size: b("rail_size")?,
-        rail_tracking: b("rail_tracking")?,
-        mass_x: b("mass_x")?,
-        mass_top: b("mass_top")?,
-        mass_size: b("mass_size")?,
-        mass_leading: b("mass_leading")?,
-        mass_tracking: b("mass_tracking")?,
-        panel_x: b("panel_x")?,
-        panel_top: b("panel_top")?,
-        panel_right: b("panel_right")?,
-        panel_bottom: b("panel_bottom")?,
-        panel_padding: b("panel_padding")?,
-        statement_max_size: b("statement_max_size")?,
-        statement_min_size: b("statement_min_size")?,
-        statement_leading_ratio: b("statement_leading_ratio")?,
-        slug_x: b("slug_x")?,
-        slug_bottom: b("slug_bottom")?,
-        slug_size: b("slug_size")?,
-        slug_tracking: b("slug_tracking")?,
-    })
-}
-
-struct Copy {
-    mass: [&'static str; 2],
-    issue: &'static str,
-    end: &'static str,
-    statement: &'static str,
-}
-
-fn copy(edition: &Edition) -> Copy {
-    if edition.language.split('-').next() == Some("es") {
-        Copy {
-            mass: ["CICLO", "CERRADO"],
-            issue: "N\u{da}MERO",
-            end: "FIN",
-            statement: "Una antolog\u{ed}a independiente de textos que vale la pena conservar.",
+    let mut doc = serde_json::to_value(parsed)?;
+    for table in TABLES {
+        ensure!(
+            doc.get(table).is_some_and(Value::is_object),
+            "{DESIGN_TOML} has no [{table}] table"
+        );
+    }
+    for (name, mut table) in layout_defaults() {
+        if let Some(given) = doc.pointer(&format!("/layout/{name}")).cloned() {
+            table.as_object_mut().into_iter().for_each(|defaults| {
+                defaults.extend(given.as_object().cloned().unwrap_or_default());
+            });
         }
-    } else {
-        Copy {
-            mass: ["LOOP", "CLOSED"],
-            issue: "ISSUE",
-            end: "END",
-            statement: "An independent anthology of writing worth keeping.",
-        }
+        doc["layout"][name] = table;
+    }
+    Ok(doc)
+}
+
+fn number(design: &Value, pointer: &str) -> Result<f64> {
+    design
+        .pointer(pointer)
+        .and_then(Value::as_f64)
+        .with_context(|| format!("{DESIGN_TOML} {pointer} is not a number"))
+}
+
+fn text(design: &Value, pointer: &str) -> Result<String> {
+    design
+        .pointer(pointer)
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .with_context(|| format!("{DESIGN_TOML} {pointer} is not a string"))
+}
+
+fn language_copy(
+    edition: &Edition,
+) -> (&'static str, [&'static str; 2], &'static str, &'static str) {
+    match edition.language.split('-').next() {
+        Some("es") => (
+            "N\u{da}MERO",
+            ["CICLO", "CERRADO"],
+            "FIN",
+            "Una antolog\u{ed}a independiente de textos que vale la pena conservar.",
+        ),
+        _ => (
+            "ISSUE",
+            ["LOOP", "CLOSED"],
+            "END",
+            "An independent anthology of writing worth keeping.",
+        ),
     }
 }
 
-fn rgb(hex: &str) -> Result<(f64, f64, f64)> {
+fn channels(design: &Value, name: &str) -> Result<[f64; 3]> {
+    let colour = text(design, &format!("/color/{name}"))?;
     let channel = |at: usize| {
-        u8::from_str_radix(hex.get(at..at + 2).unwrap_or(""), 16)
+        u8::from_str_radix(colour.get(at..at + 2).unwrap_or(""), 16)
             .map(|value| f64::from(value) / 255.0)
-            .with_context(|| format!("{DESIGN_TOML} colour {hex} is not #rrggbb"))
+            .with_context(|| format!("cover colour {colour} is not #rrggbb"))
     };
-    Ok((channel(1)?, channel(3)?, channel(5)?))
+    Ok([channel(1)?, channel(3)?, channel(5)?])
 }
 
-fn line(
-    value: String,
-    x: f64,
-    y: f64,
-    size: f64,
-    horizontal_scale: f64,
-    tracking: Option<f64>,
-) -> Line {
-    Line {
-        value,
-        x,
-        y,
-        size,
-        horizontal_scale,
-        tracking,
-    }
+fn scrim_alpha(text: [f64; 3], scrim: [f64; 3], pixel: [f64; 3]) -> f64 {
+    let ink = luminance(text);
+    (0..=50)
+        .map(|step| f64::from(step) / 50.0)
+        .find(|alpha| {
+            let ground = luminance([0, 1, 2].map(|c| alpha * scrim[c] + (1.0 - alpha) * pixel[c]));
+            (ink.max(ground) + 0.05) / (ink.min(ground) + 0.05) >= 7.0
+        })
+        .unwrap_or(1.0)
 }
 
-fn placeholder(design: &Design) -> String {
-    let (x, y, w, h) = (
-        design.art.x,
-        design.art.top,
-        design.art.width,
-        design.art.height,
-    );
-    format!(
-        "<g data-slot=\"art\"><rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"{}\"/>\
-         <circle cx=\"{}\" cy=\"{}\" r=\"56\" fill=\"none\" stroke=\"{}\"/></g>",
-        pyf(x),
-        pyf(y),
-        pyf(w),
-        pyf(h),
-        design.colors.violet,
-        pyf(x + w / 2.0),
-        pyf(y + h / 2.0),
-        design.colors.paper
-    )
-}
-
-fn front(design: &Design, fonts: &mut Fonts, edition: &Edition) -> Result<(String, Face)> {
-    let headline = edition
-        .cover
-        .headline
-        .clone()
-        .unwrap_or_else(|| edition.title.clone());
-    let text = CoverText {
-        headline: headline.clone(),
-        date_line: cover_date(&edition.publication_date),
-        contributors: cover_contributors(edition),
-        tab_issue: cover_tab_issue(edition),
-        tab_identity: cover_tab_identity(edition),
+fn scrim(design: &Value, art: &Path) -> Result<Value> {
+    let band = PAGE.0 - number(design, "/tab/width")?;
+    let margin = number(design, "/layout/footer_caption/margin")?;
+    let title_top = PAGE.1 - 46.0 - number(design, "/layout/footer_caption/title_size")?;
+    let (top, _) = art_zones(art, band, PAGE.1)?;
+    let area = [margin, title_top, band - margin, PAGE.1 - 18.0];
+    let (darkest, brightest) = extreme_pixels(art, band, PAGE.1, area)?;
+    let (paper, ink) = (channels(design, "paper")?, channels(design, "ink")?);
+    let on_paper = scrim_alpha(ink, paper, darkest);
+    let on_ink = scrim_alpha(paper, ink, brightest);
+    let (fill, scrim, alpha) = match on_ink < on_paper {
+        true => ("paper", "ink", on_ink),
+        false => ("ink", "paper", on_paper),
     };
+    let colour = |name| text(design, &format!("/color/{name}"));
+    Ok(json!({
+        "fill": colour(fill)?,
+        "scrim": colour(scrim)?,
+        "alpha": alpha,
+        "top_gradient": top.stddev > 52.0 && top.mean < 150.0,
+        "on_dark": top.mean < 118.0,
+    }))
+}
+
+fn front(design: &Value, edition: &Edition, work: &Path) -> Result<Value> {
     let layout = edition
         .cover
         .layout
         .clone()
         .filter(|layout| !layout.is_empty())
         .unwrap_or_else(|| "framed".to_string());
-    let mut builder = Builder { design, fonts };
-    let svg = match (edition.cover_art.as_deref(), layout.as_str()) {
-        (Some(art), _) => builder.materialize(&layout, &text, art)?,
-        (None, "framed") => builder.framed_with(&text, placeholder(design))?,
+    let (art, scrim) = match (edition.cover_art.as_deref(), layout.as_str()) {
+        (Some(art), layout) => {
+            ensure!(art.is_file(), "Cover art is missing: {}", art.display());
+            std::fs::create_dir_all(work)?;
+            let graded = work.join("cover-art.jpg");
+            std::fs::write(&graded, graded_art(art)?)?;
+            let scrim = match layout {
+                "footer_caption" => scrim(design, art)?,
+                _ => Value::Null,
+            };
+            (
+                json!(std::path::absolute(&graded)?.to_string_lossy()),
+                scrim,
+            )
+        }
+        (None, "framed") => (Value::Null, Value::Null),
         (None, _) => {
             bail!("Cover art is missing: the {layout} cover places art and the edition names none")
         }
     };
-    let (deck, footer) = (&design.deck, &design.footer);
-    let mut lines = vec![
-        line(
-            edition.publication_name.to_uppercase(),
-            38.0,
-            PAGE_HEIGHT - 55.0,
-            22.0,
-            100.0,
-            Some(0.0),
-        ),
-        line(
-            headline.to_uppercase(),
-            44.0,
-            PAGE_HEIGHT - 151.0,
-            16.0,
-            100.0,
-            Some(0.0),
-        ),
-    ];
-    let baseline = deck.top + deck.size;
-    for (index, value) in fonts
-        .regular
-        .wrap(&text.contributors, deck.wrap_size, design.art.width)?
-        .into_iter()
-        .enumerate()
-    {
-        let y = PAGE_HEIGHT - (baseline + index as f64 * deck.leading);
-        lines.push(line(
-            value,
-            design.art.x,
-            y,
-            deck.size,
-            deck.horizontal_scale,
-            Some(deck.tracking),
-        ));
-    }
-    lines.push(line(
-        text.date_line,
-        footer.x,
-        footer.bottom,
-        footer.size,
-        100.0,
-        Some(footer.tracking),
-    ));
-    let band_x = PAGE_WIDTH - design.tab.width;
-    let face = Face {
-        title: "Berreta Futura front cover".into(),
-        fills: pdf::front_fills(
-            band_x,
-            design.tab.width - design.tab.edge_reveal,
-            design.tab.overdraw,
-            rgb(&design.colors.orange)?,
-        ),
-        text: lines,
-    };
-    Ok((svg, face))
+    Ok(json!({
+        "layout": layout,
+        "design": design,
+        "art": art,
+        "scrim": scrim,
+        "text": {
+            "headline": edition.cover.headline.as_deref().unwrap_or(&edition.title),
+            "date_line": cover_date(&edition.publication_date),
+            "contributors": cover_contributors(edition),
+            "tab_issue": cover_tab_issue(edition),
+            "tab_identity": cover_tab_identity(edition),
+        },
+    }))
 }
 
-fn back(
-    design: &Design,
-    back: &Back,
-    fonts: &mut Fonts,
-    serif: &mut Serif,
-    edition: &Edition,
-) -> Result<(String, Face)> {
-    let copy = copy(edition);
-    let statement = edition
-        .cover
-        .back_text
-        .as_deref()
-        .unwrap_or(copy.statement)
-        .trim()
-        .to_string();
-    let text = BackText {
-        mass: copy.mass.map(str::to_string),
-        statement: statement.clone(),
-        slug: format!("{} / {}", copy.end, cover_date(&edition.publication_date)),
-        identity: format!(
-            "{} / {} {:0>3} / BUENOS AIRES",
-            edition.publication_name.to_uppercase(),
-            copy.issue,
-            edition.issue_number
-        ),
-    };
-    let svg = back_svg(design, back, fonts, serif, &text)?;
-    let mut lines = vec![
-        line(
-            text.mass[0].clone(),
-            6.0,
-            PAGE_HEIGHT - 90.0,
-            20.0,
-            100.0,
-            None,
-        ),
-        line(
-            text.mass[1].clone(),
-            6.0,
-            PAGE_HEIGHT - 170.0,
-            20.0,
-            100.0,
-            None,
-        ),
-    ];
-    for (index, value) in fonts
-        .regular
-        .wrap(&statement, 10.0, 260.0)?
-        .into_iter()
-        .enumerate()
-    {
-        lines.push(line(
-            value,
-            68.0,
-            PAGE_HEIGHT - 300.0 - index as f64 * 12.0,
-            10.0,
-            100.0,
-            None,
-        ));
-    }
-    lines.push(line(text.slug, 38.0, 26.0, 7.0, 100.0, None));
-    lines.push(line(text.identity, 38.0, 10.0, 5.5, 88.0, None));
-    let face = Face {
-        title: "Berreta Futura back cover".into(),
-        fills: pdf::back_fills(back.overdraw, rgb(&design.colors.orange)?),
-        text: lines,
-    };
-    Ok((svg, face))
-}
-
-pub struct Faces {
-    pub front: Vec<u8>,
-    pub back: Vec<u8>,
-    pub picture: Vec<u8>,
-    pub front_runs: Vec<Run>,
-    pub back_runs: Vec<Run>,
-}
-
-fn runs(face: &Face) -> Vec<Run> {
-    face.text
-        .iter()
-        .map(|line| Run {
-            text: line.value.clone(),
-            x: line.x,
-            y: line.y,
-            width: 0.0,
-            size: line.size,
-        })
-        .collect()
-}
-
-pub fn faces(root: &Path, assets: &Path, edition: &Edition, work: &Path) -> Result<Faces> {
-    let (design, back_design) = design(root)?;
-    let mut fonts = Fonts::load(assets)?;
-    let inter = std::fs::read(assets.join("fonts/inter/Inter-Regular.ttf"))?;
-    let front = front(&design, &mut fonts, edition)?;
-    let picture = raster::render(&raster::sized(&front.0, 300))?.encode_png()?;
-    let back = back(
-        &design,
-        &back_design,
-        &mut fonts,
-        &mut Serif::open(assets)?,
-        edition,
-    )?;
-    let compile = |name: &str, (svg, face): (String, Face)| -> Result<(Vec<u8>, Vec<Run>)> {
-        std::fs::write(work.join(format!("{name}.svg")), &svg)?;
-        let pixmap = raster::render(&raster::raster_svg(&svg, 300))?;
-        let bytes = pdf::write(&face, &pixmap, &inter)?;
-        std::fs::write(work.join(format!("{name}.pdf")), &bytes)?;
-        Ok((bytes, runs(&face)))
-    };
-    let (front, front_runs) = compile("front", front)?;
-    let (back, back_runs) = compile("back", back)?;
-    Ok(Faces {
-        front,
-        back,
-        picture,
-        front_runs,
-        back_runs,
+fn back(design: &Value, edition: &Edition) -> Value {
+    let (issue, mass, end, statement) = language_copy(edition);
+    json!({
+        "design": design,
+        "text": {
+            "mass": mass,
+            "statement": edition.cover.back_text.as_deref().unwrap_or(statement).trim(),
+            "slug": format!("{end} / {}", cover_date(&edition.publication_date)),
+            "identity": format!(
+                "{} / {issue} {:0>3} / BUENOS AIRES",
+                edition.publication_name.to_uppercase(),
+                edition.issue_number
+            ),
+        },
     })
 }
 
-fn cover_page(reader: &mut Document, face: &[u8]) -> Result<lopdf::Dictionary> {
-    let mut cover = Document::load_mem(face).context("reading a compiled cover face")?;
-    cover.renumber_objects_with(reader.max_id + 1);
-    let pages = cover.get_pages();
-    let (&_, &id) = pages.iter().next().context("a cover face has no page")?;
-    let page = cover.get_dictionary(id)?.clone();
-    reader.max_id = reader.max_id.max(cover.max_id);
-    reader.objects.extend(cover.objects);
-    Ok(page)
+fn literal(value: &Value) -> String {
+    match value {
+        Value::Null => "none".to_string(),
+        Value::String(text) => string_literal(text),
+        Value::Array(items) if items.is_empty() => "()".to_string(),
+        Value::Array(items) => format!(
+            "({},)",
+            items.iter().map(literal).collect::<Vec<_>>().join(", ")
+        ),
+        Value::Object(map) if map.is_empty() => "(:)".to_string(),
+        Value::Object(map) => format!(
+            "({})",
+            map.iter()
+                .map(|(key, value)| format!("{}: {}", string_literal(key), literal(value)))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        other => other.to_string(),
+    }
 }
 
-pub fn replace_outer_pages(interior: &[u8], front: &[u8], back: &[u8]) -> Result<Vec<u8>> {
-    let mut reader = Document::load_mem(interior).context("reading the typst interior")?;
-    let pages: Vec<_> = reader.get_pages().into_values().collect();
-    if pages.len() < 4 {
-        bail!("Reader must have at least four pages and each cover PDF exactly one page");
-    }
-    for (target, face) in [(pages[0], front), (pages[pages.len() - 1], back)] {
-        let face = cover_page(&mut reader, face)?;
-        let page = reader.get_dictionary_mut(target)?;
-        let parent = page.get(b"Parent")?.clone();
-        *page = face;
-        page.set("Parent", parent);
-    }
-    let info = reader
-        .trailer
-        .get(b"Info")
-        .and_then(Object::as_reference)
-        .ok();
-    let info = match info {
-        Some(id) => id,
-        None => {
-            let id = reader.add_object(lopdf::Dictionary::new());
-            reader.trailer.set("Info", id);
-            id
-        }
-    };
-    let info = reader.get_dictionary_mut(info)?;
-    for key in ["Creator", "Producer"] {
-        info.set(
-            key,
-            Object::String(b"magazine-compiler".to_vec(), StringFormat::Literal),
-        );
-    }
-    reader.prune_objects();
-    let mut bytes = Vec::new();
-    reader.save_to(&mut bytes).context("writing reader.pdf")?;
-    Ok(bytes)
+pub fn source(root: &Path, edition: &Edition, work: &Path) -> Result<String> {
+    let design = design(root)?;
+    Ok(format!(
+        "#cover-front({})\n#cover-back({})\n",
+        literal(&front(&design, edition, work)?),
+        literal(&back(&design, edition))
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::model::spec::Cover;
-    use lopdf::{dictionary, Stream};
+    use crate::typeset::content::{Emitted, File, Tree};
+    use crate::typeset::runs;
+    use crate::typeset::template::{self, ROOT_TYP, TEMPLATE_TYP};
+    use crate::typeset::world::Sources;
     use std::path::PathBuf;
 
     fn root() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
     }
 
-    fn edition(language: &str) -> Edition {
+    fn art() -> PathBuf {
+        root().join("mag/tests/cover_fixtures/cover-wildcard-sign-punched-v3.png")
+    }
+
+    fn edition(language: &str, layout: Option<&str>, cover_art: Option<PathBuf>) -> Edition {
         Edition {
             id: "010".into(),
             publication_name: "Berreta Futura".into(),
@@ -581,25 +306,52 @@ mod tests {
             publication_date: "2026-09-13".into(),
             language: language.into(),
             locale: language.into(),
+            cover: Cover {
+                layout: layout.map(str::to_string),
+                ..Cover::default()
+            },
+            cover_art,
             ..Edition::default()
         }
     }
 
+    fn scratch(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("mag-cover-{name}-{}", std::process::id()))
+    }
+
+    fn pages(edition: &Edition) -> Result<Vec<Vec<String>>> {
+        let source = source(&root(), edition, &scratch("work"))?;
+        let main = format!("#import \"/template.typ\": *\n{source}");
+        let tree = Tree {
+            files: vec![File {
+                path: "main.typ".into(),
+                source: main,
+            }],
+            figures: vec![Emitted {
+                piece: "p".into(),
+                id: "f".into(),
+                hole: 0,
+            }],
+            ..Tree::default()
+        };
+        let document = template::document(&Sources::new(&tree, TEMPLATE_TYP, ROOT_TYP)?)?;
+        confine(&document)?;
+        Ok(runs::pages(&document)
+            .into_iter()
+            .map(|page| page.into_iter().map(|run| run.text).collect())
+            .collect())
+    }
+
+    fn refusal(edition: &Edition) -> String {
+        format!("{:#}", pages(edition).expect_err("the cover is refused"))
+    }
+
     #[test]
     fn a_missing_design_toml_or_layout_table_takes_the_built_in_defaults() {
-        let bare = std::env::temp_dir().join(format!("mag-no-design-{}", std::process::id()));
-        let (design, back) = super::design(&bare).expect("the built-in design loads");
-        let art = (
-            design.art.x,
-            design.art.top,
-            design.art.width,
-            design.art.height,
-        );
-        assert_eq!(art, (85.25, 221.85, 249.35, 248.65));
-        assert_eq!(
-            (design.colors.violet.as_str(), back.mass_leading),
-            ("#4b21c0", 84.68)
-        );
+        let bare = scratch("no-design");
+        let design = design(&bare).expect("the built-in design loads");
+        assert_eq!(number(&design, "/art/top").expect("art"), 221.85);
+        assert_eq!(text(&design, "/color/violet").expect("violet"), "#4b21c0");
         let partial = bare.join(DESIGN_TOML);
         std::fs::create_dir_all(partial.parent().expect("nested")).expect("temp dir");
         let text = std::fs::read_to_string(root().join(DESIGN_TOML)).expect("design.toml");
@@ -611,243 +363,138 @@ mod tests {
             format!("{}[layout.honored_plate]\nfooter = 60.0\n", &text[..cut]),
         )
         .expect("write");
-        let (design, _) = super::design(&bare).expect("a partial design loads");
-        let caption = &design.footer_caption;
-        let caption = (
-            caption.margin,
-            caption.wordmark_scale,
-            caption.wordmark_dy,
-            caption.title_size,
-        );
-        assert_eq!(caption, (25.0, 0.8, 6.0, 26.0));
-        let plate = &design.honored_plate;
-        let plate = (
-            plate.margin,
-            plate.footer,
-            plate.wordmark_scale,
-            plate.title_size,
-        );
-        assert_eq!(plate, (17.0, 60.0, 0.5, 19.0));
+        let design = super::design(&bare).expect("a partial design loads");
+        let layout = &design["layout"];
+        assert_eq!(layout["footer_caption"]["title_size"], 26.0);
+        assert_eq!(layout["honored_plate"]["footer"], 60.0);
+        assert_eq!(layout["honored_plate"]["margin"], 17.0);
         std::fs::remove_file(&partial).expect("clean up");
     }
 
     #[test]
-    fn a_framed_cover_without_art_draws_the_violet_placeholder_and_other_layouts_refuse() {
-        let assets = root().join("mag/assets");
-        let (design, _) = super::design(&root()).expect("design.toml loads");
-        let framed = |layout: &str| {
-            let cover = Cover {
-                layout: Some(layout.to_string()),
-                ..Cover::default()
-            };
-            let edition = Edition {
-                cover,
-                ..edition("es")
-            };
-            let mut fonts = Fonts::load(&assets).expect("cover faces load");
-            front(&design, &mut fonts, &edition).map(|(svg, _)| svg)
-        };
-        let svg = framed("framed").expect("a framed cover needs no art");
-        assert!(svg.contains(
-            "<g data-slot=\"art\"><rect x=\"85.25\" y=\"221.85\" width=\"249.35\" \
-             height=\"248.65\" fill=\"#4b21c0\"/><circle cx=\"209.925\" cy=\"346.175\" r=\"56\" \
-             fill=\"none\" stroke=\"#ffffff\"/></g>"
-        ));
-        assert!(framed("footer_caption").is_err() && framed("honored_plate").is_err());
-    }
-
-    fn back_face(language: &str, cover: Cover) -> (String, Face) {
-        let assets = root().join("mag/assets");
-        let (design, back_design) = design(&root()).expect("design.toml loads");
-        let mut fonts = Fonts::load(&assets).expect("cover faces load");
-        let mut serif = Serif::open(&assets).expect("serif loads");
-        back(
-            &design,
-            &back_design,
-            &mut fonts,
-            &mut serif,
-            &Edition {
-                cover,
-                ..edition(language)
-            },
-        )
-        .expect("back builds")
-    }
-
-    #[test]
-    fn the_back_cover_text_layer_carries_each_languages_copy() {
-        let values = |language| {
-            back_face(language, Cover::default())
-                .1
-                .text
-                .into_iter()
-                .map(|l| l.value)
-                .collect::<Vec<_>>()
-        };
-        assert_eq!(
-            values("en"),
-            [
-                "LOOP",
-                "CLOSED",
-                "An independent anthology of writing worth keeping.",
-                "END / 2026 09 13",
-                "BERRETA FUTURA / ISSUE 010 / BUENOS AIRES"
-            ]
-        );
-        let spanish = values("es-AR");
-        assert_eq!(spanish[..2], ["CICLO", "CERRADO"]);
-        assert_eq!(
-            spanish[spanish.len() - 2..],
-            [
-                "FIN / 2026 09 13",
-                "BERRETA FUTURA / N\u{da}MERO 010 / BUENOS AIRES"
-            ]
-        );
-    }
-
-    #[test]
-    fn the_back_cover_rasterizes_at_a5_and_300_dpi() {
-        let (svg, _) = back_face("en", Cover::default());
-        let pixmap = raster::render(&raster::raster_svg(&svg, 300)).expect("back rasterizes");
-        assert_eq!((pixmap.width(), pixmap.height()), (1748, 2480));
-    }
-
-    fn page(document: &mut Document, parent: lopdf::ObjectId, marker: &str) -> Object {
-        let contents = document.add_object(Stream::new(
-            lopdf::Dictionary::new(),
-            marker.as_bytes().to_vec(),
-        ));
-        document
-            .add_object(dictionary! {"Type" => "Page", "Parent" => parent, "Contents" => contents, "MediaBox" => vec![0.into(), 0.into(), PAGE_WIDTH.into(), PAGE_HEIGHT.into()]})
-            .into()
-    }
-
-    fn interior() -> Vec<u8> {
-        let mut document = Document::with_version("1.7");
-        let pages = document.new_object_id();
-        let kids: Vec<Object> = (1..=4)
-            .map(|n| page(&mut document, pages, &format!("% page {n}")))
-            .collect();
-        document.objects.insert(
-            pages,
-            Object::Dictionary(
-                dictionary! {"Type" => "Pages", "Kids" => kids.clone(), "Count" => 4},
-            ),
-        );
-        let outline = document.new_object_id();
-        let entry = document.add_object(dictionary! {"Title" => Object::string_literal("Contents"), "Parent" => outline, "Dest" => vec![kids[1].clone(), "Fit".into()]});
-        document.objects.insert(
-            outline,
-            Object::Dictionary(
-                dictionary! {"Type" => "Outlines", "First" => entry, "Last" => entry, "Count" => 1},
-            ),
-        );
-        let catalog = document.add_object(dictionary! {"Type" => "Catalog", "Pages" => pages, "Outlines" => outline, "Lang" => Object::string_literal("en")});
-        let info = document.add_object(
-            dictionary! {"Title" => Object::string_literal("Berreta Futura: The Speed Limit")},
-        );
-        document.trailer.set("Root", catalog);
-        document.trailer.set("Info", info);
-        let mut bytes = Vec::new();
-        document.save_to(&mut bytes).expect("interior writes");
-        bytes
-    }
-
-    fn face(title: &str) -> Vec<u8> {
-        let inter =
-            std::fs::read(root().join("mag/assets/fonts/inter/Inter-Regular.ttf")).expect("inter");
-        let face = Face {
-            title: title.into(),
-            fills: pdf::back_fills(1.5, (1.0, 0.0, 0.0)),
-            text: vec![],
-        };
-        pdf::write(
-            &face,
-            &tiny_skia::Pixmap::new(4, 4).expect("pixmap"),
-            &inter,
-        )
-        .expect("face writes")
-    }
-
-    #[test]
-    fn outer_pages_take_the_cover_faces_and_keep_the_interiors_catalog() {
-        let merged =
-            replace_outer_pages(&interior(), &face("front"), &face("back")).expect("merges");
-        let document = Document::load_mem(&merged).expect("reader parses");
-        let pages: Vec<_> = document.get_pages().into_values().collect();
-        assert_eq!(pages.len(), 4);
-        let content = |id| String::from_utf8_lossy(&document.get_page_content(id)).into_owned();
-        assert!(content(pages[0]).contains("/Cover Do") && content(pages[3]).contains("/Cover Do"));
-        assert_eq!(
-            (content(pages[1]), content(pages[2])),
-            ("% page 2\n".into(), "% page 3\n".into())
-        );
-        let catalog = document.catalog().expect("catalog");
-        assert_eq!(
-            catalog.get(b"Lang").and_then(Object::as_str).ok(),
-            Some(&b"en"[..])
-        );
-        let outline = document
-            .get_dictionary(
-                catalog
-                    .get(b"Outlines")
-                    .and_then(Object::as_reference)
-                    .expect("outline"),
-            )
-            .expect("outline dict");
-        let first = document
-            .get_dictionary(
-                outline
-                    .get(b"First")
-                    .and_then(Object::as_reference)
-                    .expect("entry"),
-            )
-            .expect("entry dict");
-        let target = first.get(b"Dest").and_then(Object::as_array).expect("dest")[0]
-            .as_reference()
-            .expect("page ref");
-        assert_eq!(target, pages[1]);
-        let info = document
-            .get_dictionary(
-                document
-                    .trailer
-                    .get(b"Info")
-                    .and_then(Object::as_reference)
-                    .expect("info"),
-            )
-            .expect("info dict");
-        let text = |key: &[u8]| {
-            info.get(key)
-                .and_then(Object::as_str)
-                .map(<[u8]>::to_vec)
-                .ok()
-        };
-        assert_eq!(
-            text(b"Title"),
-            Some(b"Berreta Futura: The Speed Limit".to_vec())
-        );
-        assert_eq!(
-            (text(b"Creator"), text(b"Producer")),
-            (
-                Some(b"magazine-compiler".to_vec()),
-                Some(b"magazine-compiler".to_vec())
-            )
-        );
-        for id in [pages[0], pages[3]] {
-            assert_eq!(
-                document
-                    .get_dictionary(id)
-                    .expect("page")
-                    .get(b"Parent")
-                    .and_then(Object::as_reference)
-                    .ok(),
-                document
-                    .catalog()
-                    .expect("c")
-                    .get(b"Pages")
-                    .and_then(Object::as_reference)
-                    .ok()
+    fn every_layout_sets_both_covers_as_pages_of_the_reader_with_real_text() {
+        for layout in ["framed", "footer_caption", "honored_plate"] {
+            let pages = pages(&edition("en", Some(layout), Some(art()))).expect(layout);
+            assert_eq!(pages.len(), 4, "{layout}");
+            let front = pages[0].join("|");
+            assert!(
+                front.contains("THE SPEED LIMIT") || front.contains("SPEED"),
+                "{layout}"
+            );
+            assert!(
+                front.contains("ISSUE 010") && front.contains("2026 09 13"),
+                "{layout}"
+            );
+            assert!(pages[1].is_empty() && pages[2].is_empty(), "{layout}");
+            let back = pages[3].join("|");
+            assert!(
+                back.contains("LOOP") && back.contains("END / 2026 09 13"),
+                "{layout}"
             );
         }
+    }
+
+    #[test]
+    fn a_roster_wider_than_the_cover_is_cut_to_one_line_inside_the_page() {
+        let names = (1..40)
+            .map(|n| format!("AUTHOR NUMBER {n}"))
+            .collect::<Vec<_>>();
+        for layout in ["footer_caption", "honored_plate"] {
+            let mut long = edition("en", Some(layout), Some(art()));
+            long.cover.deck = Some(names.join(" / "));
+            let front = pages(&long).expect(layout)[0].join("|");
+            assert!(front.contains("AUTHOR NUMBER 1 /"), "{layout}");
+            assert!(!front.contains("AUTHOR NUMBER 39"), "{layout}");
+        }
+    }
+
+    #[test]
+    fn the_back_cover_carries_each_languages_copy() {
+        let back = back_of("es-AR");
+        assert_eq!(back["text"]["mass"], json!(["CICLO", "CERRADO"]));
+        assert_eq!(back["text"]["slug"], "FIN / 2026 09 13");
+        assert_eq!(
+            back["text"]["identity"],
+            "BERRETA FUTURA / N\u{da}MERO 010 / BUENOS AIRES"
+        );
+        let english = back_of("en");
+        assert_eq!(
+            english["text"]["statement"],
+            "An independent anthology of writing worth keeping."
+        );
+    }
+
+    fn back_of(language: &str) -> Value {
+        back(
+            &design(&root()).expect("design"),
+            &edition(language, None, None),
+        )
+    }
+
+    #[test]
+    fn cover_text_is_not_limited_to_win_ansi() {
+        let mut polish = edition("en", Some("honored_plate"), Some(art()));
+        polish.cover.headline = Some("\u{141}\u{f3}d\u{17a} \u{2192} \u{15a}wiat".into());
+        let front = pages(&polish).expect("a non-WinAnsi title sets")[0].join("|");
+        assert!(front.contains('\u{141}') && front.contains('\u{15a}'));
+    }
+
+    #[test]
+    fn a_framed_cover_without_art_draws_the_placeholder_and_other_layouts_refuse() {
+        assert_eq!(
+            pages(&edition("es", Some("framed"), None))
+                .expect("no art is fine")
+                .len(),
+            4
+        );
+        for layout in ["footer_caption", "honored_plate"] {
+            let message = refusal(&edition("es", Some(layout), None));
+            assert!(message.contains("Cover art is missing"), "{message}");
+        }
+    }
+
+    #[test]
+    fn an_unknown_layout_or_missing_art_file_is_refused() {
+        assert!(
+            refusal(&edition("en", Some("spread"), Some(art()))).contains(
+                "Unknown cover layout 'spread': expected framed, footer_caption, or honored_plate"
+            )
+        );
+        let absent = root().join("editions/010/art/does-not-exist.png");
+        let message = refusal(&edition("en", Some("framed"), Some(absent.clone())));
+        assert!(message.contains(&format!("Cover art is missing: {}", absent.display())));
+    }
+
+    #[test]
+    fn titles_decks_and_headlines_that_cannot_fit_are_refused() {
+        let stem = "The Speed Limit And Its Apostle";
+        let mut plate = edition("en", Some("honored_plate"), Some(art()));
+        plate.cover.headline = Some(format!("{stem}l"));
+        pages(&plate).expect("the size floor still fits");
+        plate.cover.headline = Some(format!("{stem}s"));
+        assert!(refusal(&plate)
+            .contains("Cover title cannot fit on one line: THE SPEED LIMIT AND ITS APOSTLES"));
+        let mut framed = edition("en", Some("framed"), Some(art()));
+        let deck = |count: usize| {
+            (0..count)
+                .map(|i| format!("CONTRIBUTOR NAME NUMBER {i} WITH EXTRA WORDS"))
+                .collect::<Vec<_>>()
+                .join(" / ")
+        };
+        framed.cover.deck = Some(deck(6));
+        pages(&framed).expect("five wrapped lines fit");
+        framed.cover.deck = Some(deck(7));
+        assert!(refusal(&framed).contains("Cover deck cannot fit"));
+        framed.cover.deck = None;
+        framed.cover.headline = Some(
+            "Antidisestablishmentarianism Floccinaucinihilipilification Pneumonoultramicroscopic Is"
+                .into(),
+        );
+        pages(&framed).expect("three lines at the floor fit");
+        framed.cover.headline = Some(
+            "Antidisestablishmentarianism Floccinaucinihilipilification Pneumonoultramicroscopic As"
+                .into(),
+        );
+        assert!(refusal(&framed).contains("Cover headline cannot fit"));
     }
 }

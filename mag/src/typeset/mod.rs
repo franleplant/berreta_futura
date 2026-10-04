@@ -95,14 +95,7 @@ pub(crate) fn run_request(
             true => render_dir.join("typst"),
             false => render_dir.join(format!("typst-{language}")),
         };
-        let one = render_language(
-            (repo_root, render_dir),
-            request,
-            &staged,
-            &edition,
-            &work,
-            hyphenation,
-        )?;
+        let one = render_language(render_dir, request, &staged, &edition, &work, hyphenation)?;
         result.files.extend(one.files);
         result.layouts.extend(one.layouts);
         result.warnings.extend(one.warnings);
@@ -111,7 +104,7 @@ pub(crate) fn run_request(
 }
 
 fn render_language(
-    (repo_root, render_dir): (&Path, &Path),
+    render_dir: &Path,
     request: &Request,
     staged: &Path,
     edition: &crate::model::manifest::Edition,
@@ -121,7 +114,8 @@ fn render_language(
     let out_dir = render_dir.join(&edition.language);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     println!("out dir: {}", out_dir.display());
-    let tree = template::composed(edition, hyphenation)?;
+    let cover = cover::source(staged, edition, work)?;
+    let tree = template::composed(edition, hyphenation, &cover)?;
     let (tree, document) = template::paginate(tree, hyphenation)?;
     for file in &tree.flat()?.files {
         let path = work.join(&file.path);
@@ -146,7 +140,6 @@ fn render_language(
             out_dir: &out_dir,
             render_dir,
             work,
-            assets: &repo_root.join("mag/assets"),
             raw: request,
         },
         &document,

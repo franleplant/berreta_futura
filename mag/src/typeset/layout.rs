@@ -551,7 +551,6 @@ pub struct Request<'a> {
     pub out_dir: &'a Path,
     pub render_dir: &'a Path,
     pub work: &'a Path,
-    pub assets: &'a Path,
     pub raw: &'a crate::render::Request,
 }
 
@@ -617,10 +616,8 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
         request: request.raw,
         edition,
         layout,
-        interior: crate::typeset::template::pdf(document)?,
-        runs: super::runs::pages(document),
+        document,
         staged: request.staged,
-        assets: request.assets,
         render_dir: request.render_dir,
         work: request.work,
         out_dir: request.out_dir,

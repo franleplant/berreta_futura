@@ -250,6 +250,270 @@
 
 #let plain-page() = page(margin: 0pt, foreground: none, [])
 
+#let COVER-W = PAGE-WIDTH.pt()
+#let COVER-H = PAGE-HEIGHT.pt()
+#let COVER-FACES = (
+  bold: ("Inter", 700),
+  regular: ("Inter", 400),
+  display: ("Archivo", 700),
+  serif: ("Source Serif 4 SmText", 400),
+)
+#let COVER-WORDMARK-INSET = (2.85, -28.91)
+#let COVER-WORDMARK-HEIGHT = 75.13
+
+#let cover-front(spec) = state("mag-cover-front").update(_ => spec)
+#let cover-back(spec) = state("mag-cover-back").update(_ => spec)
+
+#let cover-page(key, draw) = page(margin: 0pt, foreground: none, context {
+  let spec = state(key).final()
+  if spec != none { draw(spec) }
+})
+
+#let cover-put(x, y, body) = place(top + left, dx: x * 1pt, dy: y * 1pt, body)
+
+#let cover-box(width, height, fill: none, stroke: none) = rect(width: width * 1pt, height: height * 1pt, fill: fill, stroke: stroke)
+
+#let cover-run(face, size, body, fill: black, tracking: 0, stretch: 100, stroke: none, edges: ("baseline", "baseline")) = {
+  let (font, weight) = COVER-FACES.at(face)
+  let run = box(text(font: font, weight: weight, size: size * 1pt, fill: fill, tracking: tracking * 1pt, stroke: stroke, top-edge: edges.at(0), bottom-edge: edges.at(1), body))
+  if stretch == 100 { run } else { scale(x: stretch * 1%, y: 100%, origin: left + top, reflow: true, run) }
+}
+
+#let cover-width(face, size, body, tracking: 0, stretch: 100) = {
+  measure(cover-run(face, size, body, tracking: tracking, stretch: stretch)).width.pt() - tracking * stretch / 100
+}
+
+#let cover-vertical(top, center, run) = {
+  cover-put(center - measure(run).height.pt() / 2, top, rotate(90deg, reflow: true, run))
+}
+
+#let cover-wrap(source, limit, width-of) = {
+  let lines = ()
+  let current = ""
+  for word in source.split().filter(w => w != "") {
+    let candidate = if current == "" { word } else { current + " " + word }
+    if current != "" and width-of(candidate) > limit {
+      lines.push(current)
+      current = word
+    } else {
+      current = candidate
+    }
+  }
+  if current != "" { lines.push(current) }
+  lines
+}
+
+#let cover-wordmark(d, dark, size, dx, dy) = {
+  let colors = d.color
+  let svg = read("/brand/wordmark.svg")
+  let head = if dark { colors.paper } else { colors.ink }
+  for (name, value) in (ink: head, paper: colors.paper, red: colors.orange, box: colors.ink) {
+    svg = svg.replace(regex("var\\(--" + name + "[^)]*\\)"), value)
+  }
+  let (vx, vy, vw, vh) = svg.match(regex("viewBox=\"([^\"]+)\"")).captures.first().split(" ").map(float)
+  let (inset-x, inset-y) = COVER-WORDMARK-INSET
+  let room = COVER-W - d.tab.width - d.wordmark.right_reserve - inset-x
+  let fit = calc.min(COVER-WORDMARK-HEIGHT / vh, room / vw)
+  cover-put(
+    dx + size * (d.wordmark.x + inset-x),
+    dy + size * (d.wordmark.top + inset-y),
+    image(bytes(svg), format: "svg", width: size * fit * vw * 1pt),
+  )
+}
+
+#let cover-tab(d, t) = {
+  let band = COVER-W - d.tab.width
+  let width = d.tab.width - d.tab.edge_reveal
+  cover-put(band, -d.tab.overdraw, cover-box(width, COVER-H + 2 * d.tab.overdraw, fill: rgb(d.color.orange)))
+  for (value, top, size, stretch) in ((t.tab_issue, d.tab.issue_top, 7.4, 100), (t.tab_identity, d.tab.identity_top, 4.8, 103)) {
+    cover-vertical(top, band + width / 2, cover-run("bold", size, value, fill: rgb(d.color.ink), tracking: 1.6, stretch: stretch, edges: ("ascender", "descender")))
+  }
+}
+
+#let cover-headline(d, source) = {
+  let words = upper(source).trim().split().filter(w => w != "")
+  let width-of = (line, size) => cover-width("display", size, line)
+  let size = 29.0
+  let lines = ()
+  while true {
+    let best = none
+    for split in range(1, words.len()) {
+      let pair = (words.slice(0, split).join(" "), words.slice(split).join(" "))
+      let (a, b) = pair.map(line => width-of(line, size))
+      if calc.max(a, b) <= d.headline.width and (best == none or calc.abs(a - b) < best.at(0)) {
+        best = (calc.abs(a - b), pair)
+      }
+    }
+    lines = if best != none { best.at(1) } else { cover-wrap(words.join(" "), d.headline.width, line => width-of(line, size)) }
+    if lines.len() <= 3 or size < 20 { break }
+    size -= 0.5
+  }
+  assert(size >= 20, message: "Cover headline cannot fit: " + source)
+  let colors = (rgb(d.color.ink), rgb(d.color.violet), rgb(d.color.ink))
+  let baseline = d.headline.top + size
+  for (index, line) in lines.enumerate() {
+    let odd = calc.odd(index)
+    let stroke = if odd { none } else { 0.09pt + colors.at(index) }
+    cover-put(
+      d.headline.x + if odd { 23 } else { -0.65 },
+      baseline + if odd { 1 } else { 0 },
+      cover-run("display", if odd { 28 } else { size }, line, fill: colors.at(index), tracking: -1.35, stroke: stroke),
+    )
+    baseline += size * 0.78
+  }
+}
+
+#let cover-deck(d, source) = {
+  if source == "" { return }
+  let lines = cover-wrap(source, d.art.width, line => cover-width("regular", d.deck.wrap_size, line))
+  assert(lines.len() <= 5, message: "Cover deck cannot fit: " + source)
+  for (index, line) in lines.enumerate() {
+    cover-put(
+      d.art.x - if index == 0 { 0.65 } else { 0 },
+      d.deck.top + d.deck.size + index * d.deck.leading,
+      cover-run("regular", d.deck.size, line, fill: rgb(d.color.ink), tracking: d.deck.tracking, stretch: d.deck.horizontal_scale),
+    )
+  }
+}
+
+#let cover-title(title, limit, size) = {
+  let size = size
+  while size >= 12 and cover-width("display", size, title, tracking: 0.2) > limit { size -= 0.5 }
+  assert(size >= 12, message: "Cover title cannot fit on one line: " + title)
+  size
+}
+
+#let cover-right(source, edge, y, size, fill) = {
+  let width = cover-width("bold", size, source, tracking: 1.4)
+  cover-put(edge - width, y, cover-run("bold", size, source, fill: fill, tracking: 1.4))
+}
+
+#let cover-justified(source, x, y, size, fill, width) = {
+  let spare = width - cover-width("regular", size, source)
+  let gaps = calc.max(source.codepoints().len() - 1, 1)
+  cover-put(x, y, cover-run("regular", size, source, fill: fill, tracking: calc.max(0, spare / gaps)))
+}
+
+#let cover-roster(source, size, limit) = {
+  let names = source.split(" / ")
+  for keep in range(names.len(), 0, step: -1) {
+    let line = if keep == names.len() { source } else { names.slice(0, keep).join(" / ") + " / …" }
+    if cover-width("regular", size, line) <= limit { return line }
+  }
+  "…"
+}
+
+#let cover-fade(width, top, height, stops) = cover-put(0, top, cover-box(width, height, fill: gradient.linear(dir: ttb, space: rgb, ..stops)))
+
+#let cover-framed(d, t, spec) = {
+  let (ink, a) = (rgb(d.color.ink), d.art)
+  cover-put(COVER-W - d.tab.width, -d.tab.overdraw, cover-box(d.tab.width - d.tab.edge_reveal, COVER-H + 2 * d.tab.overdraw, fill: rgb(d.color.orange)))
+  cover-wordmark(d, false, 1, 0, 0)
+  cover-headline(d, t.headline)
+  if spec.art == none {
+    cover-put(a.x, a.top, cover-box(a.width, a.height, fill: rgb(d.color.violet)))
+    cover-put(a.x + a.width / 2 - 56, a.top + a.height / 2 - 56, circle(radius: 56pt, stroke: 1pt + rgb(d.color.paper)))
+  } else {
+    cover-put(a.x, a.top, image(spec.art, width: a.width * 1pt, height: a.height * 1pt, fit: "cover"))
+  }
+  cover-put(a.x, a.top, cover-box(a.width, a.height, stroke: 0.7pt + ink))
+  cover-deck(d, t.contributors)
+  cover-put(d.footer.x, COVER-H - d.footer.bottom, cover-run("bold", d.footer.size, t.date_line, fill: ink, tracking: d.footer.tracking))
+  cover-tab(d, t)
+}
+
+#let cover-caption(d, t, spec) = {
+  let (c, s) = (d.layout.footer_caption, spec.scrim)
+  let (band, fill, tint) = (COVER-W - d.tab.width, rgb(s.fill), rgb(s.scrim))
+  let (margin, title) = (c.margin, upper(t.headline).trim())
+  let right = band - margin
+  let top = COVER-H - 46 - c.title_size - 60
+  let veil = tint.transparentize((1 - s.alpha) * 100%)
+  cover-put(0, 0, image(spec.art, width: band * 1pt, height: COVER-H * 1pt, fit: "cover"))
+  cover-fade(band, top, COVER-H - top, ((tint.transparentize(100%), 0%), (veil, 60 / (COVER-H - top) * 100%), (veil, 100%)))
+  if s.top_gradient {
+    let ink = rgb(d.color.ink)
+    cover-fade(band, 0, 120, ((ink.transparentize(58%), 0%), (ink.transparentize(100%), 100%)))
+  }
+  cover-wordmark(d, s.on_dark, c.wordmark_scale, margin - (d.wordmark.x + 0.36) * c.wordmark_scale, c.wordmark_dy)
+  let size = cover-title(title, right - margin - 62, c.title_size)
+  cover-put(margin, COVER-H - 46, cover-run("display", size, title, fill: fill, tracking: 0.2))
+  cover-right(t.date_line, right, COVER-H - 46, 7.0, fill)
+  if t.contributors != "" {
+    cover-justified(cover-roster(t.contributors, 4.6, right - margin), margin, COVER-H - 24, 4.6, fill, right - margin)
+  }
+  cover-tab(d, t)
+}
+
+#let cover-plate(d, t, spec) = {
+  let (p, ink) = (d.layout.honored_plate, rgb(d.color.ink))
+  let (band, margin) = (COVER-W - d.tab.width, p.margin)
+  let (width, height) = (band - 2 * margin, COVER-H - 2 * margin - p.footer)
+  let right = band - margin - 8
+  let title = upper(t.headline).trim()
+  cover-put(margin, margin, image(spec.art, width: width * 1pt, height: height * 1pt, fit: "cover"))
+  cover-put(margin, margin, cover-box(width, height, stroke: 0.7pt + ink))
+  cover-wordmark(d, false, p.wordmark_scale, 6, COVER-H - p.footer - 36)
+  let size = cover-title(title, 190, p.title_size)
+  cover-put(right - cover-width("display", size, title, tracking: 0.2), COVER-H - p.footer + 22, cover-run("display", size, title, fill: ink, tracking: 0.2))
+  if t.contributors != "" {
+    let room = right - margin - 68
+    cover-justified(cover-roster(t.contributors, 4.4, room), margin + 8, COVER-H - 24, 4.4, ink, room)
+  }
+  cover-right(t.date_line, right, COVER-H - 13, 4.4, ink)
+  cover-tab(d, t)
+}
+
+#let cover-front-page(spec) = {
+  let d = spec.design
+  cover-put(0, 0, cover-box(COVER-W, COVER-H, fill: rgb(d.color.paper)))
+  let modes = (framed: cover-framed, footer_caption: cover-caption, honored_plate: cover-plate)
+  assert(spec.layout in modes, message: "Unknown cover layout '" + spec.layout + "': expected framed, footer_caption, or honored_plate")
+  (modes.at(spec.layout))(d, spec.text, spec)
+}
+
+#let cover-statement(b, source, panel, height) = {
+  let size = b.statement_max_size
+  while size >= b.statement_min_size {
+    let lines = cover-wrap(source, panel, line => cover-width("serif", size, line))
+    let leading = size * b.statement_leading_ratio
+    let rise = measure(cover-run("serif", size, lines.first(), edges: ("bounds", "baseline"))).height.pt()
+    let drop = measure(cover-run("serif", size, lines.last(), edges: ("baseline", "bounds"))).height.pt()
+    let extent = rise + (lines.len() - 1) * leading + drop
+    if extent <= height { return (lines: lines, size: size, rise: rise, leading: leading, extent: extent) }
+    size -= 0.5
+  }
+  assert(false, message: "Back-cover issue statement cannot fit: " + source)
+}
+
+#let cover-back-page(spec) = {
+  let (d, b, t) = (spec.design, spec.design.back, spec.text)
+  let (ink, paper) = (rgb(d.color.ink), rgb(d.color.paper))
+  cover-put(-b.overdraw, -b.overdraw, cover-box(COVER-W + 2 * b.overdraw, COVER-H + 2 * b.overdraw, fill: rgb(d.color.orange)))
+  let room = COVER-W - b.rail_width - b.mass_x + 4
+  let size = b.mass_size
+  while size >= 72 and not t.mass.all(word => cover-width("bold", size, word, tracking: b.mass_tracking) <= room) { size -= 0.5 }
+  assert(size >= 72, message: "Back-cover display words cannot fit: " + t.mass.join(" / "))
+  cover-put(0, 0, block(width: (COVER-W - b.rail_width) * 1pt, height: COVER-H * 1pt, clip: true, {
+    for (index, word) in t.mass.enumerate() {
+      let fill = if index == 0 { rgb(d.color.violet) } else { ink }
+      cover-put(b.mass_x, b.mass_top + size + index * b.mass_leading * size / b.mass_size, cover-run("bold", size, word, fill: fill, tracking: b.mass_tracking))
+    }
+  }))
+  let (panel, pad) = (COVER-W - b.panel_x - b.panel_right, b.panel_padding)
+  let fit = cover-statement(b, t.statement, panel - 2 * pad, COVER-H - b.panel_top - b.panel_bottom - 2 * pad)
+  cover-put(b.panel_x, b.panel_top, cover-box(panel, fit.extent + 2 * pad, fill: paper))
+  for (index, line) in fit.lines.enumerate() {
+    cover-put(b.panel_x + pad, b.panel_top + pad + fit.rise + index * fit.leading, cover-run("serif", fit.size, line, fill: ink, tracking: -0.12))
+  }
+  cover-put(b.slug_x, COVER-H - b.slug_bottom, cover-run("bold", b.slug_size, t.slug, fill: paper, tracking: b.slug_tracking))
+  let reach = COVER-H - b.rail_top - 28
+  let stretch = 100
+  while stretch >= 70 and cover-width("bold", b.rail_size, t.identity, tracking: b.rail_tracking, stretch: stretch) > reach { stretch -= 1 }
+  assert(stretch >= 70, message: "Back-cover identity rail cannot fit: " + t.identity)
+  cover-vertical(b.rail_top, COVER-W - b.rail_width / 2, cover-run("bold", b.rail_size, t.identity, fill: ink, tracking: b.rail_tracking, stretch: stretch, edges: ("ascender", "descender")))
+}
+
 #let column(body) = pad(left: RAIL, right: RAIL - MEASURE-DELTA, body)
 
 #let NO-ESCAPE = (left: 0pt, right: 0pt)
@@ -349,11 +613,11 @@
     justify: false,
     first-line-indent: 0pt,
   )
-  plain-page()
+  cover-page("mag-cover-front", cover-front-page)
   plain-page()
   body
   plain-page()
-  plain-page()
+  cover-page("mag-cover-back", cover-back-page)
 }
 
 #let edition-header(body) = body

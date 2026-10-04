@@ -15,6 +15,7 @@ pub const ROOT: &str = "/root.typ";
 pub const TEMPLATE: &str = "/template.typ";
 const PRELUDE: &str = "#import \"/template.typ\": *\n";
 const RASTERS: [&str; 3] = [".png", ".jpg", ".jpeg"];
+const WORDMARK: &str = include_str!("../../assets/brand/wordmark.svg");
 
 struct Shared {
     library: LazyHash<Library>,
@@ -127,6 +128,9 @@ impl World for Sources {
 
     fn file(&self, file: FileId) -> FileResult<Bytes> {
         let path = file.vpath().get_with_slash();
+        if path == "/brand/wordmark.svg" {
+            return Ok(Bytes::from_string(WORDMARK));
+        }
         if RASTERS
             .iter()
             .any(|kind| path.to_lowercase().ends_with(kind))

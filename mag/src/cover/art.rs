@@ -1,6 +1,8 @@
 use std::path::Path;
 
 use anyhow::Result;
+use image::codecs::jpeg::JpegEncoder;
+use image::{ExtendedColorType, ImageEncoder};
 
 use crate::critic::metrics::{decode_rgb, luma601, round_half_even, Rgb};
 
@@ -129,10 +131,12 @@ pub fn graded_art(path: &Path) -> Result<Vec<u8>> {
             graded.extend_from_slice(pixel);
         }
     }
-    Rgb {
-        width: image.width,
-        height: image.height,
-        data: graded,
-    }
-    .png()
+    let mut jpeg = Vec::new();
+    JpegEncoder::new_with_quality(&mut jpeg, 92).write_image(
+        &graded,
+        image.width,
+        image.height,
+        ExtendedColorType::Rgb8,
+    )?;
+    Ok(jpeg)
 }

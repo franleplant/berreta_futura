@@ -1,5 +1,4 @@
 use super::layout::{FileRow, Layout};
-use crate::critic::text::Run;
 use crate::model::manifest::Edition;
 use crate::package::archive::archive_tree;
 use crate::package::preflight::FigurePlacement;
@@ -7,6 +6,9 @@ use crate::package::release::{package_release, Release};
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
+use typst::utils::Scalar;
+use typst_layout::PagedDocument;
+use typst_render::RenderOptions;
 
 const CONTRACT_VERSION: &str = "magazine-renderer/1";
 const STUDIO_BLOCKER: &str = "A named printer profile and preflight are required.";
@@ -15,10 +17,8 @@ pub struct Publish<'a> {
     pub request: &'a crate::render::Request,
     pub edition: &'a Edition,
     pub layout: Layout,
-    pub interior: Vec<u8>,
-    pub runs: Vec<Vec<Run>>,
+    pub document: &'a PagedDocument,
     pub staged: &'a Path,
-    pub assets: &'a Path,
     pub render_dir: &'a Path,
     pub work: &'a Path,
     pub out_dir: &'a Path,
@@ -128,16 +128,18 @@ fn manifest(p: &Publish) -> Result<Value> {
 
 pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
     let work = p.work;
-    let faces = super::cover::faces(p.staged, p.assets, p.edition, work)?;
     std::fs::create_dir_all(p.out_dir)?;
+    let front = typst_render::render(
+        &p.document.pages()[0],
+        &RenderOptions {
+            pixel_per_pt: Scalar::new(300.0 / 72.0),
+            render_bleed: false,
+        },
+    );
     let cover = p.out_dir.join("cover.png");
-    std::fs::write(&cover, &faces.picture)?;
+    std::fs::write(&cover, front.encode_png()?)?;
     let reader = work.join("reader.pdf");
-    std::fs::write(work.join("interior.pdf"), &p.interior)?;
-    std::fs::write(
-        &reader,
-        super::cover::replace_outer_pages(&p.interior, &faces.front, &faces.back)?,
-    )?;
+    std::fs::write(&reader, super::template::pdf(p.document)?)?;
     let figures = placements(&p.layout, &p.staged.canonicalize()?);
     let cover_art = p
         .edition
@@ -145,10 +147,8 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         .as_deref()
         .map(Path::canonicalize)
         .transpose()?;
-    let mut runs = p.runs.clone();
-    let last = runs.len() - 1;
-    runs[0] = faces.front_runs;
-    runs[last] = faces.back_runs;
+    super::cover::confine(p.document)?;
+    let runs = super::runs::pages(p.document);
     let written = package_release(Release {
         reader_pdf: &reader,
         destination: p.out_dir,

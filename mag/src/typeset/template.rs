@@ -19,11 +19,12 @@ pub fn world(tree: &Tree) -> Result<Sources> {
 pub fn composed(
     edition: &crate::model::manifest::Edition,
     hyphenation: Hyphenation,
+    cover: &str,
 ) -> Result<Tree> {
-    let tree = compose(edition, hyphenation, &[])?;
+    let tree = compose(edition, hyphenation, &[], cover)?;
     let keeps = standfirst_keeps(&document(&world(&tree)?)?);
     Ok(match keeps.iter().any(Option::is_some) {
-        true => compose(edition, hyphenation, &keeps)?,
+        true => compose(edition, hyphenation, &keeps, cover)?,
         false => tree,
     })
 }

@@ -97,19 +97,21 @@ pub fn pipeline(inputs: &Inputs) -> Result<Tree> {
             allow_unanchored_figures: inputs.allow_unanchored_figures,
         },
     )?;
-    compose(&edition, Hyphenation::PLAIN, &[])
+    compose(&edition, Hyphenation::PLAIN, &[], "")
 }
 
 pub fn compose(
     edition: &Edition,
     hyphenation: Hyphenation,
     keeps: &[Option<usize>],
+    cover: &str,
 ) -> Result<Tree> {
     let settable = settable_codepoints(font_dir()).map_err(|error| refusal(&error))?;
     let tree = Writer {
         edition,
         metrics: &Metrics,
         keeps,
+        cover,
         standfirsts: Cell::new(0),
         holes: Cell::new(0),
         figures: RefCell::new(Vec::new()),
@@ -167,6 +169,7 @@ struct Writer<'a> {
     edition: &'a Edition,
     metrics: &'a Metrics,
     keeps: &'a [Option<usize>],
+    cover: &'a str,
     standfirsts: Cell<usize>,
     holes: Cell<usize>,
     figures: RefCell<Vec<Emitted>>,
@@ -246,6 +249,7 @@ impl Writer<'_> {
     fn tree(&self) -> Result<Tree> {
         let mut files = Vec::new();
         let mut main = String::from("#import \"/template.typ\": *\n\n");
+        main.push_str(self.cover);
         main.push_str(&self.header());
         main.push_str(&self.closing_plates());
         main.push_str(&self.contents()?);
@@ -1567,7 +1571,7 @@ mod tests {
         let root = corpus();
         let base = crate::typeset::layout::edition(&root, "906", PUBLICATION).expect("906 loads");
         let es = crate::model::manifest::load_translation(&root, &base, "es").expect("es loads");
-        let tree = compose(&es, Hyphenation::PLAIN, &[]).expect("the Spanish edition composes");
+        let tree = compose(&es, Hyphenation::PLAIN, &[], "").expect("the Spanish edition composes");
         let flat = tree.flat().expect("the tree renders");
         let text: String = flat.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#set text(lang: \"es\", region: \"AR\")"));
@@ -1576,13 +1580,13 @@ mod tests {
         assert!(text.contains("level: 2)[Dónde se dividen las palabras]"));
         assert!(text.contains("Una columna justificada corta las palabras"));
         let english =
-            compose(&base, Hyphenation::PLAIN, &[]).expect("the English edition composes");
+            compose(&base, Hyphenation::PLAIN, &[], "").expect("the English edition composes");
         assert!(english.files.iter().all(|f| !f.source.contains('\u{ad}')));
         let native = Hyphenation {
             english: true,
             ..Hyphenation::PLAIN
         };
-        let hyphenated = compose(&base, native, &[]).expect("it composes");
+        let hyphenated = compose(&base, native, &[], "").expect("it composes");
         let flat = hyphenated.flat().expect("the tree renders");
         let text: String = flat.files.iter().map(|f| f.source.as_str()).collect();
         assert!(text.contains("#text(hyphenate: true)[A cache budget limits"));
