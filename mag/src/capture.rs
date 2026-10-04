@@ -450,6 +450,8 @@ fn parse_reply(reply: &str, haystack: &str, pres: &[String]) -> Result<Extractio
     })
 }
 
+const PROSE_FOLD: [char; 5] = ['*', '`', '[', ']', '\u{2197}'];
+
 fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
     let fence = Regex::new(r"(?s)```[^\n]*\n(.*?)```").unwrap();
     for block in fence.captures_iter(article) {
@@ -490,7 +492,6 @@ fn fidelity_gate(article: &str, haystack: &str, pres: &[String]) -> Result<()> {
     let body = image.replace_all(&body, " ");
     let body = link.replace_all(&body, "$1");
 
-    const PROSE_FOLD: [char; 5] = ['*', '`', '[', ']', '\u{2197}'];
     let folded_haystack = comparison_form(haystack).replace(PROSE_FOLD, "");
     let mut misses = Vec::new();
     let mut total = 0usize;
@@ -600,8 +601,7 @@ pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(S
         .enumerate()
         .skip(section + 1)
         .find(|(_, l)| !l.is_empty() && !l.starts_with(' ') && !l.starts_with('-'))
-        .map(|(i, _)| i)
-        .unwrap_or(lines.len());
+        .map_or(lines.len(), |(i, _)| i);
 
     let id_line_of = |l: &str| -> Option<String> {
         l.strip_prefix("- id: ")
@@ -617,8 +617,7 @@ pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(S
             let entry_end = lines[start + 1..section_end]
                 .iter()
                 .position(|l| l.starts_with("- "))
-                .map(|i| i + start + 1)
-                .unwrap_or(section_end);
+                .map_or(section_end, |i| i + start + 1);
             let ids: Vec<usize> = (start + 1..entry_end)
                 .filter(|&i| lines[i].starts_with("  - "))
                 .collect();
@@ -669,8 +668,8 @@ pub fn prepend_sources_md(text: &str, entry: &[String], edition: &str, queued: u
             .next_back()
             .unwrap_or(2);
         lines.splice(
-            last_meta + 1..last_meta + 1,
-            ["".to_string(), collecting_line],
+            (last_meta + 1)..=last_meta,
+            [String::new(), collecting_line],
         );
     }
     let first_entry = lines
@@ -908,7 +907,7 @@ fn resolve_input(html_file: Option<&Path>, url: &str) -> Result<ResolvedInput> {
     }
 }
 
-fn write_raw(pdf: &Option<PathBuf>, html: &str, sid: &str) -> Result<()> {
+fn write_raw(pdf: Option<&PathBuf>, html: &str, sid: &str) -> Result<()> {
     fs::create_dir_all(RAW_DIR)?;
     let ext = if pdf.is_some() { "pdf" } else { "html" };
     let raw_path = PathBuf::from(RAW_DIR).join(format!("{sid}.{ext}"));
@@ -966,7 +965,7 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
         .or_else(|| intake_edition(&release_text))
         .ok_or_else(|| anyhow!("no --edition and no intake_edition_id in release-state.yaml"))?;
 
-    write_raw(&pdf, &html, &sid)?;
+    write_raw(pdf.as_ref(), &html, &sid)?;
 
     let (extraction, model_cost) = match pre_extraction {
         Some(e) => {
@@ -992,9 +991,7 @@ pub fn run(args: &CaptureArgs, spec: &ModelSpec) -> Result<i32> {
     )?;
 
     let captured_at = iso_now();
-    let author = author_override
-        .map(str::to_string)
-        .unwrap_or_else(|| extraction.author.clone());
+    let author = author_override.map_or_else(|| extraction.author.clone(), str::to_string);
     let published = published_override
         .map(str::to_string)
         .or_else(|| (!extraction.published.is_empty()).then(|| extraction.published.clone()))

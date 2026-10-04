@@ -111,7 +111,7 @@ fn manifest(p: &Publish) -> Result<Value> {
     }))
 }
 
-pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
+pub fn publish(p: &Publish) -> Result<(Vec<Value>, String)> {
     let work = p.work;
     let (front, back) = super::cover::faces(p.staged, p.assets, p.edition, work)?;
     let reader = work.join("reader.pdf");
@@ -132,7 +132,7 @@ pub fn publish(p: Publish) -> Result<(Vec<Value>, String)> {
     let written = package_release(Release {
         reader_pdf: &reader,
         destination: p.out_dir,
-        manifest: manifest(&p)?,
+        manifest: manifest(p)?,
         cover_art: cover_art.as_deref(),
         cover_art_size_points: None,
         figure_placements: &figures,

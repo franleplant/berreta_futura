@@ -981,7 +981,7 @@ mod tests {
             author: String::new(),
             article: None,
             document: Document {
-                metadata: Default::default(),
+                metadata: serde_yaml::Mapping::default(),
                 blocks,
             },
         };

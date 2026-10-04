@@ -194,7 +194,7 @@ pub fn decode_rgb(path: &Path) -> Result<Rgb> {
             .chunks_exact(2)
             .flat_map(|p| [p[0], p[0], p[0]])
             .collect(),
-        other => bail!(
+        other @ png::ColorType::Indexed => bail!(
             "unsupported png color type {:?} in {}",
             other,
             path.display()
@@ -219,15 +219,17 @@ fn thumbnail_size(width: u32, height: u32) -> Option<(u32, u32)> {
     if x >= width && y >= height {
         return None;
     }
-    let aspect = width as f64 / height as f64;
-    if x as f64 / y as f64 >= aspect {
-        x = round_aspect(y as f64 * aspect, |n| (aspect - n as f64 / y as f64).abs());
+    let aspect = f64::from(width) / f64::from(height);
+    if f64::from(x) / f64::from(y) >= aspect {
+        x = round_aspect(f64::from(y) * aspect, |n| {
+            (aspect - n as f64 / f64::from(y)).abs()
+        });
     } else {
-        y = round_aspect(x as f64 / aspect, |n| {
+        y = round_aspect(f64::from(x) / aspect, |n| {
             if n == 0 {
                 0.0
             } else {
-                (aspect - x as f64 / n as f64).abs()
+                (aspect - f64::from(x) / n as f64).abs()
             }
         });
     }
@@ -257,7 +259,7 @@ fn lanczos(x: f64) -> f64 {
 }
 
 fn precompute_coeffs(in_size: u32, in0: f32, in1: f32, out_size: u32) -> Coeffs {
-    let scale = f64::from(in1 - in0) / out_size as f64;
+    let scale = f64::from(in1 - in0) / f64::from(out_size);
     let in0 = f64::from(in0);
     let filterscale = scale.max(1.0);
     let support = LANCZOS_SUPPORT * filterscale;
@@ -266,7 +268,7 @@ fn precompute_coeffs(in_size: u32, in0: f32, in1: f32, out_size: u32) -> Coeffs 
     let mut kk = vec![0i32; out_size as usize * ksize];
     let mut window = vec![0f64; ksize];
     for xx in 0..out_size {
-        let center = in0 + (xx as f64 + 0.5) * scale;
+        let center = in0 + (f64::from(xx) + 0.5) * scale;
         let step = 1.0 / filterscale;
         let mut xmin = (center - support + 0.5) as i32;
         if xmin < 0 {
@@ -279,7 +281,7 @@ fn precompute_coeffs(in_size: u32, in0: f32, in1: f32, out_size: u32) -> Coeffs 
         xmax -= xmin;
         let mut total = 0.0;
         for (x, slot) in window.iter_mut().enumerate().take(xmax as usize) {
-            let weight = lanczos(((x as i32 + xmin) as f64 - center + 0.5) * step);
+            let weight = lanczos((f64::from(x as i32 + xmin) - center + 0.5) * step);
             *slot = weight;
             total += weight;
         }
@@ -328,7 +330,7 @@ fn resample_horizontal(
                 let weight = coeffs.kk[base + x];
                 let pixel = row + (x + xmin as usize) * 3;
                 for (channel, slot) in acc.iter_mut().enumerate() {
-                    *slot += source.data[pixel + channel] as i32 * weight;
+                    *slot += i32::from(source.data[pixel + channel]) * weight;
                 }
             }
             let target = (yy * out_width as usize + xx) * 3;
@@ -355,7 +357,7 @@ fn resample_vertical(source: &Rgb, out_height: u32, coeffs: &Coeffs) -> Rgb {
                 let weight = coeffs.kk[base + y];
                 let pixel = ((y + ymin as usize) * source.width as usize + xx) * 3;
                 for (channel, slot) in acc.iter_mut().enumerate() {
-                    *slot += source.data[pixel + channel] as i32 * weight;
+                    *slot += i32::from(source.data[pixel + channel]) * weight;
                 }
             }
             let target = (yy * source.width as usize + xx) * 3;
@@ -372,20 +374,20 @@ fn resample_vertical(source: &Rgb, out_height: u32, coeffs: &Coeffs) -> Rgb {
 }
 
 fn division_multiplier(divider: u32) -> u32 {
-    let max_dividend = (1u64 << 8) * divider as u64;
+    let max_dividend = (1u64 << 8) * u64::from(divider);
     let max_int = (1u64 << 30) as f32 * 4.0;
     (max_int / max_dividend as f32) as u32
 }
 
 fn block_average(source: &Rgb, origin: (u32, u32), span: (u32, u32)) -> [u8; 3] {
     let scale = span.0 * span.1;
-    let multiplier = division_multiplier(scale) as u64;
-    let mut acc = [(scale / 2) as u64; 3];
+    let multiplier = u64::from(division_multiplier(scale));
+    let mut acc = [u64::from(scale / 2); 3];
     for yy in origin.1..origin.1 + span.1 {
         for xx in origin.0..origin.0 + span.0 {
             let pixel = (yy as usize * source.width as usize + xx as usize) * 3;
             for (channel, slot) in acc.iter_mut().enumerate() {
-                *slot += source.data[pixel + channel] as u64;
+                *slot += u64::from(source.data[pixel + channel]);
             }
         }
     }
@@ -452,7 +454,7 @@ pub(crate) fn resize(source: &Rgb, size: (u32, u32), box_rect: (f64, f64, f64, f
     let rows = (last.0 + last.1 - first) as u32;
     let mut current = source.clone();
     if width != source.width {
-        for bound in vertical.bounds.iter_mut() {
+        for bound in &mut vertical.bounds {
             bound.0 -= first;
         }
         current = resample_horizontal(source, width, first as u32, rows, &horizontal);
@@ -464,7 +466,7 @@ pub(crate) fn resize(source: &Rgb, size: (u32, u32), box_rect: (f64, f64, f64, f
 }
 
 fn reducing_factor(length: u32, target: u32) -> u32 {
-    let factor = (length as f64 / target as f64 / 2.0) as u32;
+    let factor = (f64::from(length) / f64::from(target) / 2.0) as u32;
     factor.max(1)
 }
 
@@ -476,7 +478,12 @@ pub fn thumbnail(image: &Rgb) -> Rgb {
         return image.clone();
     }
     let mut current = image.clone();
-    let mut box_rect = (0.0, 0.0, current.width as f64, current.height as f64);
+    let mut box_rect = (
+        0.0,
+        0.0,
+        f64::from(current.width),
+        f64::from(current.height),
+    );
     let factor = (
         reducing_factor(image.width, width),
         reducing_factor(image.height, height),
@@ -486,8 +493,8 @@ pub fn thumbnail(image: &Rgb) -> Rgb {
         box_rect = (
             0.0,
             0.0,
-            image.width as f64 / factor.0 as f64,
-            image.height as f64 / factor.1 as f64,
+            f64::from(image.width) / f64::from(factor.0),
+            f64::from(image.height) / f64::from(factor.1),
         );
     }
     resize(&current, (width, height), box_rect)
@@ -574,18 +581,25 @@ pub fn analyze_print_contrast(source: &Rgb) -> PrintContrastAnalysis {
 }
 
 pub(crate) fn luma601(pixel: &[u8]) -> u8 {
-    ((pixel[0] as u32 * 19595 + pixel[1] as u32 * 38470 + pixel[2] as u32 * 7471 + 0x8000) >> 16)
-        as u8
+    ((u32::from(pixel[0]) * 19595
+        + u32::from(pixel[1]) * 38470
+        + u32::from(pixel[2]) * 7471
+        + 0x8000)
+        >> 16) as u8
 }
 
 fn enhance_contrast(image: &Rgb, factor: f64) -> Rgb {
-    let sum: u64 = image.data.chunks_exact(3).map(|p| luma601(p) as u64).sum();
+    let sum: u64 = image
+        .data
+        .chunks_exact(3)
+        .map(|p| u64::from(luma601(p)))
+        .sum();
     let mean = (sum as f64 / image.pixels() as f64 + 0.5) as i32;
     let data = image
         .data
         .iter()
         .map(|&channel| {
-            let temp = (mean as f64 + factor * (channel as f64 - mean as f64)) as f32;
+            let temp = (f64::from(mean) + factor * (f64::from(channel) - f64::from(mean))) as f32;
             if temp <= 0.0 {
                 0
             } else if temp >= 255.0 {
@@ -656,11 +670,7 @@ pub fn worker_count(items: usize, workers: Option<usize>) -> usize {
     match workers {
         Some(requested) => requested.min(items).max(1),
         None => items
-            .min(
-                std::thread::available_parallelism()
-                    .map(|value| value.get())
-                    .unwrap_or(1),
-            )
+            .min(std::thread::available_parallelism().map_or(1, std::num::NonZero::get))
             .clamp(1, MAX_WORKERS),
     }
 }

@@ -71,7 +71,11 @@ fn indirect(doc: &mut Document, dict: &mut lopdf::Dictionary) {
     }
 }
 
-fn pdf_with(mut font: lopdf::Dictionary, content: &str, page_extra: lopdf::Dictionary) -> Document {
+fn pdf_with(
+    mut font: lopdf::Dictionary,
+    content: &str,
+    page_extra: &lopdf::Dictionary,
+) -> Document {
     let mut doc = Document::with_version("1.5");
     indirect(&mut doc, &mut font);
     let pages_id = doc.new_object_id();
@@ -91,7 +95,7 @@ fn pdf_with(mut font: lopdf::Dictionary, content: &str, page_extra: lopdf::Dicti
         "Type" => "Page", "Parent" => pages_id, "Contents" => content_id,
         "Resources" => resources, "MediaBox" => vec![0.into(), 0.into(), 612.into(), 792.into()],
     };
-    page.extend(&page_extra);
+    page.extend(page_extra);
     let page_id = doc.add_object(page);
     let pages = dictionary! {"Type" => "Pages", "Kids" => vec![page_id.into()], "Count" => 1};
     doc.objects.insert(pages_id, Object::Dictionary(pages));
@@ -107,7 +111,7 @@ fn bytes(mut doc: Document) -> Vec<u8> {
 }
 
 fn read(font: lopdf::Dictionary, content: &str) -> Result<String, String> {
-    let doc = pdf_with(font, content, dictionary! {});
+    let doc = pdf_with(font, content, &dictionary! {});
     pdf_text::transcribe_bytes(&bytes(doc)).map_err(|e| format!("{e:#}"))
 }
 
@@ -132,7 +136,7 @@ fn positive_control_reads_a_plain_page() {
     assert_eq!(read(helvetica(), HELLO).unwrap(), "Hello world\n");
     let turned = "BT /F1 12 Tf 0 1 -1 0 300 100 Tm (Turned text) Tj ET";
     assert_eq!(read(helvetica(), turned).unwrap(), "Turned text\n");
-    let rotated_page = pdf_with(helvetica(), HELLO, dictionary! {"Rotate" => 90});
+    let rotated_page = pdf_with(helvetica(), HELLO, &dictionary! {"Rotate" => 90});
     assert_eq!(
         pdf_text::transcribe_bytes(&bytes(rotated_page)).unwrap(),
         "Hello world\n"
@@ -142,7 +146,7 @@ fn positive_control_reads_a_plain_page() {
 #[test]
 fn encrypted_pdf_fails_loud() {
     use lopdf::encryption::{EncryptionState, EncryptionVersion, Permissions};
-    let mut doc = pdf_with(helvetica(), HELLO, dictionary! {});
+    let mut doc = pdf_with(helvetica(), HELLO, &dictionary! {});
     doc.trailer
         .set("ID", vec![Object::string_literal("0123456789abcdef"); 2]);
     let state = EncryptionState::try_from(EncryptionVersion::V2 {
@@ -340,7 +344,7 @@ fn a_missing_xobject_fails_loud() {
 
 #[test]
 fn a_self_invoking_form_fails_loud() {
-    let mut doc = pdf_with(helvetica(), "/Fm1 Do", dictionary! {});
+    let mut doc = pdf_with(helvetica(), "/Fm1 Do", &dictionary! {});
     let form_id = doc.new_object_id();
     let form = Stream::new(
         dictionary! {"Type" => "XObject", "Subtype" => "Form",

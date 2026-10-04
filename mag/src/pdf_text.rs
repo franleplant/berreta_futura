@@ -139,7 +139,7 @@ fn deref<'a>(doc: &'a Document, o: &'a Object) -> &'a Object {
 fn num(o: &Object) -> f64 {
     match o {
         Object::Integer(i) => *i as f64,
-        Object::Real(r) => *r as f64,
+        Object::Real(r) => f64::from(*r),
         _ => 0.0,
     }
 }
@@ -192,7 +192,7 @@ fn load_font(doc: &Document, f: &Dictionary) -> Result<Font> {
         .map(|m| m.iter().map(num).collect())
         .filter(|m: &Vec<f64>| type3 && m.len() == 6)
         .unwrap_or_else(|| vec![0.001, 0.0, 0.0, 0.001]);
-    let first = f.get(b"FirstChar").map(num).unwrap_or(0.0) as u32;
+    let first = f.get(b"FirstChar").map_or(0.0, num) as u32;
     let widths: BTreeMap<u32, f64> = f
         .get(b"Widths")
         .ok()
@@ -230,8 +230,7 @@ fn load_font(doc: &Document, f: &Dictionary) -> Result<Font> {
 fn is_mono(desc: Option<&Dictionary>, widths: &BTreeMap<u32, f64>) -> bool {
     let flag = desc
         .and_then(|d| d.get(b"Flags").ok())
-        .map(|f| num(f) as i64 & 1 == 1)
-        .unwrap_or(false);
+        .is_some_and(|f| num(f) as i64 & 1 == 1);
     let mut seen = widths.values().filter(|w| **w > 0.0);
     let first = seen.next().copied();
     let uniform = first.is_some() && widths.len() > 20 && seen.all(|w| Some(*w) == first);
@@ -261,7 +260,7 @@ fn cid_font(doc: &Document, f: &Dictionary, name: String) -> Result<Font> {
         .and_then(|d| deref(doc, d).as_dict().ok());
     Ok(Font {
         mono: is_mono(fd, &BTreeMap::new()),
-        missing: desc.get(b"DW").map(num).unwrap_or(1000.0),
+        missing: desc.get(b"DW").map_or(1000.0, num),
         cid: true,
         type3: false,
         scale: 1.0,
@@ -674,7 +673,7 @@ impl Interp<'_> {
                 }
                 ("re", 4) => path.push(seg(a[0], a[1], a[0] + a[2], a[1] + a[3], 1.0)),
                 ("S" | "s" | "B" | "B*" | "b" | "b*", _) => {
-                    self.paint(&std::mem::take(&mut path), true)
+                    self.paint(&std::mem::take(&mut path), true);
                 }
                 ("f" | "F" | "f*", _) => self.paint(&std::mem::take(&mut path), false),
                 ("n", _) => path.clear(),
@@ -694,7 +693,7 @@ impl Interp<'_> {
             );
             let thin = y1 - y0 < 2.0 && x1 - x0 > 10.0 * (y1 - y0).max(0.5);
             let edges = if thin && (p[4] == 1.0 || stroke) {
-                vec![(y0 + y1) / 2.0]
+                vec![f64::midpoint(y0, y1)]
             } else if stroke && p[4] == 1.0 && x1 - x0 > 10.0 {
                 vec![y0, y1]
             } else {
@@ -810,10 +809,10 @@ impl Interp<'_> {
         let codes: Vec<u32> = if font.cid {
             bytes
                 .chunks(2)
-                .map(|c| c.iter().fold(0u32, |a, b| a * 256 + *b as u32))
+                .map(|c| c.iter().fold(0u32, |a, b| a * 256 + u32::from(*b)))
                 .collect()
         } else {
-            bytes.iter().map(|b| *b as u32).collect()
+            bytes.iter().map(|b| u32::from(*b)).collect()
         };
         for code in codes {
             self.glyph(&font, code)?;
@@ -896,8 +895,7 @@ impl Interp<'_> {
                     .get(b"Matrix")
                     .ok()
                     .and_then(|m| m.as_array().ok())
-                    .map(|m| m.iter().map(num).collect())
-                    .unwrap_or_else(|| ID.to_vec());
+                    .map_or_else(|| ID.to_vec(), |m| m.iter().map(num).collect());
                 let saved = (self.gs.clone(), self.stack.len());
                 if m.len() == 6 {
                     self.gs.ctm = concat(&[m[0], m[1], m[2], m[3], m[4], m[5]], &self.gs.ctm);
@@ -1117,7 +1115,7 @@ fn xycut(gs: &[Glyph], idx: Vec<usize>, rules: &[Rule], out: &mut Vec<Vec<usize>
     let vgaps: Vec<f64> = gaps(idx.iter().map(|&i| xbox(&gs[i])).collect())
         .into_iter()
         .filter(|(lo, hi)| hi - lo >= size)
-        .map(|(lo, hi)| (lo + hi) / 2.0)
+        .map(|(lo, hi)| f64::midpoint(lo, hi))
         .collect();
     let core = || {
         gaps(
@@ -1211,7 +1209,7 @@ fn line(gs: &[Glyph], idx: &[usize]) -> Line {
     }
     let mono = glyphs.iter().filter(|g| g.mono).count() * 5 >= glyphs.len() * 4;
     Line {
-        x0: glyphs.first().map(|g| g.x).unwrap_or(0.0),
+        x0: glyphs.first().map_or(0.0, |g| g.x),
         x1: glyphs
             .iter()
             .map(|g| g.x + g.w)

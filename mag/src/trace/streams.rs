@@ -494,7 +494,7 @@ impl Tracer<'_> {
         let name = name_str(&args[0])?;
         let states = resolve(self.doc, res.get(b"ExtGState")?)?.as_dict()?;
         let dict = resolve(self.doc, states.get(name.as_bytes())?)?.as_dict()?;
-        for (key, value) in dict.iter() {
+        for (key, value) in dict {
             let value = resolve(self.doc, value)?;
             match key.as_slice() {
                 b"Type" => {}
@@ -1427,7 +1427,7 @@ fn unfilter_row(ftype: u8, row: &mut [u8], prev: &[u8], bpp: usize) -> Result<()
             0 => row[i],
             1 => row[i].wrapping_add(left),
             2 => row[i].wrapping_add(up),
-            3 => row[i].wrapping_add(((u16::from(left) + u16::from(up)) / 2) as u8),
+            3 => row[i].wrapping_add(u16::midpoint(u16::from(left), u16::from(up)) as u8),
             4 => row[i].wrapping_add(paeth(left, up, ul)),
             other => bail!("png filter {other}"),
         };
@@ -2206,7 +2206,9 @@ mod tests {
             .collect();
         move |_| {
             let mut image = sampled(None, "DeviceRGB", &[], samples(768));
-            extra.into_iter().for_each(|(k, v)| image.dict.set(k, v));
+            for (k, v) in extra {
+                image.dict.set(k, v);
+            }
             image
         }
     }

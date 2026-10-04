@@ -450,7 +450,7 @@ fn the_font_widths_serialize_as_the_python_compiler_serializes_them() {
     let (_, font) = font_dict(&bytes);
     let first = font
         .get(b"FirstChar")
-        .and_then(|value| value.as_i64())
+        .and_then(lopdf::Object::as_i64)
         .expect("FirstChar");
     let marker = b"/Widths[";
     let start = bytes

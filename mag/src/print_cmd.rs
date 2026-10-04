@@ -34,7 +34,7 @@ const ROOTS: [&str; 6] = [
     ".post",
     ".entry-content",
 ];
-const READER_CSS: &str = r#"<style>
+const READER_CSS: &str = r"<style>
 @page { {page} {pagebox} }
 html { font-size: {font}pt; }
 body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.5; color: #111;
@@ -64,7 +64,7 @@ hr { border: 0; border-top: 0.3mm solid #ccc; margin: 1.2em 0; }
   h1, h2, h3, h4 { break-after: avoid; }
 }
 {counterstyles}
-</style>"#;
+</style>";
 
 pub struct PrintArgs {
     pub url: String,

@@ -181,13 +181,13 @@ pub fn crop(gray: &Gray, box_rect: [i64; 4]) -> Gray {
     let width = (box_rect[2] - box_rect[0]).max(0) as u32;
     let height = (box_rect[3] - box_rect[1]).max(0) as u32;
     let mut data = vec![0u8; width as usize * height as usize];
-    for y in 0..height as i64 {
-        for x in 0..width as i64 {
+    for y in 0..i64::from(height) {
+        for x in 0..i64::from(width) {
             let (source_x, source_y) = (box_rect[0] + x, box_rect[1] + y);
             if source_x < 0
                 || source_y < 0
-                || source_x >= gray.width as i64
-                || source_y >= gray.height as i64
+                || source_x >= i64::from(gray.width)
+                || source_y >= i64::from(gray.height)
             {
                 continue;
             }
@@ -286,7 +286,7 @@ pub fn locate_tail_band(
     declared_height: f64,
 ) -> Option<TailBand> {
     let runs = occupied_runs(data, columns, rows_count);
-    let cell_points = VOID_DOWNSAMPLE as f64 * scale;
+    let cell_points = f64::from(VOID_DOWNSAMPLE) * scale;
     let mut matched: Option<usize> = None;
     for (index, (run_start, run_end)) in runs.iter().enumerate() {
         let height = (run_end - run_start) as f64 * cell_points;
@@ -334,15 +334,15 @@ fn live_box(rows: &[PageAnnotation], body_pages: &BTreeSet<usize>) -> Option<[i6
         return None;
     }
     Some([
-        boxes.iter().map(|box_rect| box_rect[0]).min()? as i64,
-        boxes.iter().map(|box_rect| box_rect[1]).min()? as i64,
-        boxes.iter().map(|box_rect| box_rect[2]).max()? as i64,
-        boxes.iter().map(|box_rect| box_rect[3]).max()? as i64,
+        i64::from(boxes.iter().map(|box_rect| box_rect[0]).min()?),
+        i64::from(boxes.iter().map(|box_rect| box_rect[1]).min()?),
+        i64::from(boxes.iter().map(|box_rect| box_rect[2]).max()?),
+        i64::from(boxes.iter().map(|box_rect| box_rect[3]).max()?),
     ])
 }
 
 fn void_from_cell(cell: [usize; 5], live: [i64; 4], live_width: i64, scale: f64) -> Void {
-    let step = VOID_DOWNSAMPLE as i64;
+    let step = i64::from(VOID_DOWNSAMPLE);
     let width_px = (cell[1] as i64 * step).min(live_width);
     let height_px = cell[2] as i64 * step;
     let x_px = live[0] + cell[3] as i64 * step;
@@ -373,7 +373,7 @@ fn annotate_page(
     live: [i64; 4],
     declared_height: Option<f64>,
 ) -> Result<()> {
-    let scale = 72.0 / RASTER_DPI as f64;
+    let scale = 72.0 / f64::from(RASTER_DPI);
     let live_width = live[2] - live[0];
     let gray = grayscale(&decode_rgb(raster)?);
     let cells = mask_cells(
@@ -411,7 +411,7 @@ pub fn annotate_void_geometry(
     body_pages: &BTreeSet<usize>,
     tail_bands: &BTreeMap<usize, f64>,
 ) -> Result<Option<[f64; 4]>> {
-    let scale = 72.0 / RASTER_DPI as f64;
+    let scale = 72.0 / f64::from(RASTER_DPI);
     let Some(live) = live_box(rows, body_pages) else {
         return Ok(None);
     };
@@ -421,7 +421,9 @@ pub fn annotate_void_geometry(
         round_places(live[2] as f64 * scale, 1),
         round_places(live[3] as f64 * scale, 1),
     ];
-    if live[2] - live[0] < VOID_DOWNSAMPLE as i64 || live[3] - live[1] < VOID_DOWNSAMPLE as i64 {
+    if live[2] - live[0] < i64::from(VOID_DOWNSAMPLE)
+        || live[3] - live[1] < i64::from(VOID_DOWNSAMPLE)
+    {
         return Ok(Some(rounded));
     }
     for row in rows.iter_mut() {
@@ -443,7 +445,7 @@ pub fn annotate_void_geometry(
 }
 
 fn frame_runs(image: &Rgb, color_tolerance: i32) -> Vec<(u32, u32, u32)> {
-    let minimum_run = (image.width as f64 * OPENER_FRAME_MIN_RUN_FRACTION) as u32;
+    let minimum_run = (f64::from(image.width) * OPENER_FRAME_MIN_RUN_FRACTION) as u32;
     let mut runs = vec![];
     for y in 0..image.height / 2 {
         let mut start: Option<u32> = None;
@@ -454,7 +456,7 @@ fn frame_runs(image: &Rgb, color_tolerance: i32) -> Vec<(u32, u32, u32)> {
                     .iter()
                     .zip(OPENER_FRAME_RGB)
                     .all(|(&channel, target)| {
-                        (channel as i32 - target as i32).abs() <= color_tolerance
+                        (i32::from(channel) - i32::from(target)).abs() <= color_tolerance
                     })
             };
             match (is_frame, start) {
@@ -508,14 +510,14 @@ pub fn inspect_opener_crop_fidelity(crop_path: &Path, reader_page_path: &Path) -
     let normalized = resize(
         &source,
         (reference.width, reference.height),
-        (0.0, 0.0, source.width as f64, source.height as f64),
+        (0.0, 0.0, f64::from(source.width), f64::from(source.height)),
     );
     let histogram = rgb_histogram(&difference(&normalized, &reference)?);
-    let channel_values = reference.width as f64 * reference.height as f64 * 3.0;
+    let channel_values = f64::from(reference.width) * f64::from(reference.height) * 3.0;
     let total: u64 = histogram
         .iter()
         .enumerate()
-        .map(|(index, &count)| (index % 256) as u64 * count as u64)
+        .map(|(index, &count)| (index % 256) as u64 * u64::from(count))
         .sum();
     let rgb_mae = total as f64 / channel_values;
     let crop_frame = opener_frame_bbox(&normalized, 24);
@@ -525,10 +527,10 @@ pub fn inspect_opener_crop_fidelity(crop_path: &Path, reader_page_path: &Path) -
         (Some(one), Some(other)) => Some(
             one.iter()
                 .zip(other)
-                .map(|(&edge, other_edge)| (edge as i64 - other_edge as i64).unsigned_abs())
+                .map(|(&edge, other_edge)| (i64::from(edge) - i64::from(other_edge)).unsigned_abs())
                 .max()
                 .expect("a bounding box has four edges") as f64
-                / RASTER_DPI as f64,
+                / f64::from(RASTER_DPI),
         ),
         (None, None) => {
             frames_match = true;
@@ -567,7 +569,7 @@ pub fn inspect_opener_offset(path: &Path) -> Result<Value> {
     let frame = border_box(&runs).expect("a non-empty run list has a border box");
     let [left, top, right, bottom] = frame;
     let search = (4.0f64)
-        .max(round_half_even(OPENER_OFFSET_POINTS * RASTER_DPI as f64 / 72.0 * 3.0) as f64)
+        .max(round_half_even(OPENER_OFFSET_POINTS * f64::from(RASTER_DPI) / 72.0 * 3.0) as f64)
         as u32;
     let right_orange: Vec<(u32, u32)> = (top..image.height.min(bottom + search))
         .flat_map(|y| (right..image.width.min(right + search)).map(move |x| (x, y)))
@@ -595,31 +597,31 @@ fn offset_verdict(
     let [left, top, right, bottom] = frame.map(i64::from);
     let offset_x = bottom_orange
         .iter()
-        .map(|(x, _)| *x as i64)
+        .map(|(x, _)| i64::from(*x))
         .min()
         .expect("orange below")
         - left;
     let offset_y = right_orange
         .iter()
-        .map(|(_, y)| *y as i64)
+        .map(|(_, y)| i64::from(*y))
         .min()
         .expect("orange right")
         - top;
     let extension_x = right_orange
         .iter()
-        .map(|(x, _)| *x as i64)
+        .map(|(x, _)| i64::from(*x))
         .max()
         .expect("orange right")
         + 1
         - right;
     let extension_y = bottom_orange
         .iter()
-        .map(|(_, y)| *y as i64)
+        .map(|(_, y)| i64::from(*y))
         .max()
         .expect("orange below")
         + 1
         - bottom;
-    let expected = OPENER_OFFSET_POINTS * RASTER_DPI as f64 / 72.0;
+    let expected = OPENER_OFFSET_POINTS * f64::from(RASTER_DPI) / 72.0;
     let values = [offset_x, offset_y, extension_x, extension_y];
     let passed = values
         .iter()
@@ -646,7 +648,7 @@ pub fn normalized(raw: &str) -> String {
 
 pub fn spread_text(elements: &[Element], media: [f64; 4]) -> String {
     let middle = if media[2] - media[0] > media[3] - media[1] {
-        (media[0] + media[2]) / 2.0
+        f64::midpoint(media[0], media[2])
     } else {
         f64::INFINITY
     };
@@ -677,10 +679,7 @@ impl Leg {
     }
 
     fn normalized_page(&self, page: usize) -> &str {
-        self.normalized
-            .get(page - 1)
-            .map(String::as_str)
-            .unwrap_or("")
+        self.normalized.get(page - 1).map_or("", String::as_str)
     }
 
     pub fn all_a4_landscape(&self) -> bool {
@@ -711,7 +710,7 @@ fn media_boxes(pdf: &Path) -> Result<Vec<[f64; 4]>> {
                 for (slot, item) in out.iter_mut().zip(array) {
                     *slot = match document.dereference(item)?.1 {
                         lopdf::Object::Integer(value) => *value as f64,
-                        lopdf::Object::Real(value) => *value as f64,
+                        lopdf::Object::Real(value) => f64::from(*value),
                         other => anyhow::bail!("MediaBox carries {other:?}"),
                     };
                 }
@@ -1126,11 +1125,11 @@ pub struct RowContext<'a> {
     pub article_last_pages: &'a BTreeMap<String, usize>,
 }
 
-fn void_span(void: &Void) -> Option<(f64, f64)> {
-    Some((
+fn void_span(void: &Void) -> (f64, f64) {
+    (
         void.y_points - CROP_MARGIN_POINTS,
         void.y_points + void.height_points + CROP_MARGIN_POINTS,
-    ))
+    )
 }
 
 fn tail_gap_issue(
@@ -1151,8 +1150,7 @@ fn tail_gap_issue(
         .article_last_pages
         .iter()
         .find(|(_, last)| **last == page)
-        .map(|(name, _)| name.as_str())
-        .unwrap_or("unknown article");
+        .map_or("unknown article", |(name, _)| name.as_str());
     recorder.at(
         "article-tail-gap",
         "review",
@@ -1166,7 +1164,7 @@ fn tail_gap_issue(
     flags.push(FlagCrop {
         page,
         kind: "void",
-        span: void_span(void),
+        span: Some(void_span(void)),
     });
 }
 
@@ -1203,7 +1201,7 @@ fn void_issues(
         flags.push(FlagCrop {
             page,
             kind: "void",
-            span: void_span(void),
+            span: Some(void_span(void)),
         });
     }
 }
@@ -1381,7 +1379,7 @@ pub fn contents_issues(
     contents: &Contents,
 ) -> i64 {
     let cover_text = if reader.pages() > 0 {
-        reader.raw.first().map(String::as_str).unwrap_or("")
+        reader.raw.first().map_or("", String::as_str)
     } else {
         ""
     };
@@ -1687,7 +1685,7 @@ fn crop_name(base: &str, used: &mut BTreeSet<String>) -> String {
 }
 
 fn crop_box(image: &Rgb, region: [f64; 4]) -> Option<[u32; 4]> {
-    let scale = CROP_DPI as f64 / 72.0;
+    let scale = f64::from(CROP_DPI) / 72.0;
     let box_rect = [
         (region[0] * scale).floor().max(0.0) as u32,
         (region[1] * scale).floor().max(0.0) as u32,
@@ -1776,10 +1774,10 @@ pub fn opener_crop_fidelity_checks(
         let region = &crop["region_points"];
         let reference = decode_rgb(&rendered_pages[page - 1])?;
         let expected = [2usize, 3].map(|index| {
-            round_half_even(region[index].as_f64().unwrap_or(0.0) * RASTER_DPI as f64 / 72.0)
+            round_half_even(region[index].as_f64().unwrap_or(0.0) * f64::from(RASTER_DPI) / 72.0)
         });
-        if (reference.width as i64 - expected[0]).abs() > 1
-            || (reference.height as i64 - expected[1]).abs() > 1
+        if (i64::from(reference.width) - expected[0]).abs() > 1
+            || (i64::from(reference.height) - expected[1]).abs() > 1
         {
             continue;
         }
@@ -1875,8 +1873,7 @@ pub fn geometry(page_count: usize, toc: &BTreeMap<String, usize>) -> Geometry {
         .values()
         .copied()
         .min()
-        .map(|page| page as i64)
-        .unwrap_or(3 + maximum_contents_pages);
+        .map_or(3 + maximum_contents_pages, |page| page as i64);
     let actual_contents_pages = first_body_page - 3;
     let contents: BTreeSet<usize> = (3..3 + actual_contents_pages.max(0))
         .map(|page| page as usize)

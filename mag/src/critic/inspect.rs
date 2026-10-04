@@ -251,9 +251,7 @@ pub fn render_pages(pdf: &Path, output_dir: &Path, shards: Option<usize>) -> Res
     std::fs::create_dir_all(output_dir)
         .with_context(|| format!("cannot create {}", output_dir.display()))?;
     let prefix = output_dir.join("page");
-    let page_count = lopdf::Document::load(pdf)
-        .map(|document| document.get_pages().len())
-        .unwrap_or(0);
+    let page_count = lopdf::Document::load(pdf).map_or(0, |document| document.get_pages().len());
     let shard_count = shards.unwrap_or_else(|| worker_count(page_count / 2, None));
     if shard_count < 2 {
         rasterize(&tool, pdf, &prefix, None)?;

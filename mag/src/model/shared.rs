@@ -374,11 +374,10 @@ pub fn ui(language: &str, key: &str) -> String {
         ("verbatim", "TEXTUAL"),
     ];
     let table = if language == "es" { SPANISH } else { ENGLISH };
-    table
-        .iter()
-        .find(|(name, _)| *name == key)
-        .map(|(_, value)| (*value).to_string())
-        .unwrap_or_else(|| py_upper(&key.replace(['_', '-'], " ")))
+    table.iter().find(|(name, _)| *name == key).map_or_else(
+        || py_upper(&key.replace(['_', '-'], " ")),
+        |(_, value)| (*value).to_string(),
+    )
 }
 
 pub fn raw_or(value: Option<&Value>, fallback: &str) -> String {

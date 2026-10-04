@@ -184,9 +184,8 @@ fn ordered_map_preserves_order_and_reports_the_first_failure() {
         |value| {
             if *value == 7 || *value == 19 {
                 anyhow::bail!("item {value}")
-            } else {
-                Ok(*value)
             }
+            Ok(*value)
         },
         &items,
         None,

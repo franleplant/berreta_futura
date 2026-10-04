@@ -171,8 +171,7 @@ fn extract_body(reply: &str, label: &str) -> Result<String> {
     while body.starts_with('#') {
         body = body
             .split_once('\n')
-            .map(|(_, rest)| rest)
-            .unwrap_or("")
+            .map_or("", |(_, rest)| rest)
             .trim_start();
     }
     if body.is_empty() {
@@ -625,7 +624,7 @@ fn scaffold_edition_yaml(
 pub fn run_edition(
     plan_path: &Path,
     resume: Option<PathBuf>,
-    only: Option<HashSet<String>>,
+    only: Option<&HashSet<String>>,
     writer_model: &ModelSpec,
 ) -> Result<i32> {
     let plan_text = read(plan_path)?;
@@ -652,13 +651,12 @@ pub fn run_edition(
     let articles: Vec<serde_yaml::Value> = plan
         .articles
         .into_iter()
-        .filter(|a| match &only {
+        .filter(|a| match only {
             None => true,
             Some(ids) => a
                 .get("id")
                 .and_then(|v| v.as_str())
-                .map(|s| ids.contains(s))
-                .unwrap_or(false),
+                .is_some_and(|s| ids.contains(s)),
         })
         .collect();
 
@@ -809,7 +807,7 @@ fn parse_front_matter(reply: &str) -> Result<HashMap<String, String>> {
     let drafted: HashMap<String, String> =
         serde_yaml::from_str(yaml).context("the front matter reply is not a YAML mapping")?;
     for key in ["title", "subtitle", "back_text"] {
-        let value = drafted.get(key).map(|v| v.trim()).unwrap_or("");
+        let value = drafted.get(key).map_or("", |v| v.trim());
         if value.is_empty() || value.contains('\u{2014}') {
             bail!("front matter {key} is missing, empty, or carries an em dash");
         }

@@ -205,7 +205,7 @@ fn page_resource_hashes(doc: &Document, page_id: ObjectId) -> Vec<(Vec<u8>, Stri
                 continue;
             };
             for (name, value) in entries {
-                out.push((name.to_vec(), object_digest(doc, value, 0)));
+                out.push((name.clone(), object_digest(doc, value, 0)));
             }
         }
     }
@@ -256,11 +256,10 @@ fn object_digest(doc: &Document, object: &Object, depth: usize) -> String {
 
 fn operand_text(operand: &Object, resources: &[(Vec<u8>, String)]) -> String {
     match operand {
-        Object::Name(name) => resources
-            .iter()
-            .find(|(key, _)| key == name)
-            .map(|(_, digest)| format!("res:{digest}"))
-            .unwrap_or_else(|| format!("/{}", String::from_utf8_lossy(name))),
+        Object::Name(name) => resources.iter().find(|(key, _)| key == name).map_or_else(
+            || format!("/{}", String::from_utf8_lossy(name)),
+            |(_, digest)| format!("res:{digest}"),
+        ),
         Object::Integer(value) => format!("{:.6}", *value as f64),
         Object::Real(value) => format!("{:.6}", f64::from(*value)),
         Object::String(bytes, _) => format!("({})", hex::encode(bytes)),

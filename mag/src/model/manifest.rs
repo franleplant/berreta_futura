@@ -361,7 +361,7 @@ fn article_identity(
         ));
         return None;
     }
-    let source_ids = article_source_ids(row.get("source_ids"))?;
+    let source_ids = article_source_ids(row.get("source_ids"));
     if source_ids.is_empty() {
         errors.push(format!(
             "{label} source_ids must be a non-empty list of strings"
@@ -371,23 +371,21 @@ fn article_identity(
     Some((label, article_id.clone(), source_ids))
 }
 
-fn article_source_ids(declared: Option<&Value>) -> Option<Vec<String>> {
+fn article_source_ids(declared: Option<&Value>) -> Vec<String> {
     let Some(Value::Sequence(items)) = declared else {
-        return Some(Vec::new());
+        return Vec::new();
     };
     if items.is_empty()
         || items
             .iter()
             .any(|value| !matches!(value, Value::String(text) if !text.py_trim().is_empty()))
     {
-        return Some(Vec::new());
+        return Vec::new();
     }
-    Some(
-        items
-            .iter()
-            .filter_map(|value| value.as_str().map(str::to_string))
-            .collect(),
-    )
+    items
+        .iter()
+        .filter_map(|value| value.as_str().map(str::to_string))
+        .collect()
 }
 
 fn article_author_note(label: &str, row: &Value, errors: &mut Vec<String>) -> (String, bool) {

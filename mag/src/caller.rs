@@ -18,7 +18,7 @@ pub fn call_timeout_secs_for(spec: Option<&ModelSpec>) -> u64 {
         return v;
     }
     match spec.and_then(|s| s.effort.as_deref()) {
-        Some("max") | Some("xhigh") => 2700,
+        Some("max" | "xhigh") => 2700,
         Some("high") => 1500,
         _ => 600,
     }
@@ -266,7 +266,6 @@ impl Caller {
                 Err(e) => {
                     last_error = Some(e.to_string());
                     last_reply = Some(result_text);
-                    continue;
                 }
             }
         }
@@ -501,7 +500,7 @@ fn parse_claude(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f
     })?;
     let is_error = data
         .get("is_error")
-        .and_then(|v| v.as_bool())
+        .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
     let subtype = data.get("subtype").and_then(|v| v.as_str()).unwrap_or("");
     if is_error || subtype != "success" {
@@ -510,7 +509,7 @@ fn parse_claude(out: &[u8], err: &[u8], status: ExitStatus) -> Result<(String, f
     }
     let cost = data
         .get("total_cost_usd")
-        .and_then(|v| v.as_f64())
+        .and_then(serde_json::Value::as_f64)
         .unwrap_or(0.0);
     let result = data
         .get("result")

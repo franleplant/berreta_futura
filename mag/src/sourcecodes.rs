@@ -378,7 +378,9 @@ pub fn run(edition: &str, check: bool) -> Result<i32> {
     let (files, declines) = build(Path::new("."), edition)?;
     if check {
         let differences = differences(&files, &directory)?;
-        differences.iter().for_each(|line| println!("{line}"));
+        for line in &differences {
+            println!("{line}");
+        }
         if differences.is_empty() {
             println!("{} files reproduce byte-for-byte", files.len());
         }

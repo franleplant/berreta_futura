@@ -122,8 +122,7 @@ fn latest_complete_run(
         .filter(|p| {
             p.is_dir()
                 && p.file_name()
-                    .map(|n| n.to_string_lossy().starts_with("run-"))
-                    .unwrap_or(false)
+                    .is_some_and(|n| n.to_string_lossy().starts_with("run-"))
         })
         .collect();
     runs.sort();
@@ -262,8 +261,7 @@ fn print_summary(value: &serde_json::Value, out_dir: &Path) {
             let lang = info.get("language").and_then(|v| v.as_str()).unwrap_or("?");
             let total_pages = info
                 .get("totalPages")
-                .map(|v| v.to_string())
-                .unwrap_or_else(|| "?".to_string());
+                .map_or_else(|| "?".to_string(), std::string::ToString::to_string);
             println!("  [{lang}] totalPages={total_pages}");
             if let Some(article_pages) = info.get("articlePages").and_then(|v| v.as_object()) {
                 for (aid, pages) in article_pages {
@@ -429,14 +427,12 @@ fn parse_anchor_reply(
             .find(|l| {
                 l.split("::")
                     .next()
-                    .map(|s| s.trim().trim_start_matches('-').trim() == id)
-                    .unwrap_or(false)
+                    .is_some_and(|s| s.trim().trim_start_matches('-').trim() == id)
             })
             .ok_or_else(|| anyhow!("reply has no `{id} :: <heading>` line"))?;
         let value = line
             .split_once("::")
-            .map(|(_, v)| v)
-            .unwrap_or("")
+            .map_or("", |(_, v)| v)
             .trim()
             .trim_start_matches("##")
             .trim();
@@ -508,9 +504,10 @@ fn load_edition(edition: &str) -> Result<EditionInputs> {
         bail!("{} not found", yaml_path.display());
     }
     let yaml = read_yaml(&yaml_path)?;
-    let id = str_field(&yaml, "id")
-        .map(str::to_string)
-        .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().to_string());
+    let id = str_field(&yaml, "id").map_or_else(
+        || dir.file_name().unwrap().to_string_lossy().to_string(),
+        str::to_string,
+    );
     let articles = yaml
         .get("articles")
         .and_then(|v| v.as_sequence())
@@ -847,9 +844,7 @@ fn stage_translation(
     let translation_dir = edition_dir.join("translations/es");
     let translation_yaml_path = translation_dir.join("edition.yaml");
     let has_translation = translation_yaml_path.exists()
-        && langs
-            .map(|l| l.split(',').any(|x| x.trim() == "es"))
-            .unwrap_or(true);
+        && langs.is_none_or(|l| l.split(',').any(|x| x.trim() == "es"));
     if !has_translation {
         return Ok(vec!["en".to_string()]);
     }

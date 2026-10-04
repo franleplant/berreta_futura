@@ -150,7 +150,7 @@ fn page_resources(doc: &Document, id: ObjectId) -> Result<Dictionary> {
     {
         for (key, value) in source {
             let resolved = doc.dereference(value).map(|(_, object)| object);
-            merged.set(key.to_vec(), resolved.unwrap_or(value).clone());
+            merged.set(key.clone(), resolved.unwrap_or(value).clone());
         }
     }
     Ok(merged)
@@ -252,7 +252,7 @@ fn merge_resources(target: &mut Dictionary, source: &Dictionary) -> Vec<(Vec<u8>
         for (key, value) in entries {
             let unique = unique_key(&merged, key, value);
             if unique != *key {
-                renames.push((key.to_vec(), unique.clone()));
+                renames.push((key.clone(), unique.clone()));
             }
             if merged.get(&unique).ok() != Some(value) {
                 merged.set(unique, value.clone());

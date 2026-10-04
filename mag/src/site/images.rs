@@ -108,7 +108,7 @@ fn encode(path: &Path, out: &Path) -> Result<Image> {
     })
 }
 
-pub fn encode_all(paths: Vec<PathBuf>, out: &Path) -> Result<BTreeMap<PathBuf, Image>> {
+pub fn encode_all(paths: &[PathBuf], out: &Path) -> Result<BTreeMap<PathBuf, Image>> {
     std::fs::create_dir_all(out.join("img"))?;
     let threads = std::thread::available_parallelism().map_or(4, usize::from);
     let chunk = paths.len().div_ceil(threads).max(1);

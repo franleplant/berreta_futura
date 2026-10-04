@@ -83,7 +83,7 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
         .collect::<Result<Vec<_>>>()?;
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
     prepare(&args.out)?;
-    let images = images::encode_all(html::image_paths(&issues), &args.out)?;
+    let images = images::encode_all(&html::image_paths(&issues), &args.out)?;
     let name = issues
         .first()
         .map_or("Magazine", |i| i.editions[0].publication_name.as_str())
@@ -247,7 +247,7 @@ mod tests {
     use std::collections::BTreeSet;
 
     fn set(paths: &[&str]) -> BTreeSet<String> {
-        paths.iter().map(|p| p.to_string()).collect()
+        paths.iter().map(std::string::ToString::to_string).collect()
     }
 
     #[test]

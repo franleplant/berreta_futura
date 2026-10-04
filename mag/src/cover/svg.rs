@@ -175,7 +175,7 @@ struct Gradient<'a> {
     bottom: f64,
 }
 
-fn gradient(spec: Gradient<'_>) -> String {
+fn gradient(spec: &Gradient<'_>) -> String {
     let Gradient {
         id,
         x,
@@ -185,7 +185,7 @@ fn gradient(spec: Gradient<'_>) -> String {
         color,
         top,
         bottom,
-    } = spec;
+    } = *spec;
     format!(
         "<defs><linearGradient id=\"{id}\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\
 <stop offset=\"0\" stop-color=\"{color}\" stop-opacity=\"{}\"/>\
@@ -697,7 +697,7 @@ impl Builder<'_> {
     fn caption_gradients(&self, top: &Zone, band: f64) -> Vec<String> {
         let mut parts = Vec::new();
         if top.stddev > 52.0 && top.mean < 150.0 {
-            parts.push(gradient(Gradient {
+            parts.push(gradient(&Gradient {
                 id: "cap-t",
                 x: "0",
                 y: 0.0,

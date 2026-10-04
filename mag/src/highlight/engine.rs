@@ -163,14 +163,14 @@ impl Lexer {
             let group = m.get(index + 1);
             match (action, group) {
                 (Action::Token(class), Some(g)) if !g.as_str().is_empty() => {
-                    ctx.out.push((class.clone(), g.as_str().to_owned()))
+                    ctx.out.push((class.clone(), g.as_str().to_owned()));
                 }
                 (Action::Call(call), Some(g)) => {
                     ctx.pos = g.start();
                     call.run(g.as_str(), g.start(), m, ctx);
                 }
                 (Action::Using(stack), Some(g)) => {
-                    ctx.out.extend(self.tokens_from(g.as_str(), stack.clone())?)
+                    ctx.out.extend(self.tokens_from(g.as_str(), stack.clone())?);
                 }
                 (Action::Groups(_) | Action::Http(..), _) => bail!("unsupported group action"),
                 _ => {}
@@ -446,7 +446,7 @@ impl Call {
                 }
                 if ctx.next_indent > ctx.indent {
                     let cut = py_index(text.len(), ctx.indent);
-                    extra = text[cut..].to_owned();
+                    text[cut..].clone_into(&mut extra);
                     text.truncate(cut);
                 }
             }

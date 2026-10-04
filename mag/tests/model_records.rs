@@ -497,7 +497,7 @@ fn create_and_source_id_match_python() {
     let tags = |items: &[&str]| {
         items
             .iter()
-            .map(|item| item.to_string())
+            .map(std::string::ToString::to_string)
             .collect::<Vec<String>>()
     };
     let plain_tags = tags(&["  Beta ", "alpha", "ALPHA", "  "]);

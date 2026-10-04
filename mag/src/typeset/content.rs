@@ -95,7 +95,7 @@ pub fn compose(
     hyphenation: Hyphenation,
     keeps: &[Option<usize>],
 ) -> Result<Tree> {
-    let settable = settable_codepoints(fonts).map_err(refusal)?;
+    let settable = settable_codepoints(fonts).map_err(|error| refusal(&error))?;
     let tree = Writer {
         edition,
         metrics: &Metrics::load(fonts)?,
@@ -146,7 +146,7 @@ pub fn unsettable_in(file: &File, settable: &BTreeSet<u32>) -> Vec<String> {
         .collect()
 }
 
-fn refusal(error: anyhow::Error) -> ValidationError {
+fn refusal(error: &anyhow::Error) -> ValidationError {
     ValidationError::one(format!("{error:#}"))
 }
 
@@ -177,14 +177,14 @@ impl Writer<'_> {
     }
 
     fn hyphenated(&self, value: &str) -> String {
-        self.hyphenable(fold_reader_characters(&educate_reader_quotes(value)))
+        self.hyphenable(&fold_reader_characters(&educate_reader_quotes(value)))
     }
 
-    fn hyphenable(&self, folded: String) -> String {
+    fn hyphenable(&self, folded: &str) -> String {
         match (&self.hyphenator, self.native) {
-            (Some(hyphenator), _) => escape_markup(&hyphenator.text(&folded)),
-            (None, true) => format!("#text(hyphenate: true)[{}]", escape_markup(&folded)),
-            (None, false) => escape_markup(&folded),
+            (Some(hyphenator), _) => escape_markup(&hyphenator.text(folded)),
+            (None, true) => format!("#text(hyphenate: true)[{}]", escape_markup(folded)),
+            (None, false) => escape_markup(folded),
         }
     }
 
@@ -193,7 +193,7 @@ impl Writer<'_> {
     }
 
     fn verbatim_body(&self, value: &str) -> String {
-        format!("[{}]", self.hyphenable(fold_reader_characters(value)))
+        format!("[{}]", self.hyphenable(&fold_reader_characters(value)))
     }
 
     fn literal(&self, value: &str) -> String {
@@ -653,7 +653,7 @@ impl Writer<'_> {
         format!(
             "source-link(destination: {}, source-id: {}, code: {code}){}",
             string_literal(url),
-            string_literal(article.source_ids.first().map(String::as_str).unwrap_or("")),
+            string_literal(article.source_ids.first().map_or("", String::as_str)),
             self.verbatim(url),
         )
     }
@@ -824,8 +824,7 @@ impl Writer<'_> {
                 string_literal(destination),
                 title
                     .as_deref()
-                    .map(string_literal)
-                    .unwrap_or_else(|| "none".to_string()),
+                    .map_or_else(|| "none".to_string(), string_literal),
                 self.flowing(children, hyphens)
             ),
             Inline::LineBreak { hard } => {
@@ -935,7 +934,7 @@ fn read_manuscript(path: &Path) -> Result<Document> {
     let text = std::fs::read_to_string(path).map_err(|error| {
         ValidationError::one(format!("Cannot read {}: {error}", path.display()))
     })?;
-    let document = parse_publication_document(&text).map_err(refusal)?;
+    let document = parse_publication_document(&text).map_err(|error| refusal(&error))?;
     scalar_label(&document.metadata)?;
     Ok(document)
 }

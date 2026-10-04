@@ -44,7 +44,7 @@ impl Builder {
 }
 
 fn num(v: f32) -> String {
-    let r = (v as f64 * 100.0).round() / 100.0;
+    let r = (f64::from(v) * 100.0).round() / 100.0;
     if (r - r.trunc()).abs() < f64::EPSILON {
         format!("{}", r.trunc() as i64)
     } else {

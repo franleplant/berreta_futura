@@ -229,7 +229,7 @@ fn a_title_of_one_line_at_the_size_floor_still_fits() {
 fn a_title_that_cannot_fit_on_one_line_is_refused() {
     assert_eq!(
         refusal("honored_plate", |text| {
-            text.headline = format!("{TITLE_STEM}s")
+            text.headline = format!("{TITLE_STEM}s");
         }),
         "Cover title cannot fit on one line: THE SPEED LIMIT AND ITS APOSTLES"
     );

@@ -120,8 +120,8 @@ fn every_check_family_discriminates_on_real_output() {
     }
 }
 
-fn mutated(f: &Fixture, text: String, id: &str) -> bool {
-    verdict(&verdicts(f, &text), id)
+fn mutated(f: &Fixture, text: &str, id: &str) -> bool {
+    verdict(&verdicts(f, text), id)
 }
 
 #[test]
@@ -135,12 +135,16 @@ fn each_defect_trips_its_check() {
             "{}: first passage sits on one line",
             f.name
         );
-        assert!(!mutated(&f, flat.replacen(first, "", 1), "passage:0"));
-        assert!(!mutated(&f, format!("{flat}\n{first}"), "passage:0"));
+        assert!(!mutated(&f, &flat.replacen(first, "", 1), "passage:0"));
+        assert!(!mutated(&f, &format!("{flat}\n{first}"), "passage:0"));
         let (a, b) = (&f.spec.order[0][0], &f.spec.order[0][1]);
-        assert!(!mutated(&f, format!("{b}\n{a}"), "order:0.0"), "{}", f.name);
         assert!(
-            !mutated(&f, flat.replacen(a.as_str(), "", 1), "order:0.0"),
+            !mutated(&f, &format!("{b}\n{a}"), "order:0.0"),
+            "{}",
+            f.name
+        );
+        assert!(
+            !mutated(&f, &flat.replacen(a.as_str(), "", 1), "order:0.0"),
             "{}",
             f.name
         );
@@ -158,33 +162,33 @@ fn each_defect_trips_its_check() {
             .map(|(i, h)| (format!("real-hyphen:{i}"), h));
         for (id, h) in soft.chain(real).filter(|(_, h)| h.contains("-|")) {
             let welded = t.replace(&h.replace('|', ""), &h.replace("-|", ""));
-            assert!(!mutated(&f, welded, &id), "{} {h}", f.name);
+            assert!(!mutated(&f, &welded, &id), "{} {h}", f.name);
             let spaced = t.replace(&h.replace('|', ""), &h.replace("-|", " -"));
-            assert!(!mutated(&f, spaced, &id), "{} {h}", f.name);
+            assert!(!mutated(&f, &spaced, &id), "{} {h}", f.name);
         }
         for (i, a) in f.spec.absent.iter().enumerate() {
-            assert!(!mutated(&f, format!("{t}{a}"), &format!("absent:{i}")));
+            assert!(!mutated(&f, &format!("{t}{a}"), &format!("absent:{i}")));
         }
         assert!(!mutated(
             &f,
-            t.replacen("fi", "\u{FB01}", 1),
+            &t.replacen("fi", "\u{FB01}", 1),
             "chars:ligature"
         ));
-        assert!(!mutated(&f, t.replacen("f", "\u{0}", 1), "chars:control"));
-        assert!(!mutated(&f, format!("{t}\u{AD}"), "chars:soft-hyphen"));
-        assert!(!mutated(&f, format!("{t}\u{FFFD}"), "chars:replacement"));
+        assert!(!mutated(&f, &t.replacen('f', "\u{0}", 1), "chars:control"));
+        assert!(!mutated(&f, &format!("{t}\u{AD}"), "chars:soft-hyphen"));
+        assert!(!mutated(&f, &format!("{t}\u{FFFD}"), "chars:replacement"));
         for (i, block) in f.code.iter().enumerate() {
             let line = block.iter().rfind(|l| l.starts_with(' ')).unwrap();
             let shifted = t.replacen(&format!("\n{line}\n"), &format!("\n {line}\n"), 1);
-            assert!(!mutated(&f, shifted.clone(), &format!("code-exact:{i}")));
+            assert!(!mutated(&f, &shifted.clone(), &format!("code-exact:{i}")));
             assert!(
-                mutated(&f, shifted, &format!("code:{i}")),
+                mutated(&f, &shifted, &format!("code:{i}")),
                 "{} code {i}",
                 f.name
             );
             let cut = t.replacen(&format!("\n{line}\n"), "\n", 1);
             assert!(
-                !mutated(&f, cut, &format!("code:{i}")),
+                !mutated(&f, &cut, &format!("code:{i}")),
                 "{} code {i}",
                 f.name
             );

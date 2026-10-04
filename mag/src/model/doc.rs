@@ -198,7 +198,7 @@ fn parse_blocks(events: &[Event], index: &mut usize, until: Option<Until>) -> Re
     let mut blocks = Vec::new();
     while *index < events.len() {
         if let (Event::End(end), Some(boundary)) = (&events[*index], until) {
-            if closes(end, boundary) {
+            if closes(*end, boundary) {
                 *index += 1;
                 return Ok(blocks);
             }
@@ -264,7 +264,7 @@ fn parse_list(events: &[Event], index: &mut usize, start: Option<u64>) -> Result
     let mut items = Vec::new();
     while *index < events.len() {
         match &events[*index] {
-            Event::End(end) if closes(end, Until::List) => {
+            Event::End(end) if closes(*end, Until::List) => {
                 *index += 1;
                 return Ok(Block::List {
                     ordered: start.is_some(),
@@ -310,7 +310,7 @@ fn parse_code_block(events: &[Event], index: &mut usize, kind: &CodeBlockKind) -
     let mut code = String::new();
     while *index < events.len() {
         match &events[*index] {
-            Event::End(end) if closes(end, Until::CodeBlock) => {
+            Event::End(end) if closes(*end, Until::CodeBlock) => {
                 *index += 1;
                 return Ok(Block::FencedCode { code, info });
             }
@@ -328,7 +328,7 @@ fn parse_inlines(events: &[Event], index: &mut usize, until: Until) -> Result<Ve
     let mut inlines = Vec::new();
     while *index < events.len() {
         if let Event::End(end) = &events[*index] {
-            if closes(end, until) {
+            if closes(*end, until) {
                 *index += 1;
                 return Ok(inlines);
             }
@@ -365,7 +365,7 @@ fn parse_inline(events: &[Event], index: &mut usize) -> Result<Inline> {
     }
 }
 
-fn closes(end: &TagEnd, until: Until) -> bool {
+fn closes(end: TagEnd, until: Until) -> bool {
     matches!(
         (end, until),
         (TagEnd::Heading(_), Until::Heading)
@@ -402,7 +402,7 @@ fn flatten(blocks: &[Block], into: &mut Vec<(String, String)>, container: Option
     for block in blocks {
         match block {
             Block::Heading { level, children } => {
-                into.push((format!("h{level}"), inline_visible(children)))
+                into.push((format!("h{level}"), inline_visible(children)));
             }
             Block::Paragraph(children) => into.push((
                 container.unwrap_or("p").to_string(),

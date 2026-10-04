@@ -268,7 +268,7 @@ fn run_text(cmd: Cmd) -> Result<i32> {
             let writer = caller::ModelSpec::parse(&writer_model)?;
             let only_set: Option<HashSet<String>> =
                 only.map(|s| s.split(',').map(|x| x.trim().to_string()).collect());
-            produce::run_edition(&plan, resume, only_set, &writer)
+            produce::run_edition(&plan, resume, only_set.as_ref(), &writer)
         }
         Cmd::Translate { run_dir, model } => {
             let spec = caller::ModelSpec::parse(&model)?;

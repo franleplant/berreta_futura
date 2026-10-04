@@ -111,7 +111,7 @@ fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
     let before_len = before
         .get("articles")
         .and_then(|v| v.as_sequence())
-        .map(|s| s.len())
+        .map(std::vec::Vec::len)
         .ok_or_else(|| anyhow!("existing plan.yaml has no articles list"))?;
 
     let rows_text = serde_yaml::to_string(&serde_yaml::Value::Sequence(rows.to_vec()))?;
@@ -126,7 +126,7 @@ fn append_rows(plan_text: &str, rows: &[serde_yaml::Value]) -> Result<String> {
             .ok()?
             .get("articles")?
             .as_sequence()
-            .map(|s| s.len())
+            .map(std::vec::Vec::len)
     };
     if check(&appended) != Some(before_len + rows.len()) {
         bail!(
@@ -200,8 +200,7 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
         .position(|l| {
             l.starts_with("- ") || (!l.is_empty() && !l.starts_with(' ') && !l.starts_with('#'))
         })
-        .map(|i| row_start + 1 + i)
-        .unwrap_or(lines.len());
+        .map_or(lines.len(), |i| row_start + 1 + i);
     let sids_line = lines[row_start..row_end]
         .iter()
         .position(|l| l.trim_end() == "  source_ids:")
@@ -213,7 +212,7 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     while insert_at < row_end && lines[insert_at].starts_with("  - ") {
         insert_at += 1;
     }
-    let mut out: Vec<String> = lines.iter().map(|l| l.to_string()).collect();
+    let mut out: Vec<String> = lines.iter().map(std::string::ToString::to_string).collect();
     out.insert(insert_at, format!("  - {sid}"));
     let mut joined = out.join("\n");
     joined.push('\n');
@@ -223,16 +222,14 @@ fn join_article(plan_text: &str, article: &str, sid: &str) -> Result<String> {
     let landed = doc
         .get("articles")
         .and_then(|v| v.as_sequence())
-        .map(|arts| {
+        .is_some_and(|arts| {
             arts.iter().any(|a| {
                 a.get("id").and_then(|v| v.as_str()) == Some(article)
                     && a.get("source_ids")
                         .and_then(|v| v.as_sequence())
-                        .map(|s| s.iter().any(|x| x.as_str() == Some(sid)))
-                        .unwrap_or(false)
+                        .is_some_and(|s| s.iter().any(|x| x.as_str() == Some(sid)))
             })
-        })
-        .unwrap_or(false);
+        });
     if !landed {
         bail!("could not add {sid} to article '{article}' in plan.yaml; add it by hand");
     }

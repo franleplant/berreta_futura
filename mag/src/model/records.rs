@@ -73,7 +73,7 @@ fn host_and_port(netloc: &str) -> Result<(String, Option<u32>)> {
                 Some(close) => (&bracketed[..close], &bracketed[close + 1..]),
                 None => (bracketed, ""),
             };
-            let port = after.find(':').map(|mark| &after[mark + 1..]).unwrap_or("");
+            let port = after.find(':').map_or("", |mark| &after[mark + 1..]);
             (inside, port)
         }
         None => match hostinfo.find(':') {
@@ -110,7 +110,7 @@ fn quote_plus(value: &str) -> String {
     for byte in value.as_bytes() {
         match byte {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'_' | b'.' | b'-' | b'~' => {
-                out.push(*byte as char)
+                out.push(*byte as char);
             }
             b' ' => out.push('+'),
             _ => out.push_str(&format!("%{byte:02X}")),

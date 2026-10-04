@@ -35,7 +35,7 @@ fn discover_jobs(run_dir: &Path) -> Result<Vec<PieceJob>> {
     if articles_dir.is_dir() {
         let mut ids: Vec<String> = fs::read_dir(&articles_dir)
             .with_context(|| format!("reading {}", articles_dir.display()))?
-            .filter_map(|e| e.ok())
+            .filter_map(std::result::Result::ok)
             .filter(|e| e.path().is_dir())
             .filter_map(|e| e.file_name().into_string().ok())
             .collect();

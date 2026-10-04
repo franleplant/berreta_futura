@@ -102,7 +102,7 @@ fn measured(
                 bbox.max.x,
             )
         }
-        _ => point,
+        FrameItem::Image(..) => point,
     }
 }
 
@@ -255,7 +255,7 @@ impl Pango {
 }
 
 fn spacing(ls: i64) -> (i64, i64) {
-    let left = if ls & 1023 == 0 {
+    let left = if ls.trailing_zeros() >= 10 {
         (ls / 2 + 512) & !1023
     } else {
         ls / 2
@@ -404,7 +404,7 @@ mod tests {
             );
             let set: String = found.iter().map(|(_, text)| text.text.as_str()).collect();
             assert!(
-                set.replace(" ", "").starts_with("\u{25a1}\u{25c7}\u{21dd}"),
+                set.replace(' ', "").starts_with("\u{25a1}\u{25c7}\u{21dd}"),
                 "{family}"
             );
             assert!(found

@@ -51,7 +51,7 @@ impl Hyphenation {
         })
     }
 
-    pub fn native(&self, locale: &str) -> bool {
+    pub fn native(self, locale: &str) -> bool {
         self.english && language(locale) == "en"
     }
 }

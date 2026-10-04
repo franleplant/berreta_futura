@@ -378,8 +378,9 @@ fn figure_geometry(
         placed.push(row);
     }
     for (page, placed) in &by_page {
-        let page_glyphs = glyphs
-            .get(*page as usize - 1)
+        let page_glyphs = usize::try_from(*page - 1)
+            .ok()
+            .and_then(|index| glyphs.get(index))
             .map_or(&[][..], Vec::as_slice);
         if let Some((a, b)) = overprint(page_glyphs) {
             collisions.push(json!({

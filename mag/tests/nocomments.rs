@@ -214,7 +214,7 @@ fn python_offenses(src: &str) -> Vec<(usize, &'static str)> {
             first = false;
         }
     }
-    docs.sort();
+    docs.sort_unstable();
     out.extend(docs.into_iter().map(|(_, line)| (line, "docstring")));
     out
 }

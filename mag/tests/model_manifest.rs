@@ -177,7 +177,7 @@ fn case_records(case: &Value) -> Records {
 
 fn flag(case: &Value, key: &str) -> bool {
     case.get(key)
-        .and_then(|value| value.as_bool())
+        .and_then(serde_yaml::Value::as_bool)
         .unwrap_or(false)
 }
 

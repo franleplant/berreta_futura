@@ -193,12 +193,12 @@ pub fn measure(document: &PagedDocument) -> Result<Measured> {
                 at.point.y.to_pt(),
             )?),
             (Some("mag-tail"), _) => {
-                tails.push(tail(&meta.value).context("a tail mark is malformed")?)
+                tails.push(tail(&meta.value).context("a tail mark is malformed")?);
             }
             (Some("mag-flow"), Some(piece))
                 if text(&meta.value, "kind").as_deref() == Some("figure") =>
             {
-                piece.figures.push(page)
+                piece.figures.push(page);
             }
             _ => {}
         }
@@ -573,7 +573,7 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
             json!({"operation": request.operation, "layouts": [row("not_run")], "files": [file], "warnings": warnings}),
         );
     }
-    let (files, critic) = super::release::publish(super::release::Publish {
+    let (files, critic) = super::release::publish(&super::release::Publish {
         request: request.raw,
         edition,
         layout,
@@ -857,7 +857,7 @@ mod tests {
             "the sweep bounds must straddle the fit"
         );
         while spilling - fitting > 1 {
-            let middle = (fitting + spilling) / 2;
+            let middle = usize::midpoint(fitting, spilling);
             if fits(middle) {
                 fitting = middle;
             } else {
@@ -903,7 +903,7 @@ mod tests {
         let line = sweep.len();
         for &(words, kept) in &sweep {
             let fitted = match kept {
-                None => opener_fits(titled_run(&title, words)),
+                None => opener_fits(&titled_run(&title, words)),
                 Some(kept) => kept < keep && words - kept > line && split(&title, kept),
             };
             assert!(
@@ -924,11 +924,11 @@ mod tests {
             "roster: false)[standfirst",
             "roster: false, split: true)[standfirst",
         );
-        opener_fits(tree)
+        opener_fits(&tree)
     }
 
-    fn opener_fits(tree: Tree) -> bool {
-        let measured = measure(&compiled(&tree)).expect("the run measures");
+    fn opener_fits(tree: &Tree) -> bool {
+        let measured = measure(&compiled(tree)).expect("the run measures");
         measured.opener_fits()["a"].as_bool().expect("measured")
     }
 
@@ -1125,7 +1125,7 @@ mod tests {
         )
     }
 
-    fn piece_run(body: String) -> Tree {
+    fn piece_run(body: &str) -> Tree {
         Tree {
             files: vec![File {
                 path: "main.typ".to_string(),
@@ -1139,7 +1139,7 @@ mod tests {
 
     fn tail_after(gap: usize) -> Tail {
         let tail = media("corpus/editions/900/art/tail.png");
-        let run = piece_run(format!(
+        let run = piece_run(&format!(
             "#v({gap}pt)\n#end-mark[End / 01]\n\
              #tail-art(article: \"a\", path: \"{tail}\", pixels: (1500, 500), fit: \"cover\")\n"
         ));
@@ -1160,7 +1160,7 @@ mod tests {
     }
 
     fn anchor_gap(lead: &str) -> f64 {
-        let run = piece_run(format!(
+        let run = piece_run(&format!(
             "{lead}#doc-heading(level: 2)[Anchor]\n\
              #figure-block(id: \"f\", source-id: \"s\", anchor: \"Anchor\", \
              layout: \"evidence_band\", word: \"Figure\", alt: \"a\", \
@@ -1272,7 +1272,7 @@ mod tests {
 
     type Laid = Vec<(f64, f64, FrameItem)>;
 
-    fn laid(body: String) -> Laid {
+    fn laid(body: &str) -> Laid {
         let document = compiled(&piece_run(body));
         let mut out = vec![];
         for (index, page) in document.pages().iter().enumerate() {
@@ -1303,7 +1303,7 @@ mod tests {
             .unwrap_or_else(|| panic!("no text item {word:?}"))
     }
 
-    fn gap(body: String, above: &str, below: &str) -> f64 {
+    fn gap(body: &str, above: &str, below: &str) -> f64 {
         let items = laid(body);
         word(&items, below).1 - word(&items, above).1
     }
@@ -1327,33 +1327,33 @@ mod tests {
     fn body_blocks_collapse_their_margins_as_the_oracle_css_does() {
         let line = 13.0;
         near(
-            gap(para("Alpha.") + &bullets("Beta."), "Alpha.", "Beta."),
+            gap(&(para("Alpha.") + &bullets("Beta.")), "Alpha.", "Beta."),
             line + 5.4,
         );
         near(
-            gap(bullets("Beta.") + &para("Gamma."), "Beta.", "Gamma."),
+            gap(&(bullets("Beta.") + &para("Gamma.")), "Beta.", "Gamma."),
             line + 6.0,
         );
         let heading = "#doc-heading(level: 2)[Head]\n".to_string();
         near(
-            gap(heading.clone() + &bullets("Delta."), "Head", "Delta."),
-            gap(heading + &para("Delta."), "Head", "Delta."),
+            gap(&(heading.clone() + &bullets("Delta.")), "Head", "Delta."),
+            gap(&(heading + &para("Delta.")), "Head", "Delta."),
         );
         let mark = "#end-mark[End / 01]\n";
         let to_mark = line - 10.0046 - 20.0 + 2.47375 + 28.53085;
         near(
-            gap(para("Alpha.") + mark, "Alpha.", "END / 01"),
+            gap(&(para("Alpha.") + mark), "Alpha.", "END / 01"),
             to_mark + 5.4,
         );
         near(
-            gap(bullets("Beta.") + mark, "Beta.", "END / 01"),
+            gap(&(bullets("Beta.") + mark), "Beta.", "END / 01"),
             to_mark + 6.0,
         );
     }
 
     #[test]
     fn the_running_furniture_paints_after_the_body_as_the_oracle_margin_boxes_do() {
-        let items = laid(para(&vec!["words"; 900].join(" ")));
+        let items = laid(&para(&vec!["words"; 900].join(" ")));
         let page = |y: f64| (y / 1e4).floor();
         let rules: Vec<usize> = (0..items.len())
             .filter(|&i| match &items[i].2 {
@@ -1381,13 +1381,15 @@ mod tests {
                 "body text precedes the running rule"
             );
             assert!(!after.is_empty(), "the folio follows the running rule");
-            after.iter().for_each(|y| near(*y, 595.2756 - 19.5));
+            for y in &after {
+                near(*y, 595.2756 - 19.5);
+            }
         }
     }
 
     #[test]
     fn inline_code_carries_the_oracle_padding_chip_and_line_box() {
-        let items = laid(para("Alpha #inline-code[beta] gamma") + &para("Omega."));
+        let items = laid(&(para("Alpha #inline-code[beta] gamma") + &para("Omega.")));
         let (x, y, width) = word(&items, "beta");
         let pads: Vec<f64> = items
             .iter()
@@ -1399,7 +1401,9 @@ mod tests {
             })
             .collect();
         assert_eq!(pads.len(), 2);
-        pads.iter().for_each(|pad| near(*pad, 3.0));
+        for pad in &pads {
+            near(*pad, 3.0);
+        }
         let chip = items
             .iter()
             .find_map(|(cx, cy, item)| match item {
@@ -1447,7 +1451,7 @@ mod tests {
 
     #[test]
     fn the_list_disc_takes_the_oracle_bezier_constant() {
-        let items = laid(bullets("Beta."));
+        let items = laid(&bullets("Beta."));
         let controls: Vec<f64> = items
             .iter()
             .filter_map(|(_, _, item)| match item {

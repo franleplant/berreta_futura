@@ -129,8 +129,8 @@ fn walk(
             FrameItem::Group(group) => {
                 let t = group.transform;
                 let plain = Transform {
-                    tx: Default::default(),
-                    ty: Default::default(),
+                    tx: typst::layout::Abs::default(),
+                    ty: typst::layout::Abs::default(),
                     ..t
                 }
                 .is_identity();

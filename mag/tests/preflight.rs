@@ -117,7 +117,7 @@ struct Bundle {
     cover: PathBuf,
 }
 
-fn bundle(tag: &str, reader_pages: Vec<(f64, f64)>) -> Bundle {
+fn bundle(tag: &str, reader_pages: &[(f64, f64)]) -> Bundle {
     let dir = scratch().join(tag);
     std::fs::create_dir_all(&dir).expect("bundle directory");
     let page_count = reader_pages.len();
@@ -128,7 +128,7 @@ fn bundle(tag: &str, reader_pages: Vec<(f64, f64)>) -> Bundle {
         interior: dir.join("interior.pdf"),
         cover: dir.join("cover.pdf"),
     };
-    write_pdf(&bundle.reader, &reader_pages);
+    write_pdf(&bundle.reader, reader_pages);
     write_pdf(&bundle.booklet, &a4_pages(sheets * 2));
     write_pdf(&bundle.interior, &a4_pages(sheets.saturating_sub(1) * 2));
     write_pdf(&bundle.cover, &a4_pages(1));
@@ -174,7 +174,7 @@ fn blockers(report: &Value) -> Vec<String> {
 
 #[test]
 fn reader_shape_branches_edition_010_cannot_reach() {
-    let square = bundle("square", vec![(400.0, 400.0); 6]);
+    let square = bundle("square", &[(400.0, 400.0); 6]);
     let report = inspect(&square, &[], "en");
     assert_eq!(report["reader"]["page_count"], json!(6));
     assert_eq!(
@@ -183,7 +183,7 @@ fn reader_shape_branches_edition_010_cannot_reach() {
     );
     assert_eq!(report["reader"]["all_pages_a5"], json!(false));
 
-    let tiny = bundle("tiny", a5_pages(2));
+    let tiny = bundle("tiny", &a5_pages(2));
     let report = inspect(&tiny, &[], "en");
     assert_eq!(
         report["home_booklet_interior"]["reader_pages"],
@@ -200,7 +200,7 @@ fn reader_shape_branches_edition_010_cannot_reach() {
 
 #[test]
 fn language_selection_covers_both_tables_and_the_fallback() {
-    let deck = bundle("language", a5_pages(8));
+    let deck = bundle("language", &a5_pages(8));
     let english = blockers(&inspect(&deck, &[], "en"));
     let spanish = blockers(&inspect(&deck, &[], "es"));
     let regional = blockers(&inspect(&deck, &[], "es-AR"));
@@ -217,7 +217,7 @@ fn language_selection_covers_both_tables_and_the_fallback() {
 
 #[test]
 fn cover_art_absence_and_unreadable_paths_yield_no_measurements() {
-    let deck = bundle("cover", a5_pages(8));
+    let deck = bundle("cover", &a5_pages(8));
     let report = inspect(&deck, &[], "en");
     assert_eq!(report["cover_art"]["path"], Value::Null);
     assert_eq!(report["cover_art"]["pixel_dimensions"], Value::Null);
@@ -259,7 +259,7 @@ fn cover_art_absence_and_unreadable_paths_yield_no_measurements() {
 
 #[test]
 fn cover_resolution_target_decides_the_studio_blocker() {
-    let deck = bundle("resolution", a5_pages(8));
+    let deck = bundle("resolution", &a5_pages(8));
     let low = scratch().join("low.png");
     write_png(&low, 100, 150, |_, _| [255, 255, 255]);
     let high = scratch().join("high.png");
@@ -303,7 +303,7 @@ fn cover_resolution_target_decides_the_studio_blocker() {
 
 #[test]
 fn placement_points_default_to_a5_and_honour_an_override() {
-    let deck = bundle("placement", a5_pages(8));
+    let deck = bundle("placement", &a5_pages(8));
     let art = scratch().join("art.png");
     write_png(&art, 1440, 2160, |_, _| [255, 255, 255]);
 
@@ -352,7 +352,7 @@ fn placement_points_default_to_a5_and_honour_an_override() {
 
 #[test]
 fn every_box_invalidity_condition_is_detected() {
-    let deck = bundle("boxes", a5_pages(8));
+    let deck = bundle("boxes", &a5_pages(8));
     let art = scratch().join("box.png");
     write_png(&art, 40, 40, |_, _| [255, 255, 255]);
     let cases: Vec<(&str, i64, Vec<f64>)> = vec![
@@ -385,7 +385,7 @@ fn every_box_invalidity_condition_is_detected() {
 
 #[test]
 fn overlapping_figures_on_one_page_collide_and_neighbours_do_not() {
-    let deck = bundle("collision", a5_pages(8));
+    let deck = bundle("collision", &a5_pages(8));
     let art = scratch().join("collide.png");
     write_png(&art, 40, 40, |_, _| [255, 255, 255]);
 
@@ -418,7 +418,7 @@ fn overlapping_figures_on_one_page_collide_and_neighbours_do_not() {
 
 #[test]
 fn low_resolution_figures_raise_their_own_blocker() {
-    let deck = bundle("lowres", a5_pages(8));
+    let deck = bundle("lowres", &a5_pages(8));
     let art = scratch().join("lowres.png");
     write_png(&art, 40, 40, |_, _| [255, 255, 255]);
     let mut placement = figure("faint", 3, &art, vec![10.0, 10.0, 100.0, 100.0]);
@@ -435,7 +435,7 @@ fn low_resolution_figures_raise_their_own_blocker() {
 
 #[test]
 fn effective_ppi_and_dimensions_are_derived_when_absent() {
-    let deck = bundle("derive", a5_pages(8));
+    let deck = bundle("derive", &a5_pages(8));
     let art = scratch().join("derive.png");
     write_png(&art, 1200, 900, |_, _| [255, 255, 255]);
     let mut placement = figure("derived", 3, &art, vec![10.0, 10.0, 144.0, 108.0]);
@@ -456,7 +456,7 @@ fn effective_ppi_and_dimensions_are_derived_when_absent() {
 
 #[test]
 fn a_figure_that_stays_faint_after_treatment_raises_the_contrast_blocker() {
-    let deck = bundle("contrast", a5_pages(8));
+    let deck = bundle("contrast", &a5_pages(8));
     let art = scratch().join("faint.png");
     write_png(&art, 200, 200, |_, y| {
         if y < 20 {

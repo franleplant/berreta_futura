@@ -145,11 +145,11 @@ fn difference_and_rgb_histogram_match_pil() {
             row["histogram_sha256"].as_str().expect("histogram sha"),
             "difference histogram"
         );
-        let channel_values = (first.width as u64) * (first.height as u64) * 3;
+        let channel_values = u64::from(first.width) * u64::from(first.height) * 3;
         let total: u64 = histogram
             .iter()
             .enumerate()
-            .map(|(index, &count)| (index % 256) as u64 * count as u64)
+            .map(|(index, &count)| (index % 256) as u64 * u64::from(count))
             .sum();
         assert_eq!(
             total,

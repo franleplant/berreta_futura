@@ -102,8 +102,8 @@ pub fn paginate(
     Ok((tree, plated))
 }
 
-fn joined(messages: Vec<String>) -> String {
-    messages.join("\n  ")
+fn joined(messages: impl Iterator<Item = String>) -> String {
+    messages.collect::<Vec<_>>().join("\n  ")
 }
 
 #[cfg(test)]
@@ -127,23 +127,18 @@ pub fn document(world: &Sources) -> Result<PagedDocument> {
         Ok(document) => Ok(document),
         Err(errors) => bail!(
             "the Typst reader template did not compile:\n  {}",
-            joined(
-                errors
-                    .iter()
-                    .map(|e| format!(
-                        "{}{}",
-                        e.message,
-                        if e.hints.is_empty() {
-                            String::new()
-                        } else {
-                            format!(
-                                " (hint: {})",
-                                joined(e.hints.iter().map(|h| h.v.to_string()).collect())
-                            )
-                        }
-                    ))
-                    .collect()
-            )
+            joined(errors.iter().map(|e| format!(
+                "{}{}",
+                e.message,
+                if e.hints.is_empty() {
+                    String::new()
+                } else {
+                    format!(
+                        " (hint: {})",
+                        joined(e.hints.iter().map(|h| h.v.to_string()))
+                    )
+                }
+            )))
         ),
     }
 }
@@ -198,7 +193,7 @@ fn weasyprint_links(frame: &mut Frame, at: &dyn Fn(Location) -> Option<PagedPosi
                     && s.y == size.y
                     && (p.x + s.x - pos.x).abs() < Abs::pt(1e-6) =>
             {
-                s.x += size.x
+                s.x += size.x;
             }
             _ => {
                 flush(frame, &mut open);
@@ -455,7 +450,7 @@ pub fn pdf(document: &PagedDocument) -> Result<Vec<u8>> {
     let bytes = typst_pdf::pdf(&document, &options).map_err(|errors| {
         anyhow::anyhow!(
             "PDF export failed:\n  {}",
-            joined(errors.iter().map(|e| e.message.to_string()).collect())
+            joined(errors.iter().map(|e| e.message.to_string()))
         )
     })?;
     weasyprint_annotations(&bytes)
@@ -560,9 +555,10 @@ mod tests {
                     .clone();
                 let mut out = [0.0; 4];
                 for (slot, value) in out.iter_mut().zip(&array) {
-                    *slot = value.as_float().map(f64::from).unwrap_or_else(|_| {
-                        value.as_i64().expect("a box coordinate is a number") as f64
-                    });
+                    *slot = value.as_float().map_or_else(
+                        |_| value.as_i64().expect("a box coordinate is a number") as f64,
+                        f64::from,
+                    );
                 }
                 out
             })
@@ -1536,7 +1532,7 @@ mod tests {
             match item {
                 FrameItem::Group(group) => paints(&group.frame, out),
                 FrameItem::Image(_, size, _) => {
-                    out.push(format!("image {:.2}x{:.2}", size.x.to_pt(), size.y.to_pt()))
+                    out.push(format!("image {:.2}x{:.2}", size.x.to_pt(), size.y.to_pt()));
                 }
                 FrameItem::Shape(shape, _) => {
                     let size = shape.bbox(false).size();
@@ -1764,7 +1760,7 @@ mod tests {
                         .and_then(|o| doc.dereference(o).ok())
                         .and_then(|(_, o)| o.as_array().ok())
                 })
-                .map(|dest| dest[3].as_float().expect("an XYZ top") as f64)
+                .map(|dest| f64::from(dest[3].as_float().expect("an XYZ top")))
                 .collect();
             assert!(internal.len() >= 3, "fixture {edition_id}: {internal:?}");
             assert!(
@@ -2060,7 +2056,7 @@ mod tests {
             match item {
                 FrameItem::Group(group) => {
                     let shift = Point::new(group.transform.tx, group.transform.ty);
-                    marks(&group.frame, origin + shift, out)
+                    marks(&group.frame, origin + shift, out);
                 }
                 FrameItem::Text(text) => out.push(Mark {
                     text: text.text.to_string(),

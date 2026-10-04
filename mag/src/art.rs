@@ -488,10 +488,7 @@ fn generate_all(
                     break;
                 };
                 let out_path = round_dir.join(file);
-                let ok = if fs::metadata(&out_path)
-                    .map(|m| m.len() > 0)
-                    .unwrap_or(false)
-                {
+                let ok = if fs::metadata(&out_path).is_ok_and(|m| m.len() > 0) {
                     println!("    {brief} v{variant}: kept (already on disk)");
                     true
                 } else {
@@ -659,13 +656,19 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
         };
         let generated = round.get("generated").and_then(|v| v.as_sequence());
         for item in generated.into_iter().flatten() {
-            let ok = item.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+            let ok = item
+                .get("ok")
+                .and_then(serde_yaml::Value::as_bool)
+                .unwrap_or(false);
             let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
             if !ok || file.is_empty() || !round_dir.join(file).exists() {
                 continue;
             }
             let brief_id = item.get("brief").and_then(|v| v.as_str()).unwrap_or("");
-            let variant = item.get("variant").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+            let variant = item
+                .get("variant")
+                .and_then(serde_yaml::Value::as_u64)
+                .unwrap_or(0) as u32;
             let (purpose, article_id, prompt) = match by_id.get(brief_id) {
                 Some(b) => (b.purpose.clone(), b.article_id.clone(), b.prompt.clone()),
                 None => ("unknown".to_string(), None, String::new()),
@@ -723,7 +726,7 @@ fn showcase_frame(edition_dir: &Path, edition_label: &str) -> Result<(CoverFrame
     {
         cover_frame.headline = h.to_string();
     }
-    if let Some(n) = doc.get("issue_number").and_then(|v| v.as_u64()) {
+    if let Some(n) = doc.get("issue_number").and_then(serde_yaml::Value::as_u64) {
         cover_frame.issue = format!("{n:03}");
     }
     if let Some(d) = doc.get("publication_date").and_then(|v| v.as_str()) {
@@ -981,7 +984,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     );
     html += SHOWCASE_CSS;
     let mut rounds: Vec<&str> = items.iter().map(|i| i.round.as_str()).collect();
-    rounds.sort();
+    rounds.sort_unstable();
     rounds.dedup();
     let rounds_line = rounds
         .iter()
@@ -1212,17 +1215,21 @@ fn cast_round_cells(round_dir: &Path, canon: &[(String, Vec<u8>)]) -> Result<Str
         .into_iter()
         .flatten()
     {
-        let ok = item.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+        let ok = item
+            .get("ok")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(false);
         let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
-        let variant = item.get("variant").and_then(|v| v.as_u64()).unwrap_or(0);
+        let variant = item
+            .get("variant")
+            .and_then(serde_yaml::Value::as_u64)
+            .unwrap_or(0);
         let path = round_dir.join(file);
         if !ok || file.is_empty() || !path.exists() {
             continue;
         }
-        let is_canon = !canon.is_empty()
-            && fs::read(&path)
-                .map(|b| canon.iter().any(|(_, c)| c == &b))
-                .unwrap_or(false);
+        let is_canon =
+            !canon.is_empty() && fs::read(&path).is_ok_and(|b| canon.iter().any(|(_, c)| c == &b));
         cells += &format!(
             "<figure class=\"{}\">\n",
             if is_canon { "canon" } else { "" }
@@ -1510,16 +1517,16 @@ fn cast_check_prompt(cast: &[CastMember], image_abs: &Path, license: Option<&str
 }
 
 fn extract_verdicts(reply: &str, label: &str, cast: &[CastMember]) -> Result<Vec<MemberVerdict>> {
+    #[derive(Deserialize)]
+    struct Doc {
+        verdicts: Vec<MemberVerdict>,
+    }
     let re = Regex::new(r"(?s)```ya?ml\s*\n(.*?)```").unwrap();
     let fence = re
         .captures_iter(reply)
         .last()
         .map(|c| c[1].to_string())
         .ok_or_else(|| anyhow!("{label}: reply contained no fenced yaml block"))?;
-    #[derive(Deserialize)]
-    struct Doc {
-        verdicts: Vec<MemberVerdict>,
-    }
     let doc: Doc = serde_yaml::from_str(&fence)
         .with_context(|| format!("{label}: invalid yaml, or no 'verdicts' list"))?;
     for m in cast {
@@ -1593,7 +1600,10 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
         .into_iter()
         .flatten()
     {
-        let ok = item.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+        let ok = item
+            .get("ok")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(false);
         let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
         let brief = item.get("brief").and_then(|v| v.as_str()).unwrap_or("");
         let (applicable, purpose) = applies.get(brief).copied().unwrap_or((false, ""));
@@ -1617,8 +1627,7 @@ pub fn cast_check_run(
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_label = edition_dir
         .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_else(|| edition.to_string());
+        .map_or_else(|| edition.to_string(), |n| n.to_string_lossy().to_string());
     let direction_text = match direction_override {
         Some(p) => read(p)?,
         None => {
@@ -2004,8 +2013,7 @@ pub fn run(opts: &ArtRun) -> Result<i32> {
     let edition_dir = resolve_edition_dir(edition)?;
     let edition_label = edition_dir
         .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_else(|| edition.to_string());
+        .map_or_else(|| edition.to_string(), |n| n.to_string_lossy().to_string());
 
     if showcase_only {
         let path = write_showcase(&edition_dir, &edition_label)?;
