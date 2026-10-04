@@ -1,7 +1,7 @@
 use crate::typeset::content::{File, Tree};
-use crate::typeset::estimate::Metrics;
 use crate::typeset::geometry::geometry;
 use crate::typeset::hyphen::Hyphenation;
+use crate::typeset::measure::Metrics;
 use crate::typeset::template::{document, world};
 use crate::typeset::world::PRELUDE;
 use anyhow::{bail, Result};
@@ -390,11 +390,10 @@ fn bind(tree: Tree, found: &[Edit]) -> Tree {
 }
 
 pub fn bound(mut tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDocument)> {
-    let metrics = Metrics::load().map_err(|e| anyhow::anyhow!("{e}"))?;
     for _ in 0..PASSES {
         let sources = world(&tree)?;
         let doc = document(&sources)?;
-        let runts = binds(&doc, &sources, metrics, hyphenation.english)?.into_iter();
+        let runts = binds(&doc, &sources, &Metrics, hyphenation.english)?.into_iter();
         let ladders = match hyphenation.limit_ladders {
             true => laddered(&doc, &sources),
             false => Vec::new(),

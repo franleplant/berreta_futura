@@ -1,12 +1,12 @@
 pub mod art;
 pub(crate) mod content;
 pub(crate) mod cover;
-pub(crate) mod estimate;
 pub(crate) mod flow;
 pub(crate) mod geometry;
 pub(crate) mod hyphen;
 pub(crate) mod layout;
 pub(crate) mod legible;
+pub(crate) mod measure;
 pub(crate) mod media;
 pub(crate) mod release;
 pub(crate) mod runs;

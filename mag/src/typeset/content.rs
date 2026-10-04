@@ -10,8 +10,8 @@ use crate::model::shared::{
     scalar_label, ui, Result, ValidationError,
 };
 use crate::sourcecodes::source_code_directory;
-use crate::typeset::estimate::Metrics;
 use crate::typeset::hyphen::{Hyphenation, Hyphenator};
+use crate::typeset::measure::Metrics;
 use crate::typeset::media::pixels;
 use crate::typeset::world::font_dir;
 use std::cell::Cell;
@@ -98,7 +98,7 @@ pub fn compose(
     let settable = settable_codepoints(font_dir()).map_err(|error| refusal(&error))?;
     let tree = Writer {
         edition,
-        metrics: Metrics::load()?,
+        metrics: &Metrics,
         keeps,
         standfirsts: Cell::new(0),
         illustrated: edition.format.article_opener.as_deref().map(str::trim) == Some(ILLUSTRATED),

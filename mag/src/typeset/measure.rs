@@ -1,18 +1,25 @@
+use crate::model::doc::{educate_reader_quotes, fold_reader_characters};
 use crate::model::shared::{Result, ValidationError};
+use crate::typeset::content::Tree;
 use crate::typeset::geometry::geometry;
-use crate::typeset::world::font_dir;
-use std::collections::BTreeMap;
-use std::sync::OnceLock;
+use crate::typeset::world::Sources;
+use typst_layout::PagedDocument;
+use unicode_normalization::UnicodeNormalization;
 
-const FACES: [(&str, &str); 4] = [
-    ("serif", "source-serif-4/SourceSerif4SmText-Regular.ttf"),
+const FACES: [(&str, &str, u32, &str); 5] = [
+    ("serif", "Source Serif 4 SmText", 400, ""),
+    ("serif-display", "Source Serif 4 Display", 600, ""),
+    ("sans-medium", "Inter", 500, ""),
+    ("sans-semibold", "Inter", 600, ""),
     (
-        "serif-display",
-        "source-serif-4/SourceSerif4Display-Semibold.ttf",
+        "illustrated-title",
+        "Source Serif 4 Display",
+        600,
+        ", tracking: -0.045em, features: (liga: 0, clig: 0)",
     ),
-    ("sans-medium", "inter/Inter-Medium.ttf"),
-    ("sans-semibold", "inter/Inter-SemiBold.ttf"),
 ];
+const ILLUSTRATED_FACE: &str = "illustrated-title";
+const BYLINE_RUNS: usize = 2;
 const TITLE_BOX: f64 = 64.0;
 const TITLE_MIN: f64 = 22.0;
 const TITLE_MAX: f64 = 32.5;
@@ -32,49 +39,26 @@ pub struct PlainOpener {
     pub trim: f64,
 }
 
-pub struct Metrics(BTreeMap<&'static str, BTreeMap<char, f64>>);
-
-static METRICS: OnceLock<Metrics> = OnceLock::new();
+pub struct Metrics;
 
 impl Metrics {
-    pub fn load() -> Result<&'static Metrics> {
-        if let Some(loaded) = METRICS.get() {
-            return Ok(loaded);
-        }
-        let mut faces = BTreeMap::new();
-        for (name, file) in FACES {
-            let path = font_dir().join(file);
-            let data = std::fs::read(&path)
-                .map_err(|e| ValidationError::one(format!("{}: {e}", path.display())))?;
-            let face = ttf_parser::Face::parse(&data, 0)
-                .map_err(|e| ValidationError::one(format!("{}: {e}", path.display())))?;
-            let units = f64::from(face.units_per_em());
-            let mut widths = BTreeMap::new();
-            for subtable in face.tables().cmap.iter().flat_map(|c| c.subtables) {
-                subtable.codepoints(|codepoint| {
-                    let advance = char::from_u32(codepoint)
-                        .and_then(|c| face.glyph_index(c).map(|g| (c, g)))
-                        .and_then(|(c, g)| face.glyph_hor_advance(g).map(|a| (c, a)));
-                    if let Some((c, a)) = advance {
-                        widths.insert(c, f64::from(a) / units);
-                    }
-                });
-            }
-            faces.insert(name, widths);
-        }
-        Ok(METRICS.get_or_init(|| Metrics(faces)))
-    }
-
     pub fn width(&self, face: &str, text: &str, size: f64) -> Result<f64> {
-        let widths = self
-            .0
-            .get(face)
+        let (_, family, weight, extra) = FACES
+            .iter()
+            .find(|(name, ..)| *name == face)
             .ok_or_else(|| ValidationError::one(format!("unknown font face {face:?}")))?;
-        Ok(text
-            .chars()
-            .map(|c| widths.get(&c).unwrap_or(&0.0))
-            .sum::<f64>()
-            * size)
+        let literal = text.replace('\\', "\\\\").replace('"', "\\\"");
+        let root = format!(
+            "#set page(width: auto, height: auto, margin: 0pt)\n\
+             #set text(font: \"{family}\", weight: {weight}, size: {size}pt{extra})\n\
+             #box(\"{literal}\")"
+        );
+        let world = Sources::new(&Tree { files: vec![] }, "", &root)
+            .map_err(|e| ValidationError::one(e.to_string()))?;
+        let document = typst::compile::<PagedDocument>(&world)
+            .output
+            .map_err(|e| ValidationError::one(format!("measuring {text:?}: {e:?}")))?;
+        Ok(document.pages()[0].frame.width().to_pt())
     }
 
     pub fn wrap(&self, text: &str, face: &str, size: f64, width: f64) -> Result<Vec<String>> {
@@ -112,7 +96,7 @@ impl Metrics {
 
     fn fitted(
         &self,
-        title: &str,
+        (title, face): (&str, &str),
         width: f64,
         box_height: f64,
         max: f64,
@@ -121,7 +105,7 @@ impl Metrics {
     ) -> Result<Option<(f64, usize)>> {
         let mut size = max;
         while size >= min {
-            let count = self.wrap(title, "serif-display", size, width)?.len();
+            let count = self.wrap(title, face, size, width)?.len();
             if count <= lines && size + (count as f64 - 1.0) * size * TITLE_LEADING <= box_height {
                 return Ok(Some((size, count)));
             }
@@ -132,7 +116,7 @@ impl Metrics {
 
     fn compact_title(&self, title: &str) -> Result<Option<(f64, usize)>> {
         self.fitted(
-            title,
+            (title, ILLUSTRATED_FACE),
             geometry().opener_rail,
             TITLE_BOX,
             COMPACT_TITLE_MAX,
@@ -143,7 +127,7 @@ impl Metrics {
 
     pub fn illustrated_titles(&self, title: &str) -> Result<[(f64, usize); 2]> {
         let standard = self.fitted(
-            title,
+            (title, ILLUSTRATED_FACE),
             geometry().opener_rail,
             TITLE_BOX,
             TITLE_MAX,
@@ -160,7 +144,14 @@ impl Metrics {
 
     pub fn editorial_opener(&self, title: &str) -> Result<(f64, f64)> {
         let (size, lines) = self
-            .fitted(title, geometry().live, 135.0, 35.0, 25.0, 4)?
+            .fitted(
+                (title, "serif-display"),
+                geometry().live,
+                135.0,
+                35.0,
+                25.0,
+                4,
+            )?
             .ok_or_else(|| {
                 ValidationError::one(format!(
                     "Title cannot fit the Quiet Standard display box: {title}"
@@ -180,7 +171,14 @@ impl Metrics {
     ) -> Result<PlainOpener> {
         let maximum = if figure { 30.0 } else { 35.0 };
         let (size, lines) = self
-            .fitted(title, geometry().measure, 165.0, maximum, 24.0, 4)?
+            .fitted(
+                (title, "serif-display"),
+                geometry().measure,
+                165.0,
+                maximum,
+                24.0,
+                4,
+            )?
             .ok_or_else(|| {
                 ValidationError::one(format!(
                     "Title cannot fit the Quiet Standard display box: {title}"
@@ -221,7 +219,10 @@ impl Metrics {
     }
 
     fn byline_tracking(&self, byline: &str, column: f64) -> Result<f64> {
-        let text = byline.trim().to_uppercase();
+        let text = fold_reader_characters(&educate_reader_quotes(byline.trim()))
+            .to_uppercase()
+            .nfc()
+            .collect::<String>();
         let width = self.width("sans-semibold", &text, 7.4)?;
         if width > 0.0 && column / width < 0.78 {
             return Err(ValidationError::one(format!(
@@ -231,7 +232,9 @@ impl Metrics {
             )));
         }
         Ok(match width > column {
-            true => (column - width) / (text.chars().count().max(2) - 1) as f64,
+            true => {
+                (column - width) / (text.chars().count().max(BYLINE_RUNS + 1) - BYLINE_RUNS) as f64
+            }
             false => 0.0,
         })
     }
@@ -252,16 +255,16 @@ mod tests {
     use super::*;
 
     fn metrics() -> &'static Metrics {
-        Metrics::load().expect("the faces load")
+        &Metrics
     }
 
     #[test]
-    fn an_illustrated_title_is_fitted_on_advance_widths_as_the_adapter_fits_it() {
+    fn an_illustrated_title_is_fitted_on_measured_widths() {
         let metrics = metrics();
         let title = "Automated Researchers Can Reliably Mitigate Alignment Failures";
         assert_eq!(
             metrics.illustrated_titles(title).expect("it fits"),
-            [(22.5, 2), (22.5, 2)]
+            [(25.5, 2), (25.5, 2)]
         );
         let [(size, lines), _] = metrics
             .illustrated_titles("The Pen")
@@ -285,12 +288,30 @@ mod tests {
         assert!((field - 153.2756).abs() < 1e-4);
         assert_eq!(
             metrics
-                .fitted(upkeep, geometry().measure, 135.0, 35.0, 25.0, 4)
+                .fitted(
+                    (upkeep, "serif-display"),
+                    geometry().measure,
+                    135.0,
+                    35.0,
+                    25.0,
+                    4
+                )
                 .expect("a known face"),
             Some((35.0, 2))
         );
         assert!(metrics
             .editorial_opener(&["Unbreakable"; 12].join(" "))
             .is_err());
+    }
+
+    #[test]
+    fn a_leading_space_and_kerning_are_measured() {
+        let metrics = metrics();
+        let plain = metrics.width("serif", "a", 10.0).expect("measures");
+        let spaced = metrics.width("serif", " a", 10.0).expect("measures");
+        assert!(spaced > plain + 1.0);
+        let apart = metrics.width("serif", "A", 10.0).expect("measures")
+            + metrics.width("serif", "V", 10.0).expect("measures");
+        assert!(metrics.width("serif", "AV", 10.0).expect("measures") < apart);
     }
 }
