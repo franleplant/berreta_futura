@@ -1,13 +1,11 @@
 use crate::caller::{self, write_atomic, Caller, ModelSpec};
+use crate::pdf_text;
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-
-#[path = "pdf_text.rs"]
-pub mod pdf_text;
 
 const RAW_DIR: &str = ".magazine/capture";
 const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";

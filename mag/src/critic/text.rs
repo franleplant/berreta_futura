@@ -1,10 +1,7 @@
-use anyhow::Result;
-use std::collections::BTreeMap;
-use std::path::Path;
 use std::sync::OnceLock;
 
 use crate::model::shared::py_strip;
-use crate::trace::{trace_elements, Element, TextFace, GLYPH_QUANTUM};
+use crate::trace::{Element, GLYPH_QUANTUM};
 
 const SAME_LINE_TOLERANCE: i64 = 100;
 const WORD_GAP_FRACTION: f64 = 0.15;
@@ -89,7 +86,7 @@ fn separator(previous: &Show, next: &Show) -> &'static str {
     }
 }
 
-pub(crate) fn page_lines(elements: &[Element]) -> Vec<String> {
+pub fn page_lines(elements: &[Element]) -> Vec<String> {
     let mut groups: Vec<Vec<Show>> = vec![];
     for show in shows(elements) {
         match groups.last_mut() {
@@ -120,18 +117,6 @@ pub(crate) fn body_text_lines(text: &str) -> usize {
         .map(py_strip)
         .filter(|line| !line.is_empty() && line.chars().any(py_islower))
         .count()
-}
-
-pub(crate) fn trace_text(
-    pdf: &Path,
-    first: u32,
-    last: u32,
-    fonts: &BTreeMap<String, TextFace>,
-) -> Result<Vec<String>> {
-    Ok(trace_elements(pdf, first, last, fonts)?
-        .iter()
-        .map(|page| page_text(page))
-        .collect())
 }
 
 #[cfg(test)]

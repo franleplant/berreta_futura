@@ -252,20 +252,11 @@ impl GState {
     }
 }
 
+#[derive(Default)]
 pub struct Caches {
     images: HashMap<ObjectId, String>,
     fonts: HashMap<ObjectId, Rc<Font>>,
     faces: HashMap<String, Rc<HashMap<String, u32>>>,
-}
-
-impl Caches {
-    pub fn new() -> Self {
-        Caches {
-            images: HashMap::new(),
-            fonts: HashMap::new(),
-            faces: HashMap::new(),
-        }
-    }
 }
 
 struct Tracer<'a> {
@@ -1781,7 +1772,7 @@ mod tests {
         doc.get_object_mut(page)?
             .as_dict_mut()?
             .set("Parent", pages);
-        trace_page(&doc, page, &BTreeMap::new(), &mut Caches::new())
+        trace_page(&doc, page, &BTreeMap::new(), &mut Caches::default())
     }
 
     fn icc(bytes: &[u8]) -> Object {
@@ -2184,7 +2175,7 @@ mod tests {
         doc.get_object_mut(page)?
             .as_dict_mut()?
             .set("Parent", pages);
-        let elements = trace_page(&doc, page, &BTreeMap::new(), &mut Caches::new())?;
+        let elements = trace_page(&doc, page, &BTreeMap::new(), &mut Caches::default())?;
         Ok(serde_json::to_string(&elements)?)
     }
 

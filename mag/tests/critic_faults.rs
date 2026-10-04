@@ -1,56 +1,6 @@
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-pub mod shared;
-
-mod model {
-    pub use super::shared;
-}
-
-#[path = "../src/trace/exact.rs"]
-#[allow(dead_code)]
-pub mod exact;
-#[path = "../src/trace/streams.rs"]
-#[allow(dead_code, clippy::new_without_default)]
-pub mod streams;
-
-#[path = "../src/trace/elements.rs"]
-#[allow(dead_code)]
-pub mod elements;
-
-mod trace {
-    pub use super::elements::trace_elements;
-    pub use super::exact::{authored, num};
-    #[allow(unused_imports)]
-    pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};
-}
-
-#[path = "../src/impose.rs"]
-#[allow(dead_code)]
-pub mod impose;
-
-#[path = "../src/critic/metrics.rs"]
-#[allow(dead_code)]
-pub mod metrics;
-
-#[path = "../src/critic/text.rs"]
-#[allow(dead_code)]
-pub mod text;
-
-#[path = "../src/critic/inspect.rs"]
-#[allow(dead_code)]
-pub mod inspect;
-
-mod critic {
-    #[allow(unused_imports)]
-    pub use super::inspect;
-    pub use super::{metrics, text};
-}
-
+use mag::impose;
 #[allow(dead_code)]
 mod oracle;
-#[path = "../src/critic/rules.rs"]
-#[allow(dead_code)]
-mod rules;
 
 #[test]
 fn authored_expectations_follow_the_imposition_plan() {

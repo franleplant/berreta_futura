@@ -1,5 +1,5 @@
-mod engine;
-mod guess;
+pub mod engine;
+pub mod guess;
 mod json;
 
 use anyhow::{anyhow, bail, Result};

@@ -1,9 +1,7 @@
+use mag::pdf_text;
 #[path = "pdf_fixtures/checks.rs"]
 #[allow(dead_code)]
 mod checks;
-#[path = "../src/pdf_text.rs"]
-#[allow(dead_code)]
-mod pdf_text;
 
 use std::path::{Path, PathBuf};
 

@@ -1,10 +1,7 @@
+use mag::model::records;
+use mag::model::shared;
 #[allow(dead_code)]
 mod oracle;
-#[path = "../src/model/records.rs"]
-mod records;
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-mod shared;
 
 use records::{
     canonicalize_url, load_records, localize_extracts, localize_figures, resolve_extracts,

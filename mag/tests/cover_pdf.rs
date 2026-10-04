@@ -1,23 +1,8 @@
-#[path = "../src/critic/metrics.rs"]
-pub mod metrics;
+use mag::cover::pdf;
+use mag::cover::raster;
+use mag::cover::svg;
 #[allow(dead_code)]
 mod oracle;
-
-mod critic {
-    pub use super::metrics;
-}
-
-#[path = "../src/cover/art.rs"]
-mod art;
-#[path = "../src/cover/outline.rs"]
-mod outline;
-#[path = "../src/cover/pdf.rs"]
-mod pdf;
-#[path = "../src/cover/raster.rs"]
-mod raster;
-#[allow(dead_code)]
-#[path = "../src/cover/svg.rs"]
-mod svg;
 
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};

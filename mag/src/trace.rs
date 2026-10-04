@@ -1,6 +1,6 @@
-mod elements;
-mod exact;
-mod streams;
+pub mod elements;
+pub mod exact;
+pub mod streams;
 
 use std::collections::BTreeMap;
 

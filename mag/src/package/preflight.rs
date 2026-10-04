@@ -5,9 +5,9 @@ use anyhow::{Context, Result};
 use lopdf::{Document, Object, ObjectId};
 use serde_json::{json, Map, Value};
 
-use crate::capture::pdf_text::{page_glyphs, Glyph};
 use crate::critic::metrics::{prepare_print_image, round_places, PreparedPrintImage};
 use crate::impose::{section_reader_pages, A4_LANDSCAPE_POINTS, PAGE_TREE_DEPTH};
+use crate::pdf_text::{page_glyphs, Glyph};
 
 pub const A5_POINTS: (f64, f64) = (419.5276, 595.2756);
 

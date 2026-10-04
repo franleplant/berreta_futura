@@ -157,7 +157,7 @@ fn untag_nulls(value: Value) -> std::result::Result<Value, String> {
     })
 }
 
-pub(crate) fn load_structured(path: &Path) -> Result<Value> {
+pub fn load_structured(path: &Path) -> Result<Value> {
     let text = std::fs::read_to_string(path).map_err(|error| {
         ValidationError(vec![format!("Cannot read {}: {error}", path.display())])
     })?;

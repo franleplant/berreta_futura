@@ -1,81 +1,9 @@
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-pub mod shared;
-
-mod model {
-    pub use super::shared;
-}
-
-#[path = "../src/trace/exact.rs"]
-#[allow(dead_code)]
-pub mod exact;
-#[path = "../src/trace/streams.rs"]
-#[allow(dead_code, clippy::new_without_default)]
-pub mod streams;
-
-#[path = "../src/trace/elements.rs"]
-#[allow(dead_code)]
-pub mod elements;
-
-mod trace {
-    pub use super::elements::trace_elements;
-    pub use super::exact::{authored, num};
-    #[allow(unused_imports)]
-    pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};
-}
-
-#[path = "../src/impose.rs"]
-#[allow(dead_code)]
-pub mod impose;
-
-#[path = "../src/critic/metrics.rs"]
-#[allow(dead_code)]
-pub mod metrics;
-
-#[path = "../src/critic/text.rs"]
-#[allow(dead_code)]
-pub mod text;
-
-#[path = "../src/critic/inspect.rs"]
-#[allow(dead_code)]
-pub mod inspect;
-
-#[path = "../src/critic/rules.rs"]
-#[allow(dead_code)]
-pub mod rules;
-
-mod critic {
-    pub use super::{inspect, metrics, rules, text};
-}
-
-#[path = "../src/pdf_text.rs"]
-#[allow(dead_code)]
-pub mod pdf_text;
-
-mod capture {
-    pub use super::pdf_text;
-}
-
-#[path = "../src/package/preflight.rs"]
-#[allow(dead_code)]
-pub mod preflight;
-
-#[path = "../src/package/contact.rs"]
-#[allow(dead_code)]
-pub mod contact;
-
-#[path = "../src/package/release.rs"]
-#[allow(dead_code)]
-pub mod release;
-
-#[path = "../src/package/archive.rs"]
-#[allow(dead_code)]
-pub mod archive;
-
-mod package {
-    pub use super::{contact, preflight};
-}
-
+use mag::critic::metrics;
+use mag::package::archive;
+use mag::package::contact;
+use mag::package::preflight;
+use mag::package::release;
+use mag::trace::streams;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

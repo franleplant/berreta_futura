@@ -1,47 +1,5 @@
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-pub mod shared;
-
-mod model {
-    pub use super::shared;
-}
-
-#[path = "../src/trace/exact.rs"]
-#[allow(dead_code)]
-pub mod exact;
-#[path = "../src/trace/streams.rs"]
-#[allow(dead_code, clippy::new_without_default)]
-pub mod streams;
-
-mod trace {
-    pub use super::exact::{authored, num};
-}
-
-#[path = "../src/impose.rs"]
-#[allow(dead_code)]
-mod impose;
-
-#[path = "../src/critic/metrics.rs"]
-#[allow(dead_code)]
-pub mod metrics_source;
-
-mod critic {
-    pub use super::metrics_source as metrics;
-}
-
-#[path = "../src/pdf_text.rs"]
-#[allow(dead_code)]
-pub mod pdf_text;
-
-mod capture {
-    pub use super::pdf_text;
-}
-
-#[path = "../src/package/preflight.rs"]
-#[allow(dead_code)]
-mod preflight;
-
 use lopdf::dictionary;
+use mag::package::preflight;
 use preflight::{inspect_package, FigurePlacement};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};

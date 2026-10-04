@@ -15,7 +15,7 @@ pub fn trace_elements(
     let doc = Document::load_mem(&raw).with_context(|| format!("loading {}", pdf.display()))?;
     let _exact = exact::authored(&doc, &raw)?;
     let page_ids = doc.get_pages();
-    let mut caches = streams::Caches::new();
+    let mut caches = streams::Caches::default();
     let mut pages = vec![];
     for number in first..=last {
         let id = *page_ids

@@ -1,6 +1,4 @@
-#[path = "../src/highlight/guess.rs"]
-mod guess;
-
+use mag::highlight::guess;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 

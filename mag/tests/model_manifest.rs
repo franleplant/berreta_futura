@@ -1,16 +1,6 @@
-#[path = "../src/model/doc.rs"]
-#[allow(dead_code)]
-mod doc;
-#[path = "../src/model/manifest.rs"]
-#[allow(dead_code)]
-mod manifest;
-#[path = "../src/model/records.rs"]
-#[allow(dead_code)]
-mod records;
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-mod shared;
-
+use mag::model::manifest;
+use mag::model::records;
+use mag::model::shared;
 use manifest::{load_edition, load_translation, Edition, LoadOptions, Records};
 use records::SourceRecord;
 use serde_json::{json, Map, Value as Json};

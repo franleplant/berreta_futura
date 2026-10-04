@@ -1,25 +1,7 @@
-#[path = "../src/model/doc.rs"]
-#[allow(dead_code)]
-pub mod doc;
-#[path = "../src/model/manifest.rs"]
-#[allow(dead_code)]
-pub mod manifest;
+use mag::cover::text;
+use mag::model::manifest;
 #[allow(dead_code)]
 mod oracle;
-#[path = "../src/model/records.rs"]
-#[allow(dead_code)]
-pub mod records;
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-pub mod shared;
-
-mod model {
-    pub use super::{manifest, shared};
-}
-
-#[path = "../src/cover/text.rs"]
-#[allow(dead_code)]
-mod text;
 
 use manifest::{Article, Edition};
 use serde_json::Value as Json;

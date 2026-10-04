@@ -12,7 +12,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(clap::Args)]
-pub(crate) struct SiteArgs {
+pub struct SiteArgs {
     #[arg(
         long,
         default_value = "output/site",

@@ -467,7 +467,7 @@ fn parse_anchor_reply(
 }
 
 #[derive(clap::Args)]
-pub(crate) struct RenderArgs {
+pub struct RenderArgs {
     pub edition: String,
     #[arg(
         long,

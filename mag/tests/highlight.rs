@@ -1,6 +1,4 @@
-#[path = "../src/highlight/mod.rs"]
-#[allow(dead_code)]
-mod highlight;
+use mag::highlight;
 #[allow(dead_code)]
 mod oracle;
 

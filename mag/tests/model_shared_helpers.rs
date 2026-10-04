@@ -1,7 +1,4 @@
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-mod shared;
-
+use mag::model::shared;
 use serde_yaml::{Mapping, Value};
 
 fn yaml(text: &str) -> Value {

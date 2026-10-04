@@ -19,7 +19,7 @@ const FONTS: [&str; 4] = [
 ];
 
 #[derive(clap::Args)]
-pub(crate) struct EpubArgs {
+pub struct EpubArgs {
     #[arg(help = "Edition id, e.g. 012")]
     pub edition: String,
     #[arg(long, default_value = "en", help = "Language edition to package")]

@@ -1,26 +1,5 @@
-#[path = "../src/trace/exact.rs"]
-#[allow(dead_code)]
-pub mod exact;
-#[path = "../src/trace/streams.rs"]
-#[allow(dead_code, clippy::new_without_default)]
-pub mod streams;
-
-mod trace {
-    pub use super::exact::{authored, num};
-}
-
-#[path = "../src/impose.rs"]
-mod impose;
-
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-pub mod shared;
-
-mod model {
-    pub use super::shared;
-}
-
 use lopdf::{Document, Object, ObjectId};
+use mag::impose;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};

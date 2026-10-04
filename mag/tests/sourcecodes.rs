@@ -1,9 +1,6 @@
+use mag::sourcecodes;
 #[allow(dead_code)]
 mod oracle;
-#[allow(dead_code)]
-#[path = "../src/sourcecodes.rs"]
-mod sourcecodes;
-
 use qrcodegen::{Mask, QrCode, QrCodeEcc, QrSegment, Version};
 use serde_json::Value;
 use std::path::{Path, PathBuf};

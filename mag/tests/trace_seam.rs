@@ -1,14 +1,6 @@
-#[path = "../src/trace/elements.rs"]
-#[allow(dead_code)]
-mod elements;
-#[path = "../src/trace/exact.rs"]
-#[allow(dead_code)]
-mod exact;
-#[path = "../src/trace/streams.rs"]
-#[allow(dead_code)]
-mod streams;
-
 use lopdf::{dictionary, Document, Object, Stream};
+use mag::trace::elements;
+use mag::trace::streams;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 

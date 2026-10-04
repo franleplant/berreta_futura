@@ -1,32 +1,9 @@
-mod art;
-mod caller;
-mod capture;
-#[allow(dead_code)]
-mod cover;
-#[allow(dead_code)]
-mod critic;
-#[allow(dead_code)]
-mod highlight;
-#[allow(dead_code)]
-mod impose;
-#[allow(dead_code)]
-mod model;
-#[allow(dead_code)]
-mod package;
-mod picks;
-mod plan_cmd;
-mod print_cmd;
-mod produce;
-mod publish;
-mod render;
-mod site;
-mod sourcecodes;
-mod trace;
-mod translate;
-mod typeset;
-
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use mag::{
+    art, caller, capture, plan_cmd, print_cmd, produce, publish, render, site, sourcecodes,
+    translate,
+};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -360,22 +337,5 @@ fn run_visual(cmd: Cmd) -> Result<i32> {
         Cmd::Publish(args) => publish::run(&args),
         Cmd::SourceCodes { edition, check } => sourcecodes::run(&edition, check),
         _ => unreachable!(),
-    }
-}
-
-#[cfg(test)]
-mod trace_seam_is_reachable {
-    use crate::trace::{trace_elements, Element, TextFace};
-    use std::collections::BTreeMap;
-    use std::path::Path;
-
-    #[test]
-    fn the_text_path_is_callable_from_outside_the_trace_module() {
-        let map: BTreeMap<String, TextFace> = BTreeMap::new();
-        let Err(err) = trace_elements(Path::new("does-not-exist.pdf"), 1, 1, &map) else {
-            panic!("a missing pdf must fail rather than succeed");
-        };
-        assert!(format!("{err:#}").contains("does-not-exist.pdf"));
-        let _: fn(&Element) -> bool = |e| matches!(e, Element::Text { .. });
     }
 }

@@ -1,32 +1,5 @@
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-pub mod shared;
-
-mod model {
-    pub use super::shared;
-}
-
-#[path = "../src/trace/exact.rs"]
-#[allow(dead_code)]
-pub mod exact;
-#[path = "../src/trace/streams.rs"]
-#[allow(dead_code, clippy::new_without_default)]
-pub mod streams;
-
-#[path = "../src/trace/elements.rs"]
-#[allow(dead_code)]
-pub mod elements;
-
-mod trace {
-    pub use super::elements::trace_elements;
-    #[allow(unused_imports)]
-    pub use super::streams::{Color, Element, Face as TextFace, GLYPH_QUANTUM};
-}
-
-#[path = "../src/critic/text.rs"]
-#[allow(dead_code)]
-mod text;
-
+use mag::critic::text;
+use mag::trace::streams;
 fn text_show(s: &str, x_pt: f64, y_pt: f64, size_pt: f64, advance_pt: f64) -> streams::Element {
     let glyphs = s.chars().count().max(2);
     let step = advance_pt / (glyphs as f64 - 1.0);

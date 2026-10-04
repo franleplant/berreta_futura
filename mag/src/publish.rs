@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[derive(clap::Args)]
-pub(crate) struct PublishArgs {
+pub struct PublishArgs {
     #[arg(help = "Edition id, e.g. 011")]
     pub edition: String,
     #[arg(long, help = "The approved PDF, uploaded to Google Drive unchanged")]

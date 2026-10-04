@@ -1,10 +1,4 @@
-#[path = "../src/model/doc.rs"]
-#[allow(dead_code)]
-mod doc;
-#[path = "../src/model/shared.rs"]
-#[allow(dead_code)]
-mod shared;
-
+use mag::model::doc;
 use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};

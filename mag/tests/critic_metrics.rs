@@ -1,5 +1,4 @@
-#[path = "../src/critic/metrics.rs"]
-mod metrics;
+use mag::critic::metrics;
 #[allow(dead_code)]
 mod oracle;
 
