@@ -6,7 +6,8 @@ use crate::typeset::legible::{ENLARGED, ENLARGED_MIN_PPI};
 use crate::typeset::media::pixels;
 use crate::typeset::template::TEMPLATE_TYP;
 use anyhow::{bail, Context, Result};
-use serde_json::{json, Map, Value};
+use serde::Serialize;
+use std::collections::BTreeMap;
 use std::path::Path;
 use typst::foundations::Value as Typed;
 use typst::introspection::{Location, MetadataElem, StateUpdateElem, Tag};
@@ -259,23 +260,21 @@ impl Measured {
         self.pieces.iter().filter_map(|p| Some((p.article()?, p)))
     }
 
-    pub fn article_pages(&self) -> Map<String, Value> {
+    pub fn article_pages(&self) -> BTreeMap<String, usize> {
         self.articles()
-            .map(|(id, p)| (id.to_string(), json!(p.span())))
+            .map(|(id, p)| (id.to_string(), p.span()))
             .collect()
     }
 
-    pub fn opener_fits(&self) -> Map<String, Value> {
+    pub fn opener_fits(&self) -> BTreeMap<String, bool> {
         self.articles()
-            .filter_map(|(id, p)| {
-                Some((id.to_string(), json!(p.opener_fits(self.content_bottom)?)))
-            })
+            .filter_map(|(id, p)| Some((id.to_string(), p.opener_fits(self.content_bottom)?)))
             .collect()
     }
 
-    pub fn plain_opener_fits(&self) -> Map<String, Value> {
+    pub fn plain_opener_fits(&self) -> BTreeMap<String, bool> {
         self.articles()
-            .filter_map(|(id, p)| Some((id.to_string(), json!(p.opener_end? == p.head))))
+            .filter_map(|(id, p)| Some((id.to_string(), p.opener_end? == p.head)))
             .collect()
     }
 
@@ -286,24 +285,91 @@ impl Measured {
             .map(Piece::span)
     }
 
-    pub fn toc(&self) -> Map<String, Value> {
+    pub fn toc(&self) -> BTreeMap<String, usize> {
         self.pieces
             .iter()
-            .map(|p| (p.article().unwrap_or(&p.id).to_string(), json!(p.head)))
+            .map(|p| (p.article().unwrap_or(&p.id).to_string(), p.head))
             .collect()
     }
 
-    pub fn row(&self, language: &str, figures: usize, critic: &str) -> Value {
-        json!({
-            "language": language,
-            "totalPages": self.total_pages,
-            "editorialPages": self.editorial_pages().unwrap_or(0),
-            "articlePages": self.article_pages(),
-            "articleOpenerFits": self.opener_fits(),
-            "figureCount": figures,
-            "criticResult": critic,
-        })
+    pub fn row(&self, language: &str, figures: usize, critic: &str) -> LayoutRow {
+        LayoutRow {
+            article_opener_fits: self.opener_fits(),
+            article_pages: self.article_pages(),
+            critic_result: critic.to_string(),
+            editorial_pages: self.editorial_pages().unwrap_or(0),
+            figure_count: figures,
+            language: language.to_string(),
+            total_pages: self.total_pages,
+        }
     }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LayoutRow {
+    pub article_opener_fits: BTreeMap<String, bool>,
+    pub article_pages: BTreeMap<String, usize>,
+    pub critic_result: String,
+    pub editorial_pages: usize,
+    pub figure_count: usize,
+    pub language: String,
+    pub total_pages: usize,
+}
+
+#[derive(Serialize)]
+pub struct FileRow {
+    pub kind: String,
+    #[serde(rename = "mediaType", skip_serializing_if = "Option::is_none")]
+    pub media_type: Option<String>,
+    pub path: String,
+}
+
+#[derive(Serialize)]
+pub struct Outcome {
+    pub files: Vec<FileRow>,
+    pub layouts: Vec<LayoutRow>,
+    pub operation: RenderOperation,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Default, Serialize)]
+pub struct Layout {
+    pub article_content_modes: BTreeMap<String, String>,
+    pub article_opener_fits: BTreeMap<String, bool>,
+    pub article_page_caps: BTreeMap<String, usize>,
+    pub article_pages: BTreeMap<String, usize>,
+    pub article_terminal_balance: BTreeMap<String, f64>,
+    pub cover_art_size_points: Option<f64>,
+    pub design_direction: String,
+    pub editorial_pages: Option<usize>,
+    pub figures: Vec<Figure>,
+    pub maximum_article_pages: i64,
+    pub maximum_editorial_pages: i64,
+    pub tail_arts: Vec<TailArt>,
+    pub toc: BTreeMap<String, usize>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Figure {
+    pub article_id: String,
+    pub box_points: [f64; 4],
+    pub caption: String,
+    pub credit: String,
+    pub effective_ppi: f64,
+    pub id: String,
+    pub page: usize,
+    pub path: String,
+    pub pixel_dimensions: (u32, u32),
+}
+
+#[derive(Debug, Serialize)]
+pub struct TailArt {
+    pub article: String,
+    pub declared: bool,
+    pub drop_reason: Option<String>,
+    pub height_points: Option<f64>,
+    pub printed: bool,
 }
 
 pub fn edition(root: &Path, edition_id: &str, publication_name: &str) -> Result<Edition> {
@@ -362,7 +428,12 @@ fn page_cap(mode: ContentMode) -> usize {
     }
 }
 
-fn figures(edition: &Edition, measured: &Measured, tree: &Tree, root: &Path) -> Result<Vec<Value>> {
+fn figures(
+    edition: &Edition,
+    measured: &Measured,
+    tree: &Tree,
+    root: &Path,
+) -> Result<Vec<Figure>> {
     let mut pages = measured
         .pieces
         .iter()
@@ -405,17 +476,22 @@ fn figures(edition: &Edition, measured: &Measured, tree: &Tree, root: &Path) -> 
             );
         }
         let bottom = measured.page_height - placed.y - placed.height + RASTER_NUDGE_PT;
-        out.push(json!({
-            "id": id,
-            "article_id": article,
-            "page": placed.page,
-            "path": figure.path.strip_prefix(root).unwrap_or(&figure.path).to_string_lossy().replace('\\', "/"),
-            "pixel_dimensions": [width, height],
-            "box_points": ([placed.x, bottom, placed.width, placed.height].map(|v| rounded(v, 3))),
-            "effective_ppi": rounded(ppi, 1),
-            "caption": figure.caption,
-            "credit": figure.credit,
-        }));
+        out.push(Figure {
+            article_id: article.to_string(),
+            box_points: [placed.x, bottom, placed.width, placed.height].map(|v| rounded(v, 3)),
+            caption: figure.caption.clone(),
+            credit: figure.credit.clone(),
+            effective_ppi: rounded(ppi, 1),
+            id,
+            page: placed.page,
+            path: figure
+                .path
+                .strip_prefix(root)
+                .unwrap_or(&figure.path)
+                .to_string_lossy()
+                .replace('\\', "/"),
+            pixel_dimensions: (width, height),
+        });
     }
     anyhow::ensure!(
         pages.next().is_none(),
@@ -433,7 +509,7 @@ fn effective_ppi(pixels: (u32, u32), width: f64, height: f64) -> f64 {
     (f64::from(pixels.0) / (width / 72.0)).min(f64::from(pixels.1) / (height / 72.0))
 }
 
-fn tail_art(article: &crate::model::manifest::Article, measured: &Measured) -> Result<Value> {
+fn tail_art(article: &crate::model::manifest::Article, measured: &Measured) -> Result<TailArt> {
     let tail = match article.tail_art {
         None => None,
         Some(_) => Some(
@@ -454,17 +530,30 @@ fn tail_art(article: &crate::model::manifest::Article, measured: &Measured) -> R
             );
         }
     }
-    Ok(json!({
-        "article": article.id,
-        "declared": tail.is_some(),
-        "printed": printed,
-        "height_points": tail.filter(|t| t.printed).map(|t| rounded(t.height, 4)),
-        "drop_reason": tail.filter(|t| !t.printed).map(|t| format!(
-            "the article's last page leaves {:.1}pt of open tail room below the end mark's \
-             12pt clearance; the strip prints at its one {:.1}pt size or not at all",
-            t.room, t.height
-        )),
-    }))
+    Ok(TailArt {
+        article: article.id.clone(),
+        declared: tail.is_some(),
+        drop_reason: tail.filter(|t| !t.printed).map(|t| {
+            format!(
+                "the article's last page leaves {:.1}pt of open tail room below the end mark's \
+                 12pt clearance; the strip prints at its one {:.1}pt size or not at all",
+                t.room, t.height
+            )
+        }),
+        height_points: tail.filter(|t| t.printed).map(|t| rounded(t.height, 4)),
+        printed,
+    })
+}
+
+fn per_article<T>(
+    edition: &Edition,
+    f: impl Fn(&crate::model::manifest::Article) -> T,
+) -> BTreeMap<String, T> {
+    edition
+        .articles
+        .iter()
+        .map(|a| (a.id.clone(), f(a)))
+        .collect()
 }
 
 pub fn manifest_layout(
@@ -472,37 +561,28 @@ pub fn manifest_layout(
     measured: &Measured,
     tree: &Tree,
     root: &Path,
-) -> Result<Value> {
-    let by_article = |f: &dyn Fn(&crate::model::manifest::Article) -> Value| -> Map<String, Value> {
-        edition
-            .articles
-            .iter()
-            .map(|a| (a.id.clone(), f(a)))
-            .collect()
-    };
-    Ok(json!({
-        "design_direction": DESIGN,
-        "cover_art_size_points": null,
-        "article_terminal_balance": {},
-        "maximum_article_pages": edition.format.max_article_pages.unwrap_or(7),
-        "article_pages": measured.article_pages(),
-        "toc": measured.toc(),
-        "article_opener_fits": measured.opener_fits(),
-        "article_page_caps": by_article(&|a| json!(page_cap(a.content_mode))),
-        "article_content_modes": by_article(&|a| json!(a.content_mode.as_str())),
-        "maximum_editorial_pages": edition.format.max_editorial_pages.unwrap_or(2),
-        "editorial_pages": measured.editorial_pages(),
-        "figures": figures(edition, measured, tree, root)?,
-        "tail_arts": edition
+) -> Result<Layout> {
+    Ok(Layout {
+        article_content_modes: per_article(edition, |a| a.content_mode.as_str().to_string()),
+        article_opener_fits: measured.opener_fits(),
+        article_page_caps: per_article(edition, |a| page_cap(a.content_mode)),
+        article_pages: measured.article_pages(),
+        design_direction: DESIGN.to_string(),
+        editorial_pages: measured.editorial_pages(),
+        figures: figures(edition, measured, tree, root)?,
+        maximum_article_pages: edition.format.max_article_pages.unwrap_or(7),
+        maximum_editorial_pages: edition.format.max_editorial_pages.unwrap_or(2),
+        tail_arts: edition
             .articles
             .iter()
             .map(|a| tail_art(a, measured))
             .collect::<Result<Vec<_>>>()?,
-    }))
+        toc: measured.toc(),
+        ..Layout::default()
+    })
 }
 
 pub struct Request<'a> {
-    pub operation: &'a str,
     pub article: Option<&'a str>,
     pub edition: &'a Edition,
     pub staged: &'a Path,
@@ -510,37 +590,38 @@ pub struct Request<'a> {
     pub render_dir: &'a Path,
     pub work: &'a Path,
     pub assets: &'a Path,
-    pub raw: &'a Value,
+    pub raw: &'a crate::render::Request,
 }
 
-pub fn cap_warnings(layout: &Value) -> Vec<String> {
-    let pages = layout["article_pages"]
-        .as_object()
-        .cloned()
-        .unwrap_or_default();
-    pages
+pub fn cap_warnings(layout: &Layout) -> Vec<String> {
+    layout
+        .article_pages
         .iter()
-        .filter(|(id, _)| layout["article_content_modes"][id.as_str()] == ContentMode::Verbatim.as_str())
+        .filter(|(id, _)| layout.article_content_modes.get(*id).map(String::as_str) == Some(ContentMode::Verbatim.as_str()))
         .filter_map(|(id, count)| {
-            let (count, cap) = (count.as_u64()?, layout["article_page_caps"][id].as_u64()?);
-            (count > cap).then(|| {
+            let cap = *layout.article_page_caps.get(id)?;
+            (*count > cap).then(|| {
                 format!("WARNING: verbatim article past the page cap, rendering anyway: {id} ({count} pages, cap {cap})")
             })
         })
         .collect()
 }
 
-fn written(path: &Path, bytes: &[u8], kind: &str) -> Result<Value> {
+fn written(path: &Path, bytes: &[u8], kind: &str) -> Result<FileRow> {
     std::fs::write(path, bytes).with_context(|| format!("writing {}", path.display()))?;
-    Ok(json!({"kind": kind, "path": path.display().to_string()}))
+    Ok(FileRow {
+        kind: kind.to_string(),
+        media_type: None,
+        path: path.display().to_string(),
+    })
 }
 
-pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Result<Value> {
+pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Result<Outcome> {
     let measured = measure(document)?;
     for (id, _) in measured
         .plain_opener_fits()
         .iter()
-        .filter(|(_, fits)| fits.as_bool() == Some(false))
+        .filter(|(_, fits)| !**fits)
     {
         eprintln!("warning: the plain opener of {id} runs past its first page");
     }
@@ -552,18 +633,23 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
     }
     let edition = request.edition;
     let layout = manifest_layout(edition, &measured, tree, request.staged)?;
-    let figures = layout["figures"].as_array().map_or(0, Vec::len);
+    let figures = layout.figures.len();
     let row = |critic: &str| measured.row(&edition.language, figures, critic);
     let warnings = cap_warnings(&layout);
-    if request.operation != RenderOperation::RenderEdition.as_str() {
+    let operation = request.raw.operation;
+    if operation != RenderOperation::RenderEdition {
         let file = written(
             &request.out_dir.join("layout.json"),
-            (serde_json::to_string_pretty(&json!({ "layout": layout }))? + "\n").as_bytes(),
+            (serde_json::to_string_pretty(&serde_json::json!({ "layout": layout }))? + "\n")
+                .as_bytes(),
             "render_layout",
         )?;
-        return Ok(
-            json!({"operation": request.operation, "layouts": [row("not_run")], "files": [file], "warnings": warnings}),
-        );
+        return Ok(Outcome {
+            files: vec![file],
+            layouts: vec![row("not_run")],
+            operation,
+            warnings,
+        });
     }
     let (files, critic) = super::release::publish(&super::release::Publish {
         request: request.raw,
@@ -576,9 +662,12 @@ pub fn report(request: &Request, document: &PagedDocument, tree: &Tree) -> Resul
         work: request.work,
         out_dir: request.out_dir,
     })?;
-    Ok(
-        json!({"operation": request.operation, "layouts": [row(&critic)], "files": files, "warnings": warnings}),
-    )
+    Ok(Outcome {
+        files,
+        layouts: vec![row(&critic)],
+        operation,
+        warnings,
+    })
 }
 
 #[cfg(test)]
@@ -652,8 +741,6 @@ mod tests {
     fn fits(words: usize) -> bool {
         let measured = measure(&compiled(&opener_run(words))).expect("the run measures");
         measured.opener_fits()["a"]
-            .as_bool()
-            .expect("the illustrated opener is measured")
     }
 
     #[test]
@@ -736,7 +823,7 @@ mod tests {
 
     fn opener_fits(tree: &Tree) -> bool {
         let measured = measure(&compiled(tree)).expect("the run measures");
-        measured.opener_fits()["a"].as_bool().expect("measured")
+        measured.opener_fits()["a"]
     }
 
     fn plain_fits(note_words: usize) -> bool {
@@ -756,8 +843,6 @@ mod tests {
         };
         let measured = measure(&compiled(&tree)).expect("the run measures");
         measured.plain_opener_fits()["a"]
-            .as_bool()
-            .expect("measured")
     }
 
     fn links(document: &PagedDocument) -> Vec<(u32, String)> {
@@ -845,6 +930,54 @@ mod tests {
         assert!(!plain_fits(4000));
     }
 
+    fn pairs(rows: &[(&str, usize)]) -> BTreeMap<String, usize> {
+        rows.iter().map(|(id, n)| (id.to_string(), *n)).collect()
+    }
+
+    #[test]
+    fn result_json_keys_keep_their_order() {
+        let outcome = Outcome {
+            files: vec![FileRow {
+                kind: "k".into(),
+                media_type: Some("m".into()),
+                path: "p".into(),
+            }],
+            layouts: vec![LayoutRow {
+                article_opener_fits: BTreeMap::new(),
+                article_pages: BTreeMap::new(),
+                critic_result: String::new(),
+                editorial_pages: 0,
+                figure_count: 0,
+                language: String::new(),
+                total_pages: 0,
+            }],
+            operation: RenderOperation::RenderEdition,
+            warnings: vec![],
+        };
+        let json = serde_json::to_string(&outcome).unwrap();
+        let keys = [
+            "files",
+            "kind",
+            "mediaType",
+            "path",
+            "layouts",
+            "articleOpenerFits",
+            "articlePages",
+            "criticResult",
+            "editorialPages",
+            "figureCount",
+            "language",
+            "totalPages",
+            "operation",
+            "warnings",
+        ];
+        let at: Vec<usize> = keys
+            .iter()
+            .map(|k| json.find(&format!("\"{k}\":")).unwrap())
+            .collect();
+        assert!(at.windows(2).all(|w| w[0] < w[1]), "{json}");
+    }
+
     #[test]
     fn the_fixture_pieces_measure_as_emitted() {
         let (tree, document, edition, root) = fixture("900");
@@ -852,39 +985,42 @@ mod tests {
         let layout = manifest_layout(&edition, &measured, &tree, &root).expect("the layout builds");
         assert_eq!(measured.total_pages, 11);
         assert_eq!(
-            layout["toc"],
-            json!({"editorial": 4, "plain-opener-article": 5, "second-fixture-article": 8, "section-0": 9})
+            layout.toc,
+            pairs(&[
+                ("editorial", 4),
+                ("plain-opener-article", 5),
+                ("second-fixture-article", 8),
+                ("section-0", 9)
+            ])
         );
         assert_eq!(
-            layout["article_pages"],
-            json!({"plain-opener-article": 3, "second-fixture-article": 1})
+            layout.article_pages,
+            pairs(&[("plain-opener-article", 3), ("second-fixture-article", 1)])
         );
-        assert_eq!(layout["editorial_pages"], json!(1));
-        assert_eq!(layout["article_opener_fits"], json!({}));
+        assert_eq!(layout.editorial_pages, Some(1));
+        assert!(layout.article_opener_fits.is_empty());
         assert_eq!(
             measured.plain_opener_fits(),
-            json!({"plain-opener-article": true, "second-fixture-article": true})
-                .as_object()
-                .cloned()
-                .unwrap()
+            BTreeMap::from([
+                ("plain-opener-article".to_string(), true),
+                ("second-fixture-article".to_string(), true)
+            ])
         );
-        assert_eq!(layout["figures"][0]["id"], "budget-diagram");
-        assert_eq!(layout["figures"][0]["page"], 6);
+        let figure = &layout.figures[0];
+        assert_eq!(figure.id, "budget-diagram");
+        assert_eq!(figure.page, 6);
+        assert_eq!(figure.pixel_dimensions, (1200, 1000));
         assert_eq!(
-            layout["figures"][0]["pixel_dimensions"],
-            json!([1200, 1000])
+            figure.box_points,
+            [87.504, figure.box_points[1], 246.0, 205.0]
         );
-        assert_eq!(layout["tail_arts"][1]["declared"], true);
-        let figure = &layout["figures"][0];
-        assert_eq!(figure["box_points"][0], json!(87.504));
-        assert_eq!(figure["box_points"][2], json!(246.0));
-        assert_eq!(figure["box_points"][3], json!(205.0));
-        assert_eq!(figure["effective_ppi"], json!(351.2));
-        assert_eq!(layout["tail_arts"][1]["printed"], true);
-        assert_eq!(layout["tail_arts"][1]["height_points"], json!(108.3333));
+        assert_eq!(figure.effective_ppi, 351.2);
+        let tail = &layout.tail_arts[1];
+        assert!(tail.declared && tail.printed);
+        assert_eq!(tail.height_points, Some(108.3333));
         let row = measured.row("en", 1, "not_run");
-        assert_eq!(row["totalPages"], 11);
-        assert_eq!(row["editorialPages"], 1);
+        assert_eq!(row.total_pages, 11);
+        assert_eq!(row.editorial_pages, 1);
     }
 
     #[test]
@@ -995,10 +1131,7 @@ mod tests {
         let measured = measure(&document).expect("the fixture measures");
         assert_eq!(
             measured.opener_fits(),
-            json!({"illustrated-fixture-article": true})
-                .as_object()
-                .cloned()
-                .unwrap()
+            BTreeMap::from([("illustrated-fixture-article".to_string(), true)])
         );
         let bottom = measured.pieces[0]
             .opener_bottom
@@ -1012,11 +1145,16 @@ mod tests {
 
     #[test]
     fn only_a_verbatim_article_past_its_cap_warns() {
-        let layout = json!({
-            "article_pages": {"long": 13, "fits": 10, "prose": 9},
-            "article_page_caps": {"long": 10, "fits": 10, "prose": 7},
-            "article_content_modes": {"long": "verbatim", "fits": "verbatim", "prose": "article"},
-        });
+        let layout = Layout {
+            article_pages: pairs(&[("long", 13), ("fits", 10), ("prose", 9)]),
+            article_page_caps: pairs(&[("long", 10), ("fits", 10), ("prose", 7)]),
+            article_content_modes: BTreeMap::from([
+                ("long".to_string(), "verbatim".to_string()),
+                ("fits".to_string(), "verbatim".to_string()),
+                ("prose".to_string(), "article".to_string()),
+            ]),
+            ..Layout::default()
+        };
         assert_eq!(
             super::cap_warnings(&layout),
             vec!["WARNING: verbatim article past the page cap, rendering anyway: long (13 pages, cap 10)"]

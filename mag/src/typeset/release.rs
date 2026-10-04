@@ -1,19 +1,19 @@
+use super::layout::{FileRow, Layout};
 use crate::model::manifest::Edition;
 use crate::package::archive::archive_tree;
 use crate::package::preflight::FigurePlacement;
 use crate::package::release::{package_release, Release};
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 const CONTRACT_VERSION: &str = "magazine-renderer/1";
 const STUDIO_BLOCKER: &str = "A named printer profile and preflight are required.";
 
 pub struct Publish<'a> {
-    pub request: &'a Value,
+    pub request: &'a crate::render::Request,
     pub edition: &'a Edition,
-    pub layout: Value,
+    pub layout: Layout,
     pub interior: Vec<u8>,
     pub staged: &'a Path,
     pub assets: &'a Path,
@@ -22,41 +22,22 @@ pub struct Publish<'a> {
     pub out_dir: &'a Path,
 }
 
-fn placements(layout: &Value, staged: &Path) -> Result<Vec<FigurePlacement>> {
-    let rows = layout["figures"].as_array().map_or(&[][..], Vec::as_slice);
-    rows.iter()
-        .map(|row| {
-            let text = |key: &str| {
-                row[key]
-                    .as_str()
-                    .map(str::to_string)
-                    .with_context(|| format!("layout figure {key}"))
-            };
-            let pixels = row["pixel_dimensions"].as_array();
-            Ok(FigurePlacement {
-                figure_id: text("id")?,
-                article_id: text("article_id")?,
-                page: row["page"].as_i64().context("layout figure page")?,
-                path: staged.join(text("path")?),
-                pixel_dimensions: pixels
-                    .and_then(|p| Some((p.first()?.as_u64()? as u32, p.get(1)?.as_u64()? as u32))),
-                box_points: row["box_points"]
-                    .as_array()
-                    .into_iter()
-                    .flatten()
-                    .filter_map(Value::as_f64)
-                    .collect(),
-                effective_ppi: row["effective_ppi"].as_f64(),
-                caption: text("caption")?,
-                credit: text("credit")?,
-            })
+fn placements(layout: &Layout, staged: &Path) -> Vec<FigurePlacement> {
+    layout
+        .figures
+        .iter()
+        .map(|figure| FigurePlacement {
+            figure_id: figure.id.clone(),
+            article_id: figure.article_id.clone(),
+            page: figure.page as i64,
+            path: staged.join(&figure.path),
+            pixel_dimensions: Some(figure.pixel_dimensions),
+            box_points: figure.box_points.to_vec(),
+            effective_ppi: Some(figure.effective_ppi),
+            caption: figure.caption.clone(),
+            credit: figure.credit.clone(),
         })
         .collect()
-}
-
-fn pages(layout: &Value, key: &str) -> Result<BTreeMap<String, usize>> {
-    serde_json::from_value(layout[key].clone())
-        .with_context(|| format!("layout {key} is not a page map"))
 }
 
 fn kind(path: &Path) -> (&'static str, &'static str) {
@@ -77,14 +58,18 @@ fn kind(path: &Path) -> (&'static str, &'static str) {
     }
 }
 
-fn file_row(path: &Path, root: &Path) -> Value {
+fn file_row(path: &Path, root: &Path) -> FileRow {
     let (kind, media_type) = kind(path);
     let relative = path
         .strip_prefix(root)
         .unwrap_or(path)
         .to_string_lossy()
         .replace('\\', "/");
-    json!({"path": relative, "mediaType": media_type, "kind": kind})
+    FileRow {
+        kind: kind.to_string(),
+        media_type: Some(media_type.to_string()),
+        path: relative,
+    }
 }
 
 fn edition_summary(edition: &Edition) -> Result<Value> {
@@ -116,20 +101,20 @@ fn edition_summary(edition: &Edition) -> Result<Value> {
 }
 
 fn manifest(p: &Publish) -> Result<Value> {
-    let ids: Vec<&str> = p.request["inputs"]
-        .as_array()
-        .context("the render request has no inputs array")?
+    let ids: Vec<&str> = p
+        .request
+        .inputs
         .iter()
-        .filter_map(|row| row["artifactId"].as_str())
+        .map(|row| row.artifact_id.as_str())
         .collect();
     Ok(json!({
         "schema_version": 1,
         "renderer_contract_version": CONTRACT_VERSION,
         "publication": {
-            "name": p.request["publicationName"],
+            "name": p.request.publication_name,
             "language": p.edition.language,
             "locale": p.edition.locale,
-            "available_languages": p.request["languages"],
+            "available_languages": p.request.languages,
         },
         "edition": edition_summary(p.edition)?,
         "inputs": {"artifact_ids": ids},
@@ -139,7 +124,7 @@ fn manifest(p: &Publish) -> Result<Value> {
     }))
 }
 
-pub fn publish(p: &Publish) -> Result<(Vec<Value>, String)> {
+pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
     let work = p.work;
     let (front, back, picture) = super::cover::faces(p.staged, p.assets, p.edition, work)?;
     std::fs::create_dir_all(p.out_dir)?;
@@ -151,14 +136,13 @@ pub fn publish(p: &Publish) -> Result<(Vec<Value>, String)> {
         &reader,
         super::cover::replace_outer_pages(&p.interior, &front, &back)?,
     )?;
-    let figures = placements(&p.layout, &p.staged.canonicalize()?)?;
+    let figures = placements(&p.layout, &p.staged.canonicalize()?);
     let cover_art = p
         .edition
         .cover_art
         .as_deref()
         .map(Path::canonicalize)
         .transpose()?;
-    let (toc, article_pages) = (pages(&p.layout, "toc")?, pages(&p.layout, "article_pages")?);
     let fonts = crate::trace::text_font_map();
     let written = package_release(Release {
         reader_pdf: &reader,
@@ -168,9 +152,9 @@ pub fn publish(p: &Publish) -> Result<(Vec<Value>, String)> {
         cover_art_size_points: None,
         figure_placements: &figures,
         language: &p.edition.language,
-        toc: &toc,
-        article_pages: &article_pages,
-        editorial_pages: p.layout["editorial_pages"].as_i64(),
+        toc: &p.layout.toc,
+        article_pages: &p.layout.article_pages,
+        editorial_pages: p.layout.editorial_pages.map(|n| n as i64),
         edition_id: &p.edition.id,
         recorded_review: None,
         fonts: &fonts,

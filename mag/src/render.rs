@@ -3,6 +3,7 @@ use crate::model::kinds::RenderOperation;
 use crate::model::manifest::art_slots;
 use crate::model::shared::read_spec;
 use crate::model::spec::{ArticleRow, EditionFile, TranslationFile};
+use crate::typeset::layout::Outcome;
 use crate::util::EditionId;
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use serde::Serialize;
@@ -16,25 +17,25 @@ const RENDERER_CONTRACT_VERSION: &str = "magazine-renderer/1";
 const RENDERER: &str = "typst";
 const DESIGN_TOML_PATH: &str = "design/covers/canto-vivo/design.toml";
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub(crate) struct InputRow {
     #[serde(rename = "artifactId")]
-    artifact_id: String,
+    pub artifact_id: String,
     #[serde(rename = "sourcePath")]
     pub source_path: String,
     #[serde(rename = "targetPath")]
     pub target_path: String,
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub(crate) struct Request {
     #[serde(rename = "schemaVersion")]
-    schema_version: u32,
+    pub schema_version: u32,
     #[serde(rename = "rendererContractVersion")]
-    renderer_contract_version: String,
-    operation: RenderOperation,
+    pub renderer_contract_version: String,
+    pub operation: RenderOperation,
     #[serde(rename = "articleId", skip_serializing_if = "Option::is_none")]
-    article_id: Option<String>,
+    pub article_id: Option<String>,
     #[serde(rename = "editionId")]
     pub edition_id: String,
     #[serde(rename = "primaryLanguage")]
@@ -42,9 +43,9 @@ pub(crate) struct Request {
     pub languages: Vec<String>,
     #[serde(rename = "publicationName")]
     pub publication_name: String,
-    renderer: String,
+    pub renderer: String,
     #[serde(rename = "artifactRoot")]
-    artifact_root: String,
+    pub artifact_root: String,
     pub inputs: Vec<InputRow>,
 }
 
@@ -220,33 +221,17 @@ fn stage_article_extracts(staging: &mut Staging, article: &ArticleRow) -> Result
     Ok(())
 }
 
-fn print_summary(value: &serde_json::Value, out_dir: &Path) {
-    if let Some(layouts) = value.get("layouts").and_then(|v| v.as_array()) {
-        for info in layouts {
-            let lang = info.get("language").and_then(|v| v.as_str()).unwrap_or("?");
-            let total_pages = info
-                .get("totalPages")
-                .map_or_else(|| "?".to_string(), std::string::ToString::to_string);
-            println!("  [{lang}] totalPages={total_pages}");
-            if let Some(article_pages) = info.get("articlePages").and_then(|v| v.as_object()) {
-                for (aid, pages) in article_pages {
-                    println!("    articlePages.{aid} = {pages}");
-                }
-            }
-            if let Some(critic) = info.get("criticResult") {
-                println!("    criticResult: {critic}");
-            }
+fn print_summary(outcome: &Outcome, out_dir: &Path) {
+    for info in &outcome.layouts {
+        println!("  [{}] totalPages={}", info.language, info.total_pages);
+        for (aid, pages) in &info.article_pages {
+            println!("    articlePages.{aid} = {pages}");
         }
-    } else {
-        println!("  (no 'layouts' field in adapter output)");
+        println!("    criticResult: {:?}", info.critic_result);
     }
-    if let Some(files) = value.get("files").and_then(|v| v.as_array()) {
-        println!("  files:");
-        for f in files {
-            let kind = f.get("kind").and_then(|v| v.as_str()).unwrap_or("?");
-            let path = f.get("path").and_then(|v| v.as_str()).unwrap_or("?");
-            println!("    {kind}: {path}");
-        }
+    println!("  files:");
+    for f in &outcome.files {
+        println!("    {}: {}", f.kind, f.path);
     }
     println!("  out dir: {}", out_dir.display());
 }
@@ -416,7 +401,7 @@ pub struct RenderArgs {
     pub article: Option<String>,
     #[arg(
         long,
-        help = "Comma-separated languages to render (default: en + es if translations exist)"
+        help = "Comma-separated languages to render (default: primary language plus every translations/<lang>/edition.yaml present)"
     )]
     pub langs: Option<String>,
     #[arg(
@@ -540,7 +525,12 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
     if repo_root.join(&design_toml).exists() {
         staging.add(&design_toml);
     }
-    let languages = stage_translation(&mut staging, &edition_dir, &repo_root, langs)?;
+    let primary_language = edition_yaml
+        .language
+        .clone()
+        .unwrap_or_else(|| "en".to_string());
+    let languages = translation_languages(&edition_dir, &primary_language, langs)?;
+    stage_translation(&mut staging, &edition_dir, &repo_root, &languages)?;
     stage_source_records(&mut staging, &edition_yaml, &repo_root);
     for article in &edition_yaml.articles {
         stage_article_figures(&mut staging, article)?;
@@ -572,10 +562,7 @@ pub(crate) fn request(args: &RenderArgs, repo_root: &Path, render_dir: &Path) ->
             .filter(|_| operation == RenderOperation::MeasureArticle)
             .map(str::to_string),
         edition_id,
-        primary_language: edition_yaml
-            .language
-            .clone()
-            .unwrap_or_else(|| "en".to_string()),
+        primary_language,
         languages,
         publication_name: publication_name(&repo_root)?,
         renderer: RENDERER.to_string(),
@@ -590,15 +577,14 @@ fn run_typst(
     request: &Request,
     legibility: bool,
 ) -> Result<i32> {
-    let json = serde_json::to_string(request)?;
-    let value = crate::typeset::run_request(repo_root, render_dir, &json, legibility)?;
+    let outcome = crate::typeset::run_request(repo_root, render_dir, request, legibility)?;
     let result = render_dir.join("result.json");
-    fs::write(&result, serde_json::to_string_pretty(&value)? + "\n")
+    fs::write(&result, serde_json::to_string_pretty(&outcome)? + "\n")
         .with_context(|| format!("writing {}", result.display()))?;
     let out_dir = render_dir.join(&request.primary_language);
-    print_summary(&value, &out_dir);
+    print_summary(&outcome, &out_dir);
     close_typst(
-        &value,
+        &outcome.warnings,
         &out_dir,
         &mut std::io::stdout(),
         &mut std::io::stderr(),
@@ -607,13 +593,13 @@ fn run_typst(
 }
 
 fn close_typst(
-    value: &serde_json::Value,
+    warnings: &[String],
     out_dir: &Path,
     out: &mut dyn Write,
     err: &mut dyn Write,
 ) -> std::io::Result<()> {
-    for warning in value["warnings"].as_array().into_iter().flatten() {
-        writeln!(err, "{}", warning.as_str().unwrap_or_default())?;
+    for warning in warnings {
+        writeln!(err, "{warning}")?;
     }
     writeln!(out, "{}", next_step(out_dir))
 }
@@ -760,31 +746,72 @@ fn stage_art(staging: &mut Staging, edition_yaml: &EditionFile, edition_dir: &Pa
     }
 }
 
+fn translation_languages(
+    edition_dir: &Path,
+    primary: &str,
+    langs: Option<&str>,
+) -> Result<Vec<String>> {
+    let present = |language: &str| {
+        edition_dir
+            .join("translations")
+            .join(language)
+            .join("edition.yaml")
+            .exists()
+    };
+    let found = || {
+        let mut names: Vec<String> = fs::read_dir(edition_dir.join("translations"))
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter(|e| e.path().join("edition.yaml").exists())
+            .filter_map(|e| e.file_name().into_string().ok())
+            .collect();
+        names.sort();
+        names
+    };
+    let others = match langs {
+        Some(list) => list
+            .split(',')
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && *l != primary)
+            .map(str::to_string)
+            .collect(),
+        None => found(),
+    };
+    if let Some(missing) = others.iter().find(|l| !present(l)) {
+        bail!("--langs {missing}: no translations/{missing}/edition.yaml");
+    }
+    let mut languages = vec![primary.to_string()];
+    for language in others {
+        if !languages.contains(&language) {
+            languages.push(language);
+        }
+    }
+    Ok(languages)
+}
+
 fn stage_translation(
     staging: &mut Staging,
     edition_dir: &Path,
     repo_root: &Path,
-    langs: Option<&str>,
-) -> Result<Vec<String>> {
-    let translation_dir = edition_dir.join("translations/es");
-    let translation_yaml_path = translation_dir.join("edition.yaml");
-    let has_translation = translation_yaml_path.exists()
-        && langs.is_none_or(|l| l.split(',').any(|x| x.trim() == "es"));
-    if !has_translation {
-        return Ok(vec!["en".to_string()]);
-    }
-    let translation_yaml: TranslationFile = read_spec(&translation_yaml_path)?;
-    staging.add(&translation_yaml_path);
-    stage_source_codes(staging, &translation_dir, repo_root);
-    if let Some(editorial) = &translation_yaml.editorial {
-        staging.add(&resolve_field(&editorial.path, &translation_dir));
-    }
-    for article in translation_yaml.articles.iter().flatten() {
-        if !article.manuscript.is_empty() {
-            staging.add(&resolve_field(&article.manuscript, &translation_dir));
+    languages: &[String],
+) -> Result<()> {
+    for language in languages.iter().skip(1) {
+        let translation_dir = edition_dir.join("translations").join(language);
+        let translation_yaml_path = translation_dir.join("edition.yaml");
+        let translation_yaml: TranslationFile = read_spec(&translation_yaml_path)?;
+        staging.add(&translation_yaml_path);
+        stage_source_codes(staging, &translation_dir, repo_root);
+        if let Some(editorial) = &translation_yaml.editorial {
+            staging.add(&resolve_field(&editorial.path, &translation_dir));
+        }
+        for article in translation_yaml.articles.iter().flatten() {
+            if !article.manuscript.is_empty() {
+                staging.add(&resolve_field(&article.manuscript, &translation_dir));
+            }
         }
     }
-    Ok(vec!["en".to_string(), "es".to_string()])
+    Ok(())
 }
 
 fn stage_source_records(staging: &mut Staging, edition_yaml: &EditionFile, repo_root: &Path) {
@@ -817,7 +844,7 @@ fn next_step(pdf_dir: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{close_typst, next_step, parse_anchor_reply, Staging};
+    use super::{close_typst, next_step, parse_anchor_reply, translation_languages, Staging};
     use std::path::{Path, PathBuf};
 
     #[test]
@@ -839,10 +866,9 @@ mod tests {
 
     #[test]
     fn the_typst_leg_prints_its_warnings_and_the_next_step() {
-        let value =
-            serde_json::json!({"warnings": ["WARNING: verbatim article past the page cap"]});
+        let warnings = ["WARNING: verbatim article past the page cap".to_string()];
         let (mut out, mut err) = (Vec::new(), Vec::new());
-        close_typst(&value, Path::new("r/en"), &mut out, &mut err).unwrap();
+        close_typst(&warnings, Path::new("r/en"), &mut out, &mut err).unwrap();
         assert_eq!(
             String::from_utf8(out).unwrap(),
             next_step(Path::new("r/en")) + "\n"
@@ -851,6 +877,41 @@ mod tests {
             String::from_utf8(err).unwrap(),
             "WARNING: verbatim article past the page cap\n"
         );
+    }
+
+    #[test]
+    fn languages_come_from_the_translations_present_and_the_declared_primary() {
+        let dir = std::env::temp_dir().join(format!("mag-langs-{}", std::process::id()));
+        for language in ["fr", "es"] {
+            std::fs::create_dir_all(dir.join("translations").join(language)).unwrap();
+            std::fs::write(
+                dir.join("translations").join(language).join("edition.yaml"),
+                "",
+            )
+            .unwrap();
+        }
+        std::fs::create_dir_all(dir.join("translations/empty")).unwrap();
+        assert_eq!(
+            translation_languages(&dir, "en", None).unwrap(),
+            ["en", "es", "fr"]
+        );
+        assert_eq!(
+            translation_languages(&dir, "es", None).unwrap(),
+            ["es", "fr"]
+        );
+        assert_eq!(
+            translation_languages(&dir, "en", Some("fr")).unwrap(),
+            ["en", "fr"]
+        );
+        assert_eq!(
+            translation_languages(&dir, "en", Some("en")).unwrap(),
+            ["en"]
+        );
+        assert_eq!(translation_languages(&dir, "en", Some("")).unwrap(), ["en"]);
+        let err = translation_languages(&dir, "en", Some("fr,de")).unwrap_err();
+        assert!(err.to_string().contains("de"), "{err}");
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(translation_languages(&dir, "en", None).unwrap(), ["en"]);
     }
 
     #[test]

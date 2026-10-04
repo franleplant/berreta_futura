@@ -13,89 +13,69 @@ pub(crate) mod template;
 pub(crate) mod tone;
 pub(crate) mod world;
 
+use crate::render::Request;
 use anyhow::{Context, Result};
-use serde_json::Value;
+use layout::Outcome;
 use std::fs;
-use std::path::{Component, Path, PathBuf};
-
-fn field<'a>(request: &'a Value, key: &str) -> Result<&'a str> {
-    request
-        .get(key)
-        .and_then(Value::as_str)
-        .with_context(|| format!("the render request has no string field '{key}'"))
-}
+use std::path::{Component, Path};
 
 pub(crate) fn contained(path: &Path) -> bool {
     path.components()
         .all(|c| matches!(c, Component::Normal(_) | Component::CurDir))
 }
 
-fn stage(request: &Value, into: &Path) -> Result<usize> {
-    let rows = request
-        .get("inputs")
-        .and_then(Value::as_array)
-        .context("the render request has no inputs array")?;
-    for row in rows {
-        let target = field(row, "targetPath")?;
+fn stage(request: &Request, into: &Path) -> Result<usize> {
+    for row in &request.inputs {
         anyhow::ensure!(
-            contained(Path::new(target)),
-            "staged target {target:?} must be relative with no '..' components"
+            contained(Path::new(&row.target_path)),
+            "staged target {:?} must be relative with no '..' components",
+            row.target_path
         );
     }
-    for row in rows {
-        let source = PathBuf::from(field(row, "sourcePath")?);
-        let target = into.join(field(row, "targetPath")?);
+    for row in &request.inputs {
+        let target = into.join(&row.target_path);
         let parent = target.parent().context("a staged target has no parent")?;
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
-        fs::copy(&source, &target)
-            .with_context(|| format!("staging {} into {}", source.display(), target.display()))?;
+        fs::copy(&row.source_path, &target)
+            .with_context(|| format!("staging {} into {}", row.source_path, target.display()))?;
     }
-    Ok(rows.len())
+    Ok(request.inputs.len())
 }
 
 pub(crate) fn run_request(
     repo_root: &Path,
     render_dir: &Path,
-    request_json: &str,
+    request: &Request,
     legibility: bool,
-) -> Result<Value> {
-    let request: Value =
-        serde_json::from_str(request_json).context("parsing the render request as JSON")?;
-    let primary = field(&request, "primaryLanguage")?;
-    let languages: Vec<&str> = request["languages"]
-        .as_array()
-        .context("the render request has no languages array")?
-        .iter()
-        .filter_map(Value::as_str)
-        .collect();
+) -> Result<Outcome> {
+    let primary = request.primary_language.as_str();
     anyhow::ensure!(
-        languages.contains(&primary),
+        request.languages.iter().any(|l| l == primary),
         "languages must include primaryLanguage"
     );
     fs::create_dir_all(render_dir).with_context(|| format!("creating {}", render_dir.display()))?;
     let request_path = render_dir.join("request.json");
-    fs::write(
-        &request_path,
-        serde_json::to_string_pretty(&request)? + "\n",
-    )
-    .with_context(|| format!("writing {}", request_path.display()))?;
+    fs::write(&request_path, serde_json::to_string_pretty(request)? + "\n")
+        .with_context(|| format!("writing {}", request_path.display()))?;
     println!("request: {}", request_path.display());
     let staged = render_dir.join("staged");
-    let rows = stage(&request, &staged)?;
+    let rows = stage(request, &staged)?;
     println!("staged {rows} inputs into {}", staged.display());
-    let base = layout::edition(
-        &staged,
-        field(&request, "editionId")?,
-        field(&request, "publicationName")?,
-    )?;
+    let base = layout::edition(&staged, &request.edition_id, &request.publication_name)?;
     let hyphenation =
         hyphen::Hyphenation::from_settings(crate::render::magazine_toml(repo_root)?.get("render"))
             .map_err(anyhow::Error::msg)?;
     if legibility {
         legible::require_tesseract()?;
     }
-    let mut result = serde_json::json!({"layouts": [], "files": [], "warnings": []});
-    for language in languages {
+    let mut result = Outcome {
+        files: vec![],
+        layouts: vec![],
+        operation: request.operation,
+        warnings: vec![],
+    };
+    for language in &request.languages {
+        let language = language.as_str();
         let printed = tone::print_figures(
             match language == primary {
                 true => base.clone(),
@@ -114,29 +94,27 @@ pub(crate) fn run_request(
         };
         let one = render_language(
             (repo_root, render_dir),
-            &request,
+            request,
             &staged,
             &edition,
             &work,
             hyphenation,
         )?;
-        for key in ["layouts", "files", "warnings"] {
-            let rows = one[key].as_array().cloned().unwrap_or_default();
-            result[key].as_array_mut().expect("seeded").extend(rows);
-        }
-        result["operation"] = one["operation"].clone();
+        result.files.extend(one.files);
+        result.layouts.extend(one.layouts);
+        result.warnings.extend(one.warnings);
     }
     Ok(result)
 }
 
 fn render_language(
     (repo_root, render_dir): (&Path, &Path),
-    request: &Value,
+    request: &Request,
     staged: &Path,
     edition: &crate::model::manifest::Edition,
     work: &Path,
     hyphenation: hyphen::Hyphenation,
-) -> Result<Value> {
+) -> Result<Outcome> {
     let out_dir = render_dir.join(&edition.language);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     println!("out dir: {}", out_dir.display());
@@ -160,8 +138,7 @@ fn render_language(
     );
     let mut one = layout::report(
         &layout::Request {
-            operation: field(request, "operation")?,
-            article: request.get("articleId").and_then(Value::as_str),
+            article: request.article_id.as_deref(),
             edition,
             staged,
             out_dir: &out_dir,
@@ -174,18 +151,24 @@ fn render_language(
         &tree,
     )?;
     let ladders = runt::ladder_warnings(&document, &edition.id);
-    if let Some(warnings) = one["warnings"].as_array_mut() {
-        warnings.extend(ladders.into_iter().map(Value::from));
-    }
+    one.warnings.extend(ladders);
     Ok(one)
 }
 
 #[cfg(test)]
 mod staging_tests {
     use super::*;
+    use crate::render::InputRow;
 
-    fn request(source: &Path, target: &str) -> Value {
-        serde_json::json!({"inputs": [{"sourcePath": source, "targetPath": target}]})
+    fn request(source: &Path, target: &str) -> Request {
+        Request {
+            inputs: vec![InputRow {
+                source_path: source.to_string_lossy().to_string(),
+                target_path: target.to_string(),
+                ..InputRow::default()
+            }],
+            ..Request::default()
+        }
     }
 
     #[test]
