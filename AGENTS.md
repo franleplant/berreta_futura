@@ -148,7 +148,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   signal exists, and gate its output with a mechanical check.
 - Ship each feature complete in the fewest lines that stay readable, and
   keep cyclomatic complexity low. Style is enforced by tooling, not prose:
-  `cargo fmt`, `cargo clippy` (complexity and length lints in Cargo.toml),
+  `cargo fmt`, `cargo clippy` (complexity, length, and a named list of
+  pedantic lints, all `deny` in Cargo.toml; add pedantic lints by name,
+  never the whole group, and fix findings instead of adding `allow`),
   `uvx ruff format` and `uvx ruff check` on `tools/` (C901, ERA in ruff.toml),
   and `mag/tests/nocomments.rs` under `cargo test` for the one rule no linter
   has (no comments; clap help text and `__doc__` usage strings excepted).
