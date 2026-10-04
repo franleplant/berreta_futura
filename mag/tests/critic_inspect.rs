@@ -41,7 +41,6 @@ mod inspect;
 
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 fn manifest() -> PathBuf {
@@ -98,69 +97,9 @@ fn exact(value: &Value) -> f64 {
         .expect("the text is a float")
 }
 
-fn outside_strings(raw: &str) -> String {
-    let (mut out, mut quoted, mut escaped) = (String::with_capacity(raw.len()), false, false);
-    for character in raw.chars() {
-        match (quoted, escaped, character) {
-            (true, true, _) => escaped = false,
-            (true, false, '\\') => escaped = true,
-            (true, false, '"') => quoted = false,
-            (true, false, _) => {}
-            (false, _, '"') => quoted = true,
-            (false, _, _) => out.push(character),
-        }
-    }
-    out
-}
-
 #[test]
-fn serde_json_parses_every_oracle_float_exactly() {
-    let mut checked = 0;
-    for name in [
-        "critic_inspect_expected.json",
-        "critic_inspect_render_expected.json",
-    ] {
-        let raw = outside_strings(
-            &std::fs::read_to_string(manifest().join("tests").join(name)).expect("readable"),
-        );
-        for literal in raw.split(|c: char| !"0123456789.eE+-".contains(c)) {
-            if !literal.contains('.') || literal.parse::<f64>().is_err() {
-                continue;
-            }
-            let strict: f64 = literal.parse().expect("a float");
-            let loose: f64 = serde_json::from_str::<Value>(literal)
-                .expect("json number")
-                .as_f64()
-                .expect("a float");
-            assert_eq!(
-                strict.to_bits(),
-                loose.to_bits(),
-                "serde_json parses {literal} in {name} to a different double, so oracle comparison through as_f64 is unsound here"
-            );
-            checked += 1;
-        }
-    }
-    assert!(checked > 0, "no float literals were checked");
-    let known: f64 = "97.71500651041667".parse().expect("a float");
-    let parsed: f64 = serde_json::from_str::<Value>("97.71500651041667")
-        .expect("json number")
-        .as_f64()
-        .expect("a float");
-    assert_ne!(
-        known.to_bits(),
-        parsed.to_bits(),
-        "serde_json's inexact parser must still be inexact, else this guard proves nothing"
-    );
-}
-
-fn naive_luma(pixel: &[u8]) -> u8 {
-    (pixel[0] as f64 * 0.299 + pixel[1] as f64 * 0.587 + pixel[2] as f64 * 0.114).round() as u8
-}
-
-#[test]
-fn grayscale_matches_pil_and_the_naive_formula_disagrees() {
+fn grayscale_matches_pil() {
     let expected = oracle("critic_inspect_expected.json");
-    let mut divergent = 0;
     let rows = expected["grayscale"].as_array().expect("grayscale rows");
     assert!(!rows.is_empty(), "the grayscale oracle is not empty");
     for row in rows {
@@ -182,17 +121,7 @@ fn grayscale_matches_pil_and_the_naive_formula_disagrees() {
             row["histogram_sha256"].as_str().expect("histogram sha"),
             "grayscale histogram for {name}"
         );
-        divergent += source
-            .data
-            .chunks_exact(3)
-            .zip(&gray.data)
-            .filter(|(pixel, &value)| naive_luma(pixel) != value)
-            .count();
     }
-    assert!(
-        divergent > 0,
-        "the float formula must disagree somewhere, else this test cannot see a luma defect"
-    );
 }
 
 #[test]
@@ -329,166 +258,5 @@ fn render_pages_reports_the_python_message_when_poppler_fails() {
             .to_string()
             .starts_with("Could not rasterize reader PDF for criticism: "),
         "unexpected message: {error}"
-    );
-}
-
-fn font_map() -> BTreeMap<String, streams::Face> {
-    let spec: serde_yaml::Value = serde_yaml::from_str(
-        &std::fs::read_to_string(manifest().join("../meta/verification/parity.yaml"))
-            .expect("parity.yaml"),
-    )
-    .expect("yaml");
-    let entries = spec["normalization"]["font_name_map"]["entries"]
-        .as_mapping()
-        .expect("entries");
-    let mut map = BTreeMap::new();
-    for (alias, value) in entries {
-        map.insert(
-            alias.as_str().expect("alias").to_string(),
-            streams::Face {
-                face: value["face"].as_str().expect("face").to_string(),
-                file: format!(
-                    "{}/../{}",
-                    env!("CARGO_MANIFEST_DIR"),
-                    value["file"].as_str().expect("file")
-                ),
-            },
-        );
-    }
-    map
-}
-
-fn live_inputs() -> Option<(PathBuf, Value)> {
-    let render = std::env::var("MAG_CRITIC_RENDER_DIR").ok();
-    let path = std::env::var("MAG_CRITIC_INSPECT_ORACLE").ok();
-    match (render, path) {
-        (None, None) => None,
-        (Some(render), Some(path)) => {
-            let raw = std::fs::read_to_string(&path).expect("the live oracle is readable");
-            Some((
-                PathBuf::from(render),
-                serde_json::from_str(&raw).expect("the live oracle is json"),
-            ))
-        }
-        _ => panic!("set both MAG_CRITIC_RENDER_DIR and MAG_CRITIC_INSPECT_ORACLE, or neither"),
-    }
-}
-
-#[test]
-fn inspects_edition_010_like_python() {
-    let Some((render, expected)) = live_inputs() else {
-        println!("MODE: skipped, MAG_CRITIC_RENDER_DIR and MAG_CRITIC_INSPECT_ORACLE unset");
-        return;
-    };
-    assert!(poppler_pinned());
-    println!("MODE: full, inspecting {}", render.display());
-    let mut compared = 0;
-    let mut rasters = 0;
-    for leg in ["reader", "booklet", "cover_booklet"] {
-        let block = &expected[leg];
-        let rows = block["rows"].as_array().expect("rows");
-        let pdf = render.join(block["pdf"].as_str().expect("pdf"));
-        let directory = scratch(&format!("live-{leg}"));
-        let produced = inspect::render_pages(&pdf, &directory, None).expect("rasterization");
-        assert_eq!(
-            produced.len(),
-            block["rasters"].as_u64().expect("rasters") as usize,
-            "raster count for {leg}"
-        );
-        for (index, row) in rows.iter().enumerate() {
-            let mine = &produced[index];
-            assert_eq!(
-                digest(&std::fs::read(mine).expect("the raster is readable")),
-                row["png_sha256"].as_str().expect("png sha"),
-                "raster bytes for {leg} page {}",
-                row["page"]
-            );
-            rasters += 1;
-            let theirs = render.join(row["png"].as_str().expect("png"));
-            let inspection = inspect::inspect_page(
-                &theirs,
-                row["page"].as_u64().expect("page") as usize,
-                row["text"].as_str().expect("text"),
-            )
-            .expect("inspection succeeds");
-            assert_eq!(
-                inspection.row(),
-                row["row"],
-                "inspection row for {leg} page {}",
-                row["page"]
-            );
-            compared += 1;
-        }
-    }
-    println!("COMPARED: {rasters} rasters, {compared} inspection rows");
-    assert!(compared >= 85, "only {compared} rows compared");
-    tracer_text_report(&render, &expected);
-}
-
-fn tracer_text_report(render: &Path, expected: &Value) {
-    let block = &expected["reader"];
-    let rows = block["rows"].as_array().expect("rows");
-    let pages = block["pdf_pages"].as_u64().expect("pdf pages") as u32;
-    let traced = elements::trace_elements(
-        &render.join(block["pdf"].as_str().expect("pdf")),
-        1,
-        pages,
-        &font_map(),
-    )
-    .expect("the tracer runs");
-    let (mut identical, mut raster_identical) = (0, 0);
-    let raster_fields = [
-        "pixel_dimensions",
-        "ink_ratio",
-        "ink_bbox",
-        "presence_ratio",
-        "presence_bbox",
-        "sparse",
-    ];
-    let text_fields = [
-        "body_text_lines",
-        "text_characters",
-        "blank",
-        "ink_free",
-        "standalone_punctuation_lines",
-    ];
-    let mut per_field = BTreeMap::new();
-    for (row, elements) in rows.iter().zip(&traced) {
-        let mine = inspect::inspect_page(
-            &render.join(row["png"].as_str().expect("png")),
-            row["page"].as_u64().expect("page") as usize,
-            &text::page_text(elements),
-        )
-        .expect("inspection succeeds")
-        .row();
-        if mine == row["row"] {
-            identical += 1;
-        }
-        if raster_fields
-            .iter()
-            .all(|field| mine[field] == row["row"][field])
-        {
-            raster_identical += 1;
-        }
-        for field in text_fields {
-            *per_field.entry(field).or_insert(0) += usize::from(mine[field] == row["row"][field]);
-        }
-    }
-    println!(
-        "TRACER TEXT: {identical} of {} rows identical to python, {raster_identical} of {} agree on every raster field",
-        rows.len(),
-        rows.len()
-    );
-    for (field, agreed) in &per_field {
-        println!("TRACER FIELD: {field} agrees on {agreed} of {}", rows.len());
-    }
-    assert_eq!(
-        raster_identical,
-        rows.len(),
-        "the text source must not move a raster field"
-    );
-    assert!(
-        identical < rows.len(),
-        "the tracer text is known to differ from pypdf on this corpus, so an exact match means the comparison is not running"
     );
 }

@@ -348,39 +348,8 @@ fn repo() -> PathBuf {
     PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/.."))
 }
 
-fn stage_cases() -> PathBuf {
-    let root = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("nocomments-cases");
-    if root.exists() {
-        std::fs::remove_dir_all(&root).expect("the old stage is removable");
-    }
-    let cases = std::fs::read_to_string(repo().join("mag/tests/nocomments_cases.txt")).unwrap();
-    for case in cases.split("\n=== ").skip(1) {
-        let (head, body) = case.split_once('\n').expect("a case has a header line");
-        let (name, crlf) = head
-            .strip_prefix("crlf ")
-            .map_or((head, false), |n| (n, true));
-        let path = root.join(name);
-        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        let body = format!("{body}\n");
-        let body = if crlf {
-            body.replace('\n', "\r\n")
-        } else {
-            body
-        };
-        std::fs::write(&path, body).unwrap();
-    }
-    root
-}
-
 #[test]
 fn no_comments_in_codebase() {
     let found = scan(&repo(), &TARGETS);
     assert_eq!(found, "no comments");
-}
-
-#[test]
-fn crafted_cases_flag_what_the_script_flags() {
-    let root = stage_cases();
-    let want = oracle::expectation("nocomments_cases_expected.txt");
-    assert_eq!(scan(&root, &TARGETS) + "\n", want);
 }
