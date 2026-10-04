@@ -1,6 +1,8 @@
 # Rust crate cleanup
 
-Status: **proposed**, 2026-10-04, not started. Written from a three-reviewer
+Status: **in execution**, 2026-10-04. Orchestrated: one implementer per
+batch, an independent verifier, local commit per verified batch, push to
+main after the final edition 012 render. Written from a three-reviewer
 read of `mag/` (CLI and pipeline; model, critic and trace; typeset, render
 and cover) at base commit `534661c`. Line numbers below are from that commit
 and will drift; find the code by the names given, not by the number.
@@ -35,6 +37,9 @@ review found.
   `cargo fmt --check`, `cargo clippy --all-targets -D warnings`, ruff on
   `tools/`, `cargo test --test nocomments`. Run the full `cargo test` in
   `mag/` before each commit.
+- Clippy denies a curated list of pedantic lints in `mag/Cargo.toml`
+  (AGENTS.md: add pedantic lints by name, fix findings); new code passes
+  them.
 - House style: no comments, fewest readable lines, low complexity, no
   U+2014 in code, prompts, or copy.
 - Fail loud. If a WP hits something this plan did not foresee, stop and
@@ -47,7 +52,10 @@ review found.
 
 ## Phase 0: baseline
 
-**WP-0.1 Reference renders.** Render the newest complete edition (012, en
+**WP-0.1 Reference renders. DONE 2026-10-04.** Baseline binary (pre-cleanup,
+`9c07153`) rendered 012 en (no Spanish translation exists for 012): 76
+pages, critic pass, 38 s wall clock, kept outside the repo by the
+orchestrator. Original text: Render the newest complete edition (012, en
 and es, plus 013 if it renders) and `mag site --out` into scratch. Keep the
 PDFs, page counts, the page each article starts on, and wall-clock render
 time. These are the comparison point for every [visual] WP and for WP-4.2.
@@ -301,7 +309,12 @@ derive `Serialize`. Remove the three `#[allow(clippy::too_many_arguments)]`
 
 ## Phase 4: let Typst do the work
 
-**WP-4.0 Question for Fran, at the start of this phase.** Does anyone read
+**WP-4.0 RESOLVED 2026-10-04: port, do not delete.** The critic is a
+blocking gate (`package/release.rs` bails when the result is `fail`) that
+enforces project rules (article page cap, page count a multiple of four,
+blank inside covers, voids, contents pages), and the same path writes the
+A4 booklet (imposition), the studio package, and `package.zip`. Keep all of
+that; WP-4.1 ports how it reads the layout. Original question: Does anyone read
 `render-critic.json`, the contact sheets, and the preflight report that
 `package_release` writes? If not: delete the critic, preflight, contact
 sheet, and `trace/` path outright and skip WP-4.1's port. If yes: WP-4.1.
@@ -369,7 +382,8 @@ masthead from the committed brand SVGs, the existing cover layout modes
 (`framed`, `footer_caption`, `honored_plate`), inside covers blank. Delete
 the content-stream writer, the splice, and whatever of `cover/` becomes
 unused. Check all three cover modes against several arts before handing to
-Fran.
+Fran. Render also writes the typeset front cover as `<lang>/cover.png`,
+which `mag epub` consumes: keep producing it.
 
 **WP-4.7 Image headers through `image`.** `typeset/media.rs` ~28-107 and
 `package/preflight.rs` ~78-115 hand-parse PNG / JPEG / EXIF headers, and
