@@ -420,6 +420,16 @@ its scopes and the result reads at least as well; otherwise keep the engine,
 make `Call.kind` an enum, and record why. Either way `fancy-regex` goes if
 nothing else uses it.
 
+**WP-4.10 Retire release-state.yaml; capture --refresh.** Added
+2026-10-04 at Fran's request. `library/release-state.yaml` duplicates
+`plan.yaml` (capture writes both), its `status` is `collecting` for every
+edition including shipped ones, and only plan_cmd and capture read it. Its
+one live fact is `intake_edition_id`. Delete the file; the default capture
+edition becomes a `magazine.toml` key (or `--edition`); `mag plan` and
+capture read membership from `plan.yaml`. Add `mag capture --refresh <id>`
+that re-transcribes an existing source in place (article.md, media,
+synopsis, sources.md entry) without touching any plan.
+
 ## Docs
 
 - CLAUDE.md: the `MAG_BLESS` sentence (WP-2.3); describe render as
