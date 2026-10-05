@@ -670,6 +670,10 @@ mod tests {
     }
 
     fn titled_run(title: &str, words: usize) -> Tree {
+        sized_run(title, 32.5, words)
+    }
+
+    fn sized_run(title: &str, size: f64, words: usize) -> Tree {
         let standfirst = vec!["standfirst"; words].join(" ");
         Tree {
             files: vec![File {
@@ -677,7 +681,7 @@ mod tests {
                 source: format!(
                     "#piece(id: \"article-a\", kind: \"article\", short-title: \"A\", \
                      opener: \"illustrated_paper_spots_v1\", \
-                     titles: ((size: 32.5pt, lines: 1), (size: 30pt, lines: 1)))[\n\
+                     titles: ((size: {size}pt, lines: 1), (size: {size}pt, lines: 1)))[\n\
                      #content-label[#label-primary[Feature 01]]\n\
                      #piece-title[{title}]\n\
                      #byline[#byline-prefix[By]#byline-name[ Ada]]\n\
@@ -719,7 +723,7 @@ mod tests {
             panic!("a spilling standfirst reports the words it keeps");
         };
         assert!(
-            split("A Fixture Title", keep) && !split("A Fixture Title", keep + 1),
+            split("A Fixture Title", 32.5, keep) && !split("A Fixture Title", 32.5, keep + 1),
             "{keep} words is the exact fit"
         );
         assert_eq!(
@@ -731,13 +735,15 @@ mod tests {
 
     #[test]
     fn a_short_standfirst_carry_squeezes_the_opener_or_grows_to_two_lines() {
-        let branches: BTreeSet<bool> = (0..16).step_by(3).map(short_carry_branch).collect();
+        let branches: BTreeSet<bool> = (0..22)
+            .map(|step| short_carry_branch(22.0 + 0.5 * f64::from(step)))
+            .collect();
         assert_eq!(branches.len(), 2, "some titles squeeze and some pull back");
     }
 
-    fn short_carry_branch(extra: usize) -> bool {
-        let title = format!("A Fixture Title{}", " Word".repeat(extra));
-        let keeps = |words| template::standfirst_keeps(&compiled(&titled_run(&title, words)));
+    fn short_carry_branch(size: f64) -> bool {
+        let title = "A Fixture Title";
+        let keeps = |words| template::standfirst_keeps(&compiled(&sized_run(title, size, words)));
         let [Some(keep)] = keeps(1000)[..] else {
             panic!("a spilling standfirst reports the words it keeps");
         };
@@ -748,8 +754,8 @@ mod tests {
         let line = sweep.len();
         for &(words, kept) in &sweep {
             let fitted = match kept {
-                None => opener_fits(&titled_run(&title, words)),
-                Some(kept) => kept < keep && words - kept > line && split(&title, kept),
+                None => opener_fits(&sized_run(title, size, words)),
+                Some(kept) => kept < keep && words - kept > line && split(title, size, kept),
             };
             assert!(
                 fitted,
@@ -763,8 +769,8 @@ mod tests {
         template::standfirst_keeps(&compiled(&opener_run(words)))
     }
 
-    fn split(title: &str, words: usize) -> bool {
-        let mut tree = titled_run(title, words);
+    fn split(title: &str, size: f64, words: usize) -> bool {
+        let mut tree = sized_run(title, size, words);
         tree.files[0].source = tree.files[0].source.replace(
             "roster: false)[standfirst",
             "roster: false, split: true)[standfirst",

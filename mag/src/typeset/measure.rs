@@ -24,7 +24,6 @@ const TITLE_BOX: f64 = 64.0;
 const TITLE_MIN: f64 = 22.0;
 const TITLE_MAX: f64 = 32.5;
 const COMPACT_TITLE_MAX: f64 = 30.0;
-const TITLE_LEADING: f64 = 0.96;
 
 const PLAIN_FIELD_GAP: f64 = 305.2756 - 264.5208;
 const CODE_SIDE: f64 = 55.5;
@@ -107,7 +106,10 @@ impl Metrics {
         let mut size = max;
         while size >= min {
             let count = self.wrap(title, face, size, width)?.len();
-            if count <= lines && size + (count as f64 - 1.0) * size * TITLE_LEADING <= box_height {
+            if count <= lines
+                && size + (count as f64 - 1.0) * size * geometry().opener_title_leading
+                    <= box_height
+            {
                 return Ok(Some((size, count)));
             }
             size -= 0.5;
@@ -158,7 +160,9 @@ impl Metrics {
                     "Title cannot fit the Quiet Standard display box: {title}"
                 ))
             })?;
-        let field = FIGURE_FIELD_BASE + 13.0 + size * (1.0 + TITLE_LEADING * lines as f64);
+        let field = FIGURE_FIELD_BASE
+            + 13.0
+            + size * (1.0 + geometry().opener_title_leading * lines as f64);
         Ok((size, field.max(geometry().page_height - 52.0 - 390.0)))
     }
 
@@ -185,7 +189,7 @@ impl Metrics {
                     "Title cannot fit the Quiet Standard display box: {title}"
                 ))
             })?;
-        let flow = size * (1.0 + TITLE_LEADING * lines as f64);
+        let flow = size * (1.0 + geometry().opener_title_leading * lines as f64);
         let baseline = (geometry().datum + 25.0 + 12.0) + flow + 10.0;
         let (column, symbol) = match code {
             Some(rows) => {
@@ -294,7 +298,9 @@ mod tests {
             .editorial_opener("The Pen Moves Faster Than Review")
             .expect("it fits");
         assert_eq!(size, 35.0);
-        assert!((field - (72.0 + 35.0 * (1.0 + 0.96 * 2.0))).abs() < 1e-9);
+        assert!(
+            (field - (72.0 + 35.0 * (1.0 + geometry().opener_title_leading * 2.0))).abs() < 1e-9
+        );
         let upkeep = "Upkeep Scaled Quickly";
         let (size, field) = metrics.editorial_opener(upkeep).expect("one line");
         assert_eq!(size, 35.0);

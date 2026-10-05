@@ -754,7 +754,13 @@ mod tests {
         let [_, narrow, low, prose] = run(false);
         assert_eq!(narrow.len(), 2, "two lines on the 325pt article measure");
         assert!((narrow[0].0 - prose[0].0).abs() < 1e-3);
-        assert!((low[0].1 - byline[0].1 - 35.0 * 0.96).abs() < 1e-3);
+        assert!(
+            (low[0].1
+                - byline[0].1
+                - 35.0 * crate::typeset::geometry::geometry().opener_title_leading)
+                .abs()
+                < 1e-3
+        );
         assert!(
             (prose[0].1 - standfirst[0].1).abs() < 1e-3,
             "the field holds the standfirst"
@@ -1763,7 +1769,10 @@ mod tests {
             title.size,
             title.y
         );
-        let byline_y = top + 47.0046 + 35.0 * 1.96 + 10.0;
+        let byline_y = top
+            + 47.0046
+            + 35.0 * (1.0 + crate::typeset::geometry::geometry().opener_title_leading)
+            + 10.0;
         let byline = mark(&page, |m| m.text.starts_with("BY"));
         assert!((byline.y - byline_y).abs() < 1e-3, "{}", byline.y);
         let note = mark(&page, |m| m.text.starts_with("A fixture author note"));
