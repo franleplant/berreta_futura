@@ -33,3 +33,4 @@ editions/*/art/cover-proofs/
 
 # Art candidates stay local; `mag art NNN --promote` commits picks as art/picks/*.jpg.
 editions/*/art/rounds/
+art-directions/experiments/
