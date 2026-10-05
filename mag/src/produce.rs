@@ -24,7 +24,7 @@ pub struct ProduceArgs {
 }
 
 static IMAGE_LINE: LazyLock<regex::Regex> =
-    LazyLock::new(|| regex::Regex::new(r"^!\[[^\]]*\]\([^)]*\)\s*$").unwrap());
+    LazyLock::new(|| regex::Regex::new(r"^\s*!\[[^\]]*\]\([^)]*\)\s*$").unwrap());
 
 pub const INLINE_PREAMBLE: &str = "You are running non-interactively with NO file access and NO tools. Every\ndocument you need is inlined below. If an included instruction tells you to\nread a file or path, the content of that file is already included here;\nnever claim to have read anything that is not inlined.";
 
@@ -1111,9 +1111,12 @@ mod tests {
 
     #[test]
     fn verbatim_body_strips_capture_chrome_only() {
-        let src = "# Title\n\nBy: A. Author - 2026\n\nFirst para.\n\n![fig](media/001.png)\n\n## Head\n\nSecond - para.\n";
+        let src = "# Title\n\nBy: A. Author - 2026\n\nFirst para.\n\n![fig](media/001.png)\n\n## Head\n\nSecond - para.\n\n1. Step.\n\n   ![nested](media/002.png)\n";
         let body = verbatim_body(&[("s-1".to_string(), src.to_string())]).unwrap();
-        assert_eq!(body, "First para.\n\n\n## Head\n\nSecond - para.\n");
+        assert_eq!(
+            body,
+            "First para.\n\n\n## Head\n\nSecond - para.\n\n1. Step.\n"
+        );
         assert!(verbatim_body(&[]).is_err());
         let dotted = "# Title\n\nBy Ann Lee & Bo Chen \u{b7} Sep 23, 2026\n\nBy design, first.\n";
         let body = verbatim_body(&[("s-1".to_string(), dotted.to_string())]).unwrap();

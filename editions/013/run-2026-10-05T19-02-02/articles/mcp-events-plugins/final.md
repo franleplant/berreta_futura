@@ -1,4 +1,9 @@
-# MCP Events
+---
+source_ids:
+- mcp-events-plugins-d29e87e0
+content_mode: verbatim
+label: VERBATIM
+---
 
 MCP Events lets ChatGPT subscribe to updates from your MCP server, such as new messages, content updates, or status changes. Users choose what to monitor and what ChatGPT should do when an update arrives.
 
@@ -317,7 +322,6 @@ With the event methods and webhook delivery in place, connect your MCP server to
 
 2. Verify that your events appear on your plugin page alongside your tools. Rescan your MCP server whenever you change its tools or events.
 
-   ![Plugin details showing message.created and comment.created events alongside MCP tools.](media/001.png)
 
    ***Plugin events.*** *Discovered events appear alongside tools on the plugin page.*
 

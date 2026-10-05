@@ -1,0 +1,57 @@
+edition:
+  id: '013'
+articles:
+- id: 8-major-updates-to-cloudflare-observability
+  title: 8 major updates to Cloudflare Observability
+  author: Nevi Shah, Arti Kumar, Tom Benn, Sahidya Devadoss
+  content_mode: article
+  source_ids:
+  - 8-major-updates-to-cloudflare-observability-cd838e82
+- id: introducing-clef-our-open-source-decision-models
+  title: 'Introducing Clef: our open-source decision models, and new RL fine-tuning platform'
+  author: Michelle Chen, Alex Reneau, Kevin Flansburg
+  content_mode: article
+  source_ids:
+  - introducing-clef-our-open-source-decision-models-c0a0a5f5
+- id: cloudflare-os-your-company-s-agent-workspace-man
+  title: 'Cloudflare OS: your company’s agent workspace, managed for you'
+  author: Phillip Jones
+  content_mode: verbatim
+  source_ids:
+  - cloudflare-os-your-company-s-agent-workspace-man-32af5c2a
+- id: uber-engineering-en-x-designing-mcp-gateway-uber
+  title: 'Designing MCP Gateway: Uber''s MCP Management Platform'
+  author: Uber Engineering
+  content_mode: article
+  source_ids:
+  - uber-engineering-en-x-designing-mcp-gateway-uber-c421ca43
+- id: statecharts-depth-and-orthogonality
+  title: 'Statecharts, Part 1: Depth and Orthogonality'
+  author: David Harel
+  content_mode: article
+  source_ids:
+  - statecharts-a-visual-formalism-for-complex-syste-7833c2fd
+  source_range:
+    begin: Abstract. We present
+    end: '## 4. Additional statechart features'
+- id: statecharts-actions-extensions-and-practice
+  title: 'Statecharts, Part 2: Actions, Extensions, and Practice'
+  author: David Harel
+  content_mode: article
+  source_ids:
+  - statecharts-a-visual-formalism-for-complex-syste-7833c2fd
+  source_range:
+    begin: '## 4. Additional statechart features'
+    end: '[1] The languages of STATEMATE'
+- id: mcp-events-plugins
+  title: MCP Events
+  author: OpenAI
+  content_mode: verbatim
+  source_ids:
+  - mcp-events-plugins-d29e87e0
+- id: evals-how-to-know-whether-an-ai-system-actually
+  title: 'Evals: how to know whether an AI system actually works'
+  author: Sergii Makarevych
+  content_mode: article
+  source_ids:
+  - evals-how-to-know-whether-an-ai-system-actually-a5c96be7

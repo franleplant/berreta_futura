@@ -220,6 +220,7 @@ fn is_inline_start(event: &Event) -> bool {
         event,
         Event::Text(_)
             | Event::Code(_)
+            | Event::InlineHtml(_)
             | Event::SoftBreak
             | Event::HardBreak
             | Event::Start(Tag::Emphasis | Tag::Strong | Tag::Link { .. })
@@ -342,7 +343,7 @@ fn parse_inline(events: &[Event], index: &mut usize) -> Result<Inline> {
     let event = &events[*index];
     *index += 1;
     match event {
-        Event::Text(text) => Ok(Inline::Text(text.to_string())),
+        Event::Text(text) | Event::InlineHtml(text) => Ok(Inline::Text(text.to_string())),
         Event::Code(text) => Ok(Inline::Code(text.to_string())),
         Event::SoftBreak => Ok(Inline::LineBreak { hard: false }),
         Event::HardBreak => Ok(Inline::LineBreak { hard: true }),
@@ -565,6 +566,14 @@ fn platform_id(platform: ttf_parser::PlatformId) -> u16 {
 mod tests {
     use super::super::shared::content_label;
     use super::*;
+
+    #[test]
+    fn angle_bracket_words_in_prose_print_as_text() {
+        let doc =
+            parse_publication_document("---\ntitle: T\n---\nOne */<service-name>/mcp* endpoint.\n")
+                .unwrap();
+        assert!(format!("{doc:?}").contains("<service-name>"), "{doc:?}");
+    }
 
     #[test]
     fn a_null_label_loads_as_null_and_falls_back() {
