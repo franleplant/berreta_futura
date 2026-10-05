@@ -1,8 +1,13 @@
 # Rust crate cleanup
 
-Status: **in execution**, 2026-10-04. Orchestrated: one implementer per
-batch, an independent verifier, local commit per verified batch, push to
-main after the final edition 012 render. Written from a three-reviewer
+Status: **done**, 2026-10-05 (6aaab2a..d1c0ba7). Final audit: every "Done
+when" criterion met except Fran's visual approval. 012 renders 76 pages,
+critic pass; dev-build render 24.5-29 s vs 38 s baseline; reader.pdf 28.1 MB
+vs 33.0 MB. Visual changes to review: opener titles p46/p56/p69 larger
+(exact measurement), covers reset as Typst text, tighter kicker spacing
+(WeasyPrint half-spacing gone). Library: building-commerce and
+opus-outshines re-captured; countering-misuse still truncated (models refuse
+verbatim transcription; its PDF needs bidi support in pdf_text). Written from a three-reviewer
 read of `mag/` (CLI and pipeline; model, critic and trace; typeset, render
 and cover) at base commit `534661c`. Line numbers below are from that commit
 and will drift; find the code by the names given, not by the number.
