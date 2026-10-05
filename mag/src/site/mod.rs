@@ -59,20 +59,54 @@ pub struct Issue {
     pub assets: PublishRecord,
 }
 
-const FONTS: [&str; 12] = [
-    "source-serif-4/SourceSerif4SmText-Regular.ttf",
-    "source-serif-4/SourceSerif4SmText-It.ttf",
-    "source-serif-4/SourceSerif4SmText-Bold.ttf",
-    "source-serif-4/SourceSerif4Display-Semibold.ttf",
+const FONTS: [&str; 14] = [
+    "web/SourceSerif4SmText-Regular.woff2",
+    "web/SourceSerif4SmText-It.woff2",
+    "web/SourceSerif4SmText-Bold.woff2",
+    "web/SourceSerif4Display-Semibold.woff2",
+    "web/Inter-Regular.woff2",
+    "web/Inter-SemiBold.woff2",
+    "web/Inter-Bold.woff2",
+    "web/InterDisplay-Black.woff2",
+    "web/GeistMono-Regular.woff2",
+    "web/NotoSansMath-Regular.woff2",
     "source-serif-4/LICENSE.md",
-    "inter/Inter-Regular.ttf",
-    "inter/Inter-SemiBold.ttf",
-    "inter/Inter-Bold.ttf",
-    "inter/InterDisplay-Black.ttf",
-    "geist-mono/GeistMono-Regular.ttf",
     "inter/LICENSE.txt",
     "geist-mono/OFL.txt",
+    "noto-sans-math/OFL.txt",
 ];
+
+fn check_font_coverage(root: &Path, files: &[(String, String)]) -> Result<()> {
+    let text = fs::read_to_string(root.join("mag/assets/fonts/web/coverage.txt"))
+        .context("reading web/coverage.txt; run tools/webfonts.py")?;
+    let bound = |s: &str| u32::from_str_radix(s, 16).unwrap_or(u32::MAX);
+    let stacks: Vec<(&str, Vec<(u32, u32)>)> = text
+        .lines()
+        .filter_map(|line| line.split_once(": "))
+        .map(|(name, runs)| {
+            let runs = runs.split(' ').filter_map(|r| r.split_once('-'));
+            (name, runs.map(|(lo, hi)| (bound(lo), bound(hi))).collect())
+        })
+        .collect();
+    ensure!(
+        !stacks.is_empty(),
+        "web/coverage.txt lists no stacks; run tools/webfonts.py"
+    );
+    for (path, body) in files.iter().filter(|(p, _)| p.ends_with(".html")) {
+        for (name, runs) in &stacks {
+            let lacks = |c: &char| {
+                !c.is_control()
+                    && !runs
+                        .iter()
+                        .any(|&(lo, hi)| (lo..=hi).contains(&(*c as u32)))
+            };
+            if let Some(c) = body.chars().find(lacks) {
+                bail!("{path}: {c:?} (U+{:04X}) is missing from the {name} web font stack; subset it in tools/webfonts.py", c as u32);
+            }
+        }
+    }
+    Ok(())
+}
 
 pub fn config(root: &Path) -> Result<SiteConfig> {
     let text = fs::read_to_string(root.join("magazine.toml")).context("reading magazine.toml")?;
@@ -138,6 +172,7 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
         .to_string();
     let logo = logo::build(&name)?;
     let files = html::pages(&issues, &images, &site, &name, &logo.inline)?;
+    check_font_coverage(&root, &files)?;
     for (path, body) in &files {
         let target = args.out.join(path);
         fs::create_dir_all(target.parent().context("a page has no parent")?)?;
@@ -146,13 +181,11 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
     fs::write(args.out.join("favicon.svg"), &logo.favicon)?;
     fs::write(args.out.join("apple-touch-icon.png"), &logo.touch)?;
     fs::write(args.out.join("og.png"), &logo.card)?;
+    let fonts = args.out.join("fonts");
+    fs::create_dir_all(&fonts)?;
     for font in FONTS {
-        let target = args
-            .out
-            .join("fonts")
-            .join(Path::new(font).file_name().unwrap());
-        fs::create_dir_all(target.parent().unwrap())?;
-        fs::copy(root.join("mag/assets/fonts").join(font), target)?;
+        let name = font.replace("web/", "").replace('/', "-");
+        fs::copy(root.join("mag/assets/fonts").join(font), fonts.join(name))?;
     }
     println!(
         "site: {} pages, {} images, {} bytes in {}",

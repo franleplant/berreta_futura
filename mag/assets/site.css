@@ -1,12 +1,13 @@
-@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Regular.ttf) format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-It.ttf) format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Bold.ttf) format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Source Serif Display"; src: url(fonts/SourceSerif4Display-Semibold.ttf) format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter"; src: url(fonts/Inter-Regular.ttf) format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter"; src: url(fonts/Inter-SemiBold.ttf) format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter"; src: url(fonts/Inter-Bold.ttf) format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter Display"; src: url(fonts/InterDisplay-Black.ttf) format("truetype"); font-weight: 900; font-style: normal; font-display: swap; }
-@font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-Regular.ttf) format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-It.woff2) format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Bold.woff2) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Source Serif Display"; src: url(fonts/SourceSerif4Display-Semibold.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter"; src: url(fonts/Inter-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter"; src: url(fonts/Inter-SemiBold.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter"; src: url(fonts/Inter-Bold.woff2) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter Display"; src: url(fonts/InterDisplay-Black.woff2) format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Math Symbols"; src: url(fonts/NotoSansMath-Regular.woff2) format("woff2"); unicode-range: U+2190-22FF, U+25A0-25FF; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 
 :root {
   --paper: #fbf9f4;
@@ -24,11 +25,11 @@
   --wide: 46rem;
   --page: 62rem;
   --gutter: 1.25rem;
-  --serif: "Source Serif", Charter, "Iowan Old Style", Georgia, serif;
-  --display: "Source Serif Display", "Source Serif", Georgia, serif;
-  --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --poster: "Inter Display", Inter, system-ui, sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --serif: "Source Serif", "Math Symbols", Charter, "Iowan Old Style", Georgia, serif;
+  --display: "Source Serif Display", "Source Serif", "Math Symbols", Georgia, serif;
+  --sans: Inter, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --poster: "Inter Display", Inter, "Math Symbols", system-ui, sans-serif;
+  --mono: "Geist Mono", "Math Symbols", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light dark;
 }
 
