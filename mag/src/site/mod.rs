@@ -99,14 +99,16 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
     let _scratch = Scratch;
     let root = std::env::current_dir()?.canonicalize()?;
     let site = config(&root)?;
-    let mut issues = site
-        .editions
-        .iter()
-        .map(|id| issue(&root, id))
+    let mut issues = crate::util::parallel(&site.editions, |id| issue(&root, id))
+        .into_iter()
         .collect::<Result<Vec<_>>>()?;
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
     prepare(&args.out)?;
-    let images = images::encode_all(&html::image_paths(&issues), &args.out)?;
+    let images = images::encode_all(
+        &html::image_paths(&issues),
+        &args.out,
+        &root.join(".magazine/site-cache"),
+    )?;
     let name = issues
         .first()
         .map_or("Magazine", |i| i.editions[0].publication_name.as_str())
@@ -347,9 +349,16 @@ fn tracked_epubs(
     rel: &str,
 ) -> Result<BTreeMap<String, Epub>> {
     let prefix = format!("{rel}/epub/");
-    tracked
+    let epubs: Vec<&String> = tracked
         .iter()
         .filter(|path| path.starts_with(&prefix))
+        .collect();
+    require_committed(
+        root,
+        &epubs.iter().map(|p| (*p).clone()).collect::<Vec<_>>(),
+    )?;
+    epubs
+        .into_iter()
         .filter_map(|path| {
             let stem = path.strip_suffix(".epub")?;
             let (_, language) = stem.rsplit_once('-')?;
@@ -366,7 +375,7 @@ fn tracked_epubs(
 
 #[cfg(test)]
 mod tests {
-    use super::{newest_tracked_run, require_committed};
+    use super::{newest_tracked_run, require_committed, tracked_epubs};
     use std::collections::BTreeSet;
 
     fn set(paths: &[&str]) -> BTreeSet<String> {
@@ -404,6 +413,32 @@ mod tests {
         std::fs::write(dir.join("a.md"), "changed").unwrap();
         let err = require_committed(&dir, &both[..1]).unwrap_err().to_string();
         assert!(err.ends_with(": a.md"), "{err}");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_modified_tracked_epub_is_refused() {
+        let dir = std::env::temp_dir().join(format!("mag-site-epub-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("editions/001/epub")).unwrap();
+        let git = |args: &[&str]| {
+            let status = std::process::Command::new("git")
+                .args(["-c", "user.name=t", "-c", "user.email=t@t"])
+                .args(args)
+                .current_dir(&dir)
+                .status()
+                .unwrap();
+            assert!(status.success());
+        };
+        git(&["init", "-q"]);
+        std::fs::write(dir.join("editions/001/epub/x-en.epub"), "a").unwrap();
+        git(&["add", "."]);
+        git(&["commit", "-qm", "a"]);
+        let tracked = set(&["editions/001/epub/x-en.epub"]);
+        assert!(tracked_epubs(&dir, &tracked, "editions/001").is_ok());
+        std::fs::write(dir.join("editions/001/epub/x-en.epub"), "changed").unwrap();
+        let err = tracked_epubs(&dir, &tracked, "editions/001").err().unwrap();
+        assert!(err.to_string().ends_with("x-en.epub"), "{err}");
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

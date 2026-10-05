@@ -129,7 +129,7 @@ to about 6.5 s.
 | 5 (done) | `capture.rs` `localize_images` | Download images with a bounded pool (8) via `util::parallel`-style workers; keep numbering by first appearance so names stay deterministic. | 13 images: 12 s to about 2 s; 41 images: about 40 s to about 6 s | S | Low | Yes |
 | 6 (done) | `mag/Cargo.toml` | `[profile.release] incremental = true` | Release rebuild 10.6 s to 2.8 s; render and site unchanged in speed and bytes (measured) | S | Low: cold builds unaffected | Yes |
 | 7 (done) | `critic/rules.rs` `emit_crops`, `opener_crop_fidelity_checks` | Write crops in parallel; let the fidelity check use the page already decoded for the crop instead of decoding again. | About 1.2 s (emit 1.33 s, fidelity 0.77 s) | S | Low | Yes |
-| 8 | `site/mod.rs` `run`/`issue`, `site/images.rs` `encode_all` | Load issues in parallel; cache encoded variants under `.magazine/site/` keyed by source sha256 + width + quality + encoder version (the same cache as plan 04 step 3, land it once); switch `encode_all` from static chunks to a work queue. | `mag site` 2.2 s to about 0.5 s warm; grows linearly with editions today | M | Low with the key and an invalidation test | Yes |
+| 8 (done) | `site/mod.rs` `run`/`issue`, `site/images.rs` `encode_all` | Load issues in parallel; cache encoded variants under `.magazine/site-cache/` keyed by source sha256 + width + quality + encoder version (the same cache as plan 04 step 3, land it once); switch `encode_all` from static chunks to a work queue. | `mag site` 2.2 s to about 0.5 s warm; grows linearly with editions today | M | Low with the key and an invalidation test | Yes |
 | 9 (done) | `art.rs` `collect_showcase_items`, `picks.rs` `picked_from` | Check each pick at most once (newest round first, stop at the first match) and run the checks in parallel. | About 1.5 s per round or `--showcase` with one matching round; 6 s observed with re-rolled names | S | Low | Yes |
 | 10 (done) | `caller.rs` `CONCURRENCY` | 8 to 16. Only issues with more than 8 articles gain. | 012: 104 s to 85 s | S | Low; same throttling caveat as item 4 | Yes |
 | 11 (done) | `site/epub.rs` `images` | Encode EPUB images in parallel (`util::parallel`). | 2.1 s to about 0.5 s | S | Low | Yes |
@@ -153,6 +153,13 @@ All measured in a scratch copy of the repo with release binaries built from HEAD
 - Item 10: `caller::CONCURRENCY` 8 to 16, semaphore unchanged. `mag produce` on 012 (11 pieces) with a fake `claude` that sleeps 2 s: 4.10 s base, 2.09 s new (two runs each); the real gain is one writing wave instead of two for issues with more than 8 pieces.
 - Item 11: EPUB images are encoded in chunks of `available_parallelism` through `util::parallel`; names and order unchanged. `mag epub 012 --cover` in a scratch clone: 2.17, 2.14, 2.16 s base; 0.93, 0.90, 0.91 s new. The epub is byte-identical (cmp).
 - Checks: fmt, clippy --all-targets -D warnings, cargo test all pass; reader.pdf and render-critic.json of a fresh `mag render 012` are byte-identical to the previous render.
+
+### Done: item 8 (2026-10-04)
+
+- `site::run` loads the issues through `util::parallel`; `encode_all` takes images from an atomic work queue instead of static chunks. Each source's variants are cached under `.magazine/site-cache/<key>/` (untracked via `.magazine/`), key = sha256 of a digest of `Cargo.lock` and `site/images.rs` (compiled in, so dependency or encoder changes invalidate it), source sha256, JPEG quality and the width set (800, 1200, 1600, 3200 cap); entries hold the variant bytes plus `entry.json` with a sha256 per variant, are written to a temp dir and renamed, and an entry that is missing, unparsable or fails a checksum is ignored and re-encoded. The cache grows unbounded under `.magazine/site-cache/` (safe to delete).
+- `mag site --out`, release build, 3 editions, 104 images, load average 12 to 23: HEAD 839b5e4 3.02, 2.30, 2.30 s; new cold cache 2.74, 2.06, 2.08 s; new warm cache 0.80, 0.80, 0.80 s. `diff -r` against the HEAD output is empty for both cold and warm. The warm floor is mostly git and staging (issues in parallel) plus writing 80 MB.
+- Tests: `a_cache_hit_reproduces_a_fresh_encode_and_corruption_falls_back_to_encoding`, `changed_bytes_quality_or_widths_miss_the_cache`.
+- Side finding fixed: `tracked_epubs` now passes the EPUB paths through `require_committed`, so a modified tracked EPUB fails the build (test `a_modified_tracked_epub_is_refused`).
 
 ### How to verify each item
 
@@ -223,8 +230,7 @@ All measured in a scratch copy of the repo with release binaries built from HEAD
 
 ## Side findings (not performance)
 
-- `mag site` copies `editions/NNN/epub/*.epub` from the working tree
-  (`tracked_epubs`) without the dirty check `require_committed` applies to the
-  other inputs, so a locally modified EPUB ships.
+- Fixed with item 8: `mag site` copied `editions/NNN/epub/*.epub` from the
+  working tree without the dirty check; it now goes through `require_committed`.
 - `preflight.json` embeds the timestamped render path, which makes
   SHA256SUMS differ between identical renders.
