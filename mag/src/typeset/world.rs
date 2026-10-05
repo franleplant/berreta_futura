@@ -28,6 +28,7 @@ static SHARED: OnceLock<Shared> = OnceLock::new();
 pub struct Sources {
     shared: &'static Shared,
     main: FileId,
+    roots: Vec<PathBuf>,
     texts: HashMap<FileId, Source>,
     marks: HashMap<FileId, Vec<Mark>>,
 }
@@ -62,6 +63,19 @@ fn faces(dir: &Path) -> Result<Vec<Font>> {
     Ok(fonts)
 }
 
+fn canonical(root: &Path) -> Result<PathBuf> {
+    root.canonicalize()
+        .with_context(|| format!("render root {}", root.display()))
+}
+
+#[cfg(test)]
+pub fn fixture_roots() -> Vec<PathBuf> {
+    vec![
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests"),
+        std::env::temp_dir(),
+    ]
+}
+
 pub fn font_dir() -> &'static Path {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts"))
 }
@@ -94,10 +108,42 @@ impl Sources {
         }
         Ok(Self {
             shared: shared()?,
+            roots: vec![canonical(
+                &Path::new(env!("CARGO_MANIFEST_DIR")).join("assets"),
+            )?],
             main: id(ROOT)?,
             texts,
             marks,
         })
+    }
+
+    #[cfg(test)]
+    pub fn fixture(tree: &Tree, template: &str, root: &str) -> Result<Self> {
+        Self::new(tree, template, root)?.allowing(&fixture_roots())
+    }
+
+    pub fn allowing(mut self, roots: &[PathBuf]) -> Result<Self> {
+        for root in roots {
+            self.roots.push(canonical(root)?);
+        }
+        Ok(self)
+    }
+
+    fn read(&self, file: FileId, path: &str) -> FileResult<Bytes> {
+        let io = |error| FileError::from_io(error, Path::new(path));
+        let real = Path::new(path).canonicalize().map_err(io)?;
+        if !self.roots.iter().any(|root| real.starts_with(root)) {
+            return Err(FileError::Other(Some(
+                format!("{path} is outside the render directory and the asset roots").into(),
+            )));
+        }
+        self.shared
+            .media
+            .lock()
+            .expect("the media cache is not poisoned")
+            .entry(file)
+            .or_insert_with(|| std::fs::read(real).map(Bytes::new).map_err(io))
+            .clone()
     }
 
     pub fn marks(&self, file: FileId) -> &[Mark] {
@@ -133,17 +179,7 @@ impl World for Sources {
         if let Ok(source) = self.source(file) {
             return Ok(Bytes::from_string(source.text().to_string()));
         }
-        self.shared
-            .media
-            .lock()
-            .expect("the media cache is not poisoned")
-            .entry(file)
-            .or_insert_with(|| {
-                std::fs::read(path)
-                    .map(Bytes::new)
-                    .map_err(|error| FileError::from_io(error, Path::new(path)))
-            })
-            .clone()
+        self.read(file, path)
     }
 
     fn font(&self, index: usize) -> Option<Font> {
@@ -152,5 +188,28 @@ impl World for Sources {
 
     fn today(&self, _offset: Option<Duration>) -> Option<Datetime> {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_file_outside_the_allowed_roots_is_refused_and_one_inside_loads() {
+        let dir = std::env::temp_dir().join(format!("mag-world-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("plate.bin");
+        std::fs::write(&path, b"plate").unwrap();
+        let file = id(path.canonicalize().unwrap().to_str().unwrap()).unwrap();
+        let bare = Sources::new(&Tree::default(), "", "").unwrap();
+        assert!(bare.file(file).is_err());
+        let allowed = Sources::new(&Tree::default(), "", "")
+            .unwrap()
+            .allowing(std::slice::from_ref(&dir))
+            .unwrap();
+        assert_eq!(allowed.file(file).unwrap().as_slice(), b"plate");
+        assert!(bare.file(file).is_err());
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }

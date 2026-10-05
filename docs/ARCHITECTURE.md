@@ -25,6 +25,35 @@ The magazine is produced by two programs and a pile of files.
 
 Model calls go through `caller.rs`, which takes `<backend>:<model>` specs.
 
+## Module map (`mag/src/`)
+
+`lib.rs` declares one module per command or concern; `main.rs` is the clap
+front end.
+
+- `capture.rs`, `plan_cmd.rs`, `produce.rs`, `art.rs`, `picks.rs`,
+  `translate.rs`, `anchors.rs`, `publish.rs`, `print_cmd.rs`: the commands.
+- `caller.rs`: every model call, by `<backend>:<model>` spec.
+- `model/`: typed records, edition manifest, and spec loaders.
+- `render.rs`: the `render` command; stages inputs and hands them to
+  `typeset/`, then runs `critic/` and `package/`.
+- `typeset/`: Typst layout. `content.rs` builds the source tree,
+  `template.rs` and `world.rs` compile it (the world reads only the render
+  directory and `assets/`), `measure.rs` measures text, `decisions.rs`
+  carries layout decisions as data, `geometry.rs` the page numbers,
+  `runs.rs` the laid-out text runs the critic reads, `cover.rs` the cover
+  pages, plus `flow`, `layout`, `hyphen`, `legible`, `media`, `art`, `tone`,
+  `release`.
+- `critic/`: render checks over the laid-out document and `pdf_text.rs`.
+- `package/`: printer preflight, contact sheet, and the release archive;
+  `impose.rs` imposes the booklet.
+- `site/`: the static site and EPUB (`html.rs`, `images.rs`, `logo.rs`,
+  `epub.rs`).
+- `highlight/`: the code highlighter, shared by `typeset/` and `site/`. It
+  interprets Pygments lexer tables with `fancy-regex`; `syntect` was tried and
+  rejected because its bundled syntaxes lack TypeScript, TOML, and HTTP, which
+  the captured sources use.
+- `cover/`: cover art and text helpers.
+
 ## The files
 
 - `library/sources/<id>/` is a captured source: `record.yaml` (title, author,

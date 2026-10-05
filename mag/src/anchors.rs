@@ -19,7 +19,10 @@ pub struct AnchorsArgs {
         help = "Cheap model that re-anchors figures to the run's headings"
     )]
     pub model: String,
-    #[arg(long, help = "Only list unresolved anchors, no model call, no edits")]
+    #[arg(
+        long,
+        help = "Only list unresolved anchors, no model call, no edits; exits 2 when anchors are unresolved (1 is an error)"
+    )]
     pub check: bool,
 }
 
@@ -61,18 +64,37 @@ fn final_md(run: &Path, article_id: &str) -> std::path::PathBuf {
     run.join("articles").join(article_id).join("final.md")
 }
 
-pub(crate) fn unresolved(run: &Path, edition: &EditionFile) -> Vec<String> {
+pub(crate) struct Unresolved {
+    pub line: String,
+    hand: bool,
+}
+
+pub(crate) fn unresolved(run: &Path, edition: &EditionFile) -> Vec<Unresolved> {
     let mut stale = Vec::new();
     for article in edition.articles.iter().filter(|a| !a.id.is_empty()) {
         let headings = manuscript_headings(&final_md(run, &article.id));
         for pending in pending_figures(article, &headings) {
-            stale.push(format!(
-                "{}:{} (anchor '{}')",
-                article.id, pending.id, pending.anchor
-            ));
+            stale.push(Unresolved {
+                line: format!(
+                    "{}:{} (anchor '{}')",
+                    article.id, pending.id, pending.anchor
+                ),
+                hand: headings.is_empty(),
+            });
         }
     }
     stale
+}
+
+pub(crate) fn advice(stale: &[Unresolved], edition: &str, run: &Path) -> String {
+    if stale.iter().all(|u| u.hand) {
+        let names: Vec<&str> = stale.iter().map(|u| u.line.as_str()).collect();
+        return format!(
+            "these manuscripts have no heading to anchor to; set the anchor by hand in edition.yaml or remove the figure: {}",
+            names.join(", ")
+        );
+    }
+    format!("mag anchors {edition} --run {}", run.display())
 }
 
 fn parse_anchor_reply(
@@ -145,6 +167,17 @@ fn resolve(
     )
 }
 
+fn inline_comment(line: &str) -> &str {
+    let value = line.trim_start().trim_start_matches("anchor:").trim_start();
+    let skip = match value.chars().next() {
+        Some(quote @ ('\'' | '"')) => value[1..].find(quote).map_or(value.len(), |i| i + 2),
+        _ => 0,
+    };
+    value[skip..]
+        .find(" #")
+        .map_or("", |at| &value[skip + at..])
+}
+
 fn patch_anchor_lines(yaml: &str, edits: &[(String, String, String)]) -> Result<String> {
     let id_of = |line: &str, prefix: &str| {
         line.strip_prefix(prefix)
@@ -161,13 +194,18 @@ fn patch_anchor_lines(yaml: &str, edits: &[(String, String, String)]) -> Result<
         skipping = false;
         if let Some(id) = id_of(line, "- id:") {
             article = id;
+            figure.clear();
         } else if let Some(id) = id_of(line, "  - id:") {
             figure = id;
         } else if line.starts_with("    anchor:") {
             if let Some((_, _, heading)) =
                 edits.iter().find(|(a, f, _)| *a == article && *f == figure)
             {
-                out.push(format!("    anchor: {}", yq(heading)));
+                out.push(format!(
+                    "    anchor: {}{}",
+                    yq(heading),
+                    inline_comment(line)
+                ));
                 applied += 1;
                 skipping = true;
                 continue;
@@ -196,8 +234,8 @@ pub fn run(args: &AnchorsArgs) -> Result<i32> {
         bail!("{} has no complete run to anchor against", args.edition);
     };
     let stale = unresolved(&run, &edition.yaml);
-    for line in &stale {
-        println!("  unresolved: {line}");
+    for item in &stale {
+        println!("  unresolved: {}", item.line);
     }
     if stale.is_empty() {
         println!(
@@ -207,12 +245,8 @@ pub fn run(args: &AnchorsArgs) -> Result<i32> {
         return Ok(0);
     }
     if args.check {
-        println!(
-            "\nnext: mag anchors {} --run {}",
-            args.edition,
-            run.display()
-        );
-        return Ok(1);
+        println!("\nnext: {}", advice(&stale, &args.edition, &run));
+        return Ok(2);
     }
     let model = ModelSpec::parse(&args.model)?;
     let caller = Caller::new(&run);
@@ -294,5 +328,27 @@ mod tests {
         let out = patch_anchor_lines(yaml, &edits).unwrap();
         assert_eq!(out, yaml.replace("anchor: Other", "anchor: 'New: heading'"));
         assert!(patch_anchor_lines(yaml, &[("c".into(), "f".into(), "H".into())]).is_err());
+    }
+
+    #[test]
+    fn an_inline_comment_survives_and_figure_ids_reset_per_article() {
+        let yaml = "- id: a
+  figures:
+  - id: f1
+    anchor: Old # note
+- id: b
+  figures:
+    anchor: Orphan
+";
+        let edits = vec![("b".to_string(), "f1".to_string(), "New".to_string())];
+        assert!(patch_anchor_lines(yaml, &edits).is_err());
+        let edits = vec![("a".to_string(), "f1".to_string(), "New".to_string())];
+        assert_eq!(
+            patch_anchor_lines(yaml, &edits).unwrap(),
+            yaml.replace("Old # note", "New # note")
+        );
+        assert_eq!(inline_comment("    anchor: \"A # b\" # c"), " # c");
+        assert_eq!(inline_comment("    anchor: A # c"), " # c");
+        assert_eq!(inline_comment("    anchor: A"), "");
     }
 }

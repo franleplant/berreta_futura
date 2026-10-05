@@ -18,11 +18,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   step leaves you guessing what comes next, fix the step's output in code;
   documenting the gap here is the fallback, not the fix.
 - `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
-  loads `edition.yaml`, lays out reader pages, and writes the PDFs. There is no other engine and
+  loads `edition.yaml`, lays out reader pages, and writes the PDFs; the render
+  critic reads the laid-out Typst document, not the PDF. `--no-legibility`
+  skips the tesseract figure legibility check. There is no other engine and
   no Python in the render path. It makes no model call: it refuses a figure
   anchor that matches no heading of the run and names the fix, `mag anchors NNN`
   (the one cheap model call that re-anchors figures and patches `edition.yaml`;
-  `--check` only lists them).
+  `--check` only lists them and exits 2 when any are unresolved, 1 on error).
 - `mag site [--out output/site]` builds the public static site, deployed
   from this laptop to berreta.franleplant.com (`deploy/web/README.md`). It publishes the editions listed in
   `magazine.toml` `[site] editions`, each from its newest git-tracked complete
@@ -77,8 +79,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   in each edition. `sources.md` is generated from the records; do not hand-edit.
 - `mag capture <url> [--edition NNN] [--tags a,b]` is the whole intake: it
   fetches the page, transcribes it to verbatim Markdown through one
-  fidelity-gated model call (prose must match the page word-for-word, code
-  blocks byte-exact, retried with the misses fed back), downloads media,
+  fidelity-gated model call (prose must match the page word-for-word, in page
+  order, without skipping stretches of it; code blocks byte-exact; retried
+  with the misses fed back), downloads media,
   writes record.yaml, queues the source, prepends the `sources.md` entry,
   and records the source in `editions/<edition>/plan.yaml` (creating the
   plan from every queued source if it does not exist). By default the source
@@ -89,7 +92,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   mapping at capture time, on the command line, so it lives in plan.yaml and
   never only in a conversation. Raw HTML lands in `.magazine/capture/` (untracked). For pages curl
   cannot reach (login walls, JS-rendered apps like X), fetch the DOM with a
-  browser first and pass it as `--html <file>`; the rest is identical.
+  browser first and pass it as `--html <file>`; the rest is identical. When `--edition` is a prefix of
+  existing edition ids but matches none exactly, capture refuses and asks for
+  the full id (`plan_cmd::intake_edition_for`).
 - Never replace a source's text with an unlabeled summary. Keep the author's
   wording, structure, and headings; drop site chrome.
 

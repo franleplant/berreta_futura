@@ -28,8 +28,36 @@ enum Action {
     Http(String, Vec<String>),
 }
 
+#[derive(Clone, Copy)]
+enum Kind {
+    Something,
+    ResetIndent,
+    SaveIndent,
+    SetIndent,
+    SetBlockScalarIndent,
+    BlockScalarEmptyLine,
+    BlockScalarIndent,
+    PlainScalarIndent,
+}
+
+impl Kind {
+    fn parse(name: &str) -> Result<Self> {
+        Ok(match name {
+            "something" => Self::Something,
+            "reset_indent" => Self::ResetIndent,
+            "save_indent" => Self::SaveIndent,
+            "set_indent" => Self::SetIndent,
+            "set_block_scalar_indent" => Self::SetBlockScalarIndent,
+            "parse_block_scalar_empty_line" => Self::BlockScalarEmptyLine,
+            "parse_block_scalar_indent" => Self::BlockScalarIndent,
+            "parse_plain_scalar_indent" => Self::PlainScalarIndent,
+            other => bail!("unknown lexer callback {other}"),
+        })
+    }
+}
+
 struct Call {
-    kind: String,
+    kind: Kind,
     class: String,
     error: String,
     content: String,
@@ -299,7 +327,7 @@ fn action(value: &Value) -> Result<Action> {
     }
     if value["f"].is_string() {
         return Ok(Action::Call(Call {
-            kind: text("f"),
+            kind: Kind::parse(&text("f"))?,
             class: text("t"),
             error: text("e"),
             content: text("c"),
@@ -357,13 +385,13 @@ impl Call {
         let end = start + text.len();
         let emit =
             |ctx: &mut Context, class: &str, text: &str| ctx.out.push((class.into(), text.into()));
-        match self.kind.as_str() {
-            "something" if text.is_empty() => {}
-            "something" => {
+        match self.kind {
+            Kind::Something if text.is_empty() => {}
+            Kind::Something => {
                 emit(ctx, &self.class, text);
                 ctx.pos = end;
             }
-            "reset_indent" => {
+            Kind::ResetIndent => {
                 ctx.indent_stack.clear();
                 ctx.indent = -1;
                 ctx.next_indent = 0;
@@ -371,8 +399,8 @@ impl Call {
                 emit(ctx, &self.class, text);
                 ctx.pos = end;
             }
-            "save_indent" => self.save_indent(text, end, ctx),
-            "set_indent" => {
+            Kind::SaveIndent => self.save_indent(text, end, ctx),
+            Kind::SetIndent => {
                 if ctx.indent < ctx.next_indent {
                     ctx.indent_stack.push(ctx.indent);
                     ctx.indent = ctx.next_indent;
@@ -383,7 +411,7 @@ impl Call {
                 emit(ctx, &self.class, text);
                 ctx.pos = end;
             }
-            "set_block_scalar_indent" => {
+            Kind::SetBlockScalarIndent => {
                 ctx.block_scalar_indent = None;
                 if text.is_empty() {
                     return;
@@ -394,7 +422,7 @@ impl Call {
                 emit(ctx, &self.class, text);
                 ctx.pos = end;
             }
-            "parse_block_scalar_empty_line" => {
+            Kind::BlockScalarEmptyLine => {
                 let width = text.chars().count() as i64;
                 match ctx.block_scalar_indent {
                     Some(indent) if width > indent => {
@@ -407,7 +435,7 @@ impl Call {
                 }
                 ctx.pos = end;
             }
-            "parse_block_scalar_indent" => {
+            Kind::BlockScalarIndent => {
                 let width = text.chars().count() as i64;
                 let floor = match ctx.block_scalar_indent {
                     None => ctx.indent.max(0) + 1,
@@ -424,7 +452,7 @@ impl Call {
                     ctx.pos = end;
                 }
             }
-            "parse_plain_scalar_indent" => {
+            Kind::PlainScalarIndent => {
                 if text.chars().count() as i64 <= ctx.indent {
                     ctx.stack.pop();
                     ctx.stack.pop();
@@ -435,7 +463,6 @@ impl Call {
                     ctx.pos = end;
                 }
             }
-            kind => unreachable!("yaml callback {kind}"),
         }
     }
 

@@ -2,6 +2,7 @@ use crate::typeset::content::{compose, Tree};
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::world::Sources;
 use anyhow::{bail, ensure, Result};
+use std::path::PathBuf;
 use typst::foundations::{Smart, Value};
 use typst::introspection::MetadataElem;
 use typst::layout::{Frame, FrameItem};
@@ -12,17 +13,23 @@ pub const TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template.typ")
 pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
 const IDENT: &str = "mag-typeset-reader";
 
+#[cfg(test)]
 pub fn world(tree: &Tree) -> Result<Sources> {
-    Sources::new(tree, TEMPLATE_TYP, ROOT_TYP)
+    Sources::fixture(tree, TEMPLATE_TYP, ROOT_TYP)
+}
+
+pub fn world_in(tree: &Tree, roots: &[PathBuf]) -> Result<Sources> {
+    Sources::new(tree, TEMPLATE_TYP, ROOT_TYP)?.allowing(roots)
 }
 
 pub fn composed(
     edition: &crate::model::manifest::Edition,
     hyphenation: Hyphenation,
     cover: &str,
+    roots: &[PathBuf],
 ) -> Result<Tree> {
     let tree = compose(edition, hyphenation, &[], cover)?;
-    let keeps = standfirst_keeps(&document(&world(&tree)?)?);
+    let keeps = standfirst_keeps(&document(&world_in(&tree, roots)?)?);
     Ok(match keeps.iter().any(Option::is_some) {
         true => compose(edition, hyphenation, &keeps, cover)?,
         false => tree,
@@ -45,14 +52,18 @@ pub fn standfirst_keeps(document: &PagedDocument) -> Vec<Option<usize>> {
         .collect()
 }
 
-pub fn paginate(tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDocument)> {
-    let (mut tree, bare) = crate::typeset::runt::bound(tree, hyphenation)?;
+pub fn paginate(
+    tree: Tree,
+    hyphenation: Hyphenation,
+    roots: &[PathBuf],
+) -> Result<(Tree, PagedDocument)> {
+    let (mut tree, bare) = crate::typeset::runt::bound(tree, hyphenation, roots)?;
     let content =
         bare.pages().len().checked_sub(2).ok_or_else(|| {
             anyhow::anyhow!("the bare document has fewer than the two cover pages")
         })?;
     tree.decisions.closing = Some(content);
-    let plated = document(&world(&tree)?)?;
+    let plated = document(&world_in(&tree, roots)?)?;
     let plates = plated
         .introspector()
         .elements()
@@ -260,12 +271,12 @@ mod tests {
     }
 
     fn pages_of(tree: &Tree, template: &str) -> Result<usize> {
-        let world = Sources::new(tree, template, ROOT_TYP)?;
+        let world = Sources::fixture(tree, template, ROOT_TYP)?;
         Ok(media_boxes(&compile(&world)?).len())
     }
 
     fn refusal(main: &str) -> String {
-        let world = Sources::new(&synthetic(main.to_string()), TEMPLATE_TYP, ROOT_TYP)
+        let world = Sources::fixture(&synthetic(main.to_string()), TEMPLATE_TYP, ROOT_TYP)
             .expect("the world builds");
         let Err(error) = document(&world) else {
             panic!("the document is refused");
@@ -467,7 +478,7 @@ mod tests {
         let tree = fixture_tree("901");
         let capped = TEMPLATE_TYP.replace("#let ARTICLE-PAGE-CAP = 7", "#let ARTICLE-PAGE-CAP = 1");
         assert_ne!(capped, TEMPLATE_TYP, "the cap constant moved");
-        let world = Sources::new(&tree, &capped, ROOT_TYP).expect("the world builds");
+        let world = Sources::fixture(&tree, &capped, ROOT_TYP).expect("the world builds");
         let error = compile(&world).expect_err("a one-page cap must refuse the fixture");
         assert!(
             error.to_string().contains("the hard cap is 1"),
@@ -484,7 +495,7 @@ mod tests {
             prose(400)
         ));
         let capped = TEMPLATE_TYP.replace("#let ARTICLE-PAGE-CAP = 7", "#let ARTICLE-PAGE-CAP = 1");
-        let world = Sources::new(&tree, &capped, ROOT_TYP).expect("the world builds");
+        let world = Sources::fixture(&tree, &capped, ROOT_TYP).expect("the world builds");
         assert!(
             compile(&world).is_ok(),
             "a verbatim overrun is a warning in render.py:2085-2091, never a refusal"
@@ -493,7 +504,7 @@ mod tests {
             "#piece(id: \"p\", kind: \"article\", short-title: \"P\", opener: \"plain\")[\n{}]\n",
             prose(400)
         ));
-        let world = Sources::new(&article, &capped, ROOT_TYP).expect("the world builds");
+        let world = Sources::fixture(&article, &capped, ROOT_TYP).expect("the world builds");
         assert!(
             compile(&world).is_err(),
             "the same run under kind article must be refused, or the branch is vacuous"
@@ -509,7 +520,7 @@ mod tests {
         );
         assert_ne!(untracked, TEMPLATE_TYP, "the tracking constant moved");
         let render = |template: &str| {
-            compile(&Sources::new(&tree, template, ROOT_TYP).expect("the world builds"))
+            compile(&Sources::fixture(&tree, template, ROOT_TYP).expect("the world builds"))
                 .expect("the opener run compiles")
         };
         assert_ne!(
@@ -528,7 +539,7 @@ mod tests {
         );
         assert_ne!(plain, TEMPLATE_TYP, "the opener name moved");
         let illustrated = pages_of(&tree, TEMPLATE_TYP).expect("the illustrated run compiles");
-        let flowed = Sources::new(&tree, &plain, ROOT_TYP)
+        let flowed = Sources::fixture(&tree, &plain, ROOT_TYP)
             .and_then(|world| compile(&world))
             .map(|pdf| media_boxes(&pdf).len())
             .expect("the flowed run compiles");
@@ -677,7 +688,7 @@ mod tests {
     }
 
     fn laid(tree: &Tree, template: &str) -> Vec<Vec<Mark>> {
-        let world = Sources::new(tree, template, ROOT_TYP).expect("the world builds");
+        let world = Sources::fixture(tree, template, ROOT_TYP).expect("the world builds");
         document(&world)
             .expect("the run compiles")
             .pages()
@@ -820,8 +831,12 @@ mod tests {
     }
 
     fn settled(tree: Tree) -> (Tree, Vec<Vec<Mark>>) {
-        let (tree, doc) =
-            crate::typeset::runt::bound(tree, Hyphenation::PLAIN).expect("the run settles");
+        let (tree, doc) = crate::typeset::runt::bound(
+            tree,
+            Hyphenation::PLAIN,
+            &crate::typeset::world::fixture_roots(),
+        )
+        .expect("the run settles");
         let pages = doc.pages().iter().map(|page| {
             let mut out = vec![];
             marks(&page.frame, Point::zero(), &mut out);
@@ -1082,8 +1097,12 @@ mod tests {
     #[test]
     fn closing_plates_close_the_signature_in_the_adapter_s_slots_and_order() {
         let paged = |articles, plates| {
-            paginate(plated(articles, plates), Hyphenation::PLAIN)
-                .map(|(_, doc)| pdf(&doc).expect("a PDF"))
+            paginate(
+                plated(articles, plates),
+                Hyphenation::PLAIN,
+                &crate::typeset::world::fixture_roots(),
+            )
+            .map(|(_, doc)| pdf(&doc).expect("a PDF"))
         };
         let pdf = paged(2, 7).expect("the plated run compiles");
         assert_eq!(plate_pages(&pdf), vec![4, 5, 6, 8, 9, 10]);
@@ -1097,7 +1116,7 @@ mod tests {
             format!("{short:#}").contains("needs 7 closing plates"),
             "{short:#}"
         );
-        let unpaged = compile(&Sources::new(&plated(2, 7), TEMPLATE_TYP, ROOT_TYP).unwrap())
+        let unpaged = compile(&Sources::fixture(&plated(2, 7), TEMPLATE_TYP, ROOT_TYP).unwrap())
             .expect("the bare run compiles");
         assert!(
             plate_pages(&unpaged).is_empty(),
@@ -1247,7 +1266,7 @@ mod tests {
 
     fn opener_paints(template: &str) -> Vec<String> {
         let world =
-            Sources::new(&fixture_tree("901"), template, ROOT_TYP).expect("the world builds");
+            Sources::fixture(&fixture_tree("901"), template, ROOT_TYP).expect("the world builds");
         let document = document(&world).expect("the fixture compiles");
         document
             .pages()
@@ -1618,7 +1637,8 @@ mod tests {
             "if ink == none { run } else { text(fill: ink, run) }",
             "run",
         );
-        let world = Sources::new(&fixture_tree("902"), &plain, ROOT_TYP).expect("the world builds");
+        let world =
+            Sources::fixture(&fixture_tree("902"), &plain, ROOT_TYP).expect("the world builds");
         let mut flat = vec![];
         for page in document(&world).expect("it compiles").pages() {
             marks(&page.frame, Point::zero(), &mut flat);

@@ -644,7 +644,8 @@ mod tests {
     }
 
     fn compiled(tree: &Tree) -> PagedDocument {
-        let world = Sources::new(tree, template::TEMPLATE_TYP, ROOT_TYP).expect("the world builds");
+        let world =
+            Sources::fixture(tree, template::TEMPLATE_TYP, ROOT_TYP).expect("the world builds");
         template::document(&world).expect("the tree compiles")
     }
 

@@ -3,8 +3,9 @@ use crate::typeset::decisions::{locate, Splice};
 use crate::typeset::geometry::geometry;
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::measure::Metrics;
-use crate::typeset::template::{document, world};
+use crate::typeset::template::{document, world_in};
 use anyhow::{bail, ensure, Result};
+use std::path::PathBuf;
 use typst::introspection::{Location, Tag};
 use typst::layout::{FrameItem, Point, Transform};
 use typst::text::TextItem;
@@ -368,9 +369,13 @@ pub fn ladder_warnings(doc: &PagedDocument, edition: &str) -> Vec<String> {
 
 type Edit = (FileId, usize, usize, &'static str);
 
-pub fn bound(mut tree: Tree, hyphenation: Hyphenation) -> Result<(Tree, PagedDocument)> {
+pub fn bound(
+    mut tree: Tree,
+    hyphenation: Hyphenation,
+    roots: &[PathBuf],
+) -> Result<(Tree, PagedDocument)> {
     for _ in 0..PASSES {
-        let sources = world(&tree)?;
+        let sources = world_in(&tree, roots)?;
         let doc = document(&sources)?;
         let runts = binds(&doc, &sources, &Metrics, hyphenation.english)?;
         let stuck = runts.len();
@@ -492,8 +497,12 @@ mod tests {
 
     #[test]
     fn a_band_caption_is_bound_on_the_band_s_own_measure() {
-        let (band, _) =
-            bound(captioned("evidence_band_prose"), Hyphenation::PLAIN).expect("the binds settle");
+        let (band, _) = bound(
+            captioned("evidence_band_prose"),
+            Hyphenation::PLAIN,
+            &crate::typeset::world::fixture_roots(),
+        )
+        .expect("the binds settle");
         let band = band
             .flat()
             .expect("the tree renders")
@@ -504,8 +513,12 @@ mod tests {
             !band.contains("effort goes\\.") && band.contains(&format!("effort{NO_BREAK}goes")),
             "{band}"
         );
-        let (column, _) =
-            bound(captioned("column_plate"), Hyphenation::PLAIN).expect("the binds settle");
+        let (column, _) = bound(
+            captioned("column_plate"),
+            Hyphenation::PLAIN,
+            &crate::typeset::world::fixture_roots(),
+        )
+        .expect("the binds settle");
         let column = column
             .flat()
             .expect("the tree renders")
@@ -517,12 +530,18 @@ mod tests {
 
     #[test]
     fn a_one_word_last_line_is_bound_to_its_neighbour_as_the_adapter_binds_it() {
-        let bare = document(&world(&piece()).expect("the world builds")).expect("it compiles");
+        let bare = document(&crate::typeset::template::world(&piece()).expect("the world builds"))
+            .expect("it compiles");
         assert_eq!(
             last_lines(&bare),
             ["BMP.", "A closing line that ends well inside the measure."]
         );
-        let (tree, doc) = bound(piece(), Hyphenation::PLAIN).expect("the binds settle");
+        let (tree, doc) = bound(
+            piece(),
+            Hyphenation::PLAIN,
+            &crate::typeset::world::fixture_roots(),
+        )
+        .expect("the binds settle");
         let source = &tree.flat().expect("the tree renders").files[0]
             .source
             .clone();

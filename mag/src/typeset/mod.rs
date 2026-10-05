@@ -115,8 +115,8 @@ fn render_language(
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     println!("out dir: {}", out_dir.display());
     let cover = cover::source(staged, edition, work)?;
-    let tree = template::composed(edition, hyphenation, &cover)?;
-    let (tree, document) = template::paginate(tree, hyphenation)?;
+    let tree = template::composed(edition, hyphenation, &cover, &[render_dir.to_path_buf()])?;
+    let (tree, document) = template::paginate(tree, hyphenation, &[render_dir.to_path_buf()])?;
     for file in &tree.flat()?.files {
         let path = work.join(&file.path);
         let parent = path.parent().context("a tree file has no parent")?;

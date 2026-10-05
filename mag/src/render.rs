@@ -469,11 +469,15 @@ fn refuse_unresolved_anchors(run: &Path, edition_yaml: &EditionFile, edition: &s
     let stale = crate::anchors::unresolved(run, edition_yaml);
     ensure!(
         stale.is_empty(),
-        "{} figure anchor(s) match no heading of {}:\n  {}\nfix them first: mag anchors {edition} --run {}",
+        "{} figure anchor(s) match no heading of {}:\n  {}\nfix them first: {}",
         stale.len(),
         run.display(),
-        stale.join("\n  "),
-        run.display()
+        stale
+            .iter()
+            .map(|u| u.line.as_str())
+            .collect::<Vec<_>>()
+            .join("\n  "),
+        crate::anchors::advice(&stale, edition, run)
     );
     Ok(())
 }

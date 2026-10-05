@@ -334,7 +334,7 @@ mod tests {
             }],
             ..Tree::default()
         };
-        let document = template::document(&Sources::new(&tree, TEMPLATE_TYP, ROOT_TYP)?)?;
+        let document = template::document(&Sources::fixture(&tree, TEMPLATE_TYP, ROOT_TYP)?)?;
         confine(&document)?;
         Ok(runs::pages(&document)
             .into_iter()
