@@ -33,10 +33,14 @@ fn say(language: &str, key: &str) -> &'static str {
         "read" => "Read the issue",
         "issues" if spanish => "Números",
         "issues" => "Issues",
-        "pdf" if spanish => "Descargar el PDF",
-        "pdf" => "Download the PDF",
-        "epub" if spanish => "Descargar el EPUB",
-        "epub" => "Download the EPUB",
+        "get" if spanish => "Obtener el número",
+        "get" => "Get the issue",
+        "back" if spanish => "Volver al",
+        "back" => "Back to",
+        "pdf" if spanish => "diseño A5 para imprimir",
+        "pdf" => "A5 print layout",
+        "epub" if spanish => "para lectores electrónicos",
+        "epub" => "for e-readers",
         "original" if spanish => "Leer el original",
         "original" => "Read the original",
         "next" if spanish => "Siguiente",
@@ -47,6 +51,8 @@ fn say(language: &str, key: &str) -> &'static str {
         "lost" => "This page does not exist.",
         "home" if spanish => "Volver a la portada",
         "home" => "Back to the front page",
+        "tagline" if spanish => "Impresa en una notebook, para leer en cualquier parte.",
+        "tagline" => "Printed on a laptop, read anywhere.",
         "name" if spanish => "Español",
         _ => "English",
     }
@@ -92,14 +98,25 @@ fn date(language: &str, iso: &str) -> String {
 }
 
 fn megabytes(bytes: u64) -> String {
-    format!("{:.1} MB", bytes as f64 / 1_000_000.0)
+    let megabytes = bytes as f64 / 1_000_000.0;
+    match megabytes < 10.0 {
+        true => format!("{megabytes:.1} MB"),
+        false => format!("{megabytes:.0} MB"),
+    }
 }
+
+const SPRITE: &str = "<svg width=\"0\" height=\"0\" style=\"position:absolute\" aria-hidden=\"true\"><defs>\
+<symbol id=\"g-pdf\" viewBox=\"0 0 24 24\"><path d=\"M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
+<symbol id=\"g-epub\" viewBox=\"0 0 24 24\"><path d=\"M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
+<symbol id=\"g-down\" viewBox=\"0 0 24 24\"><path d=\"M12 4v13m-5-5 5 5 5-5M5 20.25h14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></symbol>\
+</defs></svg>\n";
 
 pub struct Piece<'a> {
     pub slug: String,
     pub kicker: String,
     pub title: String,
     pub author: String,
+    pub label: String,
     pub article: Option<&'a Article>,
     pub document: Document,
 }
@@ -119,6 +136,7 @@ pub fn pieces(edition: &Edition) -> Result<Vec<Piece<'_>>> {
             kicker: editorial.label.clone(),
             title: editorial.title.clone(),
             author: editorial.byline.clone(),
+            label: String::new(),
             article: None,
             document: read(&editorial.path)?,
         });
@@ -131,6 +149,7 @@ pub fn pieces(edition: &Edition) -> Result<Vec<Piece<'_>>> {
             kicker: format!("{} {:02} · {label}", ui(language, "feature"), index + 1),
             title: article.title.clone(),
             author: article.author.clone(),
+            label: label.clone(),
             article: Some(article),
             document,
         });
@@ -141,6 +160,7 @@ pub fn pieces(edition: &Edition) -> Result<Vec<Piece<'_>>> {
             kicker: ui(language, &section.kind),
             title: section.title.clone(),
             author: String::new(),
+            label: String::new(),
             article: None,
             document: read(&section.path)?,
         });
@@ -219,13 +239,20 @@ impl Ctx<'_> {
         )
     }
 
-    fn figure(&self, figure: &Figure) -> String {
+    fn figure(&self, language: &str, figure: &Figure) -> String {
+        let label = match self.epub {
+            true => String::new(),
+            false => format!(
+                "<span class=\"fig-label\">{}</span>",
+                escape_html(&ui(language, "figure"))
+            ),
+        };
         let credit = match figure.credit.trim() {
             "" => String::new(),
             credit => format!(" <span class=\"credit\">{}</span>", prose(credit)),
         };
         format!(
-            "<figure class=\"figure\" id=\"figure-{}\">{}<figcaption>{}{credit}</figcaption></figure>",
+            "<figure class=\"figure\" id=\"figure-{}\">{}<figcaption>{label}{}{credit}</figcaption></figure>",
             escape_html(&figure.id),
             self.zoomable(&figure.path, &figure.alt_text, BODY_SIZES),
             prose(&figure.caption)
@@ -295,14 +322,14 @@ fn code(code: &str, info: &str) -> Result<String> {
     ))
 }
 
-fn block(item: &Block, standfirst: bool) -> Result<String> {
+fn block(item: &Block, class: &str) -> Result<String> {
     Ok(match item {
         Block::Heading { level, children } => {
             let level = (*level).clamp(2, 6);
             format!("<h{level}>{}</h{level}>", inline(children))
         }
-        Block::Paragraph(children) if standfirst => {
-            format!("<p class=\"standfirst\">{}</p>", inline(children))
+        Block::Paragraph(children) if !class.is_empty() => {
+            format!("<p class=\"{class}\">{}</p>", inline(children))
         }
         Block::Paragraph(children) => format!("<p>{}</p>", inline(children)),
         Block::FencedCode { code: text, info } => code(text, info)?,
@@ -346,7 +373,7 @@ fn table(rows: &[Vec<Vec<Inline>>]) -> String {
 }
 
 fn blocks(items: &[Block]) -> Result<String> {
-    items.iter().map(|item| block(item, false)).collect()
+    items.iter().map(|item| block(item, "")).collect()
 }
 
 fn anchored(ctx: &Ctx, language: &str, article: Option<&Article>, key: &str) -> String {
@@ -357,7 +384,7 @@ fn anchored(ctx: &Ctx, language: &str, article: Option<&Article>, key: &str) -> 
         .figures
         .iter()
         .filter(|f| anchor_key(&f.anchor) == key)
-        .map(|f| ctx.figure(f));
+        .map(|f| ctx.figure(language, f));
     let extracts = article
         .extracts
         .iter()
@@ -366,10 +393,40 @@ fn anchored(ctx: &Ctx, language: &str, article: Option<&Article>, key: &str) -> 
     figures.chain(extracts).collect::<Vec<_>>().join("\n")
 }
 
+fn opener(ctx: &Ctx, piece: &Piece) -> String {
+    piece
+        .article
+        .and_then(|a| a.opener_art.as_ref())
+        .map(|o| {
+            format!(
+                "<figure class=\"opener\">{}</figure>",
+                ctx.picture(&o.path, &o.alt_text, WIDE_SIZES, true)
+            )
+        })
+        .unwrap_or_default()
+}
+
 fn body(ctx: &Ctx, language: &str, piece: &Piece) -> Result<String> {
-    let mut out = vec![anchored(ctx, language, piece.article, &anchor_key(OPENER))];
+    let mut out = Vec::new();
+    let lead = matches!(piece.document.blocks.first(), Some(Block::Paragraph(_)));
+    if !lead {
+        out.push(opener(ctx, piece));
+        out.push(anchored(ctx, language, piece.article, &anchor_key(OPENER)));
+    }
+    let mut capped = false;
     for (index, item) in piece.document.blocks.iter().enumerate() {
-        out.push(block(item, index == 0)?);
+        let is_paragraph = matches!(item, Block::Paragraph(_));
+        let class = match (index, is_paragraph && !capped) {
+            (0, _) => "standfirst",
+            (_, true) => "first",
+            _ => "",
+        };
+        capped |= is_paragraph && index > 0;
+        out.push(block(item, class)?);
+        if index == 0 && lead {
+            out.push(opener(ctx, piece));
+            out.push(anchored(ctx, language, piece.article, &anchor_key(OPENER)));
+        }
         if let Block::Heading { children, .. } = item {
             let key = anchor_key(&inline_text(children));
             out.push(anchored(ctx, language, piece.article, &key));
@@ -521,13 +578,15 @@ fn document(page: &Page, site: &SiteConfig, (name, logo): (&str, &str), root: &s
 <link rel=\"icon\" href=\"{root}favicon.svg\" type=\"image/svg+xml\">\n\
 <link rel=\"apple-touch-icon\" href=\"{root}apple-touch-icon.png\">\n\
 <link rel=\"preload\" href=\"{root}fonts/SourceSerif4SmText-Regular.ttf\" as=\"font\" type=\"font/ttf\" crossorigin>\n\
-<link rel=\"stylesheet\" href=\"{root}site.css\">\n</head>\n<body>\n\
-<header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}{switch}</header>\n\
+<link rel=\"stylesheet\" href=\"{root}site.css\">\n</head>\n<body>\n{SPRITE}\
+<header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}<nav class=\"topnav\"><a href=\"{home}\">{issues}</a></nav>{switch}</header>\n\
 <main>\n{body}\n</main>\n\
-<footer class=\"colophon\"><a href=\"{home}\">{name}</a></footer>\n</body>\n</html>\n",
+<footer class=\"colophon\"><a href=\"{home}\">{name}</a><span>{tagline}</span></footer>\n</body>\n</html>\n",
         lang = escape_html(&page.language),
         head = head.join("\n"),
         name = escape_html(name),
+        issues = say(&page.language, "issues"),
+        tagline = say(&page.language, "tagline"),
         crumb = page.crumb,
         body = page.body,
     )
@@ -627,18 +686,42 @@ fn mime(kind: &str) -> &'static str {
     }
 }
 
-fn download(language: &str, kind: &str, asset: Option<&super::Asset>) -> String {
-    asset.map_or(String::new(), |asset| {
-        format!(
-            "<p class=\"download\"><a href=\"{}?v={}\" type=\"{}\" download>{} <span>({}, {})</span></a></p>",
-            escape_html(&asset.url),
-            &asset.sha256[..8],
-            mime(kind),
-            say(language, kind),
-            kind.to_uppercase(),
-            megabytes(asset.bytes)
-        )
-    })
+fn download(language: &str, kind: &str, asset: &super::Asset) -> String {
+    format!(
+        "<a class=\"btn\" href=\"{}?v={}\" type=\"{}\" download><svg class=\"glyph\" aria-hidden=\"true\"><use href=\"#g-{kind}\"/></svg><span class=\"btn-text\"><span class=\"btn-label\">{}</span><span class=\"btn-meta\">{}, {}</span></span><svg class=\"btn-arrow\" aria-hidden=\"true\"><use href=\"#g-down\"/></svg></a>",
+        escape_html(&asset.url),
+        &asset.sha256[..8],
+        mime(kind),
+        kind.to_uppercase(),
+        megabytes(asset.bytes),
+        say(language, kind)
+    )
+}
+
+fn formats(assets: Option<&super::Assets>) -> Vec<(&'static str, &super::Asset)> {
+    let Some(assets) = assets else {
+        return Vec::new();
+    };
+    [("pdf", &assets.pdf), ("epub", &assets.epub)]
+        .into_iter()
+        .filter_map(|(kind, asset)| Some((kind, asset.as_ref()?)))
+        .collect()
+}
+
+fn get_issue(language: &str, assets: Option<&super::Assets>) -> String {
+    let found = formats(assets);
+    let solo = if found.len() == 1 { " solo" } else { "" };
+    let buttons: String = found
+        .into_iter()
+        .map(|(kind, asset)| download(language, kind, asset))
+        .collect();
+    match buttons.is_empty() {
+        true => String::new(),
+        false => format!(
+            "<div class=\"getissue\" id=\"get\"><h2 class=\"getissue-title\">{}</h2><div class=\"btns{solo}\">{buttons}</div></div>\n",
+            say(language, "get")
+        ),
+    }
 }
 
 fn issue_page(issued: &Issued, images: &Images) -> Page {
@@ -652,22 +735,22 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
     let entries: String = issued
         .pieces
         .iter()
-        .map(|piece| {
+        .enumerate()
+        .map(|(index, piece)| {
             let author = match piece.author.as_str() {
                 "" => String::new(),
                 author => format!("<span class=\"entry-author\">{}</span>", prose(author)),
             };
             format!(
-                "<li><a href=\"{}/\"><span class=\"kicker\">{}</span><span class=\"entry-title\">{}</span>{author}</a></li>",
+                "<li><a href=\"{}/\"><span class=\"num\">{:02}</span><span class=\"entry-main\"><span class=\"entry-title\">{}</span>{author}</span><span class=\"mode\">{}</span></a></li>",
                 escape_html(&piece.slug),
-                prose(&piece.kicker),
-                prose(&piece.title)
+                index + 1,
+                prose(&piece.title),
+                prose(&piece.label)
             )
         })
         .collect();
-    let files = issued.assets;
-    let pdf = download(language, "pdf", files.and_then(|a| a.pdf.as_ref()))
-        + &download(language, "epub", files.and_then(|a| a.epub.as_ref()));
+    let pdf = get_issue(language, issued.assets);
     let body = format!(
         "<section class=\"issue\">\n{}\n<div class=\"issue-head\"><p class=\"kicker\">{} · <time datetime=\"{}\">{}</time></p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{}\"><h2>{}</h2><ol>{entries}</ol></nav>",
         issued.cover(&ctx, true),
@@ -695,14 +778,8 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
     }
 }
 
-fn article_head(ctx: &Ctx, language: &str, piece: &Piece) -> String {
+fn article_head(language: &str, piece: &Piece) -> String {
     let mut out = Vec::new();
-    if let Some(opener) = piece.article.and_then(|a| a.opener_art.as_ref()) {
-        out.push(format!(
-            "<figure class=\"opener\">{}</figure>",
-            ctx.picture(&opener.path, &opener.alt_text, WIDE_SIZES, true)
-        ));
-    }
     let dateline = piece
         .article
         .and_then(|a| a.dateline.as_deref())
@@ -791,6 +868,28 @@ fn pager(issued: &Issued, index: usize) -> String {
     format!("<nav class=\"pager\">{}</nav>", links.join(""))
 }
 
+fn piece_end(issued: &Issued) -> String {
+    let language = &issued.edition.language;
+    let names: Vec<String> = formats(issued.assets)
+        .iter()
+        .map(|(kind, _)| kind.to_uppercase())
+        .collect();
+    let get = match names.is_empty() {
+        true => String::new(),
+        false => format!(
+            "<a class=\"dl\" href=\"../#get\"><svg class=\"glyph\" aria-hidden=\"true\"><use href=\"#g-down\"/></svg>{}: {}</a>",
+            say(language, "get"),
+            names.join(", ")
+        ),
+    };
+    format!(
+        "<div class=\"piece-end\"><a class=\"back\" href=\"../\">{} {}, {}</a>{get}</div>\n",
+        say(language, "back"),
+        escape_html(&issued.issue_label()),
+        prose(&issued.edition.title)
+    )
+}
+
 fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
     let piece = &issued.pieces[index];
     let path = format!("{}{}/", issued.dir(), piece.slug);
@@ -806,10 +905,11 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
         .map(|o| images[&o.path].large().to_string())
         .or_else(|| issued.cover_image(images));
     let body = format!(
-        "<article class=\"piece\">\n<header class=\"piece-head\">\n{}\n</header>\n{}\n{}\n</article>\n{}",
-        article_head(&ctx, language, piece),
+        "<article class=\"piece\">\n<header class=\"piece-head\">\n{}\n</header>\n{}\n{}\n</article>\n{}{}",
+        article_head(language, piece),
         body(&ctx, language, piece)?,
         article_tail(&ctx, language, piece.article),
+        piece_end(issued),
         pager(issued, index)
     );
     let missing = dropped(piece, &body);
@@ -848,7 +948,7 @@ pub fn chapter(edition: &Edition, piece: &Piece, images: &Images) -> Result<Stri
     let language = &edition.language;
     let body = format!(
         "<article class=\"piece\">\n<header class=\"piece-head\">\n{}\n</header>\n{}\n{}\n</article>",
-        article_head(&ctx, language, piece),
+        article_head(language, piece),
         body(&ctx, language, piece)?,
         article_tail(&ctx, language, piece.article),
     );
@@ -887,9 +987,9 @@ fn index_page(language: &str, issued: &[&Issued], images: &Images, other: Option
         .iter()
         .map(|i| {
             format!(
-                "<li><a href=\"{}/\"><span class=\"kicker\">{}</span><span class=\"entry-title\">{}</span><span class=\"entry-author\">{}</span></a></li>",
+                "<li><a href=\"{}/\"><span class=\"num\">{}</span><span class=\"entry-main\"><span class=\"entry-title\">{}</span><span class=\"entry-author\">{}</span></span></a></li>",
                 escape_html(&i.edition.id),
-                escape_html(&i.issue_label()),
+                escape_html(&i.edition.issue_number),
                 prose(&i.edition.title),
                 date(language, &i.edition.publication_date)
             )
@@ -1000,9 +1100,14 @@ pub fn pages(
 
 #[cfg(test)]
 mod tests {
-    use super::{block, download, dropped, Piece};
+    use super::{block, body, download, dropped, get_issue, Ctx, Image, Piece};
     use crate::model::doc::{Block, Document, Inline};
+    use crate::model::kinds::{ContentMode, FigureFit, FigureLayout, FigureTone};
+    use crate::model::manifest::{Article, ArticleOpenerArt};
+    use crate::model::records::Figure;
     use crate::site::publish_record;
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
 
     #[test]
     fn a_publish_record_links_each_language_file_with_its_hash_and_no_record_links_none() {
@@ -1016,13 +1121,13 @@ mod tests {
         .unwrap();
         let record = publish_record(&path).unwrap();
         let es = record.get("es").unwrap();
-        assert_eq!(
-            download("es", "pdf", es.pdf.as_ref()),
-            "<p class=\"download\"><a href=\"https://files.example/011/es/x.pdf?v=abcdef01\" type=\"application/pdf\" download>Descargar el PDF <span>(PDF, 127.3 MB)</span></a></p>"
-        );
-        assert!(download("es", "epub", es.epub.as_ref())
-            .contains("x.epub?v=01234567\" type=\"application/epub+zip\" download>Descargar el EPUB <span>(EPUB, 5.0 MB)"));
-        assert_eq!(download("en", "pdf", None), "");
+        let pdf = download("es", "pdf", es.pdf.as_ref().unwrap());
+        assert!(pdf.contains("href=\"https://files.example/011/es/x.pdf?v=abcdef01\" type=\"application/pdf\" download>"));
+        assert!(pdf.contains("<span class=\"btn-label\">PDF</span><span class=\"btn-meta\">127 MB, diseño A5 para imprimir</span>"));
+        assert!(download("es", "epub", es.epub.as_ref().unwrap())
+            .contains("x.epub?v=01234567\" type=\"application/epub+zip\" download>"));
+        assert!(get_issue("en", record.get("none")).is_empty());
+        assert!(get_issue("es", Some(es)).contains("5.0 MB, para lectores electrónicos"));
         assert!(publish_record(&dir.join("absent.yaml")).unwrap().is_empty());
         std::fs::write(
             &path,
@@ -1060,12 +1165,13 @@ mod tests {
                 info: "rust".into(),
             },
         ];
-        let html: String = blocks.iter().map(|b| block(b, false).unwrap()).collect();
+        let html: String = blocks.iter().map(|b| block(b, "").unwrap()).collect();
         let piece = Piece {
             slug: "x".into(),
             kicker: String::new(),
             title: String::new(),
             author: String::new(),
+            label: String::new(),
             article: None,
             document: Document {
                 metadata: serde_norway::Mapping::default(),
@@ -1075,5 +1181,79 @@ mod tests {
         assert!(dropped(&piece, &html).is_empty());
         let cut = html.replace("println", "print");
         assert_eq!(dropped(&piece, &cut), vec![code]);
+    }
+
+    #[test]
+    fn opener_art_follows_the_standfirst_and_opener_figures_follow_the_art() {
+        let image = || Image {
+            variants: vec![("a.jpg".into(), 100)],
+            width: 100,
+            height: 50,
+        };
+        let images = BTreeMap::from([
+            (PathBuf::from("art.png"), image()),
+            (PathBuf::from("fig.png"), image()),
+        ]);
+        let ctx = Ctx {
+            root: String::new(),
+            images: &images,
+            epub: false,
+        };
+        let article = Article {
+            id: "a".into(),
+            title: String::new(),
+            short_title: String::new(),
+            display_emphasis: String::new(),
+            opener_variant: String::new(),
+            author: String::new(),
+            author_note: String::new(),
+            source_ids: Vec::new(),
+            manuscript: PathBuf::new(),
+            content_mode: ContentMode::Article,
+            figures: vec![Figure {
+                id: "f1".into(),
+                source_id: "s".into(),
+                path: "fig.png".into(),
+                caption: "cap".into(),
+                credit: String::new(),
+                alt_text: String::new(),
+                anchor: "__opener__".into(),
+                layout: FigureLayout::ColumnPlate,
+                tone: FigureTone::Auto,
+                fit: FigureFit::Auto,
+            }],
+            minimum_reader_pages: 0,
+            tail_art: None,
+            source_url: None,
+            opener_art: Some(ArticleOpenerArt {
+                path: "art.png".into(),
+                alt_text: String::new(),
+                credit: String::new(),
+            }),
+            key_ideas: Vec::new(),
+            dateline: None,
+            extracts: Vec::new(),
+        };
+        let piece = Piece {
+            slug: "x".into(),
+            kicker: String::new(),
+            title: String::new(),
+            author: String::new(),
+            label: String::new(),
+            article: Some(&article),
+            document: Document {
+                metadata: serde_norway::Mapping::default(),
+                blocks: vec![
+                    Block::Paragraph(vec![Inline::Text("Stand".into())]),
+                    Block::Paragraph(vec![Inline::Text("Later".into())]),
+                ],
+            },
+        };
+        let html = body(&ctx, "en", &piece).unwrap();
+        let at = |needle: &str| html.find(needle).unwrap();
+        assert!(at("Stand") < at("class=\"opener\""));
+        assert!(at("class=\"opener\"") < at("id=\"figure-f1\""));
+        assert!(at("id=\"figure-f1\"") < at("Later"));
+        assert!(dropped(&piece, &html).is_empty());
     }
 }

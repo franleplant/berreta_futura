@@ -59,12 +59,19 @@ pub struct Issue {
     pub assets: PublishRecord,
 }
 
-const FONTS: [&str; 5] = [
+const FONTS: [&str; 12] = [
     "source-serif-4/SourceSerif4SmText-Regular.ttf",
     "source-serif-4/SourceSerif4SmText-It.ttf",
     "source-serif-4/SourceSerif4SmText-Bold.ttf",
     "source-serif-4/SourceSerif4Display-Semibold.ttf",
     "source-serif-4/LICENSE.md",
+    "inter/Inter-Regular.ttf",
+    "inter/Inter-SemiBold.ttf",
+    "inter/Inter-Bold.ttf",
+    "inter/InterDisplay-Black.ttf",
+    "geist-mono/GeistMono-Regular.ttf",
+    "inter/LICENSE.txt",
+    "geist-mono/OFL.txt",
 ];
 
 pub fn config(root: &Path) -> Result<SiteConfig> {
