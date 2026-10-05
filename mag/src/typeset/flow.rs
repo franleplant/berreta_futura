@@ -134,16 +134,24 @@ fn floats(doc: &PagedDocument, tree: &Tree, g: &Page) -> Vec<Choice> {
         let (Some(head), Some(placed), Some(slot)) = (head, placed, slot) else {
             continue;
         };
-        if head.text("kind").as_deref() != Some("heading") || placed.flag("turned") == Some(true) {
+        let kind = head.text("kind");
+        if !matches!(kind.as_deref(), Some("heading" | "figure"))
+            || placed.flag("turned") == Some(true)
+        {
             continue;
         }
         match figure.flag("float") {
             None => {
-                let moved = placed.page == head.page && head.y <= g.top + g.epsilon;
-                let page = &doc.pages()[head.page.saturating_sub(2)].frame;
+                let (moved, need) = match kind.as_deref() {
+                    Some("heading") => (
+                        placed.page == head.page && head.y <= g.top + g.epsilon,
+                        g.above + (placed.y - g.datum - head.y) + g.lines * HEAD_ROOM_LINES,
+                    ),
+                    _ => (placed.page == head.page + 1, g.lines * HEAD_ROOM_LINES),
+                };
+                let page = &doc.pages()[placed.page.saturating_sub(2)].frame;
                 let room = g.bottom - ink_bottom(page, Point::zero(), g.top, g.bottom);
-                let need = g.above + (placed.y - g.datum - head.y) + g.lines * HEAD_ROOM_LINES;
-                if moved && head.page > 1 && !fresh(head.page) && room >= need {
+                if moved && placed.page > 1 && !fresh(placed.page) && room >= need {
                     edits.push(Choice::Float(slot.hole, true));
                 }
             }

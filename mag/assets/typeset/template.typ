@@ -1408,7 +1408,7 @@
   flow-mark("figure", ROTATED-PLATE, id: id, _ => place(top, float: true, clearance: 0pt, block(
     width: 100%,
     height: CONTENT-HEIGHT,
-    place(center + horizon, dy: (MARGIN-BOTTOM - MARGIN-TOP) / 2, rotate(-90deg, reflow: true, block(width: width, {
+    place(center + horizon, dy: (MARGIN-BOTTOM - MARGIN-TOP) / 2, rotate(90deg, reflow: true, block(width: width, {
       framed-image(id, path, width, height, turned: true)
       body
     }))),
