@@ -103,6 +103,7 @@ impl Metrics {
         min: f64,
         lines: usize,
     ) -> Result<Option<(f64, usize)>> {
+        let title = &fold_reader_characters(&educate_reader_quotes(title));
         let mut size = max;
         while size >= min {
             let count = self.wrap(title, face, size, width)?.len();
@@ -272,6 +273,18 @@ mod tests {
         assert_eq!((size, lines), (32.5, 1));
         let long = ["Unbreakable"; 12].join(" ");
         assert!(metrics.illustrated_titles(&long).is_err());
+    }
+
+    #[test]
+    fn a_title_is_measured_after_the_template_educates_its_quotes() {
+        let metrics = metrics();
+        let straight = "The Maker's \"Pen\" Isn't Slow";
+        let curly = "The Maker\u{2019}s \u{201c}Pen\u{201d} Isn\u{2019}t Slow";
+        assert_eq!(
+            metrics.illustrated_titles(straight).expect("it fits"),
+            metrics.illustrated_titles(curly).expect("it fits")
+        );
+        assert_ne!(educate_reader_quotes(straight), straight);
     }
 
     #[test]

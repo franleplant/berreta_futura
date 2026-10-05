@@ -1,7 +1,8 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use mag::{
-    art, capture, plan_cmd, print_cmd, produce, publish, render, site, sourcecodes, translate,
+    anchors, art, capture, plan_cmd, print_cmd, produce, publish, render, site, sourcecodes,
+    translate,
 };
 use std::path::Path;
 
@@ -40,6 +41,9 @@ enum Cmd {
     /// Write editions/<edition>/source-codes: one QR SVG per source for the web
     /// edition and codes.json with the print fit (run after picking opener art, before render)
     SourceCodes(sourcecodes::SourceCodesArgs),
+    /// Re-anchor an edition's figures to the headings of its newest complete run (one cheap model
+    /// call per article with unresolved anchors; patches edition.yaml in place)
+    Anchors(anchors::AnchorsArgs),
     /// Render an edition through Typst
     Render(render::RenderArgs),
     /// Build the public static website from the editions listed in magazine.toml [site]
@@ -76,6 +80,7 @@ fn run(cli: Cli) -> Result<i32> {
         Cmd::CastSheet(args) => art::cast_sheet_run(&args),
         Cmd::CastCheck(args) => art::cast_check_run(&args),
         Cmd::SourceCodes(args) => sourcecodes::run(&args),
+        Cmd::Anchors(args) => anchors::run(&args),
         Cmd::Render(args) => render::run(&args),
         Cmd::Site(args) => site::run(&args),
         Cmd::Epub(args) => site::epub::run(&args),

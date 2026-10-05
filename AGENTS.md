@@ -7,7 +7,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 ## Pipeline
 
 - `mag` (Rust, in `mag/`) is the CLI: `capture`, `plan`, `produce`, `art`,
-  `translate`, `render`, `epub`, `site`, `publish`. Build with `cargo build`, run from the repo root.
+  `translate`, `anchors`, `render`, `epub`, `site`, `publish`. Build with `cargo build`, run from the repo root.
 - The pipeline leads: every step prints the next command when it finishes.
   Follow that, not the previous edition. The order is `mag capture` (writes
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
@@ -19,7 +19,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   documenting the gap here is the fallback, not the fix.
 - `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
   loads `edition.yaml`, lays out reader pages, and writes the PDFs. There is no other engine and
-  no Python in the render path.
+  no Python in the render path. It makes no model call: it refuses a figure
+  anchor that matches no heading of the run and names the fix, `mag anchors NNN`
+  (the one cheap model call that re-anchors figures and patches `edition.yaml`;
+  `--check` only lists them).
 - `mag site [--out output/site]` builds the public static site, deployed
   from this laptop to berreta.franleplant.com (`deploy/web/README.md`). It publishes the editions listed in
   `magazine.toml` `[site] editions`, each from its newest git-tracked complete

@@ -1,99 +1,32 @@
 use crate::model::shared::{Result, ValidationError};
-use std::path::Path;
+use image::{ImageDecoder, ImageReader};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 
-const PNG_MAGIC: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
-const JPEG_MAGIC: [u8; 2] = [0xFF, 0xD8];
-const NOT_A_SIZE: [u8; 3] = [0xC4, 0xC8, 0xCC];
+static SIZES: OnceLock<Mutex<HashMap<PathBuf, (u32, u32)>>> = OnceLock::new();
 
 fn refuse(path: &Path, why: &str) -> ValidationError {
     ValidationError::one(format!("Cannot read the size of {}: {why}", path.display()))
 }
 
-fn be16(bytes: &[u8], at: usize) -> Option<u32> {
-    Some(u32::from(u16::from_be_bytes([
-        *bytes.get(at)?,
-        *bytes.get(at + 1)?,
-    ])))
-}
-
-fn be32(bytes: &[u8], at: usize) -> Option<u32> {
-    Some(u32::from_be_bytes([
-        *bytes.get(at)?,
-        *bytes.get(at + 1)?,
-        *bytes.get(at + 2)?,
-        *bytes.get(at + 3)?,
-    ]))
-}
-
-fn png_pixels(bytes: &[u8]) -> Option<(u32, u32)> {
-    if &bytes.get(12..16)? != b"IHDR" {
-        return None;
-    }
-    Some((be32(bytes, 16)?, be32(bytes, 20)?))
-}
-
-fn exif_orientation(segment: &[u8]) -> Option<u32> {
-    let tiff = segment.strip_prefix(b"Exif\0\0")?;
-    let big = match tiff.get(0..2)? {
-        b"MM" => true,
-        b"II" => false,
-        _ => return None,
-    };
-    let read = |at: usize, width: usize| -> Option<u32> {
-        let field = tiff.get(at..at + width)?;
-        let fold = |sum: u32, byte: &u8| (sum << 8) | u32::from(*byte);
-        Some(if big {
-            field.iter().fold(0, fold)
-        } else {
-            field.iter().rev().fold(0, fold)
-        })
-    };
-    let ifd = read(4, 4)? as usize;
-    (0..read(ifd, 2)? as usize)
-        .map(|entry| ifd + 2 + 12 * entry)
-        .find(|&entry| read(entry, 2) == Some(0x0112))
-        .and_then(|entry| read(entry + 8, 2))
-}
-
-fn jpeg_pixels(bytes: &[u8]) -> Option<(u32, u32, u32)> {
-    let mut orientation = 1;
-    let mut at = 2;
-    while at + 4 <= bytes.len() {
-        if bytes[at] != 0xFF {
-            at += 1;
-            continue;
-        }
-        let marker = bytes[at + 1];
-        if (0xC0..=0xCF).contains(&marker) && !NOT_A_SIZE.contains(&marker) {
-            return Some((be16(bytes, at + 7)?, be16(bytes, at + 5)?, orientation));
-        }
-        if marker == 0xE1 {
-            let end = at + 2 + be16(bytes, at + 2)? as usize;
-            orientation = exif_orientation(bytes.get(at + 4..end)?).unwrap_or(orientation);
-        }
-        if marker == 0xD8 || marker == 0x01 || (0xD0..=0xD7).contains(&marker) {
-            at += 2;
-        } else {
-            at += 2 + be16(bytes, at + 2)? as usize;
-        }
-    }
-    None
-}
-
-pub fn pixels(path: &Path) -> Result<(u32, u32)> {
-    let bytes = std::fs::read(path).map_err(|error| refuse(path, &error.to_string()))?;
-    let size = if bytes.starts_with(&PNG_MAGIC) {
-        png_pixels(&bytes).map(|(width, height)| (width, height, 1))
-    } else if bytes.starts_with(&JPEG_MAGIC) {
-        jpeg_pixels(&bytes)
-    } else {
+fn read_size(path: &Path) -> Result<(u32, u32)> {
+    let reader = ImageReader::open(path)
+        .and_then(ImageReader::with_guessed_format)
+        .map_err(|error| refuse(path, &error.to_string()))?;
+    if reader.format().is_none() {
         return Err(refuse(
             path,
-            "a curated figure must be a PNG or a JPEG; convert it before building",
+            "its format is not one the figure reader decodes (png, jpg, gif, webp); convert it before building",
         ));
-    };
-    let (width, height, orientation) =
-        size.ok_or_else(|| refuse(path, "its header carries no frame size"))?;
+    }
+    let mut decoder = reader
+        .into_decoder()
+        .map_err(|error| refuse(path, &error.to_string()))?;
+    let (width, height) = decoder.dimensions();
+    let orientation = decoder
+        .orientation()
+        .map_or(1, image::metadata::Orientation::to_exif);
     if orientation != 1 {
         return Err(refuse(
             path,
@@ -104,6 +37,23 @@ pub fn pixels(path: &Path) -> Result<(u32, u32)> {
         return Err(refuse(path, "its header states a zero dimension"));
     }
     Ok((width, height))
+}
+
+pub fn pixels(path: &Path) -> Result<(u32, u32)> {
+    let cache = SIZES.get_or_init(Mutex::default);
+    if let Some(size) = cache
+        .lock()
+        .expect("the size cache is not poisoned")
+        .get(path)
+    {
+        return Ok(*size);
+    }
+    let size = read_size(path)?;
+    cache
+        .lock()
+        .expect("the size cache is not poisoned")
+        .insert(path.to_path_buf(), size);
+    Ok(size)
 }
 
 #[cfg(test)]
@@ -140,12 +90,13 @@ mod tests {
     }
 
     #[test]
-    fn a_format_with_no_reader_is_refused_by_name_rather_than_guessed() {
-        let error = pixels(&media_fixtures().join("figure.webp")).expect_err("webp is refused");
-        assert!(
-            error.to_string().contains("must be a PNG or a JPEG"),
-            "{error}"
-        );
+    fn webp_reads_and_an_unknown_format_or_missing_file_is_refused_by_name() {
+        let webp = pixels(&media_fixtures().join("figure.webp")).expect("webp reads");
+        assert_eq!(webp, (11, 13));
+        let text = std::env::temp_dir().join("media-not-an-image.txt");
+        std::fs::write(&text, "plain text").expect("the scratch file writes");
+        let error = pixels(&text).expect_err("text is refused");
+        assert!(error.to_string().contains("png, jpg, gif, webp"), "{error}");
         let missing =
             pixels(&media_fixtures().join("absent.png")).expect_err("a missing file is refused");
         assert!(missing.to_string().contains("absent.png"), "{missing}");

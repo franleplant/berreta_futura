@@ -14,14 +14,13 @@ use typst_syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 pub const ROOT: &str = "/root.typ";
 pub const TEMPLATE: &str = "/template.typ";
 const PRELUDE: &str = "#import \"/template.typ\": *\n";
-const RASTERS: [&str; 3] = [".png", ".jpg", ".jpeg"];
 const WORDMARK: &str = include_str!("../../assets/brand/wordmark.svg");
 
 struct Shared {
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Vec<Font>,
-    rasters: Mutex<HashMap<FileId, FileResult<Bytes>>>,
+    media: Mutex<HashMap<FileId, FileResult<Bytes>>>,
 }
 
 static SHARED: OnceLock<Shared> = OnceLock::new();
@@ -76,7 +75,7 @@ fn shared() -> Result<&'static Shared> {
         library: LazyHash::new(Library::default()),
         book: LazyHash::new(FontBook::from_fonts(&fonts)),
         fonts,
-        rasters: Mutex::default(),
+        media: Mutex::default(),
     }))
 }
 
@@ -131,25 +130,20 @@ impl World for Sources {
         if path == "/brand/wordmark.svg" {
             return Ok(Bytes::from_string(WORDMARK));
         }
-        if RASTERS
-            .iter()
-            .any(|kind| path.to_lowercase().ends_with(kind))
-        {
-            return self
-                .shared
-                .rasters
-                .lock()
-                .expect("the raster cache is not poisoned")
-                .entry(file)
-                .or_insert_with(|| {
-                    std::fs::read(path)
-                        .map(Bytes::new)
-                        .map_err(|error| FileError::from_io(error, Path::new(path)))
-                })
-                .clone();
+        if let Ok(source) = self.source(file) {
+            return Ok(Bytes::from_string(source.text().to_string()));
         }
-        self.source(file)
-            .map(|source| Bytes::from_string(source.text().to_string()))
+        self.shared
+            .media
+            .lock()
+            .expect("the media cache is not poisoned")
+            .entry(file)
+            .or_insert_with(|| {
+                std::fs::read(path)
+                    .map(Bytes::new)
+                    .map_err(|error| FileError::from_io(error, Path::new(path)))
+            })
+            .clone()
     }
 
     fn font(&self, index: usize) -> Option<Font> {

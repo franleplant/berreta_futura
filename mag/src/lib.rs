@@ -1,3 +1,4 @@
+pub mod anchors;
 pub mod art;
 pub mod caller;
 pub mod capture;

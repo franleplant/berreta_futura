@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use image::ImageReader;
 use lopdf::{Document, Object, ObjectId};
 use serde_json::{json, Map, Value};
 
@@ -75,51 +76,12 @@ fn effective_image_ppi(pixels: (u32, u32), placement: (f64, f64)) -> f64 {
     horizontal.min(vertical)
 }
 
-fn png_dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
-    let header = bytes.get(..8)?;
-    if header != b"\x89PNG\r\n\x1a\n" || bytes.get(12..16)? != b"IHDR" {
-        return None;
-    }
-    let width = u32::from_be_bytes(bytes.get(16..20)?.try_into().ok()?);
-    let height = u32::from_be_bytes(bytes.get(20..24)?.try_into().ok()?);
-    Some((width, height))
-}
-
-fn jpeg_dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
-    if bytes.get(..2)? != b"\xff\xd8" {
-        return None;
-    }
-    let mut cursor = 2usize;
-    while cursor + 3 < bytes.len() {
-        if bytes[cursor] != 0xff {
-            cursor += 1;
-            continue;
-        }
-        let marker = bytes[cursor + 1];
-        if matches!(marker, 0xd8 | 0xd9 | 0xff) || (0xd0..=0xd7).contains(&marker) {
-            cursor += 2;
-            continue;
-        }
-        let length = u16::from_be_bytes(bytes.get(cursor + 2..cursor + 4)?.try_into().ok()?);
-        let frame = matches!(marker, 0xc0..=0xc3 | 0xc5..=0xc7 | 0xc9..=0xcb | 0xcd..=0xcf);
-        if frame {
-            let height = u16::from_be_bytes(bytes.get(cursor + 5..cursor + 7)?.try_into().ok()?);
-            let width = u16::from_be_bytes(bytes.get(cursor + 7..cursor + 9)?.try_into().ok()?);
-            return Some((u32::from(width), u32::from(height)));
-        }
-        cursor += 2 + usize::from(length);
-    }
-    None
-}
-
 fn raster_dimensions(path: Option<&Path>) -> Option<(u32, u32)> {
-    let path = path?;
-    let extension = path.extension()?.to_str()?.to_ascii_lowercase();
-    if !matches!(extension.as_str(), "png" | "jpg" | "jpeg") || !path.is_file() {
-        return None;
-    }
-    let bytes = std::fs::read(path).ok()?;
-    png_dimensions(&bytes).or_else(|| jpeg_dimensions(&bytes))
+    ImageReader::open(path?)
+        .and_then(ImageReader::with_guessed_format)
+        .ok()?
+        .into_dimensions()
+        .ok()
 }
 
 fn inherited_media_box(document: &Document, page: ObjectId) -> Result<(f64, f64)> {

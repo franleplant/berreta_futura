@@ -465,7 +465,7 @@ struct Plan {
     articles: Vec<serde_norway::Value>,
 }
 
-fn yq(s: &str) -> String {
+pub(crate) fn yq(s: &str) -> String {
     if s.contains(['\n', '\r']) {
         serde_json::to_string(s).expect("a string serializes")
     } else {
@@ -931,9 +931,10 @@ fn print_next_steps(
     println!(
         "\nnext:\n  1. read the finals under {}/articles/*/final.md\n  \
          2. edit {}: review the drafted title and cover copy; article order, figures\n  \
-         3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
-         4. mag source-codes {edition_id}   (after picking opener art)\n  \
-         5. mag render {edition_id}",
+         3. mag anchors {edition_id}        (only if render reports figure anchors that match no heading)\n  \
+         4. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
+         5. mag source-codes {edition_id}   (after picking opener art)\n  \
+         6. mag render {edition_id}",
         run_dir.display(),
         edition_yaml.display()
     );

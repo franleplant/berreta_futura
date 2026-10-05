@@ -297,11 +297,9 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
         article: None,
         langs: None,
         run: Some(format!("{rel}/{run}")),
-        anchor_model: "haiku".to_string(),
-        no_model: true,
         no_legibility: true,
     };
-    let request = request(&args, root, &scratch)?;
+    let request = request(&args, root)?;
     let inputs: Vec<String> = request
         .inputs
         .iter()
