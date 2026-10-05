@@ -845,7 +845,7 @@ fn article_tail(ctx: &Ctx, language: &str, article: Option<&Article>) -> String 
     let tail = article.tail_art.as_deref().map_or(String::new(), |art| {
         format!(
             "<figure class=\"tail\" aria-hidden=\"true\">{}</figure>",
-            ctx.picture(art, "", "(min-width: 30rem) 14rem, 50vw", false)
+            ctx.picture(art, "", BODY_SIZES, false)
         )
     });
     format!("{ideas}{tail}")
