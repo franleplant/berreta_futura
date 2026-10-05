@@ -18,7 +18,7 @@ static HTML_TAG: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new("<[
 const OPENER: &str = "__opener__";
 const BODY_SIZES: &str = "(min-width: 44rem) 40rem, calc(100vw - 2.5rem)";
 const WIDE_SIZES: &str = "(min-width: 44rem) 40rem, 100vw";
-const COVER_SIZES: &str = "(min-width: 52rem) 24rem, 80vw";
+const COVER_SIZES: &str = "(min-width: 52rem) 20rem, min(22rem, calc(100vw - 2.5rem))";
 
 type Images = BTreeMap<PathBuf, Image>;
 
