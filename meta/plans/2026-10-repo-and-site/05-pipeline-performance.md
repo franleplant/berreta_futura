@@ -182,6 +182,101 @@ All measured in a scratch copy of the repo with release binaries built from HEAD
   a test that changing a source image or the encoder settings re-encodes it.
 - Items 10, 11: same outputs with the fake backend; EPUB byte-identical.
 
+## Results after the pass (2026-10-05)
+
+Before = 3ebf70a, after = HEAD 974cc9f, both release (or dev where noted)
+binaries built in scratch and run back to back, alternating before/after, in
+one scratch clone at 974cc9f (edition and library data are identical between
+the two commits), so both sides share the same load. Median of 3. Load
+average: builds 13 to 24, runtime rows 3 to 11 (noted per row). Model and
+image steps use the audit's fakes: a fake `claude` (0 s or 2 s latency), a
+fake `--gen-cmd` copying a 5 MB PNG after 1.5 s, and a local image server
+adding 0.5 s per image. No paid calls.
+
+| Step | Before | After | Load | Notes |
+|------|--------|-------|------|-------|
+| `cargo build --release`, cold | 57.25 s | 56.66 s | 20 to 24 | unchanged, as expected |
+| `cargo build --release`, touch `src/lib.rs` | 10.33 s | 1.43 s | 13 to 17 | item 6 |
+| `cargo build` (dev), cold | 94.3 s | 93.6 s | 24 to 32 | one run each |
+| `cargo build` (dev), touch / real edit | 1.38 / 1.54 s | 1.37 / 4.26 s | 12 to 30 | the edit time swings between 1.5 and 4.4 s on both trees with incremental-cache state (the before tree was 4.2 s in a verbose rerun); nothing in the pass touches it |
+| `cargo test --no-run`, after a real edit | 6.31 s | 3.95 s | 3 to 9 | same incremental noise as the row above |
+| `cargo test` run (built) | 17.94 s | 8.73 s | 16 to 19 | per binary, after: `site` 2.84 s (was 10.51), unit tests 2.81, `pdf_text` 1.63, everything else 1.5 in total |
+| pre-commit hook, after an edit | 6.97 s | 4.40 s | 12 to 15 | fmt+clippy 2.4 s on both, ruff 0.06 s; `--test nocomments` 4.8 s before vs 1.85 s after is lib recompile noise again, not the pass |
+| `mag render 012` (warm OCR cache) | 18.66 s | 5.80 s | 5 to 6 | peak RSS 1.88 to 1.80 GB; render dir 442 to 241 MB |
+| `mag render 012`, empty OCR cache | 23.64 s | 10.86 s | 4 to 10 | tesseract adds 5.0 s on both |
+| `mag render 012 --no-legibility` | 17.11 s | 5.29 s | 4 to 8 | |
+| `mag render 012`, dev binary | 24.39 s | 7.56 s | 4 to 6 | |
+| `mag site --out` (3 editions) | 2.17 s | 2.06 s cold cache, 0.80 s warm | 10 to 11 | |
+| `mag epub 012` | 2.09 s | 0.97 s | 7 to 11 | |
+| `mag capture --html`, 20 images at 0.5 s each | 10.74 s | 1.69 s | 5 | |
+| `mag capture --html`, same, no image delay | 0.21 s | 0.12 s | 5 | non-model overhead |
+| `mag produce` 012, fake model 0 s / 2 s | 0.14 / 4.19 s | 0.08 / 2.14 s | 4 | one writing wave instead of two |
+| `mag art 012` round, 120 candidates at 1.5 s | 24.77 s | 14.14 s | 3 to 4 | floors are 15 and 9 waves (22.5 and 13.5 s): overhead 2.3 to 0.6 s |
+| `mag art 012 --showcase` (5 rounds) | 2.56 s | 0.32 s | 3 to 5 | |
+
+Outputs checked in the same session:
+
+- `mag render 012 --run editions/012/run-2026-10-01T14-52-53`: reader.pdf,
+  the three booklets, render-critic.json and edition-manifest.json are
+  byte-identical between before and after and across all six runs. The
+  file list loses only `package.zip`; all 182 PNGs under the render dir decode
+  to identical pixels (bytes differ: item 1); preflight.json equals the
+  before version once the absolute render-dir prefix is stripped, and is now
+  byte-identical across after runs, as is SHA256SUMS (it differs from before
+  only through preflight.json, `package.zip` and the re-encoded review PNGs).
+- `mag site`: `diff -r` empty between before, after with a cold cache and
+  after with a warm cache. EPUB: byte-identical. Showcase: byte-identical.
+  Capture: `library/` identical except `captured_at`.
+
+Where the 5.8 s render goes now (pdftoppm wrapper timestamps plus `sample`):
+about 2 s of typesetting, cover, export and staging; 3.2 s of critic
+(pdftoppm busy 2.6 s of it: reader pages 0.65 s, booklet sides 0.77 s, 40
+crop pages 1.15 s; the rest is `inspect_page`, PNG decode and resize); about
+1 s of contact sheets, PNG deflate for crops and contact sheets, preflight
+and checksums.
+
+Side findings from this run (not fixed here):
+
+- `mag epub NNN` fails on its second run until the EPUB is committed: since
+  68d4a66 the issue loader refuses the modified tracked
+  `editions/NNN/epub/*.epub`, and `mag epub` loads the issue the same way
+  ("mag site publishes committed inputs only; untracked or modified:
+  editions/012/epub/berreta-futura-012-en.epub"). Re-packaging after a fix
+  needs a commit or a restore first.
+- `capture::prepend_sources_md` panics (slice index out of range) when
+  `sources.md` has fewer than three lines and no collecting line; the real
+  file always has them, so only scratch setups hit it.
+
+### Still open
+
+- Later: in-process rasterization with `typst_render` (open, see the revised
+  estimate below), the shared image cache for render, site and EPUB (open).
+  The decoded-raster plumbing was tried and rejected; render-dir retention is
+  done.
+- Item 4's real effect is unmeasured until a real art round writes
+  per-candidate seconds to its `log.jsonl` (no round has run since 839b5e4).
+
+### What to do next (ranked by measured headroom)
+
+1. `cargo test` runs its 28 test binaries one after another: 8.7 s, of which
+   the three biggest are 2.8, 2.8 and 1.6 s and no single test dominates any
+   more (slowest: Typst layout unit tests at 1.9 to 2.5 s each, the site
+   build test at 1.9 s, `pdf_text` three-runs test at 1.6 s). Running the
+   binaries concurrently (for example `cargo nextest run`) has a floor near
+   the longest binary, about 3 s: up to 5.7 s per test run, no code change.
+2. First render of an edition with new figures: tesseract runs once per
+   figure, serially, 5.0 s for 012. Running those calls through
+   `util::parallel` would make it about 1 s; it is paid once per new figure
+   (the cache keys on image sha256), so about 4 s per new edition.
+3. In-process reader rasterization (Later) now has a measured ceiling of
+   about 1.8 s (reader pages plus crop pages in pdftoppm), minus whatever
+   `typst_render` itself costs (0.36 s for the 300 dpi cover alone), and it
+   changes critic pixels. Not worth it until the render matters again.
+4. Nothing else has headroom worth a change: warm `mag site` is 0.8 s (git,
+   staging, tone recompute, writing 80 MB), capture, produce and art overheads
+   are within 0.1 to 0.6 s of their floors, and the real waits are model and
+   image latency (capture call median 41 s, image session median 125 s).
+
 ## Later (crosses module boundaries)
 
 - Keep the critic's rasters decoded in memory from rasterization through
