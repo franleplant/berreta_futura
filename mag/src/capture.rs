@@ -7,7 +7,8 @@ use regex::Regex;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::LazyLock;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{LazyLock, Mutex};
 
 static CHARSET_DECL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)charset\s*=\s*[\x22']?([\w.:-]+)").unwrap());
@@ -1002,18 +1003,41 @@ fn set_intake_edition(text: &str, edition: &str) -> Result<String> {
     Ok(out)
 }
 
-fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
-    let mut mapping: Vec<(String, String)> = Vec::new();
-    for c in REMOTE_MD_IMAGE.captures_iter(article) {
-        let url = c[1].to_string();
-        if mapping.iter().any(|(u, _)| *u == url) {
-            continue;
+const IMAGE_WORKERS: usize = 8;
+
+fn download_images(urls: &[String], media_dir: &Path) -> Vec<Result<String>> {
+    let next = AtomicUsize::new(0);
+    let done = Mutex::new(Vec::new());
+    std::thread::scope(|scope| {
+        for _ in 0..IMAGE_WORKERS.min(urls.len()) {
+            scope.spawn(|| loop {
+                let index = next.fetch_add(1, Ordering::Relaxed);
+                let Some(url) = urls.get(index) else { break };
+                let stem = media_dir.join(format!("{:03}", index + 1));
+                let name = curl_image(url, &stem)
+                    .map(|dest| format!("media/{}", dest.file_name().unwrap().to_string_lossy()));
+                done.lock().unwrap().push((index, name));
+            });
         }
-        let stem = media_dir.join(format!("{:03}", mapping.len() + 1));
-        let dest = curl_image(&url, &stem)?;
-        let name = dest.file_name().unwrap().to_string_lossy().into_owned();
-        mapping.push((url, format!("media/{name}")));
+    });
+    let mut done = done.into_inner().unwrap();
+    done.sort_by_key(|(index, _)| *index);
+    done.into_iter().map(|(_, name)| name).collect()
+}
+
+fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
+    let mut urls: Vec<String> = Vec::new();
+    for c in REMOTE_MD_IMAGE.captures_iter(article) {
+        if !urls.iter().any(|u| *u == c[1]) {
+            urls.push(c[1].to_string());
+        }
     }
+    let downloads = download_images(&urls, media_dir);
+    let mapping: Vec<(String, String)> = urls
+        .into_iter()
+        .zip(downloads)
+        .map(|(url, local)| local.map(|local| (url, local)))
+        .collect::<Result<_>>()?;
     let mut out = article.to_string();
     for (url, local) in &mapping {
         out = out.replace(&format!("({url})"), &format!("({local})"));
@@ -1370,6 +1394,60 @@ fn refresh(args: &CaptureArgs, sid: &str) -> Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+
+    #[test]
+    fn parallel_downloads_keep_numbering_by_first_appearance() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                std::thread::spawn(move || {
+                    let mut stream = stream.unwrap();
+                    let mut buf = [0u8; 1024];
+                    let n = stream.read(&mut buf).unwrap();
+                    let request = String::from_utf8_lossy(&buf[..n]).into_owned();
+                    let id: u64 = request.split("/img").nth(1).unwrap()[..2].parse().unwrap();
+                    std::thread::sleep(std::time::Duration::from_millis((20 - id) * 15));
+                    let body = format!("body-{id}");
+                    let head = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    );
+                    stream.write_all(head.as_bytes()).unwrap();
+                    stream.write_all(body.as_bytes()).unwrap();
+                });
+            }
+        });
+        let url = |id: u64| format!("http://127.0.0.1:{port}/img{id:02}.png");
+        let ids = [3u64, 1, 3, 17, 5, 2, 9, 11, 13, 4, 6, 7, 8, 10, 12];
+        let article: String = ids
+            .iter()
+            .map(|id| format!("![a]({})\n\n", url(*id)))
+            .collect();
+        let dir = std::env::temp_dir().join(format!("mag-localize-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let (out, count) = localize_images(&article, &dir).unwrap();
+        let mut unique: Vec<u64> = vec![];
+        for id in ids {
+            if !unique.contains(&id) {
+                unique.push(id);
+            }
+        }
+        assert_eq!(count, unique.len());
+        for (index, id) in unique.iter().enumerate() {
+            let name = format!("{:03}.png", index + 1);
+            assert!(out.contains(&format!("(media/{name})")));
+            assert_eq!(
+                fs::read_to_string(dir.join(&name)).unwrap(),
+                format!("body-{id}")
+            );
+        }
+        assert!(!out.contains("http://"));
+        fs::remove_dir_all(&dir).unwrap();
+    }
 
     #[test]
     fn a_latin1_page_is_decoded_by_its_header_or_its_meta_tag() {

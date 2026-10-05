@@ -249,18 +249,24 @@ pub fn render_pages(pdf: &Path, output_dir: &Path, shards: Option<usize>) -> Res
     }
     let sources = rendered_names(output_dir)?;
     let numbered: Vec<(usize, &PathBuf)> = sources.iter().enumerate().collect();
-    ordered_map(
+    let encoded = ordered_map(
         |(index, source): &(usize, &PathBuf)| {
             let target = output_dir.join(format!("page-{:03}.png", index + 1));
-            std::fs::write(&target, read_ppm(source)?.png_fast()?)
-                .with_context(|| format!("cannot write {}", target.display()))?;
-            std::fs::remove_file(source)
-                .with_context(|| format!("cannot remove {}", source.display()))?;
-            Ok(target)
+            let outcome = read_ppm(source).and_then(|image| {
+                std::fs::write(&target, image.png_fast()?)
+                    .with_context(|| format!("cannot write {}", target.display()))
+            });
+            let removed = std::fs::remove_file(source)
+                .with_context(|| format!("cannot remove {}", source.display()));
+            outcome.and(removed).map(|()| target)
         },
         &numbered,
         None,
-    )
+    );
+    for source in &sources {
+        std::fs::remove_file(source).ok();
+    }
+    encoded
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1728,54 +1728,56 @@ pub fn write_review_crops(
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
-    let rasters = ordered_map(
-        |page: &usize| render_crop_page(reader_pdf, *page, &scratch),
+    let mut used = BTreeSet::new();
+    let named: Vec<(usize, &CropSpec, PathBuf)> = specs
+        .iter()
+        .enumerate()
+        .map(|(index, spec)| {
+            let name = crop_name(&format!("crop-p{:02}-{}", spec.page, spec.kind), &mut used);
+            (index, spec, crops_dir.join(format!("{name}.png")))
+        })
+        .collect();
+    let outcome = ordered_map(
+        |page: &usize| {
+            let image = render_crop_page(reader_pdf, *page, &scratch)?;
+            let on_page = named.iter().filter(|(_, spec, _)| spec.page == *page);
+            emit_page_crops(&image, destination, on_page)
+        },
         &pages,
         Some(worker_count(pages.len(), None)),
     );
-    let outcome = rasters.and_then(|rasters| {
-        let rendered: BTreeMap<usize, Rgb> = pages.iter().copied().zip(rasters).collect();
-        emit_crops(crops_dir, destination, specs, &rendered)
-    });
     std::fs::remove_dir_all(&scratch).ok();
-    outcome
+    let mut written: Vec<(usize, PathBuf, CropRow)> = outcome?.into_iter().flatten().collect();
+    written.sort_by_key(|(index, _, _)| *index);
+    Ok(written
+        .into_iter()
+        .map(|(_, path, row)| (path, row))
+        .unzip())
 }
 
-fn emit_crops(
-    crops_dir: &Path,
+fn emit_page_crops<'a>(
+    image: &Rgb,
     destination: &Path,
-    specs: &[CropSpec],
-    rendered: &BTreeMap<usize, Rgb>,
-) -> Result<(Vec<PathBuf>, Vec<CropRow>)> {
-    let mut used = BTreeSet::new();
-    let mut jobs = vec![];
-    for spec in specs {
-        let name = crop_name(&format!("crop-p{:02}-{}", spec.page, spec.kind), &mut used);
-        let image = &rendered[&spec.page];
-        if let Some(box_rect) = crop_box(image, spec.region) {
-            jobs.push((spec, crops_dir.join(format!("{name}.png")), box_rect));
-        }
+    crops: impl Iterator<Item = &'a (usize, &'a CropSpec, PathBuf)>,
+) -> Result<Vec<(usize, PathBuf, CropRow)>> {
+    let mut written = vec![];
+    for (index, spec, target) in crops {
+        let Some(box_rect) = crop_box(image, spec.region) else {
+            continue;
+        };
+        write_png(target, &crop_rgb(image, box_rect))?;
+        let path = target.strip_prefix(destination).unwrap_or(target);
+        let row = CropRow {
+            path: path.to_string_lossy().into_owned(),
+            page: spec.page,
+            kind: spec.kind.clone(),
+            subject: spec.subject.clone(),
+            region_points: spec.region.map(|value| round_places(value, 1)),
+            ppi: CROP_DPI,
+        };
+        written.push((*index, target.clone(), row));
     }
-    ordered_map(
-        |(spec, target, box_rect): &(&CropSpec, PathBuf, [u32; 4])| {
-            write_png(target, &crop_rgb(&rendered[&spec.page], *box_rect))?;
-            let path = target.strip_prefix(destination).unwrap_or(target);
-            Ok((
-                target.clone(),
-                CropRow {
-                    path: path.to_string_lossy().into_owned(),
-                    page: spec.page,
-                    kind: spec.kind.clone(),
-                    subject: spec.subject.clone(),
-                    region_points: spec.region.map(|value| round_places(value, 1)),
-                    ppi: CROP_DPI,
-                },
-            ))
-        },
-        &jobs,
-        None,
-    )
-    .map(|written| written.into_iter().unzip())
+    Ok(written)
 }
 
 pub fn opener_crop_fidelity_checks(
