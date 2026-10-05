@@ -370,6 +370,8 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
         release.figure_placements,
         release.language,
     )?;
+    let mut facts = facts;
+    relativize_paths(&mut facts, &root.canonicalize()?)?;
     write(&preflight, &json_text(&facts))?;
     let mut files: Vec<PathBuf> = [
         reader,
@@ -394,6 +396,28 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
     write(&checksums, &sums)?;
     files.push(checksums);
     Ok(files)
+}
+
+fn relativize_paths(facts: &mut Value, root: &Path) -> Result<()> {
+    let render = root.parent().unwrap_or(root);
+    let figures = facts["figures"].as_array().map_or(0, Vec::len);
+    let pointers = (0..figures)
+        .map(|at| format!("/figures/{at}/path"))
+        .chain(["/cover_art/path".to_string()]);
+    for pointer in pointers {
+        let Some(slot) = facts.pointer_mut(&pointer) else {
+            continue;
+        };
+        let Some(text) = slot.as_str().map(str::to_owned) else {
+            continue;
+        };
+        let full = Path::new(&text).canonicalize()?;
+        let inside = full
+            .strip_prefix(render)
+            .with_context(|| format!("preflight path {text} is outside {}", render.display()))?;
+        *slot = json!(inside.display().to_string());
+    }
+    Ok(())
 }
 
 fn is_spanish(language: &str) -> bool {

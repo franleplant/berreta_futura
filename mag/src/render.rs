@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 const SCHEMA_VERSION: u32 = 1;
 const RENDERER_CONTRACT_VERSION: &str = "magazine-renderer/1";
 const RENDERER: &str = "typst";
+const KEEP_RENDERS: usize = 3;
 const DESIGN_TOML_PATH: &str = "design/covers/canto-vivo/design.toml";
 
 #[derive(Default, Serialize)]
@@ -310,7 +311,69 @@ pub fn run(args: &RenderArgs) -> Result<i32> {
     let edition_dir = resolve_edition_dir(&args.edition)?;
     let render_dir = edition_dir.join(format!("render-{}", crate::caller::now_stamp()));
     let request = request(args, &repo_root)?;
-    run_typst(&repo_root, &render_dir, &request, !args.no_legibility)
+    let result = run_typst(&repo_root, &render_dir, &request, !args.no_legibility);
+    if let Err(error) = prune_renders(&edition_dir, &render_dir) {
+        eprintln!("render pruning skipped: {error:#}");
+    }
+    result
+}
+
+fn is_render_stamp(name: &str) -> bool {
+    let Some(stamp) = name.strip_prefix("render-") else {
+        return false;
+    };
+    stamp.len() == 19
+        && stamp.bytes().enumerate().all(|(at, byte)| match at {
+            4 | 7 => byte == b'-',
+            10 => byte == b'T',
+            13 | 16 => byte == b'-',
+            _ => byte.is_ascii_digit(),
+        })
+}
+
+fn is_tracked(dir: &Path) -> Result<bool> {
+    let output = std::process::Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(["ls-files", "--", "."])
+        .output()
+        .context("running git ls-files")?;
+    ensure!(
+        output.status.success(),
+        "git ls-files failed in {}",
+        dir.display()
+    );
+    Ok(!output.stdout.is_empty())
+}
+
+fn is_recent(dir: &Path) -> Result<bool> {
+    let age = fs::metadata(dir)?.modified()?.elapsed().unwrap_or_default();
+    Ok(age < std::time::Duration::from_secs(3600))
+}
+
+pub(crate) fn prune_renders(edition_dir: &Path, current: &Path) -> Result<()> {
+    let mut renders: Vec<PathBuf> = fs::read_dir(edition_dir)?
+        .filter_map(|entry| Some(entry.ok()?.path()))
+        .filter(|path| path.is_dir())
+        .filter(|path| {
+            path.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(is_render_stamp)
+        })
+        .collect();
+    renders.sort_by(|a, b| b.cmp(a));
+    let mut kept = 0;
+    for dir in renders {
+        let complete = dir.join("result.json").is_file();
+        kept += usize::from(complete);
+        let keep = (complete && kept <= KEEP_RENDERS) || dir == current;
+        if keep || is_recent(&dir)? || is_tracked(&dir)? {
+            continue;
+        }
+        fs::remove_dir_all(&dir).with_context(|| format!("removing {}", dir.display()))?;
+        println!("removed old render {}", dir.display());
+    }
+    Ok(())
 }
 
 pub(crate) fn request(args: &RenderArgs, repo_root: &Path) -> Result<Request> {
@@ -628,8 +691,51 @@ fn next_step(pdf_dir: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{close_typst, next_step, translation_languages, Staging};
+    use super::{close_typst, next_step, prune_renders, translation_languages, Staging};
     use std::path::{Path, PathBuf};
+
+    #[test]
+    fn pruning_keeps_the_newest_three_completed_and_spares_fresh_tracked_and_odd_names() {
+        let root = std::env::temp_dir().join(format!("mag-prune-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let git = |args: &[&str]| {
+            let ok = std::process::Command::new("git")
+                .arg("-C")
+                .arg(&root)
+                .args(args)
+                .status()
+                .unwrap();
+            assert!(ok.success());
+        };
+        git(&["init", "-q"]);
+        let old = std::time::SystemTime::now() - std::time::Duration::from_secs(7200);
+        let stamps = ["01", "02", "03", "04", "05", "06", "07"];
+        for day in stamps {
+            let dir = root.join(format!("render-2026-10-{day}T10-00-00"));
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("a.txt"), "x").unwrap();
+            if day != "06" && day != "07" {
+                std::fs::write(dir.join("result.json"), "{}").unwrap();
+            }
+            if day != "07" {
+                std::fs::File::open(&dir)
+                    .unwrap()
+                    .set_modified(old)
+                    .unwrap();
+            }
+        }
+        std::fs::create_dir_all(root.join("render-latest")).unwrap();
+        git(&["add", "-f", "render-2026-10-02T10-00-00/a.txt"]);
+        let current = root.join("render-2026-10-08T10-00-00");
+        prune_renders(&root, &current).unwrap();
+        let left: Vec<bool> = stamps
+            .iter()
+            .map(|day| root.join(format!("render-2026-10-{day}T10-00-00")).exists())
+            .collect();
+        assert_eq!(left, [false, true, true, true, true, false, true]);
+        assert!(root.join("render-latest").exists());
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn staging_refuses_parent_and_absolute_targets_without_recording_them() {

@@ -187,16 +187,20 @@ All measured in a scratch copy of the repo with release binaries built from HEAD
 - Keep the critic's rasters decoded in memory from rasterization through
   inspection, void geometry, contact sheets and fidelity, instead of
   re-reading PNGs in each stage: about 1 s more, but it changes the critic's
-  data flow between functions.
+  data flow between functions. Tried 2026-10-05: 0.16 s (3%) for +140 MB RSS
+  and about 150 lines of generic plumbing: rejected.
 - Rasterize the reader pages in-process with `typst_render` from the
   `PagedDocument` already in memory: no pdftoppm process for the reader and
   crops. Pixels change, so critic numbers change: needs a reviewed baseline
   update. Booklets would still need a PDF rasterizer.
 - One image cache shared by render (tone copies), site and EPUB, keyed by
   source bytes and settings.
-- A render-dir retention rule (for example keep the newest N per edition):
-  127 GiB of render dirs is disk, not time, but it is the largest cost this
-  audit found.
+- DONE: render-dir retention. After every `mag render`, each untracked
+  `render-YYYY-MM-DDTHH-MM-SS` dir of that edition is removed unless it is
+  among the newest 3 completed renders (those holding `result.json`, written
+  last), was modified within the last hour, or is the dir just written; each
+  removal is printed, so failed renders older than an hour go and fresh
+  in-progress ones survive.
 
 ## Dropped (with the reason)
 
@@ -232,5 +236,6 @@ All measured in a scratch copy of the repo with release binaries built from HEAD
 
 - Fixed with item 8: `mag site` copied `editions/NNN/epub/*.epub` from the
   working tree without the dirty check; it now goes through `require_committed`.
-- `preflight.json` embeds the timestamped render path, which makes
-  SHA256SUMS differ between identical renders.
+- Fixed: `preflight.json` paths are now relative to the render dir
+  (for example `staged/...`; a path outside the render dir fails the render); two renders of the same inputs have byte identical
+  preflight.json and SHA256SUMS.
