@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
-use crate::critic::metrics::{decode_rgb, round_half_even, Rgb};
+use crate::critic::metrics::{decode_rgb, ordered_map, round_half_even, Rgb};
 use crate::critic::rules::write_png;
 
 const CONTACT_COLUMNS: u32 = 4;
@@ -225,14 +225,15 @@ pub fn write_contact_sheets(
             height,
             data: BACKGROUND.repeat(width as usize * height as usize),
         };
-        for (offset, page) in chunk.iter().enumerate() {
+        let tiles = ordered_map(
+            |page: &PathBuf| Ok(fit(&decode_rgb(page)?, (THUMBNAIL_WIDTH, thumb_height))),
+            chunk,
+            None,
+        )?;
+        for (offset, tile) in tiles.iter().enumerate() {
             let x = offset as u32 % CONTACT_COLUMNS * THUMBNAIL_WIDTH;
             let y = offset as u32 / CONTACT_COLUMNS * cell_height;
-            paste(
-                &mut sheet,
-                &fit(&decode_rgb(page)?, (THUMBNAIL_WIDTH, thumb_height)),
-                (x, y),
-            );
+            paste(&mut sheet, tile, (x, y));
             label(
                 &mut sheet,
                 (x + 7, y + thumb_height + 5),

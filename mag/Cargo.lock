@@ -1703,7 +1703,6 @@ dependencies = [
  "ego-tree",
  "encoding_rs",
  "fancy-regex",
- "flate2",
  "hex",
  "image",
  "lopdf",

@@ -2,7 +2,9 @@ use anyhow::{bail, Context, Result};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
-use crate::critic::metrics::{decode_rgb, luma601, ordered_map, round_places, worker_count, Rgb};
+use crate::critic::metrics::{
+    decode_rgb, luma601, ordered_map, read_ppm, round_places, worker_count, Rgb,
+};
 use crate::critic::text::body_text_lines;
 
 pub const RASTER_DPI: u32 = 144;
@@ -171,7 +173,7 @@ fn executable(program: &str) -> Option<PathBuf> {
 
 fn rasterize(tool: &Path, pdf: &Path, prefix: &Path, window: Option<(usize, usize)>) -> Result<()> {
     let mut command = std::process::Command::new(tool);
-    command.args(["-png", "-r", &RASTER_DPI.to_string()]);
+    command.args(["-r", &RASTER_DPI.to_string()]);
     if let Some((first, last)) = window {
         command.args(["-f", &first.to_string(), "-l", &last.to_string()]);
     }
@@ -210,7 +212,7 @@ fn rendered_names(output_dir: &Path) -> Result<Vec<PathBuf>> {
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or("");
-        if name.starts_with("page-") && name.ends_with(".png") {
+        if name.starts_with("page-") && name.ends_with(".ppm") {
             found.push(path);
         }
     }
@@ -245,16 +247,20 @@ pub fn render_pages(pdf: &Path, output_dir: &Path, shards: Option<usize>) -> Res
             None,
         )?;
     }
-    let mut normalized = vec![];
-    for (index, path) in rendered_names(output_dir)?.iter().enumerate() {
-        let target = output_dir.join(format!("page-{:03}.png", index + 1));
-        if *path != target {
-            std::fs::rename(path, &target)
-                .with_context(|| format!("cannot rename {}", path.display()))?;
-        }
-        normalized.push(target);
-    }
-    Ok(normalized)
+    let sources = rendered_names(output_dir)?;
+    let numbered: Vec<(usize, &PathBuf)> = sources.iter().enumerate().collect();
+    ordered_map(
+        |(index, source): &(usize, &PathBuf)| {
+            let target = output_dir.join(format!("page-{:03}.png", index + 1));
+            std::fs::write(&target, read_ppm(source)?.png_fast()?)
+                .with_context(|| format!("cannot write {}", target.display()))?;
+            std::fs::remove_file(source)
+                .with_context(|| format!("cannot remove {}", source.display()))?;
+            Ok(target)
+        },
+        &numbered,
+        None,
+    )
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

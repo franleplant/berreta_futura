@@ -46,9 +46,21 @@ pub struct Rgb {
 
 impl Rgb {
     pub fn png(&self) -> Result<Vec<u8>> {
+        self.encode(CompressionType::Default)
+    }
+
+    pub fn png_fast(&self) -> Result<Vec<u8>> {
+        self.encode(CompressionType::Fast)
+    }
+
+    fn encode(&self, compression: CompressionType) -> Result<Vec<u8>> {
         let mut out = Vec::new();
-        PngEncoder::new_with_quality(&mut out, CompressionType::Default, FilterType::Adaptive)
-            .write_image(&self.data, self.width, self.height, ExtendedColorType::Rgb8)?;
+        PngEncoder::new_with_quality(&mut out, compression, FilterType::Adaptive).write_image(
+            &self.data,
+            self.width,
+            self.height,
+            ExtendedColorType::Rgb8,
+        )?;
         Ok(out)
     }
 
@@ -181,6 +193,37 @@ pub fn decode_rgb(path: &Path) -> Result<Rgb> {
         width: image.width(),
         height: image.height(),
         data: image.into_raw(),
+    })
+}
+
+pub fn read_ppm(path: &Path) -> Result<Rgb> {
+    let bytes =
+        std::fs::read(path).with_context(|| format!("cannot open image {}", path.display()))?;
+    let mut at = 0;
+    let mut fields = [0usize; 4];
+    for field in &mut fields {
+        while bytes.get(at).is_some_and(u8::is_ascii_whitespace) {
+            at += 1;
+        }
+        let start = at;
+        while bytes
+            .get(at)
+            .is_some_and(|byte| !byte.is_ascii_whitespace())
+        {
+            at += 1;
+        }
+        let token = std::str::from_utf8(&bytes[start..at]).unwrap_or("");
+        *field = token.trim_start_matches('P').parse().unwrap_or(0);
+    }
+    let [magic, width, height, maxval] = fields;
+    let data = bytes.get(at + 1..).unwrap_or_default();
+    if magic != 6 || maxval != 255 || data.len() != width * height * 3 {
+        bail!("unsupported ppm {}", path.display());
+    }
+    Ok(Rgb {
+        width: width as u32,
+        height: height as u32,
+        data: data.to_vec(),
     })
 }
 

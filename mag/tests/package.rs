@@ -1,4 +1,3 @@
-use mag::package::archive;
 use mag::package::contact;
 use mag::package::release;
 use serde_json::{json, Value};
@@ -90,65 +89,5 @@ fn visual_review_status_covers_every_recorded_review_branch() {
         ),
     ] {
         assert_eq!(status(Some(broken)).unwrap_err().to_string(), message);
-    }
-}
-
-fn zip_entries(path: &Path) -> Vec<(Value, Vec<u8>)> {
-    use std::io::Read;
-    let bytes = std::fs::read(path).unwrap();
-    let word = |at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
-    let half = |at: usize| u16::from_le_bytes(bytes[at..at + 2].try_into().unwrap()) as usize;
-    let end = bytes.len() - 22;
-    assert_eq!(word(end), 0x0605_4b50);
-    let mut at = word(end + 16) as usize;
-    let mut entries = vec![];
-    for _ in 0..half(end + 10) {
-        assert_eq!(word(at), 0x0201_4b50);
-        let (name_len, extra_len, comment_len) = (half(at + 28), half(at + 30), half(at + 32));
-        let name = String::from_utf8(bytes[at + 46..at + 46 + name_len].to_vec()).unwrap();
-        let (time, date) = (half(at + 12), half(at + 14));
-        let date_time = json!([
-            1980 + (date >> 9),
-            (date >> 5) & 15,
-            date & 31,
-            time >> 11,
-            (time >> 5) & 63,
-            (time & 31) * 2
-        ]);
-        let local = word(at + 42) as usize;
-        let start = local + 30 + half(local + 26) + half(local + 28);
-        let packed = &bytes[start..start + word(at + 20) as usize];
-        let mut data = vec![];
-        flate2::read::DeflateDecoder::new(packed)
-            .read_to_end(&mut data)
-            .unwrap();
-        entries.push((
-            json!([
-                name,
-                date_time,
-                word(at + 38),
-                half(at + 10),
-                word(at + 16),
-                word(at + 24)
-            ]),
-            data,
-        ));
-        at += 46 + name_len + extra_len + comment_len;
-    }
-    entries
-}
-
-#[test]
-fn archive_entries_hold_the_tree_files_byte_for_byte() {
-    let tree = fixtures().join("tree");
-    let out = scratch("archive").join("tree.zip");
-    archive::archive_tree(&tree, &out).unwrap();
-    let entries = zip_entries(&out);
-    assert!(!entries.is_empty());
-    for (row, data) in entries {
-        assert_eq!(
-            data,
-            std::fs::read(tree.join(row[0].as_str().unwrap())).unwrap()
-        );
     }
 }

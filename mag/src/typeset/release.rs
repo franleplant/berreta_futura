@@ -1,6 +1,5 @@
 use super::layout::{FileRow, Layout};
 use crate::model::manifest::Edition;
-use crate::package::archive::archive_tree;
 use crate::package::preflight::FigurePlacement;
 use crate::package::release::{package_release, Release};
 use anyhow::{Context, Result};
@@ -55,7 +54,6 @@ fn kind(path: &Path) -> (&'static str, &'static str) {
         "json" if name == "render-critic.json" => ("render_critic_report", "application/json"),
         "json" => ("render_report", "application/json"),
         "md" => ("render_instructions", "text/markdown"),
-        "zip" if name == "package.zip" => ("package_artifact", "application/zip"),
         _ => ("render_file", "text/plain"),
     }
 }
@@ -164,7 +162,6 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         recorded_review: None,
         runs: &runs,
     })?;
-    let package = archive_tree(p.out_dir, &p.out_dir.join("package.zip"))?;
     let report: Value = serde_json::from_str(&std::fs::read_to_string(
         p.out_dir.join("render-critic.json"),
     )?)?;
@@ -172,7 +169,7 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         .as_str()
         .context("render-critic.json has no result")?
         .to_string();
-    let files: Vec<PathBuf> = written.into_iter().chain([package, cover]).collect();
+    let files: Vec<PathBuf> = written.into_iter().chain([cover]).collect();
     Ok((
         files
             .iter()

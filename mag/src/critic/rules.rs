@@ -11,7 +11,7 @@ use crate::critic::inspect::{
     PageInspection, ReviewRasters, PAPER_WHITE, RASTER_DPI,
 };
 use crate::critic::metrics::{
-    decode_rgb, ordered_map, resize, round_half_even, round_places, worker_count, Rgb,
+    decode_rgb, ordered_map, read_ppm, resize, round_half_even, round_places, worker_count, Rgb,
 };
 use crate::critic::text::{page_text, Run};
 use crate::impose::{
@@ -491,18 +491,14 @@ pub struct OffsetCheck {
     pub measured: OpenerOffset,
 }
 
-pub fn inspect_opener_crop_fidelity(
-    crop_path: &Path,
-    reader_page_path: &Path,
-) -> Result<OpenerFidelity> {
-    let reference = decode_rgb(reader_page_path)?;
+pub fn inspect_opener_crop_fidelity(crop_path: &Path, reference: &Rgb) -> Result<OpenerFidelity> {
     let source = decode_rgb(crop_path)?;
     let normalized = resize(
         &source,
         (reference.width, reference.height),
         (0.0, 0.0, f64::from(source.width), f64::from(source.height)),
     );
-    let histogram = rgb_histogram(&difference(&normalized, &reference)?);
+    let histogram = rgb_histogram(&difference(&normalized, reference)?);
     let channel_values = f64::from(reference.width) * f64::from(reference.height) * 3.0;
     let total: u64 = histogram
         .iter()
@@ -511,7 +507,7 @@ pub fn inspect_opener_crop_fidelity(
         .sum();
     let rgb_mae = total as f64 / channel_values;
     let crop_frame = opener_frame_bbox(&normalized, 24);
-    let reference_frame = opener_frame_bbox(&reference, 24);
+    let reference_frame = opener_frame_bbox(reference, 24);
     let mut frames_match = crop_frame.is_some() && reference_frame.is_some();
     let frame_delta = match (crop_frame, reference_frame) {
         (Some(one), Some(other)) => Some(
@@ -1624,12 +1620,12 @@ pub fn review_crop_plan(
     specs
 }
 
-fn render_crop_page(reader_pdf: &Path, page_number: usize, output_dir: &Path) -> Result<PathBuf> {
+fn render_crop_page(reader_pdf: &Path, page_number: usize, output_dir: &Path) -> Result<Rgb> {
     std::fs::create_dir_all(output_dir)
         .with_context(|| format!("cannot create {}", output_dir.display()))?;
     let stem = format!("page-{page_number:03}");
     let completed = std::process::Command::new("pdftoppm")
-        .args(["-png", "-r", &CROP_DPI.to_string()])
+        .args(["-r", &CROP_DPI.to_string()])
         .args([
             "-f",
             &page_number.to_string(),
@@ -1645,13 +1641,13 @@ fn render_crop_page(reader_pdf: &Path, page_number: usize, output_dir: &Path) ->
         .filter(|path| {
             path.file_name()
                 .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with(&format!("{stem}-")) && name.ends_with(".png"))
+                .is_some_and(|name| name.starts_with(&format!("{stem}-")) && name.ends_with(".ppm"))
         })
         .collect();
     matches.sort();
     if completed.status.success() {
         if let Some(first) = matches.first() {
-            return Ok(first.clone());
+            return read_ppm(first);
         }
     }
     let stderr = String::from_utf8_lossy(&completed.stderr);
@@ -1738,7 +1734,7 @@ pub fn write_review_crops(
         Some(worker_count(pages.len(), None)),
     );
     let outcome = rasters.and_then(|rasters| {
-        let rendered: BTreeMap<usize, PathBuf> = pages.iter().copied().zip(rasters).collect();
+        let rendered: BTreeMap<usize, Rgb> = pages.iter().copied().zip(rasters).collect();
         emit_crops(crops_dir, destination, specs, &rendered)
     });
     std::fs::remove_dir_all(&scratch).ok();
@@ -1749,34 +1745,37 @@ fn emit_crops(
     crops_dir: &Path,
     destination: &Path,
     specs: &[CropSpec],
-    rendered: &BTreeMap<usize, PathBuf>,
+    rendered: &BTreeMap<usize, Rgb>,
 ) -> Result<(Vec<PathBuf>, Vec<CropRow>)> {
     let mut used = BTreeSet::new();
-    let mut outputs = vec![];
-    let mut rows = vec![];
+    let mut jobs = vec![];
     for spec in specs {
         let name = crop_name(&format!("crop-p{:02}-{}", spec.page, spec.kind), &mut used);
-        let target = crops_dir.join(format!("{name}.png"));
-        let image = decode_rgb(&rendered[&spec.page])?;
-        let Some(box_rect) = crop_box(&image, spec.region) else {
-            continue;
-        };
-        write_png(&target, &crop_rgb(&image, box_rect))?;
-        outputs.push(target.clone());
-        rows.push(CropRow {
-            path: target
-                .strip_prefix(destination)
-                .unwrap_or(&target)
-                .to_string_lossy()
-                .into_owned(),
-            page: spec.page,
-            kind: spec.kind.clone(),
-            subject: spec.subject.clone(),
-            region_points: spec.region.map(|value| round_places(value, 1)),
-            ppi: CROP_DPI,
-        });
+        let image = &rendered[&spec.page];
+        if let Some(box_rect) = crop_box(image, spec.region) {
+            jobs.push((spec, crops_dir.join(format!("{name}.png")), box_rect));
+        }
     }
-    Ok((outputs, rows))
+    ordered_map(
+        |(spec, target, box_rect): &(&CropSpec, PathBuf, [u32; 4])| {
+            write_png(target, &crop_rgb(&rendered[&spec.page], *box_rect))?;
+            let path = target.strip_prefix(destination).unwrap_or(target);
+            Ok((
+                target.clone(),
+                CropRow {
+                    path: path.to_string_lossy().into_owned(),
+                    page: spec.page,
+                    kind: spec.kind.clone(),
+                    subject: spec.subject.clone(),
+                    region_points: spec.region.map(|value| round_places(value, 1)),
+                    ppi: CROP_DPI,
+                },
+            ))
+        },
+        &jobs,
+        None,
+    )
+    .map(|written| written.into_iter().unzip())
 }
 
 pub fn opener_crop_fidelity_checks(
@@ -1785,39 +1784,44 @@ pub fn opener_crop_fidelity_checks(
     rendered_pages: &[PathBuf],
     destination: &Path,
 ) -> Result<Vec<FidelityCheck>> {
+    let openers: Vec<&CropRow> = crop_rows
+        .iter()
+        .filter(|crop| crop.kind == "opener" && (1..=rendered_pages.len()).contains(&crop.page))
+        .collect();
+    let measured = ordered_map(
+        |crop: &&CropRow| {
+            let reference = decode_rgb(&rendered_pages[crop.page - 1])?;
+            let expected = [2usize, 3].map(|index| {
+                round_half_even(crop.region_points[index] * f64::from(RASTER_DPI) / 72.0)
+            });
+            if (i64::from(reference.width) - expected[0]).abs() > 1
+                || (i64::from(reference.height) - expected[1]).abs() > 1
+            {
+                return Ok(None);
+            }
+            inspect_opener_crop_fidelity(&destination.join(&crop.path), &reference).map(Some)
+        },
+        &openers,
+        None,
+    )?;
     let mut checks = vec![];
-    for crop in crop_rows {
-        if crop.kind != "opener" {
+    for (crop, measured) in openers.into_iter().zip(measured) {
+        let Some(measured) = measured else {
             continue;
-        }
-        let page = crop.page;
-        if !(1..=rendered_pages.len()).contains(&page) {
-            continue;
-        }
-        let region = crop.region_points;
-        let reference = decode_rgb(&rendered_pages[page - 1])?;
-        let expected =
-            [2usize, 3].map(|index| round_half_even(region[index] * f64::from(RASTER_DPI) / 72.0));
-        if (i64::from(reference.width) - expected[0]).abs() > 1
-            || (i64::from(reference.height) - expected[1]).abs() > 1
-        {
-            continue;
-        }
-        let measured =
-            inspect_opener_crop_fidelity(&destination.join(&crop.path), &rendered_pages[page - 1])?;
+        };
         if !measured.pass {
             recorder.at(
                 "article-opener-crop-fidelity",
                 "error",
                 format!(
-                    "Full-page opener crop for reader page {page} does not match the final-PDF page raster. {}",
-                    measured.message
+                    "Full-page opener crop for reader page {} does not match the final-PDF page raster. {}",
+                    crop.page, measured.message
                 ),
-                page,
+                crop.page,
             );
         }
         checks.push(FidelityCheck {
-            page,
+            page: crop.page,
             path: crop.path.clone(),
             measured,
         });
@@ -1861,12 +1865,12 @@ pub struct Critique {
 }
 
 fn inspect_leg(rasters: &[PathBuf], leg: &Leg) -> Result<Vec<PageInspection>> {
-    rasters
-        .iter()
-        .enumerate()
-        .filter(|(index, _)| *index < leg.pages())
-        .map(|(index, path)| inspect_page(path, index + 1, &leg.raw[index]))
-        .collect()
+    let numbered: Vec<(usize, &PathBuf)> = rasters.iter().enumerate().collect();
+    ordered_map(
+        |(index, path): &(usize, &PathBuf)| inspect_page(path, index + 1, &leg.raw[*index]),
+        &numbered[..leg.pages().min(numbered.len())],
+        None,
+    )
 }
 
 pub struct Geometry {
