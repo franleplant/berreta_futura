@@ -23,7 +23,7 @@ cover:
     restarts, and split brains is the whole trick: fencing tokens, write-ahead logs, a loop that refuses
     to call the work done early. This issue is about systems that finish what they start, and what it
     costs them.'
-  art_path: editions/007/art/rounds/2026-08-18T18-20-06/cover-tortoise-lamp-violet-v4.png
+  art_path: editions/007/art/picks/cover-tortoise-lamp-violet-v4.jpg
 articles:
 - id: cloudflare-workflows-in-a-nutshell
   title: Cloudflare Workflows in a Nutshell
@@ -43,11 +43,11 @@ articles:
   - events-and-parameters-179cef23
   manuscript: editions/007/articles/cloudflare-workflows-in-a-nutshell.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-workflows-v2.png
+    path: editions/007/art/picks/opener-workflows-v2.jpg
     alt_text: Pedro carries a watering can up stepping stones across a stream; Maro braces a tipping stone
       while Flopaz holds up an hourglass beside him.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-workflows-v1.png
+  tail_art_path: editions/007/art/picks/tail-workflows-v1.jpg
 - id: celld-durable-objects-self-hosted
   title: 'celld: Durable Objects, Self-Hosted'
   short_title: 'celld: Durable Objects, Self-Hosted'
@@ -63,11 +63,11 @@ articles:
   - webassembly-a0dede27
   manuscript: editions/007/articles/celld-durable-objects-self-hosted.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-celld-self-hosted-v3.png
+    path: editions/007/art/picks/opener-celld-self-hosted-v3.jpg
     alt_text: Pedro and Flopaz carry a glowing jar toward a small wooden shed while Maro holds the door
       open beside an empty shelf, a tall tower in the distance behind them.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-celld-self-hosted-v1.png
+  tail_art_path: editions/007/art/picks/tail-celld-self-hosted-v1.jpg
 - id: how-celld-keeps-its-promises
   title: How celld Keeps Its Promises
   short_title: How celld Keeps Its Promises
@@ -84,11 +84,11 @@ articles:
   - telemetry-258b249b
   manuscript: editions/007/articles/how-celld-keeps-its-promises.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-promises-fencing-v2.png
+    path: editions/007/art/picks/opener-promises-fencing-v2.jpg
     alt_text: Maro turns a new key in a heavy storeroom door as Pedro watches closely, while Flopaz holds
       a bent, useless older key away to one side.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-promises-fencing-v1.png
+  tail_art_path: editions/007/art/picks/tail-promises-fencing-v1.jpg
 - id: origin-code-hosting
   title: Origin Code Hosting
   short_title: Origin Code Hosting
@@ -101,11 +101,11 @@ articles:
   - origin-code-hosting-807cadab
   manuscript: editions/007/articles/origin-code-hosting.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-origin-v2.png
+    path: editions/007/art/picks/opener-origin-v2.jpg
     alt_text: Maro lifts a small wooden sluice gate where a spring's channel forks, merging two branches,
       while Pedro crouches at the water and Flopaz watches from the spring mouth.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-origin-v1.png
+  tail_art_path: editions/007/art/picks/tail-origin-v1.jpg
 - id: how-to-run-a-gauntlet-loop
   title: How to Run a Gauntlet Loop
   short_title: How to Run a Gauntlet Loop
@@ -128,12 +128,12 @@ articles:
     caption: The entire prompt that produced Claude of Duty, verbatim.
     anchor: __opener__
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-gauntlet-loop-v2.png
+    path: editions/007/art/picks/opener-gauntlet-loop-v2.jpg
     alt_text: A small clay figure tumbles on a circular obstacle track while Maro waits to set it back
       at the start, Pedro watches at table level with a pocket watch, and Flopaz holds three broken earlier
       figures.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-gauntlet-loop-v3.png
+  tail_art_path: editions/007/art/picks/tail-gauntlet-loop-v3.jpg
 - id: opus-outshines-even-fable
   title: Opus Outshines Even Fable
   short_title: Opus Outshines Even Fable
@@ -146,11 +146,11 @@ articles:
   - opus-outshines-even-fable-inside-the-hugging-fac-c220467a
   manuscript: editions/007/articles/opus-outshines-even-fable.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-opus-outshines-v2.png
+    path: editions/007/art/picks/opener-opus-outshines-v2.jpg
     alt_text: On a rooftop at night, Pedro points up at a star burning brighter than the one beside it
       while Flopaz looks on from the parapet and Maro turns a telescope toward it.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-opus-outshines-v1.png
+  tail_art_path: editions/007/art/picks/tail-opus-outshines-v1.jpg
 - id: my-ai-adoption-journey
   title: My AI Adoption Journey
   short_title: My AI Adoption Journey
@@ -163,19 +163,19 @@ articles:
   - my-ai-adoption-journey-0036f2d9
   manuscript: editions/007/articles/my-ai-adoption-journey.md
   opener_art:
-    path: editions/007/art/rounds/2026-08-18T15-17-35/opener-adoption-journey-v1.png
+    path: editions/007/art/picks/opener-adoption-journey-v1.jpg
     alt_text: On a hillside road, Pedro releases the grip of a heavy tool bag into Maro's hands while
       Flopaz waits a few paces ahead, looking up the road.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/rounds/2026-08-18T15-17-35/tail-adoption-journey-v1.png
+  tail_art_path: editions/007/art/picks/tail-adoption-journey-v1.jpg
 editorial: manuscript/editorial.md
 tail_art_fit: contain
 closing_plates:
 - title: The Lantern Room
-  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-lantern-room-v2.png
+  art_path: editions/007/art/picks/closing-lantern-room-v2.jpg
 - title: The Long Staircase
-  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-long-staircase-v3.png
+  art_path: editions/007/art/picks/closing-long-staircase-v3.jpg
 - title: The Deep Well
-  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-deep-well-v1.png
+  art_path: editions/007/art/picks/closing-deep-well-v1.jpg
 - title: The Night Shed
-  art_path: editions/007/art/rounds/2026-08-18T15-17-35/closing-night-shed-v1.png
+  art_path: editions/007/art/picks/closing-night-shed-v1.jpg
