@@ -22,7 +22,7 @@ git add editions/011/publish.yaml && git commit && git push
 
 ## Downloads on GitHub Releases
 
-PDFs exceed the 25 MiB asset limit, so each issue's downloads are assets of a
+PDFs can exceed the 25 MiB asset limit, so each issue's downloads are assets of a
 GitHub Release in `[site] repo`: tag `issue-NNN`, assets
 `berreta-futura-NNN-<lang>.pdf` and `.epub`. `mag publish` refuses a file
 without a `%PDF-` header (or an EPUB that is not a zip), creates the release
