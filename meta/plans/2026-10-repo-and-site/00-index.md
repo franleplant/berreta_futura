@@ -1,11 +1,12 @@
 # Repo, publishing, site, and speed: plan index (2026-10-04)
 
-Five plans, in dependency order. Each is executable on its own once the ones
+Plans still to do (01, the git history cleanup, ran on 2026-10-05: art rounds
+and art-directions/experiments stripped from history, pack 3.12 GiB to
+645 MiB, main force-pushed as 8bdd728; every commit hash before it changed). Each is executable on its own once the ones
 it depends on have landed; each ends with its own verification.
 
 | # | Plan | Depends on | Size |
 |---|------|------------|------|
-| 01 | [Git history cleanup](01-git-history-cleanup.md) | none | M, one coordinated hour |
 | 02 | [Downloads on GitHub Releases](02-hosting-downloads-exploration.md) | none (Releases do not touch git history) | S |
 | 03 | [Site design refresh](03-site-design-refresh.md) | 02 (download buttons point at the final links) | M |
 | 04 | [Faster deploys](04-faster-deploys.md) | 03 (design churn changes every asset once; measure after it) | S |
