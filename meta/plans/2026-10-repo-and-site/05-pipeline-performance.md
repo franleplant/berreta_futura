@@ -237,15 +237,15 @@ and checksums.
 
 Side findings from this run (not fixed here):
 
-- `mag epub NNN` fails on its second run until the EPUB is committed: since
-  68d4a66 the issue loader refuses the modified tracked
-  `editions/NNN/epub/*.epub`, and `mag epub` loads the issue the same way
-  ("mag site publishes committed inputs only; untracked or modified:
-  editions/012/epub/berreta-futura-012-en.epub"). Re-packaging after a fix
-  needs a commit or a restore first.
-- `capture::prepend_sources_md` panics (slice index out of range) when
-  `sources.md` has fewer than three lines and no collecting line; the real
-  file always has them, so only scratch setups hit it.
+- DONE: `mag epub NNN` failed on its second run until the EPUB was committed
+  (the committed-only check from 68d4a66 also ran inside `mag epub`, which
+  loads the issue and rewrites that tracked file). `site::issue` now takes
+  `publishing`; only `mag site` passes true and checks the EPUBs. Test
+  `epub_rebuilds_its_own_tracked_file_while_site_refuses_a_modified_epub`
+  (sparse scratch clone: epub twice succeeds, site then refuses).
+- DONE: `capture::prepend_sources_md` panicked on a `sources.md` shorter than
+  three lines; the insertion point is now clamped to the file length, with a
+  test for an empty and a one-line file.
 
 ### Still open
 
@@ -258,16 +258,22 @@ Side findings from this run (not fixed here):
 
 ### What to do next (ranked by measured headroom)
 
-1. `cargo test` runs its 28 test binaries one after another: 8.7 s, of which
+1. Optional developer tool, no code change: `cargo test` runs its 28 test binaries one after another: 8.7 s, of which
    the three biggest are 2.8, 2.8 and 1.6 s and no single test dominates any
    more (slowest: Typst layout unit tests at 1.9 to 2.5 s each, the site
    build test at 1.9 s, `pdf_text` three-runs test at 1.6 s). Running the
    binaries concurrently (for example `cargo nextest run`) has a floor near
    the longest binary, about 3 s: up to 5.7 s per test run, no code change.
-2. First render of an edition with new figures: tesseract runs once per
-   figure, serially, 5.0 s for 012. Running those calls through
-   `util::parallel` would make it about 1 s; it is paid once per new figure
-   (the cache keys on image sha256), so about 4 s per new edition.
+2. DONE: first render of an edition with new figures ran tesseract once per
+   figure, serially (5.0 s for 012). `typeset::legible::enlarge` now measures
+   every distinct uncached figure through `ordered_map` (bounded pool, results
+   in figure order, cache keyed by image sha256 as before). Empty OCR cache,
+   `mag render 012`, alternating before/after, 3 runs each, load 5 to 20:
+   10.6, 10.5, 10.5 s before and 7.8, 6.8, 6.9 s after (median 10.5 to 6.9 s,
+   about 3.6 s saved); reader.pdf, the booklets, render-critic.json,
+   edition-manifest.json and preflight.json are byte-identical across all four
+   renders kept, the legibility log lines are identical, and the 16 cache
+   files are identical.
 3. In-process reader rasterization (Later) now has a measured ceiling of
    about 1.8 s (reader pages plus crop pages in pdftoppm), minus whatever
    `typst_render` itself costs (0.36 s for the 300 dpi cover alone), and it

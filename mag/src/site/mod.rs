@@ -99,7 +99,7 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
     let _scratch = Scratch;
     let root = std::env::current_dir()?.canonicalize()?;
     let site = config(&root)?;
-    let mut issues = crate::util::parallel(&site.editions, |id| issue(&root, id))
+    let mut issues = crate::util::parallel(&site.editions, |id| issue(&root, id, true))
         .into_iter()
         .collect::<Result<Vec<_>>>()?;
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
@@ -276,7 +276,7 @@ fn scratch_root() -> PathBuf {
     std::env::temp_dir().join(format!("mag-site-{}", std::process::id()))
 }
 
-pub fn issue(root: &Path, id: &str) -> Result<Issue> {
+pub fn issue(root: &Path, id: &str, publishing: bool) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
     let yaml: EditionFile = parse_yaml(&committed_text(root, &format!("{rel}/edition.yaml"))?)?;
@@ -335,7 +335,10 @@ pub fn issue(root: &Path, id: &str) -> Result<Issue> {
         true => parse_publish_record(&committed_text(root, &publish_path)?)?.pdfs,
         false => BTreeMap::new(),
     };
-    let epubs = tracked_epubs(root, &tracked, &rel)?;
+    let epubs = match publishing {
+        true => tracked_epubs(root, &tracked, &rel)?,
+        false => BTreeMap::new(),
+    };
     Ok(Issue {
         editions,
         pdfs,

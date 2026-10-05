@@ -1,9 +1,12 @@
+use crate::critic::metrics::ordered_map;
 use crate::model::kinds::{FigureFit, FigureLayout};
 use crate::model::manifest::Edition;
+use crate::model::records::Figure;
 use crate::typeset::geometry::geometry;
 use crate::typeset::media::pixels;
 use anyhow::{Context, Result};
-use std::path::Path;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub const LEGIBLE_TEXT_PT: f64 = 4.0;
@@ -110,19 +113,33 @@ fn require(binary: &str) -> Result<()> {
         .map(drop)
 }
 
+fn skipped(figure: &Figure) -> bool {
+    figure.fit == FigureFit::Keep
+        || figure.layout == FigureLayout::RotatedPlate
+        || figure.anchor == "__opener__"
+}
+
 pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
     let geometry = Geometry::from_template();
+    let paths: Vec<PathBuf> = edition
+        .articles
+        .iter()
+        .flat_map(|article| &article.figures)
+        .filter(|figure| !skipped(figure))
+        .map(|figure| figure.path.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    let measured = ordered_map(|path| word_heights(path, repo_root), &paths, None)?;
+    let heights: BTreeMap<&PathBuf, &Vec<f64>> = paths.iter().zip(&measured).collect();
     for article in &mut edition.articles {
         for figure in &mut article.figures {
-            let fixed = figure.fit == FigureFit::Keep
-                || figure.layout == FigureLayout::RotatedPlate
-                || figure.anchor == "__opener__";
-            if fixed {
+            if skipped(figure) {
                 continue;
             }
-            let heights = word_heights(&figure.path, repo_root)?;
+            let heights = heights[&figure.path];
             let size = pixels(&figure.path)?;
-            let Some(change) = decide(&heights, size, figure.layout, &geometry) else {
+            let Some(change) = decide(heights, size, figure.layout, &geometry) else {
                 continue;
             };
             println!(

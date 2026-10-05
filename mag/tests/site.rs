@@ -92,3 +92,69 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
     assert!(String::from_utf8_lossy(&a["index.html"]).contains(body));
     std::fs::remove_dir_all(&base).unwrap();
 }
+
+#[test]
+fn epub_rebuilds_its_own_tracked_file_while_site_refuses_a_modified_epub() {
+    let dir = std::env::temp_dir().join(format!("mag-epub-clone-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let origin = repository().display().to_string();
+    let target = dir.display().to_string();
+    let git = |args: &[&str], cwd: &Path| {
+        let status = Command::new("git")
+            .args(args)
+            .current_dir(cwd)
+            .status()
+            .unwrap();
+        assert!(status.success(), "git {args:?}");
+    };
+    git(
+        &["clone", "-q", "--local", "--no-checkout", &origin, &target],
+        &repository(),
+    );
+    git(
+        &[
+            "sparse-checkout",
+            "set",
+            "--cone",
+            "editions/012",
+            "library",
+            "mag/assets",
+            "prompts",
+        ],
+        &dir,
+    );
+    git(&["checkout", "-q", "HEAD"], &dir);
+    let cover = std::fs::read_dir(dir.join("editions/012/art/picks"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| {
+            path.file_name()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with("cover-")
+        })
+        .unwrap();
+    let mag = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_mag"))
+            .args(args)
+            .current_dir(&dir)
+            .output()
+            .unwrap()
+    };
+    let cover = cover.display().to_string();
+    let epub = dir.join("editions/012/epub/berreta-futura-012-en.epub");
+    for _ in 0..2 {
+        let out = mag(&["epub", "012", "--cover", &cover]);
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        std::fs::write(&epub, b"modified").unwrap();
+    }
+    let site = mag(&["site", "--out", &dir.join("site").display().to_string()]);
+    assert!(!site.status.success());
+    let stderr = String::from_utf8_lossy(&site.stderr);
+    assert!(stderr.contains("untracked or modified"), "{stderr}");
+    std::fs::remove_dir_all(&dir).unwrap();
+}

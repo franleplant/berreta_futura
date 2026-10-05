@@ -863,10 +863,8 @@ pub fn prepend_sources_md(text: &str, entry: &[String], edition: &str, queued: u
             .map(|(i, _)| i)
             .next_back()
             .unwrap_or(2);
-        lines.splice(
-            (last_meta + 1)..=last_meta,
-            [String::new(), collecting_line],
-        );
+        let at = (last_meta + 1).min(lines.len());
+        lines.splice(at..at, [String::new(), collecting_line]);
     }
     let first_entry = lines
         .iter()
@@ -1723,6 +1721,16 @@ mod tests {
         let new_pos = out.find("## New").unwrap();
         let old_pos = out.find("## Old entry").unwrap();
         assert!(new_pos < old_pos);
+    }
+
+    #[test]
+    fn sources_md_shorter_than_its_header_still_takes_the_entry() {
+        let entry = vec!["## New".to_string()];
+        for md in ["", "# Sources\n"] {
+            let out = prepend_sources_md(md, &entry, "006", 1);
+            assert!(out.contains("_Collecting: `006` (1 queued)._"), "{out}");
+            assert!(out.contains("## New"), "{out}");
+        }
     }
 
     fn numbered_paragraph(tag: &str, words: usize) -> String {
