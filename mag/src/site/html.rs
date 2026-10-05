@@ -563,8 +563,7 @@ fn summary(document: &Document, fallback: &str) -> String {
 struct Issued<'a> {
     edition: &'a Edition,
     pieces: Vec<Piece<'a>>,
-    pdf: Option<&'a super::Pdf>,
-    epub: Option<&'a super::Epub>,
+    assets: Option<&'a super::Assets>,
     others: Vec<&'a str>,
 }
 
@@ -621,30 +620,23 @@ pub fn issue_dir(edition: &Edition) -> String {
     format!("{}{}/", prefix(&edition.language), edition.id)
 }
 
-fn ebook(language: &str, epub: Option<&super::Epub>) -> String {
-    let Some(epub) = epub else {
-        return String::new();
-    };
-    let name = epub
-        .path
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_default();
-    format!(
-        "<p class=\"download\"><a href=\"{}\" download type=\"application/epub+zip\">{} <span>(EPUB, {})</span></a></p>",
-        escape_html(&name),
-        say(language, "epub"),
-        megabytes(epub.bytes)
-    )
+fn mime(kind: &str) -> &'static str {
+    match kind {
+        "pdf" => "application/pdf",
+        _ => "application/epub+zip",
+    }
 }
 
-fn download(language: &str, pdf: Option<&super::Pdf>) -> String {
-    pdf.map_or(String::new(), |pdf| {
+fn download(language: &str, kind: &str, asset: Option<&super::Asset>) -> String {
+    asset.map_or(String::new(), |asset| {
         format!(
-            "<p class=\"download\"><a href=\"{}\" download>{} <span>(PDF, {})</span></a></p>",
-            escape_html(&pdf.url),
-            say(language, "pdf"),
-            megabytes(pdf.bytes)
+            "<p class=\"download\"><a href=\"{}?v={}\" type=\"{}\" download>{} <span>({}, {})</span></a></p>",
+            escape_html(&asset.url),
+            &asset.sha256[..8],
+            mime(kind),
+            say(language, kind),
+            kind.to_uppercase(),
+            megabytes(asset.bytes)
         )
     })
 }
@@ -673,7 +665,9 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
             )
         })
         .collect();
-    let pdf = download(language, issued.pdf) + &ebook(language, issued.epub);
+    let files = issued.assets;
+    let pdf = download(language, "pdf", files.and_then(|a| a.pdf.as_ref()))
+        + &download(language, "epub", files.and_then(|a| a.epub.as_ref()));
     let body = format!(
         "<section class=\"issue\">\n{}\n<div class=\"issue-head\"><p class=\"kicker\">{} · <time datetime=\"{}\">{}</time></p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{}\"><h2>{}</h2><ol>{entries}</ol></nav>",
         issued.cover(&ctx, true),
@@ -960,8 +954,7 @@ pub fn pages(
             issued.push(Issued {
                 edition,
                 pieces: pieces(edition)?,
-                pdf: issue.pdfs.get(&edition.language),
-                epub: issue.epubs.get(&edition.language),
+                assets: issue.assets.get(&edition.language),
                 others: languages
                     .iter()
                     .copied()
@@ -1012,25 +1005,45 @@ mod tests {
     use crate::site::publish_record;
 
     #[test]
-    fn a_publish_record_puts_its_language_pdf_link_on_the_issue_page_and_no_record_puts_none() {
+    fn a_publish_record_links_each_language_file_with_its_hash_and_no_record_links_none() {
         let dir = std::env::temp_dir().join(format!("mag-site-pdf-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("publish.yaml");
         std::fs::write(
             &path,
-            "pdfs:\n  es:\n    url: https://files.example/011/es/x.pdf\n    bytes: 127300000\n    sha256: ab\n",
+            "es:\n  pdf:\n    url: https://files.example/011/es/x.pdf\n    bytes: 127300000\n    sha256: abcdef0100000000000000000000000000000000000000000000000000000000\n  epub:\n    url: https://files.example/011/es/x.epub\n    bytes: 5000000\n    sha256: 0123456700000000000000000000000000000000000000000000000000000000\n",
         )
         .unwrap();
-        let pdfs = publish_record(&path).unwrap().pdfs;
+        let record = publish_record(&path).unwrap();
+        let es = record.get("es").unwrap();
         assert_eq!(
-            download("es", pdfs.get("es")),
-            "<p class=\"download\"><a href=\"https://files.example/011/es/x.pdf\" download>Descargar el PDF <span>(PDF, 127.3 MB)</span></a></p>"
+            download("es", "pdf", es.pdf.as_ref()),
+            "<p class=\"download\"><a href=\"https://files.example/011/es/x.pdf?v=abcdef01\" type=\"application/pdf\" download>Descargar el PDF <span>(PDF, 127.3 MB)</span></a></p>"
         );
-        assert_eq!(download("en", pdfs.get("en")), "");
-        assert!(publish_record(&dir.join("absent.yaml"))
-            .unwrap()
-            .pdfs
-            .is_empty());
+        assert!(download("es", "epub", es.epub.as_ref())
+            .contains("x.epub?v=01234567\" type=\"application/epub+zip\" download>Descargar el EPUB <span>(EPUB, 5.0 MB)"));
+        assert_eq!(download("en", "pdf", None), "");
+        assert!(publish_record(&dir.join("absent.yaml")).unwrap().is_empty());
+        std::fs::write(
+            &path,
+            "pdfs:\n  en:\n    url: u\n    bytes: 1\n    sha256: ab\n",
+        )
+        .unwrap();
+        let err = format!("{:#}", publish_record(&path).unwrap_err());
+        assert!(
+            err.contains("publish.yaml") && err.contains("old Drive format"),
+            "{err}"
+        );
+        std::fs::write(
+            &path,
+            "en:\n  pdf:\n    url: u\n    bytes: 1\n    sha256: ab\n",
+        )
+        .unwrap();
+        let err = format!("{:#}", publish_record(&path).unwrap_err());
+        assert!(
+            err.contains("64 lowercase hex") && err.contains("publish.yaml"),
+            "{err}"
+        );
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

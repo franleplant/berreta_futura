@@ -187,7 +187,7 @@ fn cover(args: &EpubArgs, dir: &Path, language: &str) -> Result<PathBuf> {
 pub fn run(args: &EpubArgs) -> Result<i32> {
     let root = std::env::current_dir()?.canonicalize()?;
     let site = super::config(&root)?;
-    let issue = super::issue(&root, &args.edition, false)?;
+    let issue = super::issue(&root, &args.edition)?;
     let edition = issue
         .editions
         .iter()
@@ -276,8 +276,9 @@ pub fn run(args: &EpubArgs) -> Result<i32> {
         target.display()
     );
     println!(
-        "\nnext: open {} in Books to check it, then commit it; `mag site` links a committed EPUB on the issue page",
-        target.display()
+        "\nnext: open {0} in Books to check it, then `mag publish {1} --pdf <approved pdf> --epub {0}` ships it",
+        target.display(),
+        edition.id
     );
     Ok(0)
 }

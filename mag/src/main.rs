@@ -50,7 +50,7 @@ enum Cmd {
     Site(site::SiteArgs),
     /// Package one language of an edition as an EPUB 3 for Apple Books and other e-readers
     Epub(site::epub::EpubArgs),
-    /// Upload an approved edition PDF to Google Drive and record its link in editions/<edition>/publish.yaml
+    /// Upload an approved edition PDF (and EPUB) to the issue GitHub Release and record the links in editions/<edition>/publish.yaml
     Publish(publish::PublishArgs),
 }
 

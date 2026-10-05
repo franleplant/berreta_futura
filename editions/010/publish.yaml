@@ -1,5 +1,5 @@
-pdfs:
-  en:
-    url: https://drive.google.com/open?id=1G4KAr4nsyrwdaTVJgmxsoo4eP4kAn9JR
+en:
+  pdf:
+    url: https://github.com/franleplant/berreta_futura/releases/download/issue-010/berreta-futura-010-en.pdf
     bytes: 24356617
     sha256: 580c30c38a2a678419ccd14f2952437c634292aea764d436b4dc7795fe7319af

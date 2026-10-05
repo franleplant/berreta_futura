@@ -13,10 +13,9 @@ hyphenate_english = true
 
 [site]
 # `mag site` publishes these editions, newest first, each from its newest
-# git-tracked complete run. PDF links come from editions/<id>/publish.yaml,
-# which `mag publish` writes.
+# git-tracked complete run. download links come from editions/<id>/publish.yaml,
+# which `mag publish` writes after uploading to the issue's GitHub Release
+# in `repo`.
 base_url = "https://berreta.franleplant.com"
 editions = ["012", "011", "010"]
-# `mag publish` uploads approved PDFs to this rclone remote (Google Drive) and
-# records an anyone-with-the-link share URL.
-pdf_remote = "gdrive:berreta-futura"
+repo = "franleplant/berreta_futura"

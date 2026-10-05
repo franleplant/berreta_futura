@@ -1,7 +1,7 @@
 use crate::caller::write_atomic;
 use crate::model::records::slug;
 use crate::render::{publication_name, resolve_edition_dir};
-use crate::site::{config, publish_record, Pdf};
+use crate::site::{config, publish_record, Asset};
 use anyhow::{ensure, Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -11,15 +11,35 @@ use std::process::Command;
 pub struct PublishArgs {
     #[arg(help = "Edition id, e.g. 011")]
     pub edition: String,
-    #[arg(long, help = "The approved PDF, uploaded to Google Drive unchanged")]
+    #[arg(
+        long,
+        help = "The approved PDF, uploaded to the issue's GitHub Release"
+    )]
     pub pdf: PathBuf,
-    #[arg(long, default_value = "en", help = "The language this PDF is")]
+    #[arg(long, help = "The EPUB to upload with it (`mag epub` writes one)")]
+    pub epub: Option<PathBuf>,
+    #[arg(long, default_value = "en", help = "The language these files are")]
     pub lang: String,
     #[arg(
         long = "dry-run",
-        help = "Print the rclone commands instead of running them (nothing is written)"
+        help = "Print what would be uploaded instead of running gh (nothing is written)"
     )]
     pub dry_run: bool,
+}
+
+struct Staging(PathBuf);
+
+impl Drop for Staging {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.0).ok();
+    }
+}
+
+struct Upload {
+    kind: &'static str,
+    source: PathBuf,
+    name: String,
+    asset: Asset,
 }
 
 pub fn run(args: &PublishArgs) -> Result<i32> {
@@ -35,71 +55,151 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
         "--lang takes a two-letter code like en or es, not {}",
         args.lang
     );
-    let (bytes, sha256) = digest(&args.pdf)?;
-    let key = key(
-        &slug(&publication_name(&root)?),
-        &edition,
-        &args.lang,
-        &sha256,
+    let tag = format!("issue-{edition}");
+    let stem = format!(
+        "{}-{edition}-{}",
+        slug(&publication_name(&root)?),
+        args.lang
     );
-    let object = format!("{}/{key}", site.pdf_remote.trim_end_matches('/'));
-    let file = args.pdf.to_string_lossy();
+    let url = |name: &str| {
+        format!(
+            "https://github.com/{}/releases/download/{tag}/{name}",
+            site.repo
+        )
+    };
+    let mut uploads = vec![upload(&args.pdf, "pdf", b"%PDF-", &stem, &url)?];
+    if let Some(epub) = &args.epub {
+        uploads.push(upload(epub, "epub", b"PK", &stem, &url)?);
+    }
     let path = dir.join("publish.yaml");
     if args.dry_run {
-        println!("dry run, not uploading: rclone copyto {file} {object} && rclone link {object}");
-        println!(
-            "would write {} with the {} PDF at {object}",
-            path.display(),
-            args.lang
-        );
+        for one in &uploads {
+            println!(
+                "dry run, not uploading: gh release upload {tag} {} as {} to {}",
+                one.source.display(),
+                one.name,
+                site.repo
+            );
+        }
+        println!("would write {}", path.display());
         return Ok(0);
     }
-    let url = upload(&file, &object)?;
+    let spec: serde_norway::Value =
+        serde_norway::from_str(&fs::read_to_string(dir.join("edition.yaml"))?)?;
+    let title = spec["title"]
+        .as_str()
+        .context("edition.yaml has no title")?;
+    let current = current_digests(&site.repo, &tag, &format!("Issue {edition}: {title}"))?;
+    let staging = std::env::temp_dir().join(format!("mag-publish-{}", std::process::id()));
+    fs::create_dir_all(&staging)?;
+    let _staging = Staging(staging.clone());
     let mut record = publish_record(&path)?;
-    record.pdfs.insert(
-        args.lang.clone(),
-        Pdf {
-            url: url.clone(),
-            bytes,
-            sha256,
-        },
-    );
+    for one in uploads {
+        match current.contains(&format!("{}:{}", one.name, one.asset.sha256)) {
+            true => println!("unchanged on the release, skipped: {}", one.name),
+            false => send(&site.repo, &tag, &staging, &one)?,
+        }
+        let assets = record.entry(args.lang.clone()).or_default();
+        match one.kind {
+            "pdf" => assets.pdf = Some(one.asset),
+            _ => assets.epub = Some(one.asset),
+        }
+    }
     write_atomic(&path, serde_norway::to_string(&record)?)?;
-    println!("link: {url}\nwrote {}", path.display());
+    println!("wrote {}", path.display());
     println!(
-        "\nnext: git add {0} && git commit -m 'edition {edition}: publish the {1} PDF' && git push (the site deploy adds the link)",
+        "\nnext: mag site, then wrangler deploy, then git add {0} && git commit -m 'edition {edition}: publish the {1} downloads' && git push",
         path.display(),
         args.lang
     );
     Ok(0)
 }
 
-fn upload(file: &str, object: &str) -> Result<String> {
-    ensure!(
-        Command::new("rclone")
-            .args(["copyto", file, object])
-            .status()?
-            .success(),
-        "the upload to {object} failed; publish.yaml is unchanged"
-    );
-    let link = Command::new("rclone").args(["link", object]).output()?;
-    ensure!(link.status.success(), "rclone could not share {object}");
-    Ok(String::from_utf8(link.stdout)?.trim().to_string())
-}
-
-fn key(name: &str, edition: &str, lang: &str, sha256: &str) -> String {
-    format!(
-        "{edition}/{lang}/{name}-{edition}-{lang}-{}.pdf",
-        &sha256[..8]
-    )
-}
-
-fn digest(path: &Path) -> Result<(u64, String)> {
+fn upload(
+    path: &Path,
+    kind: &'static str,
+    magic: &[u8],
+    stem: &str,
+    url: &dyn Fn(&str) -> String,
+) -> Result<Upload> {
     let bytes = fs::read(path).with_context(|| format!("reading {}", path.display()))?;
     ensure!(
-        bytes.starts_with(b"%PDF-"),
-        "{} is not a PDF (no %PDF- header)",
+        bytes.starts_with(magic),
+        "{} is not a {kind}",
         path.display()
     );
-    Ok((bytes.len() as u64, crate::util::sha256_hex(&bytes)))
+    let name = format!("{stem}.{kind}");
+    Ok(Upload {
+        kind,
+        source: path.to_path_buf(),
+        asset: Asset {
+            url: url(&name),
+            bytes: bytes.len() as u64,
+            sha256: crate::util::sha256_hex(&bytes),
+        },
+        name,
+    })
+}
+
+fn gh(args: &[&str]) -> Result<std::process::Output> {
+    Command::new("gh")
+        .args(args)
+        .output()
+        .context("running gh; is the GitHub CLI installed and logged in?")
+}
+
+fn current_digests(repo: &str, tag: &str, title: &str) -> Result<Vec<String>> {
+    let found = gh(&["api", &format!("repos/{repo}/releases/tags/{tag}")])?;
+    if !found.status.success() {
+        let made = gh(&[
+            "release",
+            "create",
+            tag,
+            "--repo",
+            repo,
+            "--title",
+            title,
+            "--notes",
+            "",
+            "--latest=false",
+        ])?;
+        ensure!(
+            made.status.success(),
+            "gh could not create release {tag}: {}",
+            String::from_utf8_lossy(&made.stderr)
+        );
+        return Ok(Vec::new());
+    }
+    let release: serde_json::Value = serde_json::from_slice(&found.stdout)?;
+    Ok(release["assets"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|a| {
+            let digest = a["digest"].as_str()?.strip_prefix("sha256:")?;
+            Some(format!("{}:{digest}", a["name"].as_str()?))
+        })
+        .collect())
+}
+
+fn send(repo: &str, tag: &str, staging: &Path, one: &Upload) -> Result<()> {
+    let staged = staging.join(&one.name);
+    fs::copy(&one.source, &staged)?;
+    let out = gh(&[
+        "release",
+        "upload",
+        tag,
+        &staged.to_string_lossy(),
+        "--clobber",
+        "--repo",
+        repo,
+    ])?;
+    ensure!(
+        out.status.success(),
+        "the upload of {} failed; publish.yaml is unchanged: {}",
+        one.name,
+        String::from_utf8_lossy(&out.stderr)
+    );
+    println!("uploaded {}", one.name);
+    Ok(())
 }

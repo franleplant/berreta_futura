@@ -29,25 +29,26 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   from this laptop to berreta.franleplant.com (`deploy/web/README.md`). It publishes the editions listed in
   `magazine.toml` `[site] editions`, each from its newest git-tracked complete
   run (never an untracked local run), with the print-tone figure copies,
-  resized JPEG/WebP variants, and no Typst render and no model call. PDF links
-  come only from a committed `editions/NNN/publish.yaml`
-  (`pdfs: {en: {url, bytes, sha256}}`); without one the issue page has no
-  PDF link. It refuses to write a page that drops any manuscript block,
+  resized JPEG/WebP variants, and no Typst render and no model call. Download links
+  come only from a committed `editions/NNN/publish.yaml`; without one the
+  issue page has no PDF or EPUB link. It refuses to write a page that drops any manuscript block,
   figure, or extract.
 - `mag render` also writes the typeset front cover as `<lang>/cover.png` in
   its render dir. `mag epub NNN [--lang en] [--cover file]` packages that
   language as a reflowable EPUB 3 for Apple Books: the newest tracked run's
   manuscripts, figures, and extracts through the site's HTML walk (same
   drop check), embedded Source Serif, and the newest render's cover. It
-  writes `editions/NNN/epub/<publication>-NNN-<lang>.epub`; committing that
-  file is what makes `mag site` copy it and link it on the issue page.
-- `mag publish NNN --pdf <file> [--lang en] [--dry-run]` ships an approved
-  PDF: it uploads the file unchanged to Google Drive at `[site] pdf_remote`
-  (`rclone`, the owner's local `gdrive` remote) as
-  `NNN/<lang>/berreta-futura-NNN-<lang>-<sha8>.pdf`, shares it as
-  anyone-with-the-link (`rclone link`), and writes its url,
-  bytes, and sha256 into `editions/NNN/publish.yaml`; committing that file
-  publishes the link.
+  writes `editions/NNN/epub/<publication>-NNN-<lang>.epub` (gitignored; it
+  ships through `mag publish`).
+- `mag publish NNN --pdf <file> [--epub <file>] [--lang en] [--dry-run]` ships
+  the approved files to the issue's GitHub Release (`gh`, logged in on the
+  owner's laptop; repo from `[site] repo`): tag `issue-NNN`, created when
+  missing, assets `berreta-futura-NNN-<lang>.pdf` and `.epub` replaced in place
+  with `--clobber` (only the latest exists), an asset whose sha256 already
+  matches the release's digest is skipped. It writes
+  `editions/NNN/publish.yaml` as `<lang>: {pdf: {url, bytes, sha256}, epub:
+  {...}}`; committing that file publishes the links, which the site adds
+  with `?v=<sha8>`.
 - `tools/letter.py`, `coverproof.py`, `compare.py`, and `read.py` are
   standalone Python side scripts (`uv run --with <dep> tools/<name>.py`), not
   pipeline steps; nothing in `mag` calls them.

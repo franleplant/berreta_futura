@@ -8,7 +8,7 @@ use crate::model::manifest::{load_translation, Edition};
 use crate::model::shared::parse_yaml;
 use crate::model::spec::EditionFile;
 use crate::render::{request, resolve_edition_dir, RenderArgs};
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -33,31 +33,30 @@ struct Config {
 pub struct SiteConfig {
     pub base_url: String,
     pub editions: Vec<String>,
-    pub pdf_remote: String,
+    pub repo: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-pub struct Pdf {
+pub struct Asset {
     pub url: String,
     pub bytes: u64,
     pub sha256: String,
 }
 
-#[derive(Deserialize, Serialize, Default)]
-pub struct PublishRecord {
-    #[serde(default)]
-    pub pdfs: BTreeMap<String, Pdf>,
+#[derive(Deserialize, Serialize, Default, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Assets {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pdf: Option<Asset>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub epub: Option<Asset>,
 }
 
-pub struct Epub {
-    pub path: PathBuf,
-    pub bytes: u64,
-}
+pub type PublishRecord = BTreeMap<String, Assets>;
 
 pub struct Issue {
     pub editions: Vec<Edition>,
-    pub pdfs: BTreeMap<String, Pdf>,
-    pub epubs: BTreeMap<String, Epub>,
+    pub assets: PublishRecord,
 }
 
 const FONTS: [&str; 5] = [
@@ -75,15 +74,32 @@ pub fn config(root: &Path) -> Result<SiteConfig> {
     Ok(config.site)
 }
 
-pub fn parse_publish_record(text: &str) -> Result<PublishRecord> {
-    serde_norway::from_str(text).context("reading publish.yaml")
+pub fn parse_publish_record(text: &str, path: &str) -> Result<PublishRecord> {
+    let record: PublishRecord = serde_norway::from_str(text).with_context(|| {
+        let old = text.lines().any(|line| line.starts_with("pdfs:"));
+        match old {
+            true => format!("{path} is the old Drive format; re-run `mag publish NNN --pdf <file> [--epub <file>]` and commit it"),
+            false => format!("reading {path}"),
+        }
+    })?;
+    for asset in record.values().flat_map(|a| [&a.pdf, &a.epub]).flatten() {
+        ensure!(
+            asset.sha256.len() == 64
+                && asset
+                    .sha256
+                    .bytes()
+                    .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')),
+            "{path}: sha256 must be 64 lowercase hex characters, got {}",
+            asset.sha256
+        );
+    }
+    Ok(record)
 }
 
 pub fn publish_record(path: &Path) -> Result<PublishRecord> {
     match path.is_file() {
-        true => parse_publish_record(&fs::read_to_string(path)?)
-            .with_context(|| format!("reading {}", path.display())),
-        false => Ok(PublishRecord::default()),
+        true => parse_publish_record(&fs::read_to_string(path)?, &path.display().to_string()),
+        false => Ok(PublishRecord::new()),
     }
 }
 
@@ -99,7 +115,7 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
     let _scratch = Scratch;
     let root = std::env::current_dir()?.canonicalize()?;
     let site = config(&root)?;
-    let mut issues = crate::util::parallel(&site.editions, |id| issue(&root, id, true))
+    let mut issues = crate::util::parallel(&site.editions, |id| issue(&root, id))
         .into_iter()
         .collect::<Result<Vec<_>>>()?;
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
@@ -115,19 +131,6 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
         .to_string();
     let logo = logo::build(&name)?;
     let files = html::pages(&issues, &images, &site, &name, &logo.inline)?;
-    for issue in &issues {
-        for edition in &issue.editions {
-            let Some(epub) = issue.epubs.get(&edition.language) else {
-                continue;
-            };
-            let target = args
-                .out
-                .join(html::issue_dir(edition))
-                .join(epub.path.file_name().context("an EPUB has no file name")?);
-            fs::create_dir_all(target.parent().context("an EPUB has no parent")?)?;
-            fs::copy(&epub.path, target)?;
-        }
-    }
     for (path, body) in &files {
         let target = args.out.join(path);
         fs::create_dir_all(target.parent().context("a page has no parent")?)?;
@@ -276,7 +279,7 @@ fn scratch_root() -> PathBuf {
     std::env::temp_dir().join(format!("mag-site-{}", std::process::id()))
 }
 
-pub fn issue(root: &Path, id: &str, publishing: bool) -> Result<Issue> {
+pub fn issue(root: &Path, id: &str) -> Result<Issue> {
     let dir = resolve_edition_dir(id)?;
     let rel = dir.to_string_lossy().replace('\\', "/");
     let yaml: EditionFile = parse_yaml(&committed_text(root, &format!("{rel}/edition.yaml"))?)?;
@@ -331,54 +334,16 @@ pub fn issue(root: &Path, id: &str, publishing: bool) -> Result<Issue> {
         })
         .collect::<Result<Vec<_>>>()?;
     let publish_path = format!("{rel}/publish.yaml");
-    let pdfs = match tracked.contains(&publish_path) {
-        true => parse_publish_record(&committed_text(root, &publish_path)?)?.pdfs,
-        false => BTreeMap::new(),
+    let assets = match tracked.contains(&publish_path) {
+        true => parse_publish_record(&committed_text(root, &publish_path)?, &publish_path)?,
+        false => PublishRecord::new(),
     };
-    let epubs = match publishing {
-        true => tracked_epubs(root, &tracked, &rel)?,
-        false => BTreeMap::new(),
-    };
-    Ok(Issue {
-        editions,
-        pdfs,
-        epubs,
-    })
-}
-
-fn tracked_epubs(
-    root: &Path,
-    tracked: &BTreeSet<String>,
-    rel: &str,
-) -> Result<BTreeMap<String, Epub>> {
-    let prefix = format!("{rel}/epub/");
-    let epubs: Vec<&String> = tracked
-        .iter()
-        .filter(|path| path.starts_with(&prefix))
-        .collect();
-    require_committed(
-        root,
-        &epubs.iter().map(|p| (*p).clone()).collect::<Vec<_>>(),
-    )?;
-    epubs
-        .into_iter()
-        .filter_map(|path| {
-            let stem = path.strip_suffix(".epub")?;
-            let (_, language) = stem.rsplit_once('-')?;
-            Some((language.to_string(), root.join(path)))
-        })
-        .map(|(language, path)| {
-            let bytes = fs::metadata(&path)
-                .with_context(|| format!("reading {}", path.display()))?
-                .len();
-            Ok((language, Epub { path, bytes }))
-        })
-        .collect()
+    Ok(Issue { editions, assets })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{newest_tracked_run, require_committed, tracked_epubs};
+    use super::{newest_tracked_run, require_committed};
     use std::collections::BTreeSet;
 
     fn set(paths: &[&str]) -> BTreeSet<String> {
@@ -416,32 +381,6 @@ mod tests {
         std::fs::write(dir.join("a.md"), "changed").unwrap();
         let err = require_committed(&dir, &both[..1]).unwrap_err().to_string();
         assert!(err.ends_with(": a.md"), "{err}");
-        std::fs::remove_dir_all(&dir).unwrap();
-    }
-
-    #[test]
-    fn a_modified_tracked_epub_is_refused() {
-        let dir = std::env::temp_dir().join(format!("mag-site-epub-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(dir.join("editions/001/epub")).unwrap();
-        let git = |args: &[&str]| {
-            let status = std::process::Command::new("git")
-                .args(["-c", "user.name=t", "-c", "user.email=t@t"])
-                .args(args)
-                .current_dir(&dir)
-                .status()
-                .unwrap();
-            assert!(status.success());
-        };
-        git(&["init", "-q"]);
-        std::fs::write(dir.join("editions/001/epub/x-en.epub"), "a").unwrap();
-        git(&["add", "."]);
-        git(&["commit", "-qm", "a"]);
-        let tracked = set(&["editions/001/epub/x-en.epub"]);
-        assert!(tracked_epubs(&dir, &tracked, "editions/001").is_ok());
-        std::fs::write(dir.join("editions/001/epub/x-en.epub"), "changed").unwrap();
-        let err = tracked_epubs(&dir, &tracked, "editions/001").err().unwrap();
-        assert!(err.to_string().ends_with("x-en.epub"), "{err}");
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
