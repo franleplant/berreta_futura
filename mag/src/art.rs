@@ -10,12 +10,14 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::LazyLock;
 use std::sync::Mutex;
 use std::thread;
+use std::time::Instant;
 
 #[derive(clap::Args)]
 pub struct ArtArgs {
@@ -24,6 +26,8 @@ pub struct ArtArgs {
     pub gen_cmd: String,
     #[arg(long, default_value_t = 4, help = "How many candidates per art brief")]
     pub candidates: u32,
+    #[arg(long, default_value_t = DEFAULT_JOBS, help = "How many images to generate at once")]
+    pub jobs: usize,
     #[arg(long, default_value = "opus")]
     pub model: String,
     #[arg(
@@ -75,6 +79,8 @@ pub struct CastSheetArgs {
         help = "How many sheet candidates to render"
     )]
     pub candidates: u32,
+    #[arg(long, default_value_t = DEFAULT_JOBS, help = "How many images to generate at once")]
+    pub jobs: usize,
     #[arg(
         long = "dry-run",
         help = "Write the prompt and generate.sh, but spend no image credits"
@@ -111,7 +117,7 @@ static YAML_FENCE: LazyLock<Regex> =
 static KEBAB_ID: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap());
 
-const GEN_CONCURRENCY: usize = 8;
+const DEFAULT_JOBS: usize = 14;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Brief {
@@ -634,6 +640,7 @@ fn generate_all(
     candidates: u32,
     gen_cmd: &str,
     round_dir: &Path,
+    workers: usize,
 ) -> Result<Vec<GeneratedItem>> {
     let jobs: Vec<(String, u32, String, String, GenEnv)> = briefs
         .iter()
@@ -645,29 +652,44 @@ fn generate_all(
         .collect::<Result<_>>()?;
     let next = AtomicUsize::new(0);
     let results = Mutex::new(Vec::with_capacity(jobs.len()));
+    let log = Mutex::new(
+        fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(round_dir.join("log.jsonl"))?,
+    );
     thread::scope(|s| {
-        for _ in 0..GEN_CONCURRENCY.min(jobs.len()) {
+        for _ in 0..workers.max(1).min(jobs.len()) {
             s.spawn(|| loop {
                 let i = next.fetch_add(1, Ordering::Relaxed);
                 let Some((brief, variant, file, cmd, env)) = jobs.get(i) else {
                     break;
                 };
                 let out_path = round_dir.join(file);
-                let ok = if fs::metadata(&out_path).is_ok_and(|m| m.len() > 0) {
+                let started = Instant::now();
+                let outcome = if fs::metadata(&out_path).is_ok_and(|m| m.len() > 0) {
                     println!("    {brief} v{variant}: kept (already on disk)");
-                    true
+                    "kept".to_string()
                 } else {
                     match run_gen_command(cmd, env, &out_path) {
                         Ok(()) => {
                             println!("    {brief} v{variant}: ok");
-                            true
+                            "ok".to_string()
                         }
                         Err(e) => {
                             eprintln!("    {brief} v{variant}: FAILED: {e}");
-                            false
+                            e
                         }
                     }
                 };
+                let ok = matches!(outcome.as_str(), "ok" | "kept");
+                let line = serde_json::json!({
+                    "label": format!("{brief} v{variant}"),
+                    "seconds": (started.elapsed().as_secs_f64() * 10.0).round() / 10.0,
+                    "status": if ok { outcome.as_str() } else { "failed" },
+                    "error": if ok { None } else { Some(outcome.as_str()) },
+                });
+                writeln!(log.lock().unwrap(), "{line}").ok();
                 let item = GeneratedItem {
                     brief: brief.clone(),
                     variant: *variant,
@@ -813,16 +835,38 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
                 article_id,
                 prompt,
                 variant,
-                selected: selected.iter().any(|s| {
-                    s == &repo_path
-                        || (*s == crate::picks::pick_path(&repo_path)
-                            && crate::picks::picked_from(s, &round_dir.join(file)))
-                }),
+                selected: selected.contains(&repo_path),
                 verdicts: checks.get(file).cloned().unwrap_or_default(),
             });
         }
     }
+    mark_picked(&mut items, edition_dir, selected);
     Ok(items)
+}
+
+fn mark_picked(items: &mut [ShowcaseItem], edition_dir: &Path, selected: &[String]) {
+    let candidate = |item: &ShowcaseItem| {
+        edition_dir
+            .join("art/rounds")
+            .join(&item.round)
+            .join(&item.file)
+    };
+    let pick_of = |item: &ShowcaseItem| {
+        crate::picks::pick_path(&format!(
+            "{}/art/rounds/{}/{}",
+            edition_dir.to_string_lossy(),
+            item.round,
+            item.file
+        ))
+    };
+    let matched = parallel(selected, |pick| {
+        Ok(items.iter().rposition(|item| {
+            pick_of(item) == *pick && crate::picks::picked_from(pick, &candidate(item))
+        }))
+    });
+    for index in matched.into_iter().flatten().flatten() {
+        items[index].selected = true;
+    }
 }
 
 const PROOF_SHEET_CSS: &str = "<style>\n\
@@ -1549,7 +1593,7 @@ pub fn cast_sheet_run(args: &CastSheetArgs) -> Result<i32> {
         return Ok(0);
     }
     let gen_cmd = gen_cmd.expect("clap requires --gen-cmd when not a dry run");
-    let generated = generate_all(&briefs, candidates, gen_cmd, &round_dir)?;
+    let generated = generate_all(&briefs, candidates, gen_cmd, &round_dir, args.jobs)?;
     write_proof_sheet(&round_dir, &stem, &briefs, &generated)?;
     let failures = write_round_yaml(&round_dir, &stem, false, &generated)?;
     let showcase = write_cast_showcase(direction_path)?;
@@ -1934,6 +1978,7 @@ struct ArtRun<'a> {
     pub edition: &'a str,
     pub gen_cmd: Option<&'a str>,
     pub candidates: u32,
+    pub jobs: usize,
     pub model: &'a ModelSpec,
     pub dry_run: bool,
     pub showcase_only: bool,
@@ -2063,6 +2108,7 @@ fn resume_round(
         &doc.briefs,
         opts.candidates,
         gen_cmd,
+        opts.jobs,
         &round_dir,
         edition_dir,
         edition_label,
@@ -2108,6 +2154,7 @@ pub fn run(args: &ArtArgs) -> Result<i32> {
         edition: &args.edition,
         gen_cmd: Some(args.gen_cmd.as_str()),
         candidates: args.candidates,
+        jobs: args.jobs,
         model: &model,
         dry_run: args.dry_run,
         showcase_only: args.showcase,
@@ -2124,6 +2171,7 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
         edition,
         gen_cmd,
         candidates,
+        jobs,
         model,
         dry_run,
         showcase_only,
@@ -2220,6 +2268,7 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
         &briefs,
         candidates,
         gen_cmd,
+        jobs,
         &round_dir,
         &edition_dir,
         &edition_label,
@@ -2244,11 +2293,12 @@ fn generate_and_finish(
     briefs: &[Brief],
     candidates: u32,
     gen_cmd: &str,
+    jobs: usize,
     round_dir: &Path,
     edition_dir: &Path,
     edition_label: &str,
 ) -> Result<i32> {
-    let generated = generate_all(briefs, candidates, gen_cmd, round_dir)?;
+    let generated = generate_all(briefs, candidates, gen_cmd, round_dir, jobs)?;
 
     write_proof_sheet(round_dir, edition_label, briefs, &generated)?;
     let failures = write_round_yaml(round_dir, edition_label, false, &generated)?;

@@ -1,13 +1,14 @@
 use super::html::{art_paths, chapter, pieces, title_page};
 use super::images::{flatten, Image};
 use crate::model::manifest::Edition;
-use crate::util::escape_html;
+use crate::util::{escape_html, parallel};
 use anyhow::{Context, Result};
 use image::imageops::FilterType;
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::thread;
 use zip::write::SimpleFileOptions;
 use zip::CompressionMethod;
 
@@ -98,9 +99,13 @@ fn images(edition: &Edition, book: &mut Book) -> Result<BTreeMap<PathBuf, Image>
     let mut paths = art_paths(edition);
     paths.sort();
     paths.dedup();
+    let lanes = thread::available_parallelism().map_or(4, usize::from);
+    let encoded = paths
+        .chunks(lanes)
+        .flat_map(|chunk| parallel(chunk, |path| jpeg(path)))
+        .collect::<Result<Vec<_>>>()?;
     let mut out = BTreeMap::new();
-    for (index, path) in paths.into_iter().enumerate() {
-        let (bytes, width, height) = jpeg(&path)?;
+    for (index, (path, (bytes, width, height))) in paths.into_iter().zip(encoded).enumerate() {
         let name = format!("images/{index:03}.jpg");
         book.add(&name, "image/jpeg", "", bytes);
         let image = Image {

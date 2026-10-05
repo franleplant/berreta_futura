@@ -9,7 +9,7 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 pub const CALL_RETRIES: u32 = 2;
-pub const CONCURRENCY: usize = 8;
+pub const CONCURRENCY: usize = 16;
 
 pub fn call_timeout_secs_for(spec: Option<&ModelSpec>) -> u64 {
     if let Some(v) = std::env::var("MAG_CALL_TIMEOUT_SECS")
