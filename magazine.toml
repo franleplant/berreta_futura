@@ -1,6 +1,11 @@
 [publication]
 name = "Berreta Futura"
 
+[intake]
+# `mag capture` adds new sources to this edition's plan.yaml unless --edition
+# says otherwise; capturing into a new edition makes it the intake edition.
+edition = "013"
+
 [render]
 # English prose hyphenates (Typst patterns); no prose block ends more than two
 # consecutive lines on a hyphen. Absent means true.

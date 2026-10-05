@@ -11,6 +11,23 @@ pub(crate) fn read(path: &Path) -> Result<String> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EditionId(String);
 
+pub fn edition_names(root: &Path) -> Result<Vec<String>> {
+    let editions = root.join("editions");
+    let mut names = Vec::new();
+    if editions.is_dir() {
+        for entry in
+            fs::read_dir(&editions).with_context(|| format!("reading {}", editions.display()))?
+        {
+            let entry = entry?;
+            if entry.path().is_dir() {
+                names.push(entry.file_name().to_string_lossy().to_string());
+            }
+        }
+    }
+    names.sort();
+    Ok(names)
+}
+
 impl EditionId {
     pub fn pick(given: &str, names: impl IntoIterator<Item = String>) -> Result<Self> {
         let mut names: Vec<String> = names.into_iter().collect();
@@ -28,19 +45,7 @@ impl EditionId {
     }
 
     pub fn resolve(root: &Path, given: &str) -> Result<Self> {
-        let editions = root.join("editions");
-        let mut names = Vec::new();
-        if editions.is_dir() {
-            for entry in fs::read_dir(&editions)
-                .with_context(|| format!("reading {}", editions.display()))?
-            {
-                let entry = entry?;
-                if entry.path().is_dir() {
-                    names.push(entry.file_name().to_string_lossy().to_string());
-                }
-            }
-        }
-        Self::pick(given, names)
+        Self::pick(given, edition_names(root)?)
     }
 
     pub fn as_str(&self) -> &str {

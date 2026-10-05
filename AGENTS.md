@@ -75,16 +75,17 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   - `article.md`: the source's substantive text, verbatim, in source order.
     Image references point at `media/...` inside the same directory.
   - `media/`: the source's images at original resolution.
-- `library/release-state.yaml` tracks which sources are queued for or released
-  in each edition. `sources.md` is generated from the records; do not hand-edit.
+- Edition membership lives in `editions/<edition>/plan.yaml` alone; the default
+  capture edition is `[intake] edition` in `magazine.toml`. `sources.md` is
+  generated from the records; do not hand-edit.
 - `mag capture <url> [--edition NNN] [--tags a,b]` is the whole intake: it
   fetches the page, transcribes it to verbatim Markdown through one
   fidelity-gated model call (prose must match the page word-for-word, in page
   order, without skipping stretches of it; code blocks byte-exact; retried
   with the misses fed back), downloads media,
-  writes record.yaml, queues the source, prepends the `sources.md` entry,
-  and records the source in `editions/<edition>/plan.yaml` (creating the
-  plan from every queued source if it does not exist). By default the source
+  writes record.yaml, prepends the `sources.md` entry,
+  and records the source in `editions/<edition>/plan.yaml` (created with that
+  one row if it does not exist, and then `[intake] edition` moves to it). By default the source
   gets its own row, auto-promoted to `verbatim` when the captured text fits
   seven reader pages (word-count calibration in plan_cmd) and `article`
   otherwise; `--article <id>` joins an existing row instead and `--mode`
@@ -95,6 +96,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   browser first and pass it as `--html <file>`; the rest is identical. When `--edition` is a prefix of
   existing edition ids but matches none exactly, capture refuses and asks for
   the full id (`plan_cmd::intake_edition_for`).
+  `mag capture --refresh <source-id> [--html file]` re-transcribes an existing
+  source through the same gate and replaces its article.md, changed media,
+  synopsis, and `sources.md` entry; it touches no plan or edition.
+  `mag plan NNN` only checks that every source a plan references has a record.
 - Never replace a source's text with an unlabeled summary. Keep the author's
   wording, structure, and headings; drop site chrome.
 

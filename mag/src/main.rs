@@ -15,12 +15,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Write plan.yaml from the edition's queued library sources (no model call; human edits it).
-    /// Re-running appends rows for queued sources the plan does not reference yet; existing rows stay untouched.
+    /// Check an edition's plan.yaml: every source it references has a record and article (no model call, no writes).
+    /// `mag capture` writes the plan rows; edit plan.yaml by hand to merge or retitle them.
     Plan(plan_cmd::PlanArgs),
     /// Capture a source: fetch the page, transcribe it verbatim through one
-    /// fidelity-gated model call, download media, queue it, update sources.md,
-    /// and record it in the edition's plan.yaml (own row, or --article to join one)
+    /// fidelity-gated model call, download media, update sources.md, and
+    /// record it in the edition's plan.yaml (own row, or --article to join one)
     Capture(capture::CaptureArgs),
     /// Produce a printable, self-contained HTML version of a blog post: keep
     /// the page's own style, content, and images; strip site chrome, scripts,

@@ -2,7 +2,7 @@ use crate::caller::write_atomic;
 use crate::model::kinds::ContentMode;
 use crate::model::shared::read_spec;
 use crate::model::spec::SourceRecord;
-use crate::util::{read, EditionId};
+use crate::util::{edition_names, read, EditionId};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -10,37 +10,6 @@ use std::path::{Path, PathBuf};
 #[derive(clap::Args)]
 pub struct PlanArgs {
     pub edition: String,
-}
-
-pub fn queued_source_ids(release_state: &str, edition: &str) -> Result<(String, Vec<String>)> {
-    let doc: serde_norway::Value =
-        serde_norway::from_str(release_state).context("parsing library/release-state.yaml")?;
-    let collecting = doc
-        .get("collecting_editions")
-        .and_then(|v| v.as_sequence())
-        .ok_or_else(|| anyhow!("release-state.yaml has no collecting_editions list"))?;
-    for entry in collecting {
-        let id = entry.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        if id != edition {
-            continue;
-        }
-        let sources = entry
-            .get("source_ids")
-            .and_then(|v| v.as_sequence())
-            .ok_or_else(|| anyhow!("collecting edition '{id}' has no source_ids"))?
-            .iter()
-            .map(|v| {
-                v.as_str()
-                    .map(str::to_string)
-                    .ok_or_else(|| anyhow!("non-string source id in '{id}'"))
-            })
-            .collect::<Result<Vec<String>>>()?;
-        if sources.is_empty() {
-            bail!("collecting edition '{id}' has no sources queued");
-        }
-        return Ok((id.to_string(), sources));
-    }
-    bail!("no collecting edition '{edition}' in library/release-state.yaml")
 }
 
 fn article_slug(source_id: &str) -> String {
@@ -235,34 +204,8 @@ fn plan_path_for(edition: &str) -> PathBuf {
     PathBuf::from("editions").join(edition).join("plan.yaml")
 }
 
-fn known_editions(root: &Path, release_state: &str) -> Result<Vec<String>> {
-    let doc: serde_norway::Value =
-        serde_norway::from_str(release_state).context("parsing library/release-state.yaml")?;
-    let mut names: Vec<String> = doc
-        .get("collecting_editions")
-        .and_then(|v| v.as_sequence())
-        .into_iter()
-        .flatten()
-        .filter_map(|e| e.get("id").and_then(|v| v.as_str()).map(str::to_string))
-        .collect();
-    if let Ok(dirs) = fs::read_dir(root.join("editions")) {
-        names.extend(
-            dirs.flatten()
-                .filter(|e| e.path().is_dir())
-                .map(|e| e.file_name().to_string_lossy().to_string()),
-        );
-    }
-    names.sort();
-    names.dedup();
-    Ok(names)
-}
-
-fn resolve_planned(root: &Path, release_state: &str, given: &str) -> Result<EditionId> {
-    EditionId::pick(given, known_editions(root, release_state)?)
-}
-
-pub fn intake_edition_for(root: &Path, release_state: &str, given: &str) -> Result<String> {
-    let names = known_editions(root, release_state)?;
+pub fn intake_edition_for(root: &Path, given: &str) -> Result<String> {
+    let names = edition_names(root)?;
     let hits: Vec<&str> = names
         .iter()
         .filter(|n| n.starts_with(given))
@@ -307,16 +250,11 @@ fn write_new_plan(
 
 pub fn check_join(edition: &str, article: &str) -> Result<()> {
     let plan = plan_path_for(edition);
-    if plan.exists() {
-        return join_article(&read(&plan)?, article, "preflight").map(drop);
-    }
-    let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
-    let queued = queued_source_ids(&release_state, edition)?.1;
     ensure!(
-        queued.iter().any(|q| article_slug(q) == article),
-        "no plan.yaml for edition {edition} and no queued source forms article '{article}'"
+        plan.exists(),
+        "no plan.yaml for edition {edition}, so there is no article '{article}' to join"
     );
-    Ok(())
+    join_article(&read(&plan)?, article, "preflight").map(drop)
 }
 
 pub fn add_source(
@@ -324,107 +262,56 @@ pub fn add_source(
     sid: &str,
     article: Option<&str>,
     mode: Option<ContentMode>,
-) -> Result<()> {
+) -> Result<usize> {
     let out_path = plan_path_for(edition);
-    let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
-    let (edition_id, queued) = queued_source_ids(&release_state, edition)?;
-
     if !out_path.exists() {
-        let mut articles = Vec::new();
-        for q in &queued {
-            if q == sid {
-                if article.is_none() {
-                    articles.push(row_from_record(q, mode)?.0);
-                }
-            } else {
-                articles.push(row_from_record(q, None)?.0);
-            }
-        }
-        write_new_plan(&out_path, &edition_id, articles)?;
-        println!(
-            "  plan: wrote {} ({} row(s))",
-            out_path.display(),
-            queued.len()
-        );
-        if article.is_none() {
-            return Ok(());
-        }
+        let (row, mode) = row_from_record(sid, mode)?;
+        write_new_plan(&out_path, edition, vec![row])?;
+        println!("  plan: wrote {} ({mode} row)", out_path.display());
+        return Ok(1);
     }
-
     let plan_text = read(&out_path)?;
-    if referenced_source_ids(&plan_text)?.contains(sid) {
+    let referenced = referenced_source_ids(&plan_text)?;
+    if referenced.contains(sid) {
         println!("  plan: {} already references {sid}", out_path.display());
-        return Ok(());
+        return Ok(referenced.len());
     }
     let new_text = match article {
         Some(a) => {
-            let t = join_article(&plan_text, a, sid)?;
             println!("  plan: {sid} joined article '{a}'");
-            t
+            join_article(&plan_text, a, sid)?
         }
         None => {
             let (row, mode) = row_from_record(sid, mode)?;
-            let t = append_rows(&plan_text, &[row])?;
             println!("  plan: {sid} added as its own {mode} row");
-            t
+            append_rows(&plan_text, &[row])?
         }
     };
+    let count = referenced_source_ids(&new_text)?.len();
     write_atomic(&out_path, new_text)?;
-    Ok(())
+    Ok(count)
 }
 
 pub fn run(args: &PlanArgs) -> Result<i32> {
-    let release_state = read(&PathBuf::from("library/release-state.yaml"))?;
-    let resolved = resolve_planned(Path::new("."), &release_state, &args.edition)?;
-    let edition = resolved.as_str();
+    let edition = EditionId::resolve(Path::new("."), &args.edition)?;
+    let edition = edition.as_str();
     let out_path = plan_path_for(edition);
-    let (edition_id, source_ids) = queued_source_ids(&release_state, edition)?;
-
-    if out_path.exists() {
-        let plan_text = read(&out_path)?;
-        let referenced = referenced_source_ids(&plan_text)?;
-        let missing: Vec<&String> = source_ids
-            .iter()
-            .filter(|sid| !referenced.contains(*sid))
-            .collect();
-        if missing.is_empty() {
-            println!(
-                "{} already covers all {} queued source(s); nothing to add",
-                out_path.display(),
-                source_ids.len()
-            );
-            return Ok(0);
-        }
-        let mut rows = Vec::new();
-        for sid in &missing {
-            let (row, mode) = row_from_record(sid, None)?;
-            rows.push(row);
-            println!("  added: {sid} ({mode})");
-        }
-        write_atomic(&out_path, append_rows(&plan_text, &rows)?)?;
-        println!(
-            "\nappended {} row(s) to {}; existing rows untouched. Edit the new rows \
-             (merge source_ids, flip content_mode, fix titles), then: mag produce {}",
-            rows.len(),
-            out_path.display(),
-            out_path.display()
-        );
-        return Ok(0);
+    ensure!(
+        out_path.exists(),
+        "no {}; `mag capture <url> --edition {edition}` writes it",
+        out_path.display()
+    );
+    let mut ids: Vec<String> = referenced_source_ids(&read(&out_path)?)?
+        .into_iter()
+        .collect();
+    ids.sort();
+    for sid in &ids {
+        row_from_record(sid, None).with_context(|| format!("plan source {sid}"))?;
     }
-
-    let mut articles = Vec::new();
-    for sid in &source_ids {
-        let (row, mode) = row_from_record(sid, None)?;
-        articles.push(row);
-        println!("  queued: {sid} ({mode})");
-    }
-
-    write_new_plan(&out_path, &edition_id, articles)?;
     println!(
-        "\nwrote {}: {} article(s) from '{edition_id}'. Edit it (drop rows, flip \
-         content_mode to in_a_nutshell, fix titles), then: mag produce {}",
+        "{} covers {} source(s), each with a record and article; next: mag produce {}",
         out_path.display(),
-        source_ids.len(),
+        ids.len(),
         out_path.display()
     );
     Ok(0)
@@ -450,42 +337,16 @@ mod tests {
     }
 
     #[test]
-    fn queued_source_ids_finds_the_matching_collecting_edition() {
-        let yaml = "\
-collecting_editions:
-- id: '005'
-  source_ids: [a-11112222, b-33334444]
-released_editions: []
-";
-        let (id, sources) = queued_source_ids(yaml, "005").unwrap();
-        assert_eq!(id, "005");
-        assert_eq!(sources, vec!["a-11112222", "b-33334444"]);
-    }
-
-    #[test]
-    fn planned_edition_prefix_must_be_unambiguous() {
-        let yaml = "collecting_editions:\n- id: '990'\n  source_ids: [a]\n- id: '991'\n  source_ids: [b]\n";
-        let root = Path::new("/nonexistent");
-        assert!(resolve_planned(root, yaml, "99").is_err());
-        assert_eq!(resolve_planned(root, yaml, "991").unwrap().as_str(), "991");
-    }
-
-    #[test]
     fn intake_refuses_a_prefix_of_existing_editions() {
-        let yaml = "collecting_editions:\n- id: '010'\n  source_ids: [a]\n- id: '011'\n  source_ids: [b]\n";
-        let root = Path::new("/nonexistent");
-        let err = intake_edition_for(root, yaml, "01")
-            .unwrap_err()
-            .to_string();
+        let root = std::env::temp_dir().join(format!("mag-intake-prefix-{}", std::process::id()));
+        for id in ["010", "011"] {
+            fs::create_dir_all(root.join("editions").join(id)).unwrap();
+        }
+        let err = intake_edition_for(&root, "01").unwrap_err().to_string();
         assert!(err.contains("010, 011"));
-        assert_eq!(intake_edition_for(root, yaml, "010").unwrap(), "010");
-        assert_eq!(intake_edition_for(root, yaml, "099").unwrap(), "099");
-    }
-
-    #[test]
-    fn queued_source_ids_fails_loud_on_no_match() {
-        let yaml = "collecting_editions:\n- id: 006-x\n  source_ids: [a-11112222]\n";
-        assert!(queued_source_ids(yaml, "005").is_err());
+        assert_eq!(intake_edition_for(&root, "010").unwrap(), "010");
+        assert_eq!(intake_edition_for(&root, "099").unwrap(), "099");
+        fs::remove_dir_all(&root).unwrap();
     }
 
     const PLAN: &str = "\

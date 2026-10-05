@@ -6,9 +6,9 @@ The magazine is produced by two programs and a pile of files.
 
 `mag` drives the workflow from the repo root:
 
-- `mag plan <edition>` reads every `library/sources/*/article.md`, proposes an
-  edition plan (7 sources, paired where useful, one content mode each), and
-  writes `editions/<edition>/plan.yaml`.
+- `mag capture` writes each source's row into `editions/<edition>/plan.yaml`;
+  `mag plan <edition>` checks that every source the plan references has a
+  record and article.
 - `mag produce` runs the writer prompts over the planned sources and writes
   the manuscripts and frontmatter into a timestamped run directory under the
   edition.
@@ -58,8 +58,8 @@ front end.
 
 - `library/sources/<id>/` is a captured source: `record.yaml` (title, author,
   url, dates, tags, synopsis), `article.md` (verbatim text), `media/` (images).
-- `library/release-state.yaml` says which sources are queued or released per
-  edition; `sources.md` is generated from the records.
+- `editions/<edition>/plan.yaml` says which sources belong to an edition;
+  `sources.md` is generated from the records.
 - `editions/<edition>/` holds `plan.yaml`, `edition.yaml`, manuscripts, art,
   translations, and timestamped `run-*`/`render-*` output directories.
 - `prompts/` holds the hand-tested prompts; `templates/` the edition template;

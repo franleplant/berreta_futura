@@ -1,6 +1,8 @@
 use crate::caller::{self, write_atomic, Caller, ModelSpec};
+use crate::model::shared::read_spec;
+use crate::model::spec::SourceRecord;
 use crate::pdf_text;
-use anyhow::{anyhow, bail, ensure, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -634,11 +636,12 @@ fn recall(body: &str, covers: &[String], page: &Folded) -> Recall {
     }
     for (i, line) in body.lines().enumerate() {
         let t = line.trim();
-        let structural = i < 3 || t.starts_with(['#', '|']) || t.starts_with("![");
+        let heading = t.starts_with(['#', '|']) || t.starts_with("![");
         let t = t.trim_start_matches(['-', '*', '>', '#']).trim_start();
         let t = NUMBERED_ITEM.replace(t, "").replace(PROSE_FOLD, "");
         let words: Vec<&str> = t.split_whitespace().collect();
-        if structural || words.len() < 5 {
+        let head_line = i < 3 && (words.len() < SHINGLE_WORDS || t.contains(" \u{b7} "));
+        if heading || head_line || words.len() < 5 {
             for cell in t.split('|') {
                 let needle = comparison_form(cell);
                 if let Some((s, e, _)) = Some(&needle)
@@ -844,79 +847,6 @@ fn record_yaml(m: &SourceMeta) -> String {
     out
 }
 
-pub fn queue_in_release_state(text: &str, edition: &str, sid: &str) -> Result<(String, usize)> {
-    let (out, queued) = splice_release_state(text, edition, sid)?;
-    let (_, ids) = crate::plan_cmd::queued_source_ids(&out, edition)
-        .context("release-state.yaml no longer parses after queueing")?;
-    ensure!(
-        ids.len() == queued && ids.last().map(String::as_str) == Some(sid),
-        "release-state.yaml edit did not land {sid} last in edition {edition}"
-    );
-    Ok((out, queued))
-}
-
-fn splice_release_state(text: &str, edition: &str, sid: &str) -> Result<(String, usize)> {
-    let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
-    let section = lines
-        .iter()
-        .position(|l| l == "collecting_editions:")
-        .ok_or_else(|| anyhow!("release-state.yaml has no collecting_editions list"))?;
-    let section_end = lines
-        .iter()
-        .enumerate()
-        .skip(section + 1)
-        .find(|(_, l)| !l.is_empty() && !l.starts_with(' ') && !l.starts_with('-'))
-        .map_or(lines.len(), |(i, _)| i);
-
-    let id_line_of = |l: &str| -> Option<String> {
-        l.strip_prefix("- id: ")
-            .map(|v| v.trim().trim_matches('\'').trim_matches('"').to_string())
-    };
-    let entry_start = lines[section + 1..section_end]
-        .iter()
-        .position(|l| id_line_of(l).as_deref() == Some(edition))
-        .map(|i| i + section + 1);
-
-    match entry_start {
-        Some(start) => {
-            let entry_end = lines[start + 1..section_end]
-                .iter()
-                .position(|l| l.starts_with("- "))
-                .map_or(section_end, |i| i + start + 1);
-            let ids: Vec<usize> = (start + 1..entry_end)
-                .filter(|&i| lines[i].starts_with("  - "))
-                .collect();
-            if ids.iter().any(|&i| lines[i].trim() == format!("- {sid}")) {
-                bail!("source {sid} is already queued for edition {edition}");
-            }
-            let insert_at = ids
-                .last()
-                .map(|&i| i + 1)
-                .ok_or_else(|| anyhow!("collecting edition '{edition}' has no source_ids list"))?;
-            lines.insert(insert_at, format!("  - {sid}"));
-            let count = ids.len() + 1;
-            Ok((lines.join("\n") + "\n", count))
-        }
-        None => {
-            let block = vec![
-                format!("- id: '{edition}'"),
-                format!("  issue_number: {}", edition.trim_start_matches('0')),
-                "  status: collecting".to_string(),
-                "  source_ids:".to_string(),
-                format!("  - {sid}"),
-            ];
-            lines.splice(section_end..section_end, block);
-            if let Some(i) = lines
-                .iter()
-                .position(|l| l.starts_with("intake_edition_id:"))
-            {
-                lines[i] = format!("intake_edition_id: '{edition}'");
-            }
-            Ok((lines.join("\n") + "\n", 1))
-        }
-    }
-}
-
 pub fn prepend_sources_md(text: &str, entry: &[String], edition: &str, queued: usize) -> String {
     let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
     let collecting_line = format!("_Collecting: `{edition}` ({queued} queued)._");
@@ -947,7 +877,7 @@ pub fn prepend_sources_md(text: &str, entry: &[String], edition: &str, queued: u
     lines.join("\n").trim_end().to_string() + "\n"
 }
 
-fn sources_md_entry(m: &SourceMeta, edition: &str) -> Vec<String> {
+fn sources_md_entry(m: &SourceMeta, release: &str) -> Vec<String> {
     let dash = '\u{2014}';
     let mut lines = vec![
         if m.author.is_empty() {
@@ -966,7 +896,7 @@ fn sources_md_entry(m: &SourceMeta, edition: &str) -> Vec<String> {
     if !m.tags.is_empty() {
         lines.push(format!("- Tags: {}", m.tags.join(", ")));
     }
-    lines.push(format!("- Release: queued for `{edition}`"));
+    lines.push(format!("- Release: {release}"));
     lines.push(String::new());
     lines.push(m.synopsis.to_string());
     lines
@@ -1012,12 +942,17 @@ impl Drop for StateLock {
     }
 }
 
-fn publish_source(m: &SourceMeta, src_dir: &Path, edition: &str, release_text: &str) -> Result<()> {
+fn publish_source(
+    m: &SourceMeta,
+    src_dir: &Path,
+    edition: &str,
+    article: Option<&str>,
+    mode: Option<crate::model::kinds::ContentMode>,
+) -> Result<()> {
     write_atomic(src_dir.join("record.yaml"), record_yaml(m))?;
-    let (new_release, queued) = queue_in_release_state(release_text, edition, m.sid)?;
-    write_atomic("library/release-state.yaml", new_release)?;
+    let queued = crate::plan_cmd::add_source(edition, m.sid, article, mode)?;
     let sources_path = PathBuf::from("sources.md");
-    let entry = sources_md_entry(m, edition);
+    let entry = sources_md_entry(m, &format!("queued for `{edition}`"));
     let sources_text = fs::read_to_string(&sources_path).context("reading sources.md")?;
     write_atomic(
         &sources_path,
@@ -1032,11 +967,39 @@ fn iso_now() -> String {
     format!("{date}{}Z", time.replace('-', ":"))
 }
 
-fn intake_edition(release_state: &str) -> Option<String> {
-    release_state.lines().find_map(|l| {
-        l.strip_prefix("intake_edition_id:")
-            .map(|v| v.trim().trim_matches('\'').trim_matches('"').to_string())
-    })
+fn intake_edition(root: &Path) -> Result<String> {
+    crate::render::magazine_toml(root)?
+        .get("intake")
+        .and_then(|t| t.get("edition"))
+        .and_then(toml::Value::as_str)
+        .map(str::to_string)
+        .context("no --edition and no [intake] edition in magazine.toml")
+}
+
+fn set_intake_edition(text: &str, edition: &str) -> Result<String> {
+    let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
+    let section = lines
+        .iter()
+        .position(|l| l.trim() == "[intake]")
+        .context("magazine.toml has no [intake] table")?;
+    let key = lines
+        .iter()
+        .skip(section + 1)
+        .take_while(|l| !l.starts_with('['))
+        .position(|l| l.split('=').next().is_some_and(|k| k.trim() == "edition"))
+        .context("magazine.toml [intake] has no edition key")?;
+    let line = &mut lines[section + 1 + key];
+    let comment = line.find('#').map_or("", |i| &line[i..]);
+    let tail = if comment.is_empty() {
+        String::new()
+    } else {
+        format!(" {comment}")
+    };
+    *line = format!("edition = \"{edition}\"{tail}");
+    let out = lines.join("\n") + "\n";
+    out.parse::<toml::Table>()
+        .context("magazine.toml no longer parses after the edition rewrite")?;
+    Ok(out)
 }
 
 fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
@@ -1065,10 +1028,17 @@ fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
 
 #[derive(clap::Args)]
 pub struct CaptureArgs {
-    pub url: String,
+    #[arg(required_unless_present = "refresh")]
+    pub url: Option<String>,
     #[arg(
         long,
-        help = "Collecting edition to queue into (default: the intake edition; created, and made the intake edition, if it does not exist)"
+        conflicts_with_all = ["url", "edition", "article", "mode", "tags", "title", "author", "published"],
+        help = "Re-transcribe an existing source (by id) from the URL in its record.yaml, or from --html, through the same fidelity gate: replaces its article.md, changed media, synopsis, and sources.md entry; touches no plan or edition"
+    )]
+    pub refresh: Option<String>,
+    #[arg(
+        long,
+        help = "Edition whose plan.yaml gets the source (default: [intake] edition in magazine.toml; a new edition becomes the intake edition)"
     )]
     pub edition: Option<String>,
     #[arg(long, help = "Comma-separated tags for record.yaml")]
@@ -1214,13 +1184,12 @@ fn write_raw(pdf: Option<&PathBuf>, html: &str, sid: &str) -> Result<()> {
 }
 
 pub fn run(args: &CaptureArgs) -> Result<i32> {
+    if let Some(sid) = &args.refresh {
+        return refresh(args, sid);
+    }
     let spec = &ModelSpec::parse(&args.model)?;
-    let (url, edition, tags, mode) = (
-        args.url.as_str(),
-        args.edition.as_deref(),
-        args.tags.as_deref(),
-        args.mode,
-    );
+    let url = args.url.as_deref().context("pass a URL or --refresh")?;
+    let (edition, tags, mode) = (args.edition.as_deref(), args.tags.as_deref(), args.mode);
     let (title_override, author_override, published_override) = (
         args.title.as_deref(),
         args.author.as_deref(),
@@ -1239,13 +1208,18 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         bail!("{} already exists", src_dir.display());
     }
 
-    let release_path = PathBuf::from("library/release-state.yaml");
-    let release_text = fs::read_to_string(&release_path).context("reading release-state.yaml")?;
-    let edition = edition
-        .map(str::to_string)
-        .or_else(|| intake_edition(&release_text))
-        .ok_or_else(|| anyhow!("no --edition and no intake_edition_id in release-state.yaml"))?;
-    let edition = crate::plan_cmd::intake_edition_for(Path::new("."), &release_text, &edition)?;
+    let root = Path::new(".");
+    let edition = match edition {
+        Some(e) => e.to_string(),
+        None => intake_edition(root)?,
+    };
+    let edition = crate::plan_cmd::intake_edition_for(root, &edition)?;
+    let new_toml = if Path::new("editions").join(&edition).exists() {
+        None
+    } else {
+        let toml = fs::read_to_string(root.join("magazine.toml"))?;
+        Some(set_intake_edition(&toml, &edition)?)
+    };
     if let Some(article) = join_article {
         crate::plan_cmd::check_join(&edition, article)?;
     }
@@ -1299,14 +1273,96 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         synopsis: &extraction.synopsis,
     };
     let lock = StateLock::acquire()?;
-    let release_text = fs::read_to_string(&release_path).context("reading release-state.yaml")?;
-    publish_source(&meta, &src_dir, &edition, &release_text)?;
-    crate::plan_cmd::add_source(&edition, &sid, join_article, mode)?;
+    publish_source(&meta, &src_dir, &edition, join_article, mode)?;
+    if let Some(toml) = new_toml {
+        write_atomic(root.join("magazine.toml"), toml)?;
+    }
     drop(lock);
 
     let words = article.split_whitespace().count();
     println!(
         "  captured: {words} words, {image_count} images, queued for {edition} ({model_cost})"
+    );
+    Ok(0)
+}
+
+fn replace_sources_md_entry(text: &str, m: &SourceMeta) -> Result<String> {
+    let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
+    let id_line = format!("- ID: `{}`", m.sid);
+    let id_at = lines
+        .iter()
+        .position(|l| *l == id_line)
+        .with_context(|| format!("sources.md has no entry for {}", m.sid))?;
+    let start = (0..id_at)
+        .rev()
+        .find(|&i| lines[i].starts_with("## "))
+        .context("sources.md entry has no heading")?;
+    let end = lines[id_at..]
+        .iter()
+        .position(|l| l.starts_with("## "))
+        .map_or(lines.len(), |i| id_at + i);
+    let release = lines[start..end]
+        .iter()
+        .find_map(|l| l.strip_prefix("- Release: "))
+        .context("sources.md entry has no Release line")?
+        .to_string();
+    let mut block = sources_md_entry(m, &release);
+    block.push(String::new());
+    lines.splice(start..end, block);
+    Ok(lines.join("\n").trim_end().to_string() + "\n")
+}
+
+fn sync_media(staged: &Path, dest: &Path) -> Result<()> {
+    fs::create_dir_all(dest)?;
+    for file in fs::read_dir(staged)? {
+        let from = file?.path();
+        let to = dest.join(from.file_name().context("media file without a name")?);
+        if fs::read(&to).ok().as_deref() != Some(fs::read(&from)?.as_slice()) {
+            fs::copy(&from, &to)?;
+            println!("  media: wrote {}", to.display());
+        }
+    }
+    Ok(())
+}
+
+fn refresh(args: &CaptureArgs, sid: &str) -> Result<i32> {
+    let spec = &ModelSpec::parse(&args.model)?;
+    let src_dir = PathBuf::from("library/sources").join(sid);
+    let record: SourceRecord = read_spec(&src_dir.join("record.yaml"))?;
+    let (pdf, html, pre_extraction) = resolve_input(args.html.as_deref(), &record.url)?;
+    write_raw(pdf.as_ref(), &html, sid)?;
+    let extraction = match pre_extraction {
+        Some(e) => e,
+        None => transcribe(&html, &record.url, sid, spec)?.0,
+    };
+    let staged = PathBuf::from(RAW_DIR).join(format!("refresh-{sid}"));
+    let _ = fs::remove_dir_all(&staged);
+    fs::create_dir_all(staged.join("media"))?;
+    let labeled = label_fences(&extraction.article, &html);
+    let (article, image_count) = localize_images(&labeled, &staged.join("media"))?;
+    sync_media(&staged.join("media"), &src_dir.join("media"))?;
+    fs::remove_dir_all(&staged)?;
+    write_atomic(
+        src_dir.join("article.md"),
+        article.trim_end().to_string() + "\n",
+    )?;
+    let meta = SourceMeta {
+        sid,
+        title: &record.title,
+        author: record.author.as_deref().unwrap_or_default(),
+        url: &record.url,
+        captured_at: &record.captured_at,
+        published: record.published_at.as_deref().unwrap_or_default(),
+        tags: &record.tags,
+        synopsis: &extraction.synopsis,
+    };
+    let _lock = StateLock::acquire()?;
+    write_atomic(src_dir.join("record.yaml"), record_yaml(&meta))?;
+    let sources = fs::read_to_string("sources.md").context("reading sources.md")?;
+    write_atomic("sources.md", replace_sources_md_entry(&sources, &meta)?)?;
+    println!(
+        "  refreshed: {} words, {image_count} images; plans and editions untouched",
+        article.split_whitespace().count()
     );
     Ok(0)
 }
@@ -1545,19 +1601,38 @@ mod tests {
     }
 
     #[test]
-    fn queue_appends_and_creates_editions() {
-        let state = "schema_version: 2\nintake_edition_id: '006'\ncollecting_editions:\n\
-                     - id: '006'\n  issue_number: 6\n  status: collecting\n  source_ids:\n  \
-                     - a\n  - b\nreleased_editions:\n- id: old\n  source_ids:\n  - z\n";
-        let (out, n) = queue_in_release_state(state, "006", "c").unwrap();
-        assert_eq!(n, 3);
-        assert!(out.contains("  - b\n  - c\nreleased_editions:"));
-        assert!(queue_in_release_state(&out, "006", "c").is_err());
+    fn intake_key_is_replaced_in_place() {
+        let toml = "[a]\nedition = \"x\"\n\n[intake]\n# note\nedition = \"013\"\n\n[b]\n";
+        let out = set_intake_edition(toml, "014").unwrap();
+        assert_eq!(
+            out,
+            "[a]\nedition = \"x\"\n\n[intake]\n# note\nedition = \"014\"\n\n[b]\n"
+        );
+        assert!(set_intake_edition("[a]\n", "014").is_err());
+        let toml = "[intake]\neditions_note = \"x\"\nedition = \"013\" # current\nother = 1\n";
+        assert_eq!(
+            set_intake_edition(toml, "014").unwrap(),
+            "[intake]\neditions_note = \"x\"\nedition = \"014\" # current\nother = 1\n"
+        );
+    }
 
-        let (out2, n2) = queue_in_release_state(&out, "007", "d").unwrap();
-        assert_eq!(n2, 1);
-        assert!(out2.contains("intake_edition_id: '007'"));
-        assert!(out2.contains("- id: '007'\n  issue_number: 7\n  status: collecting\n  source_ids:\n  - d\nreleased_editions:"));
+    #[test]
+    fn a_refreshed_entry_keeps_its_release_line() {
+        let md = "# Sources\n\n## Old \u{2014} A\n\n- ID: `s-1`\n- Source: u\n- Captured: c\n- Release: queued for `006`\n\nold\n\n## Next\n\n- ID: `s-2`\n";
+        let tags = vec![];
+        let m = SourceMeta {
+            sid: "s-1",
+            title: "Old",
+            author: "A",
+            url: "u",
+            captured_at: "c",
+            published: "",
+            tags: &tags,
+            synopsis: "fresh",
+        };
+        let out = replace_sources_md_entry(md, &m).unwrap();
+        assert!(out.contains("- Release: queued for `006`\n\nfresh\n\n## Next"));
+        assert!(!out.contains("\nold\n"));
     }
 
     #[test]
@@ -1712,5 +1787,29 @@ mod tests {
         );
         let reply = format!("# T\nByline\n\n{a}\n\n{b}");
         assert!(gate(&reply, &page).is_ok());
+    }
+
+    #[test]
+    fn gate_checks_a_lede_that_follows_the_title_directly() {
+        let (a, b, c) = (
+            numbered_paragraph("a", 150),
+            numbered_paragraph("b", 260),
+            numbered_paragraph("c", 150),
+        );
+        let page = page_of(&[&a, &b, &c]);
+        assert!(gate(&format!("# T\n\n{a}\n\n{b}\n\n{c}"), &page).is_ok());
+        let err = gate(&format!("# T\n\n{a}\n\n{c}"), &page)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("260 consecutive page words"), "{err}");
+        let invented = a.replacen(
+            "aw10 aw11 aw12",
+            "aw10 and some words nobody wrote aw11 aw12",
+            1,
+        );
+        let err = gate(&format!("# T\n\n{invented}\n\n{b}\n\n{c}"), &page)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("not verbatim"), "{err}");
     }
 }
