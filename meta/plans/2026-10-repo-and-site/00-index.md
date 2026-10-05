@@ -1,0 +1,20 @@
+# Repo, publishing, site, and speed: plan index (2026-10-04)
+
+Five plans, in dependency order. Each is executable on its own once the ones
+it depends on have landed; each ends with its own verification.
+
+| # | Plan | Depends on | Size |
+|---|------|------------|------|
+| 01 | [Git history cleanup](01-git-history-cleanup.md) | none | M, one coordinated hour |
+| 02 | [Downloads on GitHub Releases](02-hosting-downloads-exploration.md) | none (Releases do not touch git history) | S |
+| 03 | [Site design refresh](03-site-design-refresh.md) | 02 (download buttons point at the final links) | M |
+| 04 | [Faster deploys](04-faster-deploys.md) | 03 (design churn changes every asset once; measure after it) | S |
+| 05 | [Pipeline performance](05-pipeline-performance.md) | none (audited 2026-10-04 from 3ebf70a; render 18.7 s to 7.7 s measured on a prototype) | M, a ranked menu of independent S items |
+
+Rules that apply to all of them:
+- Several agents share this repo. A plan that rewrites history (01) or moves
+  branches needs every agent stopped first; the rest land as ordinary
+  fast-forward commits on `main` from a scratch worktree.
+- Deterministic, measured steps before model calls (AGENTS.md). Every plan
+  states its before/after numbers.
+- Releases run from the laptop (deploy/web/README.md); no CI.
