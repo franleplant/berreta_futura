@@ -4,7 +4,7 @@
   "workers_dev": false,
   "routes": [{ "pattern": "berreta.franleplant.com", "custom_domain": true }],
   "assets": {
-    "directory": "../../output/site",
+    "directory": "../../site",
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash"
   }

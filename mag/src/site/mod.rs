@@ -18,10 +18,15 @@ use std::path::{Path, PathBuf};
 pub struct SiteArgs {
     #[arg(
         long,
-        default_value = "output/site",
+        default_value = "site",
         help = "Directory to write the static site into (replaced on every run)"
     )]
     pub out: PathBuf,
+    #[arg(
+        long,
+        help = "Rebuild into a temp dir and fail if it differs from --out"
+    )]
+    pub check: bool,
 }
 
 #[derive(Deserialize)]
@@ -152,7 +157,74 @@ impl Drop for Scratch {
     }
 }
 
+fn tree_files(dir: &Path, root: &Path, out: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        match path.is_dir() {
+            true => tree_files(&path, root, out)?,
+            false => {
+                out.insert(
+                    path.strip_prefix(root)?.display().to_string(),
+                    fs::read(&path)?,
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+fn check(args: &SiteArgs) -> Result<i32> {
+    let fresh = std::env::temp_dir().join(format!("mag-site-check-{}", std::process::id()));
+    let built = build(&args.out_with(&fresh));
+    let (mut old, mut new) = (BTreeMap::new(), BTreeMap::new());
+    let compared = built.and_then(|_| {
+        ensure!(args.out.is_dir(), "{} does not exist", args.out.display());
+        tree_files(&args.out, &args.out, &mut old)?;
+        tree_files(&fresh, &fresh, &mut new)
+    });
+    fs::remove_dir_all(&fresh).ok();
+    compared?;
+    let paths: BTreeSet<_> = old.keys().chain(new.keys()).collect();
+    let differing: Vec<_> = paths
+        .into_iter()
+        .filter(|p| old.get(*p) != new.get(*p))
+        .collect();
+    for path in &differing {
+        println!("differs: {path}");
+    }
+    ensure!(
+        differing.is_empty(),
+        "{} is out of date in {} paths; run mag site and commit it",
+        args.out.display(),
+        differing.len()
+    );
+    println!("site: {} matches a fresh build", args.out.display());
+    Ok(0)
+}
+
 pub fn run(args: &SiteArgs) -> Result<i32> {
+    match args.check {
+        true => check(args),
+        false => build(args).map(|()| {
+            println!(
+                "\nnext: commit {} and push; Cloudflare deploys it",
+                args.out.display()
+            );
+            0
+        }),
+    }
+}
+
+impl SiteArgs {
+    fn out_with(&self, out: &Path) -> SiteArgs {
+        SiteArgs {
+            out: out.to_path_buf(),
+            check: false,
+        }
+    }
+}
+
+fn build(args: &SiteArgs) -> Result<()> {
     let _scratch = Scratch;
     let root = std::env::current_dir()?.canonicalize()?;
     let site = config(&root)?;
@@ -194,8 +266,7 @@ pub fn run(args: &SiteArgs) -> Result<i32> {
         tree_bytes(&args.out)?,
         args.out.display()
     );
-    println!("\nnext: deploy {} as static assets", args.out.display());
-    Ok(0)
+    Ok(())
 }
 
 fn tree_bytes(dir: &Path) -> Result<u64> {

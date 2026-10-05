@@ -25,7 +25,7 @@ mag art NNN                                # art candidates; pick in art/showcas
 mag source-codes NNN                       # QR codes for the openers
 mag render NNN                             # reader.pdf, booklets, package
 mag translate <run dir>                    # Spanish edition
-mag site [--out output/site]               # static site of the [site] editions
+mag site [--out site] [--check]            # static site of the [site] editions
 ```
 
 `mag render` typesets through Typst in Rust (`mag/src/typeset/`).

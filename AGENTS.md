@@ -25,8 +25,11 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   anchor that matches no heading of the run and names the fix, `mag anchors NNN`
   (the one cheap model call that re-anchors figures and patches `edition.yaml`;
   `--check` only lists them and exits 2 when any are unresolved, 1 on error).
-- `mag site [--out output/site]` builds the public static site, deployed
-  from this laptop to berreta.franleplant.com (`deploy/web/README.md`). It publishes the editions listed in
+- `mag site [--out site] [--check]` builds the public static site into the
+  committed `site/`; Cloudflare Workers Builds deploys it to
+  berreta.franleplant.com when a push changes `site/**`
+  (`deploy/web/README.md`). `--check` rebuilds into a temp dir and fails
+  listing paths that differ from `--out`. It publishes the editions listed in
   `magazine.toml` `[site] editions`, each from its newest git-tracked complete
   run (never an untracked local run), with the print-tone figure copies,
   resized JPEG/WebP variants, and no Typst render and no model call. Download links

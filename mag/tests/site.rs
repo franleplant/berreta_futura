@@ -65,6 +65,21 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
     files(&first, &first, &mut a);
     files(&second, &second, &mut b);
     assert!(a == b, "two builds from the same inputs differ");
+    let mut committed = BTreeMap::new();
+    files(
+        &repository().join("site"),
+        &repository().join("site"),
+        &mut committed,
+    );
+    let stale: Vec<_> = a
+        .keys()
+        .chain(committed.keys())
+        .filter(|k| a.get(*k) != committed.get(*k))
+        .collect();
+    assert!(
+        stale.is_empty(),
+        "site/ is out of date, run mag site: {stale:?}"
+    );
     let edition = std::fs::read_to_string(repository().join("editions/011/edition.yaml")).unwrap();
     let yaml: serde_norway::Value = serde_norway::from_str(&edition).unwrap();
     for article in yaml["articles"].as_sequence().unwrap() {
