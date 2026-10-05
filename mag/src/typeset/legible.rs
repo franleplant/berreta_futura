@@ -5,7 +5,7 @@ use crate::model::records::Figure;
 use crate::typeset::geometry::geometry;
 use crate::typeset::media::pixels;
 use anyhow::{Context, Result};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -121,23 +121,32 @@ fn skipped(figure: &Figure) -> bool {
 
 pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
     let geometry = Geometry::from_template();
-    let paths: Vec<PathBuf> = edition
+    let hashes: BTreeMap<PathBuf, String> = edition
         .articles
         .iter()
         .flat_map(|article| &article.figures)
         .filter(|figure| !skipped(figure))
-        .map(|figure| figure.path.clone())
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .collect();
-    let measured = ordered_map(|path| word_heights(path, repo_root), &paths, None)?;
-    let heights: BTreeMap<&PathBuf, &Vec<f64>> = paths.iter().zip(&measured).collect();
+        .map(|figure| {
+            let bytes = std::fs::read(&figure.path)
+                .with_context(|| format!("reading {}", figure.path.display()))?;
+            Ok((figure.path.clone(), crate::util::sha256_hex(&bytes)))
+        })
+        .collect::<Result<_>>()?;
+    let unique: BTreeMap<&String, &PathBuf> = hashes.iter().map(|(p, h)| (h, p)).collect();
+    let jobs: Vec<(&String, &PathBuf)> = unique.into_iter().collect();
+    let measured = ordered_map(
+        |(hash, path)| word_heights(path, hash, repo_root),
+        &jobs,
+        None,
+    )?;
+    let by_hash: BTreeMap<&String, &Vec<f64>> =
+        jobs.iter().map(|(h, _)| *h).zip(&measured).collect();
     for article in &mut edition.articles {
         for figure in &mut article.figures {
             if skipped(figure) {
                 continue;
             }
-            let heights = heights[&figure.path];
+            let heights = by_hash[&hashes[&figure.path]];
             let size = pixels(&figure.path)?;
             let Some(change) = decide(heights, size, figure.layout, &geometry) else {
                 continue;
@@ -159,11 +168,10 @@ pub fn enlarge(mut edition: Edition, repo_root: &Path) -> Result<Edition> {
     Ok(edition)
 }
 
-fn word_heights(path: &Path, repo_root: &Path) -> Result<Vec<f64>> {
-    let bytes = std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
-    let cached = repo_root.join(CACHE).join(crate::util::sha256_hex(&bytes));
-    if let Ok(text) = std::fs::read_to_string(&cached) {
-        return Ok(text.lines().filter_map(|l| l.parse().ok()).collect());
+fn word_heights(path: &Path, hash: &str, repo_root: &Path) -> Result<Vec<f64>> {
+    let cached = repo_root.join(CACHE).join(hash);
+    if let Some(heights) = read_cache(&cached) {
+        return Ok(heights);
     }
     let out = Command::new("tesseract")
         .arg(path)
@@ -183,8 +191,16 @@ fn word_heights(path: &Path, repo_root: &Path) -> Result<Vec<f64>> {
             .context("the legibility cache has no parent")?,
     )?;
     let lines: String = heights.iter().map(|h| format!("{h}\n")).collect();
-    std::fs::write(&cached, lines)?;
+    crate::caller::write_atomic(&cached, lines)?;
     Ok(heights)
+}
+
+fn read_cache(path: &Path) -> Option<Vec<f64>> {
+    std::fs::read_to_string(path)
+        .ok()?
+        .lines()
+        .map(|line| line.parse().ok())
+        .collect()
 }
 
 fn words(tsv: &str) -> Vec<f64> {
@@ -211,6 +227,19 @@ mod tests {
 
     fn at(height: f64) -> Vec<f64> {
         vec![height; 20]
+    }
+
+    #[test]
+    fn a_corrupted_cache_entry_is_a_miss() {
+        let dir = std::env::temp_dir().join(format!("legible-cache-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let entry = dir.join("entry");
+        std::fs::write(&entry, "12.5\n13\n1").unwrap();
+        assert_eq!(read_cache(&entry), Some(vec![12.5, 13.0, 1.0]));
+        std::fs::write(&entry, "12.5\n13.x truncated").unwrap();
+        assert_eq!(read_cache(&entry), None);
+        assert_eq!(read_cache(&dir.join("absent")), None);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
