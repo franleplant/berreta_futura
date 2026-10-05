@@ -21,14 +21,8 @@ ROOT = Path(__file__).resolve().parent.parent / "mag" / "assets" / "fonts"
 OUT = ROOT / "web"
 
 TEXT = [
-    "source-serif-4/SourceSerif4SmText-Regular.ttf",
-    "source-serif-4/SourceSerif4SmText-It.ttf",
-    "source-serif-4/SourceSerif4SmText-Bold.ttf",
-    "source-serif-4/SourceSerif4Display-Semibold.ttf",
-    "inter/Inter-Regular.ttf",
-    "inter/Inter-SemiBold.ttf",
-    "inter/Inter-Bold.ttf",
-    "inter/InterDisplay-Black.ttf",
+    "geist/Geist-Variable.ttf",
+    "geist/Geist-Italic-Variable.ttf",
     "geist-mono/GeistMono-Regular.ttf",
 ]
 SYMBOLS = ["noto-sans-math/NotoSansMath-Regular.ttf"]
@@ -75,14 +69,8 @@ def coverage() -> str:
         found = set(TTFont(OUT / (Path(name).stem + ".woff2")).getBestCmap())
         return found & set(codepoints(ranges)) if ranges else found
 
-    serif = [cmap(n) for n in TEXT[:3]]
-    stacks = {
-        "serif": serif,
-        "display": serif + [cmap(TEXT[3])],
-        "sans": [cmap(n) for n in TEXT[4:7]],
-        "poster": [cmap(TEXT[7]), cmap(TEXT[4])],
-        "mono": [cmap(TEXT[8])],
-    }
+    sans = [cmap(n) for n in TEXT[:2]]
+    stacks = {"serif": sans, "display": sans, "sans": sans, "poster": sans, "mono": [cmap(TEXT[2])]}
     math = cmap(SYMBOLS[0], ARROWS_AND_SHAPES)
     return "".join(f"{k}: {runs_of(set().union(*v, math))}\n" for k, v in stacks.items())
 

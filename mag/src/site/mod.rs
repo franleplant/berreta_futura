@@ -64,19 +64,12 @@ pub struct Issue {
     pub assets: PublishRecord,
 }
 
-const FONTS: [&str; 14] = [
-    "web/SourceSerif4SmText-Regular.woff2",
-    "web/SourceSerif4SmText-It.woff2",
-    "web/SourceSerif4SmText-Bold.woff2",
-    "web/SourceSerif4Display-Semibold.woff2",
-    "web/Inter-Regular.woff2",
-    "web/Inter-SemiBold.woff2",
-    "web/Inter-Bold.woff2",
-    "web/InterDisplay-Black.woff2",
+const FONTS: [&str; 7] = [
+    "web/Geist-Variable.woff2",
+    "web/Geist-Italic-Variable.woff2",
     "web/GeistMono-Regular.woff2",
     "web/NotoSansMath-Regular.woff2",
-    "source-serif-4/LICENSE.md",
-    "inter/LICENSE.txt",
+    "geist/OFL.txt",
     "geist-mono/OFL.txt",
     "noto-sans-math/OFL.txt",
 ];

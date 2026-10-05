@@ -1,11 +1,5 @@
-@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-It.woff2) format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Source Serif"; src: url(fonts/SourceSerif4SmText-Bold.woff2) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Source Serif Display"; src: url(fonts/SourceSerif4Display-Semibold.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter"; src: url(fonts/Inter-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter"; src: url(fonts/Inter-SemiBold.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter"; src: url(fonts/Inter-Bold.woff2) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Inter Display"; src: url(fonts/InterDisplay-Black.woff2) format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(fonts/Geist-Variable.woff2) format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(fonts/Geist-Italic-Variable.woff2) format("woff2"); font-weight: 100 900; font-style: italic; font-display: swap; }
 @font-face { font-family: "Math Symbols"; src: url(fonts/NotoSansMath-Regular.woff2) format("woff2"); unicode-range: U+2190-22FF, U+25A0-25FF; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 
@@ -19,16 +13,16 @@
   --red-text: #c8432a;
   --logo-ink: #0a0b0d;
   --on-red: #ffffff;
-  --t-1: 0.8rem; --t0: 1.15rem; --t1: 1.406rem; --t2: 1.758rem; --t3: 2.197rem; --t4: 2.747rem; --t5: 3.433rem; --t6: 4.291rem;
+  --t-1: 0.8rem; --t0: 1.08rem; --t1: 1.406rem; --t2: 1.758rem; --t3: 2.197rem; --t4: 2.747rem; --t5: 3.433rem; --t6: 4.291rem;
   --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem; --sp-4: 1rem; --sp-5: 1.5rem; --sp-6: 2.25rem; --sp-7: 3.5rem;
   --measure: 66ch;
   --wide: 46rem;
   --page: 62rem;
   --gutter: 1.25rem;
-  --serif: "Source Serif", "Math Symbols", Charter, "Iowan Old Style", Georgia, serif;
-  --display: "Source Serif Display", "Source Serif", "Math Symbols", Georgia, serif;
-  --sans: Inter, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --poster: "Inter Display", Inter, "Math Symbols", system-ui, sans-serif;
+  --serif: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --poster: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "Geist Mono", "Math Symbols", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light dark;
 }
@@ -53,7 +47,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font: 400 var(--t0)/1.62 var(--serif);
+  font: 400 var(--t0)/1.6 var(--serif);
   overflow-wrap: break-word;
 }
 main { max-width: calc(var(--page) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
@@ -83,7 +77,8 @@ img { display: block; max-width: 100%; height: auto; }
   display: block; margin: 0 0 var(--sp-3); color: var(--red-text);
   font: 600 0.72rem/1.3 var(--sans); letter-spacing: 0.16em; text-transform: uppercase;
 }
-h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; line-height: 1.12; letter-spacing: -0.015em; text-wrap: balance; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 650; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
+h1 { font-weight: 700; letter-spacing: -0.035em; }
 h1 { font-size: clamp(2.2rem, 9vw, var(--t5)); margin: 0 0 var(--sp-4); }
 h1 a { color: inherit; text-decoration: none; }
 h2 { font-size: var(--t1); margin: var(--sp-6) 0 var(--sp-3); }
@@ -94,7 +89,7 @@ ul, ol { padding-left: 1.4rem; }
 li > p { margin: 0 0 var(--sp-2); }
 li { margin-bottom: 0.3rem; }
 hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-6) 0; width: 30%; }
-blockquote { margin: var(--sp-6) 0; padding: var(--sp-4) 0; border-top: 3px solid var(--red); border-bottom: 1px solid var(--rule); font: 600 var(--t1)/1.3 var(--display); letter-spacing: -0.01em; }
+blockquote { margin: var(--sp-6) 0; padding: var(--sp-4) 0; border-top: 3px solid var(--red); border-bottom: 1px solid var(--rule); font: 600 var(--t1)/1.3 var(--display); letter-spacing: -0.02em; }
 blockquote p { margin-bottom: var(--sp-3); }
 blockquote > :last-child { margin-bottom: 0; }
 code { font-family: var(--mono); font-size: 0.86em; background: var(--well); padding: 0.05em 0.3em; border-radius: 3px; overflow-wrap: anywhere; }
@@ -120,7 +115,7 @@ tbody tr + tr td { border-top: 1px solid var(--rule); }
 .source a { font-weight: 600; }
 .source span { font-weight: 400; color: var(--muted); }
 .standfirst { margin: var(--sp-5) 0; padding: var(--sp-4) 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font: italic 400 var(--t1)/1.42 var(--serif); }
-.piece p.first::first-letter { float: left; margin: 0.06em 0.1em 0 0; font: 600 4.1em/0.82 var(--display); }
+.piece p.first::first-letter { float: left; margin: 0.06em 0.1em 0 0; font: 700 4.1em/0.82 var(--display); }
 
 .figure { margin: var(--sp-5) 0; }
 .figure img { background: #f2f1ee; }

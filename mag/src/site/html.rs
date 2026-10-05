@@ -579,8 +579,7 @@ fn document(page: &Page, site: &SiteConfig, (name, logo): (&str, &str), root: &s
 <meta name=\"color-scheme\" content=\"light dark\">\n{head}\n\
 <link rel=\"icon\" href=\"{root}favicon.svg\" type=\"image/svg+xml\">\n\
 <link rel=\"apple-touch-icon\" href=\"{root}apple-touch-icon.png\">\n\
-<link rel=\"preload\" href=\"{root}fonts/SourceSerif4SmText-Regular.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\n\
-<link rel=\"preload\" href=\"{root}fonts/SourceSerif4Display-Semibold.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\n\
+<link rel=\"preload\" href=\"{root}fonts/Geist-Variable.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\n\
 <link rel=\"stylesheet\" href=\"{root}site.css\">\n</head>\n<body>\n{SPRITE}\
 <header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}<nav class=\"topnav\"><a href=\"{home}\">{issues}</a></nav>{switch}</header>\n\
 <main>\n{body}\n</main>\n\

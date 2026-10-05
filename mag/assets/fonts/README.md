@@ -12,13 +12,17 @@ Files used: Regular, Medium, SemiBold, and Bold static TTFs from the official re
 
 Source: <https://github.com/rsms/inter> (Inter 4.001 release, `extras/ttf/InterDisplay-Black.ttf`)
 
-Draws the logo outlines in `mag/assets/brand/` (`tools/logo.py`) and sets the poster download blocks on the site (web subset). License: SIL Open Font License 1.1; see `inter/LICENSE.txt`.
+Draws the logo outlines in `mag/assets/brand/` (`tools/logo.py`) License: SIL Open Font License 1.1; see `inter/LICENSE.txt`.
+
+## Geist Sans 1.7.2
+
+Source: npm `geist@1.7.2` (`dist/fonts/geist-sans/Geist-Variable.ttf` and `Geist-Italic[wght].ttf`, saved here as `geist/Geist-Italic-Variable.ttf`), from <https://github.com/vercel/geist-font>. Variable weight axis 100 to 900. Used only by the web site (body, headings, labels, poster blocks); print and EPUB do not use it. License: SIL Open Font License 1.1; see `geist/OFL.txt`.
 
 ## Source Serif 4.005
 
 Source: <https://github.com/adobe-fonts/source-serif/releases/tag/4.005R>
 
-Files used: Small Text Regular, Italic, and Bold plus Display Semibold static TTFs from the official desktop release archive. License: SIL Open Font License 1.1; see `source-serif-4/LICENSE.md`.
+Print only. Files used: Small Text Regular, Italic, and Bold plus Display Semibold static TTFs from the official desktop release archive. License: SIL Open Font License 1.1; see `source-serif-4/LICENSE.md`.
 
 ## Geist Mono 1.7.2
 
