@@ -97,6 +97,10 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
     ] {
         assert!(a.contains_key(page), "missing {page}");
     }
+    let publish = std::fs::read_to_string(repository().join("editions/012/publish.yaml")).unwrap();
+    let publish: serde_norway::Value = serde_norway::from_str(&publish).unwrap();
+    let pdf = publish["en"]["pdf"]["url"].as_str().unwrap();
+    assert!(String::from_utf8_lossy(&a["index.html"]).contains(pdf));
     let brand = repository().join("mag/assets/brand");
     assert_eq!(
         a["favicon.svg"],

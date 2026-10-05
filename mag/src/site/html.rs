@@ -35,6 +35,8 @@ fn say(language: &str, key: &str) -> &'static str {
         "issues" => "Issues",
         "get" if spanish => "Obtener el número",
         "get" => "Get the issue",
+        "getn" if spanish => "Obtener",
+        "getn" => "Get",
         "back" if spanish => "Volver al",
         "back" => "Back to",
         "pdf" if spanish => "diseño A5 para imprimir",
@@ -709,7 +711,7 @@ fn formats(assets: Option<&super::Assets>) -> Vec<(&'static str, &super::Asset)>
         .collect()
 }
 
-fn get_issue(language: &str, assets: Option<&super::Assets>) -> String {
+fn get_issue(language: &str, assets: Option<&super::Assets>, heading: &str) -> String {
     let found = formats(assets);
     let solo = if found.len() == 1 { " solo" } else { "" };
     let buttons: String = found
@@ -720,9 +722,23 @@ fn get_issue(language: &str, assets: Option<&super::Assets>) -> String {
         true => String::new(),
         false => format!(
             "<div class=\"getissue\" id=\"get\"><h2 class=\"getissue-title\">{}</h2><div class=\"btns{solo}\">{buttons}</div></div>\n",
-            say(language, "get")
+            heading
         ),
     }
+}
+
+fn front_download(language: &str, issues: &[(String, Option<&super::Assets>)]) -> String {
+    let found = issues
+        .iter()
+        .enumerate()
+        .find_map(|(index, (name, assets))| {
+            let heading = match index {
+                0 => say(language, "get").to_string(),
+                _ => format!("{} {}", say(language, "getn"), prose(name)),
+            };
+            Some(get_issue(language, *assets, &heading)).filter(|block| !block.is_empty())
+        });
+    found.unwrap_or_default()
 }
 
 fn issue_page(issued: &Issued, images: &Images) -> Page {
@@ -751,7 +767,7 @@ fn issue_page(issued: &Issued, images: &Images) -> Page {
             )
         })
         .collect();
-    let pdf = get_issue(language, issued.assets);
+    let pdf = get_issue(language, issued.assets, say(language, "get"));
     let body = format!(
         "<section class=\"issue\">\n{}\n<div class=\"issue-head\"><p class=\"kicker\">{} · <time datetime=\"{}\">{}</time></p>\n<h1>{}</h1>\n<p class=\"subtitle\">{}</p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{}\"><h2>{}</h2><ol>{entries}</ol></nav>",
         issued.cover(&ctx, true),
@@ -996,8 +1012,18 @@ fn index_page(language: &str, issued: &[&Issued], images: &Images, other: Option
             )
         })
         .collect();
+    let candidates: Vec<_> = issued
+        .iter()
+        .map(|i| {
+            (
+                format!("{}, {}", i.issue_label(), i.edition.title),
+                i.assets,
+            )
+        })
+        .collect();
+    let pdf = front_download(language, &candidates);
     let body = format!(
-        "<section class=\"issue front\">\n<a class=\"cover-link\" href=\"{id}/\">{cover}</a>\n<div class=\"issue-head\"><p class=\"kicker\">{label} · <time datetime=\"{iso}\">{when}</time></p>\n<h1><a href=\"{id}/\">{title}</a></h1>\n<p class=\"subtitle\">{subtitle}</p>\n<p class=\"read\"><a href=\"{id}/\">{read}</a></p></div>\n</section>\n<nav class=\"contents\" aria-label=\"{issues}\"><h2>{issues}</h2><ol>{rows}</ol></nav>",
+        "<section class=\"issue front\">\n<a class=\"cover-link\" href=\"{id}/\">{cover}</a>\n<div class=\"issue-head\"><p class=\"kicker\">{label} · <time datetime=\"{iso}\">{when}</time></p>\n<h1><a href=\"{id}/\">{title}</a></h1>\n<p class=\"subtitle\">{subtitle}</p>\n<p class=\"read\"><a href=\"{id}/\">{read}</a></p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{issues}\"><h2>{issues}</h2><ol>{rows}</ol></nav>",
         id = escape_html(&latest.edition.id),
         cover = latest.cover(&ctx, true),
         label = escape_html(&latest.issue_label()),
@@ -1101,7 +1127,7 @@ pub fn pages(
 
 #[cfg(test)]
 mod tests {
-    use super::{block, body, download, dropped, get_issue, Ctx, Image, Piece};
+    use super::{block, body, download, dropped, front_download, get_issue, Ctx, Image, Piece};
     use crate::model::doc::{Block, Document, Inline};
     use crate::model::kinds::{ContentMode, FigureFit, FigureLayout, FigureTone};
     use crate::model::manifest::{Article, ArticleOpenerArt};
@@ -1127,8 +1153,16 @@ mod tests {
         assert!(pdf.contains("<span class=\"btn-label\">PDF</span><span class=\"btn-meta\">127 MB, diseño A5 para imprimir</span>"));
         assert!(download("es", "epub", es.epub.as_ref().unwrap())
             .contains("x.epub?v=01234567\" type=\"application/epub+zip\" download>"));
-        assert!(get_issue("en", record.get("none")).is_empty());
-        assert!(get_issue("es", Some(es)).contains("5.0 MB, para lectores electrónicos"));
+        assert!(get_issue("en", record.get("none"), "Get").is_empty());
+        assert!(get_issue("es", Some(es), "Get").contains("5.0 MB, para lectores electrónicos"));
+        let older = [
+            ("Issue 12, New".to_string(), record.get("none")),
+            ("Issue 11, What Trust Costs".to_string(), Some(es)),
+        ];
+        let block = front_download("en", &older);
+        assert!(block.contains("<h2 class=\"getissue-title\">Get Issue 11, What Trust Costs</h2>"));
+        let newest = [older[1].clone(), older[0].clone()];
+        assert!(front_download("es", &newest).contains(">Obtener el número</h2>"));
         assert!(publish_record(&dir.join("absent.yaml")).unwrap().is_empty());
         std::fs::write(
             &path,
