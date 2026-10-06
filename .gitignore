@@ -37,3 +37,4 @@ art-directions/experiments/
 .cloudflare/
 .wrangler/
 editions/*/epub/
+**/showcase.html
