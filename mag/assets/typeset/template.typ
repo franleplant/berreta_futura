@@ -429,7 +429,7 @@
   let right = band - margin
   let top = COVER-H - 46 - c.title_size - 60
   let veil = tint.transparentize((1 - s.alpha) * 100%)
-  cover-put(0, 0, image(spec.art, width: band * 1pt, height: COVER-H * 1pt, fit: "cover"))
+  cover-put(0, 0, image(spec.art, width: (band + 2) * 1pt, height: COVER-H * 1pt, fit: "cover"))
   cover-fade(band, top, COVER-H - top, ((tint.transparentize(100%), 0%), (veil, 60 / (COVER-H - top) * 100%), (veil, 100%)))
   if s.top_gradient {
     let ink = rgb(d.color.ink)
