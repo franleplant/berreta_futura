@@ -17,7 +17,7 @@ li > p { margin: 0 0 0.3em; }
 hr { border: 0; border-top: 1px solid #b9bbc0; margin: 2em auto; width: 30%; }
 blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 3px solid #f05738; font-style: italic; }
 code { font-family: Menlo, "SF Mono", monospace; font-size: 0.82em; }
-pre { font-family: Menlo, "SF Mono", monospace; font-size: 0.72em; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; background: #f4f5f7; padding: 0.7em 0.8em; border-radius: 4px; margin: 0 0 1em; }
+pre { font-family: Menlo, "SF Mono", monospace; font-size: 0.72em; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; background: #f4f5f7; padding: 0.7em 0.8em; border-radius: 4px; margin: 0 0 1em; tab-size: 2; -moz-tab-size: 2; }
 pre code { font-size: 1em; }
 table { border-collapse: collapse; margin: 1.2em 0; font-size: 0.8em; line-height: 1.35; border-top: 1px solid; border-bottom: 1px solid; }
 th, td { text-align: left; vertical-align: top; padding: 0.3em 0.6em 0.3em 0; }
