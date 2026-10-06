@@ -118,6 +118,15 @@ static KEBAB_ID: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap());
 
 const DEFAULT_JOBS: usize = 14;
+const COVER_VARIANTS: u32 = 2;
+static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-v\d+$").unwrap());
+
+fn variants(brief: &Brief, candidates: u32) -> u32 {
+    match brief.purpose {
+        ArtPurpose::Cover => candidates.min(COVER_VARIANTS),
+        _ => candidates,
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Brief {
@@ -314,12 +323,75 @@ fn previous_briefs(edition_dir: &Path, purposes: &[ArtPurpose]) -> Result<Vec<Br
     Ok(out)
 }
 
+fn approved_covers(edition_dir: &Path) -> Vec<(String, String)> {
+    let Some(root) = edition_dir.parent() else {
+        return Vec::new();
+    };
+    let mut dirs: Vec<PathBuf> = fs::read_dir(root)
+        .map(|entries| entries.filter_map(|e| e.ok().map(|e| e.path())).collect())
+        .unwrap_or_default();
+    dirs.sort();
+    dirs.iter()
+        .filter(|dir| dir.as_path() != edition_dir)
+        .filter_map(|dir| {
+            let spec: serde_norway::Value =
+                serde_norway::from_str(&read(&dir.join("edition.yaml")).ok()?).ok()?;
+            let picked = Path::new(spec["cover"]["art_path"].as_str()?)
+                .file_stem()?
+                .to_string_lossy()
+                .to_string();
+            let id = VARIANT_SUFFIX.replace(&picked, "").to_string();
+            let prompt = previous_briefs(dir, &[ArtPurpose::Cover])
+                .ok()?
+                .into_iter()
+                .find(|b| b.id == id)?
+                .prompt;
+            Some((dir.file_name()?.to_string_lossy().to_string(), prompt))
+        })
+        .collect()
+}
+
+fn cast_section(cast: &[CastMember]) -> String {
+    if cast.is_empty() {
+        return String::new();
+    }
+    let mut out = String::new();
+    let names: Vec<&str> = cast.iter().map(|m| m.name.as_str()).collect();
+    out += &format!(
+        "\nThe art direction defines a canonical recurring cast: {}. Never \
+         describe their appearance in a prompt; the pipeline appends each \
+         member's canonical description verbatim to every prompt that \
+         names the member. Name each cast member who appears in a scene \
+         (the direction's constraints say who must appear), and give only \
+         pose, action, expression, props, and setting; an interior brief \
+         naming no cast member is rejected. Prompts still restate the \
+         direction's style, palette, constraints, and avoid-list.\n",
+        names.join(", ")
+    );
+    out
+}
+
+fn approved_section(approved: &[(String, String)]) -> String {
+    if approved.is_empty() {
+        return String::new();
+    }
+    let body: String = approved
+        .iter()
+        .map(|(edition, prompt)| format!("--- edition {edition}\n{prompt}\n\n"))
+        .collect();
+    produce::section(
+        "covers the editor approved in past editions (the taste to match; never reuse their objects)",
+        &body,
+    )
+}
+
 fn build_brief_prompt(
     edition_yaml_text: &str,
     candidates: u32,
     only: Option<&[ArtPurpose]>,
     articles: Option<&[String]>,
     rejected: &[Brief],
+    approved: &[(String, String)],
     note: Option<&str>,
 ) -> Result<String> {
     let process_doc = read(&prompts_path("illustrations.md"))?;
@@ -335,26 +407,17 @@ fn build_brief_prompt(
     }
     out += &produce::section("edition.yaml", edition_yaml_text);
     out += FRAME_GUIDE;
-    if !cast.is_empty() {
-        let names: Vec<&str> = cast.iter().map(|m| m.name.as_str()).collect();
-        out += &format!(
-            "\nThe art direction defines a canonical recurring cast: {}. Never \
-             describe their appearance in a prompt; the pipeline appends each \
-             member's canonical description verbatim to every prompt that \
-             names the member. Name each cast member who appears in a scene \
-             (the direction's constraints say who must appear), and give only \
-             pose, action, expression, props, and setting; an interior brief \
-             naming no cast member is rejected. Prompts still restate the \
-             direction's style, palette, constraints, and avoid-list.\n",
-            names.join(", ")
-        );
-    }
+    out += &cast_section(&cast);
     if !rejected.is_empty() {
         let mut body = String::new();
         for b in rejected {
             body += &format!("--- {} [{}]\n{}\n\n", b.id, b.purpose, b.prompt);
         }
         out += &produce::section("rejected earlier briefs (do not repeat)", &body);
+    }
+    let covers_in_scope = articles.is_none() && only.is_none_or(|p| p.contains(&ArtPurpose::Cover));
+    if covers_in_scope {
+        out += &approved_section(approved);
     }
     if let Some(note) = note {
         out += &produce::section("editor's note for this round", note);
@@ -377,26 +440,30 @@ fn build_brief_prompt(
                 out += &format!(
                     "\nPropose a fresh round of art briefs covering ONLY these \
                  purposes: {}. Every earlier candidate for them was rejected; \
-                 their briefs are above. Keep each branch's established art \
+                 their briefs are above. Keep the established art \
                  direction and the shared constraints, but change the \
                  editorial proposition, subject, metaphor, and composition \
                  completely: reuse nothing conceptual from the rejected \
                  briefs.\n\n\
                  You are not generating images yourself; a later pipeline \
                  step will run each brief through an image generator \
-                 {candidates} time(s) to produce that many variants.\n\n",
-                    join(purposes)
+                 {candidates} time(s) ({cover} for a cover brief) to produce \
+                 that many variants.\n\n",
+                    join(purposes),
+                    cover = candidates.min(COVER_VARIANTS)
                 );
             }
             None => {
                 out += &format!(
                     "\nPropose the complete art-brief slate for this edition now. You are \
          not generating images yourself; a later pipeline step will run each \
-         brief through an image generator {candidates} time(s) to produce that \
-         many variants. Per prompts/illustrations.md the slate covers the \
-         cover (one brief per cover branch), one opener brief and one tail \
+         brief through an image generator {candidates} time(s) ({cover} for a \
+         cover brief) to produce that many variants. Per prompts/illustrations.md \
+         the slate covers the cover (as many briefs as the cover document asks \
+         for), one opener brief and one tail \
          brief per article, and closing-plate briefs keeping the approved pool \
-         at three or more.\n\n"
+         at three or more.\n\n",
+                    cover = candidates.min(COVER_VARIANTS)
                 );
             }
         }
@@ -594,7 +661,7 @@ fn write_generate_script(
     script += "set -eu\n";
     for brief in briefs {
         script += &format!("\n# {} [{}]\n", brief.id, brief.purpose);
-        for variant in 1..=candidates {
+        for variant in 1..=variants(brief, candidates) {
             let (_, cmd_str, env) = candidate_command(gen_cmd, brief, variant, round_dir)?;
             let exports: String = env
                 .iter()
@@ -644,7 +711,7 @@ fn generate_all(
 ) -> Result<Vec<GeneratedItem>> {
     let jobs: Vec<(String, u32, String, String, GenEnv)> = briefs
         .iter()
-        .flat_map(|b| (1..=candidates).map(move |v| (b, v)))
+        .flat_map(|b| (1..=variants(b, candidates)).map(move |v| (b, v)))
         .map(|(b, v)| {
             let (file, cmd, env) = candidate_command(gen_cmd, b, v, round_dir)?;
             Ok((b.id.clone(), v, file, cmd, env))
@@ -2225,6 +2292,7 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
         only_purposes.as_deref(),
         only_articles.as_deref(),
         &rejected,
+        &approved_covers(&edition_dir),
         note,
     )?;
     let (cast, license) = match art_direction_section(&edition_yaml_text)? {
@@ -2414,6 +2482,36 @@ mod tests {
         assert_eq!(cmd, "gen \"$MAG_PROMPT\" -o \"$MAG_OUT\"");
         assert_eq!(env[0].1, "a robot's day (variation 2)");
         assert_eq!(env[1].1, "rounds/r1/tail-a-v2.png");
+    }
+
+    #[test]
+    fn approved_covers_come_from_other_editions_picks_and_covers_get_two_variants() {
+        let root = std::env::temp_dir().join(format!("mag-approved-{}", std::process::id()));
+        let past = root.join("012");
+        let round = past.join("art/rounds/2026-01-01T00-00-00");
+        fs::create_dir_all(&round).unwrap();
+        fs::create_dir_all(root.join("013")).unwrap();
+        fs::write(
+            past.join("edition.yaml"),
+            "cover:\n  art_path: editions/012/art/picks/cover-wildcard-gold-v3.jpg\n",
+        )
+        .unwrap();
+        fs::write(
+            round.join("briefs.yaml"),
+            "briefs:\n- id: cover-wildcard-gold\n  purpose: cover\n  prompt: molten gold\n\
+             - id: cover-synthetic-grey\n  purpose: cover\n  prompt: grey poster\n",
+        )
+        .unwrap();
+        fs::write(root.join("013/edition.yaml"), "cover:\n  art_path: TODO\n").unwrap();
+        let approved = approved_covers(&root.join("013"));
+        assert_eq!(
+            approved,
+            vec![("012".to_string(), "molten gold".to_string())]
+        );
+        assert!(approved_section(&approved).contains("molten gold"));
+        assert_eq!(variants(&brief("c", "cover", "p"), 6), 2);
+        assert_eq!(variants(&brief("t", "tail", "p"), 6), 6);
+        fs::remove_dir_all(&root).unwrap();
     }
 
     fn brief(id: &str, purpose: &str, prompt: &str) -> Brief {

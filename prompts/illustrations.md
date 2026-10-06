@@ -10,9 +10,9 @@ round and an explicit new selection.
 
 ## The four slots
 
-- **Cover** — one per edition, derived from a one-sentence reading of the
-  whole edition. Governed entirely by `prompts/cover-art-candidates.md`
-  (three branches, full rounds, square ≥1000 px, no typography). This
+- **Cover** — one per edition, picked from a round of eight briefs drawn
+  from the articles. Governed entirely by `prompts/cover-art-candidates.md`
+  (the editor's approved taste, portrait 2:3, no typography). This
   document adds nothing to the cover rules; briefs for the cover restate
   that document's constraints.
 - **Article openers** — exactly one per article, placed at the article's
@@ -74,8 +74,8 @@ continuity across seven openers). When an evolution proves durable, promote
 it back into `art-directions/` as a new named direction.
 
 Interior illustrations (openers, tails, plates) all share the edition's one
-art direction. The cover follows its own three-branch grammar and only
-borrows the direction when the `art_directed` branch chooses to.
+art direction. The cover follows its own document and never borrows the
+interior direction.
 
 ## Recurring cast
 
@@ -133,7 +133,7 @@ the boy with round glasses, and **Maro**, his helper robot.
 this document, `prompts/cover-art-candidates.md`, the edition's art
 direction file, and `edition.yaml`. A complete slate covers:
 
-- the cover, per the cover document's three branches;
+- the cover, the eight briefs the cover document asks for;
 - one opener brief per article, carrying that article's `article_id`;
 - one tail brief per article, carrying that article's `article_id`;
 - closing-plate briefs to keep the approved pool at three or more.
