@@ -16,7 +16,10 @@ pub struct PublishArgs {
         help = "The approved PDF, uploaded to the issue's GitHub Release"
     )]
     pub pdf: PathBuf,
-    #[arg(long, help = "The EPUB to upload with it (`mag epub` writes one)")]
+    #[arg(
+        long,
+        help = "The EPUB to upload with it; without it, publish builds one with `mag epub` (every issue ships both)"
+    )]
     pub epub: Option<PathBuf>,
     #[arg(long, default_value = "en", help = "The language these files are")]
     pub lang: String,
@@ -67,10 +70,21 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             site.repo
         )
     };
-    let mut uploads = vec![upload(&args.pdf, "pdf", b"%PDF-", &stem, &url)?];
-    if let Some(epub) = &args.epub {
-        uploads.push(upload(epub, "epub", b"PK", &stem, &url)?);
-    }
+    let epub = match &args.epub {
+        Some(epub) => epub.clone(),
+        None => {
+            crate::site::epub::run(&crate::site::epub::EpubArgs {
+                edition: args.edition.clone(),
+                lang: args.lang.clone(),
+                cover: None,
+            })?;
+            dir.join("epub").join(format!("{stem}.epub"))
+        }
+    };
+    let uploads = vec![
+        upload(&args.pdf, "pdf", b"%PDF-", &stem, &url)?,
+        upload(&epub, "epub", b"PK", &stem, &url)?,
+    ];
     let path = dir.join("publish.yaml");
     if args.dry_run {
         for one in &uploads {

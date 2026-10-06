@@ -44,7 +44,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   writes `editions/NNN/epub/<publication>-NNN-<lang>.epub` (gitignored; it
   ships through `mag publish`).
 - `mag publish NNN --pdf <file> [--epub <file>] [--lang en] [--dry-run]` ships
-  the approved files to the issue's GitHub Release (`gh`, logged in on the
+  the approved files to the issue's GitHub Release (every issue ships both the
+  reader PDF and the EPUB; without `--epub` it builds one with `mag epub`) (`gh`, logged in on the
   owner's laptop; repo from `[site] repo`): tag `issue-NNN`, created when
   missing, assets `berreta-futura-NNN-<lang>.pdf` and `.epub` replaced in place
   with `--clobber` (only the latest exists), an asset whose sha256 already
