@@ -28,8 +28,8 @@ articles:
   title: The Actor Model in a Nutshell
   author: The Editors
   opener_art:
-    path: editions/006/art/picks/opener-actor-model-v1.jpg
-    alt_text: Pedro posts a folded note through the letter slot of one of five separate huts, Flopaz listens at another slot, and Maro carries more notes between them.
+    path: editions/006/art/picks/opener-actor-sandcastles-v3.jpg
+    alt_text: 'On a beach Pedro, Flopaz, and Maro each tend their own sandcastle; Pedro tosses a seashell into Flopaz''s bucket while Maro pats a brand-new tiny castle into shape.'
     credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
   short_title: The Actor Model
   display_emphasis: Actor Model
@@ -40,13 +40,13 @@ articles:
   - how-the-actor-model-meets-the-needs-of-modern-di-ebf5a52d
   - introduction-to-the-actor-model-using-real-actor-2d2aad66
   manuscript: editions/006/articles/the-actor-model-in-a-nutshell.md
-  tail_art_path: editions/006/art/picks/tail-actor-model-v2.jpg
+  tail_art_path: editions/006/art/picks/tail-actor-stepping-stones-v3.jpg
 - id: workers-durable-objects-beta-a-new-approach-to-s
   title: 'Durable Objects: A New Approach to Stateful Serverless'
   author: Kenton Varda
   opener_art:
-    path: editions/006/art/picks/opener-durable-objects-v1.jpg
-    alt_text: Maro lifts one small lit room, desk and spinning disk inside, toward the empty socket Flopaz marks with a finger in a glass globe full of such rooms, while Pedro leans in to look.
+    path: editions/006/art/picks/opener-durable-objects-one-scarf-v2.jpg
+    alt_text: 'Maro knits one long striped scarf while Pedro and Flopaz each hold out a ball of yarn, waiting for their color to be worked in next.'
     credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
   short_title: Durable Objects
   display_emphasis: Durable
@@ -56,13 +56,13 @@ articles:
   - workers-durable-objects-beta-a-new-approach-to-s-1a040568
   manuscript: editions/006/articles/workers-durable-objects-beta-a-new-approach-to-s.md
   author_note: Kenton Varda writes on the Cloudflare blog.
-  tail_art_path: editions/006/art/picks/tail-durable-objects-v6.jpg
+  tail_art_path: editions/006/art/picks/tail-durable-objects-snail-v1.jpg
 - id: durable-objects-easy-fast-correct-choose-three
   title: 'Easy, Fast, Correct: Choose Three'
   author: Kenton Varda
   opener_art:
-    path: editions/006/art/picks/opener-choose-three-v1.jpg
-    alt_text: Pedro lifts his hands away from a three-armed balance that is somehow perfectly level while Maro steadies the third pan and Flopaz holds the retired two-pan scale.
+    path: editions/006/art/picks/opener-choose-three-triple-cone-v3.jpg
+    alt_text: 'Pedro carries a perfectly steady three-scoop ice-cream cone while Flopaz walks backward ready to catch a scoop and Maro holds out an unneeded napkin.'
     credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
   short_title: Choose Three
   display_emphasis: Correct
@@ -72,13 +72,13 @@ articles:
   - durable-objects-easy-fast-correct-choose-three-e5ada0af
   manuscript: editions/006/articles/durable-objects-easy-fast-correct-choose-three.md
   author_note: Kenton Varda continues his Durable Objects story on the Cloudflare blog.
-  tail_art_path: editions/006/art/picks/tail-choose-three-v3.jpg
+  tail_art_path: editions/006/art/picks/tail-choose-three-triplet-bike-v3.jpg
 - id: run-ci-cd-for-millions-of-repos-on-your-platform
   title: A CI Pipeline Is Just a Workflow
   author: André Venceslau, Mia Malden, Tomáš Hobza
   opener_art:
-    path: editions/006/art/picks/opener-ci-workflow-v3.jpg
-    alt_text: A hook lifts a single derailed cart back onto a workshop rail while the rest of the line rolls on, Pedro at the crank, Maro holding the spilled bolts, Flopaz checking the moving carts by hand.
+    path: editions/006/art/picks/opener-ci-dominoes-v3.jpg
+    alt_text: 'Pedro nudges the one domino that stopped a half-fallen run, Flopaz sits calmly by the toppled start, and Maro waits at the end for the last one to fall.'
     credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
   short_title: CI Pipeline
   display_emphasis: CI
@@ -88,13 +88,13 @@ articles:
   - run-ci-cd-for-millions-of-repos-on-your-platform-66c52583
   manuscript: editions/006/articles/run-ci-cd-for-millions-of-repos-on-your-platform.md
   author_note: André Venceslau, Mia Malden, and Tomáš Hobza write on the Cloudflare blog.
-  tail_art_path: editions/006/art/picks/tail-ci-workflow-v1.jpg
+  tail_art_path: editions/006/art/picks/tail-ci-washing-line-v2.jpg
 - id: x402-in-a-nutshell
   title: x402 in a Nutshell
   author: Cloudflare
   opener_art:
-    path: editions/006/art/picks/opener-x402-v3.jpg
-    alt_text: A folded paper messenger drops a plain coin into a turnstile slot and the gate opens, while Pedro offers coins from a bowl, Flopaz watches from the wall, and Maro raises the bar.
+    path: editions/006/art/picks/opener-x402-cherry-stall-v3.jpg
+    alt_text: 'At a tiny fruit stand Maro offers one seashell for the single cherry Flopaz holds out, while Pedro waits by the tin with a grin.'
     credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
   short_title: x402
   display_emphasis: x402
@@ -106,13 +106,13 @@ articles:
   manuscript: editions/006/articles/x402-in-a-nutshell.md
   author_note: From posts by Will Allen, Cam Whiteside, Rohin Lohe, Steve James, Justin Ridgely,
     and Will Papper.
-  tail_art_path: editions/006/art/picks/tail-x402-v6.jpg
+  tail_art_path: editions/006/art/picks/tail-x402-shell-bench-v3.jpg
 - id: the-future-is-for-everyone
   title: The Future is for Everyone
   author: Mark Zuckerberg
   opener_art:
-    path: editions/006/art/picks/opener-future-everyone-v2.jpg
-    alt_text: On a dusk hillside Pedro and Flopaz hold their own small lanterns while Maro passes up a third, with many lanterns already rising overhead.
+    path: editions/006/art/picks/opener-future-over-the-hedge-v2.jpg
+    alt_text: 'Maro lifts Flopaz onto its shoulders so she can see over a tall hedge, while Pedro, standing on a crate, points to the view beyond.'
     credit: Original illustration for this edition, art direction Story-Led Boy and Robot, Gentle Print Color.
   short_title: For Everyone
   display_emphasis: Everyone
@@ -122,15 +122,19 @@ articles:
   - the-future-is-for-everyone-389f6799
   manuscript: editions/006/articles/the-future-is-for-everyone.md
   author_note: Mark Zuckerberg is the founder and chief executive of Meta.
-  tail_art_path: editions/006/art/picks/tail-future-everyone-v2.jpg
+  tail_art_path: editions/006/art/picks/tail-future-sailboats-v3.jpg
 closing_plates:
-- title: The Lamplighters' Wall
-  art_path: editions/006/art/picks/closing-lamplighters-wall-v2.jpg
-- title: The Night Sorting Tower
-  art_path: editions/006/art/picks/closing-night-sorting-tower-v3.jpg
-- title: The Toll Bridge at Dawn
-  art_path: editions/006/art/picks/closing-toll-bridge-dawn-v2.jpg
-- title: The Greenhouse of Domes
-  art_path: editions/006/art/picks/closing-greenhouse-of-domes-v1.jpg
-editorial: manuscript/editorial.md
-tail_art_fit: contain
+- title: Balloon Ascent
+  art_path: editions/006/art/picks/closing-balloon-ascent-v1.jpg
+- title: Rain Treehouse
+  art_path: editions/006/art/picks/closing-rain-treehouse-v3.jpg
+- title: Snow Fort
+  art_path: editions/006/art/picks/closing-snow-fort-v1.jpg
+- title: Rope Bridge
+  art_path: editions/006/art/picks/closing-rope-bridge-v2.jpg
+- title: Tide Pools
+  art_path: editions/006/art/picks/closing-tide-pools-v2.jpg
+- title: Night Train Window
+  art_path: editions/006/art/picks/closing-night-train-window-v2.jpg
+- title: Autumn Leaf Pile
+  art_path: editions/006/art/picks/closing-autumn-leaf-pile-v4.jpg
