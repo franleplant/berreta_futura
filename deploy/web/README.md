@@ -22,7 +22,13 @@ is resolved relative to the config file, so `../../site` is the repo's `site/`.
 mag/target/release/mag publish 011 --pdf editions/011/render-.../en/reader.pdf --epub editions/011/epub/berreta-futura-011-en.epub
 mag/target/release/mag site
 git add site editions/011/publish.yaml && git commit && git push
+uv run tools/deploy.py
 ```
+
+`tools/deploy.py` waits for the Workers Build of the pushed commit and fails
+if it fails. GitHub push events are occasionally dropped (2026-10-06: the push
+of 97d4cce9 never produced a build); when no build appears within three
+minutes it deploys `site/` with wrangler from the laptop instead.
 
 Run `publish` only when there is a new PDF or EPUB. The push to `main` triggers
 Workers Builds, which deploys when `site/**` changed. Fallback from the laptop:
