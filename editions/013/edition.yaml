@@ -16,7 +16,7 @@ cover:
   headline: The Yellow Handle
   deck: 'Harel''s statecharts in two parts, evals with error bars, Uber''s MCP Gateway, ChatGPT''s MCP Events, the Clef decision models, Cloudflare Observability, and Cloudflare OS'
   back_text: Setting the month on a Citizen Quartz Multi-Alarm, press d, then b, and hold both. The month advances, the beeper sounds, the light comes on, just as the diagram predicted. Its author drew it by poking at the watch, and needed some strenuous finger-twisting to find the one 2-second wait where the beep test goes quiet.
-  art_path: editions/013/art/picks/cover-synthetic-lever-throw-v3.jpg
+  art_path: editions/013/art/picks/cover-dye-drop-traces-v2.jpg
 articles:
 - id: statecharts-depth-and-orthogonality
   title: 'Statecharts, Part 1: Depth and Orthogonality'
