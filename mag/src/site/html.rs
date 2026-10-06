@@ -20,6 +20,7 @@ const OPENER: &str = "__opener__";
 const BODY_SIZES: &str = "(min-width: 44rem) 40rem, calc(100vw - 2.5rem)";
 const WIDE_SIZES: &str = "(min-width: 44rem) 40rem, 100vw";
 const COVER_SIZES: &str = "(min-width: 52rem) 20rem, min(22rem, calc(100vw - 2.5rem))";
+const SHELF_SIZES: &str = "(min-width: 56rem) 15rem, (min-width: 40rem) 31vw, 46vw";
 
 type Images = BTreeMap<PathBuf, Image>;
 
@@ -1007,10 +1008,15 @@ fn index_page(language: &str, issued: &[&Issued], images: &Images, other: Option
     let rows: String = issued
         .iter()
         .map(|i| {
+            let cover = i
+                .edition
+                .cover_art
+                .as_deref()
+                .map_or(String::new(), |art| ctx.picture(art, "", SHELF_SIZES, false));
             format!(
-                "<li><a href=\"{}/\"><span class=\"num\">{}</span><span class=\"entry-main\"><span class=\"entry-title\">{}</span><span class=\"entry-author\">{}</span></span></a></li>",
+                "<li><a href=\"{}/\">{cover}<span class=\"shelf-num\">{}</span><span class=\"shelf-title\">{}</span><span class=\"shelf-date\">{}</span></a></li>",
                 escape_html(&i.edition.id),
-                escape_html(&i.edition.issue_number),
+                escape_html(&i.issue_label()),
                 prose(&i.edition.title),
                 date(language, &i.edition.publication_date)
             )
@@ -1027,7 +1033,7 @@ fn index_page(language: &str, issued: &[&Issued], images: &Images, other: Option
         .collect();
     let pdf = front_download(language, &candidates);
     let body = format!(
-        "<section class=\"issue front\">\n<a class=\"cover-link\" href=\"{id}/\">{cover}</a>\n<div class=\"issue-head\"><p class=\"kicker\">{label} · <time datetime=\"{iso}\">{when}</time></p>\n<h1><a href=\"{id}/\">{title}</a></h1>\n<p class=\"subtitle\">{subtitle}</p>\n<p class=\"read\"><a href=\"{id}/\">{read}</a></p>\n{pdf}</div>\n</section>\n<nav class=\"contents\" aria-label=\"{issues}\"><h2>{issues}</h2><ol>{rows}</ol></nav>",
+        "<section class=\"issue front\">\n<a class=\"cover-link\" href=\"{id}/\">{cover}</a>\n<div class=\"issue-head\"><p class=\"kicker\">{label} · <time datetime=\"{iso}\">{when}</time></p>\n<h1><a href=\"{id}/\">{title}</a></h1>\n<p class=\"subtitle\">{subtitle}</p>\n<p class=\"read\"><a href=\"{id}/\">{read}</a></p>\n{pdf}</div>\n</section>\n<nav class=\"contents shelf\" aria-label=\"{issues}\"><h2>{issues}</h2><ol>{rows}</ol></nav>",
         id = escape_html(&latest.edition.id),
         cover = latest.cover(&ctx, true),
         label = escape_html(&latest.issue_label()),
