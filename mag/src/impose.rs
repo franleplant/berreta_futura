@@ -145,6 +145,11 @@ fn number(object: &Object) -> Result<f64> {
     }
 }
 
+pub fn sheet_x(media: [f64; 4], left: bool) -> f64 {
+    let width = (media[2] - media[0]) * page_scale(media);
+    A4_LANDSCAPE_POINTS.0 - width * if left { 2.0 } else { 1.0 }
+}
+
 pub fn page_scale(media: [f64; 4]) -> f64 {
     let (width, height) = (media[2] - media[0], media[3] - media[1]);
     (A4_LANDSCAPE_POINTS.0 / 2.0 / width).min(A4_LANDSCAPE_POINTS.1 / height)
@@ -154,13 +159,13 @@ fn sheet(
     sources: &[SourcePage],
     spread: (Option<usize>, Option<usize>),
 ) -> Result<(Vec<u8>, Dictionary)> {
-    let half = A4_LANDSCAPE_POINTS.0 / 2.0;
     let mut content: Option<Vec<u8>> = None;
     let mut resources = Dictionary::new();
-    for (number, x) in [(spread.0, 0.0), (spread.1, half)] {
+    for (number, left) in [(spread.0, true), (spread.1, false)] {
         let Some(number) = number else { continue };
         let source = &sources[number - 1];
         let scale = page_scale(source.media);
+        let x = sheet_x(source.media, left);
         let renames = merge_resources(&mut resources, &source.resources);
         let placed = place(source, scale, x, &renames)?;
         content = Some(match content {

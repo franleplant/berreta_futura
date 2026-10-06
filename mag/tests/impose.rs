@@ -117,7 +117,7 @@ fn a_reader_whose_pages_live_in_an_object_stream_imposes() {
     let first = *imposed.get_pages().values().next().expect("a sheet");
     let content = String::from_utf8_lossy(&imposed.get_page_content(first)).into_owned();
     assert!(
-        content.contains("q\n1 0 0 1 420.9449 0 cm"),
+        content.contains("q\n1 0 0 1 422.36224 0 cm"),
         "the media box reads at its shortest f32 form, 595.2756: {content}"
     );
 }

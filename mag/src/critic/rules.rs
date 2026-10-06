@@ -15,7 +15,7 @@ use crate::critic::metrics::{
 };
 use crate::critic::text::{page_text, Run};
 use crate::impose::{
-    cover_wrap_plan, imposed_reader_page_plan, page_scale, section_reader_pages,
+    cover_wrap_plan, imposed_reader_page_plan, page_scale, section_reader_pages, sheet_x,
     A4_LANDSCAPE_POINTS,
 };
 use crate::pdf_text::{page_glyphs_with_hidden, Glyph};
@@ -755,15 +755,15 @@ fn imposed_runs(reader: &Leg, runs: &[Vec<Run>], section: &str) -> Result<Vec<Ve
     } else {
         imposed_reader_page_plan(&section_reader_pages(runs.len(), section)?)
     };
-    let half = A4_LANDSCAPE_POINTS.0 / 2.0;
     Ok(plan
         .into_iter()
         .map(|(left, right)| {
-            [(left, 0.0), (right, half)]
+            [(left, true), (right, false)]
                 .into_iter()
-                .filter_map(|(page, shift)| Some((page?, shift)))
-                .flat_map(|(page, shift)| {
+                .filter_map(|(page, side)| Some((page?, side)))
+                .flat_map(|(page, side)| {
                     let scale = page_scale(reader.media[page - 1]);
+                    let shift = sheet_x(reader.media[page - 1], side);
                     runs[page - 1].iter().map(move |run| Run {
                         text: run.text.clone(),
                         x: run.x * scale + shift,
