@@ -50,10 +50,10 @@ articles:
     anchor: The loop
     layout: evidence_band_prose
   opener_art:
-    path: editions/008/art/picks/warp-opener-the-run-that-fixes-its-track-v2.jpg
-    alt_text: Maro releases a marble at the left of a long wooden marble run while Pedro chalks a cross on the floor where the last one flew off and Flopaz tilts the track section that will send the next one into the cup.
+    path: editions/008/art/picks/warp-opener-the-kite-that-retunes-v3.jpg
+    alt_text: 'On a grassy hilltop Maro holds the reel of a diamond kite that lurches in the wind, Pedro points up at its too-short tail, and Flopaz kneels in the grass tying one more cloth bow onto a longer tail ready to swap on.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/008/art/picks/warp-tail-last-card-of-the-morning-v2.jpg
+  tail_art_path: editions/008/art/picks/warp-tail-riding-high-at-evening-v3.jpg
 - id: automated-researchers-can-reliably-mitigate-alignment-failures
   title: Automated Researchers Can Reliably Mitigate Alignment Failures
   short_title: Mitigate Alignment Failures
@@ -85,10 +85,10 @@ articles:
     anchor: A weaker model aligning a stronger one
     layout: compact_band
   opener_art:
-    path: editions/008/art/picks/researchers-opener-the-clouded-flasks-v3.jpg
-    alt_text: At a long workroom bench Maro adds a single drop to the first clouded flask in a row while Pedro holds the next one up to the window light and Flopaz stands beside a nearly finished sand timer.
+    path: editions/008/art/picks/researchers-opener-the-small-one-straightens-the-tree-v4.jpg
+    alt_text: 'At the edge of an orchard Maro leans back with all its weight on a soft strap tied round a tall leaning young tree, while Pedro holds a plumb line against the trunk with one eye shut and Flopaz taps the anchoring stake in with a mallet.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/008/art/picks/researchers-tail-the-beetle-crosses-v3.jpg
+  tail_art_path: editions/008/art/picks/researchers-tail-shade-of-the-straight-tree-v2.jpg
 - id: running-a-software-factory-efficiently-at-uber-scale
   title: A Software Factory at Uber Scale
   short_title: A Software Factory at Uber Scale
@@ -122,10 +122,10 @@ articles:
     anchor: Price per token
     layout: compact_band
   opener_art:
-    path: editions/008/art/picks/uber-opener-the-lighter-belt-v3.jpg
-    alt_text: A factory conveyor crosses the frame loaded with crates at the left and carrying single small parcels at the right, as Pedro lifts a crate off the belt, Maro holds up a smaller drive motor, and Flopaz watches a wall dial's needle sink.
+    path: editions/008/art/picks/uber-opener-the-right-sized-tool-v3.jpg
+    alt_text: 'On a back porch step Pedro wobbles under an enormous sledgehammer raised over a single walnut, Maro hurries in holding out a small wooden nutcracker, and Flopaz sits calmly on the step cracking walnuts into a bowl with one of her own.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/008/art/picks/uber-tail-closing-time-v3.jpg
+  tail_art_path: editions/008/art/picks/uber-tail-three-nutcrackers-at-dusk-v2.jpg
 - id: inference-will-eat-the-world
   title: Inference Will Eat the World
   short_title: Inference Will Eat the World
@@ -138,10 +138,10 @@ articles:
   - inference-will-eat-the-world-053ed26b
   manuscript: editions/008/articles/inference-will-eat-the-world.md
   opener_art:
-    path: editions/008/art/picks/inference-opener-one-wheel-turns-the-valley-v3.jpg
-    alt_text: In a valley village one big mill wheel drives leather belts running out to three open workshops down the street, with Pedro hauling the sluice gate lever, Maro greasing the axle, and Flopaz watching the belts take up.
+    path: editions/008/art/picks/inference-opener-the-dough-that-outgrows-every-bowl-v2.jpg
+    alt_text: 'At a kitchen table Pedro presses both palms down on bread dough swelling up over the rim of its bowl, Maro hurries in carrying a bigger bowl, and Flopaz calmly stands ready with a huge washtub.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/008/art/picks/inference-tail-every-window-lit-v4.jpg
+  tail_art_path: editions/008/art/picks/inference-tail-warm-bread-on-the-floor-v3.jpg
 - id: the-instinct-thesis-why-memory-is-becoming-the-moat
   title: 'The Instinct Thesis: Why Memory Is Becoming the Moat'
   short_title: Why Memory Is Becoming the Moat
@@ -154,10 +154,10 @@ articles:
   - the-instinct-thesis-why-memory-is-becoming-the-m-14970672
   manuscript: editions/008/articles/the-instinct-thesis-why-memory-is-becoming-the-moat.md
   opener_art:
-    path: editions/008/art/picks/memory-opener-what-the-pan-keeps-v2.jpg
-    alt_text: In river shallows Pedro tips a sheet of grit and water off a broad pan while Flopaz kneels at the right holding a tin lid with three bright specks and Maro steadies a wooden sluice box in the current.
+    path: editions/008/art/picks/memory-opener-the-first-ride-alone-v3.jpg
+    alt_text: 'On a dusty park path Pedro rides a bicycle upright for the first time as Maro lets go of the saddle behind him and Flopaz crouches ahead with open arms, while wobbly older tire tracks loop through the dust beside one straighter new one.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/008/art/picks/memory-tail-what-the-water-keeps-v1.jpg
+  tail_art_path: editions/008/art/picks/memory-tail-no-hands-at-dusk-v1.jpg
 - id: the-rise-and-fall-of-agent-civilizations
   title: The Rise and Fall of Agent Civilizations
   short_title: Agent Civilizations
@@ -170,10 +170,10 @@ articles:
   - the-rise-and-fall-of-agent-civilizations-b74188c7
   manuscript: editions/008/articles/the-rise-and-fall-of-agent-civilizations.md
   opener_art:
-    path: editions/008/art/picks/civilizations-opener-the-flame-handed-on-v2.jpg
-    alt_text: In a dim room Pedro carries a flame on a wooden splint from a guttering candle toward the fresh one Flopaz holds ready, while Maro shields the flame with a glass chimney and a burnt out stub sits at the far end of the table.
+    path: editions/008/art/picks/civilizations-opener-the-bubble-raft-v3.jpg
+    alt_text: 'In a backyard Maro draws a long cluster of joined soap bubbles out of a washtub with a big wire wand, Pedro stretches up on tiptoe toward the shimmering raft, and Flopaz watches calmly as its far end bursts into a fine mist.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/008/art/picks/civilizations-tail-carrying-the-blocks-home-v3.jpg
+  tail_art_path: editions/008/art/picks/civilizations-tail-the-last-bubble-v3.jpg
 - id: previewing-the-model-hardware-standard
   title: Previewing the Model Hardware Standard
   short_title: The Model Hardware Standard
@@ -198,21 +198,21 @@ articles:
     anchor: How MHS works
     layout: evidence_band_prose
   opener_art:
-    path: editions/008/art/picks/mhs-opener-one-shaft-turns-them-all-v3.jpg
-    alt_text: In a workshop laboratory a single overhead line shaft drives three different instruments, as Pedro turns the crank wheel at the left, Maro loops the newest machine's belt over a pulley at the right, and Flopaz watches them all start.
+    path: editions/008/art/picks/mhs-opener-same-hook-any-wagon-v2.jpg
+    alt_text: 'Along a garden path a toy train pulls very different wagons, a tiny glass greenhouse car, a tank car, and a crane car, as Pedro lies nudging the locomotive, Flopaz checks a hook coupling, and Maro joins on a flatcar carrying a small brass microscope.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/008/art/picks/mhs-tail-locked-by-morning-v2.jpg
+  tail_art_path: editions/008/art/picks/mhs-tail-over-the-puddle-trestle-v2.jpg
 tail_art_fit: contain
 closing_plates:
-- title: The Bell Rope
-  art_path: editions/008/art/picks/closing-plate-the-bell-rope-v2.jpg
-- title: The Climbing Vine
-  art_path: editions/008/art/picks/closing-plate-the-climbing-vine-v3.jpg
-- title: The Fly Line
-  art_path: editions/008/art/picks/closing-plate-the-fly-line-v2.jpg
-- title: The Sack Hoist
-  art_path: editions/008/art/picks/closing-plate-the-sack-hoist-v2.jpg
-- title: The Speaking Tube
-  art_path: editions/008/art/picks/closing-plate-the-speaking-tube-v2.jpg
-- title: The Weight Chain
-  art_path: editions/008/art/picks/closing-plate-the-weight-chain-v3.jpg
+- title: The Apple Drop
+  art_path: editions/008/art/picks/closing-plate-the-apple-drop-v3.jpg
+- title: The River Leap
+  art_path: editions/008/art/picks/closing-plate-the-river-leap-v2.jpg
+- title: The Sky Lantern
+  art_path: editions/008/art/picks/closing-plate-the-sky-lantern-v3.jpg
+- title: The Snow Slope
+  art_path: editions/008/art/picks/closing-plate-the-snow-slope-v3.jpg
+- title: The One Umbrella
+  art_path: editions/008/art/picks/closing-plate-the-one-umbrella-v3.jpg
+- title: The Long Glide
+  art_path: editions/008/art/picks/closing-plate-the-long-glide-v3.jpg
