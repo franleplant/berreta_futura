@@ -1,13 +1,8 @@
-# Edition 9 spec, scaffolded by `mag produce` from plan.yaml, then filled in.
-# TITLE, COVER COPY, EMPHASIS, NOTES, AND FIGURE PICKS ARE PROVISIONAL: chosen by
-# Claude on 2026-09-08 for the editor to revise.
-# ART PICKS ARE PROVISIONAL too, chosen by Claude from round 2026-09-08T17-19-03
-# (cast-check: everything on model); the editor's real selection happens in
-# editions/009/art/showcase.html.
-# Article order is the reading order: securing agents opens beside the
-# editorial's argument, commerce agents show the stakes in production, the
-# persona piece explains what these systems are, then OpenAI's three posts
-# run mind, measurement, plan, and the Jalapeño chip closes on the iron.
+# Edition 9 spec. Re-produced 2026-10-06 with the current pipeline: fresh
+# writing run, no opening editorial, new art round. Title and cover copy are
+# kept from the original issue. ART PICKS ARE PROVISIONAL, chosen by Claude
+# overnight for the editor to revise in editions/009/art/showcase.html.
+# Article order is the reading order.
 id: '009'
 issue_number: 9
 title: Grown, Not Designed
@@ -51,13 +46,13 @@ articles:
       untrusted content; only symbolic variables ever cross between them.
     alt_text: Architecture diagram, a user's prompt flows to a privileged LLM that controls tools,
       while a quarantined LLM handles untrusted content and returns only symbolic variables.
-    anchor: The six patterns
+    anchor: __opener__
     layout: evidence_band
   opener_art:
-    path: editions/009/art/picks/opener-securing-agents-v1.jpg
-    alt_text: Pedro and Maro pass a single wooden token through a brass slot in a glass wall while Flopaz stands on the far side amid a flood of letters, holding one page up.
+    path: editions/009/art/picks/opener-securing-hatch-v3.jpg
+    alt_text: 'A wall divides the scene; Flopaz in rubber gloves sorts a heap of muddy envelopes and passes a single blank wooden token through a small hatch to Pedro, while Maro waits at a big lever.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/009/art/picks/tail-securing-agents-v2.jpg
+  tail_art_path: editions/009/art/picks/tail-securing-latched-hatch-v3.jpg
 - id: building-commerce-agents-with-claude
   title: Building Commerce Agents with Claude
   short_title: Commerce Agents
@@ -81,10 +76,10 @@ articles:
     anchor: The shopping agent
     layout: evidence_band_prose
   opener_art:
-    path: editions/009/art/picks/opener-commerce-agents-v2.jpg
-    alt_text: At a market stall Flopaz weighs fruit on a balance scale beside a loaded cart while Maro tends the crates and Pedro reaches for the packed basket.
+    path: editions/009/art/picks/opener-commerce-stall-v3.jpg
+    alt_text: 'At a small striped market stall Maro holds out two pears for Flopaz to compare while Pedro waits with a half-full woven basket.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/009/art/picks/tail-commerce-agents-v2.jpg
+  tail_art_path: editions/009/art/picks/tail-commerce-wagon-home-v3.jpg
 - id: the-persona-selection-model
   title: The Persona Selection Model
   short_title: Persona Selection
@@ -105,13 +100,13 @@ articles:
       human-like Assistant character would say next.
     alt_text: Diagram of a pretrained model answering as an Assistant character it simulates,
       one persona among the many learned from text.
-    anchor: The default, not the achievement
+    anchor: Where personas come from
     layout: adaptive_band
   opener_art:
-    path: editions/009/art/picks/opener-persona-selection-v2.jpg
-    alt_text: Backstage under a line of hanging masks, Flopaz holds a smiling mask up to its face while Pedro raises a lantern and Maro follows the script book.
+    path: editions/009/art/picks/opener-persona-puppet-booth-v3.jpg
+    alt_text: 'Pedro works a smiling cloth hand puppet over a small coral-curtained booth while Flopaz watches closely and Maro holds a lamp; spare puppets hang behind.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/009/art/picks/tail-persona-selection-v2.jpg
+  tail_art_path: editions/009/art/picks/tail-persona-curtain-bow-v1.jpg
 - id: an-alien-mind
   title: An Alien Mind
   short_title: An Alien Mind
@@ -124,10 +119,10 @@ articles:
   - an-alien-mind-e0f75446
   manuscript: editions/009/articles/an-alien-mind.md
   opener_art:
-    path: editions/009/art/picks/opener-alien-mind-v4.jpg
-    alt_text: In a night greenhouse Pedro, Maro, and Flopaz with a lamp watch an enormous glowing growth press against the glass wall of its tank.
+    path: editions/009/art/picks/opener-alien-mind-vine-v3.jpg
+    alt_text: 'Flopaz holds a tiny seed pot while Maro waters it, and behind them Pedro gapes at a huge vine curling in strange spirals over a garden wall.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/009/art/picks/tail-alien-mind-v2.jpg
+  tail_art_path: editions/009/art/picks/tail-alien-mind-night-hill-v1.jpg
 - id: research-acceleration-the-view-inside-openai
   title: 'Research Acceleration: The View Inside OpenAI'
   short_title: Research Acceleration
@@ -140,10 +135,10 @@ articles:
   - research-acceleration-the-view-inside-openai-be17d270
   manuscript: editions/009/articles/research-acceleration-the-view-inside-openai.md
   opener_art:
-    path: editions/009/art/picks/opener-research-acceleration-v2.jpg
-    alt_text: Flopaz cranks a wheel-making machine whose output stacks into a tower Maro measures with a stick, while Pedro sits on a crate whittling a single wheel by hand.
+    path: editions/009/art/picks/opener-research-paper-planes-v3.jpg
+    alt_text: 'On a grassy hill Pedro folds a single paper airplane while Maro launches planes from a tall stack and Flopaz marks the farthest landing with a pebble.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/009/art/picks/tail-research-acceleration-v2.jpg
+  tail_art_path: editions/009/art/picks/tail-research-chasing-planes-v3.jpg
 - id: built-to-benefit-everyone-our-plan
   title: 'Built to Benefit Everyone: Our Plan'
   short_title: Built to Benefit Everyone
@@ -156,10 +151,10 @@ articles:
   - built-to-benefit-everyone-our-plan-af3db91a
   manuscript: editions/009/articles/built-to-benefit-everyone-our-plan.md
   opener_art:
-    path: editions/009/art/picks/opener-built-to-benefit-v4.jpg
-    alt_text: Flopaz opens a sluice gate and water steps down through terraced garden beds where Pedro guides the flow with a hoe and Maro kneels planting, a village in the distance.
+    path: editions/009/art/picks/opener-benefit-well-v2.jpg
+    alt_text: 'Maro hauls a bucket from a stone well, Flopaz shares the water among watering cans of different sizes, and Pedro carries two full cans to a row of seedlings.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/009/art/picks/tail-built-to-benefit-v1.jpg
+  tail_art_path: editions/009/art/picks/tail-benefit-riverbank-picnic-v3.jpg
 - id: jalape-o-s-first-results-show-industry-leading-s
   title: Jalapeño’s First Results
   short_title: Jalapeño’s First Results
@@ -179,25 +174,22 @@ articles:
     caption: The Jalapeño inference chip on its board, rated at 700 watts and measured at or
       below 550 on the workloads tested.
     alt_text: Close-up of the Jalapeño inference chip mounted on a teal circuit board.
-    anchor: What we measured
+    anchor: How we measured
     layout: adaptive_band
   opener_art:
-    path: editions/009/art/picks/opener-jalapeno-v2.jpg
-    alt_text: At a workbench forge Flopaz lifts a gleaming fresh wafer with tongs from a small glowing furnace, Pedro fans the heat, Maro waves it cool, and a green jalapeno pepper rests on the bench.
+    path: editions/009/art/picks/opener-jalapeno-cool-chip-v3.jpg
+    alt_text: 'At a kitchen table Maro holds up a small cool chip, Pedro fans his mouth after tasting a green jalapeño, and Flopaz holds her hand over the chip to feel its warmth.'
     credit: Illustration generated for this edition.
-  tail_art_path: editions/009/art/picks/tail-jalapeno-v1.jpg
-editorial: manuscript/editorial.md
+  tail_art_path: editions/009/art/picks/tail-jalapeno-cooling-cloche-v3.jpg
 tail_art_fit: contain
 closing_plates:
-- title: The Outgrown Fence
-  art_path: editions/009/art/picks/closing-grown-not-drawn-tree-v1.jpg
+- title: Block Tower
+  art_path: editions/009/art/picks/closing-kite-string-hill-v3.jpg
+- title: Lantern Raft
+  art_path: editions/009/art/picks/closing-lantern-raft-v3.jpg
+- title: Sunflower Ladder
+  art_path: editions/009/art/picks/closing-sunflower-ladder-v1.jpg
 - title: The Night Greenhouse
   art_path: editions/009/art/picks/closing-night-greenhouse-v4.jpg
-- title: The Shell at Low Tide
-  art_path: editions/009/art/picks/closing-listening-shell-v3.jpg
-- title: The Creature Kite
-  art_path: editions/009/art/picks/closing-creature-kite-v3.jpg
 - title: The Frost Window
   art_path: editions/009/art/picks/closing-frost-window-v4.jpg
-- title: The Listening Shell
-  art_path: editions/009/art/picks/closing-listening-shell-v2.jpg

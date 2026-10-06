@@ -126,9 +126,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   opener.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for
-  `verbatim`). Editions from 010 on carry no opening editorial: produce no
-  longer writes one and the renderer treats `editorial:` as optional
-  (editions 001-009 keep theirs).
+  `verbatim`). No edition carries an opening editorial: produce no longer
+  writes one, the renderer treats `editorial:` as optional, and an older
+  edition drops its `editorial:` row when it is re-produced.
 - Filler art never repeats inside an edition: cover, openers, tails, and
   closing plates must all be distinct images, and two variants of one brief
   count as a repeat; generate more plates instead (`mag art <edition> --only
