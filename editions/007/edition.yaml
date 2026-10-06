@@ -43,11 +43,10 @@ articles:
   - events-and-parameters-179cef23
   manuscript: editions/007/articles/cloudflare-workflows-in-a-nutshell.md
   opener_art:
-    path: editions/007/art/picks/opener-workflows-v2.jpg
-    alt_text: Pedro carries a watering can up stepping stones across a stream; Maro braces a tipping stone
-      while Flopaz holds up an hourglass beside him.
+    path: editions/007/art/picks/opener-workflows-quilt-v3.jpg
+    alt_text: 'Maro rethreads a needle beneath a clothesline of finished quilt patches while Pedro holds out the next patch and Flopaz points to the last one pegged up.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/picks/tail-workflows-v1.jpg
+  tail_art_path: editions/007/art/picks/tail-workflows-quilt-done-v2.jpg
 - id: celld-durable-objects-self-hosted
   title: 'celld: Durable Objects, Self-Hosted'
   short_title: 'celld: Durable Objects, Self-Hosted'
@@ -63,11 +62,10 @@ articles:
   - webassembly-a0dede27
   manuscript: editions/007/articles/celld-durable-objects-self-hosted.md
   opener_art:
-    path: editions/007/art/picks/opener-celld-self-hosted-v3.jpg
-    alt_text: Pedro and Flopaz carry a glowing jar toward a small wooden shed while Maro holds the door
-      open beside an empty shelf, a tall tower in the distance behind them.
+    path: editions/007/art/picks/opener-celld-mailboxes-v3.jpg
+    alt_text: 'Maro holds a new mailbox post upright at a garden gate while Pedro tamps the earth around it and Flopaz posts an envelope into the middle box.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/picks/tail-celld-self-hosted-v1.jpg
+  tail_art_path: editions/007/art/picks/tail-celld-mailboxes-morning-v3.jpg
 - id: how-celld-keeps-its-promises
   title: How celld Keeps Its Promises
   short_title: How celld Keeps Its Promises
@@ -84,11 +82,10 @@ articles:
   - telemetry-258b249b
   manuscript: editions/007/articles/how-celld-keeps-its-promises.md
   opener_art:
-    path: editions/007/art/picks/opener-promises-fencing-v2.jpg
-    alt_text: Maro turns a new key in a heavy storeroom door as Pedro watches closely, while Flopaz holds
-      a bent, useless older key away to one side.
+    path: editions/007/art/picks/opener-promises-relay-baton-v2.jpg
+    alt_text: 'Flopaz sprints off with the relay baton while Pedro skids to a stop at the exchange line and Maro holds up a flag to keep him out of the lane.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/picks/tail-promises-fencing-v1.jpg
+  tail_art_path: editions/007/art/picks/tail-promises-relay-cooldown-v3.jpg
 - id: origin-code-hosting
   title: Origin Code Hosting
   short_title: Origin Code Hosting
@@ -101,11 +98,10 @@ articles:
   - origin-code-hosting-807cadab
   manuscript: editions/007/articles/origin-code-hosting.md
   opener_art:
-    path: editions/007/art/picks/opener-origin-v2.jpg
-    alt_text: Maro lifts a small wooden sluice gate where a spring's channel forks, merging two branches,
-      while Pedro crouches at the water and Flopaz watches from the spring mouth.
+    path: editions/007/art/picks/opener-origin-treehouse-move-v1.jpg
+    alt_text: 'Maro hauls a basket of rolled papers up to a low treehouse on a pulley rope while Pedro reaches down from the doorway and Flopaz holds the last bundle.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/picks/tail-origin-v1.jpg
+  tail_art_path: editions/007/art/picks/tail-origin-treehouse-evening-v4.jpg
 - id: how-to-run-a-gauntlet-loop
   title: How to Run a Gauntlet Loop
   short_title: How to Run a Gauntlet Loop
@@ -128,12 +124,10 @@ articles:
     caption: The entire prompt that produced Claude of Duty, verbatim.
     anchor: __opener__
   opener_art:
-    path: editions/007/art/picks/opener-gauntlet-loop-v2.jpg
-    alt_text: A small clay figure tumbles on a circular obstacle track while Maro waits to set it back
-      at the start, Pedro watches at table level with a pocket watch, and Flopaz holds three broken earlier
-      figures.
+    path: editions/007/art/picks/opener-gauntlet-paper-boat-v3.jpg
+    alt_text: 'Maro whips up waves in a washtub and Flopaz pours a shower from a pitcher while Pedro, chin at the rim, watches a paper boat ride it out.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/picks/tail-gauntlet-loop-v3.jpg
+  tail_art_path: editions/007/art/picks/tail-gauntlet-pond-jetty-v3.jpg
 - id: opus-outshines-even-fable
   title: Opus Outshines Even Fable
   short_title: Opus Outshines Even Fable
@@ -146,11 +140,10 @@ articles:
   - opus-outshines-even-fable-inside-the-hugging-fac-c220467a
   manuscript: editions/007/articles/opus-outshines-even-fable.md
   opener_art:
-    path: editions/007/art/picks/opener-opus-outshines-v2.jpg
-    alt_text: On a rooftop at night, Pedro points up at a star burning brighter than the one beside it
-      while Flopaz looks on from the parapet and Maro turns a telescope toward it.
+    path: editions/007/art/picks/opener-opus-pumpkin-balance-v3.jpg
+    alt_text: 'A lumpy green pumpkin tips a wooden balance beam, lifting a prize-ribboned orange pumpkin, as Pedro throws up his arms, Flopaz studies the angle, and Maro steadies the pointer.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/picks/tail-opus-outshines-v1.jpg
+  tail_art_path: editions/007/art/picks/tail-opus-pumpkin-cart-v2.jpg
 - id: my-ai-adoption-journey
   title: My AI Adoption Journey
   short_title: My AI Adoption Journey
@@ -163,18 +156,19 @@ articles:
   - my-ai-adoption-journey-0036f2d9
   manuscript: editions/007/articles/my-ai-adoption-journey.md
   opener_art:
-    path: editions/007/art/picks/opener-adoption-journey-v1.jpg
-    alt_text: On a hillside road, Pedro releases the grip of a heavy tool bag into Maro's hands while
-      Flopaz waits a few paces ahead, looking up the road.
+    path: editions/007/art/picks/opener-adoption-tandem-v4.jpg
+    alt_text: 'Pedro lifts his feet off the pedals of a tandem bicycle as Maro pedals from the back seat and Flopaz jogs alongside with a hand on his seat.'
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
-  tail_art_path: editions/007/art/picks/tail-adoption-journey-v1.jpg
+  tail_art_path: editions/007/art/picks/tail-adoption-tandem-later-v1.jpg
 tail_art_fit: contain
 closing_plates:
-- title: The Lantern Room
-  art_path: editions/007/art/picks/closing-lantern-room-v2.jpg
-- title: The Long Staircase
-  art_path: editions/007/art/picks/closing-long-staircase-v3.jpg
-- title: The Deep Well
-  art_path: editions/007/art/picks/closing-deep-well-v1.jpg
-- title: The Night Shed
-  art_path: editions/007/art/picks/closing-night-shed-v1.jpg
+- title: Kite String
+  art_path: editions/007/art/picks/closing-kite-string-v4.jpg
+- title: Apple Ladder
+  art_path: editions/007/art/picks/closing-apple-ladder-v1.jpg
+- title: Block Tower
+  art_path: editions/007/art/picks/closing-block-tower-v1.jpg
+- title: Diving Board
+  art_path: editions/007/art/picks/closing-diving-board-v1.jpg
+- title: Balloon Ascent
+  art_path: editions/007/art/picks/closing-balloon-ascent-v2.jpg
