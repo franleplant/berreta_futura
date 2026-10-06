@@ -182,10 +182,6 @@ pub fn decode_rgb(path: &Path) -> Result<Rgb> {
     let mut decoder = PngDecoder::new(std::io::Cursor::new(&bytes))
         .with_context(|| format!("cannot read png header {}", path.display()))?;
     check_orientation(decoder.exif_metadata()?.as_deref(), path)?;
-    let color = decoder.color_type();
-    if color.bytes_per_pixel() != color.channel_count() {
-        bail!("unsupported png bit depth {color:?} in {}", path.display());
-    }
     let image = DynamicImage::from_decoder(decoder)
         .with_context(|| format!("cannot decode png {}", path.display()))?
         .into_rgb8();
@@ -724,6 +720,27 @@ where
         results.push(slot.expect("every slot is filled")?);
     }
     Ok(results)
+}
+
+#[cfg(test)]
+mod depth_tests {
+    use super::decode_rgb;
+
+    #[test]
+    fn a_sixteen_bit_png_decodes_to_eight_bit_rgb() {
+        let path = std::env::temp_dir().join(format!("mag-rgba16-{}.png", std::process::id()));
+        image::ImageBuffer::<image::Rgba<u16>, _>::from_pixel(
+            3,
+            2,
+            image::Rgba([65535, 0, 32896, 65535]),
+        )
+        .save(&path)
+        .unwrap();
+        let rgb = decode_rgb(&path).unwrap();
+        assert_eq!((rgb.width, rgb.height), (3, 2));
+        assert_eq!(&rgb.data[..3], &[255, 0, 128]);
+        std::fs::remove_file(&path).unwrap();
+    }
 }
 
 #[cfg(test)]
