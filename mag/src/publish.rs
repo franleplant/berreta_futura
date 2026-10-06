@@ -70,6 +70,7 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             site.repo
         )
     };
+    let pdf = upload(&args.pdf, "pdf", b"%PDF-", &stem, &url)?;
     let epub = match &args.epub {
         Some(epub) => epub.clone(),
         None => {
@@ -81,10 +82,7 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             dir.join("epub").join(format!("{stem}.epub"))
         }
     };
-    let uploads = vec![
-        upload(&args.pdf, "pdf", b"%PDF-", &stem, &url)?,
-        upload(&epub, "epub", b"PK", &stem, &url)?,
-    ];
+    let uploads = vec![pdf, upload(&epub, "epub", b"PK", &stem, &url)?];
     let path = dir.join("publish.yaml");
     if args.dry_run {
         for one in &uploads {
