@@ -146,8 +146,11 @@ fn number(object: &Object) -> Result<f64> {
 }
 
 pub fn sheet_x(media: [f64; 4], left: bool) -> f64 {
-    let width = (media[2] - media[0]) * page_scale(media);
-    A4_LANDSCAPE_POINTS.0 - width * if left { 2.0 } else { 1.0 }
+    let half = A4_LANDSCAPE_POINTS.0 / 2.0;
+    match left {
+        true => half - (media[2] - media[0]) * page_scale(media),
+        false => half,
+    }
 }
 
 pub fn page_scale(media: [f64; 4]) -> f64 {
@@ -166,8 +169,15 @@ fn sheet(
         let source = &sources[number - 1];
         let scale = page_scale(source.media);
         let x = sheet_x(source.media, left);
+        let half = A4_LANDSCAPE_POINTS.0 / 2.0;
+        let span = if left {
+            (0.0, half)
+        } else {
+            (half, A4_LANDSCAPE_POINTS.0)
+        };
+        let clip = ((span.0 - x) / scale, (span.1 - x) / scale);
         let renames = merge_resources(&mut resources, &source.resources);
-        let placed = place(source, scale, x, &renames)?;
+        let placed = place(source, scale, x, clip, &renames)?;
         content = Some(match content {
             None => placed,
             Some(previous) => isolate(&previous, &placed),
@@ -188,6 +198,7 @@ fn place(
     source: &SourcePage,
     scale: f64,
     x: f64,
+    clip: (f64, f64),
     renames: &[(Vec<u8>, Vec<u8>)],
 ) -> Result<Vec<u8>> {
     let body = if renames.is_empty() {
@@ -200,9 +211,9 @@ fn place(
         real(scale),
         real(scale),
         real(x),
-        real(source.crop[0]),
+        real(clip.0),
         real(source.crop[1]),
-        real(source.crop[2] - source.crop[0]),
+        real(clip.1 - clip.0),
         real(source.crop[3] - source.crop[1]),
     )
     .into_bytes();

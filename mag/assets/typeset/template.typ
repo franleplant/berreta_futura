@@ -324,7 +324,7 @@
 #let cover-tab(d, t) = {
   let band = COVER-W - d.tab.width
   let width = d.tab.width - d.tab.edge_reveal
-  cover-put(band, -d.tab.overdraw, cover-box(width, COVER-H + 2 * d.tab.overdraw, fill: rgb(d.color.orange)))
+  cover-put(band, -d.tab.overdraw, cover-box(width + d.tab.overdraw, COVER-H + 2 * d.tab.overdraw, fill: rgb(d.color.orange)))
   for (value, top, size, stretch) in ((t.tab_issue, d.tab.issue_top, 7.4, 100), (t.tab_identity, d.tab.identity_top, 4.8, 103)) {
     cover-vertical(top, band + width / 2, cover-run("bold", size, value, fill: rgb(d.color.ink), tracking: 1.6, stretch: stretch, edges: ("ascender", "descender")))
   }
@@ -407,7 +407,7 @@
 
 #let cover-framed(d, t, spec) = {
   let (ink, a) = (rgb(d.color.ink), d.art)
-  cover-put(COVER-W - d.tab.width, -d.tab.overdraw, cover-box(d.tab.width - d.tab.edge_reveal, COVER-H + 2 * d.tab.overdraw, fill: rgb(d.color.orange)))
+  cover-put(COVER-W - d.tab.width, -d.tab.overdraw, cover-box(d.tab.width - d.tab.edge_reveal + d.tab.overdraw, COVER-H + 2 * d.tab.overdraw, fill: rgb(d.color.orange)))
   cover-wordmark(d, false, 1, 0, 0)
   cover-headline(d, t.headline)
   if spec.art == none {
