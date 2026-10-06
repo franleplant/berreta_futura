@@ -1,0 +1,9 @@
+en:
+  pdf:
+    url: https://github.com/franleplant/berreta_futura/releases/download/issue-007/berreta-futura-007-en.pdf
+    bytes: 11901987
+    sha256: 6af89fae115b44fbe71a9a366b9571146af12d63d989cd701e65d59f5f5b69ca
+  epub:
+    url: https://github.com/franleplant/berreta_futura/releases/download/issue-007/berreta-futura-007-en.epub
+    bytes: 5088424
+    sha256: 63b6d3dd1734fed3ed265c1768c8eba80ed88cb02826fb646416b46841bf1eb8
