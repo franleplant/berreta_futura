@@ -1,9 +1,9 @@
 en:
   pdf:
     url: https://github.com/franleplant/berreta_futura/releases/download/issue-013/berreta-futura-013-en.pdf
-    bytes: 15178635
-    sha256: e289d4d847b11d6706c6758544d1da24fe5486857c00e5b349130109d4dc454b
+    bytes: 16251597
+    sha256: d9268317216fa69b0ed4f1655fce2e4c06d380f522af7bf1605af823690be0c7
   epub:
     url: https://github.com/franleplant/berreta_futura/releases/download/issue-013/berreta-futura-013-en.epub
-    bytes: 6819335
-    sha256: 57d7a302ae8cdfb45e1419453f7f0b87e7f6c8e5b628a627ffcdfe8d4bbed915
+    bytes: 7036294
+    sha256: 73c8f105a6b44446c9a6bf822999b376557ce9dbf6f867ac35ef30aef0ec08a2
