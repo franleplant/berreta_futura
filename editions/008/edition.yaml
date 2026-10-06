@@ -82,7 +82,7 @@ articles:
     caption: On an early Opus 4.8 checkpoint, 60 hours of automated research closed 65% of the safety gap,
       against 72% for the released model.
     alt_text: A chart comparing safety gap closed over 60 hours of automated research with the released model's score.
-    anchor: On a production-grade model
+    anchor: A weaker model aligning a stronger one
     layout: compact_band
   opener_art:
     path: editions/008/art/picks/researchers-opener-the-clouded-flasks-v3.jpg
@@ -109,7 +109,7 @@ articles:
       effort goes.
     alt_text: A formula, total spend equals users times sessions per user times turns per session times requests
       per turn times tokens per request times price per token.
-    anchor: The equation
+    anchor: The cost equation
     layout: evidence_band_prose
   - id: pareto-frontier
     source_id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
@@ -121,16 +121,6 @@ articles:
       frontier.
     anchor: Price per token
     layout: compact_band
-  - id: graph-grounding
-    source_id: running-a-software-factory-efficiently-at-uber-s-36ff06c6
-    path: media/011.jpg
-    credit: 'Diagram by Uber Engineering; source: Running a Software Factory Efficiently at Uber Scale.'
-    caption: The same prompt to the same model, with and without the context graph; 38 seconds and correct
-      against 20 minutes and wrong.
-    alt_text: Two execution paths side by side, the graph-grounded one short and correct, the other long with
-      errors and a wrong conclusion.
-    anchor: Requests per turn
-    layout: evidence_band_prose
   opener_art:
     path: editions/008/art/picks/uber-opener-the-lighter-belt-v3.jpg
     alt_text: A factory conveyor crosses the frame loaded with crates at the left and carrying single small parcels at the right, as Pedro lifts a crate off the belt, Maro holds up a smaller drive motor, and Flopaz watches a wall dial's needle sink.
@@ -205,22 +195,13 @@ articles:
       to every instrument.
     alt_text: Three lab diagrams side by side, traditional instruments without a hub, an automated lab with
       bespoke integrations, and an MHS lab with a shared interface.
-    anchor: How it works
+    anchor: How MHS works
     layout: evidence_band_prose
-  - id: overnight-loop
-    source_id: previewing-the-model-hardware-standard-35305757
-    path: media/014.png
-    credit: 'Diagram by QuEra; source: Previewing the Model Hardware Standard.'
-    caption: The loop the agent ran overnight to relock the laser.
-    alt_text: A flow diagram of the agent's overnight loop, adjust, measure, evaluate, repeat.
-    anchor: What our partners found
-    layout: column_plate
   opener_art:
     path: editions/008/art/picks/mhs-opener-one-shaft-turns-them-all-v3.jpg
     alt_text: In a workshop laboratory a single overhead line shaft drives three different instruments, as Pedro turns the crank wheel at the left, Maro loops the newest machine's belt over a pulley at the right, and Flopaz watches them all start.
     credit: Illustration generated for this edition in the Story-Led Boy and Robot art direction.
   tail_art_path: editions/008/art/picks/mhs-tail-locked-by-morning-v2.jpg
-editorial: manuscript/editorial.md
 tail_art_fit: contain
 closing_plates:
 - title: The Bell Rope
