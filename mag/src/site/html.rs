@@ -1,7 +1,8 @@
 use super::images::Image;
 use super::{Issue, SiteConfig};
 use crate::model::doc::{
-    educate_reader_quotes, inline_text, parse_publication_document, Block, Document, Inline,
+    code_display, educate_reader_quotes, inline_text, parse_publication_document, Block, Document,
+    Inline,
 };
 use crate::model::kinds::ExtractStyle;
 use crate::model::manifest::{Article, Edition};
@@ -263,7 +264,10 @@ impl Ctx<'_> {
 
     fn extract(&self, language: &str, extract: &Extract) -> String {
         let body = match extract.style {
-            ExtractStyle::Code => format!("<pre><code>{}</code></pre>", escape_html(&extract.text)),
+            ExtractStyle::Code => format!(
+                "<pre><code>{}</code></pre>",
+                escape_html(&code_display(&extract.text))
+            ),
             ExtractStyle::Quote => format!(
                 "<blockquote>{}</blockquote>",
                 extract
@@ -317,6 +321,7 @@ fn code(code: &str, info: &str) -> Result<String> {
         "" => String::new(),
         language => format!(" class=\"language-{}\"", escape_html(language)),
     };
+    let code = &code_display(code);
     let tail = &code[code.trim_end_matches('\n').len()..];
     Ok(format!(
         "<pre><code{class}>{}{tail}</code></pre>",
@@ -472,7 +477,7 @@ fn expected(item: &Block, out: &mut Vec<(String, bool)>) {
         Block::Heading { children, .. } | Block::Paragraph(children) => {
             out.push((reader_text(children), false));
         }
-        Block::FencedCode { code, .. } => out.push((code.clone(), true)),
+        Block::FencedCode { code, .. } => out.push((code_display(code), true)),
         Block::Quote(children) => children.iter().for_each(|c| expected(c, out)),
         Block::List { items, .. } => items.iter().flatten().for_each(|c| expected(c, out)),
         Block::HorizontalRule => {}
@@ -502,7 +507,7 @@ pub fn dropped(piece: &Piece, html: &str) -> Vec<String> {
     }
     for extract in piece.article.iter().flat_map(|a| &a.extracts) {
         let verbatim = extract.style == ExtractStyle::Code;
-        want.push((extract.text.clone(), verbatim));
+        want.push((code_display(&extract.text), verbatim));
         want.push((educate_reader_quotes(&extract.caption), false));
     }
     want.into_iter()
@@ -1184,6 +1189,34 @@ mod tests {
             "{err}"
         );
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn tabbed_code_reaches_the_page_as_two_column_spaces_and_still_counts_as_kept() {
+        let code = "function main() {\n\tif (ok) {\n\t\treturn;\n\t}\n}\n".to_string();
+        let blocks = vec![Block::FencedCode {
+            code,
+            info: "js".into(),
+        }];
+        let html: String = blocks.iter().map(|b| block(b, "").unwrap()).collect();
+        assert!(!html.contains('\t'), "{html}");
+        assert!(
+            super::markup_free(&html).contains("  if (ok) {\n    return;"),
+            "{html}"
+        );
+        let piece = Piece {
+            slug: "x".into(),
+            kicker: String::new(),
+            title: String::new(),
+            author: String::new(),
+            label: String::new(),
+            article: None,
+            document: Document {
+                metadata: serde_norway::Mapping::default(),
+                blocks,
+            },
+        };
+        assert!(dropped(&piece, &html).is_empty());
     }
 
     #[test]

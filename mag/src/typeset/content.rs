@@ -1,5 +1,5 @@
 use crate::model::doc::{
-    educate_reader_quotes, fold_reader_characters, inline_text, is_settable,
+    code_display, educate_reader_quotes, fold_reader_characters, inline_text, is_settable,
     parse_publication_document, settable_codepoints, Block, Document, Inline,
 };
 use crate::model::kinds::ExtractStyle;
@@ -747,7 +747,7 @@ impl Writer<'_> {
         let body = if extract.style == ExtractStyle::Code {
             format!(
                 "  #code-panel(collapse: true, {})",
-                raw_block(&fold_reader_characters(&extract.text))
+                raw_block(&code_display(&extract.text))
             )
         } else {
             extract
@@ -816,7 +816,7 @@ impl Writer<'_> {
             }
             Block::FencedCode { code, info } => {
                 let language = info.split_whitespace().next().unwrap_or("");
-                let folded = fold_reader_characters(code);
+                let folded = code_display(code);
                 let shown = folded.trim_end_matches('\n');
                 format!(
                     "#doc-code(lang: {}, inks: {}, {})\n\n",

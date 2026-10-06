@@ -480,6 +480,31 @@ pub fn fold_reader_characters(text: &str) -> String {
     text.replace('\u{a0}', " ")
 }
 
+pub const CODE_TAB: usize = 2;
+
+pub fn code_display(code: &str) -> String {
+    let mut out = String::with_capacity(code.len());
+    let mut column = 0;
+    for character in fold_reader_characters(code).chars() {
+        match character {
+            '\t' => {
+                let pad = CODE_TAB - column % CODE_TAB;
+                out.extend(std::iter::repeat_n(' ', pad));
+                column += pad;
+            }
+            '\n' => {
+                out.push('\n');
+                column = 0;
+            }
+            other => {
+                out.push(other);
+                column += 1;
+            }
+        }
+    }
+    out
+}
+
 pub fn is_settable(character: char, settable: &BTreeSet<u32>) -> bool {
     character.is_ascii()
         || character.is_whitespace()
@@ -566,6 +591,16 @@ fn platform_id(platform: ttf_parser::PlatformId) -> u16 {
 mod tests {
     use super::super::shared::content_label;
     use super::*;
+
+    #[test]
+    fn code_tabs_become_two_column_stops() {
+        assert_eq!(
+            code_display("\tif x {\n\t\treturn;\n\t}"),
+            "  if x {\n    return;\n  }"
+        );
+        assert_eq!(code_display("a\tb\nab\tc"), "a b\nab  c");
+        assert_eq!(code_display("x\u{a0}y"), "x y");
+    }
 
     #[test]
     fn angle_bracket_words_in_prose_print_as_text() {
