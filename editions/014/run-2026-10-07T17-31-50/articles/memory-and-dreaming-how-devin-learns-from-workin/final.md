@@ -5,8 +5,6 @@ content_mode: verbatim
 label: VERBATIM
 ---
 
-Cognition · October 5, 2026
-
 Today we’re introducing Memory and Dreaming in Devin.
 
 Memory lets Devin carry useful learnings about the way you like to work across sessions: your preferences, corrections you’ve made, and lessons learned about your projects and workflows.

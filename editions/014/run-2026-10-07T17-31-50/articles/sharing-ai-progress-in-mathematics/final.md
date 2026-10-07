@@ -5,8 +5,6 @@ content_mode: verbatim
 label: VERBATIM
 ---
 
-OpenAI · October 6, 2026
-
 We’re releasing a broad range of new mathematical results produced by an [internal frontier model](https://openai.com/index/navier-stokes-solution/).
 
 As we look to improve how we share results with the math community, we’ve been consulting with the independent [Advisory Group on Mathematics and Artificial Intelligence at the Institute for Advanced Study](https://agmai.org/) to develop best practices, and we have drawn on their advice and [public recommendations](https://agmai.org/general-sep29/) to inform how we release these results.
