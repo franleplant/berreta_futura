@@ -4,7 +4,7 @@ articles:
 - id: recursive-language-models
   title: Recursive Language Models
   author: Alex L. Zhang
-  content_mode: verbatim
+  content_mode: article
   source_ids:
   - recursive-language-models-cd9f5889
 - id: memory-and-dreaming-how-devin-learns-from-workin

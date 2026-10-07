@@ -4,8 +4,8 @@
 # Article order here is the reading order; reorder freely.
 id: '014'
 issue_number: 14
-title: The Harness Tax
-subtitle: Same model, five times the bill; a model that greps its own prompt; Devin dreams nightly; OSC 7501; Nix overlays; Memory Beads; PACT; AI math in Lean
+title: The Exoskeleton
+subtitle: Seven models tried in three harnesses, a model that greps its own prompt, agents that remember and dream, consent slips for personal agents, a terminal status signal, Nix overlays, and machine math checked in Lean
 publication_date: '2026-10-07'
 status: draft
 format:
@@ -13,9 +13,9 @@ format:
 art_direction_path: art-directions/story-led-boy-and-robot.yaml
 cover:
   layout: footer_caption
-  headline: The Harness Tax
-  deck: Same model, five times the bill; a model that greps its own prompt; Devin dreams nightly; OSC 7501; Nix overlays; Memory Beads; PACT; AI math in Lean
-  back_text: To tell whether Claude Code is working, one tool checks if its window title starts with a Braille spinner. Then version 2.1.228 switched to half-circles. The rule file changed ten times in three months, all to read a spinner. The program always knew what it was doing. Nobody had given it a way to say so.
+  headline: The Exoskeleton
+  deck: Seven models tried in three harnesses, a model that greps its own prompt, agents that remember and dream, consent slips for personal agents, a terminal status signal, Nix overlays, and machine math checked in Lean
+  back_text: Behind every brilliant machine is a pile of straps, sticky notes, and permission slips. Ever wondered who buckles it in?
   art_path: editions/014/art/picks/cover-harness-buckle-tears-v2.jpg
 articles:
 - id: harnesstax-how-much-does-the-harness-matter-for
@@ -67,7 +67,7 @@ articles:
   opener_variant: stepped_title
   author: Alex L. Zhang
   author_note: Alex L. Zhang, from his blog. The full paper appears at NeurIPS 2026.
-  content_mode: verbatim
+  content_mode: article
   source_ids:
   - recursive-language-models-cd9f5889
   manuscript: editions/014/articles/recursive-language-models.md
@@ -94,96 +94,27 @@ articles:
     credit: Illustration generated for this edition.
   tail_art_path: editions/014/art/picks/tail-rlm-nested-boxes-v3.jpg
   figures:
-  - id: figure-1
+  - id: rlm-architecture
     source_id: recursive-language-models-cd9f5889
     path: media/001.png
     caption: 'An RLM call: the root model gets the query, the context waits in a REPL environment, and the root model can launch depth-1 calls on pieces of it.'
     alt_text: Diagram. A root language model at depth 0 receives a query and talks to an environment box labeled REPL holding the context. Arrows lead down to two depth-1 RLM boxes, each a language model with its own sub-query, sub-context, and sub-response.
-    anchor: tl;dr
+    anchor: The idea
     layout: evidence_band
-  - id: figure-2
-    source_id: recursive-language-models-cd9f5889
-    path: media/002.png
-    caption: "The author's pun on context rot: a rotting jack-o'-lantern carved with the word context."
-    alt_text: Cartoon of a cracked, rotting Halloween pumpkin carved with the word context, in a moonlit graveyard with bats.
-    anchor: 'Prelude: Why is “long-context” research so unsatisfactory?'
-    layout: evidence_band
-  - id: figure-3
-    source_id: recursive-language-models-cd9f5889
-    path: media/003.png
-    caption: "From the caller's side, an RLM call looks the same as a language model call: context and query in, response out."
-    alt_text: 'Two rows. Top: context and query feed a language model, which returns a response. Bottom: the same inputs feed a box labeled Language Model RLM, which returns a response.'
-    anchor: '**Recursive Language Models (RLMs).**'
-    layout: evidence_band
-  - id: figure-4
-    source_id: recursive-language-models-cd9f5889
-    path: media/004.png
-    caption: 'Inside an RLM with a REPL environment: the root model writes code into a notebook, reads its outputs, and calls recursive LMs on pieces of the context.'
-    alt_text: Diagram of a root LM context window beside a REPL Python notebook. Cells In[1] to In[N] hold code, Out cells show truncated results, and an arrow labeled llm_query leads to a recursive LM call at depth 1.
-    anchor: '**Recursive Language Models (RLMs).**'
-    layout: evidence_band
-  - id: figure-5
+  - id: oolong-132k
     source_id: recursive-language-models-cd9f5889
     path: media/005.png
     caption: 'OOLONG trec_coarse at 132k tokens: score and average cost per query for GPT-5, GPT-5-mini, RLM(GPT-5-mini), RLM without sub-calls, and a ReAct agent.'
     alt_text: 'Two bar charts. Score: GPT-5 30.2%, GPT-5-mini 34.5%, RLM(GPT-5-mini) 64.9%, RLM without sub-calls 56.0%, ReAct plus GPT-5 plus BM25 35.3%. Average cost: $0.195, $0.033, $0.234, $0.339, $0.476.'
-    anchor: '**Exciting Result #1 — Dealing with Context Rot.**'
-    layout: evidence_band
-  - id: figure-6
-    source_id: recursive-language-models-cd9f5889
-    path: media/006.png
-    caption: The same comparison at 263k tokens.
-    alt_text: 'Two bar charts. Score: GPT-5 34.2%, GPT-5-mini 23.2%, RLM(GPT-5-mini) 51.1%, RLM without sub-calls 40.9%, ReAct 30.7%. Average cost: $0.237, $0.041, $0.225, $0.312, $0.336.'
-    anchor: '**Exciting Result #1 — Dealing with Context Rot.**'
-    layout: evidence_band
-  - id: figure-7
+    anchor: 'Results'
+    layout: full_band
+    fit: keep
+  - id: browsecomp-scaling
     source_id: recursive-language-models-cd9f5889
     path: media/007.png
     caption: 'BrowseComp-Plus as the number of documents in context grows from 10 to 1,000: accuracy on the left, average API cost per query on the right.'
     alt_text: Two line charts against number of documents in context, log scale from 10 to 1000. GPT-5 accuracy falls toward zero past 100 documents while RLM(GPT-5) stays near 100%. Costs rise for all methods, reaching about $1 for RLM(GPT-5) at 1,000 documents.
-    anchor: '**Exciting Result #2 — Ridiculously Large Contexts**'
-    layout: evidence_band
-  - id: figure-8
-    source_id: recursive-language-models-cd9f5889
-    path: media/008.png
-    caption: 'The RLM trajectory visualizer: the root LM call, its query, and the code it chose to run.'
-    alt_text: Screenshot of a web tool titled RLM Trajectory Visualizer showing a root LM call with execution time and cost, the query text, the model response, and a code execution panel.
-    anchor: What is the RLM doing? Some Interesting Cases…
-    layout: evidence_band
-  - id: figure-9
-    source_id: recursive-language-models-cd9f5889
-    path: media/009.png
-    caption: 'Peeking: the root LM prints the first 2,000 characters of its context to see the format.'
-    alt_text: Screenshot of a code execution printing context[:2000], followed by output lines of dated user questions from the OOLONG dataset.
-    anchor: What is the RLM doing? Some Interesting Cases…
-    layout: evidence_band
-  - id: figure-10
-    source_id: recursive-language-models-cd9f5889
-    path: media/010.png
-    caption: 'Grepping: the RLM narrows the context with regular expressions to lines with questions and IDs.'
-    alt_text: Screenshot of Python code defining extract_question with regex patterns over separators, then printing the first ten extracted questions.
-    anchor: What is the RLM doing? Some Interesting Cases…
-    layout: evidence_band
-  - id: figure-11
-    source_id: recursive-language-models-cd9f5889
-    path: media/011.png
-    caption: 'Partition and map: the RLM chunks the questions into batches and runs a recursive LM call on each to classify them.'
-    alt_text: Screenshot of Python code defining classify_batch, which builds a prompt from a numbered list of questions, splits entries into batches of 50, and calls llm_query on each.
-    anchor: What is the RLM doing? Some Interesting Cases…
-    layout: evidence_band
-  - id: figure-12
-    source_id: recursive-language-models-cd9f5889
-    path: media/012.png
-    caption: 'Summarization: the RLM asks a sub-call to summarize the opening chapter for the outer LM.'
-    alt_text: Screenshot of code calling llm_query with a prompt to summarize the narrator's identity and reason for moving East, followed by the returned summary quoting The Great Gatsby.
-    anchor: What is the RLM doing? Some Interesting Cases…
-    layout: evidence_band
-  - id: figure-13
-    source_id: recursive-language-models-cd9f5889
-    path: media/013.png
-    caption: On LoCoDiff, RLM(GPT-5) one-shots the task by writing code that applies the diff history programmatically.
-    alt_text: Screenshot of Python code that captures commit blocks with a regular expression, extracts the diff hunks for one file, and applies them in order to rebuild the file.
-    anchor: What is the RLM doing? Some Interesting Cases…
+    anchor: 'Results'
     layout: evidence_band
 - id: memory-and-dreaming-how-devin-learns-from-workin
   title: 'Memory and dreaming: how Devin learns from working with you'

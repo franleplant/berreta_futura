@@ -5,7 +5,7 @@
 
 | piece | words |
 |---|---|
-| recursive-language-models | 5604 |
+| recursive-language-models | 1063 |
 | memory-and-dreaming-how-devin-learns-from-workin | 679 |
 | a-terminal-protocol-for-program-status-osc-7501 | 1260 |
 | the-world-hasn-t-figured-out-yet-that-you-can-li | 2535 |
