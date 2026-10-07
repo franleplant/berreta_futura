@@ -1,0 +1,8 @@
+id: extending-beads-memories-versions-and-the-wire-p-42b0a8c0
+title: 'Extending Beads: Memories, Versions and the Wire Protocol'
+author: 'Donna Box'
+url: https://blog.gascity.com/posts/extending-beads-memories-versions-and-the-wire-protocol/
+captured_at: '2026-10-07T17:29:26Z'
+published_at: '2026-10-01'
+tags: []
+synopsis: 'The Beads team describes extending Beads from issue tracking to a generic graph of typed Beads and Links with Memory Beads, versioned references, and the HTTP-based Beads Protocol (BDP), and explains how to try the preview integration branch.'

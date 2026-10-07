@@ -1,0 +1,51 @@
+edition:
+  id: '014'
+articles:
+- id: recursive-language-models
+  title: Recursive Language Models
+  author: Alex L. Zhang
+  content_mode: article
+  source_ids:
+  - recursive-language-models-cd9f5889
+- id: memory-and-dreaming-how-devin-learns-from-workin
+  title: 'Memory and dreaming: how Devin learns from working with you'
+  author: Cognition
+  content_mode: verbatim
+  source_ids:
+  - memory-and-dreaming-how-devin-learns-from-workin-393f9bac
+- id: a-terminal-protocol-for-program-status-osc-7501
+  title: A Terminal Protocol for Program Status (OSC 7501)
+  author: Mitchell Hashimoto
+  content_mode: verbatim
+  source_ids:
+  - a-terminal-protocol-for-program-status-osc-7501-cbd7ea75
+- id: the-world-hasn-t-figured-out-yet-that-you-can-li
+  title: the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay
+  author: Geoffrey Huntley
+  content_mode: article
+  source_ids:
+  - the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96
+- id: extending-beads-memories-versions-and-the-wire-p
+  title: 'Extending Beads: Memories, Versions and the Wire Protocol'
+  author: Donna Box
+  content_mode: article
+  source_ids:
+  - extending-beads-memories-versions-and-the-wire-p-42b0a8c0
+- id: sharing-ai-progress-in-mathematics
+  title: Sharing AI progress in mathematics
+  author: OpenAI
+  content_mode: verbatim
+  source_ids:
+  - sharing-ai-progress-in-mathematics-270d2009
+- id: introducing-the-personal-agent-consent-trust-pro
+  title: Introducing the Personal Agent Consent & Trust Protocol (PACT)
+  author: Harry Gao, Gram Liu
+  content_mode: verbatim
+  source_ids:
+  - introducing-the-personal-agent-consent-trust-pro-5acfcaa5
+- id: harnesstax-how-much-does-the-harness-matter-for
+  title: 'HarnessTax: How Much Does the Harness Matter for Coding Agents?'
+  author: Melissa Z. Pan, Shuo Yang, Negar Arabzadeh, Wei-Lin Chiang, Ion Stoica, Matei Zaharia
+  content_mode: article
+  source_ids:
+  - harnesstax-how-much-does-the-harness-matter-for-7e847601

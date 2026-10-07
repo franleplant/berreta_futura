@@ -1,0 +1,7 @@
+id: harnesstax-how-much-does-the-harness-matter-for-7e847601
+title: 'HarnessTax: How Much Does the Harness Matter for Coding Agents?'
+author: 'Melissa Z. Pan, Shuo Yang, Negar Arabzadeh, Wei-Lin Chiang, Ion Stoica, Matei Zaharia'
+url: https://harnesstax.github.io/
+captured_at: '2026-10-07T17:31:34Z'
+tags: []
+synopsis: 'The authors evaluate 21 model–harness pairs on SWE-bench Lite and Terminal-Bench 2.0 and find that harness choice barely changes task success but can change cost by up to 5x, that the minimal Pi harness is competitive, and that models often do as well or better outside their own provider''s harness.'

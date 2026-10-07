@@ -18,7 +18,87 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `014` (8 queued)._
+
 _Collecting: `013` (7 queued)._
+
+## HarnessTax: How Much Does the Harness Matter for Coding Agents? — Melissa Z. Pan, Shuo Yang, Negar Arabzadeh, Wei-Lin Chiang, Ion Stoica, Matei Zaharia
+
+- ID: `harnesstax-how-much-does-the-harness-matter-for-7e847601`
+- Source: https://harnesstax.github.io/
+- Captured: 2026-10-07T17:31:34Z
+- Release: queued for `014`
+
+The authors evaluate 21 model–harness pairs on SWE-bench Lite and Terminal-Bench 2.0 and find that harness choice barely changes task success but can change cost by up to 5x, that the minimal Pi harness is competitive, and that models often do as well or better outside their own provider's harness.
+
+## Introducing the Personal Agent Consent & Trust Protocol (PACT) — Harry Gao, Gram Liu
+
+- ID: `introducing-the-personal-agent-consent-trust-pro-5acfcaa5`
+- Source: https://decagon.ai/blog/introducing-the-personal-agent-consent-trust-protocol-pact
+- Published: 2026-10-06
+- Captured: 2026-10-07T17:29:54Z
+- Release: queued for `014`
+
+Decagon announces the open-source Personal Agent Consent & Trust Protocol (PACT), built on A2A and OAuth 2.0, which lets businesses verify which personal agent is calling and what permissions a customer has delegated to it.
+
+## Sharing AI progress in mathematics — OpenAI
+
+- ID: `sharing-ai-progress-in-mathematics-270d2009`
+- Source: https://openai.com/index/sharing-ai-progress-in-mathematics/
+- Published: 2026-10-06
+- Captured: 2026-10-07T17:29:34Z
+- Release: queued for `014`
+
+OpenAI announces a GitHub release of new mathematical results from an internal frontier model, with Lean formalizations, reasoning summaries, and compute details, developed with advice from the IAS Advisory Group on Mathematics and Artificial Intelligence.
+
+## Extending Beads: Memories, Versions and the Wire Protocol — Donna Box
+
+- ID: `extending-beads-memories-versions-and-the-wire-p-42b0a8c0`
+- Source: https://blog.gascity.com/posts/extending-beads-memories-versions-and-the-wire-protocol/
+- Published: 2026-10-01
+- Captured: 2026-10-07T17:29:26Z
+- Release: queued for `014`
+
+The Beads team describes extending Beads from issue tracking to a generic graph of typed Beads and Links with Memory Beads, versioned references, and the HTTP-based Beads Protocol (BDP), and explains how to try the preview integration branch.
+
+## the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay — Geoffrey Huntley
+
+- ID: `the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96`
+- Source: https://ghuntley.com/nix/
+- Published: 2026-10-07
+- Captured: 2026-10-07T17:28:47Z
+- Release: queued for `014`
+
+The author argues that Nix, despite being a hard language, lets you define one source of truth for developer, CI, sandbox, Docker and NixOS environments, and that overlays let you patch any dependency, from git to OpenSSL to the kernel, with agents doing the work.
+
+## A Terminal Protocol for Program Status (OSC 7501) — Mitchell Hashimoto
+
+- ID: `a-terminal-protocol-for-program-status-osc-7501-cbd7ea75`
+- Source: https://mitchellh.com/writing/program-status-osc7501
+- Published: 2026-10-06
+- Captured: 2026-10-07T17:28:02Z
+- Release: queued for `014`
+
+Mitchell Hashimoto introduces OSC 7501, a generic terminal escape sequence that lets programs report their own state (idle, working, blocked, done, error) to the terminal, arguing it replaces the fragile screen-scraping heuristics and out-of-band APIs that agentic inboxes use today.
+
+## Memory and dreaming: how Devin learns from working with you — Cognition
+
+- ID: `memory-and-dreaming-how-devin-learns-from-workin-393f9bac`
+- Source: https://devin.ai/blog/memory-and-dreaming
+- Published: 2026-10-05
+- Captured: 2026-10-07T17:27:26Z
+- Release: queued for `014`
+
+Cognition introduces Memory and Dreaming in Devin, a personal Git-backed memory drive of short lessons learned across sessions plus a daily background process that consolidates, prunes, and reorganizes those notes.
+
+## Recursive Language Models — Alex L. Zhang
+
+- ID: `recursive-language-models-cd9f5889`
+- Source: https://alexzhang13.github.io/blog/2025/rlm/
+- Captured: 2026-10-07T17:27:14Z
+- Release: queued for `014`
+
+The authors propose Recursive Language Models, an inference strategy in which a language model works over its input context as a variable in a Python REPL and recursively calls itself or other LMs, and they report that RLM(GPT-5-mini) outperforms GPT-5 on OOLONG and that RLM(GPT-5) holds up on BrowseComp-Plus with up to 1000 documents.
 
 ## Evals: how to know whether an AI system actually works — Sergii Makarevych
 

@@ -1,0 +1,8 @@
+id: a-terminal-protocol-for-program-status-osc-7501-cbd7ea75
+title: 'A Terminal Protocol for Program Status (OSC 7501)'
+author: 'Mitchell Hashimoto'
+url: https://mitchellh.com/writing/program-status-osc7501
+captured_at: '2026-10-07T17:28:02Z'
+published_at: '2026-10-06'
+tags: []
+synopsis: 'Mitchell Hashimoto introduces OSC 7501, a generic terminal escape sequence that lets programs report their own state (idle, working, blocked, done, error) to the terminal, arguing it replaces the fragile screen-scraping heuristics and out-of-band APIs that agentic inboxes use today.'

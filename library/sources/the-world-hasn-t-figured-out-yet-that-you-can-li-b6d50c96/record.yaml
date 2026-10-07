@@ -1,0 +1,8 @@
+id: the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96
+title: 'the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay'
+author: 'Geoffrey Huntley'
+url: https://ghuntley.com/nix/
+captured_at: '2026-10-07T17:28:47Z'
+published_at: '2026-10-07'
+tags: []
+synopsis: 'The author argues that Nix, despite being a hard language, lets you define one source of truth for developer, CI, sandbox, Docker and NixOS environments, and that overlays let you patch any dependency, from git to OpenSSL to the kernel, with agents doing the work.'

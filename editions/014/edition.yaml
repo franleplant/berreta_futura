@@ -1,0 +1,269 @@
+# Edition 14 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 014`.
+# Article order here is the reading order; reorder freely.
+id: '014'
+issue_number: 14
+title: The Harness Tax
+subtitle: Same model, five times the bill; a model that greps its own prompt; Devin dreams nightly; OSC 7501; Nix overlays; Memory Beads; PACT; AI math in Lean
+publication_date: '2026-10-07'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: The Harness Tax
+  deck: Same model, five times the bill; a model that greps its own prompt; Devin dreams nightly; OSC 7501; Nix overlays; Memory Beads; PACT; AI math in Lean
+  back_text: To tell whether Claude Code is working, one tool checks if its window title starts with a Braille spinner. Then version 2.1.228 switched to half-circles. The rule file changed ten times in three months, all to read a spinner. The program always knew what it was doing. Nobody had given it a way to say so.
+  art_path: TODO
+articles:
+- id: harnesstax-how-much-does-the-harness-matter-for
+  title: 'HarnessTax: How Much Does the Harness Matter for Coding Agents?'
+  short_title: 'HarnessTax'
+  display_emphasis: Harness
+  opener_variant: stepped_title
+  author: Melissa Z. Pan, Shuo Yang, Negar Arabzadeh, Wei-Lin Chiang, Ion Stoica, Matei Zaharia
+  author_note: Pan, Yang, Arabzadeh, Chiang, Stoica, and Zaharia, UC Berkeley and Arena Intelligence, on 21 model and harness pairs.
+  content_mode: article
+  source_ids:
+  - harnesstax-how-much-does-the-harness-matter-for-7e847601
+  manuscript: editions/014/articles/harnesstax-how-much-does-the-harness-matter-for.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/001.png: Figure 1 SWE-bench Lite
+  #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/002.png: Figure 1 Terminal-Bench 2
+  #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/003.png: Figure 2 SWE-bench Lite
+  #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/004.png: Figure 2 Terminal-Bench 2
+  #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/005.png: Figure 3
+  #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/006.png: Figure 4 SWE-bench Lite
+  #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/007.png: Figure 4 Terminal-Bench 2
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+  figures:
+  - id: harness-effect
+    source_id: harnesstax-how-much-does-the-harness-matter-for-7e847601
+    path: media/006.png
+    caption: "The same seven models in Pi, Codex, and Claude Code on SWE-bench Lite: cost per attempt on the left, success rate on the right. A green ring marks each model's cheapest harness and its highest rate. (Figure 4.)"
+    alt_text: Paired horizontal bar charts for seven models. For each model three bars, Pi in gray, Codex in purple, Claude Code in orange, show cost per rollout and success rate. Claude Fable 5 costs $0.67 in Pi and $1.33 in Claude Code while solving 96.7% and 97.8%.
+    anchor: Harness affects cost more than correctness
+    layout: column_plate
+  - id: first-call-context
+    source_id: harnesstax-how-much-does-the-harness-matter-for-7e847601
+    path: media/005.png
+    caption: 'What each harness sends before the model does anything: Claude Code ships 23 tools and about 27k tokens on the first call, Pi ships 4 tools and about 2k. (Figure 3, SWE-bench Lite.)'
+    alt_text: 'Four bar charts comparing Pi, Codex, and Claude Code: tools 4, 7.4, 23; tool schema characters 2,873, 18.1k, 77k; instruction characters 2,547, 23.5k, 13.5k; first-call context tokens 1,972, 11.3k, 27k.'
+    anchor: A simple harness can be competitive
+    layout: evidence_band
+- id: recursive-language-models
+  title: Recursive Language Models
+  short_title: Recursive Language Models
+  display_emphasis: Recursive
+  opener_variant: stepped_title
+  author: Alex L. Zhang
+  author_note: Alex L. Zhang, from his blog. The full paper appears at NeurIPS 2026.
+  content_mode: article
+  source_ids:
+  - recursive-language-models-cd9f5889
+  manuscript: editions/014/articles/recursive-language-models.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   recursive-language-models-cd9f5889 media/001.png: Teaser Figure
+  #   recursive-language-models-cd9f5889 media/002.png: Pun kin
+  #   recursive-language-models-cd9f5889 media/003.png: API
+  #   recursive-language-models-cd9f5889 media/004.png: API
+  #   recursive-language-models-cd9f5889 media/005.png: API
+  #   recursive-language-models-cd9f5889 media/006.png: API
+  #   recursive-language-models-cd9f5889 media/007.png: API
+  #   recursive-language-models-cd9f5889 media/008.png: API
+  #   recursive-language-models-cd9f5889 media/009.png: API
+  #   recursive-language-models-cd9f5889 media/010.png: API
+  #   recursive-language-models-cd9f5889 media/011.png: API
+  #   recursive-language-models-cd9f5889 media/012.png: API
+  #   recursive-language-models-cd9f5889 media/013.png: API
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+  figures:
+  - id: rlm-architecture
+    source_id: recursive-language-models-cd9f5889
+    path: media/001.png
+    caption: 'An RLM call: the root model gets the query, the context waits in a REPL environment, and the root model can launch depth-1 calls on pieces of it.'
+    alt_text: Diagram. A root language model at depth 0 receives a query and talks to an environment box labeled REPL holding the context. Arrows lead down to two depth-1 RLM boxes, each a language model with its own sub-query, sub-context, and sub-response.
+    anchor: The idea
+    layout: evidence_band
+  - id: oolong-132k
+    source_id: recursive-language-models-cd9f5889
+    path: media/005.png
+    caption: 'OOLONG trec_coarse at 132k tokens: score and average cost per query for GPT-5, GPT-5-mini, RLM(GPT-5-mini), RLM without sub-calls, and a ReAct agent.'
+    alt_text: 'Two bar charts. Score: GPT-5 30.2%, GPT-5-mini 34.5%, RLM(GPT-5-mini) 64.9%, RLM without sub-calls 56.0%, ReAct plus GPT-5 plus BM25 35.3%. Average cost: $0.195, $0.033, $0.234, $0.339, $0.476.'
+    anchor: Results
+    layout: evidence_band
+  - id: browsecomp-scaling
+    source_id: recursive-language-models-cd9f5889
+    path: media/007.png
+    caption: 'BrowseComp-Plus as the number of documents in context grows from 10 to 1,000: accuracy on the left, average API cost per query on the right.'
+    alt_text: Two line charts against number of documents in context, log scale from 10 to 1000. GPT-5 accuracy falls toward zero past 100 documents while RLM(GPT-5) stays near 100%. Costs rise for all methods, reaching about $1 for RLM(GPT-5) at 1,000 documents.
+    anchor: Results
+    layout: evidence_band
+- id: memory-and-dreaming-how-devin-learns-from-workin
+  title: 'Memory and dreaming: how Devin learns from working with you'
+  short_title: 'Memory and dreaming'
+  display_emphasis: dreaming
+  opener_variant: stepped_title
+  author: Cognition
+  author_note: From the Cognition blog, on how Devin keeps and prunes what it learns.
+  content_mode: verbatim
+  source_ids:
+  - memory-and-dreaming-how-devin-learns-from-workin-393f9bac
+  manuscript: editions/014/articles/memory-and-dreaming-how-devin-learns-from-workin.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: extending-beads-memories-versions-and-the-wire-p
+  title: 'Extending Beads: Memories, Versions and the Wire Protocol'
+  short_title: 'Extending Beads'
+  display_emphasis: Beads
+  opener_variant: stepped_title
+  author: Donna Box
+  author_note: Donna Box on the Beads issue tracker, from the Gas City blog.
+  content_mode: article
+  source_ids:
+  - extending-beads-memories-versions-and-the-wire-p-42b0a8c0
+  manuscript: editions/014/articles/extending-beads-memories-versions-and-the-wire-p.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/001.png: A brass-and-glass archive hall strung with glowing blue and green glass beads joined by threads, one green bea
+  #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/002.png: Line chart of the running total of GitHub release downloads of Beads, climbing from zero in October 2025 to 1.
+  #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/003.png: A brass robot agent sets a glowing green bead into a velvet-lined drawer of a tall cabinet full of green beads
+  #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/004.png: Work and knowledge in the same graph: two Issues joined by a depends-on Dependency, with dashed informational 
+  #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/005.png: A night cityscape of separate glass-domed archives, each holding its own cluster of glowing beads, with bright
+  #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/006.png: Two PRs citing different versions of one code flow policy Memory: the in-flight PR cites the earlier version a
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+  figures:
+  - id: one-graph
+    source_id: extending-beads-memories-versions-and-the-wire-p-42b0a8c0
+    path: media/004.png
+    caption: 'Work and knowledge in one graph: issues linked by dependencies, and a Memory the work follows and cites.'
+    alt_text: 'Diagram. Issue: Implement feature depends on Issue: Prepare integration branch, and follows Memory: Code flow policy, which cites Memory: Why we introduced integration.'
+    anchor: One graph
+    layout: compact_band
+  - id: versions
+    source_id: extending-beads-memories-versions-and-the-wire-p-42b0a8c0
+    path: media/006.png
+    caption: 'Two PRs cite two versions of the same code flow policy: each keeps pointing at the version it actually followed.'
+    alt_text: "Diagram. An in-flight PR started under the old policy cites the earlier version, target our fork's branch. A new PR started after the change cites the current version, target Jim's integration branch. Both versions sit inside one Memory: Code flow policy."
+    anchor: Versioning
+    layout: compact_band
+- id: introducing-the-personal-agent-consent-trust-pro
+  title: Introducing the Personal Agent Consent & Trust Protocol (PACT)
+  short_title: PACT
+  display_emphasis: PACT
+  opener_variant: stepped_title
+  author: Harry Gao, Gram Liu
+  author_note: Harry Gao and Gram Liu, from the Decagon blog.
+  content_mode: verbatim
+  source_ids:
+  - introducing-the-personal-agent-consent-trust-pro-5acfcaa5
+  manuscript: editions/014/articles/introducing-the-personal-agent-consent-trust-pro.md
+  figures:
+  - id: figure-1
+    source_id: introducing-the-personal-agent-consent-trust-pro-5acfcaa5
+    path: media/001.png
+    caption: 'The consent screen: the personal agent asks for flight access, and the airline lists each permission for the user to grant.'
+    alt_text: A phone screen headed Personal Agent wants to access your Skyline account, with toggles for view upcoming flights and view past flights switched on and rebook flights switched off, and an Allow 2 of 3 button.
+    anchor: How PACT works
+    layout: evidence_band
+  - id: figure-2
+    source_id: introducing-the-personal-agent-consent-trust-pro-5acfcaa5
+    path: media/002.png
+    caption: "A grant in use: Maya's agent may read her trips, so it finds the delay, but rebooking needs a permission she never granted, so the airline refuses."
+    alt_text: A phone chat with a personal agent next to the airline's view of the same session. Maya's grant lists flights upcoming read and flights history read. The agent finds trip details, then a request to rebook comes back marked Rebooking isn't allowed.
+    anchor: How PACT works
+    layout: evidence_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: a-terminal-protocol-for-program-status-osc-7501
+  title: A Terminal Protocol for Program Status (OSC 7501)
+  short_title: OSC 7501
+  display_emphasis: Program Status
+  opener_variant: stepped_title
+  author: Mitchell Hashimoto
+  author_note: Mitchell Hashimoto, from his blog.
+  content_mode: verbatim
+  source_ids:
+  - a-terminal-protocol-for-program-status-osc-7501-cbd7ea75
+  manuscript: editions/014/articles/a-terminal-protocol-for-program-status-osc-7501.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: the-world-hasn-t-figured-out-yet-that-you-can-li
+  title: the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay
+  short_title: a Nix overlay
+  display_emphasis: Nix
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley, from his blog.
+  content_mode: article
+  source_ids:
+  - the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96
+  manuscript: editions/014/articles/the-world-hasn-t-figured-out-yet-that-you-can-li.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96 media/001.jpg: the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay
+  #   the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96 media/002.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+  figures:
+  - id: overlay-fanout
+    source_id: the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96
+    path: media/002.png
+    caption: One patch in the overlay reaches every place the system is built from.
+    alt_text: Diagram. third_party/git/*.patch, about 30 lines of C, feeds nix/overlay.nix where git becomes patched git, which fans out to the developer shell, a NixOS VM test, a container image, and anything else such as CI runners, servers, and laptops.
+    anchor: The overlay
+    layout: compact_band
+- id: sharing-ai-progress-in-mathematics
+  title: Sharing AI progress in mathematics
+  short_title: AI progress in mathematics
+  display_emphasis: mathematics
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: An announcement from OpenAI.
+  content_mode: verbatim
+  source_ids:
+  - sharing-ai-progress-in-mathematics-270d2009
+  manuscript: editions/014/articles/sharing-ai-progress-in-mathematics.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+tail_art_fit: contain
+closing_plates: []

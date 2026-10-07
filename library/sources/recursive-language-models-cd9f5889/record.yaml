@@ -1,0 +1,7 @@
+id: recursive-language-models-cd9f5889
+title: 'Recursive Language Models'
+author: 'Alex L. Zhang'
+url: https://alexzhang13.github.io/blog/2025/rlm/
+captured_at: '2026-10-07T17:27:14Z'
+tags: []
+synopsis: 'The authors propose Recursive Language Models, an inference strategy in which a language model works over its input context as a variable in a Python REPL and recursively calls itself or other LMs, and they report that RLM(GPT-5-mini) outperforms GPT-5 on OOLONG and that RLM(GPT-5) holds up on BrowseComp-Plus with up to 1000 documents.'
