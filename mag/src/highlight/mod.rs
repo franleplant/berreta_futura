@@ -66,7 +66,7 @@ pub fn spans(code: &str, language: &str) -> Result<Option<Vec<Span>>> {
         return Ok(None);
     }
     let Some(name) = tables.names.get(&alias) else {
-        bail!("pygments highlights {language:?} with a lexer mag does not implement");
+        return Ok(None);
     };
     let text = code
         .strip_prefix('\u{feff}')

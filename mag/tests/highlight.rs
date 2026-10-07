@@ -218,12 +218,13 @@ fn yaml_mapping() {
 }
 
 #[test]
-fn unknown_languages_fall_back_and_unimplemented_ones_refuse() {
+fn unknown_and_unimplemented_languages_print_plain() {
     assert_eq!(highlight::spans("x", "jsonc").unwrap(), None);
     assert_eq!(highlight::spans("x", "").unwrap(), None);
     assert_eq!(highlight::html("a < b\n", "txt").unwrap(), "a &lt; b\n");
     assert_eq!(highlight::html("a < b\n", "TEXT").unwrap(), "a &lt; b");
-    assert!(highlight::spans("x := 1", "go").is_err());
+    assert_eq!(highlight::spans("x := 1", "go").unwrap(), None);
+    assert_eq!(highlight::spans("@misc{k,}", "bibtex").unwrap(), None);
     let html_body = "GET / HTTP/1.1\nContent-Type: text/html\n\n<p>";
     assert!(highlight::spans(html_body, "http").is_err());
 }

@@ -1485,7 +1485,7 @@ mod tests {
     }
 
     #[test]
-    fn a_fence_in_a_language_mag_does_not_implement_is_refused() {
+    fn a_fence_in_a_language_mag_does_not_implement_prints_plain() {
         let root = mutated("go-fence", "902", &[]);
         let manuscript = root.join("editions/902/articles/code-fixture-article.md");
         let text = std::fs::read_to_string(&manuscript).expect("the manuscript is readable");
@@ -1495,8 +1495,9 @@ mod tests {
         );
         std::fs::write(&manuscript, text.replace("```bash\n", "```go\n"))
             .expect("the manuscript is writable");
-        let refused = refusal_of(&root, "902");
-        assert!(refused.contains("\"go\""), "{refused}");
+        if let Err(error) = pipeline(&inputs(&root, "902")) {
+            panic!("a go fence must print plain: {error}");
+        }
     }
 
     #[test]
