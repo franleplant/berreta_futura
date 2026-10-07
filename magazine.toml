@@ -17,5 +17,5 @@ hyphenate_english = true
 # which `mag publish` writes after uploading to the issue's GitHub Release
 # in `repo`.
 base_url = "https://berreta.franleplant.com"
-editions = ["013", "012", "011", "010", "009", "008", "007", "006"]
+editions = ["014", "013", "012", "011", "010", "009", "008", "007", "006"]
 repo = "franleplant/berreta_futura"
