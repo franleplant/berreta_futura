@@ -1640,8 +1640,8 @@ mod tests {
             "{runs:?}"
         );
         let plain = TEMPLATE_TYP.replace(
-            "if ink == none { run } else { text(fill: ink, run) }",
-            "run",
+            "if ink == none { unbroken(run) } else { text(fill: ink, unbroken(run)) }",
+            "unbroken(run)",
         );
         let world =
             Sources::fixture(&fixture_tree("902"), &plain, ROOT_TYP).expect("the world builds");

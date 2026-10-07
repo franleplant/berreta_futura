@@ -342,15 +342,23 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
         while lines.peek().is_some_and(|l| l.trim().is_empty()) {
             lines.next();
         }
-        if lines
-            .peek()
-            .is_some_and(|l| (l.starts_with("By:") || l.starts_with("By ")) && l.len() < 240)
-        {
+        if lines.peek().is_some_and(|l| is_byline(l)) {
             lines.next();
         }
     }
     let body: Vec<&str> = lines.filter(|l| !IMAGE_LINE.is_match(l)).collect();
     Ok(body.join("\n").trim().to_string() + "\n")
+}
+
+fn is_byline(line: &str) -> bool {
+    let words = line.split_whitespace().count();
+    line.len() < 240
+        && (line.starts_with("By:")
+            || line.starts_with("By ")
+            || line.contains(" \u{b7} ")
+            || (words <= 6
+                && !line.ends_with(['.', '?', '!', ':'])
+                && !line.starts_with(['*', '#', '>', '-', '`', '!', '[', '|'])))
 }
 
 fn article_frontmatter(article: &serde_norway::Value) -> Result<String> {
@@ -1121,6 +1129,18 @@ mod tests {
         let dotted = "# Title\n\nBy Ann Lee & Bo Chen \u{b7} Sep 23, 2026\n\nBy design, first.\n";
         let body = verbatim_body(&[("s-1".to_string(), dotted.to_string())]).unwrap();
         assert_eq!(body, "By design, first.\n");
+        for byline in [
+            "Cognition \u{b7} October 5, 2026",
+            "OpenAI",
+            "Jane Doe \u{b7} Example Blog \u{b7} March 4, 2021",
+        ] {
+            let src = format!("# Title\n\n{byline}\n\nToday we ship.\n");
+            let body = verbatim_body(&[("s-1".to_string(), src)]).unwrap();
+            assert_eq!(body, "Today we ship.\n", "{byline}");
+        }
+        let unbylined = "# Title\n\nThe first paragraph opens with a sentence.\n";
+        let body = verbatim_body(&[("s-1".to_string(), unbylined.to_string())]).unwrap();
+        assert_eq!(body, "The first paragraph opens with a sentence.\n");
     }
 
     #[test]

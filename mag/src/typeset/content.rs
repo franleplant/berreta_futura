@@ -21,7 +21,7 @@ use std::path::Path;
 use typst_syntax::{SyntaxKind, SyntaxNode};
 use unicode_normalization::UnicodeNormalization;
 
-pub const CONTENTS_TITLE_LIMIT: usize = 62;
+pub const CONTENTS_TITLE_LIMIT: usize = 124;
 pub const CONTENTS_TIGHT_ABOVE: usize = 8;
 const ILLUSTRATED: &str = "illustrated_paper_spots_v1";
 const OPENER_ANCHOR: &str = "__opener__";
@@ -323,9 +323,8 @@ impl Writer<'_> {
             .filter(|entry| entry.title.chars().count() > CONTENTS_TITLE_LIMIT)
             .map(|entry| {
                 format!(
-                    "Contents title {} ({} characters) would wrap onto the entry's author \
-                     line; shorten the article title to {CONTENTS_TITLE_LIMIT} characters \
-                     or fewer.",
+                    "Contents title {} ({} characters) would run past two lines; shorten \
+                     the article title to {CONTENTS_TITLE_LIMIT} characters or fewer.",
                     quoted(&entry.title),
                     entry.title.chars().count()
                 )
@@ -846,7 +845,7 @@ impl Writer<'_> {
                     .collect::<Result<String>>()?
             )
             }
-            Block::HorizontalRule => "#doc-rule()\n\n".to_string(),
+            Block::HorizontalRule => String::new(),
             Block::Table(rows) => format!(
                 "#doc-table(\n{})\n\n",
                 rows.iter()
@@ -1805,7 +1804,7 @@ mod tests {
     }
 
     #[test]
-    fn the_contents_title_limit_straddles_sixty_two_and_sixty_three() {
+    fn the_contents_title_limit_straddles_two_lines() {
         let stem = "Plain Opener";
         let at_limit = format!(
             "{stem}{}",
@@ -1815,7 +1814,7 @@ mod tests {
         assert_eq!(at_limit.chars().count(), CONTENTS_TITLE_LIMIT);
         assert_eq!(over.chars().count(), CONTENTS_TITLE_LIMIT + 2);
         let fitting = mutated(
-            "title-62",
+            "title-at-limit",
             "900",
             &[(
                 "  title: A Plain Opener Article",
@@ -1826,7 +1825,7 @@ mod tests {
             panic!("a {CONTENTS_TITLE_LIMIT}-character title must be accepted: {error}");
         }
         let refusing = mutated(
-            "title-63",
+            "title-over-limit",
             "900",
             &[(
                 "  title: A Plain Opener Article",
@@ -1834,10 +1833,7 @@ mod tests {
             )],
         );
         let message = refusal_of(&refusing, "900");
-        assert!(
-            message.contains("would wrap onto the entry's author line"),
-            "{message}"
-        );
+        assert!(message.contains("would run past two lines"), "{message}");
         assert!(
             message.contains(&format!("({} characters)", CONTENTS_TITLE_LIMIT + 2)),
             "{message}"

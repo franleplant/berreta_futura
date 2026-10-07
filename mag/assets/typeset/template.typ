@@ -681,14 +681,16 @@
     place(top + left, dy: row + offsets.folio, link(target, box(width: measure(folio).width, height: 0pt)))
   }
   place(top + left, dy: row + offsets.folio + line-center(HALF-SANS, 23pt), folio)
+  let set-title(body) = box(
+    width: LIVE-WIDTH - CONTENTS-ENTRY-LEFT,
+    text(font: DISPLAY, size: 9.8pt, weight: 600, ..edges(9.8pt, 10.2pt, HALF-SERIF), body),
+  )
+  let wrapped = if title == none { 0pt } else { measure(set-title(title)).height - measure(set-title[X]).height }
   if title != none {
-    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.title, link(target, box(
-      width: LIVE-WIDTH - CONTENTS-ENTRY-LEFT,
-      text(font: DISPLAY, size: 9.8pt, weight: 600, ..edges(9.8pt, 10.2pt, HALF-SERIF), title),
-    )))
+    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.title, link(target, set-title(title)))
   }
   if author != none {
-    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.author + ZERO-LEADING-SANS, {
+    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.author + wrapped + ZERO-LEADING-SANS, {
       text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: SLATE, ..flat, upper(author))
     })
   }
@@ -1146,12 +1148,6 @@
   code-pad
 }
 
-#let doc-rule() = block(
-  line(length: 100%, stroke: 0.55pt + COOL-GRAY),
-  above: PARAGRAPH-AFTER,
-  below: PARAGRAPH-AFTER,
-)
-
 #let doc-paragraph(standfirst: false, roster: false, split: false, body) = {
   if standfirst {
     context {
@@ -1228,6 +1224,8 @@
   below: 4mm,
 )
 
+#let unbroken(run) = run.replace(regex("\\S{30,}"), token => token.text.clusters().join("\u{200B}"))
+
 #let code-runs(source, inks) = {
   let runs = if inks.len() == 0 { ((source.len(), none),) } else { inks }
   assert(runs.map(r => r.at(0)).sum() == source.len(), message: "the code inks do not cover the code block")
@@ -1235,7 +1233,7 @@
   for (length, ink) in runs {
     let run = source.slice(at, at + length)
     at += length
-    if ink == none { run } else { text(fill: ink, run) }
+    if ink == none { unbroken(run) } else { text(fill: ink, unbroken(run)) }
   }
 }
 
