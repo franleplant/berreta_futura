@@ -23,6 +23,7 @@ static HTML_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<[^>]*>").u
 static HTML_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
 static DATA_URI_SRC: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"(?s)\bsrc="data:[^"]*""#).unwrap());
+static SRC_ATTR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"\bsrc="([^"]*)""#).unwrap());
 static BLANK_LINE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n{3,}").unwrap());
 static PRE_BLOCK: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?is)<pre\b[^>]*>(.*?)</pre>").unwrap());
@@ -331,6 +332,11 @@ fn page_for_model(html: &str) -> String {
     }
     s = HTML_COMMENT.replace_all(&s, " ").into_owned();
     s = DATA_URI_SRC.replace_all(&s, "").into_owned();
+    s = SRC_ATTR
+        .replace_all(&s, |c: &regex::Captures| {
+            format!("src=\"{}\"", c[1].replace('(', "%28").replace(')', "%29"))
+        })
+        .into_owned();
     BLANK_LINE_RUN.replace_all(&s, "\n\n").into_owned()
 }
 
@@ -1394,6 +1400,12 @@ mod tests {
     use super::*;
     use std::io::{Read, Write};
     use std::net::TcpListener;
+
+    #[test]
+    fn image_src_parentheses_reach_the_model_percent_encoded() {
+        let page = page_for_model(r#"<img src="https://x.test/a_image%20(53).png">"#);
+        assert!(page.contains(r#"src="https://x.test/a_image%20%2853%29.png""#));
+    }
 
     #[test]
     fn parallel_downloads_keep_numbering_by_first_appearance() {
