@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay · Berreta Futura</title>
+<meta name="description" content="There are many things that are uncertain in our industry right now, but one thing I am certain about, and have been for almost 13 years, is that Nix is a terrible programming language.">
+<link rel="canonical" href="https://berreta.franleplant.com/014/the-world-hasn-t-figured-out-yet-that-you-can-li/">
+<meta property="og:site_name" content="Berreta Futura">
+<meta property="og:title" content="the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay · Berreta Futura">
+<meta property="og:description" content="There are many things that are uncertain in our industry right now, but one thing I am certain about, and have been for almost 13 years, is that Nix is a terrible programming language.">
+<meta property="og:url" content="https://berreta.franleplant.com/014/the-world-hasn-t-figured-out-yet-that-you-can-li/">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://berreta.franleplant.com/img/733d4c700d760567-1760.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../site.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="g-pdf" viewBox="0 0 24 24"><path d="M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-epub" viewBox="0 0 24 24"><path d="M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-down" viewBox="0 0 24 24"><path d="M12 4v13m-5-5 5 5 5-5M5 20.25h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></defs></svg>
+<header class="masthead"><a class="brand" href="../../"><svg class="logo" viewBox="3.91 -72.75 576.8 181.51" role="img" aria-label="Berreta Futura"><path fill="var(--ink, #0a0b0d)" d="M3.91 0V-72.75H35.45Q47.9 -72.75 54.37 -67.65Q60.84 -62.55 60.84 -54.59Q60.84 -48.24 56.98 -43.9Q53.12 -39.55 46.78 -38.33V-38.23Q51.46 -38.09 55.2 -35.82Q58.94 -33.54 61.11 -29.64Q63.28 -25.73 63.28 -20.61Q63.28 -14.65 60.3 -9.99Q57.32 -5.32 51.71 -2.66Q46.09 0 38.18 0ZM23.63 -15.23H34.38Q38.09 -15.23 40.28 -17.19Q42.48 -19.14 42.48 -22.41Q42.48 -25.68 40.28 -27.64Q38.09 -29.59 34.38 -29.59H23.63ZM23.63 -43.95H33.15Q36.52 -43.95 38.53 -45.8Q40.53 -47.66 40.53 -50.73Q40.53 -53.81 38.53 -55.66Q36.52 -57.52 33.15 -57.52H23.63ZM66.9 0V-72.75H123.24V-55.57H87.21V-44.63H120.46V-28.03H87.21V-17.19H123.24V0ZM128.08 0V-72.75H158.99Q167.68 -72.75 174.03 -69.65Q180.38 -66.55 183.82 -60.86Q187.26 -55.18 187.26 -47.36Q187.26 -40.58 184.35 -35.42Q181.45 -30.27 176.18 -27.15L189.51 0H168.36L157.47 -22.75H148.39V0ZM148.39 -38.48H157.47Q162.06 -38.48 164.75 -40.92Q167.44 -43.36 167.44 -47.36Q167.44 -51.37 164.75 -53.81Q162.06 -56.25 157.47 -56.25H148.39ZM192.63 0V-72.75H223.54Q232.23 -72.75 238.58 -69.65Q244.93 -66.55 248.37 -60.86Q251.81 -55.18 251.81 -47.36Q251.81 -40.58 248.91 -35.42Q246 -30.27 240.73 -27.15L254.06 0H232.92L222.03 -22.75H212.95V0ZM212.95 -38.48H222.03Q226.62 -38.48 229.3 -40.92Q231.99 -43.36 231.99 -47.36Q231.99 -51.37 229.3 -53.81Q226.62 -56.25 222.03 -56.25H212.95ZM257.19 0V-72.75H313.53V-55.57H277.5V-44.63H310.75V-28.03H277.5V-17.19H313.53V0ZM316.42 -55.57V-72.75H378.13V-55.57H357.43V0H337.12V-55.57ZM368.32 0 392.74 -72.75H420.08L444.74 0H421.89L418.42 -11.96H394.1L390.54 0ZM398.79 -27.59H413.93L413.73 -28.22Q411.83 -34.81 410.02 -41.26Q408.21 -47.71 406.46 -54.35Q404.65 -47.71 402.79 -41.26Q400.94 -34.81 398.99 -28.22Z"/><path fill="var(--box, #0a0b0d)" d="M156.50 10.00L580.71 10.00L563.29 108.75L139.09 108.75Z"/><path fill="var(--red, #f05738)" d="M146.65 101.57 159.48 28.82H214.12L211.09 46.01H176.76L174.49 58.9H206.86L203.95 75.4H171.58L166.97 101.57ZM236.29 102.75Q226.77 102.75 220.33 99.4Q213.89 96.06 211.08 89.98Q208.27 83.9 209.71 75.7L217.98 28.82H237.71L229.73 74.04Q228.85 79.06 231.56 82.36Q234.28 85.66 239.31 85.66Q244.43 85.66 248.26 82.38Q252.08 79.11 252.98 74.04L260.95 28.82H280.67L272.41 75.7Q270.96 83.9 266.01 89.98Q261.06 96.06 253.43 99.4Q245.81 102.75 236.29 102.75ZM281.5 46.01 284.53 28.82H346.25L343.22 46.01H322.52L312.72 101.57H292.41L302.21 46.01ZM368.42 102.75Q358.9 102.75 352.46 99.4Q346.02 96.06 343.21 89.98Q340.4 83.9 341.85 75.7L350.11 28.82H369.84L361.87 74.04Q360.98 79.06 363.69 82.36Q366.41 85.66 371.44 85.66Q376.56 85.66 380.39 82.38Q384.21 79.11 385.11 74.04L393.08 28.82H412.81L404.54 75.7Q403.1 83.9 398.14 89.98Q393.19 96.06 385.57 99.4Q377.95 102.75 368.42 102.75ZM405.79 101.57 418.62 28.82H449.53Q458.22 28.82 464.02 31.92Q469.82 35.02 472.26 40.71Q474.7 46.4 473.32 54.21Q472.13 61 468.31 66.15Q464.5 71.3 458.67 74.43L467.22 101.57H446.07L439.2 78.82H430.12L426.1 101.57ZM432.89 63.1H441.97Q446.56 63.1 449.68 60.66Q452.79 58.21 453.5 54.21Q454.2 50.21 451.95 47.77Q449.69 45.32 445.1 45.32H436.02ZM466.44 101.57 503.68 28.82H531.02L542.85 101.57H520L518.64 89.61H494.33L488.65 101.57ZM501.77 73.99H516.91L516.82 73.35Q516.08 66.76 515.41 60.31Q514.74 53.87 514.16 47.23Q511.18 53.87 508.19 60.31Q505.19 66.76 502.08 73.35Z"/><path fill="var(--paper, #ffffff)" d="M155.38 95.75 168.21 23H222.85L219.82 40.19H185.49L183.22 53.08H215.59L212.68 69.58H180.31L175.7 95.75ZM245.02 96.93Q235.5 96.93 229.06 93.58Q222.62 90.24 219.81 84.16Q217 78.08 218.44 69.88L226.71 23H246.44L238.46 68.21Q237.58 73.24 240.29 76.54Q243.01 79.84 248.04 79.84Q253.16 79.84 256.99 76.56Q260.81 73.29 261.71 68.21L269.68 23H289.41L281.14 69.88Q279.69 78.08 274.74 84.16Q269.79 90.24 262.16 93.58Q254.54 96.93 245.02 96.93ZM290.23 40.19 293.26 23H354.98L351.95 40.19H331.25L321.45 95.75H301.14L310.94 40.19ZM377.16 96.93Q367.63 96.93 361.19 93.58Q354.75 90.24 351.94 84.16Q349.13 78.08 350.58 69.88L358.84 23H378.57L370.6 68.21Q369.71 73.24 372.42 76.54Q375.14 79.84 380.17 79.84Q385.3 79.84 389.12 76.56Q392.94 73.29 393.84 68.21L401.81 23H421.54L413.27 69.88Q411.83 78.08 406.87 84.16Q401.92 90.24 394.3 93.58Q386.68 96.93 377.16 96.93ZM414.52 95.75 427.35 23H458.26Q466.95 23 472.75 26.1Q478.55 29.2 480.99 34.89Q483.43 40.58 482.05 48.39Q480.86 55.18 477.04 60.33Q473.23 65.48 467.4 68.61L475.95 95.75H454.81L447.93 73H438.85L434.83 95.75ZM441.62 57.28H450.7Q455.29 57.28 458.41 54.84Q461.52 52.39 462.23 48.39Q462.93 44.39 460.68 41.95Q458.42 39.5 453.83 39.5H444.75ZM475.17 95.75 512.41 23H539.75L551.58 95.75H528.73L527.38 83.79H503.06L497.39 95.75ZM510.5 68.17H525.64L525.55 67.53Q524.81 60.94 524.14 54.49Q523.47 48.05 522.89 41.41Q519.91 48.05 516.92 54.49Q513.92 60.94 510.81 67.53Z"/></svg></a><a class="crumb" href="../">Issue 14</a><nav class="topnav"><a href="../../">Issues</a></nav></header>
+<main>
+<article class="piece">
+<header class="piece-head">
+<p class="kicker">Feature 07 · VERBATIM · 2026 10</p>
+<h1>the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay</h1>
+<p class="byline">By Geoffrey Huntley</p>
+<p class="author-note">Geoffrey Huntley, from his blog.</p>
+<p class="source"><a href="https://ghuntley.com/nix/">Read the original <span>ghuntley.com</span></a></p>
+</header>
+<p class="standfirst">There are many things that are uncertain in our industry right now, but one thing I am certain about, and have been for almost 13 years, is that Nix is a <em>terrible</em> programming language.</p>
+<figure class="opener"><img src="../../img/733d4c700d760567-800.jpg" srcset="../../img/733d4c700d760567-800.jpg 800w, ../../img/733d4c700d760567-1200.jpg 1200w, ../../img/733d4c700d760567-1760.jpg 1760w" sizes="(min-width: 44rem) 40rem, 100vw" width="800" height="465" alt="Maro patches a leaking joint at a garden tap and four sprinklers fed by the branching hose spring to life over Pedro and Flopaz." fetchpriority="high" decoding="async"></figure>
+<figure class="figure" id="figure-figure-1"><a class="zoom" href="../../img/ce2feee82ea86397-1376.jpg"><img src="../../img/ce2feee82ea86397-800.jpg" srcset="../../img/ce2feee82ea86397-800.jpg 800w, ../../img/ce2feee82ea86397-1376.jpg 1376w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="800" height="446" alt="Ornate illustration of a dense teal and red city skyline framed by baroque scrollwork." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>The post’s header illustration.</figcaption></figure>
+<p class="first">I remember when I first learned it, it felt like pushing shit uphill. The learning cliff is ferocious, and it took me a couple of years to master it because there was no AI back then, but I stuck with it. There’s some magic here, and in this post, I’m going to show you why Nix should be your primary choice for all your software projects.</p>
+<blockquote><p>First, I’m going to open with this: many pieces of technology are in our heads as really hard to learn, complex, and maybe that’s stopped you from picking one up, but I want to encourage you to falsify those thoughts any time you start thinking along those lines. Now that we have AI, things that used to be advanced power tools, hard to use or designed for masters, are now accessible to everyone. You can just prompt for outcomes.</p></blockquote>
+<h2>first, some introductory knowledge</h2>
+<p>The term Nix is overloaded. It means many different things; when someone says they use Nix, the first thing you should do is ask, “How do you use Nix?” and “What is Nix to you?” because there are many ways to use it; it’s not just a package manager or a build system; it can also be an operating system.</p>
+<p><a href="https://haskellforall.com/2022/08/stop-calling-everything-nix?ref=ghuntley.com">Stop calling everything “Nix”</a></p>
+<p>Explanation of the Nix ecosystem’s abstraction layers</p>
+<p>an explanation of the Nix ecosystem abstraction layers.</p>
+<p>In this post, I’ll focus on Nix’s versatility and utility, and why it’s so powerful in the age of AI. There’s a reason the labs are using this to build the models you are consuming...</p>
+<h2>agent and developer experience</h2>
+<p>By using tools like <a href="https://devenv.sh/?ref=ghuntley.com">https://devenv.sh/</a>, you can define a single source of truth for your compilation toolchain and required third-party dependencies. Humans can use this single source of truth in CI/CD and in ephemeral sandbox development environments used by agents.</p>
+<pre><code># visit https://devenv.sh/getting-started/ for installation instructions
+
+$ vi devenv.nix
+
+  # devenv.sh/packages/
+  packages = [ pkgs.prek ];
+ 
+  # devenv.sh/languages/
+  languages = {
+    rust.enable = true;
+  };
+ 
+  # devenv.sh/services/
+  services = {
+    postgres.enable = true;
+  };
+ 
+  # Configure and install the Rust formatting Git hook.
+  git-hooks = {
+    hooks = {
+      rustfmt.enable = true;
+    };
+  };
+
+$ devenv up
+
+</code></pre>
+<p>this one stanza provides rust, postgres and prek (for agent backpressure) and it just works across all operating systems</p>
+<p>I keep coming across clients with drift between how a local laptop is configured and how their CI/CD is configured. And now we’ve got ephemeral sandbox environments; they’re heading down a path of triplicating that drift. This is utter madness. It is not needed. Stop it.</p>
+<p>You might be thinking, “Well, there’s mise for this.” Trust me, mise isn’t good enough. Mise is a low-power, low-IQ tool. It does one thing, and it does it well, but it doesn’t enable your agents to truly fly.</p>
+<h2>not just a package manager</h2>
+<p>nix is super composable. That same expression that defines your human developer environment setup, your CI/CD setup, and your ephemeral sandbox setup can also be reused to build <em>performant</em> Docker images.</p>
+<p><a href="https://grahamc.com/blog/nix-and-layered-docker-images/?ref=ghuntley.com">Optimising Docker Layers for Better Caching with Nix - Graham Christensen</a></p>
+<pre><code class="language-nix">pkgs.dockerTools.buildLayeredImage {
+  name = "git";
+  tag = "latest";
+  contents = [
+    (pkgs.buildEnv {
+      name = "image-root";
+      paths = [ pkgs.git pkgs.cacert ];
+      pathsToLink = [ "/bin" "/etc" ];
+    })
+  ];
+  config.Env = [
+    "PATH=/bin"
+    "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+  ];
+  config.Cmd = [ "/bin/git" "--version" ];
+};
+
+</code></pre>
+<p>This expression here creates your docker image with git in it. But there’s no reason why this docker image can’t be the binaries used to run your application in production. 🫡</p>
+<p>But perhaps... the real reason I love Nix is its power to compose an operating system. With a standard operating system such as Debian or Ubuntu, what happens if an agent is given <code>sudo</code> access to do things on your machine?</p>
+<p>You’d be pretty scared, right?</p>
+<p>What if I told you that when I’m doing agentic development, I develop on NixOS and I explicitly prompt my agents to use <code>sudo</code> as part of my loop engineering, and it is safe because NixOS is designed to make it nearly impossible to break a machine, and if it does, you can instantly roll back that change.</p>
+<p><a href="https://www.youtube.com/embed/HQmrQHmAMzg?feature=oembed">Different Rollback Methods in NixOS</a></p>
+<h2>why the operating system matters</h2>
+<p>When others do loop engineering with their agents, they’re likely running loops with building the application, perhaps Postgres, but rarely anything more. The primary difference between how others do loop engineering and how I do is that, when I run loops, I put the <em>entire system under test, and the entire System Under Test IS the operating system</em>.</p>
+<p>You might think, “Whoa, what the —“ Like, how the hell do you do this?</p>
+<p>ah! My sweet summer child. It is really simple.</p>
+<p>NixOS has a testing framework (<code>runNixOSTest</code>), built in, and for anything you could ever want to assert about how an operating system is configured, or even across many machines, you can spin up a cluster. You can use a number of machines in a test, assert the network rules between them are correct, and that the right IP tables are forwarded or dropped. You do machines of machines, and you actually test the interoperability of that environment against your application.</p>
+<p><a href="https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/development/writing-nixos-tests.section.md?ref=ghuntley.com">nixpkgs/nixos/doc/manual/development/writing-nixos-tests.section.md at master · NixOS/nixpkgs</a></p>
+<p>Nix Packages collection &amp; NixOS. Contribute to NixOS/nixpkgs development by creating an account on GitHub.</p>
+<p>Here’s an example of what this looks like when you’ve defined an operating system in NixOS and want to assert the network is configured correctly with your firewall zones, and that network activity works for your application before you deploy it.</p>
+<pre><code># NixOS VM test: HAProxy in front of a Python hello-world server.
+#
+# Topology (two QEMU nodes, separate L2 networks):
+#
+#   vlan 1  192.168.1.0/24   frontend
+#     haproxy  eth1  192.168.1.1/24     HAProxy binds :80 here only
+#
+#   vlan 2  192.168.2.0/24   backend
+#     haproxy  eth2  192.168.2.1/24     allowed source
+#              eth2  192.168.2.50/24    extra address, must be rejected
+#     web      eth2  192.168.2.2/24     Python hello-world on :8080
+#
+# NixOS test IP scheme is 192.168.&lt;vlan&gt;.&lt;nodeNumber&gt;. nodeNumber comes from
+# the sorted node name, so haproxy = 1 and web = 2.
+#
+# web firewall:
+#   - inbound: accept TCP 8080 only from 192.168.2.1, drop everything else
+#   - outbound: no new connections; established replies to HAProxy still pass
+#
+# Run:
+#   nix build .#checks.x86_64-linux.haproxy-hello
+#   nix run .#driverInteractive    # drop into the test driver
+{ lib, ... }:
+let
+  frontendVlan = 1;
+  backendVlan = 2;
+
+  # Sorted node names: haproxy, web.
+  haproxyNode = 1;
+  webNode = 2;
+
+  haproxyFrontendIp = "192.168.${toString frontendVlan}.${toString haproxyNode}";
+  haproxyBackendIp = "192.168.${toString backendVlan}.${toString haproxyNode}";
+  # Same backend VLAN, but not the address the firewall allows.
+  haproxyUntrustedIp = "192.168.${toString backendVlan}.50";
+  webIp = "192.168.${toString backendVlan}.${toString webNode}";
+
+  frontendPort = 80;
+  webPort = 8080;
+
+  helloBody = "hello from python";
+in
+{
+  name = "haproxy-hello";
+
+  nodes = {
+    haproxy = { pkgs, ... }: {
+      virtualisation.vlans = [ frontendVlan backendVlan ];
+      virtualisation.memorySize = 512;
+
+      environment.systemPackages = [ pkgs.curl ];
+
+      # Harness already assigns 192.168.2.1/24. This alias is the negative
+      # control: same L2 network, source the backend must refuse.
+      networking.interfaces.eth${toString backendVlan}.ipv4.addresses = [
+        {
+          address = haproxyUntrustedIp;
+          prefixLength = 24;
+        }
+      ];
+
+      networking.firewall = {
+        enable = true;
+        # Frontend lives only on vlan 1. Do not publish :80 on the backend net.
+        interfaces.eth${toString frontendVlan}.allowedTCPPorts = [ frontendPort ];
+      };
+
+      # The haproxy module already opens a `global` section and installs the
+      # stats socket, so this value must start at the next section.
+      services.haproxy = {
+        enable = true;
+        config = ''
+          defaults
+            mode http
+            timeout connect 5s
+            timeout client 10s
+            timeout server 10s
+            timeout check 5s
+
+          frontend fe_http
+            bind ${haproxyFrontendIp}:${toString frontendPort}
+            default_backend be_hello
+
+          backend be_hello
+            option httpchk GET /
+            http-check expect status 200
+            server hello ${webIp}:${toString webPort} check
+        '';
+      };
+    };
+
+    web = { pkgs, ... }: {
+      virtualisation.vlans = [ backendVlan ];
+      virtualisation.memorySize = 512;
+
+      environment.systemPackages = [ pkgs.curl ];
+
+      networking.firewall = {
+        enable = true;
+        # extraCommands is the iptables backend. Pin it so the rules below apply.
+        backend = "iptables";
+        allowPing = false;
+        logRefusedPackets = true;
+        # Nothing open on every source. The only accept is extraCommands.
+        allowedTCPPorts = [ ];
+        extraCommands = ''
+          iptables -A nixos-fw -p tcp -s ${haproxyBackendIp} --dport ${toString webPort} -j nixos-fw-accept
+
+          # No new outbound. Established replies (the HAProxy request path) still pass.
+          iptables -A OUTPUT -o lo -j ACCEPT
+          iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+          iptables -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+          ip6tables -A OUTPUT -o lo -j ACCEPT
+          ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+          ip6tables -A OUTPUT -j REJECT --reject-with icmp6-adm-prohibited
+        '';
+        extraStopCommands = ''
+          iptables -D nixos-fw -p tcp -s ${haproxyBackendIp} --dport ${toString webPort} -j nixos-fw-accept || true
+          iptables -D OUTPUT -o lo -j ACCEPT || true
+          iptables -D OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT || true
+          iptables -D OUTPUT -j REJECT --reject-with icmp-host-prohibited || true
+          ip6tables -D OUTPUT -o lo -j ACCEPT || true
+          ip6tables -D OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT || true
+          ip6tables -D OUTPUT -j REJECT --reject-with icmp6-adm-prohibited || true
+        '';
+      };
+
+      systemd.services.hello-world = {
+        description = "Python hello-world HTTP server";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        serviceConfig = {
+          ExecStart = "${pkgs.python3}/bin/python3 ${pkgs.writeText "hello.py" ''
+            from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+            BODY = b"${helloBody}\n"
+
+            class Handler(BaseHTTPRequestHandler):
+                def do_GET(self):
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/plain")
+                    self.send_header("Content-Length", str(len(BODY)))
+                    self.end_headers()
+                    self.wfile.write(BODY)
+
+                def log_message(self, fmt, *args):
+                    return
+
+            if __name__ == "__main__":
+                ThreadingHTTPServer(("${webIp}", ${toString webPort}), Handler).serve_forever()
+          ''}";
+          DynamicUser = true;
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          Restart = "on-failure";
+        };
+      };
+    };
+  };
+
+  testScript = ''
+    start_all()
+
+    haproxy.wait_for_unit("haproxy.service")
+    web.wait_for_unit("hello-world.service")
+    web.wait_for_unit("firewall.service")
+
+    haproxy.succeed("ip -4 addr show dev eth${toString frontendVlan} | grep -q '${haproxyFrontendIp}/24'")
+    haproxy.succeed("ip -4 addr show dev eth${toString backendVlan} | grep -q '${haproxyBackendIp}/24'")
+    haproxy.succeed("ip -4 addr show dev eth${toString backendVlan} | grep -q '${haproxyUntrustedIp}/24'")
+    web.succeed("ip -4 addr show dev eth${toString backendVlan} | grep -q '${webIp}/24'")
+
+    with subtest("backend accepts only haproxy on the hello port"):
+        haproxy.wait_until_succeeds(
+            "curl -fsS --interface ${haproxyBackendIp} http://${webIp}:${toString webPort}/ | grep -F '${helloBody}'"
+        )
+        haproxy.fail(
+            "curl -fsS --max-time 5 --interface ${haproxyUntrustedIp} http://${webIp}:${toString webPort}/"
+        )
+        haproxy.fail(
+            "curl -fsS --max-time 5 --interface ${haproxyBackendIp} http://${webIp}:9/"
+        )
+
+    with subtest("haproxy on the frontend vlan proxies to python"):
+        haproxy.wait_until_succeeds(
+            "curl -fsS http://${haproxyFrontendIp}/ | grep -F '${helloBody}'"
+        )
+
+    with subtest("python host cannot open new outbound connections"):
+        web.fail("ping -c 1 -W 3 ${haproxyBackendIp}")
+        web.fail("curl -fsS --max-time 5 http://${haproxyBackendIp}:${toString frontendPort}/")
+        # Return path still works: the proxy subtest above already required it.
+        web.succeed("iptables -S OUTPUT | grep -q 'REJECT'")
+        web.succeed(
+            "iptables -S nixos-fw | grep -q -- '-s ${haproxyBackendIp}/32 -p tcp -m tcp --dport ${toString webPort} -j nixos-fw-accept'"
+        )
+  '';
+}
+
+</code></pre>
+<p>There’s an old saying that bare metal was complicated and it was a mess. This is no longer true now that we have Nix. Honestly, one of the most galaxy-brain moves you can make these days is to ditch hyperscalers like AWS and acquire bare metal to build that fleet with NixOS, because business margins are going to get compressed by AI.</p>
+<p>Sure, you’ll need to find an older, more experienced sysadmin, but once you get the right patterns in place, one or two of those people can operate with leverage equivalent to a team of 50 “cloud certified” monkeys. I shit you not, no exaggeration, it is insane what you can do with this composability.</p>
+<h2>single sources of truth</h2>
+<p>Nix, when architected correctly, enables you to define a single source of truth for any piece of software in your stack, including dependencies.</p>
+<p>Let’s say there is a security vulnerability, and there is, like, a critical OpenSSL vulnerability. How long would it take you to identify all the different OpenSSL versions deployed within your organization? How long would it take to patch, including all dependencies of third-party software that depends on that particular version within your organization, <em>including software dependencies linked against it</em>?</p>
+<p>With nix, this can be achieved through a couple of lines</p>
+<pre><code>{ pkgs, ... }: {
+
+nixpkgs.overlays = [
+  (final: prev: {
+    openssl = prev.openssl.overrideAttrs (old: {
+    version = "3.0.7";
+    src = prev.fetchurl {
+      url = "https://www.openssl.org/source/openssl-3.0.7.tar.gz";
+      hash = "sha256-...";
+    };
+  }
+
+</code></pre>
+<h2>what you just saw was an overlay</h2>
+<figure class="figure" id="figure-figure-2"><a class="zoom" href="../../img/08946a36cca228f2-1208.jpg"><img src="../../img/08946a36cca228f2-800.jpg" srcset="../../img/08946a36cca228f2-800.jpg 800w, ../../img/08946a36cca228f2-1208.jpg 1208w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="800" height="606" alt="Diagram. third_party/git/*.patch, about 30 lines of C, feeds nix/overlay.nix where git becomes patched git, which fans out to the developer shell, a NixOS VM test, a container image, and anything else such as CI runners, servers, and laptops." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>One patch in the overlay reaches every place the system is built from.</figcaption></figure>
+<p>An overlay is the key primitive which makes Nix absolutely amazing. I want you to think about how you use open source software. What happens when you find a bug? Do you go to GitHub and ask someone to take your pull request? Or maybe you fork it. But when you fork it, you have to figure out how you’ll build it and where you’ll host the resulting artifact (ugh, Artifactory) so it can be consumed.</p>
+<p>I’ll show you a concrete example. It’s here on GitHub. It shows a pattern I’ve used for years: in my agent sandbox environments, I customize the Git binary and remove the agent’s ability to force-push by removing that functionality from Git itself. It also includes all the patterns shared in this blog post, from building a Docker image to building a NixOS virtual machine and testing that git <code>push --force</code> has been removed.</p>
+<p><a href="https://github.com/ghuntley/nix-demo?ref=ghuntley.com">GitHub - ghuntley/nix-demo: Patch git once with a Nix overlay; use it in devenv, a NixOS VM test and a Docker image</a></p>
+<p>Patch git once with a Nix overlay; use it in devenv, a NixOS VM test and a Docker image - ghuntley/nix-demo</p>
+<p>What happens if what you need to customize isn’t just a standard command-line tool? What happens if it’s a low-level thing, like OpenSSL, that many things depend on, and you need to rebuild the world? Think about that graph. Think about the pain.</p>
+<p>With Nix, every change is just an overlay; all software becomes infinitely customizable at all levels, all the way down to the Linux kernel itself, and you can patch anything by asking an agent to customize it. The only restriction on what you can do is your imagination and ambition. These LLMs know Nix very well because the labs themselves are using Nix on their journey toward reaching RSI...</p>
+<h2>ps.</h2>
+<p>You might be wondering about Bazel and Buck2. I also use these alongside Nix, but the best bang for the buck right now is just to use Nix. There are a lot of problems with Nix, for example, how the derivation store works and what that means for incremental caching, something Bazel and Buck2 excel at, but I’m not going to complicate things right now by going into these details. Move past this and just start using Nix to customize all your software.</p>
+<h2>pps.</h2>
+<p>If you are building security-critical systems, burn tokens to find every security vulnerability in third-party dependencies your software stack relies on using a cyber model, and fix them with overlays. 🧠🧠🧠</p>
+<h2>pps. socials</h2>
+<p>🗞️ the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay</p>
+<p>In this blog post, I go into how I use Nix, why you should use it, and in the tweet below is a runnable demo showing all of the concepts in this post <a href="https://t.co/rZ3sqCb5gt?ref=ghuntley.com">https://t.co/rZ3sqCb5gt</a> <a href="https://t.co/QeyAHWTxnR?ref=ghuntley.com">pic.twitter.com/QeyAHWTxnR</a></p>
+<p>— geoff (@GeoffreyHuntley) <a href="https://x.com/GeoffreyHuntley/status/2107775282690330982?ref_src=twsrc%5Etfw&amp;ref=ghuntley.com">October 7, 2026</a></p>
+<figure class="tail" aria-hidden="true"><img src="../../img/266a3e8faf6c7c4a-800.jpg" srcset="../../img/266a3e8faf6c7c4a-800.jpg 800w, ../../img/266a3e8faf6c7c4a-1200.jpg 1200w, ../../img/266a3e8faf6c7c4a-1600.jpg 1600w, ../../img/266a3e8faf6c7c4a-2160.jpg 2160w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="800" height="266" alt="" loading="lazy" decoding="async"></figure>
+</article>
+<div class="piece-end"><a class="back" href="../">Back to Issue 14, The Exoskeleton</a><a class="dl" href="../#get"><svg class="glyph" aria-hidden="true"><use href="#g-down"/></svg>Get the issue: PDF, EPUB</a></div>
+<nav class="pager"><a rel="prev" href="../a-terminal-protocol-for-program-status-osc-7501/"><span class="kicker">Previous</span>A Terminal Protocol for Program Status (OSC 7501)</a><a rel="next" href="../sharing-ai-progress-in-mathematics/"><span class="kicker">Next</span>Sharing AI progress in mathematics</a></nav>
+</main>
+<footer class="colophon"><a href="../../">Berreta Futura</a><span>Printed on a laptop, read anywhere.</span></footer>
+</body>
+</html>
