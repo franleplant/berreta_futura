@@ -13,7 +13,7 @@ use crate::critic::inspect::{
 use crate::critic::metrics::{
     decode_rgb, ordered_map, read_ppm, resize, round_half_even, round_places, worker_count, Rgb,
 };
-use crate::critic::text::{page_text, Run};
+use crate::critic::text::{page_text, prose_text, Run};
 use crate::impose::{
     cover_wrap_plan, imposed_reader_page_plan, page_scale, section_reader_pages, sheet_x,
     A4_LANDSCAPE_POINTS,
@@ -673,6 +673,7 @@ fn starts_word(before: &Glyph, glyph: &Glyph) -> bool {
 #[derive(Debug, Clone)]
 pub struct Leg {
     pub raw: Vec<String>,
+    pub prose: Vec<String>,
     pub normalized: Vec<String>,
     pub media: Vec<[f64; 4]>,
 }
@@ -744,6 +745,12 @@ pub fn read_leg(pdf: &Path, runs: &[Vec<Run>]) -> Result<Leg> {
                     .map_or_else(String::new, |page| page_text(page))
             })
             .collect(),
+        prose: (0..media.len())
+            .map(|index| {
+                runs.get(index)
+                    .map_or_else(String::new, |page| prose_text(page))
+            })
+            .collect(),
         normalized,
         media,
     })
@@ -770,6 +777,7 @@ fn imposed_runs(reader: &Leg, runs: &[Vec<Run>], section: &str) -> Result<Vec<Ve
                         y: run.y * scale,
                         width: run.width * scale,
                         size: run.size * scale,
+                        mono: run.mono,
                     })
                 })
                 .collect()
@@ -1869,7 +1877,9 @@ pub struct Critique {
 fn inspect_leg(rasters: &[PathBuf], leg: &Leg) -> Result<Vec<PageInspection>> {
     let numbered: Vec<(usize, &PathBuf)> = rasters.iter().enumerate().collect();
     ordered_map(
-        |(index, path): &(usize, &PathBuf)| inspect_page(path, index + 1, &leg.raw[*index]),
+        |(index, path): &(usize, &PathBuf)| {
+            inspect_page(path, index + 1, &leg.raw[*index], &leg.prose[*index])
+        },
         &numbered[..leg.pages().min(numbered.len())],
         None,
     )

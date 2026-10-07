@@ -17,10 +17,11 @@
 #let SIGNAL-ORANGE = rgb(240, 87, 56)
 
 #let SYMBOLS = "Noto Sans Math"
-#let SERIF = ("Source Serif 4 SmText", SYMBOLS)
-#let DISPLAY = ("Source Serif 4 Display", "Source Serif 4 SmText", SYMBOLS)
-#let SANS = ("Inter", SYMBOLS)
-#let MONO = ("Geist Mono", SYMBOLS)
+#let EMOJI = "Noto Emoji"
+#let SERIF = ("Source Serif 4 SmText", SYMBOLS, EMOJI)
+#let DISPLAY = ("Source Serif 4 Display", "Source Serif 4 SmText", SYMBOLS, EMOJI)
+#let SANS = ("Inter", SYMBOLS, EMOJI)
+#let MONO = ("Geist Mono", SYMBOLS, EMOJI)
 
 #let HALF-SERIF = 0.3505
 #let HALF-SANS = 0.36377

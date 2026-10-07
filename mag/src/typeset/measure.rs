@@ -22,6 +22,7 @@ const ILLUSTRATED_FACE: &str = "illustrated-title";
 const BYLINE_RUNS: usize = 2;
 const TITLE_BOX: f64 = 64.0;
 const TITLE_MIN: f64 = 22.0;
+const LONG_TITLE_MIN: f64 = 16.0;
 const TITLE_MAX: f64 = 32.5;
 const COMPACT_TITLE_MAX: f64 = 30.0;
 
@@ -117,27 +118,22 @@ impl Metrics {
         Ok(None)
     }
 
-    fn compact_title(&self, title: &str) -> Result<Option<(f64, usize)>> {
-        self.fitted(
-            (title, ILLUSTRATED_FACE),
-            geometry().opener_rail,
-            TITLE_BOX,
-            COMPACT_TITLE_MAX,
-            TITLE_MIN,
-            2,
+    fn rail_title(&self, title: &str, max: f64) -> Result<Option<(f64, usize)>> {
+        let face = (title, ILLUSTRATED_FACE);
+        let rail = geometry().opener_rail;
+        Ok(
+            match self.fitted(face, rail, TITLE_BOX, max, TITLE_MIN, 2)? {
+                Some(fit) => Some(fit),
+                None => self.fitted(face, rail, TITLE_BOX, max, LONG_TITLE_MIN, 3)?,
+            },
         )
     }
 
     pub fn illustrated_titles(&self, title: &str) -> Result<[(f64, usize); 2]> {
-        let standard = self.fitted(
-            (title, ILLUSTRATED_FACE),
-            geometry().opener_rail,
-            TITLE_BOX,
-            TITLE_MAX,
-            TITLE_MIN,
-            2,
-        )?;
-        match (standard, self.compact_title(title)?) {
+        match (
+            self.rail_title(title, TITLE_MAX)?,
+            self.rail_title(title, COMPACT_TITLE_MAX)?,
+        ) {
             (Some(standard), Some(compact)) => Ok([standard, compact]),
             _ => Err(ValidationError::one(format!(
                 "Title cannot fit the Quiet Standard display box: {title}"
@@ -275,7 +271,10 @@ mod tests {
             .illustrated_titles("The Pen")
             .expect("a short title fits");
         assert_eq!((size, lines), (32.5, 1));
-        let long = ["Unbreakable"; 12].join(" ");
+        metrics
+            .illustrated_titles("the world hasn\u{2019}t figured out yet that you can literally just fix everything with a Nix overlay")
+            .expect("a long verbatim title fits");
+        let long = ["Unbreakable"; 20].join(" ");
         assert!(metrics.illustrated_titles(&long).is_err());
     }
 

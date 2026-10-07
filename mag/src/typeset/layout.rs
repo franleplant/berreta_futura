@@ -433,8 +433,9 @@ fn figures(
         };
         if ppi < floor {
             bail!(
-                "Curated figure {id} resolves to {ppi:.1} ppi at its Quiet Standard placement; \
-                 the minimum is {floor:.0} ppi"
+                "Curated figure {id} of {article} resolves to {ppi:.1} ppi at its Quiet Standard \
+                 placement; the minimum is {floor:.0} ppi (give it a smaller layout such as \
+                 compact_band)"
             );
         }
         let bottom = measured.page_height - placed.y - placed.height + RASTER_NUDGE_PT;
@@ -993,8 +994,9 @@ mod tests {
         let refused = manifest_layout(&edition, &measured, &tree, &root).unwrap_err();
         assert_eq!(
             refused.to_string(),
-            "Curated figure budget-diagram resolves to 14.0 ppi at its Quiet Standard placement; \
-             the minimum is 300 ppi"
+            "Curated figure budget-diagram of plain-opener-article resolves to 14.0 ppi at its \
+             Quiet Standard placement; the minimum is 300 ppi (give it a smaller layout such as \
+             compact_band)"
         );
         let (_, _, mut edition, _) = fixture("900");
         let strip = PathBuf::from(media("media/landscape.png"));

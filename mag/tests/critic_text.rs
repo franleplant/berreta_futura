@@ -9,6 +9,7 @@ fn text_show(s: &str, x: f64, y: f64, size: f64, advance: f64) -> Run {
         y,
         width: advance,
         size,
+        mono: false,
     }
 }
 

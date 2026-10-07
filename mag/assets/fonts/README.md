@@ -36,6 +36,12 @@ Source: <https://github.com/notofonts/notofonts.github.io/tree/main/fonts/NotoSa
 
 Files used: the unhinted Regular TTF. Every reader family falls back to it for math operators, arrows, and geometric shapes the text faces lack (TLA+'s box and diamond, for example). A character no bundled face carries stops `mag render` with its codepoint and the text around it. License: SIL Open Font License 1.1; see `noto-sans-math/OFL.txt`.
 
+## Noto Emoji (variable)
+
+Source: <https://github.com/google/fonts/tree/main/ofl/notoemoji> (`NotoEmoji[wght].ttf`, saved as `noto-emoji/NotoEmoji-Variable.ttf`)
+
+Print only. Monochrome emoji, the last fallback of every reader family, so an emoji in a captured source prints instead of stopping the render. License: SIL Open Font License 1.1; see `noto-emoji/OFL.txt`.
+
 The renderer resolves these files relative to the installed `magazine` package. Never replace this with a lookup in `/Library/Fonts`, a user font directory, or a network font service.
 
 ## Web subsets

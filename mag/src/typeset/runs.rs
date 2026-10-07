@@ -34,6 +34,7 @@ fn collect(frame: &Frame, base: Transform, height: f64, out: &mut Vec<Run>) {
                     y: height - origin.y.to_pt(),
                     width: text.width().to_pt(),
                     size: text.size.to_pt() * ts.kx.get().hypot(ts.sy.get()),
+                    mono: text.font.info().family == "Geist Mono",
                 });
             }
             _ => {}

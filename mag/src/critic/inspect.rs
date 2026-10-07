@@ -130,7 +130,12 @@ pub(crate) fn standalone_punctuation_lines(text: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn inspect_page(path: &Path, page_number: usize, text: &str) -> Result<PageInspection> {
+pub fn inspect_page(
+    path: &Path,
+    page_number: usize,
+    text: &str,
+    prose: &str,
+) -> Result<PageInspection> {
     let gray = grayscale(&decode_rgb(path)?);
     let ink_mask = point_below(&gray, WHITE_THRESHOLD);
     let ink_pixels = histogram(&ink_mask)[255] as usize;
@@ -161,7 +166,7 @@ pub fn inspect_page(path: &Path, page_number: usize, text: &str) -> Result<PageI
         blank: pure_white && stripped.is_empty(),
         ink_free: ink_pixels == 0 && stripped.is_empty(),
         sparse: ratio > 0.0 && ratio < SPARSE_INK_RATIO,
-        standalone_punctuation_lines: standalone_punctuation_lines(text),
+        standalone_punctuation_lines: standalone_punctuation_lines(prose),
     })
 }
 

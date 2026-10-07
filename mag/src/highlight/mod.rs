@@ -73,7 +73,8 @@ pub fn spans(code: &str, language: &str) -> Result<Option<Vec<Span>>> {
         .unwrap_or(code)
         .replace("\r\n", "\n")
         .replace('\r', "\n");
-    Ok(Some(merge(lex(tables, name, &text)?)))
+    let spans = merge(lex(tables, name, &text)?);
+    Ok((!spans.iter().any(|(_, class)| class == "err")).then_some(spans))
 }
 
 fn lex(tables: &Tables, name: &str, text: &str) -> Result<Vec<(String, String)>> {

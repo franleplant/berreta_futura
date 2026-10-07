@@ -8,6 +8,7 @@ pub struct Run {
     pub y: f64,
     pub width: f64,
     pub size: f64,
+    pub mono: bool,
 }
 
 fn hundredths(value: f64) -> i64 {
@@ -77,6 +78,11 @@ pub(crate) fn page_text(runs: &[Run]) -> String {
     page_lines(runs).join("\n")
 }
 
+pub(crate) fn prose_text(runs: &[Run]) -> String {
+    let prose: Vec<Run> = runs.iter().filter(|run| !run.mono).cloned().collect();
+    page_text(&prose)
+}
+
 pub(crate) fn body_text_lines(text: &str) -> usize {
     text.lines()
         .map(str::trim)
@@ -86,7 +92,7 @@ pub(crate) fn body_text_lines(text: &str) -> usize {
 
 #[cfg(test)]
 mod writer_independent {
-    use super::{page_text, Run};
+    use super::{page_text, prose_text, Run};
 
     fn show(text: &str, x: f64, y: f64, width: f64) -> Run {
         Run {
@@ -95,7 +101,19 @@ mod writer_independent {
             y,
             width,
             size: 10.0,
+            mono: false,
         }
+    }
+
+    #[test]
+    fn prose_text_leaves_out_code_lines() {
+        let code = Run {
+            mono: true,
+            ..show("...", 0.0, 680.0, 12.0)
+        };
+        let runs = [show("a paragraph", 0.0, 700.0, 50.0), code];
+        assert_eq!(page_text(&runs), "a paragraph\n...");
+        assert_eq!(prose_text(&runs), "a paragraph");
     }
 
     #[test]

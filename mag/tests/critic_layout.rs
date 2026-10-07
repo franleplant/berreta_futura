@@ -12,12 +12,17 @@ fn run(text: &str, y: f64) -> Run {
         y,
         width: 80.0,
         size: 10.0,
+        mono: false,
     }
 }
 
 fn leg(pages: &[Vec<Run>]) -> Leg {
     Leg {
         raw: pages
+            .iter()
+            .map(|page| page_lines(page).join("\n"))
+            .collect(),
+        prose: pages
             .iter()
             .map(|page| page_lines(page).join("\n"))
             .collect(),

@@ -176,7 +176,7 @@ fn sql_is_case_insensitive() {
 #[test]
 fn json_keys_become_tags() {
     expect(
-        "{\"a\": [1.5, true], \"b\" x}",
+        "{\"a\": [1.5, true]}",
         "json",
         &[
             ("{", "p"),
@@ -188,12 +188,7 @@ fn json_keys_become_tags() {
             (",", "p"),
             (" ", "w"),
             ("true", "kc"),
-            ("],", "p"),
-            (" ", "w"),
-            ("\"b\"", "s2"),
-            (" ", "w"),
-            ("x", "err"),
-            ("}", "p"),
+            ("]}", "p"),
         ],
     );
 }
@@ -225,6 +220,8 @@ fn unknown_and_unimplemented_languages_print_plain() {
     assert_eq!(highlight::html("a < b\n", "TEXT").unwrap(), "a &lt; b");
     assert_eq!(highlight::spans("x := 1", "go").unwrap(), None);
     assert_eq!(highlight::spans("@misc{k,}", "bibtex").unwrap(), None);
+    let rows = "Date: Dec 12, 2022 || User: 63685 || Instance: How many years old is Benny Carter ?\n...\n";
+    assert_eq!(highlight::spans(rows, "json").unwrap(), None);
     let html_body = "GET / HTTP/1.1\nContent-Type: text/html\n\n<p>";
     assert!(highlight::spans(html_body, "http").is_err());
 }
