@@ -21,6 +21,7 @@ struct Show {
     width: i64,
     size: i64,
     text: String,
+    mono: bool,
 }
 
 fn shows(runs: &[Run]) -> Vec<Show> {
@@ -33,6 +34,7 @@ fn shows(runs: &[Run]) -> Vec<Show> {
             width: hundredths(run.width),
             size: hundredths(run.size),
             text: run.text.clone(),
+            mono: run.mono,
         })
         .collect();
     out.sort_by(|a, b| b.y.cmp(&a.y).then(a.x.cmp(&b.x)));
@@ -53,6 +55,13 @@ fn separator(previous: &Show, next: &Show) -> &'static str {
 }
 
 pub fn page_lines(runs: &[Run]) -> Vec<String> {
+    marked_lines(runs)
+        .into_iter()
+        .map(|(line, _)| line)
+        .collect()
+}
+
+fn marked_lines(runs: &[Run]) -> Vec<(String, bool)> {
     let mut groups: Vec<Vec<Show>> = vec![];
     for show in shows(runs) {
         match groups.last_mut() {
@@ -69,7 +78,7 @@ pub fn page_lines(runs: &[Run]) -> Vec<String> {
                 line.push_str(separator(&pair[0], &pair[1]));
                 line.push_str(&pair[1].text);
             }
-            line.trim().to_string()
+            (line.trim().to_string(), group.iter().all(|show| show.mono))
         })
         .collect()
 }
@@ -79,8 +88,11 @@ pub(crate) fn page_text(runs: &[Run]) -> String {
 }
 
 pub(crate) fn prose_text(runs: &[Run]) -> String {
-    let prose: Vec<Run> = runs.iter().filter(|run| !run.mono).cloned().collect();
-    page_text(&prose)
+    marked_lines(runs)
+        .into_iter()
+        .filter_map(|(line, code)| (!code).then_some(line))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 pub(crate) fn body_text_lines(text: &str) -> usize {
@@ -111,9 +123,18 @@ mod writer_independent {
             mono: true,
             ..show("...", 0.0, 680.0, 12.0)
         };
-        let runs = [show("a paragraph", 0.0, 700.0, 50.0), code];
-        assert_eq!(page_text(&runs), "a paragraph\n...");
-        assert_eq!(prose_text(&runs), "a paragraph");
+        let inline = Run {
+            mono: true,
+            ..show("FINAL(x)", 0.0, 660.0, 40.0)
+        };
+        let runs = [
+            show("a paragraph", 0.0, 700.0, 50.0),
+            code,
+            inline,
+            show(".", 42.0, 660.0, 2.0),
+        ];
+        assert_eq!(page_text(&runs), "a paragraph\n...\nFINAL(x) .");
+        assert_eq!(prose_text(&runs), "a paragraph\nFINAL(x) .");
     }
 
     #[test]
