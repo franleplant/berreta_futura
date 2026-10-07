@@ -1,6 +1,7 @@
 @font-face { font-family: "Geist"; src: url(fonts/Geist-Variable.woff2) format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
 @font-face { font-family: "Geist"; src: url(fonts/Geist-Italic-Variable.woff2) format("woff2"); font-weight: 100 900; font-style: italic; font-display: swap; }
 @font-face { font-family: "Math Symbols"; src: url(fonts/NotoSansMath-Regular.woff2) format("woff2"); unicode-range: U+2190-22FF, U+25A0-25FF; font-display: swap; }
+@font-face { font-family: "Emoji"; src: url(fonts/NotoEmoji-Variable.woff2) format("woff2"); unicode-range: U+2600-27BF, U+FE00-FE0F, U+1F300-1FAFF; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 
 :root {
@@ -19,11 +20,11 @@
   --wide: 46rem;
   --page: 62rem;
   --gutter: 1.25rem;
-  --serif: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --display: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --sans: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --poster: Geist, "Math Symbols", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: "Geist Mono", "Math Symbols", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --serif: Geist, "Math Symbols", "Emoji", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display: Geist, "Math Symbols", "Emoji", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans: Geist, "Math Symbols", "Emoji", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --poster: Geist, "Math Symbols", "Emoji", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "Geist Mono", "Math Symbols", "Emoji", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light dark;
 }
 
