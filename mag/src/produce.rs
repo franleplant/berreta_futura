@@ -857,7 +857,31 @@ const FRONT_TODOS: [(&str, &str); 5] = [
     ("  back_text: TODO", "back_text"),
 ];
 
-fn parse_front_matter(reply: &str) -> Result<HashMap<String, String>> {
+static BACK_COVER_SELF_REFERENCE: LazyLock<regex::Regex> = LazyLock::new(|| {
+    regex::Regex::new(r"(?i)\b(issue|edition|articles?|magazine|authors?|inside|pages)\b").unwrap()
+});
+
+fn front_matter_names(edition: &EditionFile) -> Vec<String> {
+    edition
+        .articles
+        .iter()
+        .flat_map(|article| {
+            let authors = article
+                .author
+                .split([',', '&'])
+                .flat_map(|part| part.split(" and "))
+                .map(str::trim);
+            [article.title.trim(), article.short_title.trim()]
+                .into_iter()
+                .chain(authors)
+                .filter(|name| name.chars().count() >= 3)
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+fn parse_front_matter(reply: &str, names: &[String]) -> Result<HashMap<String, String>> {
     let yaml = reply.trim().trim_start_matches("```yaml").trim_matches('`');
     let drafted: HashMap<String, String> =
         serde_norway::from_str(yaml).context("the front matter reply is not a YAML mapping")?;
@@ -867,9 +891,24 @@ fn parse_front_matter(reply: &str) -> Result<HashMap<String, String>> {
             bail!("front matter {key} is missing, empty, or carries an em dash");
         }
     }
-    let words = drafted["back_text"].split_whitespace().count();
-    if words > 60 {
-        bail!("front matter back_text runs {words} words; the budget is 60");
+    let back = &drafted["back_text"];
+    let words = back.split_whitespace().count();
+    if words > 40 {
+        bail!("front matter back_text runs {words} words; the budget is 40");
+    }
+    if let Some(word) = BACK_COVER_SELF_REFERENCE.find(back) {
+        bail!(
+            "front matter back_text says {:?}; it must not mention the issue, the magazine, \
+             or its articles",
+            word.as_str()
+        );
+    }
+    let named = names.iter().find(|name| {
+        regex::Regex::new(&format!(r"(?i)\b{}\b", regex::escape(name)))
+            .is_ok_and(|pattern| pattern.is_match(back))
+    });
+    if let Some(name) = named {
+        bail!("front matter back_text names {name:?}; it must not name an article, a title, or an author");
     }
     Ok(drafted)
 }
@@ -898,7 +937,10 @@ fn front_matter(
         "{INLINE_PREAMBLE}\n\n{}\n\n{finals}",
         read(&prompts_path("edition-front-matter.md"))?
     );
-    let drafted = caller.call_with_parse("front-matter", model, &prompt, parse_front_matter)?;
+    let names = front_matter_names(&edition);
+    let drafted = caller.call_with_parse("front-matter", model, &prompt, |reply| {
+        parse_front_matter(reply, &names)
+    })?;
     let filled = fill_todos(&read(edition_yaml)?, &drafted);
     parse_yaml::<EditionFile>(&filled)
         .with_context(|| format!("{} no longer parses after drafting", edition_yaml.display()))?;
@@ -1115,6 +1157,32 @@ mod tests {
                 row("media/002.png", "", "Two"),
             ]
         );
+    }
+
+    #[test]
+    fn the_back_cover_names_no_article_title_or_author() {
+        let names = [
+            "Introducing PACT".to_string(),
+            "PACT".to_string(),
+            "Mitchell Hashimoto".to_string(),
+        ];
+        let reply = |back: &str| format!("title: T\nsubtitle: S\nback_text: {back}\n");
+        assert!(parse_front_matter(
+            &reply("Your agent has more keys than you do. Count them."),
+            &names
+        )
+        .is_ok());
+        assert!(parse_front_matter(&reply("Impact first, questions later."), &names).is_ok());
+        for bad in [
+            "Ask Mitchell Hashimoto why.",
+            "PACT says no.",
+            "Open this issue now.",
+            "The articles disagree.",
+        ] {
+            assert!(parse_front_matter(&reply(bad), &names).is_err(), "{bad}");
+        }
+        let long = ["word"; 41].join(" ");
+        assert!(parse_front_matter(&reply(&long), &names).is_err());
     }
 
     #[test]

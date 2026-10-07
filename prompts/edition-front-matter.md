@@ -8,37 +8,42 @@ copy is a coincidence to enjoy, not a pipeline.
 
 ## The edition title
 
-Pull candidates from the articles themselves: the most arresting concrete
-image, claim, or phrase the issue actually contains (a thing, a scene, a
-number, a dare). Draft at least five before choosing.
+The title belongs to the whole issue, never to one piece. Read every article
+below, find what they have in common when you look past their topics (the
+same pressure, the same move, the same kind of trouble), and spin a title
+out of that. Draft at least five before choosing.
 
 Tests, all of which must pass:
 
-- You can picture it. It names something that exists in the issue's world,
-  not a quality of the issue ("small", "new", "future", "signals").
+- Every article fits under it. Hold it against each article in turn; if one
+  of them has nothing to do with it, it is the wrong title.
+- It is not any article's title, headline, coinage, or catchphrase, and not
+  a phrase lifted from one article.
+- You can picture it: an image or a thing, not a quality of the issue
+  ("small", "new", "future", "signals").
 - It would survive being shouted across a newsstand.
 - It is not a formula. Banned shapes: paired abstractions ("X, Named",
   "X and Y"), gerund openers ("Building...", "Naming..."), "The Age of X",
   "The X Issue", anything a language model would produce for a generic
   tech anthology.
-- It promises tension or pleasure, not coverage.
 
 The subtitle/deck may then do the inventory work plainly: what is actually
 inside, concretely, without theme-speak.
 
 ## The back cover
 
-`cover.back_text` is the hook on the back of the magazine: someone turns it
-over, reads it, and has to open it. Make it fun and make it about the
-content: a scene, a dare, a riddle, a tiny story, or a surprising fact lifted
-from one of the articles, told so the reader wants the rest.
+`cover.back_text` is what someone reads after turning the magazine over in
+a shop. Its only job is to make them open it. Make it fun: a dare, a joke,
+a riddle, a provocation, a question they suddenly need answered.
 
-- Never reference "this issue", "these pages", "inside", the magazine, or
-  the act of reading; no inventory or synopsis of contents.
-- One idea only, taken from the articles' actual material: a real number, a
-  real scene, a real claim. Invent nothing the articles do not say.
+- Never mention the issue, the magazine, the articles, their titles, their
+  authors, or the companies that published them, and never describe what is
+  inside. No retelling of an article's anecdote, no numbers from it.
+- It may play on the world the articles live in (agents, code, machines,
+  the people who build them), but it stands alone: a reader who knows none
+  of the articles gets it at once.
+- One idea. Short beats complete: 40 words at most, ideally under 25.
 - Playful beats solemn. A grin or a raised eyebrow is the goal.
-- Hard budget: 60 words at most (the render fails loudly when it cannot fit).
 
 ## The cover deck
 
