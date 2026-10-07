@@ -16,10 +16,10 @@ cover:
   headline: The Harness Tax
   deck: Same model, five times the bill; a model that greps its own prompt; Devin dreams nightly; OSC 7501; Nix overlays; Memory Beads; PACT; AI math in Lean
   back_text: To tell whether Claude Code is working, one tool checks if its window title starts with a Braille spinner. Then version 2.1.228 switched to half-circles. The rule file changed ten times in three months, all to read a spinner. The program always knew what it was doing. Nobody had given it a way to say so.
-  art_path: TODO
+  art_path: editions/014/art/picks/cover-harness-buckle-tears-v2.jpg
 articles:
 - id: harnesstax-how-much-does-the-harness-matter-for
-  title: 'HarnessTax: How Much Does the Harness Matter for Coding Agents?'
+  title: 'HarnessTax: How Much Does the Harness Matter?'
   short_title: 'HarnessTax'
   display_emphasis: Harness
   opener_variant: stepped_title
@@ -41,10 +41,10 @@ articles:
   #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/006.png: Figure 4 SWE-bench Lite
   #   harnesstax-how-much-does-the-harness-matter-for-7e847601 media/007.png: Figure 4 Terminal-Bench 2
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-harnesstax-two-wheelbarrows-v2.jpg
+    alt_text: Pedro struggles up a hill behind a wheelbarrow piled high with tool bags while Flopaz easily pushes another wheelbarrow carrying Maro and four small tools.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-harnesstax-choose-four-v3.jpg
   figures:
   - id: harness-effect
     source_id: harnesstax-how-much-does-the-harness-matter-for-7e847601
@@ -89,10 +89,10 @@ articles:
   #   recursive-language-models-cd9f5889 media/012.png: API
   #   recursive-language-models-cd9f5889 media/013.png: API
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-rlm-scroll-pieces-v4.jpg
+    alt_text: Maro snips pieces from an enormously long paper scroll and hands them to Pedro and Flopaz, who examine their pieces with magnifying glasses.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-rlm-nested-boxes-v3.jpg
   figures:
   - id: rlm-architecture
     source_id: recursive-language-models-cd9f5889
@@ -100,13 +100,6 @@ articles:
     caption: 'An RLM call: the root model gets the query, the context waits in a REPL environment, and the root model can launch depth-1 calls on pieces of it.'
     alt_text: Diagram. A root language model at depth 0 receives a query and talks to an environment box labeled REPL holding the context. Arrows lead down to two depth-1 RLM boxes, each a language model with its own sub-query, sub-context, and sub-response.
     anchor: The idea
-    layout: evidence_band
-  - id: oolong-132k
-    source_id: recursive-language-models-cd9f5889
-    path: media/005.png
-    caption: 'OOLONG trec_coarse at 132k tokens: score and average cost per query for GPT-5, GPT-5-mini, RLM(GPT-5-mini), RLM without sub-calls, and a ReAct agent.'
-    alt_text: 'Two bar charts. Score: GPT-5 30.2%, GPT-5-mini 34.5%, RLM(GPT-5-mini) 64.9%, RLM without sub-calls 56.0%, ReAct plus GPT-5 plus BM25 35.3%. Average cost: $0.195, $0.033, $0.234, $0.339, $0.476.'
-    anchor: Results
     layout: evidence_band
   - id: browsecomp-scaling
     source_id: recursive-language-models-cd9f5889
@@ -127,10 +120,10 @@ articles:
   - memory-and-dreaming-how-devin-learns-from-workin-393f9bac
   manuscript: editions/014/articles/memory-and-dreaming-how-devin-learns-from-workin.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-devin-night-pruning-v3.jpg
+    alt_text: At a night window Maro prunes dry paper leaves from a small potted tree while Flopaz waters it and Pedro sleeps on the windowsill.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-devin-morning-tree-v3.jpg
 - id: extending-beads-memories-versions-and-the-wire-p
   title: 'Extending Beads: Memories, Versions and the Wire Protocol'
   short_title: 'Extending Beads'
@@ -153,10 +146,10 @@ articles:
   #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/005.png: A night cityscape of separate glass-domed archives, each holding its own cluster of glowing beads, with bright
   #   extending-beads-memories-versions-and-the-wire-p-42b0a8c0 media/006.png: Two PRs citing different versions of one code flow policy Memory: the in-flight PR cites the earlier version a
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-beads-stringing-graph-v2.jpg
+    alt_text: Pedro strings blue beads on a cord fed by Maro while Flopaz ties a thread to a green bead and compares it with a paler green twin.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-beads-tin-can-wire-v2.jpg
   figures:
   - id: one-graph
     source_id: extending-beads-memories-versions-and-the-wire-p-42b0a8c0
@@ -183,26 +176,11 @@ articles:
   source_ids:
   - introducing-the-personal-agent-consent-trust-pro-5acfcaa5
   manuscript: editions/014/articles/introducing-the-personal-agent-consent-trust-pro.md
-  figures:
-  - id: figure-1
-    source_id: introducing-the-personal-agent-consent-trust-pro-5acfcaa5
-    path: media/001.png
-    caption: 'The consent screen: the personal agent asks for flight access, and the airline lists each permission for the user to grant.'
-    alt_text: A phone screen headed Personal Agent wants to access your Skyline account, with toggles for view upcoming flights and view past flights switched on and rebook flights switched off, and an Allow 2 of 3 button.
-    anchor: How PACT works
-    layout: evidence_band
-  - id: figure-2
-    source_id: introducing-the-personal-agent-consent-trust-pro-5acfcaa5
-    path: media/002.png
-    caption: "A grant in use: Maya's agent may read her trips, so it finds the delay, but rebooking needs a permission she never granted, so the airline refuses."
-    alt_text: A phone chat with a personal agent next to the airline's view of the same session. Maya's grant lists flights upcoming read and flights history read. The agent finds trip details, then a request to rebook comes back marked Rebooking isn't allowed.
-    anchor: How PACT works
-    layout: evidence_band
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-pact-two-of-three-keys-v3.jpg
+    alt_text: At a garden gate Flopaz gives Maro a ring with two keys while pocketing a third, as Pedro watches holding a suitcase and a paper airplane.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-pact-gate-stays-shut-v4.jpg
 - id: a-terminal-protocol-for-program-status-osc-7501
   title: A Terminal Protocol for Program Status (OSC 7501)
   short_title: OSC 7501
@@ -215,12 +193,12 @@ articles:
   - a-terminal-protocol-for-program-status-osc-7501-cbd7ea75
   manuscript: editions/014/articles/a-terminal-protocol-for-program-status-osc-7501.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-osc-raise-the-flag-v2.jpg
+    alt_text: Pedro and Flopaz peer through a window at a spinning pinwheel while Maro, working inside, simply raises a green flag to show its status.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-osc-signal-flags-v2.jpg
 - id: the-world-hasn-t-figured-out-yet-that-you-can-li
-  title: the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay
+  title: You can literally just fix everything with a Nix overlay
   short_title: a Nix overlay
   display_emphasis: Nix
   opener_variant: stepped_title
@@ -237,10 +215,10 @@ articles:
   #   the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96 media/001.jpg: the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay
   #   the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96 media/002.png: 
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-nix-patch-at-the-tap-v2.jpg
+    alt_text: Maro patches a leaking joint at a garden tap and four sprinklers fed by the branching hose spring to life over Pedro and Flopaz.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-nix-four-pots-v4.jpg
   figures:
   - id: overlay-fanout
     source_id: the-world-hasn-t-figured-out-yet-that-you-can-li-b6d50c96
@@ -261,9 +239,17 @@ articles:
   - sharing-ai-progress-in-mathematics-270d2009
   manuscript: editions/014/articles/sharing-ai-progress-in-mathematics.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/014/art/picks/opener-math-checking-the-arch-v3.jpg
+    alt_text: Pedro sets the keystone of a wooden block arch while Flopaz steadies it and Maro taps each joint with a small mallet to check it holds.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/014/art/picks/tail-math-walking-the-bridge-v3.jpg
 tail_art_fit: contain
-closing_plates: []
+closing_plates:
+- title: Lantern Ladder
+  art_path: editions/014/art/picks/closing-lantern-ladder-v3.jpg
+- title: Rising Kite
+  art_path: editions/014/art/picks/closing-rising-kite-v3.jpg
+- title: Rain Stairs
+  art_path: editions/014/art/picks/closing-rain-stairs-umbrella-v3.jpg
+- title: Paper Boat
+  art_path: editions/014/art/picks/closing-paper-boat-stream-v3.jpg
