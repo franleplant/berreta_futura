@@ -418,11 +418,11 @@
   let right = COVER-W - c.margin
   let top = COVER-H - 46 - c.title_size - 60
   let veil = tint.transparentize((1 - s.alpha) * 100%)
-  cover-put(wrap - 2, 0, image(spec.art, width: (COVER-W - wrap + 2) * 1pt, height: COVER-H * 1pt, fit: "cover"))
-  cover-fade(COVER-W, top, COVER-H - top, ((tint.transparentize(100%), 0%), (veil, 60 / (COVER-H - top) * 100%), (veil, 100%)))
+  cover-put(wrap - 2, 0, image(spec.art, width: (COVER-W - wrap + 3.5) * 1pt, height: COVER-H * 1pt, fit: "cover"))
+  cover-fade(COVER-W + 1.5, top, COVER-H - top, ((tint.transparentize(100%), 0%), (veil, 60 / (COVER-H - top) * 100%), (veil, 100%)))
   if s.top_gradient {
     let ink = rgb(d.color.ink)
-    cover-fade(COVER-W, 0, 120, ((ink.transparentize(58%), 0%), (ink.transparentize(100%), 100%)))
+    cover-fade(COVER-W + 1.5, 0, 120, ((ink.transparentize(58%), 0%), (ink.transparentize(100%), 100%)))
   }
   cover-spine(d)
   cover-wordmark(d, s.on_dark, c.wordmark_scale, left - (d.wordmark.x + 0.36) * c.wordmark_scale, c.wordmark_dy)
