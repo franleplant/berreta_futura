@@ -44,15 +44,10 @@ fn lead_author(author: &str) -> String {
     }
 }
 
-pub fn cover_tab_issue(edition: &Edition) -> String {
-    let label = if edition.language.split('-').next() == Some("en") {
-        "ISSUE"
-    } else {
-        "N\u{da}MERO"
-    };
-    format!("{label} {:0>3}", edition.issue_number)
-}
-
-pub fn cover_tab_identity(edition: &Edition) -> String {
-    format!("{} / BUENOS AIRES", edition.publication_name.to_uppercase())
+pub fn cover_issue(edition: &Edition) -> String {
+    let number = edition.issue_number.trim().trim_start_matches('0');
+    match number.is_empty() {
+        true => "0".to_string(),
+        false => number.to_string(),
+    }
 }

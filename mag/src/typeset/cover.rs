@@ -1,5 +1,5 @@
 use crate::cover::art::{art_zones, extreme_pixels, graded_art, luminance};
-use crate::cover::text::{cover_contributors, cover_date, cover_tab_identity, cover_tab_issue};
+use crate::cover::text::{cover_contributors, cover_date, cover_issue};
 use crate::model::manifest::Edition;
 use crate::typeset::content::string_literal;
 use anyhow::{bail, ensure, Context, Result};
@@ -67,7 +67,7 @@ pub const DESIGN_TOML: &str = "design/covers/canto-vivo/design.toml";
 const BUILT_IN: &str = include_str!("../../../design/covers/canto-vivo/design.toml");
 const PAGE: (f64, f64) = (419.527_559, 595.275_591);
 const TABLES: [&str; 8] = [
-    "color", "tab", "wordmark", "headline", "art", "deck", "footer", "back",
+    "color", "spine", "wordmark", "headline", "art", "deck", "footer", "back",
 ];
 
 fn layout_defaults() -> [(&'static str, Value); 2] {
@@ -126,18 +126,14 @@ fn text(design: &Value, pointer: &str) -> Result<String> {
         .with_context(|| format!("{DESIGN_TOML} {pointer} is not a string"))
 }
 
-fn language_copy(
-    edition: &Edition,
-) -> (&'static str, [&'static str; 2], &'static str, &'static str) {
+fn language_copy(edition: &Edition) -> ([&'static str; 2], &'static str, &'static str) {
     match edition.language.split('-').next() {
         Some("es") => (
-            "N\u{da}MERO",
             ["CICLO", "CERRADO"],
             "FIN",
             "Una antolog\u{ed}a independiente de textos que vale la pena conservar.",
         ),
         _ => (
-            "ISSUE",
             ["LOOP", "CLOSED"],
             "END",
             "An independent anthology of writing worth keeping.",
@@ -167,12 +163,13 @@ fn scrim_alpha(text: [f64; 3], scrim: [f64; 3], pixel: [f64; 3]) -> f64 {
 }
 
 fn scrim(design: &Value, art: &Path) -> Result<Value> {
-    let band = PAGE.0 - number(design, "/tab/width")?;
+    let wrap = number(design, "/spine/wrap")?;
     let margin = number(design, "/layout/footer_caption/margin")?;
     let title_top = PAGE.1 - 46.0 - number(design, "/layout/footer_caption/title_size")?;
-    let (top, _) = art_zones(art, band, PAGE.1)?;
-    let area = [margin, title_top, band - margin, PAGE.1 - 18.0];
-    let (darkest, brightest) = extreme_pixels(art, band, PAGE.1, area)?;
+    let width = PAGE.0 - wrap;
+    let (top, _) = art_zones(art, width, PAGE.1)?;
+    let area = [margin, title_top, width - margin, PAGE.1 - 18.0];
+    let (darkest, brightest) = extreme_pixels(art, width, PAGE.1, area)?;
     let (paper, ink) = (channels(design, "paper")?, channels(design, "ink")?);
     let on_paper = scrim_alpha(ink, paper, darkest);
     let on_ink = scrim_alpha(paper, ink, brightest);
@@ -226,25 +223,19 @@ fn front(design: &Value, edition: &Edition, work: &Path) -> Result<Value> {
             "headline": edition.cover.headline.as_deref().unwrap_or(&edition.title),
             "date_line": cover_date(&edition.publication_date),
             "contributors": cover_contributors(edition),
-            "tab_issue": cover_tab_issue(edition),
-            "tab_identity": cover_tab_identity(edition),
+            "issue": cover_issue(edition),
         },
     }))
 }
 
 fn back(design: &Value, edition: &Edition) -> Value {
-    let (issue, mass, end, statement) = language_copy(edition);
+    let (mass, end, statement) = language_copy(edition);
     json!({
         "design": design,
         "text": {
             "mass": mass,
             "statement": edition.cover.back_text.as_deref().unwrap_or(statement).trim(),
             "slug": format!("{end} / {}", cover_date(&edition.publication_date)),
-            "identity": format!(
-                "{} / {issue} {:0>3} / BUENOS AIRES",
-                edition.publication_name.to_uppercase(),
-                edition.issue_number
-            ),
         },
     })
 }
@@ -382,7 +373,11 @@ mod tests {
                 "{layout}"
             );
             assert!(
-                front.contains("ISSUE 010") && front.contains("2026 09 13"),
+                pages[0]
+                    .iter()
+                    .any(|run| run == "10" || run.starts_with("10 / "))
+                    && front.contains("2026 09 13")
+                    && !front.contains("ISSUE"),
                 "{layout}"
             );
             assert!(pages[1].is_empty() && pages[2].is_empty(), "{layout}");
@@ -413,10 +408,7 @@ mod tests {
         let back = back_of("es-AR");
         assert_eq!(back["text"]["mass"], json!(["CICLO", "CERRADO"]));
         assert_eq!(back["text"]["slug"], "FIN / 2026 09 13");
-        assert_eq!(
-            back["text"]["identity"],
-            "BERRETA FUTURA / N\u{da}MERO 010 / BUENOS AIRES"
-        );
+        assert!(back["text"].get("identity").is_none());
         let english = back_of("en");
         assert_eq!(
             english["text"]["statement"],
@@ -429,6 +421,32 @@ mod tests {
             &design(&root()).expect("design"),
             &edition(language, None, None),
         )
+    }
+
+    #[test]
+    fn a_footer_title_too_long_for_one_line_splits_in_two_and_keeps_every_name() {
+        let names = (1..13)
+            .map(|n| format!("AUTHOR {n}"))
+            .collect::<Vec<_>>()
+            .join(" / ");
+        for (headline, lines) in [
+            ("AI", 1),
+            ("What We Talk About When We Talk About Agents", 2),
+        ] {
+            let mut cover = edition("en", Some("footer_caption"), Some(art()));
+            cover.cover.headline = Some(headline.into());
+            cover.cover.deck = Some(names.clone());
+            let front = pages(&cover).expect(headline)[0].join("|");
+            assert_eq!(
+                front.contains("WHAT WE TALK ABOUT WHEN|WE TALK ABOUT AGENTS"),
+                lines == 2,
+                "{front}"
+            );
+            assert!(
+                front.contains("AUTHOR 12") && !front.contains('\u{2026}'),
+                "{front}"
+            );
+        }
     }
 
     #[test]

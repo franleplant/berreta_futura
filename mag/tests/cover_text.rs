@@ -68,28 +68,17 @@ fn contributors_are_deduplicated_trimmed_and_upper_cased() {
 }
 
 #[test]
-fn the_issue_tab_follows_the_language_and_pads_the_number() {
-    let issue = |language, number| {
-        text::cover_tab_issue(&edition(
+fn the_issue_number_drops_leading_zeros_and_carries_no_label() {
+    let issue = |number| {
+        text::cover_issue(&edition(
             &[],
             Cover::default(),
-            language,
+            "es-AR",
             number,
             "Berreta Futura",
         ))
     };
-    assert_eq!(issue("en", "010"), "ISSUE 010");
-    assert_eq!(issue("es-AR", "7"), "N\u{da}MERO 007");
-}
-
-#[test]
-fn the_identity_tab_upper_cases_the_publication_name() {
-    let identity = text::cover_tab_identity(&edition(
-        &[],
-        Cover::default(),
-        "en",
-        "010",
-        "berreta futura",
-    ));
-    assert_eq!(identity, "BERRETA FUTURA / BUENOS AIRES");
+    assert_eq!(issue("010"), "10");
+    assert_eq!(issue("7"), "7");
+    assert_eq!(issue("000"), "0");
 }

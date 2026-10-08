@@ -10,14 +10,12 @@ ink = "#0a0b0d"
 violet = "#4b21c0"
 orange = "#f05738"
 
-[tab]
-width = 21.0
-overdraw = 1.5
-issue_top = 26.5
-identity_top = 433.5
-# The band is one solid orange stripe that runs to the right trim, with no
-# unprinted reveal at the page edge. Nothing is ever drawn inside the band.
-edge_reveal = 0.0
+[spine]
+wrap = 28.35
+
+[issue]
+place = "tag"
+size = 46.0
 
 [wordmark]
 x = 38.0
@@ -52,10 +50,6 @@ tracking = 1.85
 
 [back]
 overdraw = 1.5
-rail_width = 42.0
-rail_top = 32.0
-rail_size = 8.0
-rail_tracking = 1.6
 mass_x = 6.0
 mass_top = 38.0
 mass_size = 116.0
