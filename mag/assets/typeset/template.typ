@@ -674,7 +674,6 @@
 #let contents-kicker(body) = tag("kicker", body)
 #let contents-label(body) = tag("label", body)
 #let contents-headline(body) = tag("headline", body)
-#let contents-dek(body) = tag("dek", body)
 #let entry-label(body) = tag("entry-label", body)
 #let entry-title(body) = tag("entry-title", body)
 #let entry-author(body) = tag("entry-author", body)
@@ -721,7 +720,7 @@
   let entries = rows.filter(r => r.tag == "entry")
   let live = PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM
   block(height: live, width: 100%, context {
-    let (kicker, label, headline, dek) = ("kicker", "label", "headline", "dek").map(name => part(rows, name))
+    let (kicker, label, headline) = ("kicker", "label", "headline").map(name => part(rows, name))
     if kicker != none {
       place(top + left, dy: CONTENTS-KICKER-TOP + ZERO-LEADING-SANS, contents-caption(kicker, tracking: 0.45pt))
     }
@@ -729,24 +728,15 @@
       if label != none { bookmark(1, label) }
       text(font: DISPLAY, size: CONTENTS-TITLE-SIZE, weight: 600, ..flat, if headline != none { headline } else { label })
     })
-    let deck = if dek == none { none } else {
-      block(width: LIVE-WIDTH * 0.86, {
-        set par(leading: 4.6pt, justify: false)
-        text(font: SERIF, size: 9.2pt, style: "italic", fill: SLATE, top-edge: "cap-height", bottom-edge: "baseline", hyphenate: false, dek)
-      })
-    }
-    let deck-top = CONTENTS-TITLE-TOP + CONTENTS-TITLE-SIZE * 0.5 + 13pt
-    if deck != none { place(top + left, dy: deck-top, deck) }
-    let list-top = if deck == none { CONTENTS-TOP } else { calc.max(CONTENTS-TOP, deck-top + measure(deck).height + 16pt) }
     let lead = 16pt
-    let room = live - list-top - CONTENTS-HEAD-RULE - lead - 8pt
+    let room = live - CONTENTS-TOP - CONTENTS-HEAD-RULE - lead - 8pt
     let gaps = calc.max(1, entries.len() - 1)
     let gap-at = size => (room - entries.map(e => measure(block(width: LIVE-WIDTH, contents-row(e, size))).height).sum()) / gaps
     let size = 11.5pt
     while size > 8.5pt and gap-at(size) < CONTENTS-GAP.min { size -= 0.25pt }
     assert(gap-at(size) >= CONTENTS-GAP.min, message: "The contents cannot fit " + str(entries.len()) + " entries on one page; shorten the longest titles")
     let gap = calc.min(gap-at(size), CONTENTS-GAP.max)
-    place(top + left, dy: list-top, block(width: LIVE-WIDTH, {
+    place(top + left, dy: CONTENTS-TOP, block(width: LIVE-WIDTH, {
       set block(spacing: 0pt)
       line(length: 100%, stroke: CONTENTS-HEAD-RULE + VIOLET)
       v(lead)

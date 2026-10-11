@@ -353,7 +353,7 @@ impl Writer<'_> {
             })
             .collect();
         Ok(format!(
-            "#contents[\n  #contents-kicker{}\n  #contents-label{}\n  #contents-headline{}\n  #contents-dek{}\n{rows}]\n\n",
+            "#contents[\n  #contents-kicker{}\n  #contents-label{}\n  #contents-headline{}\n{rows}]\n\n",
             self.said(&format!(
                 "{} {} / {}",
                 self.ui("issue"),
@@ -362,7 +362,6 @@ impl Writer<'_> {
             )),
             self.said(&self.ui("contents")),
             self.said(&self.edition.title),
-            self.said(&self.edition.subtitle),
         ))
     }
 
