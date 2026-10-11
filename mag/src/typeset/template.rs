@@ -1176,7 +1176,6 @@ mod tests {
             ("RUNNING-TICK-TOP", 27.425),
             ("RUNNING-TICK-WIDTH", 14.0),
             ("CONTENTS-KICKER-TOP", -13.46915),
-            ("CONTENTS-TITLE-TOP", 32.54098),
             ("OPENER-RAIL", 348.0),
             ("OPENER-ESCAPE", 11.5),
             ("OPENER-ART-HEIGHT", 207.1),

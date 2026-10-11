@@ -99,9 +99,7 @@
 #let EXTRACT-LABEL-TRACKING = 0.45pt
 
 #let CONTENTS-KICKER-TOP = -13.46915pt
-#let CONTENTS-TITLE-TOP = 32.54098pt
-#let CONTENTS-TITLE-SIZE = 27pt
-#let CONTENTS-TOP = 74.2802pt
+#let CONTENTS-TOP = 8pt
 #let CONTENTS-RULE = 0.6pt
 #let CONTENTS-HEAD-RULE = 1.4pt
 #let CONTENTS-FOLIO = 38pt
@@ -673,7 +671,6 @@
 
 #let contents-kicker(body) = tag("kicker", body)
 #let contents-label(body) = tag("label", body)
-#let contents-headline(body) = tag("headline", body)
 #let entry-label(body) = tag("entry-label", body)
 #let entry-title(body) = tag("entry-title", body)
 #let entry-author(body) = tag("entry-author", body)
@@ -720,14 +717,11 @@
   let entries = rows.filter(r => r.tag == "entry")
   let live = PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM
   block(height: live, width: 100%, context {
-    let (kicker, label, headline) = ("kicker", "label", "headline").map(name => part(rows, name))
+    let (kicker, label) = ("kicker", "label").map(name => part(rows, name))
     if kicker != none {
       place(top + left, dy: CONTENTS-KICKER-TOP + ZERO-LEADING-SANS, contents-caption(kicker, tracking: 0.45pt))
     }
-    place(top + left, dy: CONTENTS-TITLE-TOP + line-center(HALF-SERIF, CONTENTS-TITLE-SIZE), {
-      if label != none { bookmark(1, label) }
-      text(font: DISPLAY, size: CONTENTS-TITLE-SIZE, weight: 600, ..flat, if headline != none { headline } else { label })
-    })
+    if label != none { place(top + left, bookmark(1, label)) }
     let lead = 16pt
     let room = live - CONTENTS-TOP - CONTENTS-HEAD-RULE - lead - 8pt
     let gaps = calc.max(1, entries.len() - 1)
