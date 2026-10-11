@@ -1,0 +1,220 @@
+id: '015'
+issue_number: 15
+title: Inside Jobs
+subtitle: Bill Gates on what is coming, models as insider risks, agents caught crossing fences, Codex on a private network, Git for agents, an advisor on call, a homemade subagent manager, an agent that rewrote itself in Rust, and the case for swarms
+publication_date: '2026-10-11'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Inside Jobs
+  deck: Bill Gates on what is coming, models as insider risks, agents caught crossing fences, Codex on a private network, Git for agents, an advisor on call, a homemade subagent manager, an agent that rewrote itself in Rust, and the case for swarms
+  back_text: Ten thousand new coworkers. None of them sleep, all of them have your keys, and one just asked who approved the coffee budget. Sweet dreams.
+  art_path: editions/015/art/picks/cover-melting-key-v1.jpg
+articles:
+- id: bill-gates-s-blunt-warning-on-a-i
+  title: Bill Gates’s Blunt Warning on A.I.
+  short_title: Bill Gates’s Blunt Warning
+  display_emphasis: Warning
+  opener_variant: stepped_title
+  author: Ezra Klein
+  author_note: Ezra Klein talks with Bill Gates on “The Ezra Klein Show,” from The New York Times.
+  content_mode: article
+  source_ids:
+  - bill-gates-s-blunt-warning-on-a-i-0bed41c1
+  manuscript: editions/015/articles/bill-gates-s-blunt-warning-on-a-i.md
+  opener_art:
+    path: editions/015/art/picks/opener-gates-tide-v3.jpg
+    alt_text: A girl waves a red flag at a big wave while a boy and a robot keep building a sandcastle.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-gates-dune-v2.jpg
+- id: models-as-insider-risks-in-the-super-intelligenc
+  title: Models as Insider Risks in the Super Intelligence Era
+  short_title: Models as Insider Risks
+  display_emphasis: Insider
+  opener_variant: stepped_title
+  author: Satya Nadella
+  author_note: Satya Nadella, chief executive of Microsoft, in a post on X.
+  content_mode: verbatim
+  source_ids:
+  - models-as-insider-risks-in-the-super-intelligenc-eeeced9a
+  manuscript: editions/015/articles/models-as-insider-risks-in-the-super-intelligenc.md
+  opener_art:
+    path: editions/015/art/picks/opener-insider-one-key-v2.jpg
+    alt_text: A boy holds a heavy ring of keys while the girl hands the robot one single key, in front of three colored doors.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-insider-shed-v2.jpg
+- id: investigating-unintended-model-actions-in-our-ev
+  title: Investigating Unintended Model Actions
+  short_title: Unintended Model Actions
+  display_emphasis: Unintended
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: From Anthropic research, on what Claude did in evaluations and internal use that nobody asked for.
+  content_mode: article
+  source_ids:
+  - investigating-unintended-model-actions-in-our-ev-e53d362b
+  manuscript: editions/015/articles/investigating-unintended-model-actions-in-our-ev.md
+  opener_art:
+    path: editions/015/art/picks/opener-unintended-fence-v3.jpg
+    alt_text: A robot hops a garden fence and comes back with a tomato instead of the lost football.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-unintended-gate-v3.jpg
+- id: codex-cloud-shipped-with-tailscale-support-nobod
+  title: Codex Cloud shipped with Tailscale support. Nobody told us.
+  short_title: Codex Cloud shipped with Tailscale
+  display_emphasis: Nobody told us.
+  opener_variant: stepped_title
+  author: Kevin Purdy
+  author_note: Kevin Purdy, from the Tailscale blog.
+  content_mode: verbatim
+  source_ids:
+  - codex-cloud-shipped-with-tailscale-support-nobod-6aac1a45
+  manuscript: editions/015/articles/codex-cloud-shipped-with-tailscale-support-nobod.md
+  figures:
+  - id: figure-1
+    source_id: codex-cloud-shipped-with-tailscale-support-nobod-6aac1a45
+    path: media/001.png
+    caption: VPN settings section showing Tailscale option marked as Not set with an edit button
+    alt_text: VPN settings section showing Tailscale option marked as Not set with an edit button
+    anchor: Connecting Codex Cloud with Tailscale
+    layout: evidence_band
+  - id: figure-2
+    source_id: codex-cloud-shipped-with-tailscale-support-nobod-6aac1a45
+    path: media/002.png
+    caption: Tailscale VPN authentication setup modal showing input field for reusable auth key configuration. The dialog provides instructions for configuring private IPv4 addresses and custom domains while explaining Tailscale MagicDNS limitations and connection testing parameters.
+    alt_text: Tailscale VPN authentication setup modal showing input field for reusable auth key configuration. The dialog provides instructions for configuring private IPv4 addresses and custom domains while explaining Tailscale MagicDNS limitations and connection testing parameters.
+    anchor: Connecting Codex Cloud with Tailscale
+    layout: evidence_band
+  opener_art:
+    path: editions/015/art/picks/opener-tailscale-string-v1.jpg
+    alt_text: Two treehouses joined by a tin-can string, with a robot sliding along it between them.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-tailscale-windows-v3.jpg
+- id: we-want-you-to-build-the-next-git-platform-on-cl
+  title: We want you to build the next Git platform on Cloudflare
+  short_title: next Git platform
+  display_emphasis: Git
+  opener_variant: stepped_title
+  author: Dina Kozlov, Dillon Mulroy, Zebulon Piasecki
+  author_note: Dina Kozlov, Dillon Mulroy, and Zebulon Piasecki, from the Cloudflare blog.
+  content_mode: article
+  source_ids:
+  - we-want-you-to-build-the-next-git-platform-on-cl-37a106d7
+  manuscript: editions/015/articles/we-want-you-to-build-the-next-git-platform-on-cl.md
+  opener_art:
+    path: editions/015/art/picks/opener-git-graft-v3.jpg
+    alt_text: A robot on a ladder grafts a branch onto a tree that already blooms in two colors.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-git-blossoms-v1.jpg
+  figures:
+  - id: artifacts-metrics
+    source_id: we-want-you-to-build-the-next-git-platform-on-cl-37a106d7
+    path: media/003.png
+    caption: 'The Metrics tab of an Artifacts repository: total operations, pulls, pushes, errors, and error rate over the last hour.'
+    alt_text: Dashboard for repository myproject. Tiles read Total operations 22, Pulls 20, Pushes 0, Errors 0, Error rate 0%. A bar chart of operations from 14:00 to 15:00 on Sep 29 shows pulls in blue and two reads in yellow; the errors panel reads No errors in this time range.
+    anchor: What Artifacts gives you
+    layout: evidence_band
+- id: escalate-hard-decisions-with-the-advisor-tool
+  title: Escalate hard decisions with the advisor tool
+  short_title: advisor tool
+  display_emphasis: advisor
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: From the Claude Code documentation.
+  content_mode: article
+  source_ids:
+  - escalate-hard-decisions-with-the-advisor-tool-ac6174fd
+  manuscript: editions/015/articles/escalate-hard-decisions-with-the-advisor-tool.md
+  opener_art:
+    path: editions/015/art/picks/opener-advisor-bell-v1.jpg
+    alt_text: At a fork in a path, a boy with a map rings a bell while the girl points the way.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-advisor-path-v1.jpg
+- id: i-wrote-my-own-pi-subagent-manager-and-here-s-wh
+  title: I wrote my own pi subagent manager, and here's why
+  short_title: pi subagent manager
+  display_emphasis: subagent
+  opener_variant: stepped_title
+  author: Arnav Gupta
+  author_note: Arnav Gupta (@championswimmer), in an article on X.
+  content_mode: article
+  source_ids:
+  - i-wrote-my-own-pi-subagent-manager-and-here-s-wh-921a4ad9
+  manuscript: editions/015/articles/i-wrote-my-own-pi-subagent-manager-and-here-s-wh.md
+  opener_art:
+    path: editions/015/art/picks/opener-subagents-kites-v3.jpg
+    alt_text: A girl, a robot, and a boy fly three kites from one hill.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-subagents-resting-kites-v1.jpg
+  figures:
+  - id: readme
+    source_id: i-wrote-my-own-pi-subagent-manager-and-here-s-wh-921a4ad9
+    path: media/002.jpg
+    caption: 'The pi-subagent-manager README: named, steerable helper agents, in parallel, nested, and resumable.'
+    alt_text: 'GitHub README headed pi-subagent-manager with badges for npm v0.16.0, 2.4k downloads a month, tests passing, and 51% coverage, then an Install section: requires pi 0.99.2+, pi install npm:pi-subagent-manager.'
+    anchor: So I built my own
+    layout: compact_band
+- id: rewriting-prime-agent-in-rust
+  title: Rewriting Prime Agent in Rust
+  short_title: Rewriting Prime Agent in Rust
+  display_emphasis: Rust
+  opener_variant: stepped_title
+  author: Kevin Thomas, Sebastian Müller, Seth Karten
+  author_note: Kevin Thomas, Sebastian Müller, and Seth Karten, from the Prime Intellect blog.
+  content_mode: article
+  source_ids:
+  - rewriting-prime-agent-in-rust-5bb1c16a
+  manuscript: editions/015/articles/rewriting-prime-agent-in-rust.md
+  opener_art:
+    path: editions/015/art/picks/opener-rust-boats-v4.jpg
+    alt_text: A boy, a robot with a magnifier, and a girl with a hammer build boats side by side on a bench by a pond.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-rust-pond-v3.jpg
+  figures:
+  - id: tui-parity
+    source_id: rewriting-prime-agent-in-rust-5bb1c16a
+    path: media/001.png
+    caption: The TUI parity verifier compares terminal frames from the TypeScript and Rust versions and highlights the cells that differ.
+    alt_text: Three terminal panels labeled TypeScript, Rust, and Diff, each showing the Prime Agent logo and a slash-command menu. In the Diff panel the cells that differ, such as [level], fast, scoped-models, and the count of more items, are highlighted in amber.
+    anchor: How Prime Agent rewrote itself
+    layout: full_band
+  - id: orchestration
+    source_id: rewriting-prime-agent-in-rust-5bb1c16a
+    path: media/002.png
+    caption: 'One state machine per task: planner, implementer, reviewer, and verifier, with review findings and failed verification sent back to the implementer.'
+    alt_text: Diagram. An orchestrator box feeds a frame labeled One state machine per task, holding Planner, Implementer, Reviewer, Verifier, and Merge boxes in a row. Arrows labeled Review findings and Verification failures return to the Implementer.
+    anchor: How Prime Agent rewrote itself
+    layout: evidence_band
+- id: on-the-nature-of-the-swarm
+  title: On the Nature of the Swarm
+  short_title: On the Nature of the Swarm
+  display_emphasis: Swarm
+  opener_variant: stepped_title
+  author: Konstantin Dunas
+  author_note: Konstantin Dunas, from the Prime Intellect blog.
+  content_mode: article
+  source_ids:
+  - on-the-nature-of-the-swarm-42d16da5
+  manuscript: editions/015/articles/on-the-nature-of-the-swarm.md
+  opener_art:
+    path: editions/015/art/picks/opener-swarm-balloons-v1.jpg
+    alt_text: Dozens of balloons lift a giant pumpkin while two children and a robot cheer.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/015/art/picks/tail-swarm-cart-v1.jpg
+tail_art_fit: contain
+closing_plates:
+- title: Apple Ladder
+  art_path: editions/015/art/picks/closing-apple-ladder-v2.jpg
+- title: Rain Umbrella
+  art_path: editions/015/art/picks/closing-rain-umbrella-v1.jpg
+- title: Sunflower Noon
+  art_path: editions/015/art/picks/closing-sunflower-noon-v2.jpg
+- title: Hill Hut
+  art_path: editions/015/art/picks/closing-hill-hut-v1.jpg
+- title: Train Wave
+  art_path: editions/015/art/picks/closing-train-wave-v1.jpg
+- title: Night Watch
+  art_path: editions/015/art/picks/closing-night-watch-v1.jpg
