@@ -12,7 +12,7 @@ cover:
   headline: Inside Jobs
   deck: Bill Gates on what is coming, models as insider risks, agents caught crossing fences, Codex on a private network, Git for agents, an advisor on call, a homemade subagent manager, an agent that rewrote itself in Rust, and the case for swarms
   back_text: Ten thousand new coworkers. None of them sleep, all of them have your keys, and one just asked who approved the coffee budget. Sweet dreams.
-  art_path: editions/015/art/picks/cover-melting-key-v1.jpg
+  art_path: editions/015/art/picks/cover-paper-wave-v2.jpg
 articles:
 - id: bill-gates-s-blunt-warning-on-a-i
   title: Bill Gates’s Blunt Warning on A.I.
@@ -89,7 +89,7 @@ articles:
     anchor: Connecting Codex Cloud with Tailscale
     layout: evidence_band
   opener_art:
-    path: editions/015/art/picks/opener-tailscale-string-v1.jpg
+    path: editions/015/art/picks/opener-tailscale-string-v4.jpg
     alt_text: Two treehouses joined by a tin-can string, with a robot sliding along it between them.
     credit: Illustration generated for this edition.
   tail_art_path: editions/015/art/picks/tail-tailscale-windows-v3.jpg
@@ -174,13 +174,6 @@ articles:
     credit: Illustration generated for this edition.
   tail_art_path: editions/015/art/picks/tail-rust-pond-v3.jpg
   figures:
-  - id: tui-parity
-    source_id: rewriting-prime-agent-in-rust-5bb1c16a
-    path: media/001.png
-    caption: The TUI parity verifier compares terminal frames from the TypeScript and Rust versions and highlights the cells that differ.
-    alt_text: Three terminal panels labeled TypeScript, Rust, and Diff, each showing the Prime Agent logo and a slash-command menu. In the Diff panel the cells that differ, such as [level], fast, scoped-models, and the count of more items, are highlighted in amber.
-    anchor: How Prime Agent rewrote itself
-    layout: full_band
   - id: orchestration
     source_id: rewriting-prime-agent-in-rust-5bb1c16a
     path: media/002.png
@@ -212,9 +205,11 @@ closing_plates:
   art_path: editions/015/art/picks/closing-rain-umbrella-v1.jpg
 - title: Sunflower Noon
   art_path: editions/015/art/picks/closing-sunflower-noon-v2.jpg
+- title: Snow Sled
+  art_path: editions/015/art/picks/closing-snow-sled-v1.jpg
 - title: Hill Hut
-  art_path: editions/015/art/picks/closing-hill-hut-v1.jpg
+  art_path: editions/015/art/picks/closing-hill-hut-v2.jpg
 - title: Train Wave
-  art_path: editions/015/art/picks/closing-train-wave-v1.jpg
+  art_path: editions/015/art/picks/closing-train-wave-v2.jpg
 - title: Night Watch
   art_path: editions/015/art/picks/closing-night-watch-v1.jpg
