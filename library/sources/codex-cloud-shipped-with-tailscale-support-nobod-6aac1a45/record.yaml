@@ -1,0 +1,8 @@
+id: codex-cloud-shipped-with-tailscale-support-nobod-6aac1a45
+title: 'Codex Cloud shipped with Tailscale support. Nobody told us.'
+author: 'Kevin Purdy'
+url: https://tailscale.com/blog/codex-cloud-tailscale
+captured_at: '2026-10-11T01:20:59Z'
+published_at: '2026-10-06'
+tags: []
+synopsis: 'Tailscale describes how OpenAI''s Codex Cloud launched with Tailscale as a VPN provider without any partnership, how to connect it with a tagged reusable ephemeral auth key, its networking limitations, and how to restrict agent access with tags, grants, key expiry, flow logs, and device approval.'

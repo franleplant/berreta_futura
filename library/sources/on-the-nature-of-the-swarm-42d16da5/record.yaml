@@ -1,0 +1,8 @@
+id: on-the-nature-of-the-swarm-42d16da5
+title: 'On the Nature of the Swarm'
+author: 'Konstantin Dunas'
+url: https://www.primeintellect.ai/blog/on-the-nature-of-the-swarm
+captured_at: '2026-10-11T01:19:16Z'
+published_at: '2026-10-06'
+tags: []
+synopsis: 'The article argues that inference scaling runs into context limits, that compaction, disk offloading, and sub-agents each only partly address them, and that persistent peer agents in a mesh raise total context capacity at the price of communication cost.'

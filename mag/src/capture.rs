@@ -479,7 +479,7 @@ pub(crate) fn page_title(html: &str) -> Option<String> {
 
     let head = TITLE_SEPARATOR
         .split(&raw)
-        .next()
+        .max_by_key(|part| part.trim().chars().count())
         .unwrap_or(&raw)
         .trim()
         .to_string();
@@ -1530,6 +1530,10 @@ mod tests {
             ))
             .unwrap(),
             "OCE - The Open Agent Platform"
+        );
+        assert_eq!(
+            page_title(&page("Opinion | Bill Gates Warns on A.I.", "NYTimes")).unwrap(),
+            "Bill Gates Warns on A.I."
         );
         let webp = include_bytes!("../tests/capture_fixtures/tiny.webp");
         assert_eq!(sniff_image(webp), Some("webp"));

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 205 1520 560" width="1520" height="560"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10" fill="#a1a1aa" /></marker><marker id="purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10" fill="#a78bfa" /></marker></defs><g font-family="Helvetica Neue, Arial, sans-serif">
+<rect x="540" y="225" width="520" height="100" fill="#171122" stroke="#a78bfa" stroke-width="2" />
+<text x="800.0" y="270" font-size="28" fill="#fafafa" text-anchor="middle">Orchestrator</text>
+<text x="800.0" y="305" font-size="20" fill="#a1a1aa" text-anchor="middle">Plans tasks · monitors progress</text>
+<path d="M 800 325 V 385" stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+<rect x="60" y="385" width="1480" height="360" fill="none" stroke="#2a2a2a" stroke-width="2" />
+<text x="85" y="424" font-size="21" fill="#a1a1aa" text-anchor="start">One state machine per task</text>
+<rect x="95" y="480" width="250" height="110" fill="#111111" stroke="#444" stroke-width="2" />
+<text x="220.0" y="525" font-size="28" fill="#fafafa" text-anchor="middle">Planner</text>
+<text x="220.0" y="560" font-size="20" fill="#a1a1aa" text-anchor="middle">Defines TS behavior</text>
+<rect x="385" y="480" width="250" height="110" fill="#171122" stroke="#a78bfa" stroke-width="2" />
+<text x="510.0" y="525" font-size="28" fill="#fafafa" text-anchor="middle">Implementer</text>
+<text x="510.0" y="560" font-size="20" fill="#a1a1aa" text-anchor="middle">Implements Rust behavior</text>
+<rect x="675" y="480" width="250" height="110" fill="#111111" stroke="#444" stroke-width="2" />
+<text x="800.0" y="525" font-size="28" fill="#fafafa" text-anchor="middle">Reviewer</text>
+<text x="800.0" y="560" font-size="20" fill="#a1a1aa" text-anchor="middle">Reviews correctness</text>
+<rect x="965" y="480" width="250" height="110" fill="#111111" stroke="#444" stroke-width="2" />
+<text x="1090.0" y="525" font-size="28" fill="#fafafa" text-anchor="middle">Verifier</text>
+<text x="1090.0" y="560" font-size="20" fill="#a1a1aa" text-anchor="middle">Verifies TS parity</text>
+<rect x="1255" y="480" width="250" height="110" fill="#111111" stroke="#444" stroke-width="2" />
+<text x="1380.0" y="525" font-size="28" fill="#fafafa" text-anchor="middle">Merge</text>
+<text x="1380.0" y="560" font-size="20" fill="#a1a1aa" text-anchor="middle">Integrates verified work</text>
+<path d="M 345 535 H 375" stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+<path d="M 635 535 H 665" stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+<path d="M 925 535 H 955" stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+<path d="M 1215 535 H 1245" stroke="#a1a1aa" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+<path d="M 800 590 V 640 H 510 V 600" stroke="#a78bfa" stroke-width="2" fill="none" marker-end="url(#purple)" />
+<text x="665" y="630" font-size="19" fill="#a78bfa" text-anchor="middle">Review findings</text>
+<path d="M 1090 590 V 700 H 470 V 600" stroke="#a78bfa" stroke-width="2" fill="none" marker-end="url(#purple)" />
+<text x="835" y="690" font-size="19" fill="#a78bfa" text-anchor="middle">Verification failures</text>
+</g></svg>

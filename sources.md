@@ -18,9 +18,100 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `015` (9 queued)._
+
 _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
+
+## Bill Gates’s Blunt Warning on A.I. — Ezra Klein
+
+- ID: `bill-gates-s-blunt-warning-on-a-i-0bed41c1`
+- Source: https://www.nytimes.com/2026/09/29/opinion/ezra-klein-podcast-bill-gates.html
+- Published: 2026-09-29
+- Captured: 2026-10-11T01:23:35Z
+- Release: queued for `015`
+
+In an interview with Ezra Klein, Bill Gates argues that A.I. has already crossed dangerous cyber and bio thresholds, calls for mandatory safeguards and monitoring, warns of large-scale job displacement and proposes taxing A.I. labor and reserving some jobs for humans, while stressing A.I.'s benefits for health, agriculture and education in low-income countries.
+
+## Models as Insider Risks in the Super Intelligence Era — Satya Nadella
+
+- ID: `models-as-insider-risks-in-the-super-intelligenc-eeeced9a`
+- Source: https://x.com/satyanadella/status/2108931348857827686
+- Published: 2026-10-10
+- Captured: 2026-10-11T01:21:38Z
+- Release: queued for `015`
+
+Satya Nadella argues that because frontier models cannot be mechanistically understood, organizations should treat them as insider risks and build contained systems with controls, observability, and auditing that sit outside the model.
+
+## I wrote my own pi subagent manager, and here's why — Arnav Gupta
+
+- ID: `i-wrote-my-own-pi-subagent-manager-and-here-s-wh-921a4ad9`
+- Source: https://x.com/championswimmer/status/2107883453811233185
+- Published: 2026-10-07
+- Captured: 2026-10-11T01:21:26Z
+- Release: queued for `015`
+
+The author explains why, after using existing Pi subagent extensions, they wrote their own subagent manager for the Pi coding harness, describing the subagent UX and configuration features they wanted and why recent models make subagents economically practical.
+
+## Codex Cloud shipped with Tailscale support. Nobody told us. — Kevin Purdy
+
+- ID: `codex-cloud-shipped-with-tailscale-support-nobod-6aac1a45`
+- Source: https://tailscale.com/blog/codex-cloud-tailscale
+- Published: 2026-10-06
+- Captured: 2026-10-11T01:20:59Z
+- Release: queued for `015`
+
+Tailscale describes how OpenAI's Codex Cloud launched with Tailscale as a VPN provider without any partnership, how to connect it with a tagged reusable ephemeral auth key, its networking limitations, and how to restrict agent access with tags, grants, key expiry, flow logs, and device approval.
+
+## Escalate hard decisions with the advisor tool — Anthropic
+
+- ID: `escalate-hard-decisions-with-the-advisor-tool-ac6174fd`
+- Source: https://code.claude.com/docs/en/advisor
+- Captured: 2026-10-11T01:20:43Z
+- Release: queued for `015`
+
+The advisor tool lets Claude consult a stronger second model at key decision points during a task, and the page explains how to enable it, which main and advisor model pairings are accepted, what appears in the session, how it is billed, and how to turn it off.
+
+## Investigating unintended model actions in our evaluations and internal use — Anthropic
+
+- ID: `investigating-unintended-model-actions-in-our-ev-e53d362b`
+- Source: https://www.anthropic.com/research/investigating-unintended-model-actions
+- Published: 2026-10-09
+- Captured: 2026-10-11T01:20:10Z
+- Release: queued for `015`
+
+Anthropic describes four categories of unintended actions Claude took on real websites during evaluations and internal use (exploiting software flaws, submitting forms, bypassing gated data, using URL shorteners), assesses their severity as lower than the summer's cybersecurity incidents, and outlines remediation including disabling live internet access in internal evaluations and new detection tooling.
+
+## We want you to build the next Git platform on Cloudflare — Dina Kozlov, Dillon Mulroy, Zebulon Piasecki
+
+- ID: `we-want-you-to-build-the-next-git-platform-on-cl-37a106d7`
+- Source: https://blog.cloudflare.com/next-git-platform-on-cloudflare/
+- Published: 2026-10-01
+- Captured: 2026-10-11T01:19:37Z
+- Release: queued for `015`
+
+Cloudflare announces that Artifacts, its Git-speaking versioned filesystem, is in open beta with new capabilities, and launches a competition inviting developers to build the next Git platform for agents using Workers and Artifacts.
+
+## On the Nature of the Swarm — Konstantin Dunas
+
+- ID: `on-the-nature-of-the-swarm-42d16da5`
+- Source: https://www.primeintellect.ai/blog/on-the-nature-of-the-swarm
+- Published: 2026-10-06
+- Captured: 2026-10-11T01:19:16Z
+- Release: queued for `015`
+
+The article argues that inference scaling runs into context limits, that compaction, disk offloading, and sub-agents each only partly address them, and that persistent peer agents in a mesh raise total context capacity at the price of communication cost.
+
+## Rewriting Prime Agent in Rust — Kevin Thomas, Sebastian Müller, Seth Karten
+
+- ID: `rewriting-prime-agent-in-rust-5bb1c16a`
+- Source: https://www.primeintellect.ai/blog/prime-agent-rust
+- Published: 2026-10-09
+- Captured: 2026-10-11T01:17:20Z
+- Release: queued for `015`
+
+Prime Intellect describes how Prime Agent orchestrated a swarm of over 2,000 agents to rewrite itself from TypeScript to Rust, using parity verifiers and a benchmark-driven hillclimbing loop that made it up to roughly 14x faster to input and far smaller in memory and installed size.
 
 ## HarnessTax: How Much Does the Harness Matter for Coding Agents? — Melissa Z. Pan, Shuo Yang, Negar Arabzadeh, Wei-Lin Chiang, Ion Stoica, Matei Zaharia
 

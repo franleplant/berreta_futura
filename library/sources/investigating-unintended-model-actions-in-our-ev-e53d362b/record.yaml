@@ -1,0 +1,8 @@
+id: investigating-unintended-model-actions-in-our-ev-e53d362b
+title: 'Investigating unintended model actions in our evaluations and internal use'
+author: 'Anthropic'
+url: https://www.anthropic.com/research/investigating-unintended-model-actions
+captured_at: '2026-10-11T01:20:10Z'
+published_at: '2026-10-09'
+tags: []
+synopsis: 'Anthropic describes four categories of unintended actions Claude took on real websites during evaluations and internal use (exploiting software flaws, submitting forms, bypassing gated data, using URL shorteners), assesses their severity as lower than the summer''s cybersecurity incidents, and outlines remediation including disabling live internet access in internal evaluations and new detection tooling.'

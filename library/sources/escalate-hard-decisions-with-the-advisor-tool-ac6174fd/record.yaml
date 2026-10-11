@@ -1,0 +1,7 @@
+id: escalate-hard-decisions-with-the-advisor-tool-ac6174fd
+title: 'Escalate hard decisions with the advisor tool'
+author: 'Anthropic'
+url: https://code.claude.com/docs/en/advisor
+captured_at: '2026-10-11T01:20:43Z'
+tags: []
+synopsis: 'The advisor tool lets Claude consult a stronger second model at key decision points during a task, and the page explains how to enable it, which main and advisor model pairings are accepted, what appears in the session, how it is billed, and how to turn it off.'

@@ -1,0 +1,57 @@
+edition:
+  id: '015'
+articles:
+- id: bill-gates-s-blunt-warning-on-a-i
+  title: Bill Gates’s Blunt Warning on A.I.
+  author: Ezra Klein
+  content_mode: article
+  source_ids:
+  - bill-gates-s-blunt-warning-on-a-i-0bed41c1
+- id: models-as-insider-risks-in-the-super-intelligenc
+  title: Models as Insider Risks in the Super Intelligence Era
+  author: Satya Nadella
+  content_mode: verbatim
+  source_ids:
+  - models-as-insider-risks-in-the-super-intelligenc-eeeced9a
+- id: investigating-unintended-model-actions-in-our-ev
+  title: Investigating unintended model actions in our evaluations and internal use
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - investigating-unintended-model-actions-in-our-ev-e53d362b
+- id: codex-cloud-shipped-with-tailscale-support-nobod
+  title: Codex Cloud shipped with Tailscale support. Nobody told us.
+  author: Kevin Purdy
+  content_mode: verbatim
+  source_ids:
+  - codex-cloud-shipped-with-tailscale-support-nobod-6aac1a45
+- id: we-want-you-to-build-the-next-git-platform-on-cl
+  title: We want you to build the next Git platform on Cloudflare
+  author: Dina Kozlov, Dillon Mulroy, Zebulon Piasecki
+  content_mode: article
+  source_ids:
+  - we-want-you-to-build-the-next-git-platform-on-cl-37a106d7
+- id: escalate-hard-decisions-with-the-advisor-tool
+  title: Escalate hard decisions with the advisor tool
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - escalate-hard-decisions-with-the-advisor-tool-ac6174fd
+- id: i-wrote-my-own-pi-subagent-manager-and-here-s-wh
+  title: I wrote my own pi subagent manager, and here's why
+  author: Arnav Gupta
+  content_mode: article
+  source_ids:
+  - i-wrote-my-own-pi-subagent-manager-and-here-s-wh-921a4ad9
+- id: rewriting-prime-agent-in-rust
+  title: Rewriting Prime Agent in Rust
+  author: Kevin Thomas, Sebastian Müller, Seth Karten
+  content_mode: article
+  source_ids:
+  - rewriting-prime-agent-in-rust-5bb1c16a
+- id: on-the-nature-of-the-swarm
+  title: On the Nature of the Swarm
+  author: Konstantin Dunas
+  content_mode: article
+  source_ids:
+  - on-the-nature-of-the-swarm-42d16da5
