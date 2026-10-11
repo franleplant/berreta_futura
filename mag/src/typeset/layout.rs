@@ -832,8 +832,8 @@ mod tests {
             .collect();
         assert_eq!(
             contents.len(),
-            12,
-            "three links per contents entry: {contents:?}"
+            8,
+            "a folio link and a title link per contents entry: {contents:?}"
         );
         let mut tree = opener_run(10);
         tree.files[0].source = tree.files[0].source.replace(

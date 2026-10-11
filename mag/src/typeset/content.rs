@@ -22,7 +22,6 @@ use typst_syntax::{SyntaxKind, SyntaxNode};
 use unicode_normalization::UnicodeNormalization;
 
 pub const CONTENTS_TITLE_LIMIT: usize = 124;
-pub const CONTENTS_TIGHT_ABOVE: usize = 8;
 const ILLUSTRATED: &str = "illustrated_paper_spots_v1";
 const OPENER_ANCHOR: &str = "__opener__";
 const MAIN: &str = "main.typ";
@@ -333,16 +332,16 @@ impl Writer<'_> {
         if !refusals.is_empty() {
             return Err(ValidationError(refusals));
         }
-        let tight = entries.len() > CONTENTS_TIGHT_ABOVE;
         let rows: String = entries
             .iter()
             .map(|entry| {
                 format!(
                     "  #contents-entry(destination: {})[{}#entry-title{}{}]\n",
                     string_literal(&entry.destination),
-                    match tight {
-                        true => String::new(),
-                        false => format!("#entry-label{}", self.said(&entry.label)),
+                    if entry.label.is_empty() {
+                        String::new()
+                    } else {
+                        format!("#entry-label{}", self.said(&entry.label))
                     },
                     self.said(&entry.title),
                     if entry.author.is_empty() {
@@ -354,7 +353,7 @@ impl Writer<'_> {
             })
             .collect();
         Ok(format!(
-            "#contents(tight: {tight})[\n  #contents-kicker{}\n  #contents-label{}\n{rows}]\n\n",
+            "#contents[\n  #contents-kicker{}\n  #contents-label{}\n  #contents-headline{}\n  #contents-dek{}\n{rows}]\n\n",
             self.said(&format!(
                 "{} {} / {}",
                 self.ui("issue"),
@@ -362,6 +361,8 @@ impl Writer<'_> {
                 self.ui("contents")
             )),
             self.said(&self.ui("contents")),
+            self.said(&self.edition.title),
+            self.said(&self.edition.subtitle),
         ))
     }
 
@@ -375,10 +376,10 @@ impl Writer<'_> {
                 author: editorial.byline.clone(),
             });
         }
-        for (index, article) in self.edition.articles.iter().enumerate() {
+        for article in &self.edition.articles {
             entries.push(ContentsEntry {
                 destination: format!("article-{}", article.id),
-                label: format!("{} {:02}", self.ui("feature"), index + 1),
+                label: String::new(),
                 title: article.title.clone(),
                 author: article.author.clone(),
             });

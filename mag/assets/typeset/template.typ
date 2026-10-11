@@ -101,12 +101,11 @@
 #let CONTENTS-KICKER-TOP = -13.46915pt
 #let CONTENTS-TITLE-TOP = 32.54098pt
 #let CONTENTS-TITLE-SIZE = 27pt
-#let CONTENTS-BAND-TOP = 74.2802pt
-#let CONTENTS-BAND = 393pt
-#let CONTENTS-RULE = 0.7pt
-#let CONTENTS-ENTRY-LEFT = 47pt
-#let CONTENTS-STANDARD = (label: 8.6pt, folio: 17.7pt, title: 17.5pt, author: 32.2pt)
-#let CONTENTS-TIGHT = (label: 0pt, folio: 9.5pt, title: 5.5pt, author: 19.5pt)
+#let CONTENTS-TOP = 74.2802pt
+#let CONTENTS-RULE = 0.6pt
+#let CONTENTS-HEAD-RULE = 1.4pt
+#let CONTENTS-FOLIO = 38pt
+#let CONTENTS-GAP = (min: 8pt, max: 30pt)
 
 #let ILLUSTRATED = "illustrated_paper_spots_v1"
 #let PAPER-INK = rgb(23, 25, 28)
@@ -259,6 +258,7 @@
   display: ("Archivo", 700),
   serif: ("Source Serif 4 SmText", 400),
 )
+#let COVER-ROSTER = 6.5
 #let COVER-WORDMARK-INSET = (2.85, -28.91)
 #let COVER-WORDMARK-HEIGHT = 75.13
 
@@ -464,8 +464,8 @@
   }
   if t.contributors != "" {
     let names = t.contributors
-    let measure-names = 0.7 * (right - left)
-    let wrap-at = limit => cover-wrap(names, limit, line => cover-width("regular", 4.6, line))
+    let measure-names = 0.8 * (right - left)
+    let wrap-at = limit => cover-wrap(names, limit, line => cover-width("regular", COVER-ROSTER, line))
     let count = wrap-at(measure-names).len()
     let measure-names = if count > 3 { measure-names } else {
       let limit = measure-names
@@ -474,10 +474,10 @@
     }
     let rows = wrap-at(measure-names)
     let rows = if rows.len() <= 3 { rows } else {
-      rows.slice(0, 2) + (cover-roster(rows.slice(2).join(" "), 4.6, measure-names),)
+      rows.slice(0, 2) + (cover-roster(rows.slice(2).join(" "), COVER-ROSTER, measure-names),)
     }
     for (index, line) in rows.enumerate() {
-      cover-put(right - cover-width("regular", 4.6, line), base + 11 + index * 6.6, cover-run("regular", 4.6, line, fill: fill))
+      cover-put(right - cover-width("regular", COVER-ROSTER, line), base + 12 + index * COVER-ROSTER * 1.3, cover-run("regular", COVER-ROSTER, line, fill: fill))
     }
   }
 }
@@ -496,9 +496,9 @@
   cover-put(right - cover-width("display", size, title, tracking: 0.2), COVER-H - p.footer + 22, cover-run("display", size, title, fill: ink, tracking: 0.2))
   if t.contributors != "" {
     let room = right - left - 68
-    cover-justified(cover-roster(t.contributors, 4.4, room), left + 8, COVER-H - 24, 4.4, ink, room)
+    cover-justified(cover-roster(t.contributors, COVER-ROSTER - 0.5, room), left + 8, COVER-H - 26, COVER-ROSTER - 0.5, ink, room)
   }
-  cover-right(t.issue + " / " + t.date_line, right, COVER-H - 13, 4.4, ink)
+  cover-right(t.issue + " / " + t.date_line, right, COVER-H - 13, COVER-ROSTER - 0.5, ink)
 }
 
 #let cover-front-page(spec) = {
@@ -673,6 +673,8 @@
 
 #let contents-kicker(body) = tag("kicker", body)
 #let contents-label(body) = tag("label", body)
+#let contents-headline(body) = tag("headline", body)
+#let contents-dek(body) = tag("dek", body)
 #let entry-label(body) = tag("entry-label", body)
 #let entry-title(body) = tag("entry-title", body)
 #let entry-author(body) = tag("entry-author", body)
@@ -691,70 +693,72 @@
   upper(body),
 )
 
-#let contents-row(row, offsets, destination, rows) = {
-  let label = part(rows, "entry-label")
-  let title = part(rows, "entry-title")
-  let author = part(rows, "entry-author")
-  if label != none {
-    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.label + ZERO-LEADING-SANS, {
-      contents-caption(label)
-    })
+#let contents-row(entry, size) = {
+  let rows = parts(entry.body)
+  let (label, title, author) = ("entry-label", "entry-title", "entry-author").map(name => part(rows, name))
+  let target = query(<mag-piece>).find(m => m.value.id == entry.destination).location()
+  let cap = (top-edge: "cap-height", bottom-edge: "baseline")
+  let folio = text(font: SANS, size: size * 1.3, weight: 600, fill: VIOLET, number-width: "tabular", ..cap)[
+    #leading-zero(counter(page).at(target).first())
+  ]
+  let words = {
+    set block(spacing: 0pt)
+    if label != none {
+      block(below: size * 0.6, text(font: SANS, size: CAPTION-SIZE, weight: 600, fill: VIOLET, ..cap, ..tracked(0.45pt), upper(label)))
+    }
+    set par(leading: size * 0.6, justify: false)
+    link(target, text(font: DISPLAY, size: size, weight: 600, hyphenate: false, ..cap, title))
+    if author != none {
+      block(above: size * 0.62, text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: SLATE, ..cap, ..tracked(0.2pt), upper(author)))
+    }
   }
-  let target = query(<mag-piece>).find(m => m.value.id == destination).location()
-  let folio = text(
-    font: SANS,
-    size: 23pt,
-    weight: 600,
-    fill: VIOLET,
-    ..flat,
-    leading-zero(counter(page).at(target).first()),
-  )
-  for _ in range(2) {
-    place(top + left, dy: row + offsets.folio, link(target, box(width: measure(folio).width, height: 0pt)))
-  }
-  place(top + left, dy: row + offsets.folio + line-center(HALF-SANS, 23pt), folio)
-  let set-title(body) = box(
-    width: LIVE-WIDTH - CONTENTS-ENTRY-LEFT,
-    text(font: DISPLAY, size: 9.8pt, weight: 600, ..edges(9.8pt, 10.2pt, HALF-SERIF), body),
-  )
-  let wrapped = if title == none { 0pt } else { measure(set-title(title)).height - measure(set-title[X]).height }
-  if title != none {
-    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.title, link(target, set-title(title)))
-  }
-  if author != none {
-    place(top + left, dx: CONTENTS-ENTRY-LEFT, dy: row + offsets.author + wrapped + ZERO-LEADING-SANS, {
-      text(font: SANS, size: CAPTION-SIZE, weight: 500, fill: SLATE, ..flat, upper(author))
-    })
-  }
+  grid(columns: (CONTENTS-FOLIO, 1fr), align: top + left, link(target, folio), words)
 }
 
-#let contents(tight: false, body) = {
+#let contents(body) = {
   pagebreak(weak: true)
   let rows = parts(body)
   let entries = rows.filter(r => r.tag == "entry")
-  let offsets = if tight { CONTENTS-TIGHT } else { CONTENTS-STANDARD }
-  let height = CONTENTS-BAND / calc.max(1, entries.len())
-  block(height: PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM, width: 100%, context {
-    let kicker = part(rows, "kicker")
-    let label = part(rows, "label")
+  let live = PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM
+  block(height: live, width: 100%, context {
+    let (kicker, label, headline, dek) = ("kicker", "label", "headline", "dek").map(name => part(rows, name))
     if kicker != none {
       place(top + left, dy: CONTENTS-KICKER-TOP + ZERO-LEADING-SANS, contents-caption(kicker, tracking: 0.45pt))
     }
-    if label != none {
-      place(top + left, dy: CONTENTS-TITLE-TOP + line-center(HALF-SERIF, CONTENTS-TITLE-SIZE), {
-        bookmark(1, label)
-        text(font: DISPLAY, size: CONTENTS-TITLE-SIZE, weight: 600, ..flat, label)
+    place(top + left, dy: CONTENTS-TITLE-TOP + line-center(HALF-SERIF, CONTENTS-TITLE-SIZE), {
+      if label != none { bookmark(1, label) }
+      text(font: DISPLAY, size: CONTENTS-TITLE-SIZE, weight: 600, ..flat, if headline != none { headline } else { label })
+    })
+    let deck = if dek == none { none } else {
+      block(width: LIVE-WIDTH * 0.86, {
+        set par(leading: 4.6pt, justify: false)
+        text(font: SERIF, size: 9.2pt, style: "italic", fill: SLATE, top-edge: "cap-height", bottom-edge: "baseline", hyphenate: false, dek)
       })
     }
-    for (index, entry) in entries.enumerate() {
-      let row = CONTENTS-BAND-TOP + index * height
-      contents-row(row, offsets, entry.destination, parts(entry.body))
-      if index + 1 < entries.len() {
-        place(top + left, dy: row + height - CONTENTS-RULE / 2, {
-          rect(width: LIVE-WIDTH, height: CONTENTS-RULE, fill: COOL-GRAY, stroke: none)
-        })
+    let deck-top = CONTENTS-TITLE-TOP + CONTENTS-TITLE-SIZE * 0.5 + 13pt
+    if deck != none { place(top + left, dy: deck-top, deck) }
+    let list-top = if deck == none { CONTENTS-TOP } else { calc.max(CONTENTS-TOP, deck-top + measure(deck).height + 16pt) }
+    let lead = 16pt
+    let room = live - list-top - CONTENTS-HEAD-RULE - lead - 8pt
+    let gaps = calc.max(1, entries.len() - 1)
+    let gap-at = size => (room - entries.map(e => measure(block(width: LIVE-WIDTH, contents-row(e, size))).height).sum()) / gaps
+    let size = 11.5pt
+    while size > 8.5pt and gap-at(size) < CONTENTS-GAP.min { size -= 0.25pt }
+    assert(gap-at(size) >= CONTENTS-GAP.min, message: "The contents cannot fit " + str(entries.len()) + " entries on one page; shorten the longest titles")
+    let gap = calc.min(gap-at(size), CONTENTS-GAP.max)
+    place(top + left, dy: list-top, block(width: LIVE-WIDTH, {
+      set block(spacing: 0pt)
+      line(length: 100%, stroke: CONTENTS-HEAD-RULE + VIOLET)
+      v(lead)
+      for (index, entry) in entries.enumerate() {
+        contents-row(entry, size)
+        if index + 1 < entries.len() {
+          v(gap / 2)
+          line(length: 100%, stroke: CONTENTS-RULE + COOL-GRAY)
+          v(gap / 2)
+        }
       }
-    }
+    }))
   })
   pagebreak(weak: true)
 }

@@ -1177,10 +1177,6 @@ mod tests {
             ("RUNNING-TICK-WIDTH", 14.0),
             ("CONTENTS-KICKER-TOP", -13.46915),
             ("CONTENTS-TITLE-TOP", 32.54098),
-            ("CONTENTS-BAND-TOP", 74.2802),
-            ("CONTENTS-BAND", 393.0),
-            ("CONTENTS-RULE", 0.7),
-            ("CONTENTS-ENTRY-LEFT", 47.0),
             ("OPENER-RAIL", 348.0),
             ("OPENER-ESCAPE", 11.5),
             ("OPENER-ART-HEIGHT", 207.1),
@@ -1197,11 +1193,6 @@ mod tests {
                 "{name} drifted from its declared value"
             );
         }
-        let band = declared("CONTENTS-BAND-TOP") + declared("CONTENTS-BAND");
-        assert!(
-            (band - 467.2802).abs() < 1e-9,
-            "the contents band ends at {band}, not the stylesheet's 467.2802pt ol height"
-        );
         let measure = declared("OPENER-RAIL") - declared("OPENER-QR") - declared("OPENER-GAP");
         assert!(
             (measure - declared("OPENER-META-MEASURE")).abs() < 1e-9,
@@ -1521,6 +1512,7 @@ mod tests {
         );
     }
 
+    #[derive(Debug)]
     struct Mark {
         text: String,
         x: f64,
@@ -1868,19 +1860,35 @@ mod tests {
     }
 
     #[test]
-    fn a_four_entry_contents_divides_its_band_into_four_rows() {
-        let page = opener_page(&fixture_tree("903"), "Contents");
-        assert!(page.iter().any(|m| m.text == "Contents"));
-        let titles: Vec<f64> = page
+    fn a_four_entry_contents_sets_each_folio_on_its_title_line_at_an_even_pitch() {
+        let page = page_marks(&fixture_tree("903"), |m| {
+            m.iter().any(|m| m.text.ends_with("/ CONTENTS"))
+        })
+        .into_iter()
+        .next()
+        .expect("the contents page");
+        let titles: Vec<&Mark> = page
             .iter()
-            .filter(|m| (m.size - 9.8).abs() < 1e-9)
-            .map(|m| m.y)
+            .filter(|m| (m.size - 11.5).abs() < 1e-9)
             .collect();
-        assert_eq!(titles.len(), 4);
+        let folios: Vec<&Mark> = page
+            .iter()
+            .filter(|m| (m.size - 11.5 * 1.3).abs() < 1e-9)
+            .collect();
+        assert_eq!((titles.len(), folios.len()), (4, 4));
+        for (title, folio) in titles.iter().zip(&folios) {
+            let cap_top = |m: &Mark, cap: f64| m.y - cap * m.size;
+            assert!(
+                folio.x < title.x && (cap_top(folio, 0.727) - cap_top(title, 0.67)).abs() < 0.3,
+                "the folio and the title share a cap line: {folio:?} {title:?}"
+            );
+        }
+        let pitch = titles[1].y - titles[0].y;
         assert!(
-            titles
-                .windows(2)
-                .all(|w| (w[1] - w[0] - 393.0 / 4.0).abs() < 1e-3),
+            pitch > 30.0
+                && titles
+                    .windows(2)
+                    .all(|w| (w[1].y - w[0].y - pitch).abs() < 1e-3),
             "{titles:?}"
         );
     }
