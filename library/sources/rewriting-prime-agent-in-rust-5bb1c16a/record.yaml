@@ -5,4 +5,4 @@ url: https://www.primeintellect.ai/blog/prime-agent-rust
 captured_at: '2026-10-11T01:17:20Z'
 published_at: '2026-10-09'
 tags: []
-synopsis: 'Prime Intellect describes how Prime Agent orchestrated a swarm of over 2,000 agents to rewrite itself from TypeScript to Rust, using parity verifiers and a benchmark-driven hillclimbing loop that made it up to roughly 14x faster to input and far smaller in memory and installed size.'
+synopsis: 'Prime Intellect describes how Prime Agent orchestrated a swarm of over 2,000 agents to rewrite itself from TypeScript to Rust, using parity checks and a benchmark-driven hillclimb to reach roughly 14x faster time to input and far lower memory use.'

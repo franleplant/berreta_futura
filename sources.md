@@ -111,7 +111,7 @@ The article argues that inference scaling runs into context limits, that compact
 - Captured: 2026-10-11T01:17:20Z
 - Release: queued for `015`
 
-Prime Intellect describes how Prime Agent orchestrated a swarm of over 2,000 agents to rewrite itself from TypeScript to Rust, using parity verifiers and a benchmark-driven hillclimbing loop that made it up to roughly 14x faster to input and far smaller in memory and installed size.
+Prime Intellect describes how Prime Agent orchestrated a swarm of over 2,000 agents to rewrite itself from TypeScript to Rust, using parity checks and a benchmark-driven hillclimb to reach roughly 14x faster time to input and far lower memory use.
 
 ## HarnessTax: How Much Does the Harness Matter for Coding Agents? — Melissa Z. Pan, Shuo Yang, Negar Arabzadeh, Wei-Lin Chiang, Ion Stoica, Matei Zaharia
 

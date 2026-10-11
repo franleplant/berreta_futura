@@ -1,5 +1,5 @@
 # Rewriting Prime Agent in Rust
-By Kevin Thomas, Sebastian Müller, Seth Karten · Prime Intellect · OCT 9TH, 2026
+By Kevin Thomas, Sebastian Müller, Seth Karten · Prime Intellect · Oct 9th, 2026
 
 Since we launched Prime Agent [[1]](https://www.primeintellect.ai/blog/prime-agent-rust#reference-1) in August, it has been downloaded more than 300,000 times and has processed over 8 trillion tokens. Today, we're excited to ship a faster, cleaner and more reliable Prime Agent, rewritten from the ground up in Rust.
 
@@ -45,7 +45,7 @@ A single root agent orchestrated the rewrite and divided the work into a topolog
 
 A failed review or verification sends the feature back to the implementer with the findings, and the PR merges once both pass. We are building this pattern into Prime Agent to orchestrate a factory of finite state machines, so workflows like this one can be defined once, reused, and updated.
 
-![Prime Agent orchestration workflow](media/002.svg)
+![Prime Agent orchestration workflow](media/002.png)
 
 ### Architecture re-design
 

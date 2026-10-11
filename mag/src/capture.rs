@@ -168,10 +168,15 @@ pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
             }
         },
     };
-    if ext == "webp" || ext == "gif" {
+    if ext == "webp" || ext == "gif" || ext == "svg" {
         let dest = dest_stem.with_extension("png");
         let bytes = fs::read(&tmp)?;
-        let png = to_png(&bytes).with_context(|| format!("decoding {url}"))?;
+        let png = if ext == "svg" {
+            svg_to_png(&bytes)
+        } else {
+            to_png(&bytes)
+        }
+        .with_context(|| format!("decoding {url}"))?;
         fs::write(&dest, png).with_context(|| format!("writing {}", dest.display()))?;
         fs::remove_file(&tmp)?;
         return Ok(dest);
@@ -198,6 +203,26 @@ fn to_png(bytes: &[u8]) -> Result<Vec<u8>> {
     image::load_from_memory(bytes)?
         .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)?;
     Ok(out)
+}
+
+pub(crate) fn svg_to_png(bytes: &[u8]) -> Result<Vec<u8>> {
+    let mut options = usvg::Options::default();
+    options.fontdb_mut().load_system_fonts();
+    let tree = usvg::Tree::from_data(bytes, &options)?;
+    let size = tree.size();
+    let scale = (2400.0 / size.width()).max(1.0);
+    let mut pixmap = tiny_skia::Pixmap::new(
+        (size.width() * scale).ceil() as u32,
+        (size.height() * scale).ceil() as u32,
+    )
+    .ok_or_else(|| anyhow!("the SVG has no drawable size"))?;
+    pixmap.fill(tiny_skia::Color::WHITE);
+    resvg::render(
+        &tree,
+        tiny_skia::Transform::from_scale(scale, scale),
+        &mut pixmap.as_mut(),
+    );
+    Ok(pixmap.encode_png()?)
 }
 
 fn decode_entities(s: &str) -> String {
@@ -1538,6 +1563,12 @@ mod tests {
         let webp = include_bytes!("../tests/capture_fixtures/tiny.webp");
         assert_eq!(sniff_image(webp), Some("webp"));
         assert_eq!(sniff_image(b"<html>"), None);
+        let png = svg_to_png(
+            b"<svg xmlns='http://www.w3.org/2000/svg' width='300' height='100'><rect width='300' height='100' fill='red'/></svg>",
+        )
+        .unwrap();
+        let image = image::load_from_memory(&png).unwrap();
+        assert_eq!((image.width(), image.height()), (2400, 800));
     }
 
     #[test]
