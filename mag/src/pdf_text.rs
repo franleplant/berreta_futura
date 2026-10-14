@@ -57,6 +57,13 @@ pub fn transcribe_bytes(bytes: &[u8]) -> Result<String> {
     Ok(out.join("\n\n") + "\n")
 }
 
+pub fn info(pdf: &Path, key: &[u8]) -> Option<String> {
+    let doc = Document::load(pdf).ok()?;
+    let (_, info) = doc.dereference(doc.trailer.get(b"Info").ok()?).ok()?;
+    let value = lopdf::decode_text_string(info.as_dict().ok()?.get(key).ok()?).ok()?;
+    Some(value.trim().to_string()).filter(|v| !v.is_empty())
+}
+
 pub fn page_glyphs(pdf: &Path) -> Result<Vec<Vec<Glyph>>> {
     read_glyphs(pdf, false)
 }

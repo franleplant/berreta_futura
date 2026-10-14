@@ -1135,7 +1135,9 @@ fn pdf_to_extraction(pdf: &Path) -> Result<Extraction> {
     Ok(Extraction {
         article,
         synopsis,
-        author: String::new(),
+        author: pdf_text::info(pdf, b"Author")
+            .unwrap_or_default()
+            .replace("; ", ", "),
         published: String::new(),
     })
 }
@@ -1153,6 +1155,15 @@ fn pdf_title(article: &str) -> Option<String> {
         .filter(|t| !t.is_empty())
 }
 
+fn served_as_pdf(url: &str) -> bool {
+    Command::new("curl")
+        .args(["-sIL", "--max-time", "30", "-A", USER_AGENT])
+        .args(["-o", "/dev/null", "-w", "%{content_type}"])
+        .arg(url)
+        .output()
+        .is_ok_and(|o| o.stdout.starts_with(b"application/pdf"))
+}
+
 fn fetched_pdf(url: &str) -> Result<Option<PathBuf>> {
     if !url
         .split('?')
@@ -1160,6 +1171,7 @@ fn fetched_pdf(url: &str) -> Result<Option<PathBuf>> {
         .unwrap_or("")
         .to_lowercase()
         .ends_with(".pdf")
+        && !served_as_pdf(url)
     {
         return Ok(None);
     }
@@ -1252,6 +1264,7 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
     let (pdf, html, pre_extraction) = resolve_input(html_file, url)?;
     let title = title_override
         .map(str::to_string)
+        .or_else(|| pdf.as_ref().and_then(|p| pdf_text::info(p, b"Title")))
         .or_else(|| pre_extraction.as_ref().and_then(|e| pdf_title(&e.article)))
         .or_else(|| page_title(&html))
         .ok_or_else(|| anyhow!("could not extract a title from {url}; pass --title"))?;
