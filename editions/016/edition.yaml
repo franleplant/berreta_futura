@@ -16,7 +16,7 @@ cover:
   headline: The Long Leash
   deck: A worm that lives in TV boxes, version control built for 30,000 merges a day, bots that hold a 5 a.m. meeting, and the scaffolding wrapped around every model
   back_text: Somewhere, a machine is waiting for you to fall asleep so it can finally get some real work done.
-  art_path: editions/016/art/picks/cover-snapping-leash-v1.jpg
+  art_path: editions/016/art/picks/cover-leash-last-strand-v1.jpg
 articles:
 - id: nobody-should-type-code-by-hand-anymore-here-s-w
   title: Nobody Should Type Code by Hand Anymore
@@ -294,7 +294,7 @@ articles:
     path: editions/016/art/picks/opener-distill-screen-v2.jpg
     alt_text: A boy tries to pass a note over a folding screen while the robot guards it and a girl watches.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/016/art/picks/tail-distill-still-dusk-v4.jpg
+  tail_art_path: editions/016/art/picks/tail-distill-still-dusk-v1.jpg
 - id: muse-wonder-a-frontier-model-for-personal-profes
   title: 'Muse Wonder: A Frontier Model For Personal & Professional AI Agents'
   short_title: Muse Wonder
@@ -420,8 +420,8 @@ tail_art_fit: contain
 closing_plates:
 - title: Rowboat Lake
   art_path: editions/016/art/picks/closing-rowboat-lake-v2.jpg
-- title: Tall Sunflower
-  art_path: editions/016/art/picks/closing-tall-sunflower-v3.jpg
+- title: Paper Lantern Release
+  art_path: editions/016/art/picks/closing-paper-lantern-release-v1.jpg
 - title: Long Kite Line
   art_path: editions/016/art/picks/closing-long-kite-line-v4.jpg
 - title: Hilltop Comet
