@@ -16,7 +16,7 @@ cover:
   headline: The Long Leash
   deck: A worm that lives in TV boxes, version control built for 30,000 merges a day, bots that hold a 5 a.m. meeting, and the scaffolding wrapped around every model
   back_text: Somewhere, a machine is waiting for you to fall asleep so it can finally get some real work done.
-  art_path: TODO
+  art_path: editions/016/art/picks/cover-snapping-leash-v1.jpg
 articles:
 - id: nobody-should-type-code-by-hand-anymore-here-s-w
   title: Nobody Should Type Code by Hand Anymore
@@ -36,10 +36,10 @@ articles:
   #   nobody-should-type-code-by-hand-anymore-here-s-w-b77ac650 media/001.jpg: nobody should type code by hand anymore. here's what's left.
   #   nobody-should-type-code-by-hand-anymore-here-s-w-b77ac650 media/002.png: 
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-hands-off-keyboard-v2.jpg
+    alt_text: A boy points away from a keyboard while the robot types and a girl checks a long printout with a magnifying glass.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-keyboard-paper-boat-v1.jpg
 - id: an-empirical-study-of-harness-design-for-coding
   title: An Empirical Study of Harness Design for Coding Agents
   short_title: Harness Design for Coding Agents
@@ -54,31 +54,17 @@ articles:
   figures:
   - id: figure-1
     source_id: an-empirical-study-of-harness-design-for-coding-f485e570
-    path: media/001.png
-    caption: 'The study at a glance: context management, planning, and the action space, ablated across four models, two benchmarks, and four context windows, 176 settings in all.'
-    alt_text: 'Hand-drawn overview of the ablation: harness components on the left, models, benchmarks, and window sizes in the middle, and four findings on the right.'
-    anchor: The question
-    layout: evidence_band
-  - id: figure-2
-    source_id: an-empirical-study-of-harness-design-for-coding-f485e570
     path: media/003.png
     caption: 'Success rate against the context window. Black is T0, no management; blue is the managed tiers; orange is the share of tasks T0 loses to overflow. Managed tiers never overflow.'
     alt_text: 'Eight small line charts, one per model and benchmark, showing the unmanaged tier catching up with the managed tiers as the window grows from 32k to 128k.'
     anchor: Context management
     layout: evidence_band
-  - id: figure-3
+  - id: figure-2
     source_id: an-empirical-study-of-harness-design-for-coding-f485e570
     path: media/006.png
     caption: 'Planning off (hollow) and on (filled), at T4 and 128k with the full tool set: (a) success rate, (b) mean cost per task.'
     alt_text: 'Paired bar charts of success rate and cost for four models on SWE-Bench Verified and Terminal-Bench, with and without planning.'
     anchor: Planning
-    layout: evidence_band
-  - id: figure-4
-    source_id: an-empirical-study-of-harness-design-for-coding-f485e570
-    path: media/007.png
-    caption: 'Bash only against the full tool set, at T4 and 128k with planning on: (a) success rate, (b) mean cost per task, (c) share of calls issued through bash when all tools are available.'
-    alt_text: 'Three bar charts comparing bash-only and full-tool runs for four models on two benchmarks.'
-    anchor: Action space
     layout: evidence_band
   # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
   # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
@@ -102,10 +88,10 @@ articles:
   #   an-empirical-study-of-harness-design-for-coding-f485e570 media/016.png: 
   #   an-empirical-study-of-harness-design-for-coding-f485e570 media/017.png: 
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-harness-trials-v2.jpg
+    alt_text: A boy holds the rope while the robot climbs a practice wall and a girl times it with a stopwatch.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-harness-long-traverse-v3.jpg
 - id: harness-learning-enables-generalizable-test-time
   title: Harness Learning Enables Generalizable Test-Time Adaptation
   short_title: Harness Learning
@@ -159,10 +145,10 @@ articles:
   #   harness-learning-enables-generalizable-test-time-e88ac636 media/014.png: 
   #   harness-learning-enables-generalizable-test-time-e88ac636 media/015.png: 
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-harness-fitting-v4.jpg
+    alt_text: A boy and a girl fit a carrying pole to the robot beside a small stream.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-harness-kite-bridle-v3.jpg
 - id: redesigning-source-control-at-anthropic
   title: Redesigning Source Control at Anthropic
   short_title: Redesigning Source Control
@@ -189,13 +175,6 @@ articles:
     alt_text: 'Architecture diagram: clients talk to scion-daemon, which falls back to scion-cache and then scion-server, which reads from Spanner and Cloud Storage.'
     anchor: How Scion works
     layout: evidence_band
-  - id: figure-3
-    source_id: redesigning-source-control-at-anthropic-56ee56e4
-    path: media/005.png
-    caption: 'Merged changes to the Scion and Antique codebases per week, January to September 2026.'
-    alt_text: 'Weekly bar chart of changes to the Scion and Antique code, rising sharply from July.'
-    anchor: What we learned
-    layout: evidence_band
   # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
   # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
   # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
@@ -207,10 +186,10 @@ articles:
   #   redesigning-source-control-at-anthropic-56ee56e4 media/005.png: 
   #   redesigning-source-control-at-anthropic-56ee56e4 media/006.png: 
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-merge-lock-v2.jpg
+    alt_text: The children and the robot work a small wooden lock where two streams join, paper boats waiting to pass.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-merge-lock-line-v2.jpg
 - id: under-the-hood-off-the-hot-path-how-d1-scales-to
   title: 'Off the Hot Path: How D1 Scales to Millions of Databases'
   short_title: How D1 Scales to Millions of Databases
@@ -230,20 +209,6 @@ articles:
     alt_text: 'Diagram of D1 split into a control plane with Postgres and a data plane with Workers KV, the Eyeball Worker, and the D1 Durable Object.'
     anchor: Architecture
     layout: evidence_band
-  - id: figure-2
-    source_id: under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
-    path: media/003.png
-    caption: 'Creating a database: limits checked against replicas, the Durable Object initialized and the Postgres row written inside a retry loop, then the KV mapping confirmed asynchronously.'
-    alt_text: 'Sequence diagram of database creation across the Edge API, Postgres, the Durable Object, and Workers KV.'
-    anchor: Creating a database
-    layout: evidence_band
-  - id: figure-3
-    source_id: under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
-    path: media/008.png
-    caption: 'Daily row limits: a central Limiter reads usage from ClickHouse and sets a key in Quicksilver that Durable Objects check at the edge.'
-    alt_text: 'Diagram of the row-limit path from the D1 Durable Object through ClickHouse and the Limiter to a replicated Quicksilver key.'
-    anchor: Row limits at the edge
-    layout: evidence_band
   # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
   # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
   # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
@@ -257,10 +222,10 @@ articles:
   #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/007.png: 
   #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/008.png: 
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-off-the-hot-path-v2.jpg
+    alt_text: A boy carries a steaming bowl past a kitchen counter while the robot and a girl stack dishes behind it.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-hot-path-side-bench-v2.jpg
 - id: ai-models-may-be-capable-of-self-replicating-wit
   title: AI Models May Be Capable of Self-Replicating Without a Datacenter
   short_title: Self-Replicating Without a Datacenter
@@ -288,10 +253,10 @@ articles:
   #   ai-models-may-be-capable-of-self-replicating-wit-c044b31b media/002.png: The same flow diagram with every stage except inference setup faded.
   #   ai-models-may-be-capable-of-self-replicating-wit-c044b31b media/003.png: Screenshot of a device search engine’s results page. Identifying details are covered, some by labels such as ‘
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-runner-snip-v1.jpg
+    alt_text: A boy, the robot, and a girl pot cuttings from a strawberry plant on a windowsill.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-runner-night-check-v3.jpg
 - id: strengthening-our-defenses-against-distillation
   title: Strengthening Our Defenses Against Distillation Attacks
   short_title: Defenses Against Distillation
@@ -326,10 +291,10 @@ articles:
   #   strengthening-our-defenses-against-distillation-42044146 media/002.png: Graph showing how the pretrained model performs more strongly when trained on full rather than summarized reas
   #   strengthening-our-defenses-against-distillation-42044146 media/003.png: Graph showing the reasoning tokens exposed to distillers by day (log scale), before and after our new safeguar
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-distill-screen-v2.jpg
+    alt_text: A boy tries to pass a note over a folding screen while the robot guards it and a girl watches.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-distill-still-dusk-v4.jpg
 - id: muse-wonder-a-frontier-model-for-personal-profes
   title: 'Muse Wonder: A Frontier Model For Personal & Professional AI Agents'
   short_title: Muse Wonder
@@ -341,11 +306,33 @@ articles:
   source_ids:
   - muse-wonder-a-frontier-model-for-personal-profes-7758c02a
   manuscript: editions/016/articles/muse-wonder-a-frontier-model-for-personal-profes.md
+  figures:
+  - id: figure-1
+    source_id: muse-wonder-a-frontier-model-for-personal-profes-7758c02a
+    path: media/001.png
+    caption: 'Artificial Analysis Intelligence Index, as estimated by Artificial Analysis on October 12, 2026; the Muse models are in blue.'
+    alt_text: 'Bar chart of Artificial Analysis Intelligence Index scores for about twenty frontier models, with Muse Wonder Full near the top.'
+    anchor: Scaling Toward Personal Superintelligence
+    layout: evidence_band
+  - id: figure-2
+    source_id: muse-wonder-a-frontier-model-for-personal-profes-7758c02a
+    path: media/007.png
+    caption: 'Full results: Muse Wonder Full and Muse Wonder against Claude Fable 5.1, GPT-6 Astra, and Claude Opus 5.5 on personal and professional agent, coding, and general benchmarks.'
+    alt_text: 'Results table of fifteen benchmarks across five models, with the Muse columns highlighted.'
+    anchor: Model Highlights
+    layout: column_plate
+  - id: figure-3
+    source_id: muse-wonder-a-frontier-model-for-personal-profes-7758c02a
+    path: media/014.png
+    caption: 'In-distribution against out-of-distribution performance through post-training, for Muse Spark 1.3 and Muse Wonder Full.'
+    alt_text: 'Line plot in which Muse Wonder Full sits above Muse Spark 1.3 on out-of-distribution performance at the same in-distribution performance.'
+    anchor: Capabilities That Generalize
+    layout: evidence_band
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-muse-two-baskets-v3.jpg
+    alt_text: A boy holds a picnic basket and a girl a briefcase, with the robot between them on a doorstep.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-muse-hill-walk-v1.jpg
 - id: grok-bot-for-engineering
   title: Grok Bot for Engineering
   short_title: Grok Bot for Engineering
@@ -385,10 +372,10 @@ articles:
   #   grok-bot-for-engineering-639529b4 media/007.jpg: Onboarding a new engineer bot
   #   grok-bot-for-engineering-639529b4 media/008.jpg: Learnings and tips for running engineer bots
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-dawn-standup-v1.jpg
+    alt_text: At dawn, a sleepy boy, the robot, and a girl hold a meeting around a kitchen table.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-night-shift-v2.jpg
 - id: annotations-extensibility
   title: Annotations Extensibility
   short_title: Annotations Extensibility
@@ -401,13 +388,13 @@ articles:
   - annotations-extensibility-bb6f0748
   manuscript: editions/016/articles/annotations-extensibility.md
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-annotation-flags-v2.jpg
+    alt_text: The children and the robot stick colored notes onto a big open picture book.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-annotation-tab-v1.jpg
 - id: claude-coders-you-can-now-use-your-claude-subs-i
   title: 'Claude Coders: You CAN now use your Claude subs in third party harnesses without paying extra.'
-  short_title: 'Claude Coders: You CAN now use your Claude subs'
+  short_title: You CAN now use your Claude subs
   display_emphasis: CAN
   opener_variant: stepped_title
   author: Dan McAteer
@@ -425,9 +412,23 @@ articles:
     anchor: __opener__
     layout: column_plate
   opener_art:
-    path: TODO
-    alt_text: TODO
+    path: editions/016/art/picks/opener-one-ticket-any-ride-v4.jpg
+    alt_text: A boy waves one ticket at a fair while the robot and a girl wait by a train and a carousel.
     credit: Illustration generated for this edition.
-  tail_art_path: TODO
+  tail_art_path: editions/016/art/picks/tail-carousel-ride-v4.jpg
 tail_art_fit: contain
-closing_plates: []
+closing_plates:
+- title: Rowboat Lake
+  art_path: editions/016/art/picks/closing-rowboat-lake-v2.jpg
+- title: Tall Sunflower
+  art_path: editions/016/art/picks/closing-tall-sunflower-v3.jpg
+- title: Long Kite Line
+  art_path: editions/016/art/picks/closing-long-kite-line-v4.jpg
+- title: Hilltop Comet
+  art_path: editions/016/art/picks/closing-hilltop-comet-v1.jpg
+- title: Leaf Pile Leap
+  art_path: editions/016/art/picks/closing-leaf-pile-leap-v3.jpg
+- title: Rain Bus Stop
+  art_path: editions/016/art/picks/closing-rain-bus-stop-v2.jpg
+- title: Snowman Stack
+  art_path: editions/016/art/picks/closing-snowman-stack-v3.jpg

@@ -1,6 +1,5 @@
 # Muse Wonder: A Frontier Model For Personal & Professional AI Agents
-
-October 12, 2026
+Meta · October 12, 2026
 
 A frontier model that leads on personal and professional agents
 
@@ -14,6 +13,8 @@ Muse Wonder will soon power experiences in [Muse](https://muse.ai/), and will ro
 
 Fourteen months ago, we began a ground-up overhaul of our artificial intelligence efforts. In that time, we’ve gone from rebuilding our stack from first principles to pushing the frontier.
 
+![](media/001.png)
+
 When we introduced [Muse Spark](https://ai.meta.com/blog/introducing-muse-spark-msl/), we outlined our approach to predictable, rigorous scaling. Today’s release builds on that work across pretraining and reinforcement learning, delivering our most capable models yet. Trained at our gigawatt-scale Prometheus data center, Muse Wonder and Muse Wonder Full bring together the work of teams across Meta to deliver frontier capabilities for complex tasks at work and in everyday life — another step toward bringing personal superintelligence to the billions of people who use our products.
 
 ## Frontier Capabilities
@@ -22,7 +23,19 @@ When we introduced [Muse Spark](https://ai.meta.com/blog/introducing-muse-spark-
 
 The Muse Wonder series achieves state-of-the-art results across key benchmarks for personal and professional agents, memory, and coding.
 
+![](media/002.png)
+
+![](media/003.png)
+
+![](media/004.png)
+
+![](media/005.png)
+
+![](media/006.png)
+
 The full results below compare Muse Wonder and Muse Wonder Full with other frontier models across a broad evaluation suite.
+
+![](media/007.png)
 
 For more details about our evaluations, see [our report](https://research.meta.ai/static/muse-wonder-model-card).
 
@@ -32,17 +45,29 @@ The results above provide a broad view of the models’ performance. We now take
 
 Muse Wonder and Muse Wonder Full apply specialized knowledge to problems people encounter at work and in daily life, from understanding a lease to making sense of financial or health information. Our evaluations include tasks in law, finance, and health that test this ability. Harvey’s Legal Agent Benchmark (LAB), for example, requires models to work with source documents and follow detailed instructions to produce legal work products.
 
+![](media/008.png)
+
+![](media/009.png)
+
 ### Active Memory
 
 One of the most critical steps towards useful personal and professional agents is reliable memory. Models need to remember what matters and recognize when earlier information becomes relevant. We call this **Active Memory**: carrying important context about you across conversations and actively retrieving the details relevant to the task at hand.
+
+![](media/010.png)
 
 ### Active Focus
 
 Using that context to complete a task also requires sustained effort. **Active Focus** describes how Muse Wonder continues working toward a challenging goal: trying alternative approaches, working through blockers, and adapting to new information. Along the way, it asks for clarification when needed and checks in before taking important actions. We evaluate focus through FocusBench and sustained execution through SWE-Marathon, which tests work on long-running software projects.
 
+![](media/011.png)
+
+![](media/012.png)
+
 ### Frontier Coding
 
 Coding brings these capabilities together. Building software requires tracking requirements, making changes across a codebase, and working through repeated cycles of testing and revision. Muse Wonder and Muse Wonder Full deliver frontier coding performance, supporting projects from small applications to complex software. We trained both models on diverse, long-running tasks to help them sustain progress across this process.
+
+![](media/013.png)
 
 Muse Wonder builds a playable 3D kitchen game from customizable image inputs.
 
@@ -54,6 +79,8 @@ To quantify this mismatch, we investigate how performance on tasks targeted duri
 
 Both of our models improve similarly on out-of-distribution tasks as we scale test-time compute. But given its in-distribution performance, Muse Wonder Full performs even better on unfamiliar tasks than the Muse Spark 1.3 trend would predict. This upward shift is because Muse Wonder and Muse Wonder Full build on larger, stronger base models: a stronger base yields post-training gains that carry over more effectively to unfamiliar tasks. That versatility especially matters for personal agents, which need to handle many combinations of goals, tools, and constraints — not all of which we can anticipate during training.
 
+![](media/014.png)
+
 Working directly in a browser and across apps, Muse Wonder builds a running plan (Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors) based on personal preferences and circumstances.
 
 Muse Wonder designs and orders custom swag based on real photos taken from a personal Instagram profile.
@@ -64,7 +91,17 @@ Muse Wonder prepares a custom wedding seating chart based on a list of complex m
 
 Delivering personal superintelligence to everyone requires a significant investment in alignment and safety. A personal agent takes actions on a user’s behalf and might handle context such as messages, calendars, and private documents. That level of access demands a model that exercises discretion with private information and resists misuse. We trained the Muse Wonder family to lead on both dimensions, with robustness to adversarial instructions and careful handling of private information.
 
+![](media/015.png)
+
+![](media/016.png)
+
 As models become more capable, our goal is to help people harness those capabilities safely and responsibly. Muse Wonder offers our strongest safeguards to date against CBRN (chemical, biological, radiological, and nuclear) and cyber misuse, while preserving access to frontier cyber capabilities for defensive use, per our [Meta Superintelligence Scaling Framework](https://research.meta.ai/static/meta-superintelligence-scaling-framework).
+
+![](media/017.png)
+
+![](media/018.png)
+
+![](media/019.png)
 
 Muse Wonder is our most aligned model to date, and alignment is central to how we build personal superintelligence. A full report with additional safety evaluations will be available soon.
 

@@ -1,8 +1,8 @@
 id: muse-wonder-a-frontier-model-for-personal-profes-7758c02a
 title: 'Muse Wonder: A Frontier Model For Personal & Professional AI Agents'
-author: Meta
+author: 'Meta'
 url: https://research.meta.ai/blog/muse-wonder
 captured_at: '2026-10-14T16:30:26Z'
 published_at: '2026-10-12'
 tags: []
-synopsis: 'Meta introduces Muse Wonder and Muse Wonder Full, frontier models for personal and professional agents built around Active Memory and Active Focus, and describes their benchmark results, coding ability, generalization to unfamiliar tasks, and safety work.'
+synopsis: 'Meta introduces Muse Wonder and Muse Wonder Full, frontier models for personal and professional agents featuring Active Memory and Active Focus, and reports their benchmark results, generalization to unfamiliar tasks, and safety evaluations.'

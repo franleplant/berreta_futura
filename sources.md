@@ -133,7 +133,7 @@ The guide explains how websites can use the Browser Annotation API in ChatGPT's 
 - Captured: 2026-10-14T16:30:26Z
 - Release: queued for `016`
 
-Meta introduces Muse Wonder and Muse Wonder Full, frontier models for personal and professional agents built around Active Memory and Active Focus, and describes their benchmark results, coding ability, generalization to unfamiliar tasks, and safety work.
+Meta introduces Muse Wonder and Muse Wonder Full, frontier models for personal and professional agents featuring Active Memory and Active Focus, and reports their benchmark results, generalization to unfamiliar tasks, and safety evaluations.
 
 ## Bill Gates’s Blunt Warning on A.I. — Ezra Klein
 
