@@ -19,6 +19,13 @@ static NUMERIC_ENTITY: LazyLock<Regex> =
 static SR_ONLY_SPAN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?is)<span\b[^>]*class="[^"]*\bsr-only\b[^"]*"[^>]*>.*?</span>"#).unwrap()
 });
+static MATH_ELEMENT: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?is)<math\b[^>]*?\balttext="([^"]*)"[^>]*>.*?</math>"#).unwrap()
+});
+static LATEX_BIBLIOGRAPHY: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?is)<section\b[^>]*class="[^"]*\bltx_bibliography\b[^"]*"[^>]*>.*?</section>"#)
+        .unwrap()
+});
 static HTML_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<[^>]*>").unwrap());
 static HTML_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
 static DATA_URI_SRC: LazyLock<Regex> =
@@ -263,6 +270,11 @@ fn strip_block(html: &str, tag: &str) -> String {
         .expect("a tag name makes a valid pattern")
         .replace_all(html, " ")
         .into_owned()
+}
+
+fn latex_page(html: &str) -> String {
+    let html = LATEX_BIBLIOGRAPHY.replace_all(html, " ");
+    MATH_ELEMENT.replace_all(&html, "$1").into_owned()
 }
 
 fn strip_sr_only(html: &str) -> String {
@@ -1225,7 +1237,7 @@ fn resolve_input(html_file: Option<&Path>, url: &str) -> Result<ResolvedInput> {
                 }
                 None => curl_text(url)?,
             };
-            Ok((None, html, None))
+            Ok((None, latex_page(&html), None))
         }
     }
 }
@@ -1823,6 +1835,12 @@ mod tests {
             .to_string();
         assert!(err.contains("260 consecutive page words"), "{err}");
         assert!(err.contains("starting 'bw0 bw1"), "{err}");
+    }
+
+    #[test]
+    fn latex_page_reads_math_as_tex_and_drops_the_bibliography() {
+        let html = r#"<p>soft <math alttext="B_{1}" display="inline"><mi>B</mi><annotation>B_{1}</annotation></math>.</p><section id="bib" class="ltx_bibliography"><li>Ref</li></section>"#;
+        assert_eq!(latex_page(html), "<p>soft B_{1}.</p> ");
     }
 
     #[test]
