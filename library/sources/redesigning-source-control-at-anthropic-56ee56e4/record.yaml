@@ -1,0 +1,8 @@
+id: redesigning-source-control-at-anthropic-56ee56e4
+title: 'Redesigning source control at Anthropic'
+author: 'Nick G. and the source control team'
+url: https://www.anthropic.com/engineering/redesigning-source-control
+captured_at: '2026-10-14T16:33:55Z'
+published_at: '2026-10-13'
+tags: []
+synopsis: 'Anthropic describes how, as Claude drove its merged code changes from about 2,500 to over 30,000 per day, a seven-person team built Scion, an always-online, server-centric version control system, and migrated its monorepo off git in five months.'

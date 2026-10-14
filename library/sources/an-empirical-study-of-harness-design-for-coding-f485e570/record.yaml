@@ -1,0 +1,8 @@
+id: an-empirical-study-of-harness-design-for-coding-f485e570
+title: 'An Empirical Study of Harness Design for Coding Agents'
+author: 'Run-Ze Fan, Zihao Zhang, Simin Ma, Yebowen Hu, Shouju Wang, Kaiqiang Song, Fei Liu, Hamed Zamani, Xiaoyang Wang'
+url: https://arxiv.org/pdf/2609.20804
+captured_at: '2026-10-14T17:20:32Z'
+published_at: '2026-09-17'
+tags: []
+synopsis: 'A controlled study varies planning, action space, and context management in a fixed lightweight coding harness across four models and two benchmarks (176 settings), finding that each component''s value depends on model capability, task type, and context-window budget.'

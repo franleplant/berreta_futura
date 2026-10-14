@@ -1,0 +1,8 @@
+id: strengthening-our-defenses-against-distillation-42044146
+title: 'Strengthening our defenses against distillation attacks'
+author: Anthropic
+url: https://www.anthropic.com/research/distillation-defenses
+captured_at: '2026-10-14T16:31:56Z'
+published_at: '2026-10-12'
+tags: []
+synopsis: 'Anthropic describes new defenses against distillation attacks on Claude (controlling where reasoning can go, a two-stage classifier, and penalties for repeated attempts) that it says cut the reasoning tokens distillers extract by 10 to 100 times, along with their trade-offs and a call for all developers and platforms to act.'

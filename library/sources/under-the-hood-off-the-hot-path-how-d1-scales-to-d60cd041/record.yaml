@@ -1,0 +1,8 @@
+id: under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
+title: 'Under the hood, off the hot path: how D1 scales to millions of databases'
+author: 'David Laban, Lambros Petrou'
+url: https://blog.cloudflare.com/d1-control-plane
+captured_at: '2026-10-14T16:36:50Z'
+published_at: '2026-10-13'
+tags: []
+synopsis: 'Cloudflare describes how D1''s control plane scales to millions of databases by keeping queries off central Postgres, using Workers KV, Hyperdrive caching, heartbeats, queues, and pre-aggregated usage tables.'

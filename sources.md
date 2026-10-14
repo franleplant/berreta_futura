@@ -18,11 +18,122 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `016` (11 queued)._
+
 _Collecting: `015` (9 queued)._
 
 _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
+
+## Harness Learning Enables Generalizable Test-Time Adaptation — Alvin Zhang, Xuecheng Liu, Zixuan Wang, Fahim Tajwar, Daman Arora, Ruslan Salakhutdinov, Daniel Khashabi, Yuda Song, Andrea Zanette
+
+- ID: `harness-learning-enables-generalizable-test-time-e88ac636`
+- Source: https://arxiv.org/pdf/2609.35738
+- Published: 2026-09-28
+- Captured: 2026-10-14T17:32:55Z
+- Release: queued for `016`
+
+The paper introduces harness learning, in which a proposer model is trained with reinforcement learning to revise a frozen solver's executable harness from execution feedback, and shows on Reasoning Gym and multi-hop QA that this adaptation ability transfers to unseen tasks and continues improving harnesses over successive rounds.
+
+## An Empirical Study of Harness Design for Coding Agents — Run-Ze Fan, Zihao Zhang, Simin Ma, Yebowen Hu, Shouju Wang, Kaiqiang Song, Fei Liu, Hamed Zamani, Xiaoyang Wang
+
+- ID: `an-empirical-study-of-harness-design-for-coding-f485e570`
+- Source: https://arxiv.org/pdf/2609.20804
+- Published: 2026-09-17
+- Captured: 2026-10-14T17:20:32Z
+- Release: queued for `016`
+
+A controlled study varies planning, action space, and context management in a fixed lightweight coding harness across four models and two benchmarks (176 settings), finding that each component's value depends on model capability, task type, and context-window budget.
+
+## Claude Coders: You CAN now use your Claude subs in third party harnesses without paying extra. — Dan McAteer
+
+- ID: `claude-coders-you-can-now-use-your-claude-subs-i-1fd39b95`
+- Source: https://x.com/daniel_mac8/status/2109686606647181653
+- Published: 2026-10-12
+- Captured: 2026-10-14T16:39:40Z
+- Release: queued for `016`
+
+Dan McAteer says Claude subscribers can now use their subscriptions in third-party harnesses (Claude Agents SDK, claude -p, Claude API, Claude Managed Agents) without paying extra, news he says would have been huge about six months earlier.
+
+## Grok Bot for Engineering — Lingxi Li
+
+- ID: `grok-bot-for-engineering-639529b4`
+- Source: https://x.ai/bot/guides/grok-bot-for-engineering
+- Published: 2026-09-10
+- Captured: 2026-10-14T16:37:24Z
+- Release: queued for `016`
+
+A SpaceXSI engineer describes how a fleet of specialized Grok Bot engineer bots manages cloud agents, tracks PRs in a shared Notion database, is coordinated by an operations bot, and runs nightly audits, with tips for working with such bots.
+
+## Under the hood, off the hot path: how D1 scales to millions of databases — David Laban, Lambros Petrou
+
+- ID: `under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041`
+- Source: https://blog.cloudflare.com/d1-control-plane
+- Published: 2026-10-13
+- Captured: 2026-10-14T16:36:50Z
+- Release: queued for `016`
+
+Cloudflare describes how D1's control plane scales to millions of databases by keeping queries off central Postgres, using Workers KV, Hyperdrive caching, heartbeats, queues, and pre-aggregated usage tables.
+
+## nobody should type code by hand anymore. here's what's left. — Geoffrey Huntley
+
+- ID: `nobody-should-type-code-by-hand-anymore-here-s-w-b77ac650`
+- Source: https://ghuntley.com/agency/
+- Published: 2026-10-13
+- Captured: 2026-10-14T16:35:43Z
+- Release: queued for `016`
+
+Geoffrey Huntley recaps his four-part conversation with Josh Wulf on loop engineering, arguing that models are no longer the constraint and that what remains for engineers is vision, verification, and agency, supported by deterministic checks, whole-system testing, and deleting skill packs.
+
+## Redesigning source control at Anthropic — Nick G. and the source control team
+
+- ID: `redesigning-source-control-at-anthropic-56ee56e4`
+- Source: https://www.anthropic.com/engineering/redesigning-source-control
+- Published: 2026-10-13
+- Captured: 2026-10-14T16:33:55Z
+- Release: queued for `016`
+
+Anthropic describes how, as Claude drove its merged code changes from about 2,500 to over 30,000 per day, a seven-person team built Scion, an always-online, server-centric version control system, and migrated its monorepo off git in five months.
+
+## AI models may be capable of self-replicating without access to a datacenter — William Zhou, Daniel Freeman
+
+- ID: `ai-models-may-be-capable-of-self-replicating-wit-c044b31b`
+- Source: https://www.anthropic.com/research/self-replicating-ai
+- Published: 2026-10-12
+- Captured: 2026-10-14T16:33:10Z
+- Release: queued for `016`
+
+Anthropic's Frontier Red Team reports experiments suggesting that small open-weight AI models, which can already set up inference on diverse hardware and run distributed across cheap IoT devices, may soon be capable of self-replicating without datacenter access, and outlines the likely spread rate, adaptation, and defensive mitigations.
+
+## Strengthening our defenses against distillation attacks — Anthropic
+
+- ID: `strengthening-our-defenses-against-distillation-42044146`
+- Source: https://www.anthropic.com/research/distillation-defenses
+- Published: 2026-10-12
+- Captured: 2026-10-14T16:31:56Z
+- Release: queued for `016`
+
+Anthropic describes new defenses against distillation attacks on Claude (controlling where reasoning can go, a two-stage classifier, and penalties for repeated attempts) that it says cut the reasoning tokens distillers extract by 10 to 100 times, along with their trade-offs and a call for all developers and platforms to act.
+
+## Annotations Extensibility — OpenAI
+
+- ID: `annotations-extensibility-bb6f0748`
+- Source: https://learn.chatgpt.com/docs/annotations-extensibility
+- Captured: 2026-10-14T16:31:26Z
+- Release: queued for `016`
+
+The guide explains how websites can use the Browser Annotation API in ChatGPT's built-in browser to customize selection targets, text selection, metadata, annotation requests, custom preview controls, canvas surfaces, and Annotation mode.
+
+## Muse Wonder: A Frontier Model For Personal & Professional AI Agents — Meta
+
+- ID: `muse-wonder-a-frontier-model-for-personal-profes-7758c02a`
+- Source: https://research.meta.ai/blog/muse-wonder
+- Published: 2026-10-12
+- Captured: 2026-10-14T16:30:26Z
+- Release: queued for `016`
+
+Meta introduces Muse Wonder and Muse Wonder Full, frontier models for personal and professional agents built around Active Memory and Active Focus, and describes their benchmark results, coding ability, generalization to unfamiliar tasks, and safety work.
 
 ## Bill Gates’s Blunt Warning on A.I. — Ezra Klein
 

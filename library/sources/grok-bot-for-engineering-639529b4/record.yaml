@@ -1,0 +1,8 @@
+id: grok-bot-for-engineering-639529b4
+title: 'Grok Bot for Engineering'
+author: 'Lingxi Li'
+url: https://x.ai/bot/guides/grok-bot-for-engineering
+captured_at: '2026-10-14T16:37:24Z'
+published_at: '2026-09-10'
+tags: []
+synopsis: 'A SpaceXSI engineer describes how a fleet of specialized Grok Bot engineer bots manages cloud agents, tracks PRs in a shared Notion database, is coordinated by an operations bot, and runs nightly audits, with tips for working with such bots.'

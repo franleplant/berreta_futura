@@ -1,0 +1,8 @@
+id: harness-learning-enables-generalizable-test-time-e88ac636
+title: 'Harness Learning Enables Generalizable Test-Time Adaptation'
+author: 'Alvin Zhang, Xuecheng Liu, Zixuan Wang, Fahim Tajwar, Daman Arora, Ruslan Salakhutdinov, Daniel Khashabi, Yuda Song, Andrea Zanette'
+url: https://arxiv.org/pdf/2609.35738
+captured_at: '2026-10-14T17:32:55Z'
+published_at: '2026-09-28'
+tags: []
+synopsis: 'The paper introduces harness learning, in which a proposer model is trained with reinforcement learning to revise a frozen solver''s executable harness from execution feedback, and shows on Reasoning Gym and multi-hop QA that this adaptation ability transfers to unseen tasks and continues improving harnesses over successive rounds.'

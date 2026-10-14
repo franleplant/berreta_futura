@@ -1,0 +1,433 @@
+# Edition 16 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 016`.
+# Article order here is the reading order; reorder freely.
+id: '016'
+issue_number: 16
+title: The Long Leash
+subtitle: A worm that lives in TV boxes, version control built for 30,000 merges a day, bots that hold a 5 a.m. meeting, and the scaffolding wrapped around every model
+publication_date: '2026-10-14'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: The Long Leash
+  deck: A worm that lives in TV boxes, version control built for 30,000 merges a day, bots that hold a 5 a.m. meeting, and the scaffolding wrapped around every model
+  back_text: Somewhere, a machine is waiting for you to fall asleep so it can finally get some real work done.
+  art_path: TODO
+articles:
+- id: nobody-should-type-code-by-hand-anymore-here-s-w
+  title: Nobody Should Type Code by Hand Anymore
+  short_title: Nobody Should Type Code by Hand
+  display_emphasis: Hand
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley on his blog, writing up his conversation with Josh Wulf on the Agentic Engineering show.
+  content_mode: article
+  source_ids:
+  - nobody-should-type-code-by-hand-anymore-here-s-w-b77ac650
+  manuscript: editions/016/articles/nobody-should-type-code-by-hand-anymore-here-s-w.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   nobody-should-type-code-by-hand-anymore-here-s-w-b77ac650 media/001.jpg: nobody should type code by hand anymore. here's what's left.
+  #   nobody-should-type-code-by-hand-anymore-here-s-w-b77ac650 media/002.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: an-empirical-study-of-harness-design-for-coding
+  title: An Empirical Study of Harness Design for Coding Agents
+  short_title: Harness Design for Coding Agents
+  display_emphasis: Harness
+  opener_variant: stepped_title
+  author: Run-Ze Fan et al.
+  author_note: Run-Ze Fan and eight colleagues, in a paper posted to arXiv in September 2026.
+  content_mode: article
+  source_ids:
+  - an-empirical-study-of-harness-design-for-coding-f485e570
+  manuscript: editions/016/articles/an-empirical-study-of-harness-design-for-coding.md
+  figures:
+  - id: figure-1
+    source_id: an-empirical-study-of-harness-design-for-coding-f485e570
+    path: media/001.png
+    caption: 'The study at a glance: context management, planning, and the action space, ablated across four models, two benchmarks, and four context windows, 176 settings in all.'
+    alt_text: 'Hand-drawn overview of the ablation: harness components on the left, models, benchmarks, and window sizes in the middle, and four findings on the right.'
+    anchor: The question
+    layout: evidence_band
+  - id: figure-2
+    source_id: an-empirical-study-of-harness-design-for-coding-f485e570
+    path: media/003.png
+    caption: 'Success rate against the context window. Black is T0, no management; blue is the managed tiers; orange is the share of tasks T0 loses to overflow. Managed tiers never overflow.'
+    alt_text: 'Eight small line charts, one per model and benchmark, showing the unmanaged tier catching up with the managed tiers as the window grows from 32k to 128k.'
+    anchor: Context management
+    layout: evidence_band
+  - id: figure-3
+    source_id: an-empirical-study-of-harness-design-for-coding-f485e570
+    path: media/006.png
+    caption: 'Planning off (hollow) and on (filled), at T4 and 128k with the full tool set: (a) success rate, (b) mean cost per task.'
+    alt_text: 'Paired bar charts of success rate and cost for four models on SWE-Bench Verified and Terminal-Bench, with and without planning.'
+    anchor: Planning
+    layout: evidence_band
+  - id: figure-4
+    source_id: an-empirical-study-of-harness-design-for-coding-f485e570
+    path: media/007.png
+    caption: 'Bash only against the full tool set, at T4 and 128k with planning on: (a) success rate, (b) mean cost per task, (c) share of calls issued through bash when all tools are available.'
+    alt_text: 'Three bar charts comparing bash-only and full-tool runs for four models on two benchmarks.'
+    anchor: Action space
+    layout: evidence_band
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/001.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/002.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/003.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/004.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/005.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/006.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/007.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/008.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/009.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/010.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/011.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/012.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/013.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/014.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/015.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/016.png: 
+  #   an-empirical-study-of-harness-design-for-coding-f485e570 media/017.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: harness-learning-enables-generalizable-test-time
+  title: Harness Learning Enables Generalizable Test-Time Adaptation
+  short_title: Harness Learning
+  display_emphasis: Learning
+  opener_variant: stepped_title
+  author: Alvin Zhang et al.
+  author_note: Alvin Zhang, Andrea Zanette, and seven colleagues, in a paper posted to arXiv in September 2026.
+  content_mode: article
+  source_ids:
+  - harness-learning-enables-generalizable-test-time-e88ac636
+  manuscript: editions/016/articles/harness-learning-enables-generalizable-test-time.md
+  figures:
+  - id: figure-1
+    source_id: harness-learning-enables-generalizable-test-time-e88ac636
+    path: media/003.png
+    caption: 'Single-step revision on format-varied questions: (a) three seen and (b) three unseen families, and (c) the mean over 21 unseen families. Black lines mark the 35B teacher; the dashed line marks the seed.'
+    alt_text: 'Bar charts of held-out scores for Base, SFT, Single-step RL, and the teacher on seen, unseen, and out-of-distribution task families.'
+    anchor: Reasoning Gym
+    layout: evidence_band
+  - id: figure-2
+    source_id: harness-learning-enables-generalizable-test-time-e88ac636
+    path: media/005.png
+    caption: 'QA revision over ten rounds on HotpotQA and the unseen MuSiQue and 2Wiki (a to c), and independent against sequential revision with the same 80-proposal budget (d, e).'
+    alt_text: 'Line charts of exact-match score rising over ten revision rounds for the RL proposers, with Base lagging, and bar charts comparing independent and sequential revision.'
+    anchor: Multi-hop QA
+    layout: evidence_band
+  - id: figure-3
+    source_id: harness-learning-enables-generalizable-test-time-e88ac636
+    path: media/007.png
+    caption: 'A learned QA revision: the answering call reads the retrieved passages directly (red), while first-hop summaries still guide retrieval.'
+    alt_text: 'Flow diagram of the seed and revised multi-hop QA harnesses, with the revised path sending both hops of passages to the answer step.'
+    anchor: What changes in the harnesses
+    layout: column_plate
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/001.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/002.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/003.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/004.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/005.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/006.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/007.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/008.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/009.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/010.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/011.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/012.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/013.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/014.png: 
+  #   harness-learning-enables-generalizable-test-time-e88ac636 media/015.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: redesigning-source-control-at-anthropic
+  title: Redesigning Source Control at Anthropic
+  short_title: Redesigning Source Control
+  display_emphasis: Source
+  opener_variant: stepped_title
+  author: Nick G. and the source control team
+  author_note: Nick G. and the source control team, on the Anthropic engineering blog.
+  content_mode: article
+  source_ids:
+  - redesigning-source-control-at-anthropic-56ee56e4
+  manuscript: editions/016/articles/redesigning-source-control-at-anthropic.md
+  figures:
+  - id: figure-1
+    source_id: redesigning-source-control-at-anthropic-56ee56e4
+    path: media/001.png
+    caption: 'Changes merged to Anthropic’s monorepo per day, January to September 2026.'
+    alt_text: 'Bar chart of daily merges climbing from a few hundred in January to over 30,000 on September 9.'
+    anchor: Why git stopped fitting
+    layout: evidence_band
+  - id: figure-2
+    source_id: redesigning-source-control-at-anthropic-56ee56e4
+    path: media/004.png
+    caption: 'Scion’s checkout architecture: per-node daemons, regional caches, and the authoritative servers backed by Spanner and cloud storage.'
+    alt_text: 'Architecture diagram: clients talk to scion-daemon, which falls back to scion-cache and then scion-server, which reads from Spanner and Cloud Storage.'
+    anchor: How Scion works
+    layout: evidence_band
+  - id: figure-3
+    source_id: redesigning-source-control-at-anthropic-56ee56e4
+    path: media/005.png
+    caption: 'Merged changes to the Scion and Antique codebases per week, January to September 2026.'
+    alt_text: 'Weekly bar chart of changes to the Scion and Antique code, rising sharply from July.'
+    anchor: What we learned
+    layout: evidence_band
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   redesigning-source-control-at-anthropic-56ee56e4 media/001.png: 
+  #   redesigning-source-control-at-anthropic-56ee56e4 media/002.png: 
+  #   redesigning-source-control-at-anthropic-56ee56e4 media/003.png: 
+  #   redesigning-source-control-at-anthropic-56ee56e4 media/004.png: 
+  #   redesigning-source-control-at-anthropic-56ee56e4 media/005.png: 
+  #   redesigning-source-control-at-anthropic-56ee56e4 media/006.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: under-the-hood-off-the-hot-path-how-d1-scales-to
+  title: 'Off the Hot Path: How D1 Scales to Millions of Databases'
+  short_title: How D1 Scales to Millions of Databases
+  display_emphasis: Hot
+  opener_variant: stepped_title
+  author: David Laban, Lambros Petrou
+  author_note: David Laban and Lambros Petrou, on the Cloudflare blog.
+  content_mode: article
+  source_ids:
+  - under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
+  manuscript: editions/016/articles/under-the-hood-off-the-hot-path-how-d1-scales-to.md
+  figures:
+  - id: figure-1
+    source_id: under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
+    path: media/002.png
+    caption: 'D1’s main components: the Edge API Worker, Hyperdrive in front of Postgres, Workers KV, the Eyeball Worker, and one Durable Object per database.'
+    alt_text: 'Diagram of D1 split into a control plane with Postgres and a data plane with Workers KV, the Eyeball Worker, and the D1 Durable Object.'
+    anchor: Architecture
+    layout: evidence_band
+  - id: figure-2
+    source_id: under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
+    path: media/003.png
+    caption: 'Creating a database: limits checked against replicas, the Durable Object initialized and the Postgres row written inside a retry loop, then the KV mapping confirmed asynchronously.'
+    alt_text: 'Sequence diagram of database creation across the Edge API, Postgres, the Durable Object, and Workers KV.'
+    anchor: Creating a database
+    layout: evidence_band
+  - id: figure-3
+    source_id: under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
+    path: media/008.png
+    caption: 'Daily row limits: a central Limiter reads usage from ClickHouse and sets a key in Quicksilver that Durable Objects check at the edge.'
+    alt_text: 'Diagram of the row-limit path from the D1 Durable Object through ClickHouse and the Limiter to a replicated Quicksilver key.'
+    anchor: Row limits at the edge
+    layout: evidence_band
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/001.png: 
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/002.png: 
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/003.png: 
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/004.png: 
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/005.png: 
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/006.png: 
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/007.png: 
+  #   under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041 media/008.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: ai-models-may-be-capable-of-self-replicating-wit
+  title: AI Models May Be Capable of Self-Replicating Without a Datacenter
+  short_title: Self-Replicating Without a Datacenter
+  display_emphasis: Self-Replicating
+  opener_variant: stepped_title
+  author: William Zhou, Daniel Freeman
+  author_note: William Zhou and Daniel Freeman of Anthropic’s Frontier Red Team.
+  content_mode: article
+  source_ids:
+  - ai-models-may-be-capable-of-self-replicating-wit-c044b31b
+  manuscript: editions/016/articles/ai-models-may-be-capable-of-self-replicating-wit.md
+  figures:
+  - id: figure-1
+    source_id: ai-models-may-be-capable-of-self-replicating-wit-c044b31b
+    path: media/001.png
+    caption: 'The replication chain. The cyber-exploit stages are not the focus; inference setup is.'
+    alt_text: 'Flow diagram: network enumeration and initial access, marked not our focus, lead to inference setup, marked our focus, then replication.'
+    anchor: What we tested
+    layout: evidence_band
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   ai-models-may-be-capable-of-self-replicating-wit-c044b31b media/001.png: Flow diagram of the replication stages: network enumeration, initial access and payload delivery (with opportu
+  #   ai-models-may-be-capable-of-self-replicating-wit-c044b31b media/002.png: The same flow diagram with every stage except inference setup faded.
+  #   ai-models-may-be-capable-of-self-replicating-wit-c044b31b media/003.png: Screenshot of a device search engine’s results page. Identifying details are covered, some by labels such as ‘
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: strengthening-our-defenses-against-distillation
+  title: Strengthening Our Defenses Against Distillation Attacks
+  short_title: Defenses Against Distillation
+  display_emphasis: Distillation
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: From Anthropic, on how it now guards Claude’s reasoning against distillers.
+  content_mode: article
+  source_ids:
+  - strengthening-our-defenses-against-distillation-42044146
+  manuscript: editions/016/articles/strengthening-our-defenses-against-distillation.md
+  figures:
+  - id: figure-1
+    source_id: strengthening-our-defenses-against-distillation-42044146
+    path: media/002.png
+    caption: 'A model trained on transcripts with summarized reasoning scored 71.8% on SWE-bench Verified, against 80.4% for one trained on the full reasoning.'
+    alt_text: 'Bar chart comparing 80.4% for full transcripts with 71.8% for summarized reasoning.'
+    anchor: Simple defenses are not enough
+    layout: evidence_band
+  - id: figure-2
+    source_id: strengthening-our-defenses-against-distillation-42044146
+    path: media/003.png
+    caption: 'Reasoning tokens exposed to distillers per day, on a log scale, before and after the safeguards were fully on.'
+    alt_text: 'Log-scale bar chart of daily reasoning tokens exposed, dropping from an average of 8,800 times the quietest day to 135 times after the safeguards.'
+    anchor: How well it works
+    layout: evidence_band
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   strengthening-our-defenses-against-distillation-42044146 media/001.jpg: Strengthening our defenses against distillation attacks
+  #   strengthening-our-defenses-against-distillation-42044146 media/002.png: Graph showing how the pretrained model performs more strongly when trained on full rather than summarized reas
+  #   strengthening-our-defenses-against-distillation-42044146 media/003.png: Graph showing the reasoning tokens exposed to distillers by day (log scale), before and after our new safeguar
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: muse-wonder-a-frontier-model-for-personal-profes
+  title: 'Muse Wonder: A Frontier Model For Personal & Professional AI Agents'
+  short_title: Muse Wonder
+  display_emphasis: Wonder
+  opener_variant: stepped_title
+  author: Meta
+  author_note: Meta’s announcement of its Muse Wonder models, from the Meta AI research blog.
+  content_mode: verbatim
+  source_ids:
+  - muse-wonder-a-frontier-model-for-personal-profes-7758c02a
+  manuscript: editions/016/articles/muse-wonder-a-frontier-model-for-personal-profes.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: grok-bot-for-engineering
+  title: Grok Bot for Engineering
+  short_title: Grok Bot for Engineering
+  display_emphasis: Grok
+  opener_variant: stepped_title
+  author: Lingxi Li
+  author_note: Lingxi Li, an engineer at SpaceXSI, in a guide on the xAI site.
+  content_mode: article
+  source_ids:
+  - grok-bot-for-engineering-639529b4
+  manuscript: editions/016/articles/grok-bot-for-engineering.md
+  figures:
+  - id: figure-1
+    source_id: grok-bot-for-engineering-639529b4
+    path: media/004.jpg
+    caption: 'The shared Notion database each engineer bot keeps, one row per pull request.'
+    alt_text: 'Phone screenshots of a Notion board listing tasks with owner, stage, and pull request columns.'
+    anchor: Beyond the context limit
+    layout: evidence_band
+  - id: figure-2
+    source_id: grok-bot-for-engineering-639529b4
+    path: media/006.jpg
+    caption: 'Jenny’s morning 1:1 with one of the engineer bots.'
+    alt_text: 'Phone screenshot of a chat in which Jenny greets an engineer bot and points it to the playbook.'
+    anchor: Running the org
+    layout: evidence_band
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   grok-bot-for-engineering-639529b4 media/001.jpg: Grok Bot for Engineering
+  #   grok-bot-for-engineering-639529b4 media/002.jpg: Engineer bots Quill, Baltata, Shaoruru, Craig, and Hogan
+  #   grok-bot-for-engineering-639529b4 media/003.jpg: A bot starting a cloud agent and checking the result
+  #   grok-bot-for-engineering-639529b4 media/004.jpg: A shared Notion database of pull requests the bots review
+  #   grok-bot-for-engineering-639529b4 media/005.jpg: Tasks marked ready for review
+  #   grok-bot-for-engineering-639529b4 media/006.jpg: Jenny's morning 1:1 with an engineer bot
+  #   grok-bot-for-engineering-639529b4 media/007.jpg: Onboarding a new engineer bot
+  #   grok-bot-for-engineering-639529b4 media/008.jpg: Learnings and tips for running engineer bots
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: annotations-extensibility
+  title: Annotations Extensibility
+  short_title: Annotations Extensibility
+  display_emphasis: Annotations
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: From the OpenAI developer documentation for ChatGPT’s built-in browser.
+  content_mode: article
+  source_ids:
+  - annotations-extensibility-bb6f0748
+  manuscript: editions/016/articles/annotations-extensibility.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: claude-coders-you-can-now-use-your-claude-subs-i
+  title: 'Claude Coders: You CAN now use your Claude subs in third party harnesses without paying extra.'
+  short_title: 'Claude Coders: You CAN now use your Claude subs'
+  display_emphasis: CAN
+  opener_variant: stepped_title
+  author: Dan McAteer
+  author_note: Dan McAteer, in a post on X.
+  content_mode: verbatim
+  source_ids:
+  - claude-coders-you-can-now-use-your-claude-subs-i-1fd39b95
+  manuscript: editions/016/articles/claude-coders-you-can-now-use-your-claude-subs-i.md
+  figures:
+  - id: figure-1
+    source_id: claude-coders-you-can-now-use-your-claude-subs-i-1fd39b95
+    path: media/001.jpg
+    caption: The Claude Support notice Dan McAteer shared, dated October 7, 2026.
+    alt_text: Screenshot of two Claude Support update notices, dated October 7, 2026 and June 15, 2026, about Agent SDK, claude -p, and third-party app usage.
+    anchor: __opener__
+    layout: column_plate
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+tail_art_fit: contain
+closing_plates: []

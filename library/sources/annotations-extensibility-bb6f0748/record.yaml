@@ -1,0 +1,7 @@
+id: annotations-extensibility-bb6f0748
+title: 'Annotations Extensibility'
+author: OpenAI
+url: https://learn.chatgpt.com/docs/annotations-extensibility
+captured_at: '2026-10-14T16:31:26Z'
+tags: []
+synopsis: 'The guide explains how websites can use the Browser Annotation API in ChatGPT''s built-in browser to customize selection targets, text selection, metadata, annotation requests, custom preview controls, canvas surfaces, and Annotation mode.'

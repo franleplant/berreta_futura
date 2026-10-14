@@ -1,0 +1,69 @@
+edition:
+  id: '016'
+articles:
+- id: nobody-should-type-code-by-hand-anymore-here-s-w
+  title: nobody should type code by hand anymore. here's what's left.
+  author: Geoffrey Huntley
+  content_mode: article
+  source_ids:
+  - nobody-should-type-code-by-hand-anymore-here-s-w-b77ac650
+- id: an-empirical-study-of-harness-design-for-coding
+  title: An Empirical Study of Harness Design for Coding Agents
+  author: Run-Ze Fan et al.
+  content_mode: article
+  source_ids:
+  - an-empirical-study-of-harness-design-for-coding-f485e570
+- id: harness-learning-enables-generalizable-test-time
+  title: Harness Learning Enables Generalizable Test-Time Adaptation
+  author: Alvin Zhang et al.
+  content_mode: article
+  source_ids:
+  - harness-learning-enables-generalizable-test-time-e88ac636
+- id: redesigning-source-control-at-anthropic
+  title: Redesigning source control at Anthropic
+  author: Nick G. and the source control team
+  content_mode: article
+  source_ids:
+  - redesigning-source-control-at-anthropic-56ee56e4
+- id: under-the-hood-off-the-hot-path-how-d1-scales-to
+  title: 'Under the hood, off the hot path: how D1 scales to millions of databases'
+  author: David Laban, Lambros Petrou
+  content_mode: article
+  source_ids:
+  - under-the-hood-off-the-hot-path-how-d1-scales-to-d60cd041
+- id: ai-models-may-be-capable-of-self-replicating-wit
+  title: AI models may be capable of self-replicating without access to a datacenter
+  author: William Zhou, Daniel Freeman
+  content_mode: article
+  source_ids:
+  - ai-models-may-be-capable-of-self-replicating-wit-c044b31b
+- id: strengthening-our-defenses-against-distillation
+  title: Strengthening our defenses against distillation attacks
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - strengthening-our-defenses-against-distillation-42044146
+- id: muse-wonder-a-frontier-model-for-personal-profes
+  title: 'Muse Wonder: A Frontier Model For Personal & Professional AI Agents'
+  author: Meta
+  content_mode: verbatim
+  source_ids:
+  - muse-wonder-a-frontier-model-for-personal-profes-7758c02a
+- id: grok-bot-for-engineering
+  title: Grok Bot for Engineering
+  author: Lingxi Li
+  content_mode: article
+  source_ids:
+  - grok-bot-for-engineering-639529b4
+- id: annotations-extensibility
+  title: Annotations Extensibility
+  author: OpenAI
+  content_mode: article
+  source_ids:
+  - annotations-extensibility-bb6f0748
+- id: claude-coders-you-can-now-use-your-claude-subs-i
+  title: 'Claude Coders: You CAN now use your Claude subs in third party harnesses without paying extra.'
+  author: Dan McAteer
+  content_mode: verbatim
+  source_ids:
+  - claude-coders-you-can-now-use-your-claude-subs-i-1fd39b95
