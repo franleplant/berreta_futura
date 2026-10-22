@@ -34,6 +34,10 @@ static SRC_ATTR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"\bsrc="([^"]*)
 static BLANK_LINE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n{3,}").unwrap());
 static PRE_BLOCK: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?is)<pre\b[^>]*>(.*?)</pre>").unwrap());
+static PRE_BUTTON: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?is)<button\b[^>]*>.*?</button>").unwrap());
+static PRE_LINE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)<div\b[^>]*\bclass="line"[^>]*>"#).unwrap());
 static LANGUAGE_CLASS: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"^(?:language|lang|highlight-source|highlight)-([\w+#.-]+)$").unwrap()
 });
@@ -398,8 +402,13 @@ fn pre_runs(html: &str) -> Vec<String> {
     PRE_BLOCK
         .captures_iter(html)
         .map(|c| {
-            let inner = HTML_TAG.replace_all(&c[1], "");
-            normalize_code(&decode_entities(&inner))
+            let inner = PRE_BUTTON.replace_all(&c[1], "");
+            let text = |h: &str| decode_entities(&HTML_TAG.replace_all(h, ""));
+            let lines: Vec<String> = PRE_LINE
+                .split(&inner)
+                .map(|l| text(l).trim_end_matches('\n').to_string())
+                .collect();
+            normalize_code(&lines.join("\n"))
         })
         .collect()
 }
@@ -1734,6 +1743,22 @@ mod tests {
         assert!(fidelity_gate(exact, &page_text(html), &pres, &[]).is_ok());
         let edited = "# T\nB\n\n```js\nlet x = 1;\nlet y = 3;\n```";
         assert!(fidelity_gate(edited, &page_text(html), &pres, &[]).is_err());
+    }
+
+    #[test]
+    fn gate_reads_line_divided_code_without_line_numbers() {
+        let line = |n: u8, body: &str| {
+            format!("<div class=\"line\"><button>{n}</button><div>{body}</div></div>")
+        };
+        let html = format!(
+            "<html><pre><code>{}{}{}</code></pre></html>",
+            line(1, "<span>import</span> x"),
+            line(2, "<span style=\"display:inline-block\">\n</span>"),
+            line(3, "x()")
+        );
+        let pres = pre_runs(&html);
+        let exact = "# T\nB\n\n```js\nimport x\n\nx()\n```";
+        assert!(fidelity_gate(exact, &page_text(&html), &pres, &[]).is_ok());
     }
 
     #[test]
