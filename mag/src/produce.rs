@@ -346,12 +346,27 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
         );
     };
     let mut lines = text.lines().skip_while(|l| l.trim().is_empty()).peekable();
-    if lines.peek().is_some_and(|l| l.starts_with("# ")) {
+    if let Some(title) = lines
+        .peek()
+        .and_then(|l| l.strip_prefix("# "))
+        .map(str::trim)
+    {
+        let title = title.to_string();
         lines.next();
         while lines.peek().is_some_and(|l| l.trim().is_empty()) {
             lines.next();
         }
         if lines.peek().is_some_and(|l| is_byline(l)) {
+            lines.next();
+        }
+        while lines.peek().is_some_and(|l| l.trim().is_empty()) {
+            lines.next();
+        }
+        if lines
+            .peek()
+            .and_then(|l| l.strip_prefix("## "))
+            .is_some_and(|h| h.trim() == title)
+        {
             lines.next();
         }
     }
@@ -1222,6 +1237,12 @@ mod tests {
             let body = verbatim_body(&[("s-1".to_string(), src)]).unwrap();
             assert_eq!(body, "Today we ship.\n", "{byline}");
         }
+        let repeated = "# Title\n\nOpenAI\n\n## Title\n\nThe page repeats its own title.\n";
+        let body = verbatim_body(&[("s-1".to_string(), repeated.to_string())]).unwrap();
+        assert_eq!(body, "The page repeats its own title.\n");
+        let kept = "# Title\n\nOpenAI\n\n## Other\n\nA different heading stays.\n";
+        let body = verbatim_body(&[("s-1".to_string(), kept.to_string())]).unwrap();
+        assert_eq!(body, "## Other\n\nA different heading stays.\n");
         let unbylined = "# Title\n\nThe first paragraph opens with a sentence.\n";
         let body = verbatim_body(&[("s-1".to_string(), unbylined.to_string())]).unwrap();
         assert_eq!(body, "The first paragraph opens with a sentence.\n");

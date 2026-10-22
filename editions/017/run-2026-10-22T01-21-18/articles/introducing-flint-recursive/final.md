@@ -5,8 +5,6 @@ content_mode: verbatim
 label: VERBATIM
 ---
 
-## Introducing Flint
-
 We’re introducing Recursive Flint, a mixture-of-experts (MoE) model built for fast agentic coding on local hardware. Flint has 40 billion total parameters and activates just 2.5 billion per token. Our small team of people and agents built it from scratch in under four months.
 
 Flint leads MoE models with fewer than 50 billion total parameters on agentic coding benchmarks, including SWE-Bench Pro v2, Terminal-Bench 2.1, and SWE-Bench Verified. It also rivals the coding performance of dense models with 25–40 billion parameters, while running more than five times faster.

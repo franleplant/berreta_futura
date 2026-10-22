@@ -1,8 +1,8 @@
 # Run summary: edition 017
 
-- 1 model calls, $0.48, 0.5 minutes
+- 0 model calls, $0.00, 0.0 minutes
 - writer `opus`
 
 | piece | words |
 |---|---|
-| how-claude-designed-protein-binders-against-scor | 598 |
+| introducing-flint-recursive | 1094 |
