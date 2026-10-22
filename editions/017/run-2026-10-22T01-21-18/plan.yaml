@@ -1,0 +1,58 @@
+edition:
+  id: '017'
+articles:
+- id: closing-the-verification-loop-observability-driv
+  title: 'Closing the verification loop: Observability-driven harnesses for building with agents'
+  author: Alp Keles, Jai Menon, Sesh Nalla, Vyom Shah
+  content_mode: article
+  source_ids:
+  - closing-the-verification-loop-observability-driv-aedcc796
+  - closing-the-verification-loop-part-2-fully-auton-9b7620e5
+- id: introducing-claude-duet
+  title: Introducing Claude Duet
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - introducing-claude-duet-f5220dab
+- id: making-every-harness-durable
+  title: Making every harness durable
+  author: Pranay Prakash, Eric Dodds
+  content_mode: article
+  source_ids:
+  - making-every-harness-durable-974b525b
+- id: how-claude-designed-protein-binders-against-scor
+  title: How Claude designed protein binders against scorpion neurotoxins
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - how-claude-designed-protein-binders-against-scor-ac67a5f1
+- id: advancing-coding-in-low-resource-programming-lan
+  title: Advancing coding in low‑resource programming languages
+  author: OpenAI
+  content_mode: verbatim
+  source_ids:
+  - advancing-coding-in-low-resource-programming-lan-9f6c1d6c
+- id: cutting-our-inference-bill-by-68-by-being-obsess
+  title: Cutting our inference bill by 68% by being obsessive about optimization
+  author: Ryan Skidmore
+  content_mode: article
+  source_ids:
+  - cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d
+- id: introducing-clairic-a-new-system-one-class-of-ex
+  title: Introducing Clairic, a new System One class of extraction models
+  author: Alex Reneau, Michelle Chen, Kevin Flansburg
+  content_mode: article
+  source_ids:
+  - introducing-clairic-a-new-system-one-class-of-ex-40634a33
+- id: towards-securing-the-internet
+  title: Towards securing the internet
+  author: Greg Brockman
+  content_mode: verbatim
+  source_ids:
+  - towards-securing-the-internet-a7982fbd
+- id: introducing-flint-recursive
+  title: Introducing Flint
+  author: Recursive
+  content_mode: verbatim
+  source_ids:
+  - introducing-flint-recursive-f3f48867

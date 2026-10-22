@@ -1,0 +1,245 @@
+# Edition 17 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 017`.
+# Article order here is the reading order; reorder freely.
+id: '017'
+issue_number: 17
+title: Measure Twice
+subtitle: A Redis rebuilt under proofs, an assistant that asks first, agent turns that survive a crash, antivenom binders, COBOL migrated byte for byte, a code reviewer at a third of the bill, models that answer in typed values, PHP's fourteen-year bug, and a fast coder that runs on your laptop
+publication_date: '2026-10-22'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Measure Twice
+  deck: A Redis rebuilt under proofs, an assistant that asks first, agent turns that survive a crash, antivenom binders, COBOL migrated byte for byte, a code reviewer at a third of the bill, models that answer in typed values, PHP's fourteen-year bug, and a fast coder that runs on your laptop
+  back_text: The robot finished the job in four seconds. You will spend the whole afternoon deciding whether to believe it.
+  art_path: TODO
+articles:
+- id: closing-the-verification-loop-observability-driv
+  title: 'Closing the verification loop: Observability-driven harnesses for building with agents'
+  short_title: 'Closing the verification loop: Observability-driven harnesses for building with agents'
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Alp Keles, Jai Menon, Sesh Nalla, Vyom Shah
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - closing-the-verification-loop-observability-driv-aedcc796
+  - closing-the-verification-loop-part-2-fully-auton-9b7620e5
+  manuscript: editions/017/articles/closing-the-verification-loop-observability-driv.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/001.jpg: Closing the verification loop: Observability-driven harnesses for building with agents
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/002.jpg: Latency comparison between Redis 8.4 and redis-rust.
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/003.jpg: Memory usage for redis-rust and Redis 8.4 over time.
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/004.jpg: Diagram showing TLA+ specifications mirroring shared invariants used by Stateright, DST tests, Kani, and stagi
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/005.jpg: Workflow diagram showing ADR text generating TLA+ specifications, which generate Rust invariant checks for Sta
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/006.jpg: Dropped in as a Kafka replacement behind our internal streaming abstraction to consume and produce streams
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/007.jpg: Serving the APM profiling stream in Datadog’s staging environment
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/008.jpg: Produce latency (p50) comparison for the APM profiling stream across Helix and Kafka
+  #   closing-the-verification-loop-observability-driv-aedcc796 media/009.jpg: Diagram showing verification methods ranked by scalability and rigor, illustrating how agents shift formal met
+  #   closing-the-verification-loop-part-2-fully-auton-9b7620e5 media/001.jpg: Closing the verification loop, Part 2: Fully autonomous optimization
+  #   closing-the-verification-loop-part-2-fully-auton-9b7620e5 media/002.jpg: Architecture diagram showing Unicron with an aggregation server processing payloads and hot-swapping WASM modu
+  #   closing-the-verification-loop-part-2-fully-auton-9b7620e5 media/003.jpg: Chart showing messages consumed per second increasing from approximately 7,000 to over 26,000 after specializa
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: introducing-claude-duet
+  title: Introducing Claude Duet
+  short_title: Introducing Claude Duet
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - introducing-claude-duet-f5220dab
+  manuscript: editions/017/articles/introducing-claude-duet.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   introducing-claude-duet-f5220dab media/001.png: Logos of apps that work with Claude Duet
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: making-every-harness-durable
+  title: Making every harness durable
+  short_title: Making every harness durable
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Pranay Prakash, Eric Dodds
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - making-every-harness-durable-974b525b
+  manuscript: editions/017/articles/making-every-harness-durable.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   making-every-harness-durable-974b525b media/001.jpg: Harnesses run in the cloud now, so you can close the lid.
+  #   making-every-harness-durable-974b525b media/002.jpg: Harnesses run in the cloud now, so you can close the lid.
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: how-claude-designed-protein-binders-against-scor
+  title: How Claude designed protein binders against scorpion neurotoxins
+  short_title: How Claude designed protein binders against scorpion neurotoxins
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - how-claude-designed-protein-binders-against-scor-ac67a5f1
+  manuscript: editions/017/articles/how-claude-designed-protein-binders-against-scor.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   how-claude-designed-protein-binders-against-scor-ac67a5f1 media/001.png: 
+  #   how-claude-designed-protein-binders-against-scor-ac67a5f1 media/002.png: 
+  #   how-claude-designed-protein-binders-against-scor-ac67a5f1 media/003.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: advancing-coding-in-low-resource-programming-lan
+  title: Advancing coding in low‑resource programming languages
+  short_title: Advancing coding in low‑resource programming languages
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: TODO
+  content_mode: verbatim
+  source_ids:
+  - advancing-coding-in-low-resource-programming-lan-9f6c1d6c
+  manuscript: editions/017/articles/advancing-coding-in-low-resource-programming-lan.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: cutting-our-inference-bill-by-68-by-being-obsess
+  title: Cutting our inference bill by 68% by being obsessive about optimization
+  short_title: Cutting our inference bill by 68% by being obsessive about optimization
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Ryan Skidmore
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d
+  manuscript: editions/017/articles/cutting-our-inference-bill-by-68-by-being-obsess.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/001.png: 
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/002.png: Chart showing the share of reviewers' first requests that read from the cache rising from 14–26% to 91–99.5% a
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/003.png: Diagram showing three sub-reviewers sharing one cached first request: the first writes it and the other two re
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/004.png: Chart showing cost per review falling in steps from about $2.40 to $0.75, each step matching a specific change
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/005.png: Chart splitting the drop from $2.44 to $0.77 by change. The shared cached prefix was the biggest single saving
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/006.png: Chart showing reviews getting faster at every percentile, the slowest most. The median fell from 4m 09s to 1m 
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/007.png: Chart showing the code quality, security and performance reviewers posting far fewer critical and warning find
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/008.png: Chart showing authors now act on 59% of the code quality reviewer's serious findings, up from 34%, so it leads
+  #   cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d media/009.png: Chart showing the drop in findings was mostly minor or unverifiable ones, while important findings per review 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: introducing-clairic-a-new-system-one-class-of-ex
+  title: Introducing Clairic, a new System One class of extraction models
+  short_title: Introducing Clairic, a new System One class of extraction models
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Alex Reneau, Michelle Chen, Kevin Flansburg
+  author_note: TODO
+  content_mode: article
+  source_ids:
+  - introducing-clairic-a-new-system-one-class-of-ex-40634a33
+  manuscript: editions/017/articles/introducing-clairic-a-new-system-one-class-of-ex.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   introducing-clairic-a-new-system-one-class-of-ex-40634a33 media/001.png: 
+  #   introducing-clairic-a-new-system-one-class-of-ex-40634a33 media/002.png: 
+  #   introducing-clairic-a-new-system-one-class-of-ex-40634a33 media/003.jpg: 
+  #   introducing-clairic-a-new-system-one-class-of-ex-40634a33 media/004.png: 
+  #   introducing-clairic-a-new-system-one-class-of-ex-40634a33 media/005.png: 
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: towards-securing-the-internet
+  title: Towards securing the internet
+  short_title: Towards securing the internet
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Greg Brockman
+  author_note: TODO
+  content_mode: verbatim
+  source_ids:
+  - towards-securing-the-internet-a7982fbd
+  manuscript: editions/017/articles/towards-securing-the-internet.md
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+- id: introducing-flint-recursive
+  title: Introducing Flint
+  short_title: Introducing Flint
+  display_emphasis: TODO
+  opener_variant: stepped_title
+  author: Recursive
+  author_note: TODO
+  content_mode: verbatim
+  source_ids:
+  - introducing-flint-recursive-f3f48867
+  manuscript: editions/017/articles/introducing-flint-recursive.md
+  figures:
+  - id: figure-1
+    source_id: introducing-flint-recursive-f3f48867
+    path: media/001.png
+    caption: TODO
+    alt_text: TODO
+    anchor: Introducing Flint
+    layout: evidence_band
+  - id: figure-2
+    source_id: introducing-flint-recursive-f3f48867
+    path: media/002.png
+    caption: TODO
+    alt_text: TODO
+    anchor: State-of-the-art local agentic coding performance
+    layout: evidence_band
+  - id: figure-3
+    source_id: introducing-flint-recursive-f3f48867
+    path: media/003.png
+    caption: TODO
+    alt_text: TODO
+    anchor: Fast inference on your local AI device
+    layout: evidence_band
+  opener_art:
+    path: TODO
+    alt_text: TODO
+    credit: Illustration generated for this edition.
+  tail_art_path: TODO
+tail_art_fit: contain
+closing_plates: []

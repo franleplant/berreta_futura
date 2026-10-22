@@ -315,8 +315,9 @@ fn fix_em_dashes(
              {listed}\nReply with the piece only."
         );
         let parse_label = label.clone();
+        let floor = body.split_whitespace().count() * 9 / 10;
         body = caller.call_with_parse(&label, writer_model, &fix_prompt, |r| {
-            extract_body(r, &parse_label)
+            keeps_words(extract_body(r, &parse_label)?, floor)
         })?;
     }
     let violations = em_dash_violations(&body, sources);
@@ -325,6 +326,14 @@ fn fix_em_dashes(
             "{piece_id}: em dash outside verbatim source text after {EM_DASH_PASSES} fix passes:\n{}",
             violations.join("\n")
         );
+    }
+    Ok(body)
+}
+
+fn keeps_words(body: String, floor: usize) -> Result<String> {
+    let words = body.split_whitespace().count();
+    if words < floor {
+        bail!("the reply has {words} words where the repunctuated draft needs at least {floor}; reply with the whole piece");
     }
     Ok(body)
 }
@@ -1005,6 +1014,13 @@ mod tests {
                 serde_norway::from_str(&format!("k: {}\n", yq(raw))).unwrap();
             assert_eq!(doc["k"].as_str(), Some(raw), "{raw:?} -> {}", yq(raw));
         }
+    }
+
+    #[test]
+    fn a_repunctuation_reply_must_keep_the_draft() {
+        let draft = "word ".repeat(100);
+        assert!(keeps_words(draft.clone(), 90).is_ok());
+        assert!(keeps_words("My previous answer was cut off.".to_string(), 90).is_err());
     }
 
     #[test]
