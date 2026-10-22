@@ -1,0 +1,8 @@
+id: making-every-harness-durable-974b525b
+title: 'Making every harness durable'
+author: 'Pranay Prakash, Eric Dodds'
+url: https://vercel.com/blog/making-every-harness-durable
+captured_at: '2026-10-22T01:20:07Z'
+published_at: '2026-10-19'
+tags: []
+synopsis: 'Vercel introduces durable-harness, an open source package that logs each model and tool call to a Workflow SDK World so Pi, OpenCode, Codex, and Claude Code sessions can resume after a crash or function timeout without repeating completed work.'

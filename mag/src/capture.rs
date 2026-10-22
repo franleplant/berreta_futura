@@ -287,7 +287,7 @@ fn strip_sr_only(html: &str) -> String {
 
 fn visible_html(html: &str) -> String {
     let mut s = strip_sr_only(html);
-    for tag in ["script", "style", "svg", "noscript"] {
+    for tag in ["script", "style", "svg", "noscript", "button"] {
         s = strip_block(&s, tag);
     }
     HTML_COMMENT.replace_all(&s, " ").into_owned()

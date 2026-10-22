@@ -1,0 +1,8 @@
+id: cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d
+title: 'Cutting our inference bill by 68% by being obsessive about optimization'
+author: 'Ryan Skidmore'
+url: https://blog.cloudflare.com/obsessive-inference-optimization/
+captured_at: '2026-10-22T01:17:55Z'
+published_at: '2026-10-19'
+tags: []
+synopsis: 'Cloudflare cut the average cost of its AI code review from $2.43 to $0.77 and the median review time from 4m 09s to 1m 32s by sharing cached prompt prefixes, reducing LLM calls, and tuning models and effort levels, while checking that review quality largely held.'

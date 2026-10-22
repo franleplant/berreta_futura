@@ -1,0 +1,8 @@
+id: introducing-clairic-a-new-system-one-class-of-ex-40634a33
+title: 'Introducing Clairic, a new System One class of extraction models'
+author: 'Alex Reneau, Michelle Chen, Kevin Flansburg'
+url: https://blog.cloudflare.com/clairic-extraction-model/
+captured_at: '2026-10-22T01:19:00Z'
+published_at: '2026-10-19'
+tags: []
+synopsis: 'Cloudflare introduces Clairic, a preview System One extraction model on Workers AI that extracts, computes, estimates, and forecasts typed values from unstructured text and images in a single pass, and shows it cascading with the Clef decision model and an LLM to run faster and cheaper than an all-LLM pipeline.'

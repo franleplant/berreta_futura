@@ -1,0 +1,8 @@
+id: closing-the-verification-loop-part-2-fully-auton-9b7620e5
+title: 'Closing the verification loop, Part 2: Fully autonomous optimization'
+author: 'Ming Chen, Sesh Nalla'
+url: https://www.datadoghq.com/blog/ai/fully-autonomous-optimization/
+captured_at: '2026-10-22T01:10:47Z'
+published_at: '2026-03-09'
+tags: []
+synopsis: 'Datadog describes applying its BitsEvolve LLM-driven evolutionary optimizer to the Unicron time-series aggregation service, using specialization, Verus verification, shadow evaluation, and WASM hot-swapping to deploy verified optimizations autonomously, with reported gains of 270% and 541% over the generic baseline.'

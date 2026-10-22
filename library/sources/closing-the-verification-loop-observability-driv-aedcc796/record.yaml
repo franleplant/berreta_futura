@@ -1,0 +1,8 @@
+id: closing-the-verification-loop-observability-driv-aedcc796
+title: 'Closing the verification loop: Observability-driven harnesses for building with agents'
+author: 'Alp Keles, Jai Menon, Sesh Nalla, Vyom Shah'
+url: https://www.datadoghq.com/blog/ai/harness-first-agents/
+captured_at: '2026-10-22T01:10:05Z'
+published_at: '2026-03-09'
+tags: []
+synopsis: 'Datadog describes "harness-first engineering," in which automated verification such as deterministic simulation testing, TLA+ specs, and production telemetry replaces code review as the primary source of correctness, illustrated by the redis-rust and Helix projects built with coding agents.'

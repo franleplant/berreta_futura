@@ -18,6 +18,8 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `017` (10 queued)._
+
 _Collecting: `016` (11 queued)._
 
 _Collecting: `015` (9 queued)._
@@ -25,6 +27,106 @@ _Collecting: `015` (9 queued)._
 _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
+
+## Towards securing the internet — Greg Brockman
+
+- ID: `towards-securing-the-internet-a7982fbd`
+- Source: https://x.com/gdb/article/2112921529650688312
+- Published: 2026-10-21
+- Captured: 2026-10-22T01:20:21Z
+- Release: queued for `017`
+
+Greg Brockman describes OpenAI's coalition effort to mitigate the php2shell PHP vulnerability found with its models, and argues that defenders need stronger models and new, faster approaches to securing the internet.
+
+## Making every harness durable — Pranay Prakash, Eric Dodds
+
+- ID: `making-every-harness-durable-974b525b`
+- Source: https://vercel.com/blog/making-every-harness-durable
+- Published: 2026-10-19
+- Captured: 2026-10-22T01:20:07Z
+- Release: queued for `017`
+
+Vercel introduces durable-harness, an open source package that logs each model and tool call to a Workflow SDK World so Pi, OpenCode, Codex, and Claude Code sessions can resume after a crash or function timeout without repeating completed work.
+
+## Introducing Flint — Recursive
+
+- ID: `introducing-flint-recursive-f3f48867`
+- Source: https://recursive.com/updates/introducing-recursive-flint
+- Published: 2026-10-21
+- Captured: 2026-10-22T01:19:18Z
+- Release: queued for `017`
+
+Recursive introduces Flint, a 40-billion-parameter mixture-of-experts coding model with 2.5 billion active parameters, built in under four months with the Eureka Machine automated research system, that runs fast on local hardware and is released under the Apache 2.0 license.
+
+## Introducing Clairic, a new System One class of extraction models — Alex Reneau, Michelle Chen, Kevin Flansburg
+
+- ID: `introducing-clairic-a-new-system-one-class-of-ex-40634a33`
+- Source: https://blog.cloudflare.com/clairic-extraction-model/
+- Published: 2026-10-19
+- Captured: 2026-10-22T01:19:00Z
+- Release: queued for `017`
+
+Cloudflare introduces Clairic, a preview System One extraction model on Workers AI that extracts, computes, estimates, and forecasts typed values from unstructured text and images in a single pass, and shows it cascading with the Clef decision model and an LLM to run faster and cheaper than an all-LLM pipeline.
+
+## Cutting our inference bill by 68% by being obsessive about optimization — Ryan Skidmore
+
+- ID: `cutting-our-inference-bill-by-68-by-being-obsess-68e2ee5d`
+- Source: https://blog.cloudflare.com/obsessive-inference-optimization/
+- Published: 2026-10-19
+- Captured: 2026-10-22T01:17:55Z
+- Release: queued for `017`
+
+Cloudflare cut the average cost of its AI code review from $2.43 to $0.77 and the median review time from 4m 09s to 1m 32s by sharing cached prompt prefixes, reducing LLM calls, and tuning models and effort levels, while checking that review quality largely held.
+
+## Advancing coding in low‑resource programming languages — OpenAI
+
+- ID: `advancing-coding-in-low-resource-programming-lan-9f6c1d6c`
+- Source: https://openai.com/index/low-resource-programming-languages/
+- Published: 2026-10-19
+- Captured: 2026-10-22T01:17:08Z
+- Release: queued for `017`
+
+OpenAI reports that its latest models substantially improve at building and migrating software in low-resource languages such as COBOL, Fortran, and Visual Basic, as measured by its new MultiLangBench and COBOL migration evaluations.
+
+## How Claude designed protein binders against scorpion neurotoxins — Anthropic
+
+- ID: `how-claude-designed-protein-binders-against-scor-ac67a5f1`
+- Source: https://www.anthropic.com/research/claude-scorpion-toxin-binder-design
+- Published: 2026-10-20
+- Captured: 2026-10-22T01:13:42Z
+- Release: queued for `017`
+
+Anthropic describes how Claude, working largely autonomously over 64 hours, designed 318,484 protein candidates against five scorpion neurotoxins, and how lab testing of 211 selected designs by Adaptyv Bio and Twist Bioscience found 17 single-toxin binders, with no neutralization yet confirmed.
+
+## Introducing Claude Duet — Anthropic
+
+- ID: `introducing-claude-duet-f5220dab`
+- Source: https://claude.com/resources/articles/claude-duet
+- Published: 2026-10-21
+- Captured: 2026-10-22T01:11:07Z
+- Release: queued for `017`
+
+Anthropic announces a research preview of Claude Duet, a proactive agent app that briefs users, completes tasks in the background, connects to business tools, and asks for approval before consequential actions, available by waitlist to US Pro and Max subscribers.
+
+## Closing the verification loop, Part 2: Fully autonomous optimization — Ming Chen, Sesh Nalla
+
+- ID: `closing-the-verification-loop-part-2-fully-auton-9b7620e5`
+- Source: https://www.datadoghq.com/blog/ai/fully-autonomous-optimization/
+- Published: 2026-03-09
+- Captured: 2026-10-22T01:10:47Z
+- Release: queued for `017`
+
+Datadog describes applying its BitsEvolve LLM-driven evolutionary optimizer to the Unicron time-series aggregation service, using specialization, Verus verification, shadow evaluation, and WASM hot-swapping to deploy verified optimizations autonomously, with reported gains of 270% and 541% over the generic baseline.
+
+## Closing the verification loop: Observability-driven harnesses for building with agents — Alp Keles, Jai Menon, Sesh Nalla, Vyom Shah
+
+- ID: `closing-the-verification-loop-observability-driv-aedcc796`
+- Source: https://www.datadoghq.com/blog/ai/harness-first-agents/
+- Published: 2026-03-09
+- Captured: 2026-10-22T01:10:05Z
+- Release: queued for `017`
+
+Datadog describes "harness-first engineering," in which automated verification such as deterministic simulation testing, TLA+ specs, and production telemetry replaces code review as the primary source of correctness, illustrated by the redis-rust and Helix projects built with coding agents.
 
 ## Harness Learning Enables Generalizable Test-Time Adaptation — Alvin Zhang, Xuecheng Liu, Zixuan Wang, Fahim Tajwar, Daman Arora, Ruslan Salakhutdinov, Daniel Khashabi, Yuda Song, Andrea Zanette
 

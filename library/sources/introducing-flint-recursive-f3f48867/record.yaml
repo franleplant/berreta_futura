@@ -1,0 +1,8 @@
+id: introducing-flint-recursive-f3f48867
+title: 'Introducing Flint'
+author: 'Recursive'
+url: https://recursive.com/updates/introducing-recursive-flint
+captured_at: '2026-10-22T01:19:18Z'
+published_at: '2026-10-21'
+tags: []
+synopsis: 'Recursive introduces Flint, a 40-billion-parameter mixture-of-experts coding model with 2.5 billion active parameters, built in under four months with the Eureka Machine automated research system, that runs fast on local hardware and is released under the Apache 2.0 license.'
