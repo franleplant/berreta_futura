@@ -1132,12 +1132,30 @@ pub fn pages(
         "404.html".to_string(),
         document(&lost_page(name), site, (name, logo), "/"),
     ));
+    for (_, body) in &mut files {
+        *body = web_typography(body);
+    }
     Ok(files)
+}
+
+fn web_typography(page: &str) -> String {
+    page.replace(['\u{2011}', '\u{2010}'], "-")
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{block, body, download, dropped, front_download, get_issue, Ctx, Image, Piece};
+    use super::{
+        block, body, download, dropped, front_download, get_issue, web_typography, Ctx, Image,
+        Piece,
+    };
+
+    #[test]
+    fn hyphens_the_web_fonts_lack_print_as_plain_hyphens() {
+        assert_eq!(
+            web_typography("low\u{2011}resource and non\u{2010}breaking"),
+            "low-resource and non-breaking"
+        );
+    }
     use crate::model::doc::{Block, Document, Inline};
     use crate::model::kinds::{ContentMode, FigureFit, FigureLayout, FigureTone};
     use crate::model::manifest::{Article, ArticleOpenerArt};
