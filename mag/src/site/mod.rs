@@ -288,6 +288,10 @@ fn prepare(out: &Path) -> Result<()> {
         fs::remove_dir_all(out)?;
     }
     fs::create_dir_all(out)?;
+    fs::write(
+        out.join("search.js"),
+        include_str!("../../assets/search.js"),
+    )?;
     Ok(fs::write(
         out.join("site.css"),
         include_str!("../../assets/site.css"),

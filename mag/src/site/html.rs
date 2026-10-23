@@ -10,6 +10,7 @@ use crate::model::records::{Extract, Figure};
 use crate::model::shared::{anchor_key, content_label, ui};
 use crate::util::escape_html;
 use anyhow::{Context, Result};
+use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
@@ -51,6 +52,14 @@ fn say(language: &str, key: &str) -> &'static str {
         "next" => "Next",
         "previous" if spanish => "Anterior",
         "previous" => "Previous",
+        "search" if spanish => "Buscar",
+        "search" => "Search",
+        "ask" if spanish => "Buscar en todos los números",
+        "ask" => "Search every issue",
+        "none" if spanish => "Sin resultados.",
+        "none" => "No results.",
+        "loading" if spanish => "Cargando el índice…",
+        "loading" => "Loading the index…",
         "lost" if spanish => "Esta página no existe.",
         "lost" => "This page does not exist.",
         "home" if spanish => "Volver a la portada",
@@ -489,6 +498,86 @@ fn expected(item: &Block, out: &mut Vec<(String, bool)>) {
     }
 }
 
+fn piece_text(piece: &Piece) -> String {
+    let mut out = Vec::new();
+    for block in &piece.document.blocks {
+        expected(block, &mut out);
+    }
+    squash(
+        &out.into_iter()
+            .map(|(text, _)| text)
+            .collect::<Vec<_>>()
+            .join(" "),
+    )
+}
+
+#[derive(Serialize)]
+struct Found {
+    u: String,
+    i: String,
+    n: String,
+    t: String,
+    a: String,
+    k: String,
+    x: String,
+}
+
+fn search_index(language: &str, issued: &[&Issued]) -> Result<(String, String)> {
+    let own = prefix(language);
+    let rows: Vec<Found> = issued
+        .iter()
+        .flat_map(|one| {
+            let own = own.clone();
+            one.pieces.iter().map(move |piece| Found {
+                u: format!(
+                    "{}{}/",
+                    one.dir().strip_prefix(&own).unwrap_or_default(),
+                    piece.slug
+                ),
+                i: one.issue_label(),
+                n: one.edition.title.clone(),
+                t: piece.title.clone(),
+                a: piece.author.clone(),
+                k: piece.label.clone(),
+                x: piece_text(piece),
+            })
+        })
+        .collect();
+    Ok((
+        format!("{own}search-index.json"),
+        serde_json::to_string(&rows).context("serializing the search index")?,
+    ))
+}
+
+fn search_page(language: &str, issued: &[&Issued]) -> Page {
+    let path = format!("{}search/", prefix(language));
+    let root = depth_root(&path);
+    let base = format!("{root}{}", prefix(language));
+    let pieces: usize = issued.iter().map(|one| one.pieces.len()).sum();
+    Page {
+        path,
+        language: language.to_string(),
+        title: say(language, "search").to_string(),
+        description: say(language, "ask").to_string(),
+        image: None,
+        alternate: None,
+        crumb: String::new(),
+        body: format!(
+            "<section class=\"search\" data-index=\"{base}search-index.json\" data-base=\"{base}\" \
+             data-none=\"{none}\" data-loading=\"{loading}\"><h1>{title}</h1>\
+             <form role=\"search\" onsubmit=\"return false\"><input id=\"q\" type=\"search\" name=\"q\" \
+             placeholder=\"{ask}\" aria-label=\"{ask}\" autocomplete=\"off\" spellcheck=\"false\" autofocus></form>\
+             <p class=\"tally\" aria-live=\"polite\">{count}</p><ol class=\"hits\"></ol></section>\
+             <script src=\"{root}search.js\" defer></script>",
+            title = say(language, "search"),
+            ask = say(language, "ask"),
+            none = say(language, "none"),
+            loading = say(language, "loading"),
+            count = pieces,
+        ),
+    }
+}
+
 pub fn dropped(piece: &Piece, html: &str) -> Vec<String> {
     let text = markup_free(html);
     let flat = squash(&text);
@@ -587,13 +676,14 @@ fn document(page: &Page, site: &SiteConfig, (name, logo): (&str, &str), root: &s
 <link rel=\"apple-touch-icon\" href=\"{root}apple-touch-icon.png\">\n\
 <link rel=\"preload\" href=\"{root}fonts/Geist-Variable.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\n\
 <link rel=\"stylesheet\" href=\"{root}site.css\">\n</head>\n<body>\n{SPRITE}\
-<header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}<nav class=\"topnav\"><a href=\"{home}\">{issues}</a></nav>{switch}</header>\n\
+<header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}<nav class=\"topnav\"><a href=\"{home}\">{issues}</a><a href=\"{home}search/\">{search}</a></nav>{switch}</header>\n\
 <main>\n{body}\n</main>\n\
 <footer class=\"colophon\"><a href=\"{home}\">{name}</a><span>{tagline}</span></footer>\n</body>\n</html>\n",
         lang = escape_html(&page.language),
         head = head.join("\n"),
         name = escape_html(name),
         issues = say(&page.language, "issues"),
+        search = say(&page.language, "search"),
         tagline = say(&page.language, "tagline"),
         crumb = page.crumb,
         body = page.body,
@@ -1104,6 +1194,7 @@ pub fn pages(
     languages.sort_by_key(|l| (*l != "en", *l));
     languages.dedup();
     let mut out = Vec::new();
+    let mut indexes = Vec::new();
     for language in &languages {
         let own: Vec<&Issued> = issued
             .iter()
@@ -1111,7 +1202,9 @@ pub fn pages(
             .collect();
         let other = languages.iter().copied().find(|l| l != language);
         out.push(index_page(language, &own, images, other));
-        for one in own {
+        out.push(search_page(language, &own));
+        indexes.push(search_index(language, &own)?);
+        for one in &own {
             out.push(issue_page(one, images));
             for index in 0..one.pieces.len() {
                 out.push(piece_page(one, index, images)?);
@@ -1132,6 +1225,7 @@ pub fn pages(
         "404.html".to_string(),
         document(&lost_page(name), site, (name, logo), "/"),
     ));
+    files.extend(indexes);
     for (_, body) in &mut files {
         *body = web_typography(body);
     }

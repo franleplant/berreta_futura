@@ -90,6 +90,9 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
         "index.html",
         "011/index.html",
         "404.html",
+        "search/index.html",
+        "search-index.json",
+        "search.js",
         "site.css",
         "favicon.svg",
         "apple-touch-icon.png",
@@ -97,6 +100,19 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
     ] {
         assert!(a.contains_key(page), "missing {page}");
     }
+    let index: serde_json::Value = serde_json::from_slice(&a["search-index.json"]).unwrap();
+    let rows = index.as_array().unwrap();
+    assert!(rows.len() > 50, "the search index is short");
+    let row = rows
+        .iter()
+        .find(|r| r["u"].as_str().unwrap().starts_with("011/"))
+        .unwrap();
+    assert!(row["u"].as_str().unwrap().ends_with('/'));
+    assert!(!row["t"].as_str().unwrap().is_empty());
+    assert!(
+        row["x"].as_str().unwrap().split_whitespace().count() > 50,
+        "a piece carries no searchable text"
+    );
     let config = std::fs::read_to_string(repository().join("magazine.toml")).unwrap();
     let newest = config
         .lines()

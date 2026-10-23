@@ -65,7 +65,7 @@ img { display: block; max-width: 100%; height: auto; }
 .brand { display: block; line-height: 0; }
 .logo { display: block; height: 2.25rem; width: auto; --ink: var(--logo-ink); --paper: #ffffff; --red: #f05738; --box: #0a0b0d; }
 .crumb { color: var(--muted); }
-.topnav { margin-left: auto; }
+.topnav { margin-left: auto; display: flex; gap: var(--sp-4); }
 .switch { color: var(--muted); }
 .colophon {
   margin-top: var(--sp-7); padding: var(--sp-5) var(--gutter) var(--sp-6);
@@ -220,3 +220,36 @@ pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .
   .pager a[rel="next"]:only-child { grid-column: 2; }
 }
 @media (prefers-reduced-motion: reduce) { .shelf img { transition: none; } .shelf li a:hover img { transform: none; } }
+
+.search h1 { margin: 0 0 var(--sp-4); }
+.search form { margin: 0 0 var(--sp-3); }
+.search #q {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 1.125rem;
+  color: inherit;
+  background: var(--well);
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  padding: 0.7rem 0.9rem;
+}
+.search #q:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.search .tally { margin: 0 0 var(--sp-5); color: var(--muted); font-size: 0.875rem; }
+.hits { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.hits li { margin: 0; }
+.hits a {
+  display: block;
+  padding: var(--sp-3);
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+  background: var(--well);
+}
+.hits a:hover { border-color: var(--ink); }
+.hits .kicker { display: block; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.hits h2 { margin: 0.2rem 0 0; font-size: 1.125rem; line-height: 1.25; }
+.hits .byline { display: block; margin-top: 0.15rem; color: var(--muted); font-size: 0.875rem; }
+.hits .quote { margin: var(--sp-2) 0 0; font-size: 0.9375rem; line-height: 1.5; color: var(--muted); }
+.hits mark { background: none; color: var(--ink); font-weight: 600; }
