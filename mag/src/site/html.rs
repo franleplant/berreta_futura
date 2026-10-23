@@ -58,6 +58,8 @@ fn say(language: &str, key: &str) -> &'static str {
         "ask" => "Search every issue",
         "none" if spanish => "Sin resultados.",
         "none" => "No results.",
+        "exact" if spanish => "Entre comillas, \"la frase exacta\".",
+        "exact" => "Put \"quotes\" around an exact phrase.",
         "loading" if spanish => "Cargando el índice…",
         "loading" => "Loading the index…",
         "lost" if spanish => "Esta página no existe.",
@@ -567,11 +569,13 @@ fn search_page(language: &str, issued: &[&Issued]) -> Page {
              data-none=\"{none}\" data-loading=\"{loading}\"><h1>{title}</h1>\
              <form role=\"search\" onsubmit=\"return false\"><input id=\"q\" type=\"search\" name=\"q\" \
              placeholder=\"{ask}\" aria-label=\"{ask}\" autocomplete=\"off\" spellcheck=\"false\" autofocus></form>\
+             <p class=\"hint\">{exact}</p>\
              <p class=\"tally\" aria-live=\"polite\">{count}</p><ol class=\"hits\"></ol></section>\
              <script src=\"{root}search.js\" defer></script>",
             title = say(language, "search"),
             ask = say(language, "ask"),
             none = say(language, "none"),
+            exact = say(language, "exact"),
             loading = say(language, "loading"),
             count = pieces,
         ),
