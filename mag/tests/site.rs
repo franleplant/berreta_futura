@@ -93,6 +93,7 @@ fn the_site_is_built_from_the_newest_tracked_run_with_every_page_and_the_same_by
         "search/index.html",
         "search-index.json",
         "search.js",
+        "share.js",
         "site.css",
         "favicon.svg",
         "apple-touch-icon.png",

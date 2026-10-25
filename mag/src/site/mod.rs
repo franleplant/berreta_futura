@@ -288,6 +288,7 @@ fn prepare(out: &Path) -> Result<()> {
         fs::remove_dir_all(out)?;
     }
     fs::create_dir_all(out)?;
+    fs::write(out.join("share.js"), include_str!("../../assets/share.js"))?;
     fs::write(
         out.join("search.js"),
         include_str!("../../assets/search.js"),

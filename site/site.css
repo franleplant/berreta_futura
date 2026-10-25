@@ -235,6 +235,22 @@ pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .
   padding: 0.7rem 0.9rem;
 }
 .search #q:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+::target-text { background: var(--red); color: var(--on-red); }
+.share {
+  position: absolute;
+  z-index: 5;
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1;
+  color: var(--paper);
+  background: var(--ink);
+  border: 0;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
+}
+.share:hover { background: var(--red-text); }
 .search .hint { margin: 0 0 var(--sp-2); color: var(--muted); font-size: 0.875rem; }
 .search .tally { margin: 0 0 var(--sp-5); color: var(--muted); font-size: 0.875rem; }
 .hits { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }

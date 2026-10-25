@@ -58,6 +58,12 @@ fn say(language: &str, key: &str) -> &'static str {
         "ask" => "Search every issue",
         "none" if spanish => "Sin resultados.",
         "none" => "No results.",
+        "copy" if spanish => "Copiar enlace",
+        "copy" => "Copy link",
+        "copied" if spanish => "Enlace copiado",
+        "copied" => "Link copied",
+        "nocopy" if spanish => "Copiá el enlace a mano",
+        "nocopy" => "Copy the link by hand",
         "exact" if spanish => "Entre comillas, \"la frase exacta\".",
         "exact" => "Put \"quotes\" around an exact phrase.",
         "loading" if spanish => "Cargando el índice…",
@@ -1036,6 +1042,13 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
         missing.len(),
         missing.join("\n  ")
     );
+    let share = format!(
+        "\n<script src=\"{}share.js\" data-copy=\"{}\" data-done=\"{}\" data-failed=\"{}\" defer></script>",
+        ctx.root,
+        say(language, "copy"),
+        say(language, "copied"),
+        say(language, "nocopy")
+    );
     Ok(Page {
         alternate: issued.alternate(&path),
         title: format!(
@@ -1051,7 +1064,7 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
         ),
         language: language.clone(),
         path,
-        body,
+        body: body + &share,
     })
 }
 
