@@ -15,13 +15,39 @@
       (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
     );
 
-  const fragment = (text) => {
-    const all = words(text);
-    if (all.length <= 10) return part(all.join(" "));
-    return `${part(all.slice(0, 5).join(" "))},${part(all.slice(-5).join(" "))}`;
+  const inword = /[\p{L}\p{N}_'’]/u;
+
+  const grow = (range) => {
+    const wide = range.cloneRange();
+    const head = wide.startContainer;
+    const tail = wide.endContainer;
+    if (head.nodeType === 3) {
+      while (
+        wide.startOffset > 0 &&
+        inword.test(head.textContent[wide.startOffset - 1])
+      ) {
+        wide.setStart(head, wide.startOffset - 1);
+      }
+    }
+    if (tail.nodeType === 3) {
+      while (
+        wide.endOffset < tail.textContent.length &&
+        inword.test(tail.textContent[wide.endOffset])
+      ) {
+        wide.setEnd(tail, wide.endOffset + 1);
+      }
+    }
+    return wide;
   };
 
-  let picked = "";
+  const fragment = ({ text, split }) => {
+    const all = words(text);
+    if (all.length <= 10 && !split) return part(all.join(" "));
+    const half = Math.min(5, Math.floor(all.length / 2));
+    return `${part(all.slice(0, half).join(" "))},${part(all.slice(all.length - half).join(" "))}`;
+  };
+
+  let picked = { text: "", split: false };
 
   const place = (rect) => {
     button.textContent = script.dataset.copy;
@@ -38,10 +64,13 @@
     if (!selection || selection.isCollapsed || !selection.rangeCount) return;
     const range = selection.getRangeAt(0);
     if (!scope.contains(range.commonAncestorContainer)) return;
-    const text = words(selection.toString()).join(" ");
-    if (words(text).length < 3) return;
-    picked = text;
-    place(range.getBoundingClientRect());
+    const wide = grow(range);
+    const raw = wide.toString();
+    if (words(raw).length < 3) return;
+    picked = { text: words(raw).join(" "), split: /\n/.test(raw.trim()) };
+    selection.removeAllRanges();
+    selection.addRange(wide);
+    place(wide.getBoundingClientRect());
   };
 
   document.addEventListener("selectionchange", () => {
