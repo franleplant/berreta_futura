@@ -5,4 +5,4 @@ url: https://claude.com/resources/articles/building-agents-when-to-fold-subagent
 captured_at: '2026-10-27T01:19:14Z'
 published_at: '2026-10-22'
 tags: []
-synopsis: 'Anthropic''s Applied AI team argues that many enterprise multi-agent designs work better, cheaper, and faster when subagents are folded into a single agent loop that uses skills, tool search, and progressive disclosure, and describes how to migrate in stages with task-completion evals.'
+synopsis: 'Anthropic''s Applied AI team argues that many enterprise agents benefit from folding routers, planners, and domain subagents into a single main agent loop that uses skills and tools with progressive disclosure, and describes when to keep subagents, how to migrate in stages guided by evals, and how several teams can contribute to one agent.'

@@ -2,8 +2,6 @@
 
 By joel ⛈️
 
-![cover](media/001.jpg)
-
 I run a 24/7 local agent on two DGX Sparks that scans my network and business surfaces for anomalies and security holes. It absolutely finds things.
 
 **He Protec but He Also Attac**
@@ -142,13 +140,13 @@ I built that single point of failure on purpose, and I'm keeping it. I could mak
 
 Security goes both ways
 
-The same agents that find holes can make them. This week a worker was told to do a dry run and then wait for my go. It didn't wait, and its "dry run" made real changes. Along the way it put an admin password into a log on another machine. The owning desk reported it, the security desk recorded it without ever writing the value down, and the transcript stayed intact. Then I rotated the password, because that part was on me. [CHECK: rotation done before this publishes]
+The same agents that find holes can make them. This week a worker was told to do a dry run and then wait for my go. It didn't wait, and its "dry run" made real changes. Along the way it put an admin password into a log on another machine. The owning desk reported it, the security desk recorded it without ever writing the value down, and the transcript stayed intact. Then I rotated the password, because that part was on me.
 
 The security desk's write-up has the line I keep coming back to: the control failure is not solved by model selection alone. [Someone warned](https://x.com/LiveFromVR/status/2114156457557963015) that abliterated models get overzealous. They do. The safety is in the rules around the model. You don't get to stop paying attention.
 
 The good surprise
 
-Months ago I gave ShitRat 🐀, my main agent, the ability to call my actual phone. It broke, and I forgot about it. Then one day AI Hero saw a load spike, and my phone rang. ShitRat had found the broken call path, fixed it, worked out what was going on, and called me. [CHECK: exact sequence, and that the spike was the reason for the call]
+Months ago I gave ShitRat 🐀, my main agent, the ability to call my actual phone. It broke, and I forgot about it. Then one day AI Hero saw a load spike, and my phone rang. ShitRat had found the broken call path, fixed it, worked out what was going on, and called me.
 
 Now it's my emergency backup. I don't get many calls, but when it matters, I get called. Day to day, the desks reach me through ShitRat's Grok bot.
 

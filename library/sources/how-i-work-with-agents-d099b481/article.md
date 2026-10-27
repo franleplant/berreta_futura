@@ -1,10 +1,6 @@
 # How I work with Agents
 By Thorsten Ball
 
-![cover](media/001.jpg)
-
-... as of October 2026.
-
 **Use the latest and greatest models.** Everything else is potentially a waste of time. If a model is wrong 10% of the time, you don't know which 10%, so you end up making multiple attempts. When do you really want to hire a generalist who's 50% cheaper but also randomly 20% dumber? Who's still using Opus 4.5? Exactly.
 
 **Stop worrying about accumulating slop.** "It'll turn your codebase into an unmaintainable mess." Maybe that was true six months ago. Now? I'm not convinced it adds slop. And even if it does, I'm not convinced the result is unmaintainable.

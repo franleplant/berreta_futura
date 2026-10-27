@@ -5,4 +5,4 @@ url: https://www.anthropic.com/research/formal-verification
 captured_at: '2026-10-27T01:22:43Z'
 published_at: '2026-10-22'
 tags: []
-synopsis: 'Anthropic and Theorem report that Claude proved no-crash properties at the RISC-V assembly level for 239 fuzz-test entry points across 123 open-source libraries, found many long-hidden bugs along the way, and argue LLM-driven formal verification will become practical for most production software.'
+synopsis: 'Anthropic and Theorem report that Claude produced machine-checked formal proofs of no-crash properties for 239 fuzz-test entry points across 123 open-source libraries at the RISC-V assembly level, found long-hidden bugs along the way, and argue that falling proof costs and proof reuse will make formal verification broadly practical, while noting the limits of what such proofs cover.'

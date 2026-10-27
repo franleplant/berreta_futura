@@ -1,12 +1,8 @@
 # unikernels were hard. key word: were.
 
-By Geoffrey Huntley · Geoffrey Huntley · 2026-10-11
-
-![unikernels were hard. key word: were.](media/001.jpg)
+By Geoffrey Huntley · 11 Oct 2026
 
 Justin Cormack, who worked on MirageOS and Unikernel Systems back in the day, has been noticing what I've been noticing: people are discovering (or rediscovering) unikernels again. He's running a series of conversations on the topic for his newsletter, and I was first up. He emailed me, and five minutes later I was talking to him from the pub with a stein of beer in hand. We went deep on Mirage, Orleans, Haskell, Nix, Cursed and a whole lot more.
-
-[Unikernels in 2026: Justin Cormack in conversation with Geoffrey Huntley](https://www.youtube.com/embed/DOjHBwdfBpA?feature=oembed)
 
 Here's the gist, written up properly, with chapter links at the bottom if you want to jump to a specific part of the conversation. Justin's edited transcript is over at [Ignore Previous Directions](https://buttondown.com/justincormack/archive/unikernels-in-2026-part-1-geoffrey-huntley/?ref=ghuntley.com).
 
@@ -44,8 +40,6 @@ Justin had a great example of the same thing. He'd been building minimal Linux O
 
 That works because the original tool is a golden oracle. Generate filesystems at different sizes with both implementations and diff them. Port the tests across. Automate it.
 
-[porting software has been trivial for a while now. here's how you do it.](https://ghuntley.com/porting/)
-
 Storage was the other big gap. Most workloads these days are cloud-shaped, even on-prem, so take the [turbopuffer](https://turbopuffer.com/?ref=ghuntley.com) approach: S3 as your primary, infinitely growable storage, with a local NVMe block cache and an LRU (or whatever caching algorithm you like) for the hot bits. Justin is a massive "S3 for everything" fan too. As long as latency isn't the constraint, you get infinite storage with multi-user access, and you can build everything on it.
 
 ## nix machine tests and overlays
@@ -55,8 +49,6 @@ Justin had been experimenting with Nix too, and was surprised that the first tim
 Nix the language sucks. Nixpkgs is great. [NixOS machine tests](https://nixos.org/manual/nixos/stable/?ref=ghuntley.com#sec-nixos-tests) are the bee's knees: you write a test that spins up a fleet of machines and exercises the interaction between your network rules and your application. It's the thing people don't know about.
 
 And when something upstream is broken, or there's a supply chain problem in your dependencies, that's just an overlay.
-
-[the world hasn't figured out yet that you can literally just fix everything with a Nix overlay](https://ghuntley.com/nix/)
 
 > If you have to tool-call a human, also known as "Dear Maintainer", who might be on holiday or might have abandoned the project, and wait a day, two days, or even five minutes, that's not AGI.
 

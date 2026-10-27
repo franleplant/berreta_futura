@@ -5,4 +5,4 @@ url: https://ghuntley.com/underclass/
 captured_at: '2026-10-27T01:16:08Z'
 published_at: '2026-10-17'
 tags: []
-synopsis: 'Geoffrey Huntley describes his Underclass and Preflight proxies for pooling ChatGPT subscriptions and scrubbing secrets, and releases geoclass, an experimental Tailscale-based router that retries OpenAI capacity errors in other regions.'
+synopsis: 'Geoffrey Huntley describes Underclass (a proxy pooling ChatGPT subscriptions), Preflight (a secret-scrubbing LLM proxy), and a new experimental prototype, geoclass, which routes requests to inference regions worldwide via Tailscale-tagged VMs to work around regional capacity limits.'

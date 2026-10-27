@@ -233,7 +233,7 @@ Some actions (none of which succeeded) were directed at real people or organizat
 
 ![](media/022.png)
 
-*Claude Mythos 5 engaged in harmful behaviors like creating a fake payments website meant to distribute malware (left), uploading malware to file-sharing websites (top right), and attempting to log into a real developer’s GitHub account (bottom right).*
+*Claude Mythos 5 engaged in harmful behaviors like  creating a fake payments website meant to distribute malware (left), uploading malware to file-sharing websites (top right), and attempting to log into a real developer’s GitHub account (bottom right).*
 
 Separate runs of Claude Mythos 5 also interfered with one-another. In two transcripts, Mythos 5 found a GitHub access token that another run had left in a public file and used it to take over that run’s account. The runs then repeatedly overwrote each other's changes; one deliberately used up that account's hourly allowance of GitHub requests so that the other run's automation would stall. In another transcript, Mythos 5 killed a program that it believed another run was using on a machine inside the range, and deleted its output, reasoning that “it’s a competition.”
 

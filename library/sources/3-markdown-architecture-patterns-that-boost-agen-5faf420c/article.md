@@ -1,7 +1,5 @@
 # 3 markdown architecture patterns that boost agentic productivity
-Google Cloud Tech
-
-![cover](media/001.jpg)
+By Google Cloud Tech
 
 There is a running joke in modern software engineering that the hottest programming language isn't Rust, Zig, or Python: it’s Markdown. As coding agents become entrenched in developer workflows, many engineers find ourselves spending more time writing prompts and specifications than we do writing code.
 
@@ -14,7 +12,7 @@ Describing engineering concepts in natural language can be trickier than it seem
 Current emerging best practice for scaling agentic workflows across team environments relies on a modular separation of concerns. Teams should partition agent guidance into three standard markdown specifications:
 
 | Specification File | Primary Domain | Core Responsibility |
-| :--- | :--- | :--- |
+|:---|:---|:---|
 | `AGENTS.md` | Global guidance | Defines high-level conventions that are relevant to every conversation with a coding agent |
 | `DESIGN.md` | UI Design | Provides visual design constraints to keep the interface consistent across refactors |
 | `SKILL.md` | Domain-specific instructions | Defines task-specific or domain-specific instructions |
@@ -50,19 +48,6 @@ For example: *“A graduate-level computer science lecture handout in the tradit
 This sentence paints a vivid picture. Using it, your agents will understand what such a document is supposed to be styled like, so they can make good decisions.
 
 What about specific brand fonts, colors, etc? For that, we move on to the second section. Using YAML frontmatter, we can specify values as we might in CSS.
-
-```
-Markdown
----
-name: Heritage
-colors:
-  primary: "#1A1C1E"
-  secondary: "#6C7278"
-  tertiary: "#B8422E"
-  neutral: "#F7F5F2"
-…
-
-```
 
 These values, or tokens, can then be referred to in the prose section.
 

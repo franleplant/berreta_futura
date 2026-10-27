@@ -5,4 +5,4 @@ url: https://ghuntley.com/remix/
 captured_at: '2026-10-27T01:17:52Z'
 published_at: '2026-10-15'
 tags: []
-synopsis: 'Geoffrey Huntley proposes a "remix model" for open source in which maintainers disable pull requests and instead let others adapt software through independent Nix overlays, with upstream incorporation optional and no maintenance obligation.'
+synopsis: 'Geoffrey Huntley argues that open source maintainers should disable pull requests and instead let others remix their software through small Nix overlays, treating ideas rather than patches as the valuable unit and imposing no maintenance obligation on the original author.'

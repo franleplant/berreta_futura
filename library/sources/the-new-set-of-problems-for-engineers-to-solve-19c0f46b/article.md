@@ -1,7 +1,6 @@
 # The new set of problems for engineers to solve
-By Katelyn Lesse
 
-![cover](media/001.png)
+By Katelyn Lesse
 
 A lot of software engineers are going through what can only be described as an identity crisis. The job has changed a lot. Some are depressed, others are having the time of their lives. There's a really specific thing I see happening that makes me really excited for what engineering looks like over the next, call it a year or two - AI just isn't going to be able to create the incredible outcomes it's capable of creating unless software engineers solve problems to make it possible. This is existential, which is honestly a lot of fun, so it's a pretty incredible time to be a software engineer.
 

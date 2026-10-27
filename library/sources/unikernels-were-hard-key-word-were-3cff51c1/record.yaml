@@ -5,4 +5,4 @@ url: https://ghuntley.com/unikernels/
 captured_at: '2026-10-27T01:18:08Z'
 published_at: '2026-10-11'
 tags: []
-synopsis: 'Geoffrey Huntley argues, after a conversation with Justin Cormack, that unikernels are no longer hard because AI can port missing libraries and tooling, and that removing the operating system shrinks the attack surface.'
+synopsis: 'Geoffrey Huntley argues that unikernels were hard only because of missing libraries and dogma, that AI agents can now port what was missing, and that dropping the operating system removes the attack surface a shell would give an attacker.'

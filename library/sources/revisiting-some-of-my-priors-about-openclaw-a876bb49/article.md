@@ -27,10 +27,6 @@ You need to be curious, have lots of imagination, and when you have an idea, jus
 
 If you're using Grok, install this skill pack first, and use it to create other bots. Every time you need a new bot, which is often, ask this bot to create one.
 
-[dr eggbot · Grok Bot Marketplace](https://x.ai/bot/marketplace/bots/dr-eggbot-v2?ref=ghuntley.com)
-
-Designs high-quality Grok Bots. Asks a few preference questions, then creates them with CreateAgent.
-
 ## some ideas for bots
 
 Here are the bots I've defined in the last week, which I'm getting a lot of utility out of:
@@ -55,7 +51,7 @@ Here are the bots I've defined in the last week, which I'm getting a lot of util
 - **Kitten Vet** tracks the kittens' vaccinations and vet admin and automatically reminds me of what I need to do for them. Connectors: Gmail, Google Calendar.
 - **Desires** keeps my bucket list and "someday" list. Connector: Google Calendar and X. What's really cool is that sometimes I'll have a conversation out in public and genuinely want to catch up with someone, but I forget. So I can just prompt my desires bot to like add it to the particular category, either by searching X or dropping the exact link of the conversation.
 
-![desires bot](media/002.png)
+![](media/002.png)
 
 desires bot
 
@@ -63,12 +59,6 @@ desires bot
 
 - **Mac Mini** operates the Mac mini. It's a function pipe bot. Tailscale is installed on the Linux machine the bot runs on; it's on my Tailscale network and can tunnel its network connectivity out via my Mac Mini as needed to bypass any geo-blocks on data center IP addresses.
 - **Overalls** manages my upcoming open-source project called Overalls (previously known as loom) and acts as a remote interface for dispatching agentic coding tasks in ephemeral Firecracker VMs hosted on my self-hosted infrastructure.
-
-[Overalls: an AI-first developer platform that you own](https://overalls.dev/?ref=ghuntley.com)
-
-Overalls is an open-source, self-hosted platform for persistent Firecracker development machines and the AI agents that work on them.
-
-loom is shipping
 
 ## lessons learned
 

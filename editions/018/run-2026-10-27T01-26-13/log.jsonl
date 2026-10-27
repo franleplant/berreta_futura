@@ -11,3 +11,5 @@
 {"attempt":0,"label":"llms-are-making-formal-software-verification-fea write","model":"opus","seconds":51.8,"usd":0.3002}
 {"attempt":0,"label":"build-your-own-pi-based-homelab-software-factory trim1","model":"opus","seconds":23.8,"usd":0.2211}
 {"attempt":0,"label":"front-matter","model":"opus","seconds":15.6,"usd":0.4031}
+{"attempt":1,"label":"front-matter","model":"opus","seconds":14.7,"usd":0.417}
+{"attempt":0,"label":"front-matter","model":"opus","seconds":24.3,"usd":0.4312}

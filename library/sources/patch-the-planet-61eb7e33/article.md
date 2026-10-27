@@ -1,17 +1,11 @@
 # patch the planet
-By Geoffrey Huntley · Geoffrey Huntley · October 21, 2026
-
-![patch the planet](media/001.jpg)
+By Geoffrey Huntley · Geoffrey Huntley · 21 Oct 2026
 
 I don't know if you've seen this, but a CA just got popped. Their keys got leaked, which means the industry as a whole now has some pretty major problems. It was revealed two hours ago.
-
-[eMudhra Intermediate CA Compromise](https://emudhra.we-have-a-problem.com/?ref=ghuntley.com)
 
 Now you're probably wondering why I'm writing up this blog post. It's simple. This is perhaps one of the easiest security patches I've ever done, and I've discovered a few new tricks. First, understand that fixing this with ease without Nix is almost impossible. Tens of millions of dollars (if not more) in productivity are being lost worldwide right now as everyone tries to patch their transitive dependencies.
 
 Meanwhile, because I've used Nix, I can patch the planet, since the ideas behind the blog post below extend into security as well.
-
-[the world hasn’t figured out yet that you can literally just fix everything with a Nix overlay](https://ghuntley.com/nix/)
 
 Because of Nix's single source of truth and the ability to patch this single source of truth, I'm able to issue a simple prompt like this:
 
@@ -19,7 +13,7 @@ Because of Nix's single source of truth and the ability to patch this single sou
 
 With results in the following.
 
-![](media/002.png)
+![](media/001.png)
 
 So the problem here is the transitive dependencies. It's easy to patch one thing, but the transitive dependencies are the problem, and this is where Nix shines: one fix fixes the transitive dependencies automatically.
 
@@ -58,11 +52,3 @@ I can't stress this enough. If you build something, you own it, including all th
 The game has changed. To defend, you need more inferencing capability than the attacker, and you also need to respond rapidly.
 
 This is by far the easiest security patch I've ever done, and the best part is I won't carry this tech debt for long because an agent will automatically back it out in a couple of days.
-
-[patch the planet](https://storage.ghost.io/c/06/e5/06e5d12b-0328-469d-a0d0-3a0f0ba34c46/content/media/2026/10/hackers-patch-the-planet-dialogue--1-.mp4)
-
-ps. socials
-
-🗞️ patch the planet[https://t.co/7ZwlallBru](https://t.co/7ZwlallBru?ref=ghuntley.com) [https://t.co/aSQGD0smx2](https://t.co/aSQGD0smx2?ref=ghuntley.com) [pic.twitter.com/tDpIKpp58O](https://t.co/tDpIKpp58O?ref=ghuntley.com)
-
-— geoff (@GeoffreyHuntley) [October 20, 2026](https://x.com/GeoffreyHuntley/status/2112585326514287070?ref_src=twsrc%5Etfw&ref=ghuntley.com)

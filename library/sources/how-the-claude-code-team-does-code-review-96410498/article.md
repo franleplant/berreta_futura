@@ -2,8 +2,6 @@
 
 By Addy Osmani
 
-![cover](media/001.jpg)
-
 We previously mentioned that Claude writes about 90 percent of the code for Claude Code. So how do we do code review at this scale? Who reads code anyway? What happens if code goes wrong?
 
 This post describes our team's code review process at Claude Code and how we have improved it. Between June and September, we saw more than double the number of pull requests that were merged to the codebase for Claude Code, while the share of pull requests that had to be reverted fell by more than 40 percent.
@@ -43,13 +41,13 @@ We track our human time in terms of median human approvals per PR (along with th
 
 A typical change, whether it's from an engineer's laptop or a Claude session in Slack, goes through multiple layers of review.
 
-![FIG A: The life of a change](media/002.jpg)
+![FIG A: The life of a change](media/001.jpg)
 
 Above is the typical Claude Code change, from the author's environment to production. Most of this process is automated, with human attention focused on the risky part.
 
 We have six layers of checks with a rollback mechanism to handle any issues that get through.
 
-![FIG B: Layers, not one gate](media/003.jpg)
+![FIG B: Layers, not one gate](media/002.jpg)
 
 Each layer catches some bugs while missing others. Few bugs get through all of the layers, and if some do, we have a rollback mechanism in place.
 
@@ -115,7 +113,7 @@ Standard checks: lint, type checks, tests on all platforms, build. (We wrote abo
 
 Some changes are more risky than others (e.g. a docs fix vs. an auto-updater change), so they require different levels of review.
 
-![FIG C](media/004.jpg)
+![FIG C](media/003.jpg)
 
 The tier is determined by the change, not the author. A classifier determines the risk level based on the change. Another classifier determines if a particular change actually requires another approval, even if the tier does not say it does. Some paths always require another approval -- anything marked as sensitive by owners, and any CI workflow file.
 
@@ -143,7 +141,7 @@ Our code review process is an ongoing cycle of improvement:
 
 We use incidents as an evaluation metric. The team collected incident-causing PRs, their fix-forwards and reverts, and had the engineers who understand the codebase verify the location and correctness of each bug. The review system is evaluated daily against this collection.
 
-![FIG D: Our incidents are the eval](media/005.jpg)
+![FIG D: Our incidents are the eval](media/004.jpg)
 
 Every incident adds to the collection and every change to the review system is evaluated against the entire collection.
 
@@ -161,7 +159,7 @@ We made this worse because we had gotten into the habit of running several revie
 
 Limit the number of cycles. The review system asks the author to re-evaluate the approach after three cycles. Limit re-review to just diff after the initial cycles. Specify the class of bugs, so the author can correct all of them, not just one line. Avoid re-reporting issues already observed. The review agents are also run on the current codebase overnight, helping us identify historical bugs before they propagate.
 
-![FIG E: Review that converges](media/006.jpg)
+![FIG E: Review that converges](media/005.jpg)
 
 Reduction in the average number of review rounds per internal pull request after Convergence.
 
@@ -184,7 +182,7 @@ Code review has always served the dual purpose of communicating codebase changes
 
 We don't have any formal mechanism for this. No member of the team has a full mental model of Claude Code in their head, nor do we think anyone needs to. Rather, when anyone wants to learn about a piece of the codebase, they ask Claude to generate an explainer about that exact slice. It only takes a few minutes and the explainer is always up to date.
 
-![FIG F: If machines do most of the reading, how does anyone learn the code?](media/007.jpg)
+![FIG F: If machines do most of the reading, how does anyone learn the code?](media/006.jpg)
 
 For some of us, we go the extra step and have Claude generate a mini artifact that visualizes this area and teaches it in our preferred style.
 
@@ -256,4 +254,4 @@ So whenever our reviewers miss something, we ask ourselves what wasn't in the mo
 
 So if you also allow agents to create pull requests, please let us know what checks you've automated, what requires a human, and what we're getting wrong.
 
-*A rewrite of our original* [article](https://claude.dev/blog/solving-code-review-at-anthropic/)* and checked with Pangram.*
+*A rewrite of our original* [article](https://claude.dev/blog/solving-code-review-at-anthropic/) *and checked with Pangram.*

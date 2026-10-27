@@ -5,4 +5,4 @@ url: https://vateo.medium.com/after-waterfall-agile-and-devops-anthropics-ai-nat
 captured_at: '2026-10-27T01:18:37Z'
 published_at: '2026-09-22'
 tags: []
-synopsis: 'The author argues that Anthropic''s AI-Native SDLC playbook, which replaces linear handoffs with a git-committed loop of intent, spec, plan, code, review, and incident documents governed by skills and hooks, is the first sketch of the next software development paradigm.'
+synopsis: 'The author summarizes Anthropic''s AI-Native SDLC playbook, which replaces linear handoffs with a loop of plan, design, build, test, deploy and maintain phases that pass git-committed documents between humans and agents, and argues it is an early sketch of the next software development paradigm.'

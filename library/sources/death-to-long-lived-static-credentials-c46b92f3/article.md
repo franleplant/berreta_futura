@@ -1,5 +1,5 @@
 # Death to long-lived static credentials
-By Malte Ubl · Vercel · October 22, 2026
+By Malte Ubl · Vercel · 2026-10-22
 
 Fifteen years ago, TLS was something you'd use to protect the most sensitive areas of your app. Then Google, Let's Encrypt, the EFF, and others led the push for HTTPS everywhere, making encryption the default for every request. Without it, anyone between the browser and server can read and tamper with the traffic.
 

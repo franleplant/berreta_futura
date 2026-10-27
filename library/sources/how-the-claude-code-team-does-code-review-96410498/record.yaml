@@ -5,4 +5,4 @@ url: https://x.com/addyosmani/article/2114604912520921136
 captured_at: '2026-10-27T01:24:55Z'
 published_at: '2026-10-26'
 tags: []
-synopsis: 'The Claude Code team describes its layered, mostly automated code review process, which reserves human attention for risky changes, uses incidents as evals, limits review cycles so they converge, and relies on fast rollback, while merged PRs more than doubled and reverts fell over 40 percent.'
+synopsis: 'The Claude Code team describes its layered review process, in which automated and AI review handle routine bugs, human approval scales with risk, fast rollback backstops mistakes, and the reviewer is continuously evaluated against past incidents.'

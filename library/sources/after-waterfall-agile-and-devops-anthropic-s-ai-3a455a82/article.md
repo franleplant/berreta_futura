@@ -1,7 +1,6 @@
 # After waterfall, agile, and DevOps — Anthropic’s AI-Native SDLC playbook
 By vateo · Sep 22, 2026
 
-![](media/001.png)
 
 I finished Anthropic’s *The AI-Native SDLC playbook* with one overwhelming impression: **it looks like a product manual, but it’s very likely the first sketch of the next paradigm in software development.**
 

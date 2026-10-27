@@ -5,4 +5,4 @@ url: https://vercel.com/blog/death-to-long-lived-static-credentials
 captured_at: '2026-10-27T01:23:45Z'
 published_at: '2026-10-22'
 tags: []
-synopsis: 'Vercel argues that long-lived static credentials should give way to short-lived OIDC-based authentication, describes its OIDC, Vercel Connect, and OIDC UI tooling, and sets Marketplace deadlines of November 30, 2026 and January 2027 for vendors to support secure authentication.'
+synopsis: 'Vercel''s CTO argues that long-lived static credentials should be replaced by short-lived OIDC-based authentication, describes Vercel''s tooling (OIDC federation, Vercel Connect, OIDC UI) for making that practical, and announces Marketplace deadlines of November 30, 2026 for a "Not secure" label and January 2027 for delisting vendors without secure auth.'

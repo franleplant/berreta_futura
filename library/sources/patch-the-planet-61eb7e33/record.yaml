@@ -5,4 +5,4 @@ url: https://ghuntley.com/patch/
 captured_at: '2026-10-27T01:16:35Z'
 published_at: '2026-10-21'
 tags: []
-synopsis: 'After the eMudhra intermediate CA compromise, the author explains how Nix''s single source of truth let them patch their whole fleet and its transitive dependencies with one change, and how an AGENTS.MD reminder lets an agent automatically back the workaround out days later.'
+synopsis: 'After a certificate authority''s keys leaked, the author used Nix''s single source of truth to patch their whole fleet and its transitive dependencies with one change, and had an agent schedule the removal of the workaround through an AGENTS.MD reminder.'

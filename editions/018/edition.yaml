@@ -1,7 +1,10 @@
+# rejected title: Hard Hats
+# rejected back_text: WARNING: This machine improves while running. Keep fingers, lunch, and production clear of moving parts. If it says DONE, make it prove it.
+# other title directions: A Room With No Doors | Stop the Line | Spare Key Under the Mat | Ticket Number 30,001
 id: 018
 issue_number: 18
-title: Hard Hats
-subtitle: Sandboxes that leaked, proofs down to the assembly, review by machine, subagents folded back in, credentials that expire, and a homelab staffed entirely by bots
+title: Who Signs for the Robot?
+subtitle: Code review at thirty thousand merges a day, one loop instead of many subagents, Markdown that steers agents, a homelab agent org chart, Nix overlays and unikernels, credentials that expire, a red-teamed training cluster, an alignment post-mortem, and machine-checked proofs for open-source libraries
 publication_date: '2026-10-27'
 status: draft
 format:
@@ -9,9 +12,9 @@ format:
 art_direction_path: art-directions/story-led-boy-and-robot.yaml
 cover:
   layout: footer_caption
-  headline: Hard Hats
-  deck: Sandboxes that leaked, proofs down to the assembly, review by machine, subagents folded back in, credentials that expire, and a homelab staffed entirely by bots
-  back_text: Your new coworker works all night, never takes lunch, and has just asked, very politely, for the keys to everything. Do you hand them over?
+  headline: Who Signs for the Robot?
+  deck: Code review at thirty thousand merges a day, one loop instead of many subagents, Markdown that steers agents, a homelab agent org chart, Nix overlays and unikernels, credentials that expire, a red-teamed training cluster, an alignment post-mortem, and machine-checked proofs for open-source libraries
+  back_text: 'Overheard in a server room at 3 a.m.: "Okay, very calmly now. Who left the internet on?"'
   art_path: editions/018/art/picks/cover-hardhat-bronze-splash-v2.jpg
 articles:
 - id: the-new-set-of-problems-for-engineers-to-solve
@@ -25,14 +28,6 @@ articles:
   source_ids:
   - the-new-set-of-problems-for-engineers-to-solve-19c0f46b
   manuscript: editions/018/articles/the-new-set-of-problems-for-engineers-to-solve.md
-  figures:
-  - id: figure-1
-    source_id: the-new-set-of-problems-for-engineers-to-solve-19c0f46b
-    path: media/001.png
-    caption: Agents, and the connections between them.
-    alt_text: Line drawing of many small boxes linked by arrows on a cream background.
-    anchor: __opener__
-    layout: compact_band
   opener_art:
     path: editions/018/art/picks/opener-new-problems-yarn-v4.jpg
     alt_text: A boy untangles yarn joining cardboard boxes on the floor while a girl points at a loop and a small robot brings another box.
@@ -95,21 +90,21 @@ articles:
   figures:
   - id: figure-3
     source_id: how-the-claude-code-team-does-code-review-96410498
-    path: media/003.jpg
+    path: media/002.jpg
     caption: 'Layers, not one gate: six layers of checks, with rollback under them.'
     alt_text: Stacked planes labelled verification, required CI, AI review, security review, human approval, and merge queue, with problems filtered at each.
     anchor: The layers
     layout: compact_band
   - id: figure-5
     source_id: how-the-claude-code-team-does-code-review-96410498
-    path: media/005.jpg
+    path: media/004.jpg
     caption: 'Our incidents are the eval: every incident or revert becomes a case the reviewer is scored against.'
     alt_text: Flow from incident to expert-confirmed case to the eval set, and from reviewer change to a daily eval run.
     anchor: Making the reviewer better
     layout: compact_band
   - id: figure-6
     source_id: how-the-claude-code-team-does-code-review-96410498
-    path: media/006.jpg
+    path: media/005.jpg
     caption: 'Review that converges: pass rates after one round, and rounds needed, before and after the convergence work.'
     alt_text: Bar chart showing first-round pass rate rising from 65% to 78% and mean reviews to pass falling from 2.08 to 1.32.
     anchor: Making the reviewer better
@@ -125,19 +120,11 @@ articles:
   source_ids:
   - how-i-work-with-agents-d099b481
   manuscript: editions/018/articles/how-i-work-with-agents.md
-  figures:
-  - id: figure-1
-    source_id: how-i-work-with-agents-d099b481
-    path: media/001.jpg
-    caption: The cover of the article.
-    alt_text: Pencil-shaded sphere with lines radiating from it.
-    anchor: __opener__
-    layout: compact_band
   opener_art:
     path: editions/018/art/picks/opener-agents-soup-taste-v1.jpg
     alt_text: A small robot stirs a soup pot while a boy tastes from a ladle and a girl holds a pinch of salt.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/018/art/picks/tail-agents-soup-supper-v3.jpg
+  tail_art_path: editions/018/art/picks/tail-agents-soup-supper-v1.jpg
 - id: building-agents-when-to-fold-subagents-into-your
   title: 'Building agents: When to fold subagents into your main agent loop'
   short_title: fold subagents into your main agent loop
@@ -196,19 +183,11 @@ articles:
   source_ids:
   - 3-markdown-architecture-patterns-that-boost-agen-5faf420c
   manuscript: editions/018/articles/3-markdown-architecture-patterns-that-boost-agen.md
-  figures:
-  - id: figure-1
-    source_id: 3-markdown-architecture-patterns-that-boost-agen-5faf420c
-    path: media/001.jpg
-    caption: The cover of the article.
-    alt_text: Google Cloud title card reading 3 markdown architecture patterns that boost agentic productivity.
-    anchor: __opener__
-    layout: compact_band
   opener_art:
     path: editions/018/art/picks/opener-markdown-card-stacks-v2.jpg
     alt_text: A boy and a girl sort blank cards into three coloured stacks on a table while a small robot studies a card.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/018/art/picks/tail-markdown-tied-bundles-v2.jpg
+  tail_art_path: editions/018/art/picks/tail-markdown-tied-bundles-v1.jpg
 - id: donating-agent-skills-to-the-agentic-ai-foundati
   title: Donating Agent Skills to the Agentic AI Foundation
   short_title: Donating Agent Skills
@@ -237,7 +216,7 @@ articles:
   - build-your-own-pi-based-homelab-software-factory-4d44944f
   manuscript: editions/018/articles/build-your-own-pi-based-homelab-software-factory.md
   opener_art:
-    path: editions/018/art/picks/opener-homelab-toy-factory-v4.jpg
+    path: editions/018/art/picks/opener-homelab-toy-factory-v1.jpg
     alt_text: A boy cranks a tiny wooden toy factory on a kitchen table while a small robot feeds in blocks and a girl catches the finished ones.
     credit: Illustration generated for this edition.
   tail_art_path: editions/018/art/picks/tail-homelab-night-shift-v4.jpg
@@ -256,7 +235,7 @@ articles:
     path: editions/018/art/picks/opener-openclaw-hoops-v3.jpg
     alt_text: Three hula hoops overlap on a lawn; a boy steps toward the shared middle while a girl raises a hand to stop him and a small robot shakes its head.
     credit: Illustration generated for this edition.
-  tail_art_path: editions/018/art/picks/tail-openclaw-pull-hoop-v1.jpg
+  tail_art_path: editions/018/art/picks/tail-openclaw-pull-hoop-v3.jpg
   figures:
   - id: figure-1
     source_id: revisiting-some-of-my-priors-about-openclaw-a876bb49
@@ -284,28 +263,28 @@ articles:
   - pooling-openai-subscriptions-and-bypassing-regio-2154fb99
   manuscript: editions/018/articles/pooling-openai-subscriptions-and-bypassing-regio.md
   opener_art:
-    path: editions/018/art/picks/opener-pooling-wagons-v1.jpg
+    path: editions/018/art/picks/opener-pooling-wagons-v3.jpg
     alt_text: A boy, a girl, and a small robot each pull one of three hitched wagons, hauling a long log up a hill together.
     credit: Illustration generated for this edition.
   tail_art_path: editions/018/art/picks/tail-pooling-hilltop-rest-v3.jpg
   figures:
   - id: figure-2
     source_id: pooling-openai-subscriptions-and-bypassing-regio-2154fb99
-    path: media/002.png
+    path: media/001.png
     caption: 'The error that started it: model at capacity, again and again.'
     alt_text: Terminal session from Codex showing repeated 'Selected model is at capacity' errors.
     anchor: The capacity problem
     layout: compact_band
   - id: figure-3
     source_id: pooling-openai-subscriptions-and-bypassing-regio-2154fb99
-    path: media/003.png
+    path: media/002.png
     caption: 'The Underclass dashboard: pooled subscriptions, attempts per minute, and quota left on each account.'
     alt_text: Dark terminal dashboard listing pooled accounts with health, quota, and a bar chart of attempts.
     anchor: Underclass
     layout: evidence_band
   - id: figure-5
     source_id: pooling-openai-subscriptions-and-bypassing-regio-2154fb99
-    path: media/005.png
+    path: media/004.png
     caption: 'Underclass, Preflight, and Geoclass in line: pooled subscriptions, scrubbed requests, then routing to regions elsewhere.'
     alt_text: Flow diagram from several Codex subscriptions through underclass and preflight to geoclass regions and chatgpt.com.
     anchor: Geoclass
@@ -337,14 +316,6 @@ articles:
   source_ids:
   - a-new-model-for-open-source-closed-to-pull-reque-f3082b1f
   manuscript: editions/018/articles/a-new-model-for-open-source-closed-to-pull-reque.md
-  figures:
-  - id: figure-1
-    source_id: a-new-model-for-open-source-closed-to-pull-reque-f3082b1f
-    path: media/001.png
-    caption: The warranty clause of the MIT license.
-    alt_text: Text of the MIT license disclaimer stating the software is provided as is, without warranty of any kind.
-    anchor: __opener__
-    layout: evidence_band
   opener_art:
     path: editions/018/art/picks/opener-remix-towers-v2.jpg
     alt_text: A boy guards his blue block tower while a girl builds her own coloured version beside it and a small robot hands blocks to both.
@@ -361,14 +332,6 @@ articles:
   source_ids:
   - unikernels-were-hard-key-word-were-3cff51c1
   manuscript: editions/018/articles/unikernels-were-hard-key-word-were.md
-  figures:
-  - id: figure-1
-    source_id: unikernels-were-hard-key-word-were-3cff51c1
-    path: media/001.jpg
-    caption: Unikernels were hard.
-    alt_text: Illustrated circuit-board chip radiating colourful traces.
-    anchor: __opener__
-    layout: compact_band
   opener_art:
     path: editions/018/art/picks/opener-unikernel-backpack-v1.jpg
     alt_text: A girl hands a boy a tiny pack holding only a lantern and a bottle while a small robot wobbles under a heap of camping gear.
@@ -388,20 +351,13 @@ articles:
   figures:
   - id: figure-1
     source_id: patch-the-planet-61eb7e33
-    path: media/001.jpg
-    caption: Patch the planet.
-    alt_text: Illustrated globe wrapped in a banner reading Patch the Planet, between pink clouds.
-    anchor: __opener__
-    layout: compact_band
-  - id: figure-2
-    source_id: patch-the-planet-61eb7e33
-    path: media/002.png
+    path: media/001.png
     caption: Claude Code checking whether the fleet is affected by the eMudhra compromise, and the fix it proposes.
     alt_text: Claude Code terminal session listing affected hosts and a mitigation that blacklists the compromised roots.
     anchor: __opener__
     layout: evidence_band
   opener_art:
-    path: editions/018/art/picks/opener-patch-beach-globe-v3.jpg
+    path: editions/018/art/picks/opener-patch-beach-globe-v4.jpg
     alt_text: A boy presses a patch onto a leaking inflatable globe while a girl hands him another and a small robot finds a second leak.
     credit: Illustration generated for this edition.
   tail_art_path: editions/018/art/picks/tail-patch-globe-roll-v3.jpg

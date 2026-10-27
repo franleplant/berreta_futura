@@ -5,4 +5,4 @@ url: https://x.com/joelhooks/article/2114410421226557534
 captured_at: '2026-10-27T01:25:46Z'
 published_at: '2026-10-25'
 tags: []
-synopsis: 'The author describes the 24/7 homelab "software factory" he built on Pi, Herdr and his own tools, in which scanner, desk, worker and switchboard agents find and fix security issues and coordinate over a signed agent mailbox, along with its failures and advice for starting small.'
+synopsis: 'Joel Hooks describes his homelab agent fleet, built from Pi, Herdr, desks, workers, a switchboard and the Rat King mail network, which scans his systems for security holes and does real business work, including where it has failed.'
