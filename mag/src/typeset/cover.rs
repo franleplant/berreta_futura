@@ -1,12 +1,17 @@
 use crate::cover::art::{art_zones, extreme_pixels, graded_art, luminance};
 use crate::cover::text::{cover_contributors, cover_date, cover_issue};
 use crate::model::manifest::Edition;
-use crate::typeset::content::string_literal;
+use crate::typeset::content::{string_literal, File, Tree};
+use crate::typeset::template;
 use anyhow::{bail, ensure, Context, Result};
+use image::codecs::jpeg::JpegEncoder;
+use image::{ExtendedColorType, ImageEncoder};
 use serde_json::{json, Value};
 use std::path::Path;
 use typst::layout::{Frame, FrameItem, Point, Transform};
+use typst::utils::Scalar;
 use typst_layout::PagedDocument;
+use typst_render::RenderOptions;
 
 pub fn confine(document: &PagedDocument) -> Result<()> {
     let pages = document.pages();
@@ -219,13 +224,17 @@ fn front(design: &Value, edition: &Edition, work: &Path) -> Result<Value> {
         "design": design,
         "art": art,
         "scrim": scrim,
-        "text": {
-            "headline": edition.cover.headline.as_deref().unwrap_or(&edition.title),
-            "date_line": cover_date(&edition.publication_date),
-            "contributors": cover_contributors(edition),
-            "issue": cover_issue(edition),
-        },
+        "text": front_text(edition),
     }))
+}
+
+fn front_text(edition: &Edition) -> Value {
+    json!({
+        "headline": edition.cover.headline.as_deref().unwrap_or(&edition.title),
+        "date_line": cover_date(&edition.publication_date),
+        "contributors": cover_contributors(edition),
+        "issue": cover_issue(edition),
+    })
 }
 
 fn back(design: &Value, edition: &Edition) -> Value {
@@ -294,6 +303,67 @@ pub fn source(root: &Path, edition: &Edition, work: &Path) -> Result<String> {
         literal(&back(&design, edition)),
         literal(&credits(root, edition))
     ))
+}
+
+pub fn preview_key(root: &Path, edition: &Edition) -> Result<String> {
+    let design = design(root)?;
+    Ok(json!({
+        "layout": edition.cover.layout,
+        "text": front_text(edition),
+        "back": back(&design, edition),
+        "credits": credits(root, edition),
+        "design": design,
+        "template": template::TEMPLATE_TYP,
+        "root": template::ROOT_TYP,
+        "code": [include_str!("cover.rs"), include_str!("../cover/art.rs")],
+    })
+    .to_string())
+}
+
+pub fn preview(root: &Path, edition: &Edition, work: &Path, width: f64) -> Result<Vec<u8>> {
+    let mut edition = edition.clone();
+    if let Some(art) = edition.cover_art.as_deref() {
+        if !art.extension().is_some_and(|e| e == "jpg" || e == "jpeg") {
+            std::fs::create_dir_all(work)?;
+            let printed = work.join("print-art.jpg");
+            std::fs::write(&printed, super::art::jpeg_bytes(art)?)?;
+            edition.cover_art = Some(printed);
+        }
+    }
+    let main = format!(
+        "#import \"/template.typ\": *\n{}",
+        source(root, &edition, work)?
+    );
+    let tree = Tree {
+        files: vec![File {
+            path: "main.typ".into(),
+            source: main,
+        }],
+        ..Tree::default()
+    };
+    let document = template::document(&template::world_in(&tree, &[work.to_path_buf()])?)?;
+    confine(&document)?;
+    let page = document.pages().first().context("the cover has no page")?;
+    let pixmap = typst_render::render(
+        page,
+        &RenderOptions {
+            pixel_per_pt: Scalar::new(width / page.frame.width().to_pt()),
+            render_bleed: false,
+        },
+    );
+    let rgb: Vec<u8> = pixmap
+        .data()
+        .chunks_exact(4)
+        .flat_map(|pixel| [pixel[0], pixel[1], pixel[2]])
+        .collect();
+    let mut jpeg = Vec::new();
+    JpegEncoder::new_with_quality(&mut jpeg, 88).write_image(
+        &rgb,
+        pixmap.width(),
+        pixmap.height(),
+        ExtendedColorType::Rgb8,
+    )?;
+    Ok(jpeg)
 }
 
 #[cfg(test)]

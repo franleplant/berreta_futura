@@ -1,9 +1,10 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::model::kinds::ArtPurpose;
-use crate::model::manifest::art_slots;
+use crate::model::manifest::{art_slots, Article, Edition};
 use crate::model::shared::parse_yaml;
 use crate::model::spec::EditionFile;
 use crate::produce::{self, INLINE_PREAMBLE};
+use crate::typeset::cover;
 use crate::util::{escape_html, parallel, prompts_path, read};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
@@ -949,69 +950,147 @@ const PROOF_SHEET_CSS: &str = "<style>\n\
         details pre { white-space: pre-wrap; font-size: 0.8rem; color: #ccc; }\n\
         </style>\n</head>\n<body>\n";
 
-fn showcase_frame(edition_dir: &Path, edition_label: &str) -> Result<(CoverFrame, Vec<String>)> {
+fn showcase_selected(edition_dir: &Path) -> Result<Vec<String>> {
     let edition_yaml_path = edition_dir.join("edition.yaml");
-    let repo_root = edition_dir
-        .ancestors()
-        .nth(2)
-        .context("an edition directory sits under editions/")?;
-    let mut cover_frame = CoverFrame {
-        publication: crate::render::publication_name(repo_root)?,
-        headline: edition_label.to_string(),
-        issue: edition_label.to_string(),
-        date: String::new(),
-    };
     if !edition_yaml_path.exists() {
-        return Ok((cover_frame, Vec::new()));
+        return Ok(Vec::new());
     }
     let doc: EditionFile = parse_yaml(&read(&edition_yaml_path)?)
         .with_context(|| format!("parsing {}", edition_yaml_path.display()))?;
-    if let Some(headline) = doc.cover.headline.clone() {
-        cover_frame.headline = headline;
-    }
-    if let Ok(number) = doc.issue_number.parse::<u64>() {
-        cover_frame.issue = format!("{number:03}");
-    }
-    cover_frame.date = doc.publication_date.replace('-', " ");
-    let selected = art_slots(&doc).into_iter().map(|(_, path)| path).collect();
-    Ok((cover_frame, selected))
+    Ok(art_slots(&doc).into_iter().map(|(_, path)| path).collect())
 }
 
-fn cover_frame_html(cover_frame: &CoverFrame, item: &ShowcaseItem, img_tag: &str) -> String {
-    let mut words = cover_frame.headline.split_whitespace();
-    let first = words.next().unwrap_or("");
-    let rest = words.collect::<Vec<_>>().join(" ");
-    format!(
-        "<div class=\"coverframe\">\
-         <span class=\"cf-spine\"><span class=\"cf-issue\">ISSUE {issue}</span>\
-         <span class=\"cf-imprint\">{publication}</span></span>\
-         <div class=\"cf-masthead\">{masthead}</div>\
-         <div class=\"cf-headline\"><span>{first}</span><em>{rest}</em></div>\
-         <div class=\"cf-plate\">{img_tag}</div>\
-         <div class=\"cf-credits\">COVER CANDIDATE / {brief} v{variant}</div>\
-         <div class=\"cf-date\">{date}</div>\
-         </div>\n",
-        issue = escape_html(&cover_frame.issue),
-        publication = escape_html(&cover_frame.publication.to_uppercase()),
-        masthead = cover_frame
-            .publication
-            .split_whitespace()
-            .enumerate()
-            .map(|(i, w)| if i == 0 {
-                format!("<span class=\"cf-m1\">{}</span>", escape_html(w))
-            } else {
-                format!("<span class=\"cf-m2\">{}</span>", escape_html(w))
+const PREVIEW_WIDTH: f64 = 720.0;
+
+type Preview = Result<String, String>;
+
+fn preview_edition(edition_dir: &Path) -> Result<(PathBuf, Edition, String)> {
+    let root = edition_dir
+        .ancestors()
+        .nth(2)
+        .context("an edition directory sits under editions/")?
+        .to_path_buf();
+    let path = edition_dir.join("edition.yaml");
+    let spec: EditionFile =
+        parse_yaml(&read(&path)?).with_context(|| format!("parsing {}", path.display()))?;
+    let language = spec
+        .language
+        .filter(|l| !l.is_empty())
+        .unwrap_or_else(|| "en".into());
+    let edition = Edition {
+        publication_name: crate::render::publication_name(&root)?,
+        locale: spec
+            .locale
+            .filter(|l| !l.is_empty())
+            .unwrap_or_else(|| language.clone()),
+        language,
+        articles: spec
+            .articles
+            .iter()
+            .map(|row| Article {
+                author: row.author.clone(),
+                ..Article::default()
             })
-            .collect::<String>(),
-        first = escape_html(first),
-        rest = escape_html(&rest),
-        brief = escape_html(&item.brief_id),
-        variant = item.variant,
-        date = escape_html(&cover_frame.date),
-    )
+            .collect(),
+        id: spec.id,
+        issue_number: spec.issue_number,
+        title: spec.title,
+        publication_date: spec.publication_date,
+        cover: spec.cover,
+        ..Edition::default()
+    };
+    let key = cover::preview_key(&root, &edition)?;
+    Ok((root, edition, key))
 }
 
-fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverFrame) -> String {
+fn cover_preview(root: &Path, edition: &Edition, key: &str, art: &Path) -> Result<(PathBuf, bool)> {
+    let bytes = fs::read(art).with_context(|| format!("reading {}", art.display()))?;
+    let digest =
+        crate::util::sha256_hex([key.as_bytes(), &PREVIEW_WIDTH.to_le_bytes(), &bytes].concat());
+    let hash = &digest[..16];
+    let stem = art
+        .file_stem()
+        .context("a candidate has a file name")?
+        .to_string_lossy();
+    let dir = art
+        .parent()
+        .context("a candidate sits in a round")?
+        .join("previews");
+    let out = dir.join(format!("{stem}-{hash}.jpg"));
+    if out.is_file() {
+        return Ok((out, false));
+    }
+    let work =
+        std::env::temp_dir().join(format!("mag-cover-preview-{hash}-{}", std::process::id()));
+    let candidate = Edition {
+        cover_art: Some(art.to_path_buf()),
+        ..edition.clone()
+    };
+    let jpeg = cover::preview(root, &candidate, &work, PREVIEW_WIDTH);
+    fs::remove_dir_all(&work).ok();
+    let jpeg = jpeg?;
+    fs::create_dir_all(&dir)?;
+    for stale in fs::read_dir(&dir)?.filter_map(|e| e.ok().map(|e| e.path())) {
+        let name = stale.file_stem().unwrap_or_default().to_string_lossy();
+        if name
+            .rsplit_once('-')
+            .is_some_and(|(s, h)| s == stem && h.len() == 16)
+        {
+            fs::remove_file(&stale)?;
+        }
+    }
+    write_atomic(&out, jpeg)?;
+    Ok((out, true))
+}
+
+fn cover_previews(edition_dir: &Path, items: &[ShowcaseItem]) -> HashMap<String, Preview> {
+    let covers: Vec<&ShowcaseItem> = items
+        .iter()
+        .filter(|item| item.purpose == Some(ArtPurpose::Cover))
+        .collect();
+    if covers.is_empty() {
+        return HashMap::new();
+    }
+    let rounds = edition_dir.join("art").join("rounds");
+    let loaded = preview_edition(edition_dir);
+    let results = parallel(&covers, |item| {
+        let (root, edition, key) = loaded.as_ref().map_err(|e| anyhow!("{e:#}"))?;
+        cover_preview(
+            root,
+            edition,
+            key,
+            &rounds.join(&item.round).join(&item.file),
+        )
+    });
+    let mut rendered = 0;
+    let previews: HashMap<String, Preview> = covers
+        .iter()
+        .zip(results)
+        .map(|(item, result)| {
+            let at = format!("{}/{}", item.round, item.file);
+            let preview = match result {
+                Ok((path, fresh)) => {
+                    rendered += usize::from(fresh);
+                    let name = path.file_name().unwrap_or_default().to_string_lossy();
+                    Ok(format!("rounds/{}/previews/{name}", item.round))
+                }
+                Err(e) => {
+                    eprintln!("error: cover preview for {at} failed: {e:#}");
+                    Err(format!("{e:#}"))
+                }
+            };
+            (at, preview)
+        })
+        .collect();
+    let failed = previews.values().filter(|p| p.is_err()).count();
+    println!(
+        "cover previews: {rendered} rendered, {} cached, {failed} failed",
+        covers.len() - rendered - failed
+    );
+    previews
+}
+
+fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Preview>) -> String {
     let mut html = String::new();
     let off: Vec<&MemberVerdict> = item
         .verdicts
@@ -1059,11 +1138,18 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
         escape_html(&item.round),
         escape_html(&item.file)
     );
-    if item.purpose == Some(ArtPurpose::Cover) {
-        html += &cover_frame_html(cover_frame, item, &img_tag);
-    } else {
-        html += &img_tag;
-        html += "\n";
+    match preview {
+        Some(Ok(href)) => {
+            html += &format!("<img src=\"{}\" loading=\"lazy\">\n", escape_html(href));
+        }
+        Some(Err(error)) => {
+            html += &format!(
+                "<span class=\"errbadge\">PREVIEW FAILED</span>\n{img_tag}\n\
+                 <div class=\"previewerror\">{}</div>\n",
+                escape_html(error)
+            );
+        }
+        None => html += &format!("{img_tag}\n"),
     }
     html += &format!(
         "<figcaption>{} v{} ({})</figcaption>\n",
@@ -1133,37 +1219,16 @@ const SHOWCASE_CSS: &str = "<style>\n\
         #basket .count { font-size: 0.85rem; color: #9cd; margin-right: 0.5rem; }\n\
         #flash { font-size: 0.8rem; color: #4a4; margin-left: 0.5rem; }\n\
         body { padding-bottom: 4.5rem; }\n\
-        .coverframe { aspect-ratio: 1 / 1.414; background: #f7f2e9; color: #14120f;\n\
-            position: relative; padding: 6% 16% 5% 8%; box-sizing: border-box; overflow: hidden;\n\
-            font-family: 'Archivo Black', 'Arial Black', -apple-system, sans-serif; cursor: pointer; }\n\
-        .cf-spine { position: absolute; top: 0; right: 0; bottom: 0; width: 9%; background: #f05737;\n\
-            display: flex; flex-direction: column; justify-content: space-between; align-items: center;\n\
-            padding: 6% 0; box-sizing: border-box; }\n\
-        .cf-issue, .cf-imprint { writing-mode: vertical-rl; font-size: 0.5rem; letter-spacing: 0.25em;\n\
-            font-weight: 700; }\n\
-        .cf-issue { color: #14120f; }\n\
-        .cf-imprint { color: #f7f2e9; }\n\
-        .cf-masthead { line-height: 0.95; margin-bottom: 7%; }\n\
-        .cf-m1 { display: block; font-size: 1.5rem; letter-spacing: 0.01em; }\n\
-        .cf-m2 { display: inline-block; font-size: 1.5rem; background: #14120f; color: #f7f2e9;\n\
-            padding: 0 0.25rem; transform: skewX(-8deg); box-shadow: 0.22rem 0.22rem 0 #f05737;\n\
-            margin-left: 12%; }\n\
-        .cf-headline { line-height: 1.0; margin-bottom: 6%; }\n\
-        .cf-headline span, .cf-headline em { display: block; font-style: normal;\n\
-            font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.01em; }\n\
-        .cf-headline em { color: #5b2fd8; margin-left: 9%; }\n\
-        .cf-plate { width: 78%; margin: 0 auto; }\n\
-        .coverframe img { width: 100%; height: auto; display: block; border-radius: 0; }\n\
-        .cf-credits { font-size: 0.42rem; letter-spacing: 0.14em; color: #3a362f; margin-top: 5%;\n\
-            font-family: -apple-system, sans-serif; font-weight: 600; }\n\
-        .cf-date { position: absolute; bottom: 4%; left: 8%; font-size: 0.5rem;\n\
-            letter-spacing: 0.2em; font-weight: 700; }\n\
+        .errbadge { position: absolute; bottom: 1rem; left: 1rem; background: #d33; color: #fff; font-weight: bold;\n\
+            font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }\n\
+        figure:has(.errbadge) { border-color: #d33; }\n\
+        .previewerror { margin-top: 0.4rem; font-size: 0.75rem; color: #f88; white-space: pre-wrap; }\n\
         </style>\n</head>\n<body>\n";
 
 fn showcase_sections(
     items: &[ShowcaseItem],
     edition_dir: &Path,
-    cover_frame: &CoverFrame,
+    previews: &HashMap<String, Preview>,
 ) -> String {
     let mut html = String::new();
     for (purpose, heading) in [
@@ -1204,7 +1269,11 @@ fn showcase_sections(
                 );
                 open = true;
             }
-            html += &showcase_figure(item, edition_dir, cover_frame);
+            html += &showcase_figure(
+                item,
+                edition_dir,
+                previews.get(&format!("{}/{}", item.round, item.file)),
+            );
         }
         if open {
             html += "</div>\n";
@@ -1214,8 +1283,9 @@ fn showcase_sections(
 }
 
 fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
-    let (cover_frame, selected) = showcase_frame(edition_dir, edition_label)?;
+    let selected = showcase_selected(edition_dir)?;
     let items = collect_showcase_items(edition_dir, &selected)?;
+    let previews = cover_previews(edition_dir, &items);
 
     let mut html = String::new();
     html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
@@ -1248,7 +1318,7 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
         items.len()
     );
 
-    html += &showcase_sections(&items, edition_dir, &cover_frame);
+    html += &showcase_sections(&items, edition_dir, &previews);
     html += SHOWCASE_BASKET;
     html += "</body>\n</html>\n";
 
@@ -1256,13 +1326,6 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     fs::create_dir_all(path.parent().unwrap())?;
     fs::write(&path, html)?;
     Ok(path)
-}
-
-struct CoverFrame {
-    publication: String,
-    headline: String,
-    issue: String,
-    date: String,
 }
 
 const SHOWCASE_BASKET: &str = r#"<div id="basket">
@@ -1329,7 +1392,7 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
       var slot = f.dataset.slot;
       picks[slot] = (picks[slot] || []).concat([f.dataset.path]);
     }
-    (f.querySelector('.coverframe') || f.querySelector('img')).addEventListener('click', function () {
+    f.querySelector('img').addEventListener('click', function () {
       var slot = f.dataset.slot, p = f.dataset.path;
       var cur = picks[slot] || [];
       if (slot.indexOf('closing:') === 0) {
@@ -3037,6 +3100,48 @@ mod tests {
         );
 
         assert!(html.contains("none generated yet"), "{html}");
+        assert_eq!(html.matches("PREVIEW FAILED").count(), 1, "{html}");
+    }
+
+    #[test]
+    fn a_cover_preview_is_the_typeset_page_and_is_cached_by_its_inputs() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let round = std::env::temp_dir().join(format!("mag-art-preview-{}", std::process::id()));
+        fs::create_dir_all(&round).unwrap();
+        let art = round.join("cover-sign-v1.png");
+        fs::copy(
+            root.join("mag/tests/cover_fixtures/cover-wildcard-sign-punched-v3.png"),
+            &art,
+        )
+        .unwrap();
+        let mut edition = Edition {
+            id: "010".into(),
+            issue_number: "010".into(),
+            title: "The Speed Limit".into(),
+            publication_date: "2026-09-13".into(),
+            language: "en".into(),
+            locale: "en".into(),
+            ..Edition::default()
+        };
+        edition.cover.layout = Some("footer_caption".into());
+        let key = cover::preview_key(&root, &edition).unwrap();
+        let (path, fresh) = cover_preview(&root, &edition, &key, &art).unwrap();
+        assert!(fresh && path.starts_with(round.join("previews")));
+        let (width, height) = image::image_dimensions(&path).unwrap();
+        assert_eq!(width, 720);
+        let ratio = f64::from(height) / f64::from(width);
+        assert!((ratio - 595.275_591 / 419.527_559).abs() < 0.002, "{ratio}");
+        let written = fs::metadata(&path).unwrap().modified().unwrap();
+        assert_eq!(
+            cover_preview(&root, &edition, &key, &art).unwrap(),
+            (path.clone(), false)
+        );
+        assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), written);
+        edition.cover.headline = Some("A Different Headline".into());
+        let key = cover::preview_key(&root, &edition).unwrap();
+        let (changed, fresh) = cover_preview(&root, &edition, &key, &art).unwrap();
+        assert!(fresh && changed != path && changed.is_file() && !path.exists());
+        fs::remove_dir_all(&round).unwrap();
     }
 
     #[test]

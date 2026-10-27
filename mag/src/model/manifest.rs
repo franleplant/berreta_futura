@@ -48,7 +48,7 @@ pub struct ArticleOpenerArt {
     pub credit: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Article {
     pub id: String,
     pub title: String,
