@@ -15,7 +15,7 @@ cover:
   headline: Who Signs for the Robot?
   deck: Code review at thirty thousand merges a day, one loop instead of many subagents, Markdown that steers agents, a homelab agent org chart, Nix overlays and unikernels, credentials that expire, a red-teamed training cluster, an alignment post-mortem, and machine-checked proofs for open-source libraries
   back_text: 'Overheard in a server room at 3 a.m.: "Okay, very calmly now. Who left the internet on?"'
-  art_path: editions/018/art/picks/cover-hardhat-bronze-splash-v2.jpg
+  art_path: editions/018/art/picks/cover-paper-sail-v1.jpg
 articles:
 - id: the-new-set-of-problems-for-engineers-to-solve
   title: The new set of problems for engineers to solve
