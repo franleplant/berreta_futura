@@ -49,6 +49,7 @@ rows! {
     }
     Format {
         article_opener: Option<String>,
+        typesetting: Option<String>,
         target_pages: Option<i64>,
         max_article_pages: Option<i64>,
         max_editorial_pages: Option<i64>,

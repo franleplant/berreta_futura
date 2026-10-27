@@ -243,11 +243,18 @@ pub fn locate(marks: &[Mark], a: usize, b: usize) -> Result<(usize, usize, usize
     Ok((unit.id, base_offset(unit, a), base_offset(unit, b)))
 }
 
-pub fn cut_before(marks: &[Mark], at: usize) -> Option<usize> {
-    marks
-        .iter()
-        .rfind(|m| m.kind == 'c' && m.at <= at)
-        .map(|m| m.id)
+fn heading_only(text: &str, from: usize, to: usize) -> bool {
+    let between = text.get(from..to).unwrap_or("");
+    between.trim_start().starts_with("#doc-heading") && !between.contains("#doc-paragraph")
+}
+
+pub fn cut_before(marks: &[Mark], text: &str, at: usize) -> Option<usize> {
+    let holes: Vec<&Mark> = marks.iter().filter(|m| m.kind == 'c').collect();
+    let mut index = holes.iter().rposition(|m| m.at <= at)?;
+    while index > 0 && heading_only(text, holes[index - 1].end, holes[index].at) {
+        index -= 1;
+    }
+    Some(holes[index].id)
 }
 
 #[cfg(test)]
@@ -319,8 +326,11 @@ mod tests {
                 (4, 6, 11)
             );
             assert!(locate(&rendered.marks, 0, 1).is_err());
-            assert_eq!(cut_before(&rendered.marks, tilde), Some(3));
-            assert_eq!(cut_before(&rendered.marks, at("beta")), Some(1));
+            assert_eq!(cut_before(&rendered.marks, &rendered.text, tilde), Some(3));
+            assert_eq!(
+                cut_before(&rendered.marks, &rendered.text, at("beta")),
+                Some(1)
+            );
         }
     }
 

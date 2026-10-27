@@ -337,6 +337,9 @@ pub fn source(root: &Path, edition: &Edition, work: &Path) -> Result<String> {
 }
 
 pub fn preview_key(root: &Path, edition: &Edition) -> Result<String> {
+    crate::typeset::style::set(crate::typeset::style::Style::of(
+        edition.format.typesetting.as_deref(),
+    ));
     let design = design(root)?;
     Ok(json!({
         "layout": edition.cover.layout,
@@ -344,7 +347,7 @@ pub fn preview_key(root: &Path, edition: &Edition) -> Result<String> {
         "back": back(&design, edition),
         "credits": credits(root, edition),
         "design": design,
-        "template": template::TEMPLATE_TYP,
+        "template": template::template_typ(),
         "root": template::ROOT_TYP,
         "code": [include_str!("cover.rs"), include_str!("../cover/art.rs")],
     })
@@ -352,6 +355,9 @@ pub fn preview_key(root: &Path, edition: &Edition) -> Result<String> {
 }
 
 pub fn preview(root: &Path, edition: &Edition, work: &Path, width: f64) -> Result<Vec<u8>> {
+    crate::typeset::style::set(crate::typeset::style::Style::of(
+        edition.format.typesetting.as_deref(),
+    ));
     let mut edition = edition.clone();
     if let Some(art) = edition.cover_art.as_deref() {
         if !art.extension().is_some_and(|e| e == "jpg" || e == "jpeg") {

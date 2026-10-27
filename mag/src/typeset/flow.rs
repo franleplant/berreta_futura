@@ -7,7 +7,7 @@ use typst::foundations::Value;
 use typst::introspection::{Location, MetadataElem, Tag};
 use typst::layout::{Frame, FrameItem, Point};
 use typst::visualize::Geometry;
-use typst::WorldExt;
+use typst::{World, WorldExt};
 use typst_layout::PagedDocument;
 use typst_syntax::Span;
 
@@ -282,7 +282,11 @@ fn plate_cuts(doc: &PagedDocument, world: &Sources, cuts: &BTreeSet<usize>) -> V
         let (Some(file), Some(range)) = (span.id(), world.range(span)) else {
             continue;
         };
-        edits.extend(cut_before(world.marks(file), range.start + offset).map(Choice::Cut));
+        let text = world
+            .source(file)
+            .map(|s| s.text().to_string())
+            .unwrap_or_default();
+        edits.extend(cut_before(world.marks(file), &text, range.start + offset).map(Choice::Cut));
     }
     edits
 }

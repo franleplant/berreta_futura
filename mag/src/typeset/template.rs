@@ -10,7 +10,15 @@ use typst_layout::PagedDocument;
 use typst_pdf::{PdfOptions, PdfStandards};
 
 pub const TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template.typ");
+pub const BOOK_TEMPLATE_TYP: &str = include_str!("../../assets/typeset/template-book.typ");
 pub const ROOT_TYP: &str = include_str!("../../assets/typeset/root.typ");
+
+pub fn template_typ() -> &'static str {
+    match crate::typeset::style::current() {
+        crate::typeset::style::Style::Classic => TEMPLATE_TYP,
+        crate::typeset::style::Style::Book => BOOK_TEMPLATE_TYP,
+    }
+}
 const IDENT: &str = "mag-typeset-reader";
 
 #[cfg(test)]
@@ -19,7 +27,7 @@ pub fn world(tree: &Tree) -> Result<Sources> {
 }
 
 pub fn world_in(tree: &Tree, roots: &[PathBuf]) -> Result<Sources> {
-    Sources::new(tree, TEMPLATE_TYP, ROOT_TYP)?.allowing(roots)
+    Sources::new(tree, template_typ(), ROOT_TYP)?.allowing(roots)
 }
 
 pub fn composed(
@@ -273,6 +281,30 @@ mod tests {
     fn pages_of(tree: &Tree, template: &str) -> Result<usize> {
         let world = Sources::fixture(tree, template, ROOT_TYP)?;
         Ok(media_boxes(&compile(&world)?).len())
+    }
+
+    #[test]
+    fn the_book_template_typesets_the_fixture_edition_in_eb_garamond() {
+        let tree = fixture_tree("905");
+        let pdf = compile(&Sources::fixture(&tree, BOOK_TEMPLATE_TYP, ROOT_TYP).unwrap()).unwrap();
+        assert!(media_boxes(&pdf).len() > 4);
+        let text = String::from_utf8_lossy(&pdf);
+        assert!(
+            text.contains("EBGaramond"),
+            "the book body is set in EB Garamond"
+        );
+        assert!(
+            !text.contains("SourceSerif4SmText"),
+            "no classic body face leaks in"
+        );
+        assert_eq!(
+            crate::typeset::style::Style::of(Some("book")),
+            crate::typeset::style::Style::Book
+        );
+        assert_eq!(
+            crate::typeset::style::Style::of(None),
+            crate::typeset::style::Style::Classic
+        );
     }
 
     fn refusal(main: &str) -> String {

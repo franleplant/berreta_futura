@@ -844,7 +844,7 @@ impl Writer<'_> {
                     .collect::<Result<String>>()?
             )
             }
-            Block::HorizontalRule => String::new(),
+            Block::HorizontalRule => "#section-break()\n\n".to_string(),
             Block::Table(rows) => format!(
                 "#doc-table(\n{})\n\n",
                 rows.iter()

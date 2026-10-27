@@ -1318,6 +1318,8 @@
   })
 }
 
+#let section-break() = none
+
 #let doc-code(lang: "", inks: (), body) = context {
   let panel = code-panel(inks: inks, body)
   let tall = measure(block(width: MEASURE + MEASURE-DELTA, panel)).height > CONTENT-HEIGHT

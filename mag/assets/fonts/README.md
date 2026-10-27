@@ -48,6 +48,12 @@ Source: <https://github.com/google/fonts/tree/main/ofl/notoemoji> (`NotoEmoji[wg
 
 Print only. Monochrome emoji, the last fallback of every reader family, so an emoji in a captured source prints instead of stopping the render. License: SIL Open Font License 1.1; see `noto-emoji/OFL.txt`.
 
+## EB Garamond (variable, instanced)
+
+Source: <https://github.com/google/fonts/tree/main/ofl/ebgaramond> (`EBGaramond[wght].ttf`, `EBGaramond-Italic[wght].ttf`)
+
+Print only, for editions with `format.typesetting: book` (018 on): the reader's text and display face for titles, headings, body, labels, running heads, folios, captions, tables, contents, and the colophon. Static instances made with fontTools `instantiateVariableFont` at wght 400 and 600, roman and italic, family name "EB Garamond". Carries small caps, old-style figures for folios, and the U+2767 fleuron used as the end mark. License: SIL Open Font License 1.1; see `ebgaramond/OFL.txt`.
+
 The renderer resolves these files relative to the installed `magazine` package. Never replace this with a lookup in `/Library/Fonts`, a user font directory, or a network font service.
 
 ## Web subsets

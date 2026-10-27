@@ -257,6 +257,12 @@ fn check_edition_header(
             "Edition has invalid format.article_opener: {opener}"
         ));
     }
+    let typesetting = clean(spec.format.typesetting.as_deref());
+    if !matches!(typesetting.as_str(), "" | "classic" | "book") {
+        errors.push(format!(
+            "Edition has invalid format.typesetting: {typesetting} (expected classic or book)"
+        ));
+    }
     let illustrated = opener == ILLUSTRATED_OPENER;
     if illustrated && clean(spec.art_direction_path.as_deref()).is_empty() {
         errors.push(format!(

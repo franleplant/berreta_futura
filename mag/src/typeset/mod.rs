@@ -12,6 +12,7 @@ pub(crate) mod media;
 pub(crate) mod release;
 pub(crate) mod runs;
 pub(crate) mod runt;
+pub(crate) mod style;
 pub(crate) mod template;
 pub(crate) mod tone;
 pub(crate) mod world;
@@ -116,6 +117,7 @@ fn render_language(
     work: &Path,
     hyphenation: hyphen::Hyphenation,
 ) -> Result<Outcome> {
+    style::set(style::Style::of(edition.format.typesetting.as_deref()));
     let out_dir = render_dir.join(&edition.language);
     fs::create_dir_all(&out_dir).with_context(|| format!("creating {}", out_dir.display()))?;
     println!("out dir: {}", out_dir.display());
@@ -128,7 +130,7 @@ fn render_language(
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
         fs::write(&path, &file.source).with_context(|| format!("writing {}", path.display()))?;
     }
-    fs::write(work.join("template.typ"), template::TEMPLATE_TYP)?;
+    fs::write(work.join("template.typ"), template::template_typ())?;
     fs::write(work.join("root.typ"), template::ROOT_TYP)?;
     let projection = content::project(&tree)?;
     println!(

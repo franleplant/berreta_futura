@@ -6,25 +6,82 @@ use crate::typeset::world::Sources;
 use typst_layout::PagedDocument;
 use unicode_normalization::UnicodeNormalization;
 
-const FACES: [(&str, &str, u32, &str); 5] = [
-    ("serif", "Source Serif 4 SmText", 400, ""),
-    ("serif-display", "Source Serif 4 Display", 600, ""),
-    ("sans-medium", "Inter", 500, ""),
-    ("sans-semibold", "Inter", 600, ""),
-    (
-        "illustrated-title",
-        "Source Serif 4 Display",
-        600,
-        ", tracking: -0.045em, features: (liga: 0, clig: 0)",
-    ),
-];
+type Face = (&'static str, &'static str, u32, &'static str);
+
+struct Spec {
+    faces: [Face; 5],
+    title_box: f64,
+    title_min: f64,
+    long_title_min: f64,
+    title_max: f64,
+    compact_title_max: f64,
+    byline: f64,
+    note: f64,
+}
+
+const CLASSIC: Spec = Spec {
+    faces: [
+        ("serif", "Source Serif 4 SmText", 400, ""),
+        ("serif-display", "Source Serif 4 Display", 600, ""),
+        ("sans-medium", "Inter", 500, ""),
+        ("sans-semibold", "Inter", 600, ""),
+        (
+            "illustrated-title",
+            "Source Serif 4 Display",
+            600,
+            ", tracking: -0.045em, features: (liga: 0, clig: 0)",
+        ),
+    ],
+    title_box: 64.0,
+    title_min: 22.0,
+    long_title_min: 16.0,
+    title_max: 32.5,
+    compact_title_max: 30.0,
+    byline: 7.4,
+    note: 6.8,
+};
+
+const BOOK: Spec = Spec {
+    faces: [
+        (
+            "serif",
+            "EB Garamond",
+            400,
+            ", features: (\"onum\", \"pnum\")",
+        ),
+        (
+            "serif-display",
+            "EB Garamond",
+            600,
+            ", tracking: -0.005em, features: (\"lnum\", \"pnum\")",
+        ),
+        ("sans-medium", "EB Garamond", 400, ", style: \"italic\""),
+        ("sans-semibold", "EB Garamond", 600, ""),
+        (
+            "illustrated-title",
+            "EB Garamond",
+            600,
+            ", tracking: -0.005em, features: (\"lnum\", \"pnum\")",
+        ),
+    ],
+    title_box: 78.0,
+    title_min: 24.0,
+    long_title_min: 20.0,
+    title_max: 30.0,
+    compact_title_max: 28.0,
+    byline: 8.6,
+    note: 8.8,
+};
+
+fn spec() -> &'static Spec {
+    match crate::typeset::style::current() {
+        crate::typeset::style::Style::Classic => &CLASSIC,
+        crate::typeset::style::Style::Book => &BOOK,
+    }
+}
+
 const ILLUSTRATED_FACE: &str = "illustrated-title";
 const BYLINE_RUNS: usize = 2;
-const TITLE_BOX: f64 = 64.0;
-const TITLE_MIN: f64 = 22.0;
-const LONG_TITLE_MIN: f64 = 16.0;
-const TITLE_MAX: f64 = 32.5;
-const COMPACT_TITLE_MAX: f64 = 30.0;
 
 const PLAIN_FIELD_GAP: f64 = 305.2756 - 264.5208;
 const CODE_SIDE: f64 = 55.5;
@@ -43,7 +100,8 @@ pub struct Metrics;
 
 impl Metrics {
     pub fn width(&self, face: &str, text: &str, size: f64) -> Result<f64> {
-        let (_, family, weight, extra) = FACES
+        let (_, family, weight, extra) = spec()
+            .faces
             .iter()
             .find(|(name, ..)| *name == face)
             .ok_or_else(|| ValidationError::one(format!("unknown font face {face:?}")))?;
@@ -122,17 +180,17 @@ impl Metrics {
         let face = (title, ILLUSTRATED_FACE);
         let rail = geometry().opener_rail;
         Ok(
-            match self.fitted(face, rail, TITLE_BOX, max, TITLE_MIN, 2)? {
+            match self.fitted(face, rail, spec().title_box, max, spec().title_min, 2)? {
                 Some(fit) => Some(fit),
-                None => self.fitted(face, rail, TITLE_BOX, max, LONG_TITLE_MIN, 3)?,
+                None => self.fitted(face, rail, spec().title_box, max, spec().long_title_min, 3)?,
             },
         )
     }
 
     pub fn illustrated_titles(&self, title: &str) -> Result<[(f64, usize); 2]> {
         match (
-            self.rail_title(title, TITLE_MAX)?,
-            self.rail_title(title, COMPACT_TITLE_MAX)?,
+            self.rail_title(title, spec().title_max)?,
+            self.rail_title(title, spec().compact_title_max)?,
         ) {
             (Some(standard), Some(compact)) => Ok([standard, compact]),
             _ => Err(ValidationError::one(format!(
@@ -190,7 +248,7 @@ impl Metrics {
         let (column, symbol) = match code {
             Some(rows) => {
                 let quiet = 4.0 * CODE_SIDE / (rows as f64 + 8.0);
-                let symbol = baseline - 7.4 * INTER_CAP + CODE_SIDE - 2.0 * quiet;
+                let symbol = baseline - spec().byline * INTER_CAP + CODE_SIDE - 2.0 * quiet;
                 (
                     geometry().measure - (CODE_SIDE - 2.0 * quiet + CREDIT_GAP),
                     Some(symbol),
@@ -224,7 +282,7 @@ impl Metrics {
             .to_uppercase()
             .nfc()
             .collect::<String>();
-        let width = self.width("sans-semibold", &text, 7.4)?;
+        let width = self.width("sans-semibold", &text, spec().byline)?;
         if width > 0.0 && column / width < 0.78 {
             return Err(ValidationError::one(format!(
                 "Article byline {text:?} reaches past the {column:.2}pt credit column beside its \
@@ -241,7 +299,7 @@ impl Metrics {
     }
 
     fn credit_foot(&self, baseline: f64, foot: f64, note: &str, column: f64) -> Result<f64> {
-        let note_lines = self.wrap(note, "sans-medium", 6.8, column)?.len() as f64;
+        let note_lines = self.wrap(note, "sans-medium", spec().note, column)?.len() as f64;
         let note_foot = baseline + 12.0 + (note_lines - 1.0) * 9.45 + 6.8 * 0.2412109375;
         Ok((if note.trim().is_empty() {
             foot

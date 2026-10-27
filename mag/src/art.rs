@@ -997,6 +997,7 @@ fn preview_edition(edition_dir: &Path) -> Result<(PathBuf, Edition, String)> {
         title: spec.title,
         publication_date: spec.publication_date,
         cover: spec.cover,
+        format: spec.format,
         ..Edition::default()
     };
     let key = cover::preview_key(&root, &edition)?;

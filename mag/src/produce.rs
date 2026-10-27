@@ -697,7 +697,7 @@ fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> R
     y += &format!("id: '{edition_id}'\nissue_number: {issue_number}\n");
     y += "title: TODO\nsubtitle: TODO\n";
     y += &format!("publication_date: '{today}'\nstatus: draft\n");
-    y += "format:\n  article_opener: illustrated_paper_spots_v1\n";
+    y += "format:\n  article_opener: illustrated_paper_spots_v1\n  typesetting: book\n";
     y += "art_direction_path: art-directions/story-led-boy-and-robot.yaml\n";
     y += "cover:\n  layout: footer_caption\n  headline: TODO\n  deck: TODO\n  back_text: TODO\n  art_path: TODO\n";
     y += "articles:\n";

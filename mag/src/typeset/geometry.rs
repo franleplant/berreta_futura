@@ -1,4 +1,5 @@
-use crate::typeset::template::TEMPLATE_TYP;
+use crate::typeset::style::{current, Style};
+use crate::typeset::template::{BOOK_TEMPLATE_TYP, TEMPLATE_TYP};
 use std::sync::LazyLock;
 
 const MM_PT: f64 = 72.0 / 25.4;
@@ -26,9 +27,9 @@ pub struct Geometry {
     pub verbatim_cap: usize,
 }
 
-fn declared(name: &str) -> f64 {
+fn declared(template: &str, name: &str) -> f64 {
     let prefix = format!("#let {name} = ");
-    TEMPLATE_TYP
+    template
         .lines()
         .find_map(|line| {
             let value = line.strip_prefix(&prefix)?;
@@ -40,7 +41,8 @@ fn declared(name: &str) -> f64 {
         .unwrap_or_else(|| panic!("the template declares no numeric {name}"))
 }
 
-static GEOMETRY: LazyLock<Geometry> = LazyLock::new(|| {
+fn read(template: &str) -> Geometry {
+    let declared = |name: &str| declared(template, name);
     let (page_width, margin_inner, margin_outer) = (
         declared("PAGE-WIDTH"),
         declared("MARGIN-INNER"),
@@ -72,8 +74,14 @@ static GEOMETRY: LazyLock<Geometry> = LazyLock::new(|| {
         article_cap: declared("ARTICLE-PAGE-CAP") as usize,
         verbatim_cap: declared("VERBATIM-PAGE-CAP") as usize,
     }
-});
+}
+
+static CLASSIC: LazyLock<Geometry> = LazyLock::new(|| read(TEMPLATE_TYP));
+static BOOK: LazyLock<Geometry> = LazyLock::new(|| read(BOOK_TEMPLATE_TYP));
 
 pub fn geometry() -> &'static Geometry {
-    &GEOMETRY
+    match current() {
+        Style::Classic => &CLASSIC,
+        Style::Book => &BOOK,
+    }
 }
