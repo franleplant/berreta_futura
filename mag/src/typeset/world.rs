@@ -15,6 +15,7 @@ pub const ROOT: &str = "/root.typ";
 pub const TEMPLATE: &str = "/template.typ";
 const PRELUDE: &str = "#import \"/template.typ\": *\n";
 const WORDMARK: &str = include_str!("../../assets/brand/wordmark.svg");
+const MARK: &str = include_str!("../../assets/brand/mark.svg");
 
 struct Shared {
     library: LazyHash<Library>,
@@ -177,8 +178,10 @@ impl World for Sources {
 
     fn file(&self, file: FileId) -> FileResult<Bytes> {
         let path = file.vpath().get_with_slash();
-        if path == "/brand/wordmark.svg" {
-            return Ok(Bytes::from_string(WORDMARK));
+        match path {
+            "/brand/wordmark.svg" => return Ok(Bytes::from_string(WORDMARK)),
+            "/brand/mark.svg" => return Ok(Bytes::from_string(MARK)),
+            _ => {}
         }
         if let Ok(source) = self.source(file) {
             return Ok(Bytes::from_string(source.text().to_string()));

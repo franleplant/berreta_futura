@@ -292,6 +292,7 @@
 #let ornament(size: 11pt, fill: RUBRIC, glyph: "\u{2767}", font: SERIF) = text(font: font, size: size, fill: fill, ..flat, glyph)
 
 #let COLOPHON-TOP = 168pt
+#let COLOPHON-MARK = 40pt
 
 #let credits-page() = page(margin: 0pt, foreground: none, context {
   let c = state("mag-credits").final()
@@ -301,6 +302,8 @@
   let x0 = MARGIN-OUTER
   let at(y, body) = place(top + left, dx: x0, dy: COLOPHON-TOP + y, box(width: LIVE-WIDTH, align(center, body)))
   let name = plain-text(publication.final())
+  let mark = image(bytes(read("/brand/mark.svg").replace(regex("var\\(--[a-z]+, *(#[0-9a-fA-F]+)\\)"), m => m.captures.first())), format: "svg", width: COLOPHON-MARK)
+  place(top + left, dx: x0 + (LIVE-WIDTH - COLOPHON-MARK) / 2, dy: COLOPHON-TOP - COLOPHON-MARK - 26pt, mark)
   if name != "" { at(0pt, text(font: SERIF, size: 13pt, weight: 600, tracking: 0.02em, fill: INK, ..flat, name)) }
   if "issue" in facts {
     at(30pt, text(font: SERIF, size: 10.5pt, style: "italic", fill: STONE, features: OLDSTYLE, ..flat, facts.issue))
