@@ -1,68 +1,61 @@
 # Cover-art candidate process
 
-Every edition gets a round of EIGHT cover briefs. Each brief is one
-standalone image-generation prompt for a portrait (2:3), text-free,
-full-page cover. The editor picks one; unpicked candidates stay in their
-round.
+Every edition gets a round of TWELVE cover briefs, each generated once.
+Each brief is one standalone image-generation prompt for a portrait (2:3),
+text-free, full-page cover. The editor picks one; unpicked candidates stay
+in their round.
 
-## Eight directions, not eight variations
+## The job: stop someone across the room
+
+A cover is a poster. It has one second to make a stranger walk over and
+pick the magazine up. Judge every brief by that test before writing it:
+would this image grab you from three meters away, at the size of a
+postcard, in a pile of other magazines?
+
+What grabs:
+
+- ONE huge, simple, instantly readable shape that fills the page, with a
+  silhouette you could cut out with scissors.
+- Violent color: two or three saturated colors at full strength, hard
+  figure-ground contrast, nothing grey, beige, or muted.
+- A surprise or a joke the eye gets before the brain does: an object at
+  the wrong scale, in the wrong material, in the wrong place, doing the
+  wrong thing; a visual pun; a contradiction.
+- Scale and drama: extreme close-up, impossible size, an object breaking
+  out of the frame, a strong diagonal.
+
+What does not grab, and is banned: quiet scenes, landscapes, rooms, aerial
+views, small objects lost in space, muted or pastel palettes, soft natural
+light, documentary realism, anything you would call "nice" or "calm", and
+the glossy single object centred on a seamless studio sweep that earlier
+covers already used.
+
+## Twelve different ideas
 
 The section "covers already printed in past editions" holds the briefs
-behind earlier covers. They show the level of intent the editor expects
-and, above all, a formula that is now used up: one glossy object caught
-mid-splash or mid-shatter, centred on a seamless flat color sweep, lit
-like a product shot. The editor finds that look plain, flat, and
-machine-made. At most ONE brief in the round may use it.
+behind earlier covers: never repeat their object, event, or formula.
 
-Every brief takes a different direction, and the directions differ in
-kind, not in object. Spread the round across registers such as:
+Each brief is a different idea and a different look. Spread them across
+media that print bold: graphic poster with flat shapes, pop-art
+screenprint, bold collage, oversized 3D object render with hard shadows,
+cut-paper, bold painted illustration, high-contrast photograph with flash.
+No two briefs share a medium and a dominant color.
 
-- an editorial photograph with a real place in it: depth, weather,
-  architecture, a scene with a before and an after;
-- a printmaking piece (risograph, linocut, woodcut, screenprint) with
-  visible ink overlap, grain, and misregistration;
-- a cut-paper or collage construction with real shadows between layers;
-- a painting with a point of view (gouache, oil, poster painting) and a
-  composition that is not centred;
-- a built miniature or diorama photographed with a shallow focus;
-- a graphic, typographic-free poster made of bold shapes and pattern;
-- a surreal, deadpan still life that tells a joke or a small story;
-- a strange angle: aerial, worm's-eye, extreme close-up, cutaway.
+## Where the idea comes from
 
-Each brief must have an idea, not only an object: a situation, a
-contradiction, a visual pun, or a moment with consequences that a reader
-could explain in one sentence. Plain "object on a colored background" is
-not an idea.
-
-Avoid the marks of generated art: plastic sheen everywhere, perfect
-symmetry, dead-centre subjects, glowing rim light on everything, airbrushed
-smoothness, generic studio sweeps. Ask for texture, imperfection, a light
-source with a reason, and a composition that uses the whole page.
-
-Never reuse a past cover's object, event, or formula.
-
-## Where the motif comes from
-
-Read the articles, not the title. Each brief takes its idea from a
-concrete thing in one of the articles (an object, a mechanism, a place, a
-moment where something moves, breaks, opens, or pays) and turns it into a
-picture. Spread the eight briefs across at least five different articles,
-and name the article each brief comes from to yourself. A drafted issue
-title is a suggestion, not a brief: at most one brief may illustrate it.
+Read the articles, not the title. Each brief takes its idea from a concrete
+thing in one of the articles (an object, a mechanism, a moment where
+something moves, breaks, opens, or pays) and turns it into one striking
+picture. Spread the twelve across at least six articles. The drafted issue
+title may inspire at most two briefs.
 
 ## Write the prompt for the image generator
 
 The image generator reads only the prompt. Write it the way an art
-director would brief an illustrator or photographer:
-
-- Open with the medium, technique, and finish in specific words.
-- Then the scene and its idea, in plain concrete words.
-- Then light, viewpoint, and where things sit in the frame.
-- Close with the constraints below, restated in one or two sentences.
-
-Keep each prompt under about 120 words. Do not write checklists, counts
-of forms, rule names, or meta-commentary; the generator cannot use them.
-No two prompts in a round share a sentence skeleton or an opening phrase.
+director briefs a poster illustrator: medium and finish first, then the one
+big shape and its surprise, then color, light, and framing, then the
+constraints below in one or two sentences. Under about 110 words. No
+checklists or meta-commentary. No two prompts share an opening phrase.
 
 ## Hard constraints (every brief, restated in its prompt)
 
@@ -70,18 +63,15 @@ No two prompts in a round share a sentence skeleton or an opening phrase.
   in the top-left corner, a red-orange spine band on the right edge, and
   one line of type in the bottom strip: nothing critical top-left or
   along the bottom.
-- Light and color must survive uncoated paper: the picture's dominant
-  field is a color or a light tone, never a black, near-black, or muddy
-  dark ground. Dark belongs to forms and accents.
+- The dominant field is a saturated color or a light tone, never black,
+  near-black, or a muddy dark ground: uncoated stock prints them as mud.
 - No text, letters, numerals, logos, pseudo-writing, or watermark in the
   artwork; layout owns all typography.
-- No swarms, confetti, or scattered debris as the subject, no circuit
-  boards, network graphs, glowing brains, robots, neon cyberpunk, or other
-  AI clichés.
-- No two briefs in a round share a dominant color.
+- No swarms, confetti, or scattered debris, no circuit boards, network
+  graphs, glowing brains, robots, neon cyberpunk, or other AI clichés.
 
 ## Review and selection
 
 The editor reviews candidates as rendered covers in the showcase and
 selects by setting `cover.art_path`. If none is picked, the next round is
-eight fresh briefs in eight new directions.
+twelve fresh briefs.

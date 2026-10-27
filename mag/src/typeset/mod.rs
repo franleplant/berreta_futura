@@ -63,6 +63,11 @@ pub(crate) fn run_request(
     println!("request: {}", request_path.display());
     let staged = render_dir.join("staged");
     let rows = stage(request, &staged)?;
+    fs::copy(
+        repo_root.join("magazine.toml"),
+        staged.join("magazine.toml"),
+    )
+    .context("staging magazine.toml")?;
     println!("staged {rows} inputs into {}", staged.display());
     let base = layout::edition(&staged, &request.edition_id, &request.publication_name)?;
     let hyphenation =

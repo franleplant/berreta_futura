@@ -1240,7 +1240,7 @@ pub fn page_row_issues(
                 recorder.at(
                     "inside-cover-reader-not-blank",
                     "error",
-                    "Inside front and inside back covers must be completely blank (a pure-white raster with no extractable text)."
+                    "The inside back cover must be completely blank (a pure-white raster with no extractable text); the inside front cover carries the credits."
                         .to_string(),
                     page,
                 );
@@ -1893,7 +1893,7 @@ pub struct Geometry {
 }
 
 pub fn geometry(page_count: usize, toc: &BTreeMap<String, usize>) -> Geometry {
-    let inside_cover_pages: BTreeSet<usize> = [2, page_count - 1].into_iter().collect();
+    let inside_cover_pages: BTreeSet<usize> = [page_count - 1].into_iter().collect();
     let maximum_contents_pages = (toc.len().div_ceil(8)).max(1) as i64;
     let first_body_page = toc
         .values()

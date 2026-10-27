@@ -118,7 +118,7 @@ static KEBAB_ID: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap());
 
 const DEFAULT_JOBS: usize = 14;
-const COVER_VARIANTS: u32 = 2;
+const COVER_VARIANTS: u32 = 1;
 static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-v\d+$").unwrap());
 
 fn variants(brief: &Brief, candidates: u32) -> u32 {
@@ -2616,7 +2616,7 @@ mod tests {
     }
 
     #[test]
-    fn approved_covers_come_from_other_editions_picks_and_covers_get_two_variants() {
+    fn approved_covers_come_from_other_editions_picks_and_covers_get_one_variant() {
         let root = std::env::temp_dir().join(format!("mag-approved-{}", std::process::id()));
         let past = root.join("012");
         let round = past.join("art/rounds/2026-01-01T00-00-00");
@@ -2640,7 +2640,7 @@ mod tests {
             vec![("012".to_string(), "molten gold".to_string())]
         );
         assert!(approved_section(&approved).contains("molten gold"));
-        assert_eq!(variants(&brief("c", "cover", "p"), 6), 2);
+        assert_eq!(variants(&brief("c", "cover", "p"), 6), 1);
         assert_eq!(variants(&brief("t", "tail", "p"), 6), 6);
         fs::remove_dir_all(&root).unwrap();
     }
@@ -3045,7 +3045,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let briefs = vec![Brief {
             id: "cover-wildcard".into(),
-            purpose: ArtPurpose::Cover,
+            purpose: ArtPurpose::Closing,
             article_id: None,
             prompt: "one improbable idea".into(),
             subject: None,
@@ -3058,7 +3058,7 @@ mod tests {
             write_generate_script(&dir, "005", &briefs, 2, "gen '{prompt}' -o {out}").unwrap();
         let script = fs::read_to_string(&path).unwrap();
         assert!(script.starts_with("#!/bin/sh\n"), "{script}");
-        assert!(script.contains("# cover-wildcard [cover]"), "{script}");
+        assert!(script.contains("# cover-wildcard [closing]"), "{script}");
         assert!(script.contains("variation 1"), "{script}");
         assert!(script.contains("variation 2"), "{script}");
         assert!(script.contains("cover-wildcard-v2.png"), "{script}");

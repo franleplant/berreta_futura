@@ -261,12 +261,38 @@ fn literal(value: &Value) -> String {
     }
 }
 
+fn credits(root: &Path, edition: &Edition) -> Value {
+    let Ok(config) = crate::render::magazine_toml(root) else {
+        return Value::Null;
+    };
+    let text = |table: &str, key: &str| {
+        config
+            .get(table)
+            .and_then(|t| t.get(key))
+            .and_then(toml::Value::as_str)
+            .map(str::to_string)
+    };
+    let (Some(maker), Some(email), Some(base)) = (
+        text("credits", "maker"),
+        text("credits", "email"),
+        text("site", "base_url"),
+    ) else {
+        return Value::Null;
+    };
+    let site = base
+        .trim_start_matches("https://")
+        .trim_end_matches('/')
+        .to_string();
+    json!([maker, site.clone(), format!("{site}/{}", edition.id), email])
+}
+
 pub fn source(root: &Path, edition: &Edition, work: &Path) -> Result<String> {
     let design = design(root)?;
     Ok(format!(
-        "#cover-front({})\n#cover-back({})\n",
+        "#cover-front({})\n#cover-back({})\n#credits({})\n",
         literal(&front(&design, edition, work)?),
-        literal(&back(&design, edition))
+        literal(&back(&design, edition)),
+        literal(&credits(root, edition))
     ))
 }
 
@@ -380,7 +406,10 @@ mod tests {
                     && !front.contains("ISSUE"),
                 "{layout}"
             );
-            assert!(pages[1].is_empty() && pages[2].is_empty(), "{layout}");
+            assert!(
+                pages[1].join(" ").contains("berreta.franleplant.com/") && pages[2].is_empty(),
+                "{layout}"
+            );
             let back = pages[3].join("|");
             assert!(
                 back.contains("LOOP") && back.contains("END / 2026 09 13"),

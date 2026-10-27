@@ -262,6 +262,19 @@
 
 #let cover-front(spec) = state("mag-cover-front").update(_ => spec)
 #let cover-back(spec) = state("mag-cover-back").update(_ => spec)
+#let credits(lines) = state("mag-credits").update(_ => lines)
+
+#let credits-page() = page(margin: 0pt, foreground: none, context {
+  let lines = state("mag-credits").final()
+  if lines != none {
+    place(bottom + left, dx: MARGIN-INNER, dy: -MARGIN-BOTTOM, block(width: MEASURE, {
+      set par(leading: 0pt, spacing: 0pt, justify: false)
+      for (index, line) in lines.enumerate() {
+        block(below: 6pt, text(font: SANS, size: 7.5pt, fill: if index == 0 { INK } else { SLATE }, ..pinned(10pt), line))
+      }
+    }))
+  }
+})
 
 #let cover-page(key, draw) = page(margin: 0pt, foreground: none, context {
   let spec = state(key).final()
@@ -644,7 +657,7 @@
     first-line-indent: 0pt,
   )
   cover-page("mag-cover-front", cover-front-page)
-  plain-page()
+  credits-page()
   body
   plain-page()
   cover-page("mag-cover-back", cover-back-page)
