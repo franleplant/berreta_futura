@@ -29,6 +29,7 @@ pub struct Decisions {
     pub closing: Option<usize>,
     pub floats: BTreeMap<usize, bool>,
     pub cuts: BTreeSet<usize>,
+    pub released: BTreeSet<usize>,
     pub text: BTreeMap<usize, BTreeSet<Splice>>,
 }
 
@@ -133,6 +134,7 @@ pub fn render(source: &str, lead: &str, d: &Decisions) -> Result<Rendered> {
 #[derive(Clone, Copy)]
 pub enum Choice {
     Cut(usize),
+    Uncut(usize),
     Float(usize, bool),
 }
 
@@ -143,8 +145,13 @@ impl Decisions {
 
     pub fn choose(&mut self, choice: Choice) {
         match choice {
-            Choice::Cut(id) => {
+            Choice::Cut(id) if !self.released.contains(&id) => {
                 self.cuts.insert(id);
+            }
+            Choice::Cut(_) => {}
+            Choice::Uncut(id) => {
+                self.cuts.remove(&id);
+                self.released.insert(id);
             }
             Choice::Float(id, on) => {
                 self.floats.insert(id, on);

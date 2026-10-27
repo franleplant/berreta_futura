@@ -6,8 +6,8 @@ use crate::model::kinds::ExtractStyle;
 use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
-    anchor_key, clamp_roster, content_label, is_name_roster, is_reference_heading, quoted,
-    scalar_label, ui, Result, ValidationError,
+    anchor_key, byline_roster, clamp_roster, content_label, is_name_roster, is_reference_heading,
+    quoted, scalar_label, ui, Result, ValidationError,
 };
 use crate::sourcecodes::source_code_directory;
 use crate::typeset::decisions::{hole, unit, Decisions};
@@ -437,7 +437,7 @@ impl Writer<'_> {
         format!(
             "#byline(code: {code})[#byline-prefix{}#byline-name{}]",
             self.said(&self.ui("by")),
-            self.said(&format!(" {name}"))
+            self.said(&format!(" {}", byline_roster(name)))
         )
     }
 
@@ -599,7 +599,7 @@ impl Writer<'_> {
     ) -> Result<(String, &'static str, f64)> {
         let opener = self.metrics.plain_opener(
             &article.title,
-            &format!("{} {}", self.ui("by"), article.author),
+            &format!("{} {}", self.ui("by"), byline_roster(&article.author)),
             &article.author_note,
             rows,
             figure,
@@ -1838,6 +1838,19 @@ mod tests {
             message.contains(&format!("({} characters)", CONTENTS_TITLE_LIMIT + 2)),
             "{message}"
         );
+    }
+
+    #[test]
+    fn a_long_byline_keeps_one_line_and_says_et_al() {
+        let many =
+            "Keane Lucas, Aengus Lynch, Luna Tong, Luke Champine, Zygi Straznickas, Dino Distefano";
+        let line = byline_roster(many);
+        assert_eq!(
+            line,
+            "Keane Lucas, Aengus Lynch, Luna Tong, Luke Champine et al."
+        );
+        assert!(line.chars().count() <= crate::model::shared::BYLINE_LIMIT);
+        assert_eq!(byline_roster("Addy Osmani"), "Addy Osmani");
     }
 
     #[test]

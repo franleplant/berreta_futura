@@ -281,6 +281,50 @@ fn latex_page(html: &str) -> String {
     MATH_ELEMENT.replace_all(&html, "$1").into_owned()
 }
 
+static EMBED_CARD: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r#"(?is)(?:<p>[^<]{1,40}</p>\s*)?(?:<figure\b[^>]*class="[^"]*kg-(?:embed|bookmark|video|audio)-card[^"]*"[^>]*>.*?</figure>|<blockquote\b[^>]*class="[^"]*twitter-tweet[^"]*"[^>]*>.*?</blockquote>|<iframe\b.*?</iframe>)"#,
+    )
+    .unwrap()
+});
+static DRAFT_NOTE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\s*\[(?:CHECK|TODO|TK|FIXME)\b[^\]<]*\]").unwrap());
+static IMG_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?is)<img\b[^>]*>").unwrap());
+
+fn file_name_of(url: &str) -> &str {
+    let path = url.split(['?', '#']).next().unwrap_or("");
+    path.rsplit('/').next().unwrap_or("")
+}
+
+fn print_page(html: &str) -> String {
+    let embeds = EMBED_CARD.find_iter(html).count();
+    if embeds > 0 {
+        println!("  dropped {embeds} embed(s): link cards, videos, tweets, iframes");
+    }
+    let html = EMBED_CARD.replace_all(html, " ");
+    let html = DRAFT_NOTE.replace_all(&html, "");
+    let Some(hero) = meta_content(&html, &["og:image", "twitter:image"]) else {
+        return html.into_owned();
+    };
+    let hero = file_name_of(&hero).to_string();
+    if hero.is_empty() {
+        return html.into_owned();
+    }
+    IMG_TAG
+        .replace_all(&html, |tag: &regex::Captures| {
+            let is_hero = SRC_ATTR
+                .captures(&tag[0])
+                .is_some_and(|src| file_name_of(&src[1]) == hero);
+            if is_hero {
+                println!("  dropped the page's hero image {hero} (og:image)");
+                String::new()
+            } else {
+                tag[0].to_string()
+            }
+        })
+        .into_owned()
+}
+
 fn strip_sr_only(html: &str) -> String {
     SR_ONLY_SPAN.replace_all(html, " ").into_owned()
 }
@@ -1075,6 +1119,44 @@ fn download_images(urls: &[String], media_dir: &Path) -> Vec<Result<String>> {
     done.into_iter().map(|(_, name)| name).collect()
 }
 
+fn edit_distance(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut row: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.chars().enumerate() {
+        let mut prev = row[0];
+        row[0] = i + 1;
+        for (j, cb) in b.iter().enumerate() {
+            let next = (row[j + 1] + 1)
+                .min(row[j] + 1)
+                .min(prev + usize::from(ca != *cb));
+            prev = row[j + 1];
+            row[j + 1] = next;
+        }
+    }
+    row[b.len()]
+}
+
+fn snap_image_urls(article: &str, html: &str) -> String {
+    let srcs: Vec<String> = SRC_ATTR
+        .captures_iter(html)
+        .map(|c| decode_entities(&c[1]))
+        .collect();
+    REMOTE_MD_IMAGE
+        .replace_all(article, |c: &regex::Captures| {
+            let url = &c[1];
+            let nearest = srcs
+                .iter()
+                .map(|src| (edit_distance(url, src), src))
+                .min_by_key(|(d, _)| *d)
+                .filter(|(d, _)| (1..=3).contains(d));
+            match nearest {
+                Some((_, src)) => c[0].replace(url, src),
+                None => c[0].to_string(),
+            }
+        })
+        .into_owned()
+}
+
 fn localize_images(article: &str, media_dir: &Path) -> Result<(String, usize)> {
     let mut urls: Vec<String> = Vec::new();
     for c in REMOTE_MD_IMAGE.captures_iter(article) {
@@ -1244,9 +1326,12 @@ fn resolve_input(html_file: Option<&Path>, url: &str) -> Result<ResolvedInput> {
                     let bytes = fs::read(p).with_context(|| format!("reading {}", p.display()))?;
                     decode_page(&bytes, "")?
                 }
-                None => curl_text(url)?,
+                None => match crate::xarticle::page_for(url)? {
+                    Some(page) => page,
+                    None => curl_text(url)?,
+                },
             };
-            Ok((None, latex_page(&html), None))
+            Ok((None, print_page(&latex_page(&html)), None))
         }
     }
 }
@@ -1323,14 +1408,17 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
 
     let media_dir = src_dir.join("media");
     fs::create_dir_all(&media_dir)?;
-    let labeled = label_fences(&extraction.article, &html);
-    let (article, image_count) = match localize_images(&labeled, &media_dir) {
+    let labeled = snap_image_urls(&label_fences(&extraction.article, &html), &html);
+    let curated = localize_images(&labeled, &media_dir)
+        .and_then(|(article, _)| crate::curate::curate(&article, &title, &media_dir, spec));
+    let article = match curated {
         Ok(v) => v,
         Err(e) => {
             let _ = fs::remove_dir_all(&src_dir);
             return Err(e);
         }
     };
+    let image_count = fs::read_dir(&media_dir)?.count();
     write_atomic(
         src_dir.join("article.md"),
         article.trim_end().to_string() + "\n",
@@ -1409,6 +1497,16 @@ fn sync_media(staged: &Path, dest: &Path) -> Result<()> {
             println!("  media: wrote {}", to.display());
         }
     }
+    for file in fs::read_dir(dest)? {
+        let path = file?.path();
+        if !staged
+            .join(path.file_name().context("media file without a name")?)
+            .exists()
+        {
+            fs::remove_file(&path)?;
+            println!("  media: removed {}", path.display());
+        }
+    }
     Ok(())
 }
 
@@ -1425,8 +1523,10 @@ fn refresh(args: &CaptureArgs, sid: &str) -> Result<i32> {
     let staged = PathBuf::from(RAW_DIR).join(format!("refresh-{sid}"));
     let _ = fs::remove_dir_all(&staged);
     fs::create_dir_all(staged.join("media"))?;
-    let labeled = label_fences(&extraction.article, &html);
-    let (article, image_count) = localize_images(&labeled, &staged.join("media"))?;
+    let labeled = snap_image_urls(&label_fences(&extraction.article, &html), &html);
+    let (article, _) = localize_images(&labeled, &staged.join("media"))?;
+    let article = crate::curate::curate(&article, &record.title, &staged.join("media"), spec)?;
+    let image_count = fs::read_dir(staged.join("media"))?.count();
     sync_media(&staged.join("media"), &src_dir.join("media"))?;
     fs::remove_dir_all(&staged)?;
     write_atomic(
@@ -1459,6 +1559,25 @@ mod tests {
     use super::*;
     use std::io::{Read, Write};
     use std::net::TcpListener;
+
+    #[test]
+    fn print_page_drops_embeds_draft_notes_and_the_hero_image() {
+        let html = r#"<meta property="og:image" content="https://s.test/size/w1200/hero.jpg"><img src="https://s.test/hero.jpg"><p>Body [CHECK: verify] text.</p><p>ps. socials</p><figure class="kg-card kg-embed-card"><blockquote class="twitter-tweet">tweet</blockquote></figure><figure class="kg-card kg-bookmark-card"><a>Link</a></figure><img src="https://s.test/chart.png">"#;
+        let page = print_page(html);
+        assert!(!page.contains(r#"<img src="https://s.test/hero.jpg">"#));
+        assert!(!page.contains("tweet") && !page.contains("socials") && !page.contains("Link"));
+        assert!(page.contains("Body text.") && page.contains("chart.png"));
+    }
+
+    #[test]
+    fn a_miscopied_image_url_snaps_to_the_page_source() {
+        let html = r#"<img src="https://pbs.test/media/HVgAZymawAAx2IG.jpg">"#;
+        let article =
+            "![a](https://pbs.test/media/HVgAZymawAAAx2IG.jpg)\n![b](https://other.test/far.png)";
+        let snapped = snap_image_urls(article, html);
+        assert!(snapped.contains("(https://pbs.test/media/HVgAZymawAAx2IG.jpg)"));
+        assert!(snapped.contains("(https://other.test/far.png)"));
+    }
 
     #[test]
     fn image_src_parentheses_reach_the_model_percent_encoded() {

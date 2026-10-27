@@ -109,6 +109,24 @@ pub fn clamp_roster(author: &str) -> String {
     format!("{kept} et al.")
 }
 
+pub const BYLINE_LIMIT: usize = 70;
+
+pub fn byline_roster(author: &str) -> String {
+    let names: Vec<&str> = author.split(", ").collect();
+    if author.chars().count() <= BYLINE_LIMIT || names.len() < 2 {
+        return author.to_string();
+    }
+    let mut kept = names[0].to_string();
+    for name in &names[1..] {
+        let longer = format!("{kept}, {name}");
+        if longer.chars().count() + " et al.".len() > BYLINE_LIMIT {
+            break;
+        }
+        kept = longer;
+    }
+    format!("{kept} et al.")
+}
+
 pub fn ui(language: &str, key: &str) -> String {
     const ENGLISH: [(&str, &str); 20] = [
         ("issue", "Issue"),

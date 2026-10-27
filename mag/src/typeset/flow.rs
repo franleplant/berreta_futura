@@ -218,7 +218,42 @@ fn body(frame: &Frame) -> &[(Point, FrameItem)] {
     &items[..foreground.unwrap_or(items.len())]
 }
 
-fn plate_cuts(doc: &PagedDocument, world: &Sources) -> Vec<Choice> {
+fn stale_cuts(
+    out: &Spread,
+    plates: &[usize],
+    world: &Sources,
+    cuts: &BTreeSet<usize>,
+) -> Vec<Choice> {
+    let starts: Vec<(typst::syntax::FileId, usize, usize)> = out
+        .values()
+        .filter_map(|(pages, (_, span, offset))| {
+            let page = *pages.first()?;
+            Some((span.id()?, world.range(*span)?.start + offset, page))
+        })
+        .collect();
+    let files: std::collections::HashSet<typst::syntax::FileId> =
+        starts.iter().map(|(f, ..)| *f).collect();
+    let mut edits = Vec::new();
+    for file in files {
+        for cut in world
+            .marks(file)
+            .iter()
+            .filter(|m| m.kind == 'c' && cuts.contains(&m.id))
+        {
+            let resumes = starts
+                .iter()
+                .filter(|(f, at, _)| *f == file && *at >= cut.at)
+                .min_by_key(|(_, at, _)| *at)
+                .map(|(.., page)| *page);
+            if resumes.is_some_and(|page| !plates.contains(&(page - 1))) {
+                edits.push(Choice::Uncut(cut.id));
+            }
+        }
+    }
+    edits
+}
+
+fn plate_cuts(doc: &PagedDocument, world: &Sources, cuts: &BTreeSet<usize>) -> Vec<Choice> {
     let plates: Vec<usize> = marks(doc, "mag-figure-box")
         .iter()
         .filter(|b| b.flag("turned") == Some(true))
@@ -228,7 +263,7 @@ fn plate_cuts(doc: &PagedDocument, world: &Sources) -> Vec<Choice> {
     for (page, p) in doc.pages().iter().enumerate() {
         spread(body(&p.frame), Point::zero(), page + 1, &mut open, &mut out);
     }
-    let mut edits = Vec::new();
+    let mut edits = stale_cuts(&out, &plates, world, cuts);
     for &plate in plates
         .iter()
         .filter(|p| **p > 1 && !plates.contains(&(**p - 1)))
@@ -252,6 +287,57 @@ fn plate_cuts(doc: &PagedDocument, world: &Sources) -> Vec<Choice> {
     edits
 }
 
+fn plates_past_end(doc: &PagedDocument, world: &Sources, tree: &Tree) -> Vec<Choice> {
+    let ends: Vec<usize> = marks(doc, "mag-piece-end").iter().map(|m| m.page).collect();
+    let flows = flows(doc);
+    let files: Vec<typst::syntax::FileId> = world.files();
+
+    let mut seen: HashMap<String, usize> = HashMap::new();
+    let mut boxes: HashMap<String, Vec<Mark>> = HashMap::new();
+    for mark in marks(doc, "mag-figure-box") {
+        boxes
+            .entry(mark.text("id").unwrap_or_default())
+            .or_default()
+            .push(mark);
+    }
+    let mut edits = Vec::new();
+    for (index, figure) in flows.iter().enumerate() {
+        if figure.text("kind").as_deref() != Some("figure") {
+            continue;
+        }
+        let id = figure.text("id").unwrap_or_default();
+        let nth = *seen.entry(id.clone()).and_modify(|n| *n += 1).or_default();
+        let anchor = index.checked_sub(1).map_or(figure.page, |i| flows[i].page);
+        let end = ends
+            .iter()
+            .copied()
+            .find(|e| *e >= anchor)
+            .unwrap_or(usize::MAX);
+        let placed = boxes.get(&id).and_then(|b| b.get(nth));
+        let slot = tree.figures.iter().filter(|f| f.id == id).nth(nth);
+        let (Some(placed), Some(slot)) = (placed, slot) else {
+            continue;
+        };
+        if placed.flag("turned") != Some(true) || placed.page < end {
+            continue;
+        }
+        let hole = files.iter().find_map(|file| {
+            let marks = world.marks(*file);
+            let at = marks
+                .iter()
+                .find(|m| m.kind == 'f' && m.id == slot.hole)?
+                .at;
+            marks
+                .iter()
+                .filter(|m| m.kind == 'c' && m.at > at)
+                .min_by_key(|m| m.at)
+                .map(|m| m.id)
+        });
+        edits.extend(hole.map(Choice::Cut));
+    }
+    edits
+}
+
 pub fn choices(doc: &PagedDocument, world: &Sources, tree: &Tree) -> Vec<Choice> {
     let d = geometry();
     let g = Page {
@@ -266,5 +352,10 @@ pub fn choices(doc: &PagedDocument, world: &Sources, tree: &Tree) -> Vec<Choice>
         above: HEADING_ABOVE + d.paragraph_after,
         lines: d.body_leading,
     };
-    [floats(doc, tree, &g), plate_cuts(doc, world)].concat()
+    [
+        floats(doc, tree, &g),
+        plate_cuts(doc, world, &tree.decisions.cuts),
+        plates_past_end(doc, world, tree),
+    ]
+    .concat()
 }

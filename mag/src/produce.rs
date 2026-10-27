@@ -21,6 +21,11 @@ pub struct ProduceArgs {
     pub only: Option<String>,
     #[arg(long = "writer-model", default_value = "opus")]
     pub writer_model: String,
+    #[arg(
+        long = "redraft-front-matter",
+        help = "Reject the current title and back cover (kept in edition.yaml as comments the drafter must avoid) and draft new front matter"
+    )]
+    pub redraft_front_matter: bool,
 }
 
 static IMAGE_LINE: LazyLock<regex::Regex> =
@@ -722,6 +727,9 @@ pub fn run(args: &ProduceArgs) -> Result<i32> {
         .ok_or_else(|| anyhow!("plan.edition.id missing or not a string/number"))?;
 
     let edition_dir = plan_path.parent().map(PathBuf::from).unwrap_or_default();
+    if args.redraft_front_matter {
+        reject_front_matter(&edition_dir.join("edition.yaml"))?;
+    }
     let run_dir = match resume {
         Some(dir) => {
             fs::create_dir_all(&dir)?;
@@ -905,11 +913,60 @@ fn front_matter_names(edition: &EditionFile) -> Vec<String> {
         .collect()
 }
 
-fn parse_front_matter(reply: &str, names: &[String]) -> Result<HashMap<String, String>> {
-    let yaml = reply.trim().trim_start_matches("```yaml").trim_matches('`');
-    let drafted: HashMap<String, String> =
-        serde_norway::from_str(yaml).context("the front matter reply is not a YAML mapping")?;
-    for key in ["title", "subtitle", "back_text"] {
+const BACK_COVER_STOPWORDS: [&str; 24] = [
+    "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "it", "is", "you", "your", "its",
+    "has", "have", "just", "that", "this", "with", "at", "be", "all",
+];
+
+fn content_bigrams(text: &str) -> HashSet<(String, String)> {
+    let words: Vec<String> = text
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .map(|w| w.to_lowercase().trim_end_matches('s').to_string())
+        .filter(|w| w.len() > 1 && !BACK_COVER_STOPWORDS.contains(&w.as_str()))
+        .collect();
+    words
+        .windows(2)
+        .map(|w| (w[0].clone(), w[1].clone()))
+        .collect()
+}
+
+fn past_front_matter(edition_dir: &Path) -> Vec<(String, String)> {
+    let Some(root) = edition_dir.parent() else {
+        return Vec::new();
+    };
+    let mut dirs: Vec<PathBuf> = fs::read_dir(root)
+        .map(|entries| entries.filter_map(|e| e.ok().map(|e| e.path())).collect())
+        .unwrap_or_default();
+    dirs.sort();
+    dirs.iter()
+        .filter(|dir| dir.as_path() != edition_dir)
+        .filter_map(|dir| {
+            let spec: serde_norway::Value =
+                serde_norway::from_str(&read(&dir.join("edition.yaml")).ok()?).ok()?;
+            let title = spec["title"].as_str()?.to_string();
+            let back = spec["cover"]["back_text"].as_str()?.to_string();
+            (title != "TODO" && back != "TODO").then_some((title, back))
+        })
+        .collect()
+}
+
+fn parse_front_matter(
+    reply: &str,
+    names: &[String],
+    past: &[(String, String)],
+) -> Result<HashMap<String, String>> {
+    let keys = ["title", "subtitle", "back_text", "title_options"];
+    let drafted: HashMap<String, String> = reply
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .filter(|(key, _)| keys.contains(&key.trim()))
+        .map(|(key, value)| {
+            let value = value.trim();
+            let unquoted = serde_norway::from_str::<String>(value).unwrap_or(value.to_string());
+            (key.trim().to_string(), unquoted)
+        })
+        .collect();
+    for key in keys {
         let value = drafted.get(key).map_or("", |v| v.trim());
         if value.is_empty() || value.contains('\u{2014}') {
             bail!("front matter {key} is missing, empty, or carries an em dash");
@@ -934,7 +991,55 @@ fn parse_front_matter(reply: &str, names: &[String]) -> Result<HashMap<String, S
     if let Some(name) = named {
         bail!("front matter back_text names {name:?}; it must not name an article, a title, or an author");
     }
+    let drafted_pairs = content_bigrams(back);
+    for (title, past_back) in past {
+        if title.eq_ignore_ascii_case(drafted["title"].trim()) {
+            bail!("front matter title {title:?} was already used by an earlier edition");
+        }
+        if let Some((a, b)) = content_bigrams(past_back)
+            .intersection(&drafted_pairs)
+            .next()
+        {
+            bail!(
+                "front matter back_text echoes an earlier back cover ({a} {b}: {past_back:?}); \
+                 write a different idea in different words"
+            );
+        }
+    }
     Ok(drafted)
+}
+
+const REJECTED_TITLE: &str = "# rejected title: ";
+const REJECTED_BACK: &str = "# rejected back_text: ";
+
+fn reject_front_matter(edition_yaml: &Path) -> Result<()> {
+    let text = read(edition_yaml)?;
+    let spec: serde_norway::Value = serde_norway::from_str(&text)?;
+    let mut out = format!(
+        "{REJECTED_TITLE}{}\n{REJECTED_BACK}{}\n",
+        spec["title"].as_str().unwrap_or_default(),
+        spec["cover"]["back_text"].as_str().unwrap_or_default()
+    );
+    for line in text
+        .lines()
+        .filter(|l| !l.starts_with("# other title directions: "))
+    {
+        let todo = FRONT_TODOS
+            .iter()
+            .find(|(todo, _)| line.starts_with(&todo[..todo.len() - 4]));
+        out += &todo.map_or(line.to_string(), |(todo, _)| (*todo).to_string());
+        out += "\n";
+    }
+    write_atomic(edition_yaml, out)
+}
+
+fn rejected_front_matter(text: &str) -> Vec<(String, String)> {
+    let titles = text.lines().filter_map(|l| l.strip_prefix(REJECTED_TITLE));
+    let backs = text.lines().filter_map(|l| l.strip_prefix(REJECTED_BACK));
+    titles
+        .zip(backs)
+        .map(|(t, b)| (t.to_string(), b.to_string()))
+        .collect()
 }
 
 fn front_matter(
@@ -957,13 +1062,23 @@ fn front_matter(
         })
         .collect::<Result<Vec<_>>>()?
         .join("\n");
+    let mut past = edition_yaml
+        .parent()
+        .map(past_front_matter)
+        .unwrap_or_default();
+    past.extend(rejected_front_matter(&text));
+    let printed: String = past
+        .iter()
+        .map(|(title, back)| format!("title: {title}\nback_text: {back}\n\n"))
+        .collect();
     let prompt = format!(
-        "{INLINE_PREAMBLE}\n\n{}\n\n{finals}",
-        read(&prompts_path("edition-front-matter.md"))?
+        "{INLINE_PREAMBLE}\n\n{}\n\n{}\n\n{finals}",
+        read(&prompts_path("edition-front-matter.md"))?,
+        section("titles and back covers already printed", &printed)
     );
     let names = front_matter_names(&edition);
     let drafted = caller.call_with_parse("front-matter", model, &prompt, |reply| {
-        parse_front_matter(reply, &names)
+        parse_front_matter(reply, &names, &past)
     })?;
     let filled = fill_todos(&read(edition_yaml)?, &drafted);
     parse_yaml::<EditionFile>(&filled)
@@ -976,6 +1091,11 @@ fn fill_todos(text: &str, drafted: &HashMap<String, String>) -> String {
     let filled: Vec<String> = text
         .lines()
         .map(|line| match front_todo(line) {
+            Some((todo, "title")) if !todo.starts_with(' ') => format!(
+                "# other title directions: {}\ntitle: {}",
+                drafted["title_options"].trim(),
+                yq(&drafted["title"])
+            ),
             Some((todo, key)) => format!("{}{}", &todo[..todo.len() - 4], yq(&drafted[*key])),
             None => line.to_string(),
         })
@@ -1197,23 +1317,53 @@ mod tests {
             "PACT".to_string(),
             "Mitchell Hashimoto".to_string(),
         ];
-        let reply = |back: &str| format!("title: T\nsubtitle: S\nback_text: {back}\n");
+        let reply = |back: &str| {
+            format!("title: T\nsubtitle: S\nback_text: {back}\ntitle_options: A | B\n")
+        };
         assert!(parse_front_matter(
             &reply("Your agent has more keys than you do. Count them."),
-            &names
+            &names,
+            &[]
         )
         .is_ok());
-        assert!(parse_front_matter(&reply("Impact first, questions later."), &names).is_ok());
+        assert!(parse_front_matter(&reply("Impact first, questions later."), &names, &[]).is_ok());
         for bad in [
             "Ask Mitchell Hashimoto why.",
             "PACT says no.",
             "Open this issue now.",
             "The articles disagree.",
         ] {
-            assert!(parse_front_matter(&reply(bad), &names).is_err(), "{bad}");
+            assert!(
+                parse_front_matter(&reply(bad), &names, &[]).is_err(),
+                "{bad}"
+            );
         }
         let long = ["word"; 41].join(" ");
-        assert!(parse_front_matter(&reply(&long), &names).is_err());
+        assert!(parse_front_matter(&reply(&long), &names, &[]).is_err());
+    }
+
+    #[test]
+    fn the_back_cover_and_title_never_echo_earlier_editions() {
+        let past = [(
+            "Inside Jobs".to_string(),
+            "Ten thousand new coworkers. None of them sleep, all of them have your keys."
+                .to_string(),
+        )];
+        let reply = |title: &str, back: &str| {
+            format!("title: {title}\nsubtitle: S\nback_text: {back}\ntitle_options: A | B\n")
+        };
+        assert!(parse_front_matter(
+            &reply("Hard Hats", "Your new coworker works all night."),
+            &[],
+            &past
+        )
+        .is_err());
+        assert!(
+            parse_front_matter(&reply("inside jobs", "Count the spoons."), &[], &past).is_err()
+        );
+        assert!(
+            parse_front_matter(&reply("Hard Hats", "Count the spoons twice."), &[], &past).is_ok()
+        );
     }
 
     #[test]

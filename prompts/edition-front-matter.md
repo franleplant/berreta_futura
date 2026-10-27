@@ -27,6 +27,14 @@ Tests, all of which must pass:
   "The X Issue", anything a language model would produce for a generic
   tech anthology.
 
+The section "titles and back covers already printed" lists every earlier
+edition. A new title never repeats one and never takes the same shape as
+the last few (if they are all two-word idioms, do not write a third).
+Before choosing, draft candidates in genuinely different directions: a
+concrete object, a place, a verb or command, a question, a number, a
+joke, a borrowed phrase bent out of shape. Pick the strongest, and report
+four of the others as `title_options` so the editor can steer.
+
 The subtitle/deck may then do the inventory work plainly: what is actually
 inside, concretely, without theme-speak.
 
@@ -44,6 +52,11 @@ a riddle, a provocation, a question they suddenly need answered.
   of the articles gets it at once.
 - One idea. Short beats complete: 40 words at most, ideally under 25.
 - Playful beats solemn. A grin or a raised eyebrow is the goal.
+- Read the printed back covers first. Never reuse their premise, their
+  shape, or their words: if they keep returning to a tireless machine
+  coworker who wants your trust or your keys, that joke is spent. Find a
+  different kind of joke (a fake warning label, a recipe, an overheard
+  line, a classified ad, a riddle, a dare with a twist).
 
 ## The cover deck
 
@@ -56,6 +69,7 @@ Reply with YAML only, no fences and no commentary, with exactly these keys,
 each a single-line string:
 
 title: the edition title
+title_options: four other title candidates in different directions, separated by " | "
 subtitle: the deck (inventory line)
 back_text: the back cover
 

@@ -36,6 +36,12 @@ Source: <https://github.com/notofonts/notofonts.github.io/tree/main/fonts/NotoSa
 
 Files used: the unhinted Regular TTF. Every reader family falls back to it for math operators, arrows, and geometric shapes the text faces lack (TLA+'s box and diamond, for example). A character no bundled face carries stops `mag render` with its codepoint and the text around it. License: SIL Open Font License 1.1; see `noto-sans-math/OFL.txt`.
 
+## Twemoji Mozilla
+
+Source: <https://github.com/mozilla/twemoji-colr/releases/tag/v0.7.0> (`Twemoji.Mozilla.ttf`, saved as `twemoji/Twemoji.Mozilla.ttf`)
+
+Print only. Color (COLR v0, vector) emoji, the first emoji fallback of every reader family, so an emoji in a captured source prints as the emoji it is. Graphics by Twitter, Inc and other contributors, licensed CC-BY 4.0 (<https://creativecommons.org/licenses/by/4.0/>); font build by Mozilla, MPL 2.0. Noto Emoji below stays as the fallback for anything Twemoji lacks.
+
 ## Noto Emoji (variable)
 
 Source: <https://github.com/google/fonts/tree/main/ofl/notoemoji> (`NotoEmoji[wght].ttf`, saved as `noto-emoji/NotoEmoji-Variable.ttf`)

@@ -380,7 +380,7 @@ fn approved_section(approved: &[(String, String)]) -> String {
         .map(|(edition, prompt)| format!("--- edition {edition}\n{prompt}\n\n"))
         .collect();
     produce::section(
-        "covers the editor approved in past editions (the taste to match; never reuse their objects)",
+        "covers already printed in past editions (do not repeat their formula, object, or look)",
         &body,
     )
 }
@@ -1016,7 +1016,7 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, cover_frame: &CoverF
     let off: Vec<&MemberVerdict> = item
         .verdicts
         .iter()
-        .filter(|v| v.verdict == "off_model")
+        .filter(|v| v.verdict == "off_model" || v.verdict == "malformed")
         .collect();
     let mut classes = Vec::new();
     if item.selected {
@@ -1733,14 +1733,19 @@ fn cast_check_prompt(cast: &[CastMember], image_abs: &Path, license: Option<&str
            character\n\
          - off_model: a character of this kind appears but an identity \
            attribute is unmistakably wrong (name it)\n\
-         - absent: no character of this kind appears in the image\n\n\
+         - absent: no character of this kind appears in the image\n\
+         - malformed: the character appears but its anatomy is broken: an \
+           extra, missing, merged, or misplaced hand, arm, finger, or leg, a \
+           hand that belongs to nobody, or a limb attached to the wrong body. \
+           Count every hand in the picture and trace each one to an arm; this \
+           verdict wins over on_model and off_model\n\n\
          Return exactly one fenced yaml code block and nothing else of \
          consequence:\n\
          ```yaml\n\
          verdicts:\n\
          - name: <cast member name>\n\
-         \x20 verdict: on_model | off_model | absent\n\
-         \x20 attribute: hair_colour | glasses | garment_colour | body_shape | body_colour | face_screen | antenna | pouch | hairstyle | garment_cut | pose | style | other\n\
+         \x20 verdict: on_model | off_model | absent | malformed\n\
+         \x20 attribute: hair_colour | glasses | garment_colour | body_shape | body_colour | face_screen | antenna | pouch | hairstyle | garment_cut | pose | style | anatomy | other\n\
          \x20 reason: one short factual sentence\n\
          ```\n\
          with exactly one entry per cast member listed above; attribute names \
@@ -1772,9 +1777,12 @@ fn extract_verdicts(reply: &str, label: &str, cast: &[CastMember]) -> Result<Vec
         }
     }
     for v in &doc.verdicts {
-        if !matches!(v.verdict.as_str(), "on_model" | "off_model" | "absent") {
+        if !matches!(
+            v.verdict.as_str(),
+            "on_model" | "off_model" | "absent" | "malformed"
+        ) {
             bail!(
-                "{label}: verdict '{}' for {} is not on_model, off_model, or absent",
+                "{label}: verdict '{}' for {} is not on_model, off_model, absent, or malformed",
                 v.verdict,
                 v.name
             );
@@ -1966,7 +1974,7 @@ fn check_round(
         .flat_map(|r| {
             r.verdicts
                 .iter()
-                .filter(|v| v.verdict == "off_model")
+                .filter(|v| v.verdict == "off_model" || v.verdict == "malformed")
                 .map(|v| format!("  {}, {}: {}", r.file, v.name, v.reason))
         })
         .collect();
@@ -2343,7 +2351,112 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
     )
 }
 
+const ANATOMY_PROMPT: &str = "You check generated illustrations for broken anatomy before they \
+     go to print. Look at the attached image (if it is not attached, view it with the Read tool \
+     at the path below). List every hand you can see, including hands holding props and robot \
+     mitts. For each hand, follow its wrist back along a visible arm or sleeve to a shoulder and \
+     name the character it belongs to. A hand is broken when no continuous arm connects it to a \
+     shoulder, when one character has more than two hands, when an arm leaves the body somewhere \
+     no shoulder is, or when fingers are fused, extra, or missing. Reply with exactly one fenced \
+     yaml block:\n```yaml\nhands:\n- owner: <character>\n  traced: true | false\n  note: \
+     where the arm runs, or what breaks\nverdict: clean | broken\nreason: one short sentence\n```";
+
+#[derive(Deserialize)]
+struct AnatomyReply {
+    hands: Vec<HandTrace>,
+    verdict: String,
+    reason: String,
+}
+
+#[derive(Deserialize)]
+struct HandTrace {
+    traced: bool,
+    note: String,
+}
+
+fn parse_anatomy(reply: &str) -> Result<Option<String>> {
+    let body = YAML_FENCE
+        .captures_iter(reply)
+        .last()
+        .and_then(|c| c.get(1))
+        .map_or(reply, |m| m.as_str());
+    let doc: AnatomyReply =
+        serde_norway::from_str(body).context("anatomy reply is not the yaml asked for")?;
+    let untraced: Vec<&str> = doc
+        .hands
+        .iter()
+        .filter(|h| !h.traced)
+        .map(|h| h.note.as_str())
+        .collect();
+    Ok(match (doc.verdict.as_str(), untraced.is_empty()) {
+        ("clean", true) => None,
+        _ if untraced.is_empty() => Some(doc.reason),
+        _ => Some(untraced.join("; ")),
+    })
+}
+
+fn anatomy_gate(edition_dir: &Path) -> Result<()> {
+    let text = read(&edition_dir.join("edition.yaml"))?;
+    let picks: Vec<PathBuf> = crate::picks::round_paths(&serde_norway::from_str(&text)?)
+        .into_iter()
+        .filter(|p| !p.contains("/cover-"))
+        .map(|p| Path::new(&p).canonicalize())
+        .collect::<std::io::Result<_>>()?;
+    if art_direction_section(&text)?.is_none() || picks.is_empty() {
+        return Ok(());
+    }
+    println!(
+        "checking {} pick(s) for broken anatomy with opus",
+        picks.len()
+    );
+    let model = ModelSpec::parse("opus")?;
+    let caller = Caller::new(&edition_dir.join("art"));
+    let outcomes = parallel(&picks, |pick| {
+        let cache = pick.with_extension("anatomy.yaml");
+        if let Ok(cached) = read(&cache) {
+            return Ok(serde_norway::from_str::<Option<String>>(&cached)?);
+        }
+        let prompt = format!("{ANATOMY_PROMPT}\n\nImage: {}", pick.display());
+        let judge = |n: u8| {
+            caller.call_with_parse_images(
+                &format!("anatomy {n} {}", pick.display()),
+                &model,
+                &prompt,
+                std::slice::from_ref(pick),
+                parse_anatomy,
+            )
+        };
+        let verdict = match (judge(1)?, judge(2)?) {
+            (Some(first), Some(_)) => Some(first),
+            (Some(only), None) | (None, Some(only)) => {
+                println!(
+                    "  warning: one of two judges doubts {}: {only}",
+                    pick.display()
+                );
+                None
+            }
+            (None, None) => None,
+        };
+        write_atomic(&cache, serde_norway::to_string(&verdict)?)?;
+        Ok(verdict)
+    });
+    let mut bad = Vec::new();
+    for (pick, outcome) in picks.iter().zip(outcomes) {
+        if let Some(reason) = outcome? {
+            bad.push(format!("  {}: {reason}", pick.display()));
+        }
+    }
+    if !bad.is_empty() {
+        bail!(
+            "these picks have broken anatomy; pick another variant in the showcase:\n{}",
+            bad.join("\n")
+        );
+    }
+    Ok(())
+}
+
 fn promote_picks(edition_dir: &Path, edition_label: &str) -> Result<i32> {
+    anatomy_gate(edition_dir)?;
     let moves = crate::picks::promote(edition_dir)?;
     for (pick, round) in &moves {
         println!("  {round} -> {pick}");
@@ -2355,6 +2468,23 @@ fn promote_picks(edition_dir: &Path, edition_label: &str) -> Result<i32> {
         edition_dir.display()
     );
     Ok(0)
+}
+
+fn check_cast(edition_dir: &Path, round_dir: &Path) -> Result<()> {
+    let Some((_, direction)) = art_direction_section(&read(&edition_dir.join("edition.yaml"))?)?
+    else {
+        return Ok(());
+    };
+    let cast = cast_members(&direction)?;
+    if !cast.is_empty() {
+        check_round(
+            round_dir,
+            &cast,
+            &cast_license(&direction)?,
+            &ModelSpec::parse("sonnet")?,
+        )?;
+    }
+    Ok(())
 }
 
 fn generate_and_finish(
@@ -2370,6 +2500,7 @@ fn generate_and_finish(
 
     write_proof_sheet(round_dir, edition_label, briefs, &generated)?;
     let failures = write_round_yaml(round_dir, edition_label, false, &generated)?;
+    check_cast(edition_dir, round_dir)?;
     let showcase = write_showcase(edition_dir, edition_label)?;
     println!("showcase: {}", showcase.display());
 
@@ -2389,7 +2520,7 @@ fn generate_and_finish(
         println!("  {} [{}]: {ok} ok, {fail} failed", brief.id, brief.purpose);
     }
     println!(
-        "\nnext:\n  1. mag cast-check {edition_label}        (optional: badge off-model candidates in the showcase)\n  \
+        "\nnext:\n  1. off-model and malformed candidates are badged in the showcase (cast-check ran on this round)\n  \
          2. open editions/{edition_label}/art/showcase.html and pick; clicking writes the paths to copy into edition.yaml \
          (cover.art_path / opener_art.path / tail_art_path / closing_plates); rounds stay local, out of git\n  \
          3. mag art {edition_label} --promote   (picks become committed JPEGs in art/picks)\n  \

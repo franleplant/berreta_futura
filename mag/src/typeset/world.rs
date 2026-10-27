@@ -149,6 +149,10 @@ impl Sources {
     pub fn marks(&self, file: FileId) -> &[Mark] {
         self.marks.get(&file).map_or(&[], Vec::as_slice)
     }
+
+    pub fn files(&self) -> Vec<FileId> {
+        self.marks.keys().copied().collect()
+    }
 }
 
 impl World for Sources {
