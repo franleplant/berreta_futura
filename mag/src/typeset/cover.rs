@@ -270,6 +270,28 @@ fn literal(value: &Value) -> String {
     }
 }
 
+fn long_date(value: &str) -> String {
+    const MONTHS: [&str; 12] = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+    let parts: Vec<usize> = value.split('-').filter_map(|p| p.parse().ok()).collect();
+    match parts.as_slice() {
+        [year, month @ 1..=12, day] => format!("{} {day}, {year}", MONTHS[month - 1]),
+        _ => value.to_string(),
+    }
+}
+
 fn credits(root: &Path, edition: &Edition) -> Value {
     let Ok(config) = crate::render::magazine_toml(root) else {
         return Value::Null;
@@ -292,7 +314,16 @@ fn credits(root: &Path, edition: &Edition) -> Value {
         .trim_start_matches("https://")
         .trim_end_matches('/')
         .to_string();
-    json!([maker, site.clone(), format!("{site}/{}", edition.id), email])
+    json!({
+        "maker": maker,
+        "site": site.clone(),
+        "issue_url": format!("{site}/{}", edition.id),
+        "email": email,
+        "title": edition.title,
+        "deck": edition.subtitle,
+        "issue": cover_issue(edition),
+        "date": long_date(&edition.publication_date),
+    })
 }
 
 pub fn source(root: &Path, edition: &Edition, work: &Path) -> Result<String> {

@@ -21,7 +21,7 @@ editions = ["017", "016", "015", "014", "013", "012", "011", "010", "009", "008"
 repo = "franleplant/berreta_futura"
 
 [credits]
-# The page after the front cover prints these lines, then the site, the
-# issue's page on the site, and the email.
-maker = "made by franleplant"
+# The colophon after the front cover credits the maker and prints the site,
+# the issue's page on the site, and the email.
+maker = "franleplant"
 email = "berreta@franleplant.com"

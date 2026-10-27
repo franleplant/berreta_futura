@@ -264,14 +264,44 @@
 #let cover-back(spec) = state("mag-cover-back").update(_ => spec)
 #let credits(lines) = state("mag-credits").update(_ => lines)
 
-#let credits-page() = page(margin: 0pt, foreground: none, context {
-  let lines = state("mag-credits").final()
-  if lines != none {
-    place(bottom + left, dx: MARGIN-INNER, dy: -MARGIN-BOTTOM, block(width: MEASURE, {
-      set par(leading: 0pt, spacing: 0pt, justify: false)
-      for (index, line) in lines.enumerate() {
-        block(below: 6pt, text(font: SANS, size: 7.5pt, fill: if index == 0 { INK } else { SLATE }, ..pinned(10pt), line))
-      }
+#let COLOPHON-FACES = "Set in Source Serif 4, Inter, and Geist Mono."
+
+#let colophon-wordmark(width) = {
+  let svg = read("/brand/wordmark.svg").replace(regex("var\\(--[a-z]+, *(#[0-9a-fA-F]+)\\)"), m => m.captures.first())
+  image(bytes(svg), format: "svg", width: width)
+}
+
+#let credits-page() = page(margin: (top: MARGIN-TOP, bottom: MARGIN-BOTTOM, left: MARGIN-OUTER, right: MARGIN-INNER), foreground: none, context {
+  let c = state("mag-credits").final()
+  if c != none {
+    set par(leading: 0pt, spacing: 0pt, justify: false)
+    set block(spacing: 0pt)
+    block(below: 22pt, colophon-wordmark(150pt))
+    block(below: 9pt, text(font: SANS, size: CAPTION-SIZE, weight: 600, fill: VIOLET, ..flat, ..tracked(0.45pt), upper("Issue " + c.issue + "  /  " + c.date)))
+    block(width: MEASURE * 0.8, text(font: DISPLAY, size: 22pt, weight: 600, fill: INK, ..edges(22pt, 24pt, HALF-SERIF), c.title))
+    v(12pt)
+    block(width: MEASURE * 0.85, text(font: SERIF, size: 9pt, style: "italic", fill: SLATE, ..edges(9pt, 12.5pt, HALF-SERIF), c.deck))
+    v(16pt)
+    rect(width: RUNNING-TICK-WIDTH, height: OPENER-TICK, fill: SIGNAL-ORANGE, stroke: none)
+    place(bottom + left, block(width: MEASURE, {
+      line(length: 100%, stroke: CONTENTS-RULE + COOL-GRAY)
+      v(12pt)
+      let cap = (top-edge: "cap-height", bottom-edge: "baseline")
+      grid(
+        columns: (78pt, 1fr),
+        row-gutter: 9pt,
+        align: left + bottom,
+        ..(("Made by", c.maker), ("Online", c.site), ("This issue", c.issue_url), ("Write to", c.email))
+          .map(((label, value)) => (
+            text(font: SANS, size: 6.2pt, weight: 600, fill: SLATE, ..cap, ..tracked(0.6pt), upper(label)),
+            text(font: SERIF, size: 9.5pt, fill: INK, ..cap, value),
+          ))
+          .flatten(),
+      )
+      v(14pt)
+      line(length: 100%, stroke: CONTENTS-RULE + COOL-GRAY)
+      v(9pt)
+      text(font: SERIF, size: 7.4pt, style: "italic", fill: SLATE, ..flat, COLOPHON-FACES + " Illustrations made for this issue.")
     }))
   }
 })
