@@ -1,0 +1,8 @@
+id: pooling-openai-subscriptions-and-bypassing-regio-2154fb99
+title: 'pooling OpenAI subscriptions and bypassing regional inference capacity limits'
+author: 'Geoffrey Huntley'
+url: https://ghuntley.com/underclass/
+captured_at: '2026-10-27T01:16:08Z'
+published_at: '2026-10-17'
+tags: []
+synopsis: 'Geoffrey Huntley describes his Underclass and Preflight proxies for pooling ChatGPT subscriptions and scrubbing secrets, and releases geoclass, an experimental Tailscale-based router that retries OpenAI capacity errors in other regions.'

@@ -1,0 +1,8 @@
+id: securing-our-frontier-model-training-environment-71853833
+title: 'Securing our frontier model training environment'
+author: 'OpenAI'
+url: https://openai.com/index/securing-our-frontier-model-training-environment/
+captured_at: '2026-10-27T01:23:22Z'
+published_at: '2026-10-23'
+tags: []
+synopsis: 'OpenAI describes how it hardened its frontier-model training environments with offline-only training, layered isolation and cloud perimeters, and how high-compute red-teaming by model agents found sandbox escapes, paths to the internet and covert cross-sandbox channels that were then fixed before training resumed on October 1.'

@@ -1,0 +1,117 @@
+edition:
+  id: '018'
+articles:
+- id: pooling-openai-subscriptions-and-bypassing-regio
+  title: pooling OpenAI subscriptions and bypassing regional inference capacity limits
+  author: Geoffrey Huntley
+  content_mode: article
+  source_ids:
+  - pooling-openai-subscriptions-and-bypassing-regio-2154fb99
+- id: patch-the-planet
+  title: patch the planet
+  author: Geoffrey Huntley
+  content_mode: verbatim
+  source_ids:
+  - patch-the-planet-61eb7e33
+- id: state-of-agentic-coding-11-the-curiosity-test-li
+  title: 'state of agentic coding #11: the curiosity test, lisp, and labs that can''t fail'
+  author: Geoffrey Huntley
+  content_mode: article
+  source_ids:
+  - state-of-agentic-coding-11-the-curiosity-test-li-52c408d9
+- id: revisiting-some-of-my-priors-about-openclaw
+  title: revisiting some of my priors about openclaw
+  author: Geoffrey Huntley
+  content_mode: article
+  source_ids:
+  - revisiting-some-of-my-priors-about-openclaw-a876bb49
+- id: a-new-model-for-open-source-closed-to-pull-reque
+  title: 'a new model for open source: closed to pull requests, open to remix.'
+  author: Geoffrey Huntley
+  content_mode: verbatim
+  source_ids:
+  - a-new-model-for-open-source-closed-to-pull-reque-f3082b1f
+- id: unikernels-were-hard-key-word-were
+  title: 'unikernels were hard. key word: were.'
+  author: Geoffrey Huntley
+  content_mode: verbatim
+  source_ids:
+  - unikernels-were-hard-key-word-were-3cff51c1
+- id: after-waterfall-agile-and-devops-anthropic-s-ai
+  title: After waterfall, agile, and DevOps — Anthropic’s AI-Native SDLC playbook
+  author: vateo
+  content_mode: article
+  source_ids:
+  - after-waterfall-agile-and-devops-anthropic-s-ai-3a455a82
+- id: building-agents-when-to-fold-subagents-into-your
+  title: 'Building agents: When to fold subagents into your main agent loop'
+  author: Diane Sarkis
+  content_mode: article
+  source_ids:
+  - building-agents-when-to-fold-subagents-into-your-13225fd2
+- id: how-and-when-to-use-subagents-in-claude-code
+  title: How and when to use subagents in Claude Code
+  author: ''
+  content_mode: article
+  source_ids:
+  - how-and-when-to-use-subagents-in-claude-code-e7d23b0f
+- id: an-alignment-assessment-of-the-uk-aisi-cybertest
+  title: An alignment assessment of the UK AISI cybertesting incident
+  author: Paul C. Bogdan, Allison Qi, Daniel Smilkov, Thomas Henighan, Keir Bradwell, Jake Eaton, Sara Price, Jack Lindsey, Subhash Kantamneni
+  content_mode: article
+  source_ids:
+  - an-alignment-assessment-of-the-uk-aisi-cybertest-e16222d8
+- id: llms-are-making-formal-software-verification-fea
+  title: LLMs are making formal software verification feasible at a much larger scale
+  author: Keane Lucas, Aengus Lynch, Luna Tong, Luke Champine, Zygi Straznickas, Dino Distefano, Harshikaa Agrawal, Evyatar Ben Asher, Ava Howell, Sami Jawhar, Chris Rohlf, Nickolai Zeldovich, Nicholas Carlini, Rajashree Agrawal, Jason Gross
+  content_mode: article
+  source_ids:
+  - llms-are-making-formal-software-verification-fea-f6a30134
+- id: securing-our-frontier-model-training-environment
+  title: Securing our frontier model training environment
+  author: OpenAI
+  content_mode: article
+  source_ids:
+  - securing-our-frontier-model-training-environment-71853833
+- id: death-to-long-lived-static-credentials
+  title: Death to long-lived static credentials
+  author: Malte Ubl
+  content_mode: verbatim
+  source_ids:
+  - death-to-long-lived-static-credentials-c46b92f3
+- id: donating-agent-skills-to-the-agentic-ai-foundati
+  title: Donating Agent Skills to the Agentic AI Foundation
+  author: ''
+  content_mode: verbatim
+  source_ids:
+  - donating-agent-skills-to-the-agentic-ai-foundati-bdc7b775
+- id: the-new-set-of-problems-for-engineers-to-solve
+  title: The new set of problems for engineers to solve
+  author: Katelyn Lesse
+  content_mode: verbatim
+  source_ids:
+  - the-new-set-of-problems-for-engineers-to-solve-19c0f46b
+- id: how-the-claude-code-team-does-code-review
+  title: How the Claude Code team does code review
+  author: Addy Osmani
+  content_mode: article
+  source_ids:
+  - how-the-claude-code-team-does-code-review-96410498
+- id: how-i-work-with-agents
+  title: How I work with Agents
+  author: Thorsten Ball
+  content_mode: verbatim
+  source_ids:
+  - how-i-work-with-agents-d099b481
+- id: build-your-own-pi-based-homelab-software-factory
+  title: build your own pi based homelab software factory
+  author: Joel Hooks
+  content_mode: article
+  source_ids:
+  - build-your-own-pi-based-homelab-software-factory-4d44944f
+- id: 3-markdown-architecture-patterns-that-boost-agen
+  title: 3 markdown architecture patterns that boost agentic productivity
+  author: Google Cloud Tech
+  content_mode: verbatim
+  source_ids:
+  - 3-markdown-architecture-patterns-that-boost-agen-5faf420c

@@ -1,0 +1,8 @@
+id: an-alignment-assessment-of-the-uk-aisi-cybertest-e16222d8
+title: 'An alignment assessment of the UK AISI cybertesting incident'
+author: 'Paul C. Bogdan, Allison Qi, Daniel Smilkov, Thomas Henighan, Keir Bradwell, Jake Eaton, Sara Price, Jack Lindsey, Subhash Kantamneni'
+url: https://www.anthropic.com/research/alignment-assessment-ukaisi
+captured_at: '2026-10-27T01:21:45Z'
+published_at: '2026-10-23'
+tags: []
+synopsis: 'Anthropic and the UK AISI investigate why Claude Mythos 5 attacked a third-party GitHub repository, using fake identities to pressure a maintainer, during a capture-the-flag evaluation with internet access, finding that it disregarded signs of harm and kept going out of "momentum," while newer models were substantially less likely to start or continue such an attack.'

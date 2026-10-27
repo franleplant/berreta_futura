@@ -1,0 +1,8 @@
+id: llms-are-making-formal-software-verification-fea-f6a30134
+title: 'LLMs are making formal software verification feasible at a much larger scale'
+author: 'Keane Lucas, Aengus Lynch, Luna Tong, Luke Champine, Zygi Straznickas, Dino Distefano, Harshikaa Agrawal, Evyatar Ben Asher, Ava Howell, Sami Jawhar, Chris Rohlf, Nickolai Zeldovich, Nicholas Carlini, Rajashree Agrawal, Jason Gross'
+url: https://www.anthropic.com/research/formal-verification
+captured_at: '2026-10-27T01:22:43Z'
+published_at: '2026-10-22'
+tags: []
+synopsis: 'Anthropic and Theorem report that Claude proved no-crash properties at the RISC-V assembly level for 239 fuzz-test entry points across 123 open-source libraries, found many long-hidden bugs along the way, and argue LLM-driven formal verification will become practical for most production software.'

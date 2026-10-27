@@ -1,0 +1,8 @@
+id: a-new-model-for-open-source-closed-to-pull-reque-f3082b1f
+title: 'a new model for open source: closed to pull requests, open to remix.'
+author: 'Geoffrey Huntley'
+url: https://ghuntley.com/remix/
+captured_at: '2026-10-27T01:17:52Z'
+published_at: '2026-10-15'
+tags: []
+synopsis: 'Geoffrey Huntley proposes a "remix model" for open source in which maintainers disable pull requests and instead let others adapt software through independent Nix overlays, with upstream incorporation optional and no maintenance obligation.'

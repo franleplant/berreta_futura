@@ -1,0 +1,8 @@
+id: 3-markdown-architecture-patterns-that-boost-agen-5faf420c
+title: '3 markdown architecture patterns that boost agentic productivity'
+author: 'Google Cloud Tech'
+url: https://x.com/GoogleCloudTech/article/2113443701938884710
+captured_at: '2026-10-27T01:26:01Z'
+published_at: '2026-10-23'
+tags: []
+synopsis: 'The article recommends splitting coding-agent guidance into three Markdown files, AGENTS.md for global conventions, DESIGN.md for UI design constraints, and SKILL.md for progressively loaded task-specific instructions, and cites a benchmark showing AGENTS.md reduces diff size, time, and tokens.'

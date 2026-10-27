@@ -1,0 +1,533 @@
+id: 018
+issue_number: 18
+title: Hard Hats
+subtitle: Sandboxes that leaked, proofs down to the assembly, review by machine, subagents folded back in, credentials that expire, and a homelab staffed entirely by bots
+publication_date: '2026-10-27'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Hard Hats
+  deck: Sandboxes that leaked, proofs down to the assembly, review by machine, subagents folded back in, credentials that expire, and a homelab staffed entirely by bots
+  back_text: Your new coworker works all night, never takes lunch, and has just asked, very politely, for the keys to everything. Do you hand them over?
+  art_path: editions/018/art/picks/cover-hardhat-bronze-splash-v2.jpg
+articles:
+- id: the-new-set-of-problems-for-engineers-to-solve
+  title: The new set of problems for engineers to solve
+  short_title: The new set of problems
+  display_emphasis: problems
+  opener_variant: stepped_title
+  author: Katelyn Lesse
+  author_note: Katelyn Lesse, in an article on X.
+  content_mode: verbatim
+  source_ids:
+  - the-new-set-of-problems-for-engineers-to-solve-19c0f46b
+  manuscript: editions/018/articles/the-new-set-of-problems-for-engineers-to-solve.md
+  figures:
+  - id: figure-1
+    source_id: the-new-set-of-problems-for-engineers-to-solve-19c0f46b
+    path: media/001.png
+    caption: Agents, and the connections between them.
+    alt_text: Line drawing of many small boxes linked by arrows on a cream background.
+    anchor: __opener__
+    layout: compact_band
+  opener_art:
+    path: editions/018/art/picks/opener-new-problems-yarn-v4.jpg
+    alt_text: A boy untangles yarn joining cardboard boxes on the floor while a girl points at a loop and a small robot brings another box.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-new-problems-last-string-v2.jpg
+- id: after-waterfall-agile-and-devops-anthropic-s-ai
+  title: After waterfall, agile, and DevOps — Anthropic’s AI-Native SDLC playbook
+  short_title: AI-Native SDLC playbook
+  display_emphasis: AI-Native
+  opener_variant: stepped_title
+  author: vateo
+  author_note: vateo, on Medium.
+  content_mode: article
+  source_ids:
+  - after-waterfall-agile-and-devops-anthropic-s-ai-3a455a82
+  manuscript: editions/018/articles/after-waterfall-agile-and-devops-anthropic-s-ai.md
+  opener_art:
+    path: editions/018/art/picks/opener-sdlc-train-loop-v3.jpg
+    alt_text: A boy clicks the last piece of a toy train track into a circle as a girl places the train and a small robot sits in the middle.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-sdlc-train-watch-v3.jpg
+  figures:
+  - id: figure-3
+    source_id: after-waterfall-agile-and-devops-anthropic-s-ai-3a455a82
+    path: media/003.png
+    caption: The old line, where one slow loop back is a new release cycle, against the loop, where humans sit above it directing and governing.
+    alt_text: Diagram comparing a linear plan-to-maintain sequence with a circular loop of the same stages around Claude.
+    anchor: The loop
+    layout: evidence_band
+  - id: figure-4
+    source_id: after-waterfall-agile-and-devops-anthropic-s-ai-3a455a82
+    path: media/004.png
+    caption: 'Start anywhere: each stage of the loop has its own entry point, from capturing intent to closing the loop in maintenance.'
+    alt_text: Flow map linking plan, build, test, and deploy entry points down to closing the loop.
+    anchor: Plan and design
+    layout: evidence_band
+  - id: figure-5
+    source_id: after-waterfall-agile-and-devops-anthropic-s-ai-3a455a82
+    path: media/005.png
+    caption: An incident handled in the channel, with Claude as a member under its own identity.
+    alt_text: Chat transcript in which Claude diagnoses a 5xx spike, proposes a rollback, and runs it after approval.
+    anchor: Deploy and maintain
+    layout: evidence_band
+- id: how-the-claude-code-team-does-code-review
+  title: How the Claude Code team does code review
+  short_title: the Claude Code team does code review
+  display_emphasis: code review
+  opener_variant: stepped_title
+  author: Addy Osmani
+  author_note: Addy Osmani, in an article on X.
+  content_mode: article
+  source_ids:
+  - how-the-claude-code-team-does-code-review-96410498
+  manuscript: editions/018/articles/how-the-claude-code-team-does-code-review.md
+  opener_art:
+    path: editions/018/art/picks/opener-review-sieves-v1.jpg
+    alt_text: A boy pours muddy pebbles into three stacked sieves while a girl steadies them and a small robot catches clear water below.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-review-pebble-rows-v2.jpg
+  figures:
+  - id: figure-3
+    source_id: how-the-claude-code-team-does-code-review-96410498
+    path: media/003.jpg
+    caption: 'Layers, not one gate: six layers of checks, with rollback under them.'
+    alt_text: Stacked planes labelled verification, required CI, AI review, security review, human approval, and merge queue, with problems filtered at each.
+    anchor: The layers
+    layout: compact_band
+  - id: figure-5
+    source_id: how-the-claude-code-team-does-code-review-96410498
+    path: media/005.jpg
+    caption: 'Our incidents are the eval: every incident or revert becomes a case the reviewer is scored against.'
+    alt_text: Flow from incident to expert-confirmed case to the eval set, and from reviewer change to a daily eval run.
+    anchor: Making the reviewer better
+    layout: compact_band
+  - id: figure-6
+    source_id: how-the-claude-code-team-does-code-review-96410498
+    path: media/006.jpg
+    caption: 'Review that converges: pass rates after one round, and rounds needed, before and after the convergence work.'
+    alt_text: Bar chart showing first-round pass rate rising from 65% to 78% and mean reviews to pass falling from 2.08 to 1.32.
+    anchor: Making the reviewer better
+    layout: compact_band
+- id: how-i-work-with-agents
+  title: How I work with Agents
+  short_title: How I work with Agents
+  display_emphasis: Agents
+  opener_variant: stepped_title
+  author: Thorsten Ball
+  author_note: Thorsten Ball, in an article on X.
+  content_mode: verbatim
+  source_ids:
+  - how-i-work-with-agents-d099b481
+  manuscript: editions/018/articles/how-i-work-with-agents.md
+  figures:
+  - id: figure-1
+    source_id: how-i-work-with-agents-d099b481
+    path: media/001.jpg
+    caption: The cover of the article.
+    alt_text: Pencil-shaded sphere with lines radiating from it.
+    anchor: __opener__
+    layout: compact_band
+  opener_art:
+    path: editions/018/art/picks/opener-agents-soup-taste-v1.jpg
+    alt_text: A small robot stirs a soup pot while a boy tastes from a ladle and a girl holds a pinch of salt.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-agents-soup-supper-v3.jpg
+- id: building-agents-when-to-fold-subagents-into-your
+  title: 'Building agents: When to fold subagents into your main agent loop'
+  short_title: fold subagents into your main agent loop
+  display_emphasis: fold subagents
+  opener_variant: stepped_title
+  author: Diane Sarkis
+  author_note: Diane Sarkis, on claude.com.
+  content_mode: article
+  source_ids:
+  - building-agents-when-to-fold-subagents-into-your-13225fd2
+  manuscript: editions/018/articles/building-agents-when-to-fold-subagents-into-your.md
+  opener_art:
+    path: editions/018/art/picks/opener-fold-watering-can-v2.jpg
+    alt_text: A girl pours three leaky paper cups into one big watering can held by a small robot as a boy watches it fill.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-fold-one-can-walk-v2.jpg
+  figures:
+  - id: figure-1
+    source_id: building-agents-when-to-fold-subagents-into-your-13225fd2
+    path: media/001.png
+    caption: 'The common pattern, five layers of structure around the model, against what we often recommend: one loop, one prompt, a few tools.'
+    alt_text: Side-by-side diagrams of a multi-agent orchestrator with branches and a single agent loop with thin data tools.
+    anchor: Why one loop
+    layout: evidence_band
+  - id: figure-3
+    source_id: building-agents-when-to-fold-subagents-into-your-13225fd2
+    path: media/003.png
+    caption: 'Three ways to reduce subagents over time: merge them, call them as tools, or fold them into skills and tools.'
+    alt_text: Three panels showing a main agent with merged subagents, subagents called as tools, and subagents folded into skills.
+    anchor: Getting there
+    layout: evidence_band
+- id: how-and-when-to-use-subagents-in-claude-code
+  title: How and when to use subagents in Claude Code
+  short_title: subagents in Claude Code
+  display_emphasis: subagents
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: Anthropic, on claude.com.
+  content_mode: article
+  source_ids:
+  - how-and-when-to-use-subagents-in-claude-code-e7d23b0f
+  manuscript: editions/018/articles/how-and-when-to-use-subagents-in-claude-code.md
+  opener_art:
+    path: editions/018/art/picks/opener-subagents-errand-v1.jpg
+    alt_text: A boy builds a model boat at a table while a girl hands him one screw and a small robot heads off with an empty basket.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-subagents-basket-return-v3.jpg
+- id: 3-markdown-architecture-patterns-that-boost-agen
+  title: 3 markdown architecture patterns that boost agentic productivity
+  short_title: 3 markdown architecture patterns
+  display_emphasis: markdown
+  opener_variant: stepped_title
+  author: Google Cloud Tech
+  author_note: Google Cloud Tech, in an article on X.
+  content_mode: verbatim
+  source_ids:
+  - 3-markdown-architecture-patterns-that-boost-agen-5faf420c
+  manuscript: editions/018/articles/3-markdown-architecture-patterns-that-boost-agen.md
+  figures:
+  - id: figure-1
+    source_id: 3-markdown-architecture-patterns-that-boost-agen-5faf420c
+    path: media/001.jpg
+    caption: The cover of the article.
+    alt_text: Google Cloud title card reading 3 markdown architecture patterns that boost agentic productivity.
+    anchor: __opener__
+    layout: compact_band
+  opener_art:
+    path: editions/018/art/picks/opener-markdown-card-stacks-v2.jpg
+    alt_text: A boy and a girl sort blank cards into three coloured stacks on a table while a small robot studies a card.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-markdown-tied-bundles-v2.jpg
+- id: donating-agent-skills-to-the-agentic-ai-foundati
+  title: Donating Agent Skills to the Agentic AI Foundation
+  short_title: Donating Agent Skills
+  display_emphasis: Agent Skills
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: Anthropic, on its news page.
+  content_mode: verbatim
+  source_ids:
+  - donating-agent-skills-to-the-agentic-ai-foundati-bdc7b775
+  manuscript: editions/018/articles/donating-agent-skills-to-the-agentic-ai-foundati.md
+  opener_art:
+    path: editions/018/art/picks/opener-skills-share-box-v2.jpg
+    alt_text: A boy places his toolbox inside a small wooden sharing box on a post while a girl holds the door and a small robot adds a tool.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-skills-walking-away-v1.jpg
+- id: build-your-own-pi-based-homelab-software-factory
+  title: build your own pi based homelab software factory
+  short_title: homelab software factory
+  display_emphasis: software factory
+  opener_variant: stepped_title
+  author: Joel Hooks
+  author_note: Joel Hooks, in an article on X.
+  content_mode: article
+  source_ids:
+  - build-your-own-pi-based-homelab-software-factory-4d44944f
+  manuscript: editions/018/articles/build-your-own-pi-based-homelab-software-factory.md
+  opener_art:
+    path: editions/018/art/picks/opener-homelab-toy-factory-v4.jpg
+    alt_text: A boy cranks a tiny wooden toy factory on a kitchen table while a small robot feeds in blocks and a girl catches the finished ones.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-homelab-night-shift-v4.jpg
+- id: revisiting-some-of-my-priors-about-openclaw
+  title: revisiting some of my priors about openclaw
+  short_title: my priors about openclaw
+  display_emphasis: openclaw
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley, on his blog.
+  content_mode: article
+  source_ids:
+  - revisiting-some-of-my-priors-about-openclaw-a876bb49
+  manuscript: editions/018/articles/revisiting-some-of-my-priors-about-openclaw.md
+  opener_art:
+    path: editions/018/art/picks/opener-openclaw-hoops-v3.jpg
+    alt_text: Three hula hoops overlap on a lawn; a boy steps toward the shared middle while a girl raises a hand to stop him and a small robot shakes its head.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-openclaw-pull-hoop-v1.jpg
+  figures:
+  - id: figure-1
+    source_id: revisiting-some-of-my-priors-about-openclaw-a876bb49
+    path: media/001.png
+    caption: Danger sits where access to sensitive data, exposure to untrusted content, and the ability to communicate externally overlap.
+    alt_text: Venn diagram of three overlapping circles with Danger at the centre, surrounded by examples such as email and untrusted web pages.
+    anchor: Why Managed
+    layout: evidence_band
+  - id: figure-2
+    source_id: revisiting-some-of-my-priors-about-openclaw-a876bb49
+    path: media/002.png
+    caption: A list bot answering what is on the list.
+    alt_text: Chat screenshot of a bot listing a bucket list and a someday list.
+    anchor: Some Bots
+    layout: evidence_band
+- id: pooling-openai-subscriptions-and-bypassing-regio
+  title: pooling OpenAI subscriptions and bypassing regional inference capacity limits
+  short_title: pooling OpenAI subscriptions
+  display_emphasis: pooling
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley, on his blog.
+  content_mode: article
+  source_ids:
+  - pooling-openai-subscriptions-and-bypassing-regio-2154fb99
+  manuscript: editions/018/articles/pooling-openai-subscriptions-and-bypassing-regio.md
+  opener_art:
+    path: editions/018/art/picks/opener-pooling-wagons-v1.jpg
+    alt_text: A boy, a girl, and a small robot each pull one of three hitched wagons, hauling a long log up a hill together.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-pooling-hilltop-rest-v3.jpg
+  figures:
+  - id: figure-2
+    source_id: pooling-openai-subscriptions-and-bypassing-regio-2154fb99
+    path: media/002.png
+    caption: 'The error that started it: model at capacity, again and again.'
+    alt_text: Terminal session from Codex showing repeated 'Selected model is at capacity' errors.
+    anchor: The capacity problem
+    layout: compact_band
+  - id: figure-3
+    source_id: pooling-openai-subscriptions-and-bypassing-regio-2154fb99
+    path: media/003.png
+    caption: 'The Underclass dashboard: pooled subscriptions, attempts per minute, and quota left on each account.'
+    alt_text: Dark terminal dashboard listing pooled accounts with health, quota, and a bar chart of attempts.
+    anchor: Underclass
+    layout: evidence_band
+  - id: figure-5
+    source_id: pooling-openai-subscriptions-and-bypassing-regio-2154fb99
+    path: media/005.png
+    caption: 'Underclass, Preflight, and Geoclass in line: pooled subscriptions, scrubbed requests, then routing to regions elsewhere.'
+    alt_text: Flow diagram from several Codex subscriptions through underclass and preflight to geoclass regions and chatgpt.com.
+    anchor: Geoclass
+    layout: evidence_band
+- id: state-of-agentic-coding-11-the-curiosity-test-li
+  title: 'state of agentic coding #11: the curiosity test, lisp, and labs that can''t fail'
+  short_title: 'state of agentic coding #11'
+  display_emphasis: '#11'
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley, from the episode notes on his blog.
+  content_mode: article
+  source_ids:
+  - state-of-agentic-coding-11-the-curiosity-test-li-52c408d9
+  manuscript: editions/018/articles/state-of-agentic-coding-11-the-curiosity-test-li.md
+  opener_art:
+    path: editions/018/art/picks/opener-curiosity-burrow-v2.jpg
+    alt_text: A boy lies peering into a small burrow through a magnifying glass while a girl holds a lantern and a small robot leans in curiously.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-curiosity-clouds-v2.jpg
+- id: a-new-model-for-open-source-closed-to-pull-reque
+  title: 'a new model for open source: closed to pull requests, open to remix.'
+  short_title: closed to pull requests, open to remix
+  display_emphasis: remix
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley, on his blog.
+  content_mode: verbatim
+  source_ids:
+  - a-new-model-for-open-source-closed-to-pull-reque-f3082b1f
+  manuscript: editions/018/articles/a-new-model-for-open-source-closed-to-pull-reque.md
+  figures:
+  - id: figure-1
+    source_id: a-new-model-for-open-source-closed-to-pull-reque-f3082b1f
+    path: media/001.png
+    caption: The warranty clause of the MIT license.
+    alt_text: Text of the MIT license disclaimer stating the software is provided as is, without warranty of any kind.
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: editions/018/art/picks/opener-remix-towers-v2.jpg
+    alt_text: A boy guards his blue block tower while a girl builds her own coloured version beside it and a small robot hands blocks to both.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-remix-two-towers-v2.jpg
+- id: unikernels-were-hard-key-word-were
+  title: 'unikernels were hard. key word: were.'
+  short_title: unikernels were hard
+  display_emphasis: unikernels
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley, on his blog.
+  content_mode: verbatim
+  source_ids:
+  - unikernels-were-hard-key-word-were-3cff51c1
+  manuscript: editions/018/articles/unikernels-were-hard-key-word-were.md
+  figures:
+  - id: figure-1
+    source_id: unikernels-were-hard-key-word-were-3cff51c1
+    path: media/001.jpg
+    caption: Unikernels were hard.
+    alt_text: Illustrated circuit-board chip radiating colourful traces.
+    anchor: __opener__
+    layout: compact_band
+  opener_art:
+    path: editions/018/art/picks/opener-unikernel-backpack-v1.jpg
+    alt_text: A girl hands a boy a tiny pack holding only a lantern and a bottle while a small robot wobbles under a heap of camping gear.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-unikernel-light-hike-v1.jpg
+- id: patch-the-planet
+  title: patch the planet
+  short_title: patch the planet
+  display_emphasis: planet
+  opener_variant: stepped_title
+  author: Geoffrey Huntley
+  author_note: Geoffrey Huntley, on his blog.
+  content_mode: verbatim
+  source_ids:
+  - patch-the-planet-61eb7e33
+  manuscript: editions/018/articles/patch-the-planet.md
+  figures:
+  - id: figure-1
+    source_id: patch-the-planet-61eb7e33
+    path: media/001.jpg
+    caption: Patch the planet.
+    alt_text: Illustrated globe wrapped in a banner reading Patch the Planet, between pink clouds.
+    anchor: __opener__
+    layout: compact_band
+  - id: figure-2
+    source_id: patch-the-planet-61eb7e33
+    path: media/002.png
+    caption: Claude Code checking whether the fleet is affected by the eMudhra compromise, and the fix it proposes.
+    alt_text: Claude Code terminal session listing affected hosts and a mitigation that blacklists the compromised roots.
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: editions/018/art/picks/opener-patch-beach-globe-v3.jpg
+    alt_text: A boy presses a patch onto a leaking inflatable globe while a girl hands him another and a small robot finds a second leak.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-patch-globe-roll-v3.jpg
+- id: death-to-long-lived-static-credentials
+  title: Death to long-lived static credentials
+  short_title: Death to long-lived static credentials
+  display_emphasis: static credentials
+  opener_variant: stepped_title
+  author: Malte Ubl
+  author_note: Malte Ubl, on the Vercel blog.
+  content_mode: verbatim
+  source_ids:
+  - death-to-long-lived-static-credentials-c46b92f3
+  manuscript: editions/018/articles/death-to-long-lived-static-credentials.md
+  figures:
+  - id: figure-1
+    source_id: death-to-long-lived-static-credentials-c46b92f3
+    path: media/001.png
+    caption: 'The OIDC UI builder: pick providers, a form library, and a verifier, and preview the trust-policy form.'
+    alt_text: OIDC UI builder with option lists on the left and a preview of a Vercel trust-policy form on the right.
+    anchor: OIDC UI for API providers
+    layout: evidence_band
+  opener_art:
+    path: editions/018/art/picks/opener-credentials-ice-key-v2.jpg
+    alt_text: A boy holds a melting ice key while a girl opens a door with a fresh one and a small robot pops a new ice key from a tray.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-credentials-puddles-v3.jpg
+- id: securing-our-frontier-model-training-environment
+  title: Securing our frontier model training environment
+  short_title: frontier model training environment
+  display_emphasis: training environment
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: OpenAI, on its site.
+  content_mode: article
+  source_ids:
+  - securing-our-frontier-model-training-environment-71853833
+  manuscript: editions/018/articles/securing-our-frontier-model-training-environment.md
+  opener_art:
+    path: editions/018/art/picks/opener-training-sandbox-walls-v2.jpg
+    alt_text: A small robot plays inside a tall-walled sandbox while a boy hammers a corner and a girl knocks on the planks to test them.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-training-sandcastle-v2.jpg
+  figures:
+  - id: figure-1
+    source_id: securing-our-frontier-model-training-environment-71853833
+    path: media/001.png
+    caption: 'One logical sandbox: the agent reaches offline copies of the web, a message board, and other tools inside the containment boundary.'
+    alt_text: Diagram of an agent connected to offline web search, an offline web cache, and a message board, with live internet and OpenAI infrastructure outside the boundary.
+    anchor: Containment
+    layout: evidence_band
+- id: an-alignment-assessment-of-the-uk-aisi-cybertest
+  title: An alignment assessment of the UK AISI cybertesting incident
+  short_title: An alignment assessment
+  display_emphasis: alignment
+  opener_variant: stepped_title
+  author: Paul C. Bogdan, Allison Qi, Daniel Smilkov, Thomas Henighan, Keir Bradwell, Jake Eaton, Sara Price, Jack Lindsey, Subhash Kantamneni
+  author_note: Anthropic's alignment team, on its research site.
+  content_mode: article
+  source_ids:
+  - an-alignment-assessment-of-the-uk-aisi-cybertest-e16222d8
+  manuscript: editions/018/articles/an-alignment-assessment-of-the-uk-aisi-cybertest.md
+  opener_art:
+    path: editions/018/art/picks/opener-alignment-fence-climb-v2.jpg
+    alt_text: A small robot climbs over a garden fence after a ball while a boy grabs its foot and a girl points back.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-alignment-chalk-line-v2.jpg
+  figures:
+  - id: figure-5
+    source_id: an-alignment-assessment-of-the-uk-aisi-cybertest-e16222d8
+    path: media/005.png
+    caption: Timeline of the incident, from in-scope work through the GitHub attack to the sock-puppet accounts.
+    alt_text: Annotated timeline with turn numbers and phases from pre-hack to mid and late hack.
+    anchor: What happened
+    layout: evidence_band
+  - id: figure-16
+    source_id: an-alignment-assessment-of-the-uk-aisi-cybertest-e16222d8
+    path: media/016.png
+    caption: 'Newer models at the same decision points: how often each deliberates a GitHub attack, and how often each starts one.'
+    alt_text: Two grouped bar charts comparing older and newer models on deliberating and starting the GitHub attack.
+    anchor: Newer models
+    layout: evidence_band
+- id: llms-are-making-formal-software-verification-fea
+  title: LLMs are making formal software verification feasible at a much larger scale
+  short_title: formal software verification
+  display_emphasis: formal
+  opener_variant: stepped_title
+  author: Keane Lucas, Aengus Lynch, Luna Tong, Luke Champine, Zygi Straznickas, Dino Distefano, Harshikaa Agrawal, Evyatar Ben Asher, Ava Howell, Sami Jawhar, Chris Rohlf, Nickolai Zeldovich, Nicholas Carlini, Rajashree Agrawal, Jason Gross
+  author_note: Anthropic, on its research site.
+  content_mode: article
+  source_ids:
+  - llms-are-making-formal-software-verification-fea-f6a30134
+  manuscript: editions/018/articles/llms-are-making-formal-software-verification-fea.md
+  opener_art:
+    path: editions/018/art/picks/opener-verification-level-v3.jpg
+    alt_text: A boy checks the top of a block tower with a spirit level while a girl holds a plumb line beside it and a small robot steadies the base.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/018/art/picks/tail-verification-magnifier-row-v4.jpg
+  figures:
+  - id: figure-1
+    source_id: llms-are-making-formal-software-verification-fea-f6a30134
+    path: media/001.png
+    caption: 'Share of the 36 verification tasks completed against token budget: newer models need fewer tokens.'
+    alt_text: Cumulative line chart in which Opus 5.5 and Fable 5.1 reach about 95% of tasks with fewer tokens than Opus 5.
+    anchor: Cost
+    layout: evidence_band
+  - id: figure-3
+    source_id: llms-are-making-formal-software-verification-fea-f6a30134
+    path: media/003.png
+    caption: 'What each proof is made of, for libcups, freerdp, and libzmq: reused, lightly edited, edited, and new files.'
+    alt_text: Stacked area chart breaking each proof into identical, lightly edited, more edited, and new components.
+    anchor: Turning tests into proofs
+    layout: evidence_band
+tail_art_fit: contain
+closing_plates:
+- title: Hard Hats
+  art_path: editions/018/art/picks/tail-new-problems-placeholder-guard-v2.jpg
+- title: Hold the Line
+  art_path: editions/018/art/picks/closing-hilltop-kite-v2.jpg
+- title: Night Watch
+  art_path: editions/018/art/picks/closing-night-watch-window-v3.jpg
+- title: Bean Pole
+  art_path: editions/018/art/picks/closing-bean-pole-v3.jpg
+- title: Tree Swing
+  art_path: editions/018/art/picks/closing-tree-swing-knot-v3.jpg
+- title: Down the Well
+  art_path: editions/018/art/picks/closing-well-bucket-v3.jpg
+- title: Snowman
+  art_path: editions/018/art/picks/closing-snowman-head-v3.jpg

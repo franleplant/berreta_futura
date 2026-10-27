@@ -1,0 +1,8 @@
+id: how-and-when-to-use-subagents-in-claude-code-e7d23b0f
+title: 'How and when to use subagents in Claude Code'
+author: 'Anthropic'
+url: https://claude.com/resources/articles/subagents-in-claude-code
+captured_at: '2026-10-27T01:19:49Z'
+published_at: '2026-04-07'
+tags: []
+synopsis: 'The article explains that Claude Code subagents are isolated Claude instances with their own context windows, describes when to use them (research, independent tasks, fresh perspective, verification, pipelines), how to direct them (conversation, custom subagents, CLAUDE.md, skills, hooks), and when the overhead isn''t worth it.'
