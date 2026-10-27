@@ -70,10 +70,7 @@ pub fn imposed_reader_page_plan(reader_pages: &[usize]) -> Vec<(Option<usize>, O
 
 pub fn cover_wrap_plan(page_count: usize) -> Result<Vec<(Option<usize>, Option<usize>)>> {
     let pages = section_reader_pages(page_count, "cover")?;
-    Ok(imposed_reader_page_plan(&pages)
-        .into_iter()
-        .take(1)
-        .collect())
+    Ok(imposed_reader_page_plan(&pages))
 }
 
 struct SourcePage {
