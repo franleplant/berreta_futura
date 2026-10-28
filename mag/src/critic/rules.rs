@@ -760,7 +760,7 @@ fn imposed_runs(reader: &Leg, runs: &[Vec<Run>], section: &str) -> Result<Vec<Ve
     let plan = if section == "cover" {
         cover_wrap_plan(runs.len())?
     } else {
-        imposed_reader_page_plan(&section_reader_pages(runs.len(), section)?)
+        crate::impose::section_plan(runs.len(), section)?
     };
     Ok(plan
         .into_iter()
@@ -980,7 +980,7 @@ pub fn imposition_checks(
         );
     }
     let interior_pages = ordered(section_reader_pages(page_count, "interior"), page_count);
-    let interior_plan = imposed_reader_page_plan(&interior_pages);
+    let interior_plan = crate::impose::section_plan(page_count, "interior")?;
     let interior_spreads = booklet_spread_checks(&legs.reader, &legs.interior, &interior_plan);
     if legs.interior.pages() != interior_plan.len() {
         recorder.whole(

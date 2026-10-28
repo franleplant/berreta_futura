@@ -56,7 +56,75 @@ pub fn section_reader_pages(page_count: usize, section: &str) -> Result<Vec<usiz
     if section == "cover" {
         return Ok(vec![1, 2, page_count - 1, page_count]);
     }
-    Ok((3..page_count - 1).collect())
+    Ok(std::iter::once(2).chain(3..page_count - 1).collect())
+}
+
+pub fn section_plan(
+    page_count: usize,
+    section: &str,
+) -> Result<Vec<(Option<usize>, Option<usize>)>> {
+    let pages = section_reader_pages(page_count, section)?;
+    Ok(match section {
+        "cover" => cover_wrap_plan(page_count)?,
+        "interior" => {
+            let padded: Vec<Option<usize>> = [Some(2), None]
+                .into_iter()
+                .chain((3..page_count - 1).map(Some))
+                .chain([None, None])
+                .collect();
+            booklet_spreads(padded.len())
+                .into_iter()
+                .map(|(left, right)| (padded[left - 1], padded[right - 1]))
+                .collect()
+        }
+        _ => imposed_reader_page_plan(&pages),
+    })
+}
+
+pub fn split_sheets(
+    plan: &[(Option<usize>, Option<usize>)],
+    weight: impl Fn(usize) -> usize,
+) -> [Vec<(Option<usize>, Option<usize>)>; 2] {
+    let sheets: Vec<usize> = plan
+        .chunks(2)
+        .map(|sides| {
+            sides
+                .iter()
+                .flat_map(|(l, r)| [*l, *r])
+                .flatten()
+                .map(&weight)
+                .sum()
+        })
+        .collect();
+    let total: usize = sheets.iter().sum();
+    let first = (1..sheets.len())
+        .min_by_key(|&k| (2 * sheets[..k].iter().sum::<usize>()).abs_diff(total))
+        .unwrap_or(sheets.len());
+    [plan[..2 * first].to_vec(), plan[2 * first..].to_vec()]
+}
+
+fn image_weights(doc: &Document) -> Vec<usize> {
+    doc.get_pages()
+        .into_values()
+        .map(|id| {
+            page_resources(doc, id)
+                .ok()
+                .and_then(|r| r.get(b"XObject").ok().cloned())
+                .and_then(|x| match x {
+                    Object::Dictionary(d) => Some(d),
+                    Object::Reference(id) => doc.get_dictionary(id).ok().cloned(),
+                    _ => None,
+                })
+                .map_or(0, |xobjects| {
+                    xobjects
+                        .iter()
+                        .filter_map(|(_, v)| v.as_reference().ok())
+                        .filter_map(|id| doc.get_object(id).ok()?.as_stream().ok())
+                        .map(|stream| stream.content.len())
+                        .sum()
+                })
+        })
+        .collect()
 }
 
 pub fn imposed_reader_page_plan(reader_pages: &[usize]) -> Vec<(Option<usize>, Option<usize>)> {
@@ -70,7 +138,10 @@ pub fn imposed_reader_page_plan(reader_pages: &[usize]) -> Vec<(Option<usize>, O
 
 pub fn cover_wrap_plan(page_count: usize) -> Result<Vec<(Option<usize>, Option<usize>)>> {
     let pages = section_reader_pages(page_count, "cover")?;
-    Ok(imposed_reader_page_plan(&pages))
+    Ok(imposed_reader_page_plan(&pages)
+        .into_iter()
+        .take(1)
+        .collect())
 }
 
 struct SourcePage {
@@ -81,14 +152,36 @@ struct SourcePage {
 }
 
 pub fn impose_a5_on_a4(reader_pdf: &Path, output: &Path, section: &str) -> Result<PathBuf> {
+    let pages = Document::load(reader_pdf)
+        .with_context(|| format!("reading {}", reader_pdf.display()))?
+        .get_pages()
+        .len();
+    impose_plan(reader_pdf, output, section, &section_plan(pages, section)?)
+}
+
+pub fn impose_interior_parts(reader_pdf: &Path, stem: &Path) -> Result<[PathBuf; 2]> {
+    let doc =
+        Document::load(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
+    let weights = image_weights(&doc);
+    let [first, second] = split_sheets(&section_plan(weights.len(), "interior")?, |page| {
+        weights[page - 1] + 1
+    });
+    let part = |n: usize| stem.with_file_name(format!("booklet-a4-interior-part-{n}.pdf"));
+    Ok([
+        impose_plan(reader_pdf, &part(1), "interior", &first)?,
+        impose_plan(reader_pdf, &part(2), "interior", &second)?,
+    ])
+}
+
+fn impose_plan(
+    reader_pdf: &Path,
+    output: &Path,
+    section: &str,
+    plan: &[(Option<usize>, Option<usize>)],
+) -> Result<PathBuf> {
     let mut doc =
         Document::load(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
     let page_ids: Vec<ObjectId> = doc.get_pages().into_values().collect();
-    let plan = if section == "cover" {
-        cover_wrap_plan(page_ids.len())?
-    } else {
-        imposed_reader_page_plan(&section_reader_pages(page_ids.len(), section)?)
-    };
     let sources = page_ids
         .iter()
         .map(|id| source_page(&doc, *id))
@@ -355,8 +448,18 @@ fn write_sheets(
             _ => None,
         })
         .context("trailer has no Root reference")?;
-    doc.get_dictionary_mut(root_id)?
-        .set("Pages", Object::Reference(pages_id));
+    let catalog = doc.get_dictionary_mut(root_id)?;
+    catalog.set("Pages", Object::Reference(pages_id));
+    for key in [
+        b"Outlines".as_slice(),
+        b"Names",
+        b"Dests",
+        b"StructTreeRoot",
+        b"PageLabels",
+        b"OpenAction",
+    ] {
+        catalog.remove(key);
+    }
     let mut info = Dictionary::new();
     info.set(
         "Title",
