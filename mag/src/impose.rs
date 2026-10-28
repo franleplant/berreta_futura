@@ -273,7 +273,15 @@ fn sheet(
             Some(previous) => isolate(&previous, &placed),
         });
     }
-    Ok((content.unwrap_or_default(), resources))
+    Ok((content.unwrap_or_else(blank_side_mark), resources))
+}
+
+fn blank_side_mark() -> Vec<u8> {
+    format!(
+        "q\n0 g\n{} 24 0.5 6 re\nf\nQ\n",
+        real(A4_LANDSCAPE_POINTS.0 / 2.0 - 0.25)
+    )
+    .into_bytes()
 }
 
 fn isolate(previous: &[u8], placed: &[u8]) -> Vec<u8> {
@@ -427,10 +435,8 @@ fn write_sheets(
                         .collect(),
                 ),
             );
-            if !content.is_empty() {
-                let stream = doc.add_object(lopdf::Stream::new(Dictionary::new(), content));
-                page.set("Contents", Object::Reference(stream));
-            }
+            let stream = doc.add_object(lopdf::Stream::new(Dictionary::new(), content));
+            page.set("Contents", Object::Reference(stream));
             Object::Reference(doc.add_object(page))
         })
         .collect();
@@ -492,6 +498,12 @@ mod tests {
             doc.objects.insert(id, Object::Dictionary(node));
         }
         (doc, a)
+    }
+
+    #[test]
+    fn a_side_with_no_pages_still_carries_ink_so_printers_never_skip_it() {
+        let (content, _) = sheet(&[], (None, None)).expect("an empty side imposes");
+        assert!(content.windows(3).any(|w| w == b"re\n"), "no mark drawn");
     }
 
     #[test]
