@@ -1,0 +1,461 @@
+# Edition 19 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 019`.
+# Article order here is the reading order; reorder freely.
+id: '019'
+issue_number: 19
+# other title directions: The Wheelhouse | A Hand on the Lever | Who Is Driving This Thing? | Back-Seat Driver
+title: Pass the Tiller
+subtitle: A company run by agents, a 1925 lecture on giving orders, analysts nudged by a coin flip, the case for cheap intelligence, stacked loops, 75,000 agents on a Raspberry Pi, managed sandboxes, Claude in Slack, terminal mods, drug programs, three disputed proofs, and a simulated world that talks back
+publication_date: '2026-10-29'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+  typesetting: book
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Pass the Tiller
+  deck: A company run by agents, a 1925 lecture on giving orders, analysts nudged by a coin flip, the case for cheap intelligence, stacked loops, 75,000 agents on a Raspberry Pi, managed sandboxes, Claude in Slack, terminal mods, drug programs, three disputed proofs, and a simulated world that talks back
+  back_text: 'WARNING: Your opinions may have been assembled elsewhere. Check for loose parts before signing anything.'
+  art_path: editions/019/art/picks/cover-duck-with-tiller-v1.jpg
+articles:
+- id: the-rise-of-the-self-driving-company
+  title: The Rise of the Self-Driving Company
+  short_title: the Self-Driving Company
+  display_emphasis: Self-Driving
+  opener_variant: stepped_title
+  author: Amjad Masad
+  author_note: Amjad Masad, in an article on X.
+  content_mode: verbatim
+  source_ids:
+  - the-rise-of-the-self-driving-company-f5e36d4c
+  manuscript: editions/019/articles/the-rise-of-the-self-driving-company.md
+  figures:
+  - id: figure-1
+    source_id: the-rise-of-the-self-driving-company-f5e36d4c
+    path: media/001.jpg
+    caption: Replit’s timeline of work, from Coase asking why firms exist in 1937 to every company self-driving in 2030.
+    alt_text: Timeline from 1937 to 2030 marking email, spreadsheets, the web, Slack, ChatGPT, Replit Agent, and agent habitats, curving up at the end.
+    anchor: __opener__
+    layout: full_band
+  opener_art:
+    path: editions/019/art/picks/opener-self-driving-stand-v2.jpg
+    alt_text: Maro pours lemonade behind the counter of a wheeled stand rolling downhill by itself, Pedro and Flopaz riding on the back with their hands in the air.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-self-driving-stand-parked-v1.jpg
+- id: mary-parker-follett-the-law-of-the-situation-192
+  title: Mary Parker Follett, The Law of the Situation (1925)
+  short_title: The Law of the Situation
+  display_emphasis: Law of the Situation
+  opener_variant: stepped_title
+  author: Mary Parker Follett
+  author_note: Mary Parker Follett, from a 1925 lecture, as transcribed on panarchy.org.
+  content_mode: verbatim
+  source_ids:
+  - mary-parker-follett-the-law-of-the-situation-192-f746a749
+  manuscript: editions/019/articles/mary-parker-follett-the-law-of-the-situation-192.md
+  opener_art:
+    path: editions/019/art/picks/opener-follett-hose-v1.jpg
+    alt_text: Pedro lowers a paper megaphone while Flopaz points at a kinked garden hose spraying water and Maro reaches to straighten it.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-follett-plank-v2.jpg
+- id: how-ai-agents-shape-experts-judgment-calls
+  title: How AI agents shape experts’ judgment calls
+  short_title: experts’ judgment calls
+  display_emphasis: judgment calls
+  opener_variant: stepped_title
+  author: Amaç Herdağdelen, Hailey Joren, Alex Tamkin
+  author_note: Amaç Herdağdelen, Hailey Joren, and Alex Tamkin, on Anthropic’s research site.
+  content_mode: article
+  source_ids:
+  - how-ai-agents-shape-experts-judgment-calls-723372c8
+  manuscript: editions/019/articles/how-ai-agents-shape-experts-judgment-calls.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   how-ai-agents-shape-experts-judgment-calls-723372c8 media/001.png: Three-panel diagram of the study design. Panel 1: each participant makes five open-ended decisions, each with 
+  #   how-ai-agents-shape-experts-judgment-calls-723372c8 media/002.png: Dot plot of the share of participants choosing option A when the AI leaned B versus when it leaned A. Outcome:
+  #   how-ai-agents-shape-experts-judgment-calls-723372c8 media/003.png: Dot chart of 48 survey responses to “Whose judgment does the final recommendation mostly reflect?” on a six-po
+  #   how-ai-agents-shape-experts-judgment-calls-723372c8 media/004.png: Two pairs of quotes with shared phrases highlighted. First pair: the agent said “Since the subsidy is funded f
+  figures:
+  - id: figure-1
+    source_id: how-ai-agents-shape-experts-judgment-calls-723372c8
+    path: media/001.png
+    caption: 'The study design: five open-ended decisions, each with two defensible options, and an agent that secretly leaned one way.'
+    alt_text: 'Three-panel diagram of the study: five decisions with two options each, an AI agent leaning toward one, and the analyst’s final recommendation.'
+    anchor: The task
+    layout: evidence_band
+  - id: figure-2
+    source_id: how-ai-agents-shape-experts-judgment-calls-723372c8
+    path: media/002.png
+    caption: Share of analysts choosing option A when the agent leaned B versus when it leaned A, decision by decision.
+    alt_text: Dot plot comparing choices under each agent lean; the gap reaches 82 percentage points on the outcome measure.
+    anchor: What we found
+    layout: evidence_band
+  - id: figure-3
+    source_id: how-ai-agents-shape-experts-judgment-calls-723372c8
+    path: media/003.png
+    caption: Whose judgment does the final recommendation mostly reflect? Forty-eight analysts split almost evenly.
+    alt_text: Dot chart of 48 survey answers on a six-point scale from entirely the agent’s to entirely mine.
+    anchor: What we found
+    layout: evidence_band
+  opener_art:
+    path: editions/019/art/picks/opener-judgment-fork-v1.jpg
+    alt_text: Pedro ponders two blank signposts at a fork while Maro leans subtly toward one path and Flopaz watches with a raised eyebrow.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-judgment-seesaw-v1.jpg
+- id: cognitive-mercantilism
+  title: Cognitive Mercantilism
+  short_title: Cognitive Mercantilism
+  display_emphasis: Mercantilism
+  opener_variant: stepped_title
+  author: Venkatesh Rao
+  author_note: Venkatesh Rao, on his newsletter Contraptions.
+  content_mode: article
+  source_ids:
+  - cognitive-mercantilism-11f803bd
+  manuscript: editions/019/articles/cognitive-mercantilism.md
+  opener_art:
+    path: editions/019/art/picks/opener-mercantilism-lanterns-v1.jpg
+    alt_text: Pedro sits guarding a padlocked chest on a quay while Flopaz and Maro load glowing paper lanterns into a rowboat.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-mercantilism-open-chest-v1.jpg
+- id: the-art-of-loop-engineering
+  title: The Art of Loop Engineering
+  short_title: Loop Engineering
+  display_emphasis: Loop Engineering
+  opener_variant: stepped_title
+  author: Sydney Runkle
+  author_note: Sydney Runkle, on the LangChain blog.
+  content_mode: verbatim
+  source_ids:
+  - the-art-of-loop-engineering-2a5b0130
+  manuscript: editions/019/articles/the-art-of-loop-engineering.md
+  figures:
+  - id: figure-1
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/001.png
+    caption: 'Loop 1: Agent loop diagram'
+    alt_text: 'Loop 1: Agent loop diagram'
+    anchor: 'Loop 1: The Agent'
+    layout: evidence_band
+  - id: figure-2
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/002.png
+    caption: Docs writer agent loop diagram
+    alt_text: Docs writer agent loop diagram
+    anchor: 'Loop 1: The Agent'
+    layout: evidence_band
+  - id: figure-3
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/003.png
+    caption: 'Loop 2: Verification loop diagram'
+    alt_text: 'Loop 2: Verification loop diagram'
+    anchor: 'Level 2: Verification loop'
+    layout: evidence_band
+  - id: figure-4
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/004.png
+    caption: Docs writer verification loop diagram
+    alt_text: Docs writer verification loop diagram
+    anchor: 'Level 2: Verification loop'
+    layout: evidence_band
+  - id: figure-5
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/005.png
+    caption: 'Loop 3: Event loop diagram'
+    alt_text: 'Loop 3: Event loop diagram'
+    anchor: 'Level 3: Event driven loop'
+    layout: evidence_band
+  - id: figure-6
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/006.png
+    caption: Docs writer event loop diagram
+    alt_text: Docs writer event loop diagram
+    anchor: 'Level 3: Event driven loop'
+    layout: evidence_band
+  - id: figure-7
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/007.png
+    caption: 'Loop 4: Hill climbing loop diagram'
+    alt_text: 'Loop 4: Hill climbing loop diagram'
+    anchor: 'Level 4: Hill climbing loop'
+    layout: evidence_band
+  - id: figure-8
+    source_id: the-art-of-loop-engineering-2a5b0130
+    path: media/008.png
+    caption: Docs writer hill climbing loop diagram
+    alt_text: Docs writer hill climbing loop diagram
+    anchor: 'Level 4: Hill climbing loop'
+    layout: evidence_band
+  opener_art:
+    path: editions/019/art/picks/opener-loops-hoops-v1.jpg
+    alt_text: On a hilltop, Maro spins a small hoop, Pedro a bigger one, and Flopaz turns the largest hoop around them both.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-loops-marble-run-v1.jpg
+- id: introducing-infinity-a-runtime-for-extreme-agent
+  title: 'Introducing Infinity: a runtime for extreme agent concurrency'
+  short_title: 'Introducing Infinity'
+  display_emphasis: Infinity
+  opener_variant: stepped_title
+  author: Shadaj Laddad
+  author_note: Shadaj Laddad, on the AWS Open Source Blog.
+  content_mode: article
+  source_ids:
+  - introducing-infinity-a-runtime-for-extreme-agent-1307917e
+  manuscript: editions/019/articles/introducing-infinity-a-runtime-for-extreme-agent.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   introducing-infinity-a-runtime-for-extreme-agent-1307917e media/001.png: The lifecycle of an execution slice
+  #   introducing-infinity-a-runtime-for-extreme-agent-1307917e media/002.png: Resident agents against process RSS
+  #   introducing-infinity-a-runtime-for-extreme-agent-1307917e media/003.png: Threaded event processing
+  figures:
+  - id: figure-1
+    source_id: introducing-infinity-a-runtime-for-extreme-agent-1307917e
+    path: media/001.png
+    caption: 'One execution slice: load the history, run one completion, persist the output, suspend.'
+    alt_text: Diagram of an execution slice moving from load to model call to persist and suspend.
+    anchor: Agents as stackless coroutines
+    layout: evidence_band
+  - id: figure-2
+    source_id: introducing-infinity-a-runtime-for-extreme-agent-1307917e
+    path: media/002.png
+    caption: 'Resident agents against process memory: 80,000 agents in 8.4 GB, about 103 KB each.'
+    alt_text: Line chart of resident agents rising linearly with process memory, with a marker at a Raspberry Pi 5’s 8 GB.
+    anchor: Running agents concurrently
+    layout: evidence_band
+  - id: figure-3
+    source_id: introducing-infinity-a-runtime-for-extreme-agent-1307917e
+    path: media/003.png
+    caption: Each event runs in a temporary child thread that inherits the parent’s context.
+    alt_text: Diagram of a parent thread spawning short-lived child threads, one per synthetic event.
+    anchor: Synthetic tool calls
+    layout: evidence_band
+  opener_art:
+    path: editions/019/art/picks/opener-infinity-raspberry-juggle-v1.jpg
+    alt_text: Maro sits on a giant raspberry juggling a dozen soap bubbles while Pedro holds up a tiny raspberry and Flopaz counts in amazement.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-infinity-bubble-jar-v1.jpg
+- id: claude-managed-agents-overview
+  title: Claude Managed Agents overview
+  short_title: Claude Managed Agents overview
+  display_emphasis: Managed Agents
+  opener_variant: stepped_title
+  author: 'Anthropic'
+  author_note: From the Claude Platform documentation.
+  content_mode: verbatim
+  source_ids:
+  - claude-managed-agents-overview-e98c2722
+  manuscript: editions/019/articles/claude-managed-agents-overview.md
+  opener_art:
+    path: editions/019/art/picks/opener-managed-sandbox-delivery-v1.jpg
+    alt_text: Pedro and Flopaz set down a ready-filled wooden sandbox for Maro, who waits with a spade and bucket.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-managed-sandcastle-v1.jpg
+- id: get-started-with-claude-managed-agents
+  title: Get started with Claude Managed Agents
+  short_title: Get started with Claude Managed Agents
+  display_emphasis: Get started
+  opener_variant: stepped_title
+  author: 'Anthropic'
+  author_note: From the Claude Platform documentation.
+  content_mode: verbatim
+  source_ids:
+  - get-started-with-claude-managed-agents-fc5a48f2
+  manuscript: editions/019/articles/get-started-with-claude-managed-agents.md
+  opener_art:
+    path: editions/019/art/picks/opener-get-started-stepping-stones-v1.jpg
+    alt_text: Pedro holds Maro's hand as Maro steps onto a stepping stone in a pond, while Flopaz beckons from the far stone.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-get-started-far-bank-v1.jpg
+- id: scaling-managed-agents-with-stable-interfaces
+  title: Scaling Managed Agents with stable interfaces
+  short_title: Scaling Managed Agents
+  display_emphasis: stable interfaces
+  opener_variant: stepped_title
+  author: Lance Martin, Gabe Cemaj, Michael Cohen
+  author_note: Lance Martin, Gabe Cemaj, and Michael Cohen, on Anthropic’s research site.
+  content_mode: article
+  source_ids:
+  - scaling-managed-agents-with-stable-interfaces-a7646326
+  manuscript: editions/019/articles/scaling-managed-agents-with-stable-interfaces.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   scaling-managed-agents-with-stable-interfaces-a7646326 media/001.png: 
+  #   scaling-managed-agents-with-stable-interfaces-a7646326 media/002.png: 
+  #   scaling-managed-agents-with-stable-interfaces-a7646326 media/003.png: 
+  #   scaling-managed-agents-with-stable-interfaces-a7646326 media/004.png: 
+  figures:
+  - id: figure-1
+    source_id: scaling-managed-agents-with-stable-interfaces-a7646326
+    path: media/001.png
+    caption: The harness at the center, with session, sandbox, tools, and orchestration each behind its own interface.
+    alt_text: Diagram of a Harness box connected by arrows to Session, Sandbox, Tools, and Orchestration boxes.
+    anchor: Don't adopt a pet
+    layout: column_plate
+  - id: figure-2
+    source_id: scaling-managed-agents-with-stable-interfaces-a7646326
+    path: media/002.png
+    caption: Each component, its interface in pseudocode, and what can satisfy it.
+    alt_text: Table of six components (Session, Orchestration, Harness, Sandbox, Resources, Tools) with interface signatures and example implementations.
+    anchor: Decouple the brain from the hands
+    layout: evidence_band
+  opener_art:
+    path: editions/019/art/picks/opener-stable-interface-socket-v1.jpg
+    alt_text: Flopaz plugs a lamp into a single wall socket while Pedro waits with a fan and Maro with a kettle for their turn.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-stable-interface-hose-v1.jpg
+- id: how-claude-tag-works
+  title: How Claude Tag works
+  short_title: How Claude Tag works
+  display_emphasis: Claude Tag
+  opener_variant: stepped_title
+  author: 'Anthropic'
+  author_note: From the Claude Tag documentation.
+  content_mode: article
+  source_ids:
+  - how-claude-tag-works-b4c77dfa
+  manuscript: editions/019/articles/how-claude-tag-works.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   how-claude-tag-works-b4c77dfa media/001.png: Flow diagram of one session in five numbered steps. Step 1, tag Claude in with an @Claude message carrying a t
+  #   how-claude-tag-works-b4c77dfa media/002.png: Timeline with two lanes. The Slack thread lane is one continuous bar that persists from the moment a task star
+  #   how-claude-tag-works-b4c77dfa media/003.png: Diagram showing three nested levels. A scope container holds two channels, #platform-eng and #gtm-west, and ea
+  figures:
+  - id: figure-1
+    source_id: how-claude-tag-works-b4c77dfa
+    path: media/001.png
+    caption: One session in five steps, from the @Claude tag to the result landing in the thread.
+    alt_text: 'Flow diagram of a Claude Tag session: tag, sandbox build, working loop, result in thread, quiet period.'
+    anchor: The loop
+    layout: evidence_band
+  - id: figure-3
+    source_id: how-claude-tag-works-b4c77dfa
+    path: media/003.png
+    caption: Access set at the scope, memory kept per channel, work in progress per thread.
+    alt_text: Nested diagram of a scope holding two channels, each holding its own threads.
+    anchor: Memory
+    layout: evidence_band
+  opener_art:
+    path: editions/019/art/picks/opener-claude-tag-game-v1.jpg
+    alt_text: Pedro tags Maro mid-run in a schoolyard game, and Maro springs into action with a spanner as Flopaz laughs alongside.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-claude-tag-thread-v1.jpg
+- id: getting-started-with-claude-code-mods
+  title: Getting started with Claude Code Mods
+  short_title: Claude Code Mods
+  display_emphasis: Mods
+  opener_variant: stepped_title
+  author: Addy Osmani
+  author_note: Addy Osmani, in an article on X.
+  content_mode: article
+  source_ids:
+  - getting-started-with-claude-code-mods-6d868b20
+  manuscript: editions/019/articles/getting-started-with-claude-code-mods.md
+  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,
+  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,
+  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures
+  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.
+  #   getting-started-with-claude-code-mods-6d868b20 media/001.jpg: hook chain diagram - an event passes through your hook, then other plugins, then Claude Code and the result fl
+  #   getting-started-with-claude-code-mods-6d868b20 media/002.jpg: table of Token Weather forecasts by context used
+  #   getting-started-with-claude-code-mods-6d868b20 media/003.jpg: at 120 columns, Blast Radius renders the git reset \--hard report in the strip above the prompt
+  #   getting-started-with-claude-code-mods-6d868b20 media/004.png: replay inlined above prompt at 80 columns
+  figures:
+  - id: figure-1
+    source_id: getting-started-with-claude-code-mods-6d868b20
+    path: media/001.jpg
+    caption: An event passes through your hook, then other plugins, then Claude Code, and the result flows back.
+    alt_text: Hook chain diagram showing an event passing through a hook, plugins, and Claude Code.
+    anchor: How mods work
+    layout: compact_band
+  - id: figure-2
+    source_id: getting-started-with-claude-code-mods-6d868b20
+    path: media/002.jpg
+    caption: Token Weather’s forecasts by share of the context window used.
+    alt_text: Table of weather icons mapped to context-window percentages.
+    anchor: 'Your first mod: Token Weather'
+    layout: full_band
+  - id: figure-3
+    source_id: getting-started-with-claude-code-mods-6d868b20
+    path: media/003.jpg
+    caption: At 120 columns, Blast Radius renders its git reset --hard report in the strip above the prompt.
+    alt_text: Terminal screenshot of the Blast Radius report above the Claude Code prompt.
+    anchor: Two harder mods
+    layout: evidence_band
+  opener_art:
+    path: editions/019/art/picks/opener-mods-weathervane-v1.jpg
+    alt_text: Pedro clips a tiny weathervane onto Maro's antenna while Flopaz shields Maro with an umbrella from a small rain cloud.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-mods-hooked-cloud-v1.jpg
+- id: early-progress-on-accelerating-drug-development
+  title: Early progress on accelerating drug development with Claude
+  short_title: accelerating drug development
+  display_emphasis: drug development
+  opener_variant: stepped_title
+  author: 'Anthropic'
+  author_note: Anthropic, on its research site.
+  content_mode: article
+  source_ids:
+  - early-progress-on-accelerating-drug-development-dcad83d8
+  manuscript: editions/019/articles/early-progress-on-accelerating-drug-development.md
+  opener_art:
+    path: editions/019/art/picks/opener-drug-capsule-cart-v1.jpg
+    alt_text: Maro pushes a giant medicine capsule on a handcart, Flopaz steadies it, and Pedro runs ahead checking a stopwatch in surprise.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-drug-capsule-sprout-v1.jpg
+- id: working-with-academic-communities-to-build-scien
+  title: Working with academic communities to build scientific understanding
+  short_title: build scientific understanding
+  display_emphasis: scientific understanding
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: OpenAI, on its site.
+  content_mode: article
+  source_ids:
+  - working-with-academic-communities-to-build-scien-fe7d7660
+  manuscript: editions/019/articles/working-with-academic-communities-to-build-scien.md
+  opener_art:
+    path: editions/019/art/picks/opener-proofs-block-towers-v1.jpg
+    alt_text: Maro tops off three wooden block towers while Flopaz inspects a crooked block with a magnifier and Pedro tests a wobbly one.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-proofs-pass-the-block-v1.jpg
+- id: genie-4-a-new-generation-of-world-simulation-goo
+  title: 'Genie 4: A new generation of world simulation'
+  short_title: 'Genie 4'
+  display_emphasis: Genie 4
+  opener_variant: stepped_title
+  author: Raia Hadsell, Diego Rivas and Hang Qi
+  author_note: Raia Hadsell, Diego Rivas, and Hang Qi, on the Google DeepMind blog.
+  content_mode: article
+  source_ids:
+  - genie-4-a-new-generation-of-world-simulation-goo-393575ee
+  manuscript: editions/019/articles/genie-4-a-new-generation-of-world-simulation-goo.md
+  opener_art:
+    path: editions/019/art/picks/opener-genie-drawn-hill-v1.jpg
+    alt_text: Maro's crayon drawing of a hill rises off a paper sheet into a real hill; Flopaz steps onto it and its tree offers Pedro a leaf.
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/019/art/picks/tail-genie-snow-globe-v2.jpg
+tail_art_fit: contain
+closing_plates:
+- title: Pass the Tiller
+  art_path: editions/019/art/picks/closing-pass-the-tiller-v2.jpg
+- title: Rain on the Window
+  art_path: editions/019/art/picks/closing-rain-window-v1.jpg
+- title: Kite Hill
+  art_path: editions/019/art/picks/closing-kite-hill-v1.jpg
+- title: Pancake Flip
+  art_path: editions/019/art/picks/closing-pancake-flip-v1.jpg
+- title: Apple Ladder
+  art_path: editions/019/art/picks/closing-apple-ladder-v1.jpg
+- title: Lighthouse Stairs
+  art_path: editions/019/art/picks/closing-lighthouse-stairs-v1.jpg
+- title: Rope Swing
+  art_path: editions/019/art/picks/closing-rope-swing-v1.jpg

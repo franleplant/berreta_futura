@@ -1,0 +1,8 @@
+id: getting-started-with-claude-code-mods-6d868b20
+title: 'Getting started with Claude Code Mods'
+author: 'Addy Osmani'
+url: https://x.com/addyosmani/article/2115326629488824753
+captured_at: '2026-10-29T20:51:57Z'
+published_at: '2026-10-28'
+tags: []
+synopsis: 'Addy Osmani explains how Claude Code mods, small scripts bundled as plugins that hook session events to observe, rewrite or answer them, can be built by describing them to Claude, using the Token Weather, Blast Radius and Replay Theater examples, and how to publish, install and safely use them.'

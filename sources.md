@@ -18,6 +18,8 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `019` (14 queued)._
+
 _Collecting: `018` (19 queued)._
 
 _Collecting: `017` (10 queued)._
@@ -29,6 +31,142 @@ _Collecting: `015` (9 queued)._
 _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
+
+## Get started with Claude Managed Agents
+
+- ID: `get-started-with-claude-managed-agents-fc5a48f2`
+- Source: https://platform.claude.com/docs/en/managed-agents/quickstart
+- Captured: 2026-10-29T20:55:47Z
+- Release: queued for `019`
+
+A quickstart that walks through installing the ant CLI and SDK, creating an agent and a cloud environment, starting a session, and streaming the agent's events in Claude Managed Agents.
+
+## Genie 4: A new generation of world simulation — Raia Hadsell, Diego Rivas and Hang Qi
+
+- ID: `genie-4-a-new-generation-of-world-simulation-goo-393575ee`
+- Source: https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation/
+- Published: 2026-10-27
+- Captured: 2026-10-29T20:55:17Z
+- Release: queued for `019`
+
+Google DeepMind announces Genie 4, a real-time interactive world model with improved photorealism, native audio and dialogue, and Gemini-guided multi-step simulation, released as a research preview to trusted testers.
+
+## How Claude Tag works
+
+- ID: `how-claude-tag-works-b4c77dfa`
+- Source: https://claude.com/docs/claude-tag/concepts/how-it-works#team-channels-and-personal-dms
+- Captured: 2026-10-29T20:53:49Z
+- Release: queued for `019`
+
+Claude Tag runs a working session in a per-thread cloud sandbox for each Slack thread where it is tagged, using channel-level access set by admins, and this page explains how sessions start, are steered, persist between replies, and use channel and workspace memory.
+
+## The Rise of the Self-Driving Company — Amjad Masad
+
+- ID: `the-rise-of-the-self-driving-company-f5e36d4c`
+- Source: https://x.com/amasad/article/2114769129282601053
+- Published: 2026-10-26
+- Captured: 2026-10-29T20:52:18Z
+- Release: queued for `019`
+
+Amjad Masad argues that AI agents will reshape how firms organize work, and that by the end of 2030 every Fortune 500 company will be a Self-Driving Company built on an "Agent Habitat" that controls access and governance.
+
+## Getting started with Claude Code Mods — Addy Osmani
+
+- ID: `getting-started-with-claude-code-mods-6d868b20`
+- Source: https://x.com/addyosmani/article/2115326629488824753
+- Published: 2026-10-28
+- Captured: 2026-10-29T20:51:57Z
+- Release: queued for `019`
+
+Addy Osmani explains how Claude Code mods, small scripts bundled as plugins that hook session events to observe, rewrite or answer them, can be built by describing them to Claude, using the Token Weather, Blast Radius and Replay Theater examples, and how to publish, install and safely use them.
+
+## Mary Parker Follett, The Law of the Situation (1925) — Mary Parker Follett
+
+- ID: `mary-parker-follett-the-law-of-the-situation-192-f746a749`
+- Source: https://www.panarchy.org/follett/lawsituation.html
+- Captured: 2026-10-29T20:49:58Z
+- Release: queued for `019`
+
+Follett argues that orders should be depersonalized so that managers and workers alike take their orders from the law of the situation, which is always evolving and is discovered through joint study rather than imposed by one person on another.
+
+## Scaling Managed Agents with stable interfaces — Lance Martin, Gabe Cemaj, Michael Cohen
+
+- ID: `scaling-managed-agents-with-stable-interfaces-a7646326`
+- Source: https://www.anthropic.com/research/managed-agents
+- Published: 2026-04-08
+- Captured: 2026-10-29T20:49:30Z
+- Release: queued for `019`
+
+Anthropic's engineering team explains how Managed Agents decouples an agent's brain (Claude and its harness) from its hands (sandboxes and tools) and its session (the event log) into stable interfaces, improving reliability, security, and time-to-first-token.
+
+## Claude Managed Agents overview
+
+- ID: `claude-managed-agents-overview-e98c2722`
+- Source: https://platform.claude.com/docs/en/managed-agents/overview
+- Captured: 2026-10-29T20:48:58Z
+- Release: queued for `019`
+
+Claude Managed Agents is a pre-built, configurable agent harness running in managed infrastructure, built around agents, environments, sessions, and events, and suited to long-running and asynchronous tasks, currently in beta.
+
+## Cognitive Mercantilism — Venkatesh Rao
+
+- ID: `cognitive-mercantilism-11f803bd`
+- Source: https://contraptions.venkateshrao.com/p/cognitive-mercantilism
+- Published: 2026-10-25
+- Captured: 2026-10-29T20:48:43Z
+- Release: queued for `019`
+
+Drawing on Joyce Appleby's history of capitalism, Venkatesh Rao argues that AI panic parallels early modern mercantilism and Malthusianism, and that abundant AI may trigger a "cognitive industrious revolution" in which expanding demand for intelligence, from humans and AIs alike, creates new opportunity rather than useless minds.
+
+## Working with academic communities to build scientific understanding — OpenAI
+
+- ID: `working-with-academic-communities-to-build-scien-fe7d7660`
+- Source: https://openai.com/index/building-scientific-understanding-with-academic-communities/
+- Published: 2026-10-26
+- Captured: 2026-10-29T20:47:59Z
+- Release: queued for `019`
+
+OpenAI announces three AI-produced results in mathematics (local smoothing and Kakeya), computer science (refutation of the Exponential Time Hypothesis), and physics (existence of QCD and Yang–Mills theory), and describes the external academic collaborations and release strategies it is using to build scientific understanding of them.
+
+## Early progress on accelerating drug development with Claude
+
+- ID: `early-progress-on-accelerating-drug-development-dcad83d8`
+- Source: https://www.anthropic.com/research/early-progress-drug-development
+- Published: 2026-10-27
+- Captured: 2026-10-29T20:47:35Z
+- Release: queued for `019`
+
+Anthropic reports on research partnerships with six drug development organizations and its own muscular dystrophy programs, describing early preclinical results from using Claude across target selection, design, optimization, manufacturing documentation, and trial planning.
+
+## How AI agents shape experts’ judgment calls — Amaç Herdağdelen, Hailey Joren, Alex Tamkin
+
+- ID: `how-ai-agents-shape-experts-judgment-calls-723372c8`
+- Source: https://www.anthropic.com/research/agents-judgment-calls
+- Published: 2026-10-27
+- Captured: 2026-10-29T20:47:00Z
+- Release: queued for `019`
+
+In a randomized study of 50 professional analysts doing a farming-cooperative analysis with Claude Code, analysts followed their agent's secretly assigned lean on 86% of analytical decisions, repeated its arguments without crediting it, and still often called the recommendation their own.
+
+## Introducing Infinity: a runtime for extreme agent concurrency — Shadaj Laddad
+
+- ID: `introducing-infinity-a-runtime-for-extreme-agent-1307917e`
+- Source: https://aws.amazon.com/blogs/opensource/introducing-infinity-a-runtime-for-extreme-agent-concurrency/
+- Published: 2026-10-23
+- Captured: 2026-10-29T20:46:16Z
+- Release: queued for `019`
+
+AWS and UC Berkeley's Hydro project release Infinity, an open source agent runtime that suspends agents at tool calls like stackless coroutines, so about 75,000 agents fit in 8 GB, agents can run on serverless platforms, and asynchronous events and agent-to-agent messages are delivered as synthetic tool calls.
+
+## The Art of Loop Engineering — Sydney Runkle
+
+- ID: `the-art-of-loop-engineering-2a5b0130`
+- Source: https://www.langchain.com/blog/the-art-of-loop-engineering
+- Published: 2026-06-16
+- Captured: 2026-10-29T20:45:23Z
+- Release: queued for `019`
+
+The article describes four stacked loops for building effective agents (the agent loop, a verification loop, an event-driven loop, and a hill climbing loop), shows how to instrument each with LangChain primitives using an internal docs agent as the example, and argues that human oversight belongs at every level.
 
 ## 3 markdown architecture patterns that boost agentic productivity — Google Cloud Tech
 

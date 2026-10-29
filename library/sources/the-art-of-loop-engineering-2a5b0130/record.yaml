@@ -1,0 +1,8 @@
+id: the-art-of-loop-engineering-2a5b0130
+title: 'The Art of Loop Engineering'
+author: 'Sydney Runkle'
+url: https://www.langchain.com/blog/the-art-of-loop-engineering
+captured_at: '2026-10-29T20:45:23Z'
+published_at: '2026-06-16'
+tags: []
+synopsis: 'The article describes four stacked loops for building effective agents (the agent loop, a verification loop, an event-driven loop, and a hill climbing loop), shows how to instrument each with LangChain primitives using an internal docs agent as the example, and argues that human oversight belongs at every level.'

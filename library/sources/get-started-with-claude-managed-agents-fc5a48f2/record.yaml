@@ -1,0 +1,7 @@
+id: get-started-with-claude-managed-agents-fc5a48f2
+title: 'Get started with Claude Managed Agents'
+author: ''
+url: https://platform.claude.com/docs/en/managed-agents/quickstart
+captured_at: '2026-10-29T20:55:47Z'
+tags: []
+synopsis: 'A quickstart that walks through installing the ant CLI and SDK, creating an agent and a cloud environment, starting a session, and streaming the agent''s events in Claude Managed Agents.'

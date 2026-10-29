@@ -1,0 +1,87 @@
+edition:
+  id: 019
+articles:
+- id: the-rise-of-the-self-driving-company
+  title: The Rise of the Self-Driving Company
+  author: Amjad Masad
+  content_mode: verbatim
+  source_ids:
+  - the-rise-of-the-self-driving-company-f5e36d4c
+- id: mary-parker-follett-the-law-of-the-situation-192
+  title: Mary Parker Follett, The Law of the Situation (1925)
+  author: Mary Parker Follett
+  content_mode: verbatim
+  source_ids:
+  - mary-parker-follett-the-law-of-the-situation-192-f746a749
+- id: how-ai-agents-shape-experts-judgment-calls
+  title: How AI agents shape experts’ judgment calls
+  author: Amaç Herdağdelen, Hailey Joren, Alex Tamkin
+  content_mode: article
+  source_ids:
+  - how-ai-agents-shape-experts-judgment-calls-723372c8
+- id: cognitive-mercantilism
+  title: Cognitive Mercantilism
+  author: Venkatesh Rao
+  content_mode: article
+  source_ids:
+  - cognitive-mercantilism-11f803bd
+- id: the-art-of-loop-engineering
+  title: The Art of Loop Engineering
+  author: Sydney Runkle
+  content_mode: verbatim
+  source_ids:
+  - the-art-of-loop-engineering-2a5b0130
+- id: introducing-infinity-a-runtime-for-extreme-agent
+  title: 'Introducing Infinity: a runtime for extreme agent concurrency'
+  author: Shadaj Laddad
+  content_mode: article
+  source_ids:
+  - introducing-infinity-a-runtime-for-extreme-agent-1307917e
+- id: claude-managed-agents-overview
+  title: Claude Managed Agents overview
+  author: ''
+  content_mode: verbatim
+  source_ids:
+  - claude-managed-agents-overview-e98c2722
+- id: get-started-with-claude-managed-agents
+  title: Get started with Claude Managed Agents
+  author: ''
+  content_mode: verbatim
+  source_ids:
+  - get-started-with-claude-managed-agents-fc5a48f2
+- id: scaling-managed-agents-with-stable-interfaces
+  title: Scaling Managed Agents with stable interfaces
+  author: Lance Martin, Gabe Cemaj, Michael Cohen
+  content_mode: article
+  source_ids:
+  - scaling-managed-agents-with-stable-interfaces-a7646326
+- id: how-claude-tag-works
+  title: How Claude Tag works
+  author: ''
+  content_mode: article
+  source_ids:
+  - how-claude-tag-works-b4c77dfa
+- id: getting-started-with-claude-code-mods
+  title: Getting started with Claude Code Mods
+  author: Addy Osmani
+  content_mode: article
+  source_ids:
+  - getting-started-with-claude-code-mods-6d868b20
+- id: early-progress-on-accelerating-drug-development
+  title: Early progress on accelerating drug development with Claude
+  author: ''
+  content_mode: article
+  source_ids:
+  - early-progress-on-accelerating-drug-development-dcad83d8
+- id: working-with-academic-communities-to-build-scien
+  title: Working with academic communities to build scientific understanding
+  author: OpenAI
+  content_mode: article
+  source_ids:
+  - working-with-academic-communities-to-build-scien-fe7d7660
+- id: genie-4-a-new-generation-of-world-simulation-goo
+  title: 'Genie 4: A new generation of world simulation'
+  author: Raia Hadsell, Diego Rivas and Hang Qi
+  content_mode: article
+  source_ids:
+  - genie-4-a-new-generation-of-world-simulation-goo-393575ee

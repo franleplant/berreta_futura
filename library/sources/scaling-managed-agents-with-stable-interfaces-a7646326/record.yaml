@@ -1,0 +1,8 @@
+id: scaling-managed-agents-with-stable-interfaces-a7646326
+title: 'Scaling Managed Agents with stable interfaces'
+author: 'Lance Martin, Gabe Cemaj, Michael Cohen'
+url: https://www.anthropic.com/research/managed-agents
+captured_at: '2026-10-29T20:49:30Z'
+published_at: '2026-04-08'
+tags: []
+synopsis: 'Anthropic''s engineering team explains how Managed Agents decouples an agent''s brain (Claude and its harness) from its hands (sandboxes and tools) and its session (the event log) into stable interfaces, improving reliability, security, and time-to-first-token.'

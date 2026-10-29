@@ -1,0 +1,8 @@
+id: introducing-infinity-a-runtime-for-extreme-agent-1307917e
+title: 'Introducing Infinity: a runtime for extreme agent concurrency'
+author: 'Shadaj Laddad'
+url: https://aws.amazon.com/blogs/opensource/introducing-infinity-a-runtime-for-extreme-agent-concurrency/
+captured_at: '2026-10-29T20:46:16Z'
+published_at: '2026-10-23'
+tags: []
+synopsis: 'AWS and UC Berkeley''s Hydro project release Infinity, an open source agent runtime that suspends agents at tool calls like stackless coroutines, so about 75,000 agents fit in 8 GB, agents can run on serverless platforms, and asynchronous events and agent-to-agent messages are delivered as synthetic tool calls.'

@@ -1,0 +1,7 @@
+id: claude-managed-agents-overview-e98c2722
+title: 'Claude Managed Agents overview'
+author: ''
+url: https://platform.claude.com/docs/en/managed-agents/overview
+captured_at: '2026-10-29T20:48:58Z'
+tags: []
+synopsis: 'Claude Managed Agents is a pre-built, configurable agent harness running in managed infrastructure, built around agents, environments, sessions, and events, and suited to long-running and asynchronous tasks, currently in beta.'
