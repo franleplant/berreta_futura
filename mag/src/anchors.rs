@@ -222,6 +222,59 @@ fn patch_anchor_lines(yaml: &str, edits: &[(String, String, String)]) -> Result<
     Ok(out.join("\n") + "\n")
 }
 
+pub(crate) fn reanchor(
+    edition: &EditionFile,
+    yaml_path: &Path,
+    run: &Path,
+    model: &ModelSpec,
+) -> Result<Vec<String>> {
+    let caller = Caller::new(run);
+    let (mut edits, mut dropped) = (Vec::new(), Vec::new());
+    for article in edition.articles.iter().filter(|a| !a.id.is_empty()) {
+        let manuscript = final_md(run, &article.id);
+        let headings = manuscript_headings(&manuscript);
+        let pending = pending_figures(article, &headings);
+        if pending.is_empty() {
+            continue;
+        }
+        let answers = resolve(
+            &caller,
+            model,
+            &article.id,
+            &manuscript,
+            &headings,
+            &pending,
+        )?;
+        for (figure, answer) in pending.iter().zip(answers) {
+            match answer {
+                Some(heading) => {
+                    println!(
+                        "  re-anchored {}:{} '{}' -> '{heading}'",
+                        article.id, figure.id, figure.anchor
+                    );
+                    edits.push((article.id.clone(), figure.id.clone(), heading));
+                }
+                None => dropped.push(format!(
+                    "{}:{} (was '{}')",
+                    article.id, figure.id, figure.anchor
+                )),
+            }
+        }
+    }
+    if !edits.is_empty() {
+        std::fs::write(
+            yaml_path,
+            patch_anchor_lines(&std::fs::read_to_string(yaml_path)?, &edits)?,
+        )?;
+        println!(
+            "patched {} anchor(s) in {}",
+            edits.len(),
+            yaml_path.display()
+        );
+    }
+    Ok(dropped)
+}
+
 pub fn run(args: &AnchorsArgs) -> Result<i32> {
     let edition = load_edition(&args.edition)?;
     let Some(run) = pick_content_run(
@@ -249,45 +302,7 @@ pub fn run(args: &AnchorsArgs) -> Result<i32> {
         return Ok(2);
     }
     let model = ModelSpec::parse(&args.model)?;
-    let caller = Caller::new(&run);
-    let (mut edits, mut dropped) = (Vec::new(), Vec::new());
-    for article in edition.yaml.articles.iter().filter(|a| !a.id.is_empty()) {
-        let manuscript = final_md(&run, &article.id);
-        let headings = manuscript_headings(&manuscript);
-        let pending = pending_figures(article, &headings);
-        if pending.is_empty() {
-            continue;
-        }
-        let answers = resolve(
-            &caller,
-            &model,
-            &article.id,
-            &manuscript,
-            &headings,
-            &pending,
-        )?;
-        for (figure, answer) in pending.iter().zip(answers) {
-            match answer {
-                Some(heading) => {
-                    println!(
-                        "  re-anchored {}:{} '{}' -> '{heading}'",
-                        article.id, figure.id, figure.anchor
-                    );
-                    edits.push((article.id.clone(), figure.id.clone(), heading));
-                }
-                None => dropped.push(format!(
-                    "{}:{} (was '{}')",
-                    article.id, figure.id, figure.anchor
-                )),
-            }
-        }
-    }
-    let path = edition.yaml_path;
-    std::fs::write(
-        &path,
-        patch_anchor_lines(&std::fs::read_to_string(&path)?, &edits)?,
-    )?;
-    println!("patched {} anchor(s) in {}", edits.len(), path.display());
+    let dropped = reanchor(&edition.yaml, &edition.yaml_path, &run, &model)?;
     if dropped.is_empty() {
         println!("\nnext: mag render {}", args.edition);
         return Ok(0);

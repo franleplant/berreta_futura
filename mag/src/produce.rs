@@ -1,7 +1,7 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::model::kinds::ContentMode;
 use crate::model::shared::parse_yaml;
-use crate::model::spec::EditionFile;
+use crate::model::spec::{EditionFile, SourceRecord};
 use crate::util::{parallel, prompts_path, read};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -351,12 +351,11 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
         );
     };
     let mut lines = text.lines().skip_while(|l| l.trim().is_empty()).peekable();
-    if let Some(title) = lines
+    let title = lines
         .peek()
         .and_then(|l| l.strip_prefix("# "))
-        .map(str::trim)
-    {
-        let title = title.to_string();
+        .map(|t| t.trim().to_lowercase());
+    if title.is_some() {
         lines.next();
         while lines.peek().is_some_and(|l| l.trim().is_empty()) {
             lines.next();
@@ -364,19 +363,18 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
         if lines.peek().is_some_and(|l| is_byline(l)) {
             lines.next();
         }
-        while lines.peek().is_some_and(|l| l.trim().is_empty()) {
-            lines.next();
-        }
-        if lines
-            .peek()
-            .and_then(|l| l.strip_prefix("## "))
-            .is_some_and(|h| h.trim() == title)
-        {
-            lines.next();
-        }
     }
-    let body: Vec<&str> = lines.filter(|l| !IMAGE_LINE.is_match(l)).collect();
-    Ok(body.join("\n").trim().to_string() + "\n")
+    let repeats_title = |l: &str| {
+        let heading = l.strip_prefix("## ").or_else(|| l.strip_prefix("### "));
+        title
+            .as_deref()
+            .is_some_and(|t| heading.is_some_and(|h| h.trim().to_lowercase() == t))
+    };
+    let body: Vec<&str> = lines
+        .filter(|l| !IMAGE_LINE.is_match(l) && !repeats_title(l))
+        .collect();
+    let body = body.join("\n");
+    Ok(BLANK_RUN.replace_all(body.trim(), "\n\n\n").into_owned() + "\n")
 }
 
 fn is_byline(line: &str) -> bool {
@@ -552,7 +550,11 @@ fn images_in(text: &str) -> Vec<SourceImage> {
     out
 }
 
-fn verbatim_figures(sids: &[String], range: Option<&serde_norway::Value>) -> String {
+fn first_sentence(text: &str) -> &str {
+    text.find(". ").map_or(text, |end| &text[..=end])
+}
+
+fn figure_rows(sids: &[String], range: Option<&serde_norway::Value>) -> String {
     let rows: Vec<String> = sids
         .iter()
         .flat_map(|sid| {
@@ -562,10 +564,9 @@ fn verbatim_figures(sids: &[String], range: Option<&serde_norway::Value>) -> Str
         })
         .enumerate()
         .map(|(index, (sid, image))| {
-            let caption = if image.alt.is_empty() {
-                "TODO"
-            } else {
-                &image.alt
+            let (caption, alt) = match image.alt.as_str() {
+                "" => ("TODO", "TODO"),
+                alt => (first_sentence(alt), alt),
             };
             format!(
                 "  - id: figure-{}\n    source_id: {sid}\n    path: {}\n    caption: {}\n    \
@@ -573,7 +574,7 @@ fn verbatim_figures(sids: &[String], range: Option<&serde_norway::Value>) -> Str
                 index + 1,
                 image.media,
                 yq(caption),
-                yq(caption),
+                yq(alt),
                 yq(&image.anchor)
             )
         })
@@ -581,6 +582,37 @@ fn verbatim_figures(sids: &[String], range: Option<&serde_norway::Value>) -> Str
     match rows.is_empty() {
         true => String::new(),
         false => format!("  figures:\n{}", rows.concat()),
+    }
+}
+
+fn author_note(author: &str, sids: &[String]) -> String {
+    let author = author.trim();
+    if crate::model::manifest::is_house_byline(author) {
+        return String::new();
+    }
+    let Some(record) = sids.first().and_then(|sid| {
+        parse_yaml::<SourceRecord>(
+            &read(&Path::new("library/sources").join(sid).join("record.yaml")).ok()?,
+        )
+        .ok()
+    }) else {
+        return "TODO".to_string();
+    };
+    let site = record
+        .site
+        .unwrap_or_else(|| crate::capture::url_host(&record.url).to_string());
+    let note = |who: &str| match who {
+        "" => format!("From {site}."),
+        who if who.eq_ignore_ascii_case(&site) => format!("From {site}."),
+        who => format!("{who}, on {site}."),
+    };
+    let full = note(author);
+    match full.chars().count() > 160 {
+        true => note(&format!(
+            "{} et al.",
+            author.split(',').next().unwrap_or(author).trim()
+        )),
+        false => full,
     }
 }
 
@@ -596,17 +628,18 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
         yq(&title)
     );
     y += "  display_emphasis: TODO\n  opener_variant: stepped_title\n";
-    y += &format!(
-        "  author: {}\n  author_note: TODO\n  content_mode: {}\n",
-        yq(&get("author")),
-        yq(&get("content_mode"))
-    );
-    y += "  source_ids:\n";
     let sids: Vec<String> = a
         .get("source_ids")
         .and_then(|v| v.as_sequence())
         .map(|s| s.iter().filter_map(value_to_string).collect())
         .unwrap_or_default();
+    y += &format!(
+        "  author: {}\n  author_note: {}\n  content_mode: {}\n",
+        yq(&get("author")),
+        yq(&author_note(&get("author"), &sids)),
+        yq(&get("content_mode"))
+    );
+    y += "  source_ids:\n";
     for sid in &sids {
         y += &format!("  - {sid}\n");
     }
@@ -618,21 +651,11 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
             y += &format!("  {line}\n");
         }
     }
-    if content_mode(a).is_ok_and(|mode| mode == ContentMode::Verbatim) {
-        y += &verbatim_figures(&sids, a.get("source_range"));
-    } else {
-        let mut any = false;
-        for sid in &sids {
-            for image in source_images(sid, a.get("source_range")) {
-                if !any {
-                    y += "  # figure candidates (uncomment into a `figures:` list; each row needs id, source_id, path, caption, alt_text,\n  # anchor = a ## or ### heading in the manuscript, and layout = one of evidence_band, evidence_band_prose, adaptive_band,\n  # compact_band, column_plate, landscape_plate, full_band, rotated_plate; render enlarges small-text figures\n  # itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion). short_title and display_emphasis must occur inside title.\n";
-                    any = true;
-                }
-                let alt: String = image.alt.chars().take(110).collect();
-                y += &format!("  #   {sid} {}: {alt}\n", image.media);
-            }
-        }
+    let figures = figure_rows(&sids, a.get("source_range"));
+    if !figures.is_empty() && content_mode(a).is_ok_and(|mode| mode != ContentMode::Verbatim) {
+        y += "  # figures: every source image, captioned from its alt text; delete rows to drop them. layout is one of\n  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;\n  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.\n";
     }
+    y += &figures;
     y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
     y += "  tail_art_path: TODO\n";
     Ok(y)
@@ -889,6 +912,8 @@ const FRONT_TODOS: [(&str, &str); 5] = [
     ("  back_text: TODO", "back_text"),
 ];
 
+static BLANK_RUN: LazyLock<regex::Regex> = LazyLock::new(|| regex::Regex::new(r"\n{4,}").unwrap());
+
 static BACK_COVER_SELF_REFERENCE: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::Regex::new(r"(?i)\b(issue|edition|articles?|magazine|authors?|inside|pages)\b").unwrap()
 });
@@ -1087,6 +1112,88 @@ fn front_matter(
     Ok(true)
 }
 
+fn parse_labels(
+    reply: &str,
+    todo: &[(String, String)],
+) -> Result<HashMap<String, (String, String)>> {
+    let rows: HashMap<&str, (&str, &str)> = reply
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.split('|').map(str::trim);
+            Some((parts.next()?, (parts.next()?, parts.next()?)))
+        })
+        .collect();
+    todo.iter()
+        .map(|(id, title)| {
+            let &(short, emphasis) = rows
+                .get(id.as_str())
+                .ok_or_else(|| anyhow!("labels reply has no line for {id}"))?;
+            let inside = |part: &str| !part.is_empty() && title.contains(part) && !part.contains('\u{2014}');
+            if !(inside(short) && inside(emphasis)) || short.chars().count() > 40 {
+                bail!(
+                    "labels for {id}: short_title {short:?} (40 characters at most) and display_emphasis \
+                     {emphasis:?} must each be copied exactly from the title {title:?}"
+                );
+            }
+            Ok((id.clone(), (short.to_string(), emphasis.to_string())))
+        })
+        .collect()
+}
+
+fn patch_labels(text: &str, labels: &HashMap<String, (String, String)>) -> String {
+    let mut current: Option<&(String, String)> = None;
+    let lines: Vec<String> = text
+        .lines()
+        .map(|line| {
+            if let Some(id) = line.strip_prefix("- id: ") {
+                let id = serde_norway::from_str::<String>(id).unwrap_or(id.to_string());
+                current = labels.get(&id);
+            }
+            match current {
+                Some((short, _)) if line.starts_with("  short_title: ") => {
+                    format!("  short_title: {}", yq(short))
+                }
+                Some((_, emphasis)) if line == "  display_emphasis: TODO" => {
+                    format!("  display_emphasis: {}", yq(emphasis))
+                }
+                _ => line.to_string(),
+            }
+        })
+        .collect();
+    lines.join("\n") + "\n"
+}
+
+fn article_labels(caller: &Caller, model: &ModelSpec, edition_yaml: &Path) -> Result<bool> {
+    let text = read(edition_yaml)?;
+    let edition: EditionFile = parse_yaml(&text)?;
+    let todo: Vec<(String, String)> = edition
+        .articles
+        .iter()
+        .filter(|a| a.display_emphasis.as_deref() == Some("TODO"))
+        .map(|a| (a.id.clone(), a.title.clone()))
+        .collect();
+    if todo.is_empty() {
+        return Ok(false);
+    }
+    let list: String = todo
+        .iter()
+        .map(|(id, title)| format!("{id}: {title}\n"))
+        .collect();
+    let prompt = format!(
+        "{INLINE_PREAMBLE}\n\n{}\n\n{}",
+        read(&prompts_path("article-labels.md"))?,
+        section("articles", &list)
+    );
+    let labels = caller.call_with_parse("article-labels", model, &prompt, |reply| {
+        parse_labels(reply, &todo)
+    })?;
+    let patched = patch_labels(&text, &labels);
+    parse_yaml::<EditionFile>(&patched)
+        .with_context(|| format!("{} no longer parses after labeling", edition_yaml.display()))?;
+    write_atomic(edition_yaml, patched)?;
+    Ok(true)
+}
+
 fn fill_todos(text: &str, drafted: &HashMap<String, String>) -> String {
     let filled: Vec<String> = text
         .lines()
@@ -1116,6 +1223,19 @@ fn print_next_steps(
         "\n{}",
         scaffold_edition_yaml(edition_dir, edition_id, plan)?
     );
+    if article_labels(caller, model, &edition_yaml)? {
+        println!("drafted short titles and display emphasis (review them)");
+    }
+    let edition: EditionFile = parse_yaml(&read(&edition_yaml)?)?;
+    let dropped = crate::anchors::reanchor(
+        &edition,
+        &edition_yaml,
+        run_dir,
+        &ModelSpec::parse("haiku")?,
+    )?;
+    for figure in &dropped {
+        println!("  no heading fits figure {figure}: set its anchor or delete the row");
+    }
     if front_matter(caller, model, &edition_yaml, run_dir)? {
         println!(
             "drafted title, deck, and back cover into {} (review them)",
@@ -1125,10 +1245,9 @@ fn print_next_steps(
     println!(
         "\nnext:\n  1. read the finals under {}/articles/*/final.md\n  \
          2. edit {}: review the drafted title and cover copy; article order, figures\n  \
-         3. mag anchors {edition_id}        (only if render reports figure anchors that match no heading)\n  \
-         4. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
-         5. mag source-codes {edition_id}   (after picking opener art)\n  \
-         6. mag render {edition_id}",
+         3. mag art {edition_id}            (image candidates; pick in art/showcase.html)\n  \
+         4. mag source-codes {edition_id}   (after picking opener art)\n  \
+         5. mag render {edition_id}",
         run_dir.display(),
         edition_yaml.display()
     );
@@ -1156,6 +1275,26 @@ mod tests {
         let draft = "word ".repeat(100);
         assert!(keeps_words(draft.clone(), 90).is_ok());
         assert!(keeps_words("My previous answer was cut off.".to_string(), 90).is_err());
+    }
+
+    #[test]
+    fn verbatim_body_drops_every_heading_that_repeats_the_title() {
+        let src = "# The Rise\n\nBy A\n\nIntro.\n\n## The rise\n\nBody.\n\n## Other\n";
+        let body = verbatim_body(&[("s".to_string(), src.to_string())]).unwrap();
+        assert_eq!(body, "Intro.\n\n\nBody.\n\n## Other\n");
+    }
+
+    #[test]
+    fn labels_are_copied_from_the_title_and_patched_into_their_row() {
+        let todo = vec![("g".to_string(), "Genie 4: A new world".to_string())];
+        let labels = parse_labels("g | Genie 4 | Genie\n", &todo).unwrap();
+        assert!(parse_labels("g | Genie Five | Genie\n", &todo).is_err());
+        assert!(parse_labels("other | Genie 4 | Genie\n", &todo).is_err());
+        let yaml = "- id: g\n  title: x\n  short_title: long\n  display_emphasis: TODO\n- id: h\n  short_title: keep\n";
+        assert_eq!(
+            patch_labels(yaml, &labels),
+            "- id: g\n  title: x\n  short_title: Genie 4\n  display_emphasis: Genie\n- id: h\n  short_title: keep\n"
+        );
     }
 
     #[test]

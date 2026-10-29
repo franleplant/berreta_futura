@@ -121,7 +121,9 @@ fn refresh_replaces_one_source_and_touches_no_plan() {
         fs::read_to_string(root.join(format!("library/sources/{sid}/record.yaml"))).unwrap();
     assert_eq!(
         record_after,
-        record.replace("Old synopsis.", "A fresh synopsis.")
+        record
+            .replace("Old synopsis.", "A fresh synopsis.")
+            .replace("\ncaptured_at:", "\nsite: 'example.com'\ncaptured_at:")
     );
     let md_after = fs::read_to_string(root.join("sources.md")).unwrap();
     assert_eq!(md_after, md.replace("Old synopsis.", "A fresh synopsis."));

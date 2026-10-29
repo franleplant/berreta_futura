@@ -173,6 +173,7 @@ rows! {
         title: String,
         author: Option<String>,
         url: String,
+        site: Option<String>,
         captured_at: String,
         published_at: Option<String>,
         tags: Vec<String>,

@@ -49,6 +49,9 @@ static X_POST_TITLE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^.+ X: "(.+)" / X$"#).unwrap());
 static TITLE_SEPARATOR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\s+[|\u{2022}\u{00b7}]\s+").unwrap());
+static LD_NAME: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#""(?:author|publisher)"\s*:\s*\[?\s*\{[^{}]*?"name"\s*:\s*"([^"]+)""#).unwrap()
+});
 static DATETIME_ATTR: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"datetime=["'](\d{4}-\d{2}-\d{2})"#).unwrap());
 static NUMBERED_ITEM: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d+\.\s").unwrap());
@@ -549,15 +552,20 @@ fn normalize_code(s: &str) -> String {
 
 fn meta_content(html: &str, keys: &[&str]) -> Option<String> {
     for key in keys {
-        let value = r#"content=(?:"([^"]+)"|'([^']+)')"#;
+        let value = r#"content=(?:"([^"]+)"|'([^']+)'|([^\s"'>]+))"#;
+        let name = format!(r#"(?:property|name)=(?:"{key}"|'{key}'|{key}[\s/"#);
         for pat in [
-            format!(r#"(?i)<meta[^>]+(?:property|name)=["']{key}["'][^>]+{value}"#),
-            format!(r#"(?i)<meta[^>]+{value}[^>]+(?:property|name)=["']{key}["']"#),
+            format!(r"(?i)<meta[^>]+{name}])[^>]*?{value}"),
+            format!(r"(?i)<meta[^>]+{value}[^>]+{name}>])"),
             format!(r#""{key}"\s*:\s*"([^"]+)""#),
         ] {
             let pattern = Regex::new(&pat).expect("a meta key makes a valid pattern");
             if let Some(c) = pattern.captures(html) {
-                let m = c.get(1).or(c.get(2)).expect("one alternative matched");
+                let m = c
+                    .get(1)
+                    .or(c.get(2))
+                    .or(c.get(3))
+                    .expect("one alternative matched");
                 return Some(decode_entities(m.as_str().trim()));
             }
         }
@@ -593,6 +601,33 @@ pub(crate) fn page_title(html: &str) -> Option<String> {
         }
     }
     (!clean.is_empty()).then_some(clean)
+}
+
+fn page_author(html: &str) -> Option<String> {
+    LD_NAME
+        .captures(html)
+        .map(|c| decode_entities(c[1].trim()))
+        .or_else(|| meta_content(html, &["author", "og:site_name"]))
+}
+
+pub(crate) fn url_host(url: &str) -> &str {
+    let rest = url.split_once("://").map_or(url, |(_, r)| r);
+    let host = rest.split(['/', '?', '#']).next().unwrap_or(rest);
+    host.strip_prefix("www.").unwrap_or(host)
+}
+
+fn page_site(html: &str, url: &str) -> String {
+    match url_host(url) {
+        "x.com" | "twitter.com" => "X".to_string(),
+        host => meta_content(html, &["og:site_name"]).unwrap_or_else(|| host.to_string()),
+    }
+}
+
+fn page_author_or(extracted: &str, html: &str) -> String {
+    match extracted {
+        "" => page_author(html).unwrap_or_default(),
+        author => author.to_string(),
+    }
 }
 
 fn page_published(html: &str) -> Option<String> {
@@ -918,6 +953,7 @@ struct SourceMeta<'a> {
     title: &'a str,
     author: &'a str,
     url: &'a str,
+    site: &'a str,
     captured_at: &'a str,
     published: &'a str,
     tags: &'a [String],
@@ -925,15 +961,20 @@ struct SourceMeta<'a> {
 }
 
 fn record_yaml(m: &SourceMeta) -> String {
+    let author = if m.author.is_empty() {
+        "''".to_string()
+    } else {
+        yaml_quote(m.author)
+    };
+    let site = if m.site.is_empty() {
+        String::new()
+    } else {
+        format!("site: {}\n", yaml_quote(m.site))
+    };
     let mut out = format!(
-        "id: {}\ntitle: {}\nauthor: {}\nurl: {}\ncaptured_at: {}\n",
+        "id: {}\ntitle: {}\nauthor: {author}\nurl: {}\n{site}captured_at: {}\n",
         m.sid,
         yaml_quote(m.title),
-        if m.author.is_empty() {
-            "''".to_string()
-        } else {
-            yaml_quote(m.author)
-        },
         m.url,
         yaml_quote(m.captured_at),
     );
@@ -1433,7 +1474,8 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
     )?;
 
     let captured_at = iso_now();
-    let author = author_override.map_or_else(|| extraction.author.clone(), str::to_string);
+    let author =
+        author_override.map_or_else(|| page_author_or(&extraction.author, &html), str::to_string);
     let published = published_override
         .map(str::to_string)
         .or_else(|| (!extraction.published.is_empty()).then(|| extraction.published.clone()))
@@ -1450,6 +1492,7 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         title: &title,
         author: &author,
         url,
+        site: &page_site(&html, url),
         captured_at: &captured_at,
         published: &published,
         tags: &tags,
@@ -1546,6 +1589,10 @@ fn refresh(args: &CaptureArgs, sid: &str) -> Result<i32> {
         title: &record.title,
         author: record.author.as_deref().unwrap_or_default(),
         url: &record.url,
+        site: &record
+            .site
+            .clone()
+            .unwrap_or_else(|| page_site(&html, &record.url)),
         captured_at: &record.captured_at,
         published: record.published_at.as_deref().unwrap_or_default(),
         tags: &record.tags,
@@ -1683,6 +1730,23 @@ mod tests {
             .into_rgb8();
         assert_eq!(image.dimensions(), (3, 2));
         assert_eq!(&image.as_raw()[..6], &[255, 0, 0, 0, 255, 0]);
+    }
+
+    #[test]
+    fn minified_meta_and_json_ld_give_title_site_and_author() {
+        let html = "<title>Genie 4: A new world \u{2014} Google DeepMind</title>\
+                    <meta content=\"Genie 4: A new world\" property=og:title>\
+                    <meta content=\"Google DeepMind\" property=og:site_name>";
+        assert_eq!(page_title(html).unwrap(), "Genie 4: A new world");
+        assert_eq!(
+            page_site(html, "https://deepmind.google/blog/x/"),
+            "Google DeepMind"
+        );
+        assert_eq!(page_site("", "https://www.example.com/p"), "example.com");
+        assert_eq!(page_site("", "https://x.com/a/article/1"), "X");
+        let ld = r#"{"author":{"@type":"Organization","name":"Anthropic"}}"#;
+        assert_eq!(page_author(ld).unwrap(), "Anthropic");
+        assert_eq!(page_author(html).unwrap(), "Google DeepMind");
     }
 
     #[test]
@@ -1925,6 +1989,7 @@ mod tests {
             title: "Old",
             author: "A",
             url: "u",
+            site: "",
             captured_at: "c",
             published: "",
             tags: &tags,

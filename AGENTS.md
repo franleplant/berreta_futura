@@ -11,8 +11,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - The pipeline leads: every step prints the next command when it finishes.
   Follow that, not the previous edition. The order is `mag capture` (writes
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
-  the first time, scaffolds `edition.yaml` with TODO fields and figure
-  candidates) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
+  the first time, scaffolds `edition.yaml`: author_note is the mechanical
+  "Author, on Site." line, never a summary; every source image becomes a
+  figure row captioned from its alt and re-anchored to the run's headings;
+  one gated call drafts short_title and display_emphasis; art stays TODO) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
   `tools/imagegen`) -> pick in `art/showcase.html` -> `mag art NNN --promote`
   -> `mag render NNN`. If a
   step leaves you guessing what comes next, fix the step's output in code;
@@ -78,8 +80,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 ## Sources
 
 - A captured source is `library/sources/<id>/`:
-  - `record.yaml`: id, title, author, url, captured_at, published_at, tags,
-    synopsis.
+  - `record.yaml`: id, title, author, url, site, captured_at, published_at,
+    tags, synopsis. An author the page does not name falls back to its
+    JSON-LD author or publisher, then og:site_name; site is og:site_name or
+    the host.
   - `article.md`: the source's substantive text, verbatim, in source order.
     Image references point at `media/...` inside the same directory.
   - `media/`: the source's images at original resolution.

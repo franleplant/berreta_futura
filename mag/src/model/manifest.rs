@@ -325,6 +325,10 @@ fn article_identity(index: usize, row: &ArticleRow, errors: &mut Vec<String>) ->
     Some(label)
 }
 
+pub fn is_house_byline(author: &str) -> bool {
+    HOUSE_BYLINES.contains(&author.trim().to_lowercase().as_str())
+}
+
 fn check_note_length(label: &str, note: &str, errors: &mut Vec<String>) {
     if note.contains('\n') || note.chars().count() > 160 {
         errors.push(format!(
@@ -336,7 +340,7 @@ fn check_note_length(label: &str, note: &str, errors: &mut Vec<String>) {
 fn article_author_note(label: &str, row: &ArticleRow, errors: &mut Vec<String>) -> (String, bool) {
     let author_note = clean(row.author_note.as_deref());
     check_note_length(label, &author_note, errors);
-    let house_byline = HOUSE_BYLINES.contains(&row.author.trim().to_lowercase().as_str());
+    let house_byline = is_house_byline(&row.author);
     if !author_note.is_empty() && house_byline {
         errors.push(format!(
             "{label} must omit author_note for the self-explanatory house byline {}",
