@@ -1,5 +1,6 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::model::kinds::ContentMode;
+use crate::model::records::MAX_ARTICLE_FIGURES;
 use crate::model::shared::parse_yaml;
 use crate::model::spec::{EditionFile, SourceRecord};
 use crate::util::{parallel, prompts_path, read};
@@ -370,9 +371,13 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
             .as_deref()
             .is_some_and(|t| heading.is_some_and(|h| h.trim().to_lowercase() == t))
     };
-    let body: Vec<&str> = lines
+    let mut body: Vec<&str> = lines
         .filter(|l| !IMAGE_LINE.is_match(l) && !repeats_title(l))
+        .skip_while(|l| l.trim().is_empty())
         .collect();
+    if body.first().is_some_and(|l| l.starts_with('#')) {
+        body.remove(0);
+    }
     let body = body.join("\n");
     Ok(BLANK_RUN.replace_all(body.trim(), "\n\n\n").into_owned() + "\n")
 }
@@ -554,7 +559,7 @@ fn first_sentence(text: &str) -> &str {
     text.find(". ").map_or(text, |end| &text[..=end])
 }
 
-fn figure_rows(sids: &[String], range: Option<&serde_norway::Value>) -> String {
+fn figure_rows(sids: &[String], range: Option<&serde_norway::Value>, cap: usize) -> String {
     let rows: Vec<String> = sids
         .iter()
         .flat_map(|sid| {
@@ -568,7 +573,7 @@ fn figure_rows(sids: &[String], range: Option<&serde_norway::Value>) -> String {
                 "" => ("TODO", "TODO"),
                 alt => (first_sentence(alt), alt),
             };
-            format!(
+            let row = format!(
                 "  - id: figure-{}\n    source_id: {sid}\n    path: {}\n    caption: {}\n    \
                  alt_text: {}\n    anchor: {}\n    layout: evidence_band\n",
                 index + 1,
@@ -576,7 +581,11 @@ fn figure_rows(sids: &[String], range: Option<&serde_norway::Value>) -> String {
                 yq(caption),
                 yq(alt),
                 yq(&image.anchor)
-            )
+            );
+            match index < cap {
+                true => row,
+                false => row.lines().map(|l| format!("  #{}\n", &l[1..])).collect(),
+            }
         })
         .collect();
     match rows.is_empty() {
@@ -651,9 +660,15 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
             y += &format!("  {line}\n");
         }
     }
-    let figures = figure_rows(&sids, a.get("source_range"));
-    if !figures.is_empty() && content_mode(a).is_ok_and(|mode| mode != ContentMode::Verbatim) {
-        y += "  # figures: every source image, captioned from its alt text; delete rows to drop them. layout is one of\n  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;\n  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.\n";
+    let verbatim = content_mode(a).is_ok_and(|mode| mode == ContentMode::Verbatim);
+    let cap = if verbatim {
+        usize::MAX
+    } else {
+        MAX_ARTICLE_FIGURES
+    };
+    let figures = figure_rows(&sids, a.get("source_range"), cap);
+    if !figures.is_empty() && !verbatim {
+        y += "  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of\n  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;\n  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.\n";
     }
     y += &figures;
     y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
@@ -1282,6 +1297,9 @@ mod tests {
         let src = "# The Rise\n\nBy A\n\nIntro.\n\n## The rise\n\nBody.\n\n## Other\n";
         let body = verbatim_body(&[("s".to_string(), src.to_string())]).unwrap();
         assert_eq!(body, "Intro.\n\n\nBody.\n\n## Other\n");
+        let opens_on_heading = "# T\n\n## Section\n\nFirst.\n";
+        let body = verbatim_body(&[("s".to_string(), opens_on_heading.to_string())]).unwrap();
+        assert_eq!(body, "First.\n");
     }
 
     #[test]
@@ -1529,9 +1547,9 @@ mod tests {
         let repeated = "# Title\n\nOpenAI\n\n## Title\n\nThe page repeats its own title.\n";
         let body = verbatim_body(&[("s-1".to_string(), repeated.to_string())]).unwrap();
         assert_eq!(body, "The page repeats its own title.\n");
-        let kept = "# Title\n\nOpenAI\n\n## Other\n\nA different heading stays.\n";
-        let body = verbatim_body(&[("s-1".to_string(), kept.to_string())]).unwrap();
-        assert_eq!(body, "## Other\n\nA different heading stays.\n");
+        let opening = "# Title\n\nOpenAI\n\n## Other\n\nThe opener needs a paragraph first.\n";
+        let body = verbatim_body(&[("s-1".to_string(), opening.to_string())]).unwrap();
+        assert_eq!(body, "The opener needs a paragraph first.\n");
         let unbylined = "# Title\n\nThe first paragraph opens with a sentence.\n";
         let body = verbatim_body(&[("s-1".to_string(), unbylined.to_string())]).unwrap();
         assert_eq!(body, "The first paragraph opens with a sentence.\n");

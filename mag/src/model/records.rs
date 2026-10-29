@@ -187,13 +187,15 @@ pub struct FigureRequest<'a> {
     pub verbatim: bool,
 }
 
+pub const MAX_ARTICLE_FIGURES: usize = 3;
+
 pub fn resolve_figures(request: &FigureRequest, rows: &[FigureRow]) -> Result<Vec<Figure>> {
     if rows.is_empty() {
         return Ok(Vec::new());
     }
-    if rows.len() > 3 && !request.verbatim {
+    if rows.len() > MAX_ARTICLE_FIGURES && !request.verbatim {
         return Err(ValidationError::one(format!(
-            "Article {} selects {} figures; maximum is 3",
+            "Article {} selects {} figures; maximum is {MAX_ARTICLE_FIGURES}",
             request.article_id,
             rows.len()
         )));
