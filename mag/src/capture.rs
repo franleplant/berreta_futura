@@ -616,7 +616,7 @@ pub(crate) fn url_host(url: &str) -> &str {
     host.strip_prefix("www.").unwrap_or(host)
 }
 
-fn page_site(html: &str, url: &str) -> String {
+pub(crate) fn page_site(html: &str, url: &str) -> String {
     match url_host(url) {
         "x.com" | "twitter.com" => "X".to_string(),
         host => meta_content(html, &["og:site_name"]).unwrap_or_else(|| host.to_string()),

@@ -32,6 +32,19 @@ pub struct ProduceArgs {
 static IMAGE_LINE: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"^\s*!\[[^\]]*\]\([^)]*\)\s*$").unwrap());
 
+static BARE_LINK: LazyLock<regex::Regex> = LazyLock::new(|| {
+    regex::Regex::new(
+        r"^\s*(?:<?(https?://\S+?)>?|\[(https?://[^\]\s]+)\]\((https?://[^)\s]+)\))\s*$",
+    )
+    .unwrap()
+});
+
+fn is_bare_link(line: &str) -> bool {
+    BARE_LINK.captures(line).is_some_and(|c| {
+        c.get(1).is_some() || c.get(2).map(|m| m.as_str()) == c.get(3).map(|m| m.as_str())
+    })
+}
+
 pub const INLINE_PREAMBLE: &str = "You are running non-interactively with NO file access and NO tools. Every\ndocument you need is inlined below. If an included instruction tells you to\nread a file or path, the content of that file is already included here;\nnever claim to have read anything that is not inlined.";
 
 pub(crate) fn section(title: &str, body: &str) -> String {
@@ -372,7 +385,7 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
             .is_some_and(|t| heading.is_some_and(|h| h.trim().to_lowercase() == t))
     };
     let mut body: Vec<&str> = lines
-        .filter(|l| !IMAGE_LINE.is_match(l) && !repeats_title(l))
+        .filter(|l| !IMAGE_LINE.is_match(l) && !is_bare_link(l) && !repeats_title(l))
         .skip_while(|l| l.trim().is_empty())
         .collect();
     if body.first().is_some_and(|l| l.starts_with('#')) {
@@ -609,20 +622,8 @@ fn author_note(author: &str, sids: &[String]) -> String {
     };
     let site = record
         .site
-        .unwrap_or_else(|| crate::capture::url_host(&record.url).to_string());
-    let note = |who: &str| match who {
-        "" => format!("From {site}."),
-        who if who.eq_ignore_ascii_case(&site) => format!("From {site}."),
-        who => format!("{who}, on {site}."),
-    };
-    let full = note(author);
-    match full.chars().count() > 160 {
-        true => note(&format!(
-            "{} et al.",
-            author.split(',').next().unwrap_or(author).trim()
-        )),
-        false => full,
-    }
+        .unwrap_or_else(|| crate::capture::page_site("", &record.url));
+    format!("Published on {site}.")
 }
 
 fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String> {
@@ -1550,6 +1551,9 @@ mod tests {
         let opening = "# Title\n\nOpenAI\n\n## Other\n\nThe opener needs a paragraph first.\n";
         let body = verbatim_body(&[("s-1".to_string(), opening.to_string())]).unwrap();
         assert_eq!(body, "The opener needs a paragraph first.\n");
+        let linked = "# Title\n\nLast line.\n\n[https://a.com/p](https://a.com/p)\n\nhttps://a.com/p\n\n[See more](https://a.com/p)\n";
+        let body = verbatim_body(&[("s-1".to_string(), linked.to_string())]).unwrap();
+        assert_eq!(body, "Last line.\n\n\n[See more](https://a.com/p)\n");
         let unbylined = "# Title\n\nThe first paragraph opens with a sentence.\n";
         let body = verbatim_body(&[("s-1".to_string(), unbylined.to_string())]).unwrap();
         assert_eq!(body, "The first paragraph opens with a sentence.\n");

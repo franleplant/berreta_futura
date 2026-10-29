@@ -607,7 +607,6 @@
   for (index, line) in fit.lines.enumerate() {
     cover-put(b.panel_x + pad, b.panel_top + pad + fit.rise + index * fit.leading, cover-run("serif", fit.size, line, fill: ink, tracking: -0.12))
   }
-  cover-put(b.slug_x, COVER-H - b.slug_bottom, cover-run("bold", b.slug_size, t.slug, fill: paper, tracking: b.slug_tracking))
 }
 
 #let column(body) = pad(left: RAIL, right: RAIL - MEASURE-DELTA, body)

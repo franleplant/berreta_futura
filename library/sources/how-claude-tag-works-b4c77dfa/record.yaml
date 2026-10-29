@@ -2,6 +2,7 @@ id: how-claude-tag-works-b4c77dfa
 title: 'How Claude Tag works'
 author: ''
 url: https://claude.com/docs/claude-tag/concepts/how-it-works#team-channels-and-personal-dms
+site: 'Claude.ai Documentation'
 captured_at: '2026-10-29T20:53:49Z'
 tags: []
 synopsis: 'Claude Tag runs a working session in a per-thread cloud sandbox for each Slack thread where it is tagged, using channel-level access set by admins, and this page explains how sessions start, are steered, persist between replies, and use channel and workspace memory.'

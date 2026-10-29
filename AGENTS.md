@@ -12,10 +12,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   Follow that, not the previous edition. The order is `mag capture` (writes
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
   the first time, scaffolds `edition.yaml`: author_note is the mechanical
-  "Author, on Site." line, never a summary; the first three source images
+  "Published on Site." line, never a summary or a repeat of the byline; the first three source images
   (every one in verbatim) become figure rows captioned from their alt and
   re-anchored to the run's headings, the rest commented out; a verbatim
-  body drops headings that repeat the title and a heading that opens it,
+  body drops bare-URL lines, headings that repeat the title, and a heading that opens it,
   since the opener needs a paragraph first;
   one gated call drafts short_title and display_emphasis; art stays TODO) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
   `tools/imagegen`) -> pick in `art/showcase.html` -> `mag art NNN --promote`

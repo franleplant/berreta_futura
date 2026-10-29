@@ -77,5 +77,3 @@ Ronald Coase explained the firm through the economics of organizing work. As AI 
 We believe the biggest economic impact of AI will come from this reinvention of the firm. Self-Driving Companies will organize around people setting direction and exercising judgment, with agents carrying more of that intent through to execution.
 
 Software ate the world. Now it’s learning to run it.
-
-[https://replit.com/blog/rise-of-self-driving-company](https://replit.com/blog/rise-of-self-driving-company)

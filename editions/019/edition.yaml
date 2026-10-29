@@ -26,7 +26,7 @@ articles:
   display_emphasis: Self-Driving
   opener_variant: stepped_title
   author: Amjad Masad
-  author_note: Amjad Masad, in an article on X.
+  author_note: Published on X.
   content_mode: verbatim
   source_ids:
   - the-rise-of-the-self-driving-company-f5e36d4c
@@ -50,7 +50,7 @@ articles:
   display_emphasis: Law of the Situation
   opener_variant: stepped_title
   author: Mary Parker Follett
-  author_note: Mary Parker Follett, from a 1925 lecture, as transcribed on panarchy.org.
+  author_note: Published on panarchy.org.
   content_mode: verbatim
   source_ids:
   - mary-parker-follett-the-law-of-the-situation-192-f746a749
@@ -66,7 +66,7 @@ articles:
   display_emphasis: judgment calls
   opener_variant: stepped_title
   author: Amaç Herdağdelen, Hailey Joren, Alex Tamkin
-  author_note: Amaç Herdağdelen, Hailey Joren, and Alex Tamkin, on Anthropic’s research site.
+  author_note: Published on anthropic.com.
   content_mode: article
   source_ids:
   - how-ai-agents-shape-experts-judgment-calls-723372c8
@@ -112,7 +112,7 @@ articles:
   display_emphasis: Mercantilism
   opener_variant: stepped_title
   author: Venkatesh Rao
-  author_note: Venkatesh Rao, on his newsletter Contraptions.
+  author_note: Published on contraptions.venkateshrao.com.
   content_mode: article
   source_ids:
   - cognitive-mercantilism-11f803bd
@@ -128,7 +128,7 @@ articles:
   display_emphasis: Loop Engineering
   opener_variant: stepped_title
   author: Sydney Runkle
-  author_note: Sydney Runkle, on the LangChain blog.
+  author_note: Published on langchain.com.
   content_mode: verbatim
   source_ids:
   - the-art-of-loop-engineering-2a5b0130
@@ -201,7 +201,7 @@ articles:
   display_emphasis: Infinity
   opener_variant: stepped_title
   author: Shadaj Laddad
-  author_note: Shadaj Laddad, on the AWS Open Source Blog.
+  author_note: Published on Amazon Web Services.
   content_mode: article
   source_ids:
   - introducing-infinity-a-runtime-for-extreme-agent-1307917e
@@ -246,7 +246,7 @@ articles:
   display_emphasis: Managed Agents
   opener_variant: stepped_title
   author: 'Anthropic'
-  author_note: From the Claude Platform documentation.
+  author_note: Published on Claude Platform Docs.
   content_mode: verbatim
   source_ids:
   - claude-managed-agents-overview-e98c2722
@@ -262,7 +262,7 @@ articles:
   display_emphasis: Get started
   opener_variant: stepped_title
   author: 'Anthropic'
-  author_note: From the Claude Platform documentation.
+  author_note: Published on Claude Platform Docs.
   content_mode: verbatim
   source_ids:
   - get-started-with-claude-managed-agents-fc5a48f2
@@ -278,7 +278,7 @@ articles:
   display_emphasis: stable interfaces
   opener_variant: stepped_title
   author: Lance Martin, Gabe Cemaj, Michael Cohen
-  author_note: Lance Martin, Gabe Cemaj, and Michael Cohen, on Anthropic’s research site.
+  author_note: Published on anthropic.com.
   content_mode: article
   source_ids:
   - scaling-managed-agents-with-stable-interfaces-a7646326
@@ -317,7 +317,7 @@ articles:
   display_emphasis: Claude Tag
   opener_variant: stepped_title
   author: 'Anthropic'
-  author_note: From the Claude Tag documentation.
+  author_note: Published on Claude.ai Documentation.
   content_mode: article
   source_ids:
   - how-claude-tag-works-b4c77dfa
@@ -355,7 +355,7 @@ articles:
   display_emphasis: Mods
   opener_variant: stepped_title
   author: Addy Osmani
-  author_note: Addy Osmani, in an article on X.
+  author_note: Published on X.
   content_mode: article
   source_ids:
   - getting-started-with-claude-code-mods-6d868b20
@@ -401,7 +401,7 @@ articles:
   display_emphasis: drug development
   opener_variant: stepped_title
   author: 'Anthropic'
-  author_note: Anthropic, on its research site.
+  author_note: Published on anthropic.com.
   content_mode: article
   source_ids:
   - early-progress-on-accelerating-drug-development-dcad83d8
@@ -417,7 +417,7 @@ articles:
   display_emphasis: scientific understanding
   opener_variant: stepped_title
   author: OpenAI
-  author_note: OpenAI, on its site.
+  author_note: Published on OpenAI.
   content_mode: article
   source_ids:
   - working-with-academic-communities-to-build-scien-fe7d7660
@@ -433,7 +433,7 @@ articles:
   display_emphasis: Genie 4
   opener_variant: stepped_title
   author: Raia Hadsell, Diego Rivas and Hang Qi
-  author_note: Raia Hadsell, Diego Rivas, and Hang Qi, on the Google DeepMind blog.
+  author_note: Published on deepmind.google.
   content_mode: article
   source_ids:
   - genie-4-a-new-generation-of-world-simulation-goo-393575ee
