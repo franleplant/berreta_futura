@@ -329,7 +329,7 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
     let booklet = impose_a5_on_a4(&reader, &root.join("booklet-a4.pdf"), "all")?;
     let interior = impose_a5_on_a4(&reader, &root.join("booklet-a4-interior.pdf"), "interior")?;
     let cover = impose_a5_on_a4(&reader, &root.join("booklet-a4-cover.pdf"), "cover")?;
-    let [part_one, part_two] = crate::impose::impose_interior_parts(&reader, &interior)?;
+    let parts = crate::impose::impose_interior_parts(&reader, &interior)?;
     let manifest = root.join("edition-manifest.json");
     write(&manifest, &json_text(&release.manifest))?;
     let legs = Legs {
@@ -353,10 +353,10 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
             Pdf::read(&booklet)?.page_count() / 2,
             Pdf::read(&interior)?.page_count() / 2,
             Pdf::read(&cover)?.page_count(),
-            [
-                Pdf::read(&part_one)?.page_count() / 2,
-                Pdf::read(&part_two)?.page_count() / 2,
-            ],
+            &parts
+                .iter()
+                .map(|part| Ok(Pdf::read(part)?.page_count() / 2))
+                .collect::<Result<Vec<_>>>()?,
         ),
     )?;
     let studio = root.join("studio").join("README.md");
@@ -382,8 +382,6 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
         reader,
         booklet,
         interior,
-        part_one,
-        part_two,
         cover,
         instructions,
         studio,
@@ -392,6 +390,7 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
         report,
     ]
     .into_iter()
+    .chain(parts)
     .chain(artifacts)
     .collect();
     files.sort_by_key(|path| relative(path, root));
@@ -437,12 +436,15 @@ pub fn printing_instructions(
     all_in_one_sheets: usize,
     interior_sheets: usize,
     cover_sheets: usize,
-    parts: [usize; 2],
+    parts: &[usize],
 ) -> String {
-    let [part_one, part_two] = parts;
     let first_interior = 3;
     let last_interior = reader_page_count as i64 - 2;
     if is_spanish(language) {
+        let split_es = match parts {
+            [one, two] => format!("El mismo interior viene partido en dos tandas, para no tener que repetir todo si la impresora falla: booklet-a4-interior-part-1.pdf ({one} hojas, las exteriores) y booklet-a4-interior-part-2.pdf ({two} hojas, las interiores). Imprimir una tanda, comprobarla, imprimir la otra y apilar la parte 2 sobre la parte 1 antes de doblar.\n\n"),
+            _ => String::new(),
+        };
         return format!(
             "# Impresión doméstica\n\nImprimir al 100 % en A4 horizontal, a doble cara y volteando por el borde corto. En una impresora de una sola cara, imprimir primero las páginas impares del PDF y después las pares en orden inverso. Doblar el bloque por la mitad y graparlo a caballete. Hacer primero una prueba para confirmar la orientación de alimentación de la impresora.\n\n\
 Hay tres imposiciones de la misma revista. Imprimir el cuadernillo completo o bien la pareja de interior y cubierta, no ambas cosas.\n\n\
@@ -450,13 +452,16 @@ Hay tres imposiciones de la misma revista. Imprimir el cuadernillo completo o bi
 La revista entera, cubierta incluida: {all_in_one_sheets} hojas A4 en un solo papel. Es la opción para imprimir con un único gramaje y sin nada que intercalar.\n\n\
 ## booklet-a4-interior.pdf: interior en papel de texto\n\n\
 La página de créditos en una hoja propia (el resto de esa hoja queda en blanco) y luego las páginas {first_interior} a {last_interior} del PDF de lectura. Son {interior_sheets} hojas A4 en papel corriente de 80 a 100 g/m².\n\n\
-El mismo interior viene partido en dos tandas, para no tener que repetir todo si la impresora falla: booklet-a4-interior-part-1.pdf ({part_one} hojas, las exteriores) y booklet-a4-interior-part-2.pdf ({part_two} hojas, las interiores). Imprimir una tanda, comprobarla, imprimir la otra y apilar la parte 2 sobre la parte 1 antes de doblar.\n\n\
-## booklet-a4-cover.pdf: cubierta en papel más grueso\n\n\
+{split_es}## booklet-a4-cover.pdf: cubierta en papel más grueso\n\n\
 {cover_sheets} hoja A4, a una sola cara: la contracubierta junto a la cubierta. El PDF es esa única página; no hay cara interior que imprimir. Usar papel más grueso (de 160 a 250 g/m², que dobla bien) y dejar secar la tinta antes de doblar.\n\n\
 ## Montaje de la impresión en dos papeles\n\n\
 Doblar por separado el bloque interior y la hoja de cubierta, encajar el interior dentro de la cubierta doblada y grapar a caballete atravesando ambos por el lomo.\n"
         );
     }
+    let split_en = match parts {
+        [one, two] => format!("The same interior also comes split into two batches, so a printer failure never means starting over: booklet-a4-interior-part-1.pdf ({one} sheets, the outer ones) and booklet-a4-interior-part-2.pdf ({two} sheets, the inner ones). Print one batch, check it, print the other, then stack part 2 on top of part 1 before folding.\n\n"),
+        _ => String::new(),
+    };
     format!(
         "# Home printing\n\nPrint at 100% on A4 landscape, duplex, flipping on the short edge. On a simplex printer, print odd PDF pages first, then even PDF pages in reverse order. Fold the stack in half and saddle-staple. First run a test to confirm your printer's feed direction.\n\n\
 Three impositions of the same magazine are included. Print either the all-in-one booklet or the interior-and-cover pair, not both.\n\n\
@@ -464,8 +469,7 @@ Three impositions of the same magazine are included. Print either the all-in-one
 The whole magazine, cover included: {all_in_one_sheets} A4 sheets on one stock. This is the single-stock print, with nothing to collate.\n\n\
 ## booklet-a4-interior.pdf: interior on text stock\n\n\
 The credits page on a sheet of its own (the rest of that sheet stays blank), then reader pages {first_interior} to {last_interior}. {interior_sheets} A4 sheets on ordinary 80-100 gsm text stock.\n\n\
-The same interior also comes split into two batches, so a printer failure never means starting over: booklet-a4-interior-part-1.pdf ({part_one} sheets, the outer ones) and booklet-a4-interior-part-2.pdf ({part_two} sheets, the inner ones). Print one batch, check it, print the other, then stack part 2 on top of part 1 before folding.\n\n\
-## booklet-a4-cover.pdf: cover wrap on heavier stock\n\n\
+{split_en}## booklet-a4-cover.pdf: cover wrap on heavier stock\n\n\
 {cover_sheets} A4 sheet, printed single-sided: the back cover beside the front cover. The PDF is that one page; there is no inside face to print. Use heavier stock (160-250 gsm folds well) and let the ink dry before folding.\n\n\
 ## Assembling the two-stock print\n\n\
 Fold the interior stack and the cover sheet separately, nest the interior inside the folded cover, then saddle-staple through the spine of both.\n"

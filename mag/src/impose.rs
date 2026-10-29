@@ -9,6 +9,8 @@ pub const A4_LANDSCAPE_POINTS: (f64, f64) = (841.8898, 595.2756);
 
 pub const BOOKLET_SECTIONS: [&str; 3] = ["all", "interior", "cover"];
 
+pub const MAX_UNSPLIT_INTERIOR_SHEETS: usize = 25;
+
 pub(crate) const PAGE_TREE_DEPTH: usize = 64;
 const MERGED_RESOURCES: [&[u8]; 7] = [
     b"ExtGState",
@@ -84,7 +86,10 @@ pub fn section_plan(
 pub fn split_sheets(
     plan: &[(Option<usize>, Option<usize>)],
     weight: impl Fn(usize) -> usize,
-) -> [Vec<(Option<usize>, Option<usize>)>; 2] {
+) -> Vec<Vec<(Option<usize>, Option<usize>)>> {
+    if plan.len() <= 2 * MAX_UNSPLIT_INTERIOR_SHEETS {
+        return Vec::new();
+    }
     let sheets: Vec<usize> = plan
         .chunks(2)
         .map(|sides| {
@@ -100,7 +105,7 @@ pub fn split_sheets(
     let first = (1..sheets.len())
         .min_by_key(|&k| (2 * sheets[..k].iter().sum::<usize>()).abs_diff(total))
         .unwrap_or(sheets.len());
-    [plan[..2 * first].to_vec(), plan[2 * first..].to_vec()]
+    vec![plan[..2 * first].to_vec(), plan[2 * first..].to_vec()]
 }
 
 fn image_weights(doc: &Document) -> Vec<usize> {
@@ -159,18 +164,17 @@ pub fn impose_a5_on_a4(reader_pdf: &Path, output: &Path, section: &str) -> Resul
     impose_plan(reader_pdf, output, section, &section_plan(pages, section)?)
 }
 
-pub fn impose_interior_parts(reader_pdf: &Path, stem: &Path) -> Result<[PathBuf; 2]> {
+pub fn impose_interior_parts(reader_pdf: &Path, stem: &Path) -> Result<Vec<PathBuf>> {
     let doc =
         Document::load(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
     let weights = image_weights(&doc);
-    let [first, second] = split_sheets(&section_plan(weights.len(), "interior")?, |page| {
-        weights[page - 1] + 1
-    });
+    let plan = section_plan(weights.len(), "interior")?;
     let part = |n: usize| stem.with_file_name(format!("booklet-a4-interior-part-{n}.pdf"));
-    Ok([
-        impose_plan(reader_pdf, &part(1), "interior", &first)?,
-        impose_plan(reader_pdf, &part(2), "interior", &second)?,
-    ])
+    split_sheets(&plan, |page| weights[page - 1] + 1)
+        .iter()
+        .zip(1..)
+        .map(|(sheets, n)| impose_plan(reader_pdf, &part(n), "interior", sheets))
+        .collect()
 }
 
 fn impose_plan(
