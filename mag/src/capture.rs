@@ -106,7 +106,15 @@ pub fn source_id(title: &str, url: &str) -> String {
 pub(crate) fn curl_text(url: &str) -> Result<String> {
     let fetch = |extra: &[&str]| {
         Command::new("curl")
-            .args(["-sL", "--max-time", "90", "-A", USER_AGENT, "--fail"])
+            .args([
+                "-sL",
+                "--compressed",
+                "--max-time",
+                "90",
+                "-A",
+                USER_AGENT,
+                "--fail",
+            ])
             .args(["-w", "\n%{content_type}"])
             .args(extra)
             .arg(url)
