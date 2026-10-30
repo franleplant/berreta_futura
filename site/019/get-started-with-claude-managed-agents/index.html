@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Get started with Claude Managed Agents · Berreta Futura</title>
+<meta name="description" content="Create your first autonomous agent.">
+<link rel="canonical" href="https://berreta.franleplant.com/019/get-started-with-claude-managed-agents/">
+<meta property="og:site_name" content="Berreta Futura">
+<meta property="og:title" content="Get started with Claude Managed Agents · Berreta Futura">
+<meta property="og:description" content="Create your first autonomous agent.">
+<meta property="og:url" content="https://berreta.franleplant.com/019/get-started-with-claude-managed-agents/">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://berreta.franleplant.com/img/3855622572930b70-1760.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../site.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="g-pdf" viewBox="0 0 24 24"><path d="M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-epub" viewBox="0 0 24 24"><path d="M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-down" viewBox="0 0 24 24"><path d="M12 4v13m-5-5 5 5 5-5M5 20.25h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></defs></svg>
+<header class="masthead"><a class="brand" href="../../"><svg class="logo" viewBox="3.91 -72.75 576.8 181.51" role="img" aria-label="Berreta Futura"><path fill="var(--ink, #0a0b0d)" d="M3.91 0V-72.75H35.45Q47.9 -72.75 54.37 -67.65Q60.84 -62.55 60.84 -54.59Q60.84 -48.24 56.98 -43.9Q53.12 -39.55 46.78 -38.33V-38.23Q51.46 -38.09 55.2 -35.82Q58.94 -33.54 61.11 -29.64Q63.28 -25.73 63.28 -20.61Q63.28 -14.65 60.3 -9.99Q57.32 -5.32 51.71 -2.66Q46.09 0 38.18 0ZM23.63 -15.23H34.38Q38.09 -15.23 40.28 -17.19Q42.48 -19.14 42.48 -22.41Q42.48 -25.68 40.28 -27.64Q38.09 -29.59 34.38 -29.59H23.63ZM23.63 -43.95H33.15Q36.52 -43.95 38.53 -45.8Q40.53 -47.66 40.53 -50.73Q40.53 -53.81 38.53 -55.66Q36.52 -57.52 33.15 -57.52H23.63ZM66.9 0V-72.75H123.24V-55.57H87.21V-44.63H120.46V-28.03H87.21V-17.19H123.24V0ZM128.08 0V-72.75H158.99Q167.68 -72.75 174.03 -69.65Q180.38 -66.55 183.82 -60.86Q187.26 -55.18 187.26 -47.36Q187.26 -40.58 184.35 -35.42Q181.45 -30.27 176.18 -27.15L189.51 0H168.36L157.47 -22.75H148.39V0ZM148.39 -38.48H157.47Q162.06 -38.48 164.75 -40.92Q167.44 -43.36 167.44 -47.36Q167.44 -51.37 164.75 -53.81Q162.06 -56.25 157.47 -56.25H148.39ZM192.63 0V-72.75H223.54Q232.23 -72.75 238.58 -69.65Q244.93 -66.55 248.37 -60.86Q251.81 -55.18 251.81 -47.36Q251.81 -40.58 248.91 -35.42Q246 -30.27 240.73 -27.15L254.06 0H232.92L222.03 -22.75H212.95V0ZM212.95 -38.48H222.03Q226.62 -38.48 229.3 -40.92Q231.99 -43.36 231.99 -47.36Q231.99 -51.37 229.3 -53.81Q226.62 -56.25 222.03 -56.25H212.95ZM257.19 0V-72.75H313.53V-55.57H277.5V-44.63H310.75V-28.03H277.5V-17.19H313.53V0ZM316.42 -55.57V-72.75H378.13V-55.57H357.43V0H337.12V-55.57ZM368.32 0 392.74 -72.75H420.08L444.74 0H421.89L418.42 -11.96H394.1L390.54 0ZM398.79 -27.59H413.93L413.73 -28.22Q411.83 -34.81 410.02 -41.26Q408.21 -47.71 406.46 -54.35Q404.65 -47.71 402.79 -41.26Q400.94 -34.81 398.99 -28.22Z"/><path fill="var(--box, #0a0b0d)" d="M156.50 10.00L580.71 10.00L563.29 108.75L139.09 108.75Z"/><path fill="var(--red, #f05738)" d="M146.65 101.57 159.48 28.82H214.12L211.09 46.01H176.76L174.49 58.9H206.86L203.95 75.4H171.58L166.97 101.57ZM236.29 102.75Q226.77 102.75 220.33 99.4Q213.89 96.06 211.08 89.98Q208.27 83.9 209.71 75.7L217.98 28.82H237.71L229.73 74.04Q228.85 79.06 231.56 82.36Q234.28 85.66 239.31 85.66Q244.43 85.66 248.26 82.38Q252.08 79.11 252.98 74.04L260.95 28.82H280.67L272.41 75.7Q270.96 83.9 266.01 89.98Q261.06 96.06 253.43 99.4Q245.81 102.75 236.29 102.75ZM281.5 46.01 284.53 28.82H346.25L343.22 46.01H322.52L312.72 101.57H292.41L302.21 46.01ZM368.42 102.75Q358.9 102.75 352.46 99.4Q346.02 96.06 343.21 89.98Q340.4 83.9 341.85 75.7L350.11 28.82H369.84L361.87 74.04Q360.98 79.06 363.69 82.36Q366.41 85.66 371.44 85.66Q376.56 85.66 380.39 82.38Q384.21 79.11 385.11 74.04L393.08 28.82H412.81L404.54 75.7Q403.1 83.9 398.14 89.98Q393.19 96.06 385.57 99.4Q377.95 102.75 368.42 102.75ZM405.79 101.57 418.62 28.82H449.53Q458.22 28.82 464.02 31.92Q469.82 35.02 472.26 40.71Q474.7 46.4 473.32 54.21Q472.13 61 468.31 66.15Q464.5 71.3 458.67 74.43L467.22 101.57H446.07L439.2 78.82H430.12L426.1 101.57ZM432.89 63.1H441.97Q446.56 63.1 449.68 60.66Q452.79 58.21 453.5 54.21Q454.2 50.21 451.95 47.77Q449.69 45.32 445.1 45.32H436.02ZM466.44 101.57 503.68 28.82H531.02L542.85 101.57H520L518.64 89.61H494.33L488.65 101.57ZM501.77 73.99H516.91L516.82 73.35Q516.08 66.76 515.41 60.31Q514.74 53.87 514.16 47.23Q511.18 53.87 508.19 60.31Q505.19 66.76 502.08 73.35Z"/><path fill="var(--paper, #ffffff)" d="M155.38 95.75 168.21 23H222.85L219.82 40.19H185.49L183.22 53.08H215.59L212.68 69.58H180.31L175.7 95.75ZM245.02 96.93Q235.5 96.93 229.06 93.58Q222.62 90.24 219.81 84.16Q217 78.08 218.44 69.88L226.71 23H246.44L238.46 68.21Q237.58 73.24 240.29 76.54Q243.01 79.84 248.04 79.84Q253.16 79.84 256.99 76.56Q260.81 73.29 261.71 68.21L269.68 23H289.41L281.14 69.88Q279.69 78.08 274.74 84.16Q269.79 90.24 262.16 93.58Q254.54 96.93 245.02 96.93ZM290.23 40.19 293.26 23H354.98L351.95 40.19H331.25L321.45 95.75H301.14L310.94 40.19ZM377.16 96.93Q367.63 96.93 361.19 93.58Q354.75 90.24 351.94 84.16Q349.13 78.08 350.58 69.88L358.84 23H378.57L370.6 68.21Q369.71 73.24 372.42 76.54Q375.14 79.84 380.17 79.84Q385.3 79.84 389.12 76.56Q392.94 73.29 393.84 68.21L401.81 23H421.54L413.27 69.88Q411.83 78.08 406.87 84.16Q401.92 90.24 394.3 93.58Q386.68 96.93 377.16 96.93ZM414.52 95.75 427.35 23H458.26Q466.95 23 472.75 26.1Q478.55 29.2 480.99 34.89Q483.43 40.58 482.05 48.39Q480.86 55.18 477.04 60.33Q473.23 65.48 467.4 68.61L475.95 95.75H454.81L447.93 73H438.85L434.83 95.75ZM441.62 57.28H450.7Q455.29 57.28 458.41 54.84Q461.52 52.39 462.23 48.39Q462.93 44.39 460.68 41.95Q458.42 39.5 453.83 39.5H444.75ZM475.17 95.75 512.41 23H539.75L551.58 95.75H528.73L527.38 83.79H503.06L497.39 95.75ZM510.5 68.17H525.64L525.55 67.53Q524.81 60.94 524.14 54.49Q523.47 48.05 522.89 41.41Q519.91 48.05 516.92 54.49Q513.92 60.94 510.81 67.53Z"/></svg></a><a class="crumb" href="../">Issue 19</a><nav class="topnav"><a href="../../">Issues</a><a href="../../search/">Search</a></nav></header>
+<main>
+<article class="piece">
+<header class="piece-head">
+<p class="kicker">Feature 08 · VERBATIM</p>
+<h1>Get started with Claude Managed Agents</h1>
+<p class="byline">By Anthropic</p>
+<p class="author-note">AI safety and research company.</p>
+<p class="source"><a href="https://platform.claude.com/docs/en/managed-agents/quickstart">Read the original <span>platform.claude.com</span></a></p>
+</header>
+<p class="standfirst">Create your first autonomous agent.</p>
+<figure class="opener"><img src="../../img/3855622572930b70-800.jpg" srcset="../../img/3855622572930b70-800.jpg 800w, ../../img/3855622572930b70-1200.jpg 1200w, ../../img/3855622572930b70-1760.jpg 1760w" sizes="(min-width: 44rem) 40rem, 100vw" width="800" height="465" alt="Pedro holds Maro's hand as Maro steps onto a stepping stone in a pond, while Flopaz beckons from the far stone." fetchpriority="high" decoding="async"></figure>
+<p class="first">This guide walks you through creating an agent, setting up an environment, starting a session, and streaming agent responses.</p>
+<h2>Core concepts</h2>
+<table><thead><tr><th>Concept</th><th>Description</th></tr></thead><tbody><tr><td><strong>Agent</strong></td><td>The model, system prompt, tools, MCP servers, and skills</td></tr><tr><td><strong>Environment</strong></td><td>Configuration for where sessions run: an Anthropic-managed cloud sandbox, or a self-hosted sandbox on your own infrastructure</td></tr><tr><td><strong>Session</strong></td><td>A running agent instance within an environment, performing a specific task and generating outputs</td></tr><tr><td><strong>Events</strong></td><td>Messages exchanged between your application and the agent (user turns, tool results, status updates)</td></tr></tbody></table>
+<h2>Prerequisites</h2>
+<ul><li><p>A <a href="https://platform.claude.com/">Claude Console account</a></p></li><li><p>An <a href="https://platform.claude.com/settings/keys">API key</a> from the Console</p></li></ul>
+<h2>Install the CLI</h2>
+<p>Homebrew (macOS)</p>
+<pre><code>brew<span class="w"> </span>install<span class="w"> </span>anthropics/tap/ant
+</code></pre>
+<p>curl (Linux/WSL)</p>
+<p>For Linux environments, download the release binary directly.</p>
+<pre><code><span class="nv">VERSION</span><span class="o">=</span><span class="m">2</span>.4.0
+<span class="nv">OS</span><span class="o">=</span><span class="k">$(</span>uname<span class="w"> </span>-s<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'[:upper:]'</span><span class="w"> </span><span class="s1">'[:lower:]'</span><span class="k">)</span>
+<span class="k">case</span><span class="w"> </span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="w"> </span><span class="k">in</span>
+<span class="w">  </span>x86_64<span class="o">)</span><span class="w"> </span><span class="nv">ARCH</span><span class="o">=</span>amd64<span class="w"> </span><span class="p">;;</span>
+<span class="w">  </span>aarch64<span class="o">)</span><span class="w"> </span><span class="nv">ARCH</span><span class="o">=</span>arm64<span class="w"> </span><span class="p">;;</span>
+<span class="k">esac</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span><span class="s2">"https://github.com/anthropics/anthropic-cli/releases/download/v</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">/ant_</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">_</span><span class="si">${</span><span class="nv">OS</span><span class="si">}</span><span class="s2">_</span><span class="si">${</span><span class="nv">ARCH</span><span class="si">}</span><span class="s2">.tar.gz"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tar<span class="w"> </span>-xz<span class="w"> </span>-C<span class="w"> </span>/usr/local/bin<span class="w"> </span>ant
+</code></pre>
+<p>You can find all releases on the <a href="https://github.com/anthropics/anthropic-cli/releases">GitHub releases page</a>.</p>
+<p>Go</p>
+<p>You can also install the CLI from source using <code>go install</code>. Requires Go 1.25 or later.</p>
+<pre><code>go<span class="w"> </span>install<span class="w"> </span>github.com/anthropics/anthropic-cli/v2/cmd/ant@latest
+</code></pre>
+<p>The binary is placed in <code>$(go env GOPATH)/bin</code>. Add it to your <code>PATH</code> if it isn’t already:</p>
+<pre><code><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PATH</span><span class="s2">:</span><span class="k">$(</span>go<span class="w"> </span>env<span class="w"> </span>GOPATH<span class="k">)</span><span class="s2">/bin"</span>
+</code></pre>
+<p>Check the installation:</p>
+<pre><code>ant --version
+
+</code></pre>
+<h2>Install the SDK</h2>
+<p>Python</p>
+<pre><code>pip<span class="w"> </span>install<span class="w"> </span>anthropic
+</code></pre>
+<p>Set your API key as an environment variable:</p>
+<pre><code><span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span><span class="s2">"your-api-key-here"</span>
+</code></pre>
+<h2>Create your first session</h2>
+<h3>1. Create an agent</h3>
+<p>Create an agent that defines the model, system prompt, and available tools.</p>
+<p>CLI</p>
+<pre><code>ant apply coding-assistant.md
+
+</code></pre>
+<p>coding-assistant.md</p>
+<pre><code><span class="nn">---</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Coding Assistant</span>
+<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-opus-5-5</span>
+<span class="nt">tools</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">agent_toolset_20260401</span>
+<span class="nn">---</span>
+
+<span class="l l-Scalar l-Scalar-Plain">You are a helpful coding assistant. Write clean, well-documented code.</span>
+</code></pre>
+<p><a href="https://platform.claude.com/docs/en/cli-sdks-libraries/cli/apply"><code>ant apply</code></a> prints the agent’s ID and records it in <code>claude-lock.json</code>. You’ll reference it in every session you create.</p>
+<p>The <code>agent_toolset_20260401</code> tool type enables the full set of pre-built agent tools (bash, file operations, web search, and more). See <a href="https://platform.claude.com/docs/en/managed-agents/tools">Tools</a> for the complete list and per-tool configuration options.</p>
+<h3>2. Create an environment</h3>
+<p>An environment defines the sandbox where your agent runs. This one uses <code>limited</code> <a href="https://platform.claude.com/docs/en/managed-agents/environments#networking">networking</a> with package managers allowed, so code running in the sandbox can reach public <a href="https://platform.claude.com/docs/en/managed-agents/environments#package-manager-hosts">package registries and code hosts</a>. Web search and web fetch run outside the sandbox, and this quickstart does not need them. With <code>limited</code> networking, the <a href="https://platform.claude.com/docs/en/managed-agents/environments#networking"><code>allowed_hosts</code> list</a> applies to them too. They return no pages or search results in this environment, because it lists no hosts. For your own agent, list the hosts it needs in <code>allowed_hosts</code>.</p>
+<p>CLI</p>
+<pre><code>ant apply environment.yaml
+
+</code></pre>
+<p>environment.yaml</p>
+<pre><code><span class="c1"># yaml-language-server: $schema=https://platform.claude.com/schemas/ant/beta/environment.json</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">quickstart-env</span>
+<span class="nt">config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cloud</span>
+<span class="w">  </span><span class="nt">networking</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">limited</span>
+<span class="w">    </span><span class="nt">allow_package_managers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre>
+<p><a href="https://platform.claude.com/docs/en/cli-sdks-libraries/cli/apply"><code>ant apply</code></a> records the environment’s ID in <code>claude-lock.json</code> too. To create the agent and the environment with one command, pass both files: <code>ant apply coding-assistant.md environment.yaml</code>.</p>
+<p>This quickstart uses a cloud environment. To decide whether to run tools on your own infrastructure with a <a href="https://platform.claude.com/docs/en/managed-agents/self-hosted-sandboxes">self-hosted sandbox</a> instead, see <a href="https://platform.claude.com/docs/en/managed-agents/choosing-an-environment">Choosing an agent environment</a>.</p>
+<h3>3. Start a session</h3>
+<p>Create a session that references your agent and environment.</p>
+<p>Python</p>
+<pre><code>session = client.beta.sessions.create(
+    agent=agent.id,
+    environment_id=environment.id,
+    title="Quickstart session",
+)
+
+print(f"Session ID: {session.id}")
+
+</code></pre>
+<h3>4. Send a message and stream the response</h3>
+<p>Open a stream, send a user event, then process events as they arrive:</p>
+<p>Python</p>
+<pre><code><span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">sessions</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
+    <span class="c1"># Send the user message after the stream opens</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">sessions</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">send</span><span class="p">(</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">events</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"user.message"</span><span class="p">,</span>
+                <span class="s2">"content"</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span>
+                        <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"Create a Python script that generates the first 20 Fibonacci numbers and saves them to fibonacci.txt"</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">],</span>
+            <span class="p">},</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Process streaming events</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+        <span class="k">match</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"agent.message"</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"text"</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">"agent.tool_use"</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[Using tool: </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">"session.status_idle"</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">Agent finished."</span><span class="p">)</span>
+                <span class="k">break</span>
+</code></pre>
+<p>The agent writes a Python script, runs it in the sandbox, and verifies the output file was created. Your output looks similar to this:</p>
+<pre><code>I'll create a Python script that generates the first 20 Fibonacci numbers and saves them to a file.
+[Using tool: write]
+[Using tool: bash]
+The script ran successfully. Let me verify the output file.
+[Using tool: bash]
+fibonacci.txt contains the first 20 Fibonacci numbers (0 through 4181).
+
+Agent finished.
+
+</code></pre>
+<h2>What’s happening</h2>
+<p>When you send a user event, Claude Managed Agents:</p>
+<ol><li><p><strong>Provisions a sandbox:</strong> Your environment configuration determines how it’s built.</p></li><li><p><strong>Runs the agent loop:</strong> Claude determines which tools to use based on your message.</p></li><li><p><strong>Runs tools:</strong> File writes, bash commands, and other tool calls run inside the sandbox.</p></li><li><p><strong>Streams events:</strong> You receive real-time updates as the agent works.</p></li><li><p><strong>Goes idle:</strong> The agent emits a <code>session.status_idle</code> event when it has nothing more to do.</p></li></ol>
+<h2>Build a complete app</h2>
+<p>Each of these quickstarts pairs Claude Managed Agents with a popular chat framework to make a complete, runnable application. In each one, the framework renders the chat surface while a managed session runs the agent loop server-side: the session holds the transcript, runs tools in a sandbox, and streams events that the front end renders.</p>
+<p><a href="https://github.com/anthropics/claude-quickstarts/tree/main/managed-agents/chat-sdk">Chat SDK</a></p>
+<p>A research analyst in a browser chat built with Vercel’s Chat SDK. Each conversation is one persistent session that streams its reply while a live feed shows the tool calls. Swapping the Chat SDK adapter moves the same handler to Slack, Teams, Discord, or WhatsApp.</p>
+<p><a href="https://github.com/anthropics/claude-quickstarts/tree/main/managed-agents/assistant-ui">assistant-ui</a></p>
+<p>A spreadsheet analyst in a chat built from assistant-ui primitives. Sessions are the thread list, one reducer turns the session event log into messages and tool cards, and each bash command renders an inline Allow/Deny gate before it runs.</p>
+<p><a href="https://github.com/anthropics/claude-quickstarts/tree/main/managed-agents/copilot-kit-ag-ui">CopilotKit (AG-UI)</a></p>
+<p>A personal finance assistant in a CopilotKit chat. The AG-UI adapter for Claude Managed Agents maps each chat thread to a managed session and streams replies token by token, and custom tools render interactive charts inline in the conversation.</p>
+<h2>Next steps</h2>
+<p><a href="https://platform.claude.com/docs/en/managed-agents/agent-setup">Define your agent</a></p>
+<p>Create reusable, versioned agent configurations</p>
+<p><a href="https://platform.claude.com/docs/en/managed-agents/environments">Configure environments</a></p>
+<p>Customize networking and sandbox settings</p>
+<p><a href="https://platform.claude.com/docs/en/managed-agents/tools">Agent tools</a></p>
+<p>Enable specific tools for your agent</p>
+<p><a href="https://platform.claude.com/docs/en/managed-agents/events-and-streaming">Session event stream</a></p>
+<p>Handle events and steer the agent while it runs</p>
+<p><a href="https://platform.claude.com/docs/en/managed-agents/scheduled-deployments">Scheduled deployments</a></p>
+<p>Run your agent on a recurring cron schedule</p>
+<p><a href="https://github.com/anthropics/claude-quickstarts/tree/main/managed-agents/knowledge-wiki">Knowledge wiki quickstart</a></p>
+<p>Distill a document corpus once into a knowledge wiki, then answer repeated questions from it at a fraction of the cost</p>
+<figure class="tail" aria-hidden="true"><img src="../../img/de85f8a05e00a06a-800.jpg" srcset="../../img/de85f8a05e00a06a-800.jpg 800w, ../../img/de85f8a05e00a06a-1200.jpg 1200w, ../../img/de85f8a05e00a06a-1600.jpg 1600w, ../../img/de85f8a05e00a06a-2160.jpg 2160w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="800" height="266" alt="" loading="lazy" decoding="async"></figure>
+</article>
+<div class="piece-end"><a class="back" href="../">Back to Issue 19, Pass the Tiller</a><a class="dl" href="../#get"><svg class="glyph" aria-hidden="true"><use href="#g-down"/></svg>Get the issue: PDF, EPUB</a></div>
+<nav class="pager"><a rel="prev" href="../claude-managed-agents-overview/"><span class="kicker">Previous</span>Claude Managed Agents overview</a><a rel="next" href="../scaling-managed-agents-with-stable-interfaces/"><span class="kicker">Next</span>Scaling Managed Agents with stable interfaces</a></nav>
+<script src="../../share.js" data-copy="Copy link" data-done="Link copied" data-failed="Copy the link by hand" defer></script>
+</main>
+<footer class="colophon"><a href="../../">Berreta Futura</a><span>Printed on a laptop, read anywhere.</span></footer>
+</body>
+</html>
