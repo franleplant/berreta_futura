@@ -1,0 +1,9 @@
+en:
+  pdf:
+    url: https://github.com/franleplant/berreta_futura/releases/download/issue-019/berreta-futura-019-en.pdf
+    bytes: 27070008
+    sha256: 90bea095b695276ed3cc94a137b9a12d9ea1f9d052813d65c6852d4453405c0f
+  epub:
+    url: https://github.com/franleplant/berreta_futura/releases/download/issue-019/berreta-futura-019-en.epub
+    bytes: 12621448
+    sha256: 247ece16edf9ce87c04e96b884ea2d336245d553787b5829eb3e79f4fb4cc076
