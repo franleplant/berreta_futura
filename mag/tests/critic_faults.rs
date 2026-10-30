@@ -42,7 +42,7 @@ fn the_interior_opens_with_the_credits_on_a_sheet_of_their_own_and_splits_on_a_s
         std::iter::once(2).chain(3..=106).collect::<Vec<_>>()
     );
     let [first, second] = &impose::split_sheets(&plan, |_| 1)[..] else {
-        panic!("a 54-side interior is past 25 sheets and splits in two");
+        panic!("a 54-side interior is past 12 sheets and splits in two");
     };
     assert!(first.len() % 2 == 0 && first.len().abs_diff(second.len()) <= 2);
     assert_eq!([first.clone(), second.clone()].concat(), plan);
@@ -53,10 +53,16 @@ fn the_interior_opens_with_the_credits_on_a_sheet_of_their_own_and_splits_on_a_s
         "one heavy sheet weighs as much as the rest"
     );
     assert_eq!(parts[1].len(), plan.len() - 2);
-    let fifty = impose::section_plan(100, "interior").unwrap();
-    assert_eq!(fifty.len(), 50);
+    let twelve = impose::section_plan(48, "interior").unwrap();
+    assert_eq!(twelve.len(), 24);
     assert!(
-        impose::split_sheets(&fifty, |_| 1).is_empty(),
-        "25 sheets print as one batch"
+        impose::split_sheets(&twelve, |_| 1).is_empty(),
+        "12 sheets print as one batch"
+    );
+    let thirteen = impose::section_plan(52, "interior").unwrap();
+    assert_eq!(
+        impose::split_sheets(&thirteen, |_| 1).len(),
+        2,
+        "13 sheets split"
     );
 }

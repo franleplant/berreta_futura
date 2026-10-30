@@ -9,7 +9,7 @@ pub const A4_LANDSCAPE_POINTS: (f64, f64) = (841.8898, 595.2756);
 
 pub const BOOKLET_SECTIONS: [&str; 3] = ["all", "interior", "cover"];
 
-pub const MAX_UNSPLIT_INTERIOR_SHEETS: usize = 25;
+pub const MAX_UNSPLIT_INTERIOR_SHEETS: usize = 12;
 
 pub(crate) const PAGE_TREE_DEPTH: usize = 64;
 const MERGED_RESOURCES: [&[u8]; 7] = [
