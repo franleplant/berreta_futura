@@ -11,8 +11,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - The pipeline leads: every step prints the next command when it finishes.
   Follow that, not the previous edition. The order is `mag capture` (writes
   the plan row) -> `mag produce editions/NNN/plan.yaml` (writes the run and,
-  the first time, scaffolds `edition.yaml`: author_note is the mechanical
-  "Published on Site." line, never a summary or a repeat of the byline; the first three source images
+  the first time, scaffolds `edition.yaml`: author_note is a short bio (role
+  and where the author works or writes) from one gated call that rejects a
+  bio naming the author or reusing a title word, never a summary; the first three source images
   (every one in verbatim) become figure rows captioned from their alt and
   re-anchored to the run's headings, the rest commented out; a verbatim
   body drops bare-URL lines, headings that repeat the title, and a heading that opens it,

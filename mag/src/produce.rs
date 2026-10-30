@@ -607,23 +607,21 @@ fn figure_rows(sids: &[String], range: Option<&serde_norway::Value>, cap: usize)
     }
 }
 
-fn author_note(author: &str, sids: &[String]) -> String {
-    let author = author.trim();
-    if crate::model::manifest::is_house_byline(author) {
-        return String::new();
-    }
-    let Some(record) = sids.first().and_then(|sid| {
-        parse_yaml::<SourceRecord>(
-            &read(&Path::new("library/sources").join(sid).join("record.yaml")).ok()?,
-        )
-        .ok()
-    }) else {
-        return "TODO".to_string();
-    };
-    let site = record
-        .site
-        .unwrap_or_else(|| crate::capture::page_site("", &record.url));
-    format!("Published on {site}.")
+fn source_site(sids: &[String]) -> (String, String) {
+    sids.first()
+        .and_then(|sid| {
+            parse_yaml::<SourceRecord>(
+                &read(&Path::new("library/sources").join(sid).join("record.yaml")).ok()?,
+            )
+            .ok()
+        })
+        .map(|r| {
+            let site = r
+                .site
+                .unwrap_or_else(|| crate::capture::page_site("", &r.url));
+            (site, r.url)
+        })
+        .unwrap_or_default()
 }
 
 fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String> {
@@ -646,7 +644,10 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
     y += &format!(
         "  author: {}\n  author_note: {}\n  content_mode: {}\n",
         yq(&get("author")),
-        yq(&author_note(&get("author"), &sids)),
+        match crate::model::manifest::is_house_byline(&get("author")) {
+            true => "''",
+            false => "TODO",
+        },
         yq(&get("content_mode"))
     );
     y += "  source_ids:\n";
@@ -1210,6 +1211,109 @@ fn article_labels(caller: &Caller, model: &ModelSpec, edition_yaml: &Path) -> Re
     Ok(true)
 }
 
+fn bio_misses(bio: &str, author: &str, title: &str) -> Vec<String> {
+    let words = |text: &str, min: usize| -> Vec<String> {
+        text.split(|c: char| !c.is_alphanumeric())
+            .filter(|w| w.chars().count() >= min && *w != "and")
+            .map(str::to_lowercase)
+            .collect()
+    };
+    let used = words(bio, 1);
+    let mut misses: Vec<String> = words(author, 3)
+        .into_iter()
+        .chain(words(title, 5))
+        .filter(|w| used.contains(w))
+        .map(|w| format!("drop {w:?}: the bio never repeats the byline or the title"))
+        .collect();
+    if bio.is_empty() || bio.chars().count() > 80 || !bio.ends_with('.') || bio.contains('\u{2014}')
+    {
+        misses.push(format!(
+            "{bio:?} must be one sentence of at most 80 characters ending with a period"
+        ));
+    }
+    misses
+}
+
+fn parse_bios(reply: &str, todo: &[[String; 5]]) -> Result<HashMap<String, String>> {
+    let rows: HashMap<&str, &str> = reply
+        .lines()
+        .filter_map(|line| line.split_once('|'))
+        .map(|(id, bio)| (id.trim(), bio.trim()))
+        .collect();
+    let mut misses = Vec::new();
+    let bios = todo
+        .iter()
+        .filter_map(|[id, author, title, ..]| {
+            let Some(bio) = rows.get(id.as_str()) else {
+                misses.push(format!("no line for {id}"));
+                return None;
+            };
+            misses.extend(
+                bio_misses(bio, author, title)
+                    .into_iter()
+                    .map(|m| format!("{id}: {m}")),
+            );
+            Some((id.clone(), (*bio).to_string()))
+        })
+        .collect();
+    match misses.is_empty() {
+        true => Ok(bios),
+        false => Err(anyhow!("bios: {}", misses.join("; "))),
+    }
+}
+
+fn patch_bios(text: &str, bios: &HashMap<String, String>) -> String {
+    let mut current: Option<&String> = None;
+    let lines: Vec<String> = text
+        .lines()
+        .map(|line| {
+            if let Some(id) = line.strip_prefix("- id: ") {
+                let id = serde_norway::from_str::<String>(id).unwrap_or(id.to_string());
+                current = bios.get(&id);
+            }
+            match current {
+                Some(bio) if line == "  author_note: TODO" => format!("  author_note: {}", yq(bio)),
+                _ => line.to_string(),
+            }
+        })
+        .collect();
+    lines.join("\n") + "\n"
+}
+
+fn author_bios(caller: &Caller, model: &ModelSpec, edition_yaml: &Path) -> Result<bool> {
+    let text = read(edition_yaml)?;
+    let edition: EditionFile = parse_yaml(&text)?;
+    let todo: Vec<[String; 5]> = edition
+        .articles
+        .iter()
+        .filter(|a| a.author_note.as_deref() == Some("TODO"))
+        .map(|a| {
+            let (site, url) = source_site(&a.source_ids);
+            [a.id.clone(), a.author.clone(), a.title.clone(), site, url]
+        })
+        .collect();
+    if todo.is_empty() {
+        return Ok(false);
+    }
+    let list: String = todo
+        .iter()
+        .map(|[id, author, _, site, url]| format!("{id} | {author} | {site} | {url}\n"))
+        .collect();
+    let prompt = format!(
+        "{INLINE_PREAMBLE}\n\n{}\n\n{}",
+        read(&prompts_path("author-bios.md"))?,
+        section("articles", &list)
+    );
+    let bios = caller.call_with_parse("author-bios", model, &prompt, |reply| {
+        parse_bios(reply, &todo)
+    })?;
+    let patched = patch_bios(&text, &bios);
+    parse_yaml::<EditionFile>(&patched)
+        .with_context(|| format!("{} no longer parses after the bios", edition_yaml.display()))?;
+    write_atomic(edition_yaml, patched)?;
+    Ok(true)
+}
+
 fn fill_todos(text: &str, drafted: &HashMap<String, String>) -> String {
     let filled: Vec<String> = text
         .lines()
@@ -1241,6 +1345,9 @@ fn print_next_steps(
     );
     if article_labels(caller, model, &edition_yaml)? {
         println!("drafted short titles and display emphasis (review them)");
+    }
+    if author_bios(caller, model, &edition_yaml)? {
+        println!("drafted author bios (review them)");
     }
     let edition: EditionFile = parse_yaml(&read(&edition_yaml)?)?;
     let dropped = crate::anchors::reanchor(
@@ -1301,6 +1408,29 @@ mod tests {
         let opens_on_heading = "# T\n\n## Section\n\nFirst.\n";
         let body = verbatim_body(&[("s".to_string(), opens_on_heading.to_string())]).unwrap();
         assert_eq!(body, "First.\n");
+    }
+
+    #[test]
+    fn a_bio_never_repeats_the_byline_or_the_title_and_is_patched_into_its_row() {
+        let todo = vec![[
+            "g".to_string(),
+            "Ada Lovelace".to_string(),
+            "Notes on the Analytical Engine".to_string(),
+            String::new(),
+            String::new(),
+        ]];
+        assert!(parse_bios("g | Mathematician, 1815-1852.", &todo).is_ok());
+        assert!(parse_bios("g | Lovelace wrote these.", &todo).is_err());
+        assert!(parse_bios("g | Explains the analytical engine.", &todo).is_err());
+        assert!(parse_bios("h | Mathematician.", &todo).is_err());
+        let bios = HashMap::from([("g".to_string(), "Mathematician.".to_string())]);
+        assert_eq!(
+            patch_bios(
+                "- id: g\n  author_note: TODO\n- id: h\n  author_note: TODO\n",
+                &bios
+            ),
+            "- id: g\n  author_note: Mathematician.\n- id: h\n  author_note: TODO\n"
+        );
     }
 
     #[test]
