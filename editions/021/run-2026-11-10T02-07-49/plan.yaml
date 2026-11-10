@@ -16,7 +16,7 @@ articles:
   rationale: How S3 is built and why it scales, from the AWS overview, the Warfield essays on scale and strong consistency, the consistency launch post, the ShardStore formal-methods paper, the performance guide, and the re:Invent 2024 deep dive.
 - id: building-on-a-bucket
   title: 'Building on a bucket: celld as the case study'
-  author: Tom Lockney, Gunnar Morling, turbopuffer, WarpStream
+  author: celld, Gunnar Morling, Dan Harrison, Richard Artoul
   content_mode: in_a_nutshell
   source_ids:
   - the-bucket-is-the-coordinator-2dfa2ee2
@@ -80,3 +80,9 @@ articles:
   content_mode: article
   source_ids:
   - sparks-of-weight-space-programming-llms-can-nati-f9ecf66c
+- id: firecracker-vm-escape-pwnescape-part-2
+  title: 'Firecracker VM Escape: PwnEscape Part 2'
+  author: PWN Research, Paulos Yibelo
+  content_mode: article
+  source_ids:
+  - firecracker-vm-escape-pwnescape-part-2-19e5a3d3

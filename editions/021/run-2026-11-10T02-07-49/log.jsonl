@@ -24,3 +24,5 @@
 {"attempt":0,"label":"how-s3-works-and-why-it-scales write","model":"opus","seconds":62.6,"usd":0.8395}
 {"attempt":0,"label":"how-s3-works-and-why-it-scales figure anchors","model":"haiku","seconds":5.2,"usd":0.0033}
 {"attempt":0,"label":"building-on-a-bucket figure anchors","model":"haiku","seconds":8.7,"usd":0.0036}
+{"attempt":0,"label":"article-labels","model":"opus","seconds":4.4,"usd":0.1098}
+{"attempt":0,"label":"author-bios","model":"opus","seconds":6.6,"usd":0.1036}

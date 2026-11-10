@@ -18,7 +18,7 @@ cover:
   headline: Show Your Work
   deck: A billion-to-one bug that hits twice a day, a bucket that hands out leases, Git rebuilt for a flood of agents, one server for three readers, 948 kernel exploits, post-quantum tokens, proofs of inference, a new Claude, and networks written by hand
   back_text: 'LOST: one proof, last seen holding up a very confident answer. Answers to "trust me." Reward if returned before the demo.'
-  art_path: editions/021/art/picks/cover-bucket-city-v1.jpg
+  art_path: editions/021/art/picks/cover-glass-top-hat-v1.jpg
 articles:
 - id: how-s3-works-and-why-it-scales
   title: How S3 works and why it scales
@@ -424,6 +424,65 @@ articles:
     alt_text: 'Maro adjusts a tiny dial inside an open toy car while Pedro steadies a ramp and Flopaz waits by a blue box.'
     credit: Illustration generated for this edition.
   tail_art_path: editions/021/art/picks/tail-weights-car-leap-v1.jpg
+- id: firecracker-vm-escape-pwnescape-part-2
+  title: 'Firecracker VM Escape: PwnEscape Part 2'
+  short_title: Firecracker VM Escape
+  display_emphasis: VM Escape
+  opener_variant: stepped_title
+  author: PWN Research, Paulos Yibelo
+  author_note: Offensive security researchers at an AI-driven security company.
+  content_mode: verbatim
+  source_ids:
+  - firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+  manuscript: editions/021/articles/firecracker-vm-escape-pwnescape-part-2.md
+  figures:
+  - id: figure-1
+    source_id: firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+    path: media/firecracker-host-integration-dbdde36ef234-2x.png
+    caption: "Firecracker's host integration: each microVM's guest runs under KVM in the host kernel, with a per-VM file block device and a shared network bridge in host user space."
+    alt_text: Block diagram of Firecracker microVMs, their guests, KVM, file block devices, and a network bridge across host user and kernel space.
+    anchor: 00 / Choosing where to take control
+    layout: evidence_band
+  - id: figure-2
+    source_id: firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+    path: media/01-guest-to-vmm-chain-5c0fbee0cb07.png
+    caption: "The exploit chain end to end: a known guest page leads through host memory to the Firecracker process image, and a one-byte serial trigger redirects a saved KVM_RUN frame into a controlled host call."
+    alt_text: Three-column flow from guest microVM through host kernel and KVM to the Firecracker process, ending in a resumed thread that runs a controlled call.
+    anchor: 00 / Choosing where to take control
+    layout: evidence_band
+  - id: figure-3
+    source_id: firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+    path: media/02-address-resolution-0e47fd8bf102.png
+    caption: "Resolving the Firecracker address space in four checked stages, from recognizing a known guest page to locating and validating the Firecracker ELF image by its code bytes."
+    alt_text: Four stacked stages (recognize guest page, walk EPT roots, reverse host page mapping, locate and validate Firecracker) each with its resolved address value.
+    anchor: 02 / Finding the Firecracker process
+    layout: evidence_band
+  - id: figure-4
+    source_id: firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+    path: media/03-live-kvm-run-frame-ddb3ad26cf50.png
+    caption: "Picking the live vCPU return frame: a candidate set of saved registers is kept only if the saved syscall is KVM_RUN, the stack maps through the recovered page tables, the return points into Firecracker, and the code bytes still match."
+    alt_text: A candidate saved-register frame narrowed by four tests to the one live vCPU return frame.
+    anchor: 03 / Locating the live vCPU frame
+    layout: compact_band
+  - id: figure-5
+    source_id: firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+    path: media/04-reversible-control-flow-10ae6af41746.png
+    caption: "Redirecting the return from KVM: a guest serial byte forces a userspace exit, Firecracker runs the planted write(2) call, then the original return value and stack words are restored."
+    alt_text: Four-step reversible control flow from a guest serial byte to a planted host call and back to the original execution path.
+    anchor: 04 / Redirecting the return from KVM
+    layout: evidence_band
+  - id: figure-6
+    source_id: firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+    path: media/05-proof-receipt-6e8ad89bf50c.png
+    caption: "The proof receipt, checked on both sides of the VM boundary: the host emitted the marker once from PID 2936, and after restore the frame still passed its checks with the guest SSH session healthy."
+    alt_text: A proof receipt pairing the guest-side trigger record with the host-side marker capture and a post-restore validation.
+    anchor: 05 / Checking execution and recovery
+    layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-firecracker-marble-bell-v2.jpg
+    alt_text: 'Flopaz drops one marble into a sealed glass jar and it rolls out through a tube to ring a bell outside, startling Pedro while Maro listens at the glass.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-firecracker-jar-restored-v1.jpg
 tail_art_fit: contain
 closing_plates:
 - title: 'Window reading'

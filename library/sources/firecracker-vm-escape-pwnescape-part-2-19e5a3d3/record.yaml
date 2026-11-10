@@ -1,0 +1,9 @@
+id: firecracker-vm-escape-pwnescape-part-2-19e5a3d3
+title: 'Firecracker VM Escape: PwnEscape Part 2'
+author: 'PWN Research, Paulos Yibelo'
+url: https://pwn.ai/blog/firecracker-escape
+site: 'PWN.AI'
+captured_at: '2026-11-10T13:20:00Z'
+published_at: '2026-11-04'
+tags: []
+synopsis: 'PWN.AI walks through a guest-to-host Firecracker microVM escape: from inside the guest it resolves the live VMM in host memory, redirects a vCPU thread''s return from KVM, and runs code of its choosing as root on the host, then restores the thread so the VM keeps running.'

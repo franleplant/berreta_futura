@@ -34,6 +34,16 @@ _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
 
+## Firecracker VM Escape: PwnEscape Part 2 — PWN Research, Paulos Yibelo
+
+- ID: `firecracker-vm-escape-pwnescape-part-2-19e5a3d3`
+- Source: https://pwn.ai/blog/firecracker-escape
+- Published: 2026-11-04
+- Captured: 2026-11-10T13:20:00Z
+- Release: queued for `021`
+
+PWN.AI walks through a guest-to-host Firecracker microVM escape: from inside the guest it resolves the live VMM in host memory, redirects a vCPU thread's return from KVM, and runs code of its choosing as root on the host, then restores the thread so the VM keeps running.
+
 ## Formally verifying agent-written full-stack web apps with PDD Kit — Alex Lavaee, Matthai Philipose
 
 - ID: `formally-verifying-agent-written-full-stack-web-b28ecfb7`
