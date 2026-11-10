@@ -175,20 +175,21 @@ pub(crate) fn curl_image(url: &str, dest_stem: &Path) -> Result<PathBuf> {
         );
     }
     let ctype = String::from_utf8_lossy(&out.stdout).to_lowercase();
-    let ext = match ctype.split(';').next().unwrap_or("").trim() {
-        "image/png" => "png",
-        "image/jpeg" | "image/jpg" => "jpg",
-        "image/gif" => "gif",
-        "image/webp" => "webp",
-        "image/svg+xml" => "svg",
-        "image/avif" => "avif",
-        other => match sniff_image(&fs::read(&tmp)?) {
-            Some(ext) => ext,
-            None => {
-                let _ = fs::remove_file(&tmp);
-                bail!("image {url} came back as '{other}', not an image");
-            }
-        },
+    let ext = match (
+        sniff_image(&fs::read(&tmp)?),
+        ctype.split(';').next().unwrap_or("").trim(),
+    ) {
+        (Some(ext), _) => ext,
+        (None, "image/png") => "png",
+        (None, "image/jpeg" | "image/jpg") => "jpg",
+        (None, "image/gif") => "gif",
+        (None, "image/webp") => "webp",
+        (None, "image/svg+xml") => "svg",
+        (None, "image/avif") => "avif",
+        (None, other) => {
+            let _ = fs::remove_file(&tmp);
+            bail!("image {url} came back as '{other}', not an image");
+        }
     };
     if ext == "webp" || ext == "gif" || ext == "svg" {
         let dest = dest_stem.with_extension("png");
