@@ -37,7 +37,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (`deploy/web/README.md`). `--check` rebuilds into a temp dir and fails
   listing paths that differ from `--out`. It publishes the editions listed in
   `magazine.toml` `[site] editions`, each from its newest git-tracked complete
-  run (never an untracked local run), with the print-tone figure copies,
+  run (never an untracked local run), read from a sparse worktree of HEAD at
+  `.magazine/site-head` (so uncommitted edits neither block nor leak; `mag
+  epub` loads through it too), with the print-tone figure copies,
   resized JPEG/WebP variants, and no Typst render and no model call. Download links
   come only from a committed `editions/NNN/publish.yaml`; without one the
   issue page has no PDF or EPUB link. It refuses to write a page that drops any manuscript block,
