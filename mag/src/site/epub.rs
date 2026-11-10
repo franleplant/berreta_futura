@@ -186,8 +186,10 @@ fn cover(args: &EpubArgs, dir: &Path, language: &str) -> Result<PathBuf> {
 
 pub fn run(args: &EpubArgs) -> Result<i32> {
     let root = std::env::current_dir()?.canonicalize()?;
-    let site = super::config(&root)?;
-    let issue = super::issue(&root, &args.edition)?;
+    let (site, issue) = {
+        let (head, _at) = super::at_head(&root)?;
+        (super::config(&head)?, super::issue(&head, &args.edition)?)
+    };
     let edition = issue
         .editions
         .iter()
