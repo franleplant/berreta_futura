@@ -1,0 +1,82 @@
+edition:
+  id: '021'
+articles:
+- id: how-s3-works-and-why-it-scales
+  title: How S3 works and why it scales
+  author: 'Andy Warfield, Seth Markle, James Bornholt'
+  content_mode: in_a_nutshell
+  source_ids:
+  - building-and-operating-a-pretty-big-storage-syst-7f2204cf
+  - what-is-amazon-s3-amazon-simple-storage-service-e380da8d
+  - diving-deep-on-s3-consistency-a5bf47a7
+  - amazon-s3-update-strong-read-after-write-consist-fb59ed14
+  - using-lightweight-formal-methods-to-validate-a-k-a1b41482
+  - best-practices-design-patterns-optimizing-amazon-496d6ca3
+  - aws-re-invent-2024-dive-deep-on-amazon-s3-stg302-2c5c8e42
+  rationale: 'How S3 is built and why it scales, from the AWS overview, the Warfield essays on scale and strong consistency, the consistency launch post, the ShardStore formal-methods paper, the performance guide, and the re:Invent 2024 deep dive.'
+- id: building-on-a-bucket
+  title: 'Building on a bucket: celld as the case study'
+  author: 'celld, Gunnar Morling, Dan Harrison, Richard Artoul'
+  content_mode: in_a_nutshell
+  source_ids:
+  - the-bucket-is-the-coordinator-2dfa2ee2
+  - github-denoland-celld-self-hosted-distributed-du-b51fc922
+  - add-preconditions-to-s3-operations-with-conditio-8c695bf4
+  - leader-election-with-s3-conditional-writes-fb7d9e5f
+  - how-to-build-a-distributed-queue-in-a-single-jso-ada83d75
+  - kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+  rationale: 'Using object storage as the coordinator, with celld as the case study, from the celld book and repo, S3 conditional writes, leader election on S3, a queue in one JSON file, and diskless Kafka.'
+- id: scaling-git-at-openai
+  title: Scaling Git at OpenAI
+  author: Aaron Friel, Taylor Blau, and Ted Nyman
+  content_mode: article
+  source_ids:
+  - scaling-git-at-openai-277870ff
+- id: openai-to-acquire-pierre-computer-company-inc
+  title: OpenAI to acquire Pierre Computer Company, Inc.
+  author: OpenAI
+  content_mode: verbatim
+  source_ids:
+  - openai-to-acquire-pierre-computer-company-inc-27c88439
+- id: rebuilding-the-global-town-square-from-scratch
+  title: Rebuilding the global town square from scratch
+  author: Yagiz Nizipli
+  content_mode: article
+  source_ids:
+  - rebuilding-the-global-town-square-from-scratch-37909cd9
+- id: a-thousand-fewer-paths-to-root
+  title: A thousand fewer paths to root
+  author: OpenAI
+  content_mode: article
+  source_ids:
+  - a-thousand-fewer-paths-to-root-86d5c720
+- id: the-post-quantum-future-of-web-privacy
+  title: The post-quantum future of web privacy
+  author: Christopher Patton, Tianyu Zhang, Bas Westerbaan
+  content_mode: article
+  source_ids:
+  - the-post-quantum-future-of-web-privacy-0788fb80
+- id: progress-on-provable-inference-for-large-languag
+  title: Progress on provable inference for large language models
+  author: Roy Rinberg, Alex Allain, Alessandro Chiesa, Miranda Christ, Rahul Dalal, Giacomo Fenzi, Ben Mayer, Guy Weissenberg
+  content_mode: article
+  source_ids:
+  - progress-on-provable-inference-for-large-languag-43862ef7
+- id: introducing-claude-fable-5-2-and-claude-mythos-5
+  title: Introducing Claude Fable 5.2 and Claude Mythos 5.2
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - introducing-claude-fable-5-2-and-claude-mythos-5-a989f158
+- id: teaching-ai-to-build-scientific-models
+  title: Teaching AI to build scientific models
+  author: Jakob Macke, Daniel Gedon, and Stefan Wahl
+  content_mode: article
+  source_ids:
+  - teaching-ai-to-build-scientific-models-8a424d75
+- id: sparks-of-weight-space-programming-llms-can-nati
+  title: 'Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights'
+  author: Rikiya Takehi, Jayden Teoh, Alex Zhang, Omar Khattab
+  content_mode: article
+  source_ids:
+  - sparks-of-weight-space-programming-llms-can-nati-f9ecf66c

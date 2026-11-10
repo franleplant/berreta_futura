@@ -1,0 +1,9 @@
+id: a-thousand-fewer-paths-to-root-86d5c720
+title: 'A thousand fewer paths to root'
+author: 'OpenAI'
+url: https://openai.com/index/a-thousand-fewer-paths-to-root/
+site: 'OpenAI'
+captured_at: '2026-11-10T01:39:49Z'
+published_at: '2026-11-04'
+tags: []
+synopsis: 'OpenAI describes an autonomous pipeline that discovered, validated, exploited, and generated patches for 948 Linux kernel local privilege escalation vulnerabilities in one run costing about $1.2 million in API credits, and shares cost analysis and lessons learned.'

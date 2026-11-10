@@ -1,0 +1,440 @@
+# Edition 21 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 021`.
+# Article order here is the reading order; reorder freely.
+id: '021'
+issue_number: 21
+# other title directions: Trust, but Hash | Says Who? | Ten Thousand Haystacks | The Fourth Power
+title: Show Your Work
+subtitle: A billion-to-one bug that hits twice a day, a bucket that hands out leases, Git rebuilt for a flood of agents, one server for three readers, 948 kernel exploits, post-quantum tokens, proofs of inference, a new Claude, and networks written by hand
+publication_date: '2026-11-10'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+  typesetting: book
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Show Your Work
+  deck: A billion-to-one bug that hits twice a day, a bucket that hands out leases, Git rebuilt for a flood of agents, one server for three readers, 948 kernel exploits, post-quantum tokens, proofs of inference, a new Claude, and networks written by hand
+  back_text: 'LOST: one proof, last seen holding up a very confident answer. Answers to "trust me." Reward if returned before the demo.'
+  art_path: editions/021/art/picks/cover-bucket-city-v1.jpg
+articles:
+- id: how-s3-works-and-why-it-scales
+  title: How S3 works and why it scales
+  short_title: How S3 works
+  display_emphasis: S3
+  opener_variant: stepped_title
+  author: Andy Warfield, Seth Markle, James Bornholt
+  author_note: Engineers at Amazon Web Services.
+  content_mode: in_a_nutshell
+  source_ids:
+  - building-and-operating-a-pretty-big-storage-syst-7f2204cf
+  - what-is-amazon-s3-amazon-simple-storage-service-e380da8d
+  - diving-deep-on-s3-consistency-a5bf47a7
+  - amazon-s3-update-strong-read-after-write-consist-fb59ed14
+  - using-lightweight-formal-methods-to-validate-a-k-a1b41482
+  - best-practices-design-patterns-optimizing-amazon-496d6ca3
+  - aws-re-invent-2024-dive-deep-on-amazon-s3-stg302-2c5c8e42
+  manuscript: editions/021/articles/how-s3-works-and-why-it-scales.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-3
+    source_id: building-and-operating-a-pretty-big-storage-syst-7f2204cf
+    path: media/004.png
+    caption: The first magnetic memory device
+    alt_text: The first magnetic memory device
+    anchor: The drive
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: building-and-operating-a-pretty-big-storage-syst-7f2204cf
+  #   path: media/005.jpg
+  #   caption: 'Diagram: The anatomy of a hard disk'
+  #   alt_text: 'Diagram: The anatomy of a hard disk'
+  #   anchor: 'Technical Scale: Scale and the physics of storage'
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: building-and-operating-a-pretty-big-storage-syst-7f2204cf
+  #   path: media/007.png
+  #   caption: RAMAC hard disk stats
+  #   alt_text: RAMAC hard disk stats
+  #   anchor: 'Technical Scale: Scale and the physics of storage'
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: building-and-operating-a-pretty-big-storage-syst-7f2204cf
+  #   path: media/008.png
+  #   caption: A spiky workload
+  #   alt_text: A spiky workload
+  #   anchor: The impact of scale on data placement strategy
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: what-is-amazon-s3-amazon-simple-storage-service-e380da8d
+  #   path: media/001.png
+  #   caption: An example of two clients writing to the same items with different values but returning the same read results.
+  #   alt_text: An example of two clients writing to the same items with different values but returning the same read results.
+  #   anchor: Concurrent applications
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: what-is-amazon-s3-amazon-simple-storage-service-e380da8d
+  #   path: media/002.png
+  #   caption: An example of two clients writing to the same items with different values but returning the same or different read results.
+  #   alt_text: An example of two clients writing to the same items with different values but returning the same or different read results.
+  #   anchor: Concurrent applications
+  #   layout: evidence_band
+  # - id: figure-9
+  #   source_id: what-is-amazon-s3-amazon-simple-storage-service-e380da8d
+  #   path: media/003.png
+  #   caption: An example of two clients writing to the same items with different values but returning concurrent results.
+  #   alt_text: An example of two clients writing to the same items with different values but returning concurrent results.
+  #   anchor: Concurrent applications
+  #   layout: evidence_band
+  # - id: figure-10
+  #   source_id: diving-deep-on-s3-consistency-a5bf47a7
+  #   path: media/003.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: __opener__
+  #   layout: evidence_band
+  # - id: figure-11
+  #   source_id: amazon-s3-update-strong-read-after-write-consist-fb59ed14
+  #   path: media/001.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: __opener__
+  #   layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-s3-many-small-cups-v1.jpg
+    alt_text: 'Pedro hoists a heavy water jug while Flopaz steers its spout along a row of small cups and Maro checks that none overflows.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-s3-parcel-bridge-v1.jpg
+- id: building-on-a-bucket
+  title: 'Building on a bucket: celld as the case study'
+  short_title: Building on a bucket
+  display_emphasis: bucket
+  opener_variant: stepped_title
+  author: 'celld, Gunnar Morling, Dan Harrison, Richard Artoul'
+  author_note: Engineers and data infrastructure firms.
+  content_mode: in_a_nutshell
+  source_ids:
+  - the-bucket-is-the-coordinator-2dfa2ee2
+  - github-denoland-celld-self-hosted-distributed-du-b51fc922
+  - add-preconditions-to-s3-operations-with-conditio-8c695bf4
+  - leader-election-with-s3-conditional-writes-fb7d9e5f
+  - how-to-build-a-distributed-queue-in-a-single-jso-ada83d75
+  - kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+  manuscript: editions/021/articles/building-on-a-bucket.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+    path: media/001.png
+    caption: 'Kafka across three zones: producer traffic and each replica copy pay $0.02/GiB in inter-zone transfer.'
+    alt_text: 'Kafka across three zones: producer traffic and each replica copy pay $0.02/GiB in inter-zone transfer.'
+    anchor: 'Where the pattern comes from'
+    layout: evidence_band
+  - id: figure-2
+    source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+    path: media/002.png
+    caption: 'WarpStream: stateless agents with no disks, storage and inter-zone transfer through S3, and only metadata in WarpStream Cloud.'
+    alt_text: 'WarpStream: stateless agents with no disks, storage and inter-zone transfer through S3, and only metadata in WarpStream Cloud.'
+    anchor: 'Where the pattern comes from'
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+  #   path: media/004.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Introducing WarpStream
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+  #   path: media/005.png
+  #   caption: Footnote 7 for self hosted Kafka hardware costs, footnote 8 for self hosted Kafka network costs.
+  #   alt_text: Footnote 7 for self hosted Kafka hardware costs, footnote 8 for self hosted Kafka network costs. Note that this table assumes the best case scenario that the Kafka cluster is properly configured to use the follower fetch functionality to reduce interzone networking costs for consumers. If it’s not, the Kafka costs would be much higher. It also omits the cost of engineering salaries for the self hosted Kafka setup.
+  #   anchor: Introducing WarpStream
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+  #   path: media/006.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Introducing WarpStream
+  #   layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-bucket-key-lease-v1.jpg
+    alt_text: 'Flopaz lifts a brass key from a bucket''s handle just before Pedro can reach it, while Maro signals her win.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-bucket-brigade-v1.jpg
+- id: scaling-git-at-openai
+  title: Scaling Git at OpenAI
+  short_title: Scaling Git at OpenAI
+  display_emphasis: Git
+  opener_variant: stepped_title
+  author: Aaron Friel, Taylor Blau, and Ted Nyman
+  author_note: Engineers at the AI lab behind ChatGPT.
+  content_mode: article
+  source_ids:
+  - scaling-git-at-openai-277870ff
+  manuscript: editions/021/articles/scaling-git-at-openai.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: scaling-git-at-openai-277870ff
+    path: media/001.png
+    caption: The branch refs/heads/main points to commit C2, whose parent is C1.
+    alt_text: The branch refs/heads/main points to commit C2, whose parent is C1. C1 points to root tree T1, where parser.py refers to blob B1. C2 points to root tree T2, where parser.py refers to blob B2. In both root trees, docs/ refers to the same tree, T3. Its README.md entry points to blob B3, and usage.md points to blob B4.
+    anchor: How Git moves history
+    layout: evidence_band
+  - id: figure-2
+    source_id: scaling-git-at-openai-277870ff
+    path: media/002.png
+    caption: Two versions of parser.py appear under $GIT_DIR/objects .
+    alt_text: Two versions of parser.py appear under $GIT_DIR/objects . As loose objects, blob A contains parse(), and blob B contains both parse() and parse_file(). The packfile stores A in full and represents B as instructions to copy all of A and append parse_file(). The accompanying *.idx file locates both blobs in the packfile by object ID.
+    anchor: How Git moves history
+    layout: evidence_band
+  - id: figure-3
+    source_id: scaling-git-at-openai-277870ff
+    path: media/003.png
+    caption: On the left, three successive trunk packs contain commits A, B and C; D and E; and F.
+    alt_text: On the left, three successive trunk packs contain commits A, B and C; D and E; and F. On the right, trunk and topic diverge at C. Trunk advances to G, while topic advances through D, E, and F. The latest topic pack contains D, E, and F. A dashed outline marks D and E as also present in the earlier topic pack. The blue arrow marks the new pack’s dependency on trunk at G. F’s Git parent is E.
+    anchor: 'Pushes: showing fewer cards'
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: scaling-git-at-openai-277870ff
+  #   path: media/004.png
+  #   caption: Curve showing how advertised references affect packfile size, from full history with none, through advertising trunk, to only new objects with all references.
+  #   alt_text: Curve showing how advertised references affect packfile size, from full history with none, through advertising trunk, to only new objects with all references.
+  #   anchor: Scaling pushes
+  #   layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-git-fewer-cards-v1.jpg
+    alt_text: 'Pedro lays down just two new cards for Flopaz, who already holds the rest, while Maro points at them.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-git-knotted-rope-v1.jpg
+- id: openai-to-acquire-pierre-computer-company-inc
+  title: OpenAI to acquire Pierre Computer Company, Inc.
+  short_title: Pierre Computer Company
+  display_emphasis: Pierre
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: AI research lab behind ChatGPT.
+  content_mode: verbatim
+  source_ids:
+  - openai-to-acquire-pierre-computer-company-inc-27c88439
+  manuscript: editions/021/articles/openai-to-acquire-pierre-computer-company-inc.md
+  opener_art:
+    path: editions/021/art/picks/opener-pierre-train-coupling-v1.jpg
+    alt_text: 'Pedro clicks a small green carriage onto the end of a long toy train that Flopaz and Maro hold steady.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-pierre-train-rolls-v1.jpg
+- id: rebuilding-the-global-town-square-from-scratch
+  title: Rebuilding the global town square from scratch
+  short_title: Rebuilding the global town square
+  display_emphasis: town square
+  opener_variant: stepped_title
+  author: Yagiz Nizipli
+  author_note: Node.js core contributor, writing on X's engineering blog.
+  content_mode: article
+  source_ids:
+  - rebuilding-the-global-town-square-from-scratch-37909cd9
+  manuscript: editions/021/articles/rebuilding-the-global-town-square-from-scratch.md
+  opener_art:
+    path: editions/021/art/picks/opener-town-square-one-lamp-v1.jpg
+    alt_text: 'Pedro, Flopaz, and Maro read on three benches around a single lamp post in a small town square at dusk.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-town-square-paving-v1.jpg
+- id: a-thousand-fewer-paths-to-root
+  title: A thousand fewer paths to root
+  short_title: A thousand fewer paths to root
+  display_emphasis: paths to root
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: AI research lab behind ChatGPT.
+  content_mode: article
+  source_ids:
+  - a-thousand-fewer-paths-to-root-86d5c720
+  manuscript: editions/021/articles/a-thousand-fewer-paths-to-root.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: a-thousand-fewer-paths-to-root-86d5c720
+    path: media/001.png
+    caption: Funnel showing 2,308 candidate findings, 1,724 validated findings, and screening into 313 leak candidates and 1,238 local privilege escalation candidates, resulting in 291 working leak proofs of concept and 948 working local privilege escalation exploits.
+    alt_text: 'Funnel showing 2,308 candidate findings, 1,724 validated findings, and screening into 313 leak candidates and 1,238 local privilege escalation candidates, resulting in 291 working leak proofs of concept and 948 working local privilege escalation exploits. Total API credits: $1.2 million. Schematic; widths not to scale.'
+    anchor: The pipeline
+    layout: evidence_band
+  - id: figure-2
+    source_id: a-thousand-fewer-paths-to-root-86d5c720
+    path: media/002.png
+    caption: 'Diagram of the autonomous Linux kernel vulnerability research pipeline: vulnerability discovery produces candidate findings, dynamic validation produces validated reports, exploitability assessment produces confirmed local privilege-escalation exploits, patch generation produces candidate patches, and human researchers review the results before reporting to kernel maintainers.'
+    alt_text: 'Diagram of the autonomous Linux kernel vulnerability research pipeline: vulnerability discovery produces candidate findings, dynamic validation produces validated reports, exploitability assessment produces confirmed local privilege-escalation exploits, patch generation produces candidate patches, and human researchers review the results before reporting to kernel maintainers.'
+    anchor: The pipeline
+    layout: evidence_band
+  - id: figure-3
+    source_id: a-thousand-fewer-paths-to-root-86d5c720
+    path: media/003.png
+    caption: 'Vulnerability discovery workflow: Scout Agents discover and prioritize high-value audit targets in the kernel, then Analyst Agents analyze the targets to find potential vulnerabilities and create alerts.'
+    alt_text: 'Vulnerability discovery workflow: Scout Agents discover and prioritize high-value audit targets in the kernel, then Analyst Agents analyze the targets to find potential vulnerabilities and create alerts.'
+    anchor: The pipeline
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: a-thousand-fewer-paths-to-root-86d5c720
+  #   path: media/004.png
+  #   caption: Loop diagram showing a triage agent turning a vulnerability alert into a proof of concept, running it in a virtual machine, and iteratively refining the result from console output.
+  #   alt_text: Loop diagram showing a triage agent turning a vulnerability alert into a proof of concept, running it in a virtual machine, and iteratively refining the result from console output.
+  #   anchor: Vulnerability validation
+  #   layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-root-burrows-corked-v1.jpg
+    alt_text: 'Pedro shines a flashlight into a burrow leading to a tree''s roots while Flopaz corks another and Maro fills a third.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-root-wall-mending-v1.jpg
+- id: the-post-quantum-future-of-web-privacy
+  title: The post-quantum future of web privacy
+  short_title: The post-quantum future of web privacy
+  display_emphasis: post-quantum
+  opener_variant: stepped_title
+  author: Christopher Patton, Tianyu Zhang, Bas Westerbaan
+  author_note: Researchers at Cloudflare.
+  content_mode: article
+  source_ids:
+  - the-post-quantum-future-of-web-privacy-0788fb80
+  manuscript: editions/021/articles/the-post-quantum-future-of-web-privacy.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: the-post-quantum-future-of-web-privacy-0788fb80
+    path: media/001.png
+    caption: 'A blind signature: the issuer signs a blinded message, and a verifier later checks the finalized signature against the public key.'
+    alt_text: 'A blind signature: the issuer signs a blinded message, and a verifier later checks the finalized signature against the public key.'
+    anchor: What MOLE needs
+    layout: evidence_band
+  - id: figure-2
+    source_id: the-post-quantum-future-of-web-privacy-0788fb80
+    path: media/002.png
+    caption: 'MOLE in three steps: anchors endorse the client, the client redeems and is issued a token by the moderator, then presents and updates it.'
+    alt_text: 'MOLE in three steps: anchors endorse the client, the client redeems and is issued a token by the moderator, then presents and updates it.'
+    anchor: What MOLE needs
+    layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-pq-blind-stamp-v1.jpg
+    alt_text: 'Flopaz stamps a sealed envelope Pedro holds out, looking away from it, while Maro holds the ink pad.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-pq-token-gate-v1.jpg
+- id: progress-on-provable-inference-for-large-languag
+  title: Progress on provable inference for large language models
+  short_title: Progress on provable inference
+  display_emphasis: provable inference
+  opener_variant: stepped_title
+  author: Roy Rinberg, Alex Allain, Alessandro Chiesa, Miranda Christ, Rahul Dalal, Giacomo Fenzi, Ben Mayer, Guy Weissenberg
+  author_note: Researchers at Anthropic with academic collaborators.
+  content_mode: article
+  source_ids:
+  - progress-on-provable-inference-for-large-languag-43862ef7
+  manuscript: editions/021/articles/progress-on-provable-inference-for-large-languag.md
+  opener_art:
+    path: editions/021/art/picks/opener-inference-spot-check-v1.jpg
+    alt_text: 'Flopaz inspects one block of Maro''s tall tower through a magnifying glass while Pedro holds up the color plan.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-inference-cake-slice-v1.jpg
+- id: introducing-claude-fable-5-2-and-claude-mythos-5
+  title: Introducing Claude Fable 5.2 and Claude Mythos 5.2
+  short_title: Claude Fable 5.2 and Claude Mythos 5.2
+  display_emphasis: Claude Fable 5.2
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: AI safety research lab based in San Francisco.
+  content_mode: article
+  source_ids:
+  - introducing-claude-fable-5-2-and-claude-mythos-5-a989f158
+  manuscript: editions/021/articles/introducing-claude-fable-5-2-and-claude-mythos-5.md
+  opener_art:
+    path: editions/021/art/picks/opener-claude-two-kites-v1.jpg
+    alt_text: 'Pedro and Flopaz launch two new kites from a windy hilltop while Maro pays out both strings.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-claude-kites-aloft-v1.jpg
+- id: teaching-ai-to-build-scientific-models
+  title: Teaching AI to build scientific models
+  short_title: Teaching AI to build scientific models
+  display_emphasis: scientific models
+  opener_variant: stepped_title
+  author: Jakob Macke, Daniel Gedon, and Stefan Wahl
+  author_note: Researchers writing for Anthropic.
+  content_mode: article
+  source_ids:
+  - teaching-ai-to-build-scientific-models-8a424d75
+  manuscript: editions/021/articles/teaching-ai-to-build-scientific-models.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: teaching-ai-to-build-scientific-models-8a424d75
+    path: media/001.jpg
+    caption: 'Map of possible models, showing a search that branches out from a starting point and collects models in four clusters, beside simulated voltage traces for each cluster with their relative shares: 41%, 39%, 11%, and 9%.'
+    alt_text: 'Map of possible models, showing a search that branches out from a starting point and collects models in four clusters, beside simulated voltage traces for each cluster with their relative shares: 41%, 39%, 11%, and 9%.'
+    anchor: Constraining
+    layout: evidence_band
+  - id: figure-2
+    source_id: teaching-ai-to-build-scientific-models-8a424d75
+    path: media/002.png
+    caption: Four panels showing the fruit fly brain with 1 neuron, 10 neurons, 255 neurons, and all 124,635 cells.
+    alt_text: Four panels showing the fruit fly brain with 1 neuron, 10 neurons, 255 neurons, and all 124,635 cells. One neuron is highlighted in orange in the first and third panels.
+    anchor: Scale
+    layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-models-clay-flies-v1.jpg
+    alt_text: 'Flopaz holds a jar with a fruit fly while Maro lines up four clay models of it and Pedro compares them.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-models-pebble-paths-v1.jpg
+- id: sparks-of-weight-space-programming-llms-can-nati
+  title: 'Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights'
+  short_title: Sparks of Weight-Space Programming
+  display_emphasis: Weight-Space Programming
+  opener_variant: stepped_title
+  author: Rikiya Takehi, Jayden Teoh, Alex Zhang, Omar Khattab
+  author_note: Researchers at MIT and elsewhere.
+  content_mode: article
+  source_ids:
+  - sparks-of-weight-space-programming-llms-can-nati-f9ecf66c
+  manuscript: editions/021/articles/sparks-of-weight-space-programming-llms-can-nati.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-2
+    source_id: sparks-of-weight-space-programming-llms-can-nati-f9ecf66c
+    path: media/002.png
+    caption: 'The car level: after Astra''s edit the car backs up and jumps over the red strip to the blue box, while PPO''s car, faded, stays stuck on the ramp.'
+    alt_text: 'The car level: after Astra''s edit the car backs up and jumps over the red strip to the blue box, while PPO''s car, faded, stays stuck on the ramp.'
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: editions/021/art/picks/opener-weights-toy-car-tune-v1.jpg
+    alt_text: 'Maro adjusts a tiny dial inside an open toy car while Pedro steadies a ramp and Flopaz waits by a blue box.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/021/art/picks/tail-weights-car-leap-v1.jpg
+tail_art_fit: contain
+closing_plates:
+- title: 'Window reading'
+  art_path: editions/021/art/picks/closing-window-reading-v1.jpg
+- title: 'Rain umbrella'
+  art_path: editions/021/art/picks/closing-rain-umbrella-v1.jpg
+- title: 'Sandcastle tide'
+  art_path: editions/021/art/picks/closing-sandcastle-tide-v1.jpg
+- title: 'Orchard ladder'
+  art_path: editions/021/art/picks/closing-orchard-ladder-v1.jpg
+- title: 'Firefly jar dusk'
+  art_path: editions/021/art/picks/closing-firefly-jar-dusk-v1.jpg
+- title: 'Paper boats stream'
+  art_path: editions/021/art/picks/closing-paper-boats-stream-v1.jpg

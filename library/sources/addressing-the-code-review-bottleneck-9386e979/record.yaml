@@ -1,0 +1,9 @@
+id: addressing-the-code-review-bottleneck-9386e979
+title: 'Addressing the code review bottleneck'
+author: 'Ben Holmes'
+url: https://x.com/BHolmesDev/article/2118411592627052937
+site: 'X'
+captured_at: '2026-11-10T02:00:11Z'
+published_at: '2026-11-05'
+tags: []
+synopsis: 'The article proposes three ways to cut the time human reviewers spend on agent-written PRs: adversarial rounds of review by your own review agent, end-to-end verification with computer use and artifacts, and scoring merge risk across five criteria.'

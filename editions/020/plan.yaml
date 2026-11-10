@@ -1,0 +1,75 @@
+edition:
+  id: '020'
+articles:
+- id: your-ai-coding-agents-need-a-manager
+  title: Your AI coding agents need a manager
+  author: Addy Osmani
+  content_mode: article
+  source_ids:
+  - your-ai-coding-agents-need-a-manager-92402d58
+- id: critical-thinking-when-agents-do-the-work
+  title: Critical thinking when agents do the work
+  author: Addy Osmani
+  content_mode: article
+  source_ids:
+  - critical-thinking-when-agents-do-the-work-dcced816
+- id: addressing-the-code-review-bottleneck
+  title: Addressing the code review bottleneck
+  author: Ben Holmes
+  content_mode: article
+  source_ids:
+  - addressing-the-code-review-bottleneck-9386e979
+- id: the-ai-native-sdlc-playbook
+  title: The AI-native SDLC playbook
+  author: Louis Claxton
+  content_mode: article
+  source_ids:
+  - the-ai-native-sdlc-playbook-95a2094a
+- id: software-factory-engineer-job-description
+  title: 'Software Factory Engineer: Job Description'
+  author: Itamar Friedman
+  content_mode: article
+  source_ids:
+  - software-factory-engineer-job-description-08e49b62
+- id: agent-state-machines-building-deterministic-scaf
+  title: 'Agent State Machines: Building Deterministic Scaffolding for Agents'
+  author: Josh Rosen
+  content_mode: verbatim
+  source_ids:
+  - agent-state-machines-building-deterministic-scaf-f4e0b120
+- id: formally-verifying-agent-written-full-stack-web
+  title: Formally verifying agent-written full-stack web apps with PDD Kit
+  author: Alex Lavaee, Matthai Philipose
+  content_mode: article
+  source_ids:
+  - formally-verifying-agent-written-full-stack-web-b28ecfb7
+- id: the-components-of-agent-memory
+  title: The components of agent memory
+  author: Lance Martin
+  content_mode: article
+  source_ids:
+  - the-components-of-agent-memory-f0247d2b
+- id: recall-how-a-skill-became-our-company-brain
+  title: 'Recall: how a skill became our company brain'
+  author: Miguel Ríos Berríos
+  content_mode: article
+  source_ids:
+  - recall-how-a-skill-became-our-company-brain-bb5ea734
+- id: i-reverse-engineered-grok-bot-s-memory-system-an
+  title: I Reverse Engineered Grok Bot's Memory System, and Here's What I Found
+  author: Manthan Gupta
+  content_mode: article
+  source_ids:
+  - i-reverse-engineered-grok-bot-s-memory-system-an-1ec399b8
+- id: securing-ai-agents-lessons-from-real-world-deplo
+  title: 'Securing AI Agents: Lessons From Real-World Deployment'
+  author: Sean Tout, Max Zhurovich, Adi Raghavendra
+  content_mode: article
+  source_ids:
+  - securing-ai-agents-lessons-from-real-world-deplo-c5293c0a
+- id: see-the-agents-set-the-terms-new-visibility-and
+  title: 'See the agents, set the terms: new visibility and control for personal agents'
+  author: Marina Elmore, Nicole Justus
+  content_mode: article
+  source_ids:
+  - see-the-agents-set-the-terms-new-visibility-and-982ed481

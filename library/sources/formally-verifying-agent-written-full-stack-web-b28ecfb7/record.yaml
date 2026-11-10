@@ -1,0 +1,9 @@
+id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+title: 'Formally verifying agent-written full-stack web apps with PDD Kit'
+author: 'Alex Lavaee, Matthai Philipose'
+url: https://www.microsoft.com/en-us/research/blog/formally-verifying-agent-written-full-stack-web-apps-with-pdd-kit/
+site: 'Microsoft Research'
+captured_at: '2026-11-10T02:04:33Z'
+published_at: '2026-11-05'
+tags: []
+synopsis: 'Microsoft Research introduces PDD Kit, a Proof-Driven Development toolkit that turns developer intent into a formal Verus spec, proves agent-written Rust code meets it for every input, tests the trusted boundary, and demonstrates this by verifying the login logic of a full-stack Pet Store web app.'

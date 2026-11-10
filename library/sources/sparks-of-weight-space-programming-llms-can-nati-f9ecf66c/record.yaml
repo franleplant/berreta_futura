@@ -1,0 +1,9 @@
+id: sparks-of-weight-space-programming-llms-can-nati-f9ecf66c
+title: 'Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights'
+author: 'Rikiya Takehi, Jayden Teoh, Alex Zhang, Omar Khattab'
+url: https://rikiyat.github.io/blog/weight-space-programming/
+site: 'rikiyat.github.io'
+captured_at: '2026-11-10T01:44:42Z'
+published_at: '2026-11-02'
+tags: []
+synopsis: 'The authors show that GPT-6 Astra can read neural network weights to infer what a network does, fix a failing network by editing its weights, and write small game-playing networks from scratch, including a weight edit that raises Qwen3.5-0.8B''s MATH-500 score from 7.9% to 48.1%.'

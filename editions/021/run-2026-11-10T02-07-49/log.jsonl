@@ -1,0 +1,26 @@
+{"attempt":0,"label":"teaching-ai-to-build-scientific-models write","model":"opus","seconds":31.1,"usd":0.2207}
+{"attempt":0,"label":"building-on-a-bucket write","model":"opus","seconds":42.7,"usd":0.3767}
+{"attempt":0,"label":"sparks-of-weight-space-programming-llms-can-nati write","model":"opus","seconds":44.0,"usd":0.2807}
+{"attempt":0,"label":"a-thousand-fewer-paths-to-root write","model":"opus","seconds":44.4,"usd":0.2747}
+{"attempt":0,"label":"introducing-claude-fable-5-2-and-claude-mythos-5 write","model":"opus","seconds":46.2,"usd":0.3171}
+{"attempt":0,"label":"progress-on-provable-inference-for-large-languag write","model":"opus","seconds":48.4,"usd":0.298}
+{"attempt":0,"label":"scaling-git-at-openai write","model":"opus","seconds":53.2,"usd":0.304}
+{"attempt":0,"label":"the-post-quantum-future-of-web-privacy write","model":"opus","seconds":53.9,"usd":0.3002}
+{"attempt":0,"label":"rebuilding-the-global-town-square-from-scratch write","model":"opus","seconds":55.6,"usd":0.3135}
+{"attempt":0,"label":"how-s3-works-and-why-it-scales write","model":"opus","seconds":72.6,"usd":0.8562}
+{"attempt":0,"label":"the-post-quantum-future-of-web-privacy trim1","model":"opus","seconds":26.5,"usd":0.276}
+{"attempt":0,"label":"rebuilding-the-global-town-square-from-scratch trim1","model":"opus","seconds":25.4,"usd":0.2779}
+{"attempt":0,"label":"how-s3-works-and-why-it-scales trim1","model":"opus","seconds":24.4,"usd":0.806}
+{"attempt":0,"label":"article-labels","model":"opus","seconds":11.9,"usd":0.1275}
+{"attempt":1,"label":"author-bios","model":"opus","seconds":18.3,"usd":0.1458}
+{"attempt":0,"label":"how-s3-works-and-why-it-scales figure anchors","model":"haiku","seconds":4.4,"usd":0.0033}
+{"attempt":0,"label":"building-on-a-bucket figure anchors","model":"haiku","seconds":4.7,"usd":0.0032}
+{"attempt":0,"label":"scaling-git-at-openai figure anchors","model":"haiku","seconds":5.5,"usd":0.0035}
+{"attempt":1,"label":"a-thousand-fewer-paths-to-root figure anchors","model":"haiku","seconds":2.8,"usd":0.0031}
+{"attempt":0,"label":"the-post-quantum-future-of-web-privacy figure anchors","model":"haiku","seconds":7.0,"usd":0.0035}
+{"attempt":0,"label":"teaching-ai-to-build-scientific-models figure anchors","model":"haiku","seconds":2.7,"usd":0.003}
+{"attempt":0,"label":"front-matter","model":"opus","seconds":21.8,"usd":0.3596}
+{"attempt":0,"label":"building-on-a-bucket write","model":"opus","seconds":51.3,"usd":0.4052}
+{"attempt":0,"label":"how-s3-works-and-why-it-scales write","model":"opus","seconds":62.6,"usd":0.8395}
+{"attempt":0,"label":"how-s3-works-and-why-it-scales figure anchors","model":"haiku","seconds":5.2,"usd":0.0033}
+{"attempt":0,"label":"building-on-a-bucket figure anchors","model":"haiku","seconds":8.7,"usd":0.0036}

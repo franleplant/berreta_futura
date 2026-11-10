@@ -1,0 +1,9 @@
+id: how-to-build-a-distributed-queue-in-a-single-jso-ada83d75
+title: 'How to build a distributed queue in a single JSON file on object storage'
+author: 'Dan Harrison (Engineer)'
+url: https://turbopuffer.com/blog/object-storage-queue
+site: 'turbopuffer.com'
+captured_at: '2026-11-10T01:52:40Z'
+published_at: '2026-02-12'
+tags: []
+synopsis: 'turbopuffer describes building a distributed indexing job queue from a single queue.json file on object storage, progressing from compare-and-set writes to group commit, a stateless broker, and heartbeat-based failover.'

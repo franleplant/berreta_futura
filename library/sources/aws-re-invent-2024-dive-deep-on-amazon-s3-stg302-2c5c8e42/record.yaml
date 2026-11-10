@@ -1,0 +1,9 @@
+id: aws-re-invent-2024-dive-deep-on-amazon-s3-stg302-2c5c8e42
+title: 'AWS re:Invent 2024 - Dive deep on Amazon S3 (STG302)'
+author: 'Seth Markle, James Bornholt'
+url: https://www.youtube.com/watch?v=NXehLy7IiPM
+site: 'AWS Events'
+captured_at: '2026-11-10T01:59:47Z'
+published_at: '2024-12-05'
+tags: []
+synopsis: 'In this AWS re:Invent 2024 talk, two S3 engineers explain how S3''s scale improves customer outcomes through workload aggregation across millions of drives, shuffle sharding, the power of two random choices, and erasure coding, which together give decorrelated, fault-tolerant, high-throughput storage and let the team deploy new hardware and software faster.'

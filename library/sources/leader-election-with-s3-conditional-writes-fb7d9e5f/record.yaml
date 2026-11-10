@@ -1,0 +1,9 @@
+id: leader-election-with-s3-conditional-writes-fb7d9e5f
+title: 'Leader Election With S3 Conditional Writes'
+author: 'Gunnar Morling'
+url: https://www.morling.dev/blog/leader-election-with-s3-conditional-writes/
+site: 'Gunnar Morling'
+captured_at: '2026-11-10T01:52:16Z'
+published_at: '2024-08-26'
+tags: []
+synopsis: 'Gunnar Morling shows how S3''s new If-None-Match conditional writes let nodes elect a leader by racing to create per-epoch lock files, with expiry, validity timeouts, and epoch-based fencing tokens to handle crashes, clock drift, and zombie leaders.'

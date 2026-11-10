@@ -1,0 +1,9 @@
+id: the-components-of-agent-memory-f0247d2b
+title: 'The components of agent memory'
+author: 'Lance Martin'
+url: https://www.anthropic.com/research/components-of-agent-memory
+site: 'anthropic.com'
+captured_at: '2026-11-10T01:29:21Z'
+published_at: '2026-11-06'
+tags: []
+synopsis: 'Anthropic''s engineering team describes how agent memory can be organized into notes, wikis, and injected context, and presents evaluations showing how Claude judges salience and how offline "dreaming" can correct, restructure, and promote memories.'

@@ -1,0 +1,9 @@
+id: i-reverse-engineered-grok-bot-s-memory-system-an-1ec399b8
+title: 'I Reverse Engineered Grok Bot''s Memory System, and Here''s What I Found'
+author: 'Manthan Gupta'
+url: https://manthanguptaa.in/posts/grok_bot_memory/
+site: 'Manthan Gupta'
+captured_at: '2026-11-10T01:36:34Z'
+published_at: '2026-11-04'
+tags: []
+synopsis: 'The author reverse engineers Grok Bot''s memory by reading its desktop client and running experiments, finding that all of a user''s bots share one pool of short dated notes, injected in a capped window and otherwise reachable only by keyword search, with no automatic cleanup of contradictory notes.'

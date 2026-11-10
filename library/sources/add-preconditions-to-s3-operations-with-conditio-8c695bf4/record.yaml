@@ -1,0 +1,8 @@
+id: add-preconditions-to-s3-operations-with-conditio-8c695bf4
+title: 'Add preconditions to S3 operations with conditional requests - Amazon Simple Storage Service'
+author: ''
+url: https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html
+site: 'docs.aws.amazon.com'
+captured_at: '2026-11-10T01:51:58Z'
+tags: []
+synopsis: 'Amazon S3 conditional requests let you add a header to read, write, or delete operations so that the operation fails if a precondition on the object''s ETag, last modified date, or existence is not met.'

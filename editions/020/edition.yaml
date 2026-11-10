@@ -1,0 +1,612 @@
+# Edition 20 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 020`.
+# Article order here is the reading order; reorder freely.
+id: '020'
+issue_number: 20
+# other title directions: Twelve Interns, One Pen | Did Anyone Check? | The Front Desk | Sign Here, Then Here
+title: The Clipboard
+subtitle: Running a fleet of coding agents, reviewing what they ship, a job ad for the factory floor, state machines and proofs that hold them to the plan, three ways machines remember, and who gets past the door
+publication_date: '2026-11-10'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+  typesetting: book
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: The Clipboard
+  deck: Running a fleet of coding agents, reviewing what they ship, a job ad for the factory floor, state machines and proofs that hold them to the plan, three ways machines remember, and who gets past the door
+  back_text: 'Recipe for instant certainty: take one green checkmark. Do not ask what it checked. Serve immediately. Feeds no one by morning.'
+  art_path: editions/020/art/picks/cover-clip-holds-thundercloud-v1.jpg
+articles:
+- id: your-ai-coding-agents-need-a-manager
+  title: Your AI coding agents need a manager
+  short_title: Your AI coding agents need a manager
+  display_emphasis: manager
+  opener_variant: stepped_title
+  author: Addy Osmani
+  author_note: Engineering leader at Google.
+  content_mode: article
+  source_ids:
+  - your-ai-coding-agents-need-a-manager-92402d58
+  manuscript: editions/020/articles/your-ai-coding-agents-need-a-manager.md
+  opener_art:
+    path: editions/020/art/picks/opener-manager-toolbox-stack-v1.jpg
+    alt_text: 'A boy on a crate holding a clipboard points at one of five toolboxes stacked in a wobbling tower in a small robot''s arms, while a girl steadies the stack.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-manager-evening-rest-v1.jpg
+- id: critical-thinking-when-agents-do-the-work
+  title: Critical thinking when agents do the work
+  short_title: Critical thinking
+  display_emphasis: Critical thinking
+  opener_variant: stepped_title
+  author: Addy Osmani
+  author_note: Engineering leader at Google.
+  content_mode: article
+  source_ids:
+  - critical-thinking-when-agents-do-the-work-dcced816
+  manuscript: editions/020/articles/critical-thinking-when-agents-do-the-work.md
+  opener_art:
+    path: editions/020/art/picks/opener-critical-hollow-cake-v1.jpg
+    alt_text: 'A small robot proudly holds a frosted cake while a boy lifts its edge with a spoon and a girl with a magnifying glass discovers it is a hollow cardboard shell.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-critical-real-slice-v1.jpg
+- id: addressing-the-code-review-bottleneck
+  title: Addressing the code review bottleneck
+  short_title: code review bottleneck
+  display_emphasis: code review bottleneck
+  opener_variant: stepped_title
+  author: Ben Holmes
+  author_note: Software developer who publishes on X.
+  content_mode: article
+  source_ids:
+  - addressing-the-code-review-bottleneck-9386e979
+  manuscript: editions/020/articles/addressing-the-code-review-bottleneck.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: addressing-the-code-review-bottleneck-9386e979
+    path: media/001.jpg
+    caption: The adversarial review loop we use on our software factory.
+    alt_text: The adversarial review loop we use on our software factory. This comes with our default Warp Factories template
+    anchor: Build your own review agent
+    layout: compact_band
+  opener_art:
+    path: editions/020/art/picks/opener-review-plane-gate-v1.jpg
+    alt_text: 'A boy at a narrow garden gate inspects a paper airplane while more planes wait in line, and a girl hands a small robot a magnifying glass to help check them.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-review-planes-away-v1.jpg
+- id: the-ai-native-sdlc-playbook
+  title: The AI-native SDLC playbook
+  short_title: AI-native SDLC playbook
+  display_emphasis: AI-native SDLC
+  opener_variant: stepped_title
+  author: Louis Claxton
+  author_note: Writes for Anthropic's Claude resources site.
+  content_mode: article
+  source_ids:
+  - the-ai-native-sdlc-playbook-95a2094a
+  manuscript: editions/020/articles/the-ai-native-sdlc-playbook.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: the-ai-native-sdlc-playbook-95a2094a
+    path: media/001.png
+    caption: 'Before agents, every stage runs at human speed. After, build runs at agent speed and the cycle time is reclaimed.'
+    alt_text: 'Before agents, every stage runs at human speed. After, build runs at agent speed and the cycle time is reclaimed.'
+    anchor: 'Plan'
+    layout: evidence_band
+  - id: figure-2
+    source_id: the-ai-native-sdlc-playbook-95a2094a
+    path: media/002.png
+    caption: 'The traditional line against the AI-native loop: plan, design, build, test, deploy, and maintain turn around Claude, with humans above the loop.'
+    alt_text: 'The traditional line against the AI-native loop: plan, design, build, test, deploy, and maintain turn around Claude, with humans above the loop.'
+    anchor: 'Design'
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: the-ai-native-sdlc-playbook-95a2094a
+  #   path: media/004.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Claude on call with Claude Tag
+  #   layout: evidence_band
+  opener_art:
+    path: editions/020/art/picks/opener-sdlc-toy-train-loop-v1.jpg
+    alt_text: 'A small robot rides a toy train around a looping track while a boy and a girl on a step stool above steer with a switch lever.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-sdlc-fence-wave-v1.jpg
+- id: software-factory-engineer-job-description
+  title: 'Software Factory Engineer: Job Description'
+  short_title: Software Factory Engineer
+  display_emphasis: Software Factory Engineer
+  opener_variant: stepped_title
+  author: Itamar Friedman
+  author_note: CEO and co-founder of Qodo.
+  content_mode: article
+  source_ids:
+  - software-factory-engineer-job-description-08e49b62
+  manuscript: editions/020/articles/software-factory-engineer-job-description.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: software-factory-engineer-job-description-08e49b62
+    path: media/002.jpg
+    caption: 'The factory loop: PR opened, merged, release cut, deployed, monitored, verified, all green, then a bug found and a fix PR.'
+    alt_text: 'The factory loop: PR opened, merged, release cut, deployed, monitored, verified, all green, then a bug found and a fix PR.'
+    anchor: Architecture and orchestration
+    layout: compact_band
+  opener_art:
+    path: editions/020/art/picks/opener-factory-cupcake-bug-v1.jpg
+    alt_text: 'A small robot ices cupcakes on a conveyor belt while a girl points out a ladybug on one cupcake and a boy lifts it off with a paper cup.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-factory-ladybug-free-v1.jpg
+- id: agent-state-machines-building-deterministic-scaf
+  title: 'Agent State Machines: Building Deterministic Scaffolding for Agents'
+  short_title: Agent State Machines
+  display_emphasis: Agent State Machines
+  opener_variant: stepped_title
+  author: Josh Rosen
+  author_note: Publishes on X.
+  content_mode: verbatim
+  source_ids:
+  - agent-state-machines-building-deterministic-scaf-f4e0b120
+  manuscript: editions/020/articles/agent-state-machines-building-deterministic-scaf.md
+  opener_art:
+    path: editions/020/art/picks/opener-state-stepping-stones-v1.jpg
+    alt_text: 'A boy and a girl standing in a stream place stepping stones one at a time while a small robot steps carefully onto each new stone.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-state-far-bank-v1.jpg
+- id: formally-verifying-agent-written-full-stack-web
+  title: Formally verifying agent-written full-stack web apps with PDD Kit
+  short_title: Formally verifying agent-written
+  display_emphasis: Formally verifying
+  opener_variant: stepped_title
+  author: Alex Lavaee, Matthai Philipose
+  author_note: Researchers at Microsoft Research.
+  content_mode: article
+  source_ids:
+  - formally-verifying-agent-written-full-stack-web-b28ecfb7
+  manuscript: editions/020/articles/formally-verifying-agent-written-full-stack-web.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+    path: media/002.png
+    caption: 'Flow diagram showing the PDD Kit workflow for formally verifying agent-written code.'
+    alt_text: 'Flow diagram showing the PDD Kit workflow for formally verifying agent-written code. Team members review intent by expressing requirements in plain language, which are formalized in a pdd-plan containing decision cards, intent artifacts, trusted boundaries, and reviewer approvals. The plan generates a formal specification with Verus ensures clauses. Machines then check the code through pdd-prove, which includes Verus proofs, tests for trusted components, and LLM gap review. Verified code and receipts are submitted as a pull request. Dashed feedback loops return specification contradictions and verification gaps to earlier planning and coding stages.'
+    anchor: How PDD Kit works
+    layout: evidence_band
+  - id: figure-3
+    source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+    path: media/004.png
+    caption: Three-panel illustration comparing login outcomes.
+    alt_text: Three-panel illustration comparing login outcomes. In the first panel, a customer logs in with the correct email and password and receives a “customer” ticket. In the second panel, the same email is paired with an incorrect password and access is refused. In the third panel, an administrator logs in with the correct username and password and receives an “admin” ticket. The diagram uses a ticket-counter analogy to explain authentication and role-based access.
+    anchor: Pet Store login
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/005.png
+  #   caption: Intent map showing the login authentication flow for issuing a token.
+  #   alt_text: Intent map showing the login authentication flow for issuing a token. If an account exists and bcrypt verifies the correct password, the user receives claims for that account. If the account does not exist or the password is incorrect, the result is “401 Unauthorized.” If the password hash cannot be read, the result is “500 unreadable hash.”
+  #   anchor: 'Step 2: A human readable intent map'
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/006.png
+  #   caption: Side-by-side comparison of two authentication policies.
+  #   alt_text: Side-by-side comparison of two authentication policies. The left panel, “Only when,” shows that a token implies the correct password but does not guarantee a token for a correct password. The right panel, “Exactly when,” shows a two-way relationship in which a token is issued if and only if the correct password is provided. The highlighted difference is that denying a token to a user with the correct password is allowed under the first policy but forbidden under the second.
+  #   anchor: 'Step 2: A human readable intent map'
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/007.png
+  #   caption: Comparison of two approaches to verifying a login handler.
+  #   alt_text: Comparison of two approaches to verifying a login handler. Option A, recommended, keeps the login handler trusted and verifies only the login decision logic, while database lookups and token signing remain tested but trusted components. Option B gives the login handler its own formal specification, proving the orchestration logic but requiring additional trusted wrappers and assumed contracts around database lookups, clocks, and JWT signing.
+  #   anchor: 'Step 3: Proving the login function'
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/008.png
+  #   caption: Diagram showing the proof boundary for a formally verified login system.
+  #   alt_text: Diagram showing the proof boundary for a formally verified login system. Functionality outside the proof is either not promised or trusted and validated through human review and testing, including SQLite lookups, bcrypt, the system clock, JWT signing, database error handling, and request parsing. At the center, the formally verified portion consists of the login_flow and its components login_core, lookup_target, decide_login, and issue_token, which are proven by Verus for every input.
+  #   anchor: 'Step 4: Where proof stops'
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/009.png
+  #   caption: Proof map showing how a verified login system is divided between formally proved code and trusted, tested components.
+  #   alt_text: Proof map showing how a verified login system is divided between formally proved code and trusted, tested components. Five core functions, including login_flow, login_core, lookup_target, decide_login, and issue_token, are formally verified with Verus. Supporting functions for database queries, password verification, token signing, clock access, and error handling are treated as trusted contracts that are reviewed and tested.
+  #   anchor: 'Step 4: Where proof stops'
+  #   layout: evidence_band
+  # - id: figure-9
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/010.png
+  #   caption: Proof map showing how a verified login system is divided between formally proved code and trusted, tested components.
+  #   alt_text: Proof map showing how a verified login system is divided between formally proved code and trusted, tested components. Five core functions, including login_flow, login_core, lookup_target, decide_login, and issue_token, are formally verified with Verus. Supporting functions for database queries, password verification, token signing, clock access, and error handling are treated as trusted contracts that are reviewed and tested.
+  #   anchor: 'Step 4: Where proof stops'
+  #   layout: evidence_band
+  # - id: figure-10
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/011.png
+  #   caption: Screenshot of a test plan for verifying password validation behavior.
+  #   alt_text: Screenshot of a test plan for verifying password validation behavior. The section, “check_password_answers_with_bcrypts_verdict,” describes unit tests confirming that password checks return true for the correct password and false for incorrect or empty passwords. Example test cases use bcrypt hashes for customer and administrator accounts.
+  #   anchor: 'Step 4: Where proof stops'
+  #   layout: evidence_band
+  # - id: figure-11
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/012.png
+  #   caption: Annotated code snippet explaining a formal verification clause for login tokens.
+  #   alt_text: Annotated code snippet explaining a formal verification clause for login tokens. The clause states that if a login returns a token, then the request names a valid account, the password matches the stored hash, the token contains valid claims, and the token’s subject and role match the authenticated account. Numbered callouts explain each part of the expression.
+  #   anchor: 'Step 5: Reading the spec'
+  #   layout: evidence_band
+  # - id: figure-12
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/013.png
+  #   caption: Traceability diagram showing how formal verification promises are derived from requirements.
+  #   alt_text: Traceability diagram showing how formal verification promises are derived from requirements. Statements made by developers and decisions recorded in design cards are mapped to eight specific guarantees in the login_flow specification, covering token issuance, account roles, invalid credentials, missing accounts, malformed requests, and error handling.
+  #   anchor: 'Step 5: Reading the spec'
+  #   layout: evidence_band
+  # - id: figure-13
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/014.png
+  #   caption: Flowchart showing the end-to-end login process.
+  #   alt_text: 'Flowchart showing the end-to-end login process. A login request selects an account table based on an email or username, looks up the account, verifies the password, and issues a signed token when authentication succeeds. Error paths return appropriate HTTP responses: 400 for missing credentials, 401 for invalid credentials or missing accounts, and 500 for lookup or password-hash failures.'
+  #   anchor: 'Step 5: Reading the spec'
+  #   layout: evidence_band
+  # - id: figure-14
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/015.png
+  #   caption: Diagram comparing how formal verification applies to synchronous and asynchronous functions.
+  #   alt_text: Diagram comparing how formal verification applies to synchronous and asynchronous functions. For both types, preconditions are checked when the function is called and postconditions are guaranteed when a result is returned. In an asynchronous login flow, the function may pause while awaiting a database lookup, and the specification makes no guarantee about whether or how quickly the operation completes.
+  #   anchor: 'Step 5: Reading the spec'
+  #   layout: evidence_band
+  # - id: figure-15
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/016.png
+  #   caption: Annotated map of the verified/src/login.rs file showing the structure of a formally verified login implementation.
+  #   alt_text: 'Annotated map of the verified/src/login.rs file showing the structure of a formally verified login implementation. The diagram categorizes sections as specification-only definitions, trusted external contracts, data types, and five functions formally proved with Verus: login_flow, login_core, issue_token, lookup_target, and decide_login.'
+  #   anchor: 'Step 5: Reading the spec'
+  #   layout: evidence_band
+  # - id: figure-16
+  #   source_id: formally-verifying-agent-written-full-stack-web-b28ecfb7
+  #   path: media/017.png
+  #   caption: Screenshot of a PDD Kit build plan for a login-token issuance specification.
+  #   alt_text: Screenshot of a PDD Kit build plan for a login-token issuance specification. The build workflow contains seven tasks, with the first task focused on making verified/src/login.rs successfully build under Verus while preserving contract meanings. Subsequent tasks cover proving login-related functions, testing trusted wrappers, running end-to-end login tests, and validating token-signing behavior.
+  #   anchor: 'Step 6: Prove, check, close the gaps'
+  #   layout: evidence_band
+  opener_art:
+    path: editions/020/art/picks/opener-proof-ticket-booth-v1.jpg
+    alt_text: 'At a cardboard ticket booth a boy checks a key against its traced outline while a small robot offers two keys and a girl gives a ticket for the matching one only.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-proof-walking-with-tickets-v1.jpg
+- id: the-components-of-agent-memory
+  title: The components of agent memory
+  short_title: The components of agent memory
+  display_emphasis: agent memory
+  opener_variant: stepped_title
+  author: Lance Martin
+  author_note: Works at Anthropic.
+  content_mode: article
+  source_ids:
+  - the-components-of-agent-memory-f0247d2b
+  manuscript: editions/020/articles/the-components-of-agent-memory.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: the-components-of-agent-memory-f0247d2b
+    path: media/001.png
+    caption: Diagram of a memory hierarchy between one session and the next.
+    alt_text: 'Diagram of a memory hierarchy between one session and the next. From bottom to top: transcripts (a searchable event log), memory notes written by Claude, memory representations such as wikis, and injected context loaded into every session. Inside a box labeled “Dreaming,” arrows run from transcripts up to each layer, and in both directions between neighboring upper layers.'
+    anchor: __opener__
+    layout: evidence_band
+  - id: figure-2
+    source_id: the-components-of-agent-memory-f0247d2b
+    path: media/002.png
+    caption: The same memory hierarchy, with the memory notes layer highlighted.
+    alt_text: The same memory hierarchy, with the memory notes layer highlighted. An arrow runs from the session directly to the memory notes, described as salient observations written by Claude.
+    anchor: Judging salience
+    layout: evidence_band
+  - id: figure-3
+    source_id: the-components-of-agent-memory-f0247d2b
+    path: media/003.png
+    caption: 'Left: bar chart of mean reward on the CL-Bench database task, stateless baseline versus memory store.'
+    alt_text: 'Left: bar chart of mean reward on the CL-Bench database task, stateless baseline versus memory store. Opus 5.5: 0.655, 0.838. Sonnet 5.5: 0.644, 0.833. Opus 5: 0.564, 0.828. Opus 4.7: 0.383, 0.700. Sonnet 5: 0.306, 0.610. Sonnet 4.6: 0.330, 0.364. Right: line chart of running-mean reward over 30 questions for the same models, with and without memory.'
+    anchor: Memory as prediction
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/004.png
+  #   caption: Two treemaps of Pokémon memory directories at the same scale, where area shows characters of memory.
+  #   alt_text: Two treemaps of Pokémon memory directories at the same scale, where area shows characters of memory. Claude Sonnet 3.7’s is large and crowded, with 413 files and 977,930 characters across folders such as locations, main, battles, and several “consolidated” folders. Claude Fable 5’s is small, with 10 files and 43,406 characters in locations, gameplay, and global.md.
+  #   anchor: Claude has learned to judge salience
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/005.png
+  #   caption: 'Left: bar chart of Sonnet 4.6’s mean reward on the CL-Bench database task: 0.330 at baseline, 0.364 with memory, and 0.641 with memory and refined instruction.'
+  #   alt_text: 'Left: bar chart of Sonnet 4.6’s mean reward on the CL-Bench database task: 0.330 at baseline, 0.364 with memory, and 0.641 with memory and refined instruction. Reference lines mark Opus 4.7 with memory at 0.700 and Opus 5 with memory at 0.828. Right: change in memory gain when told to record only failures: Opus 5, −0.234; Opus 4.7, −0.150; Sonnet 4.6, −0.020.'
+  #   anchor: Steering Claude to write memory
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/006.png
+  #   caption: The memory hierarchy with dreaming, highlighting an arrow from the transcripts layer up to the memory notes layer, which shows dreaming correcting notes against transcripts.
+  #   alt_text: The memory hierarchy with dreaming, highlighting an arrow from the transcripts layer up to the memory notes layer, which shows dreaming correcting notes against transcripts.
+  #   anchor: Dreaming can correct memory
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/007.png
+  #   caption: Two Pokémon map panels with the agent next to a ledge.
+  #   alt_text: 'Two Pokémon map panels with the agent next to a ledge. Left, “Raw memory,” where the stored note is wrong: an arrow shows the agent heading for the next city. Right, “Memory + dreaming,” where an offline pass corrected the note: an arrow shows the agent heading back to the cave entrance.'
+  #   anchor: Dreaming can correct memory
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/008.png
+  #   caption: Line chart of progress toward Cerulean over 3,000 cumulative actions.
+  #   alt_text: Line chart of progress toward Cerulean over 3,000 cumulative actions. The memory plus dreaming run reaches Cerulean at action 1,935. The raw memory run falls off the ledge and backtracks to Pewter. The run with no memory never reaches Cerulean.
+  #   anchor: Dreaming can correct memory
+  #   layout: evidence_band
+  # - id: figure-9
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/009.png
+  #   caption: The memory hierarchy with dreaming, highlighting arrows from transcripts and from memory notes up to the memory representations layer, such as wikis.
+  #   alt_text: The memory hierarchy with dreaming, highlighting arrows from transcripts and from memory notes up to the memory representations layer, such as wikis.
+  #   anchor: Dreaming can build new memory representations
+  #   layout: evidence_band
+  # - id: figure-10
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/010.png
+  #   caption: 'Center: line chart of graded criteria met as wiki generation grows from 2M to 128M dreaming tokens.'
+  #   alt_text: 'Center: line chart of graded criteria met as wiki generation grows from 2M to 128M dreaming tokens. Wiki plus search tool rises from 54% to 61%, wiki alone rises from 13% to 48%, and the search tool with no wiki is flat at 53%. Left and right: network graphs of an example wiki, with 103 pages and 766 links after 2 sessions and 222 pages and 12,893 links after 128 sessions.'
+  #   anchor: Dreaming can build new memory representations
+  #   layout: evidence_band
+  # - id: figure-11
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/011.png
+  #   caption: Two diagrams linking graded criteria to source documents.
+  #   alt_text: 'Two diagrams linking graded criteria to source documents. Left, the task where the wiki showed more benefit: most of the 24 criteria connect to two or more of 10 documents, and nine need judgment or arithmetic. Right, the task where the wiki showed less benefit: most of the 57 criteria can be found by text search in a single document, usually the deal overview memo.'
+  #   anchor: Dreaming can build new memory representations
+  #   layout: evidence_band
+  # - id: figure-12
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/012.png
+  #   caption: Diagram of a wiki build and second pass.
+  #   alt_text: 'Diagram of a wiki build and second pass. On the left, a circle holds the corpus: 10 documents, 115 KB of text. An arrow leads to a larger circle holding the wiki built from it: 68 pages, 255 links, and 203 KB, or 1.77 times the corpus. Some of the wiki’s pages have no links.'
+  #   anchor: Dreaming can build new memory representations
+  #   layout: evidence_band
+  # - id: figure-13
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/013.png
+  #   caption: The memory hierarchy with dreaming, highlighting arrows from transcripts and from memory representations up to the injected context layer at the top, which feeds into the next session.
+  #   alt_text: The memory hierarchy with dreaming, highlighting arrows from transcripts and from memory representations up to the injected context layer at the top, which feeds into the next session.
+  #   anchor: Dreaming can promote notes up the memory hierarchy
+  #   layout: evidence_band
+  # - id: figure-14
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/014.png
+  #   caption: Two diagrams.
+  #   alt_text: 'Two diagrams. Before: four agents write to the same shared page, provisions.md, and one agent’s save erases another’s lines; 41 of 57 graded facts survived. After: four agents each write their own contract’s page, with terms copied word for word; all 57 of 57 graded facts survived.'
+  #   anchor: Dreaming can focus memory on a specific goal
+  #   layout: evidence_band
+  # - id: figure-15
+  #   source_id: the-components-of-agent-memory-f0247d2b
+  #   path: media/015.png
+  #   caption: Two network graphs of a wiki.
+  #   alt_text: 'Two network graphs of a wiki. Before the second pass: 38 entries and 225 links, with nine links from six pages pointing to “escrow-agreement,” a page that doesn’t exist. After: 41 entries and 278 links, with all nine links pointing to “buyer-form-escrow-agreement” and three new pages: index, instructions email, and escalations.'
+  #   anchor: Dreaming can fill in gaps a session leaves behind
+  #   layout: evidence_band
+  opener_art:
+    path: editions/020/art/picks/opener-memory-night-sorting-v1.jpg
+    alt_text: 'At night a boy sleeps at a table while a small robot gathers loose paper slips into a box and a girl with a lantern chooses which one to keep.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-memory-morning-box-v1.jpg
+- id: recall-how-a-skill-became-our-company-brain
+  title: 'Recall: how a skill became our company brain'
+  short_title: Recall
+  display_emphasis: Recall
+  opener_variant: stepped_title
+  author: Miguel Ríos Berríos
+  author_note: Publishes on X.
+  content_mode: article
+  source_ids:
+  - recall-how-a-skill-became-our-company-brain-bb5ea734
+  manuscript: editions/020/articles/recall-how-a-skill-became-our-company-brain.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+    path: media/001.png
+    caption: 'Stage 1, April: a SKILL.md prompt that tells the agent to find and grep Claude Code session files on one cloud machine.'
+    alt_text: 'Stage 1, April: a SKILL.md prompt that tells the agent to find and grep Claude Code session files on one cloud machine.'
+    anchor: From prompt to index
+    layout: compact_band
+  - id: figure-2
+    source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+    path: media/002.png
+    caption: 'Stage 2, April to July: reusable scripts that rank sessions, extract prompts, and dump context, while every search still reads 5 GB of JSONL.'
+    alt_text: 'Stage 2, April to July: reusable scripts that rank sessions, extract prompts, and dump context, while every search still reads 5 GB of JSONL.'
+    anchor: From prompt to index
+    layout: compact_band
+  - id: figure-3
+    source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+    path: media/003.jpg
+    caption: 'Stage 3, July: a local SQLite index of chunks and entities, read by Claude Code and Codex. Search at the 95th percentile fell from 15.7 s to 0.16 s; the right session reached the top five 63% of the time, up from 23%.'
+    alt_text: 'Stage 3, July: a local SQLite index of chunks and entities, read by Claude Code and Codex. Search at the 95th percentile fell from 15.7 s to 0.16 s; the right session reached the top five 63% of the time, up from 23%.'
+    anchor: 'What''s inside'
+    layout: compact_band
+  # - id: figure-4
+  #   source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+  #   path: media/004.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: It started as a prompt
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+  #   path: media/005.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: What's inside
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+  #   path: media/006.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: What happens when you ask it something
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+  #   path: media/007.jpg
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: How we use it
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: recall-how-a-skill-became-our-company-brain-bb5ea734
+  #   path: media/008.jpg
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: How we use it
+  #   layout: evidence_band
+  opener_art:
+    path: editions/020/art/picks/opener-recall-card-drawer-v1.jpg
+    alt_text: 'A tired boy drags away a huge sack of tangled paper while a girl holds a small card drawer and a small robot pulls out one card instantly.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-recall-reading-card-v1.jpg
+- id: i-reverse-engineered-grok-bot-s-memory-system-an
+  title: I Reverse Engineered Grok Bot's Memory System, and Here's What I Found
+  short_title: Grok Bot's Memory System
+  display_emphasis: Grok Bot's
+  opener_variant: stepped_title
+  author: Manthan Gupta
+  author_note: Writes at manthanguptaa.in.
+  content_mode: article
+  source_ids:
+  - i-reverse-engineered-grok-bot-s-memory-system-an-1ec399b8
+  manuscript: editions/020/articles/i-reverse-engineered-grok-bot-s-memory-system-an.md
+  opener_art:
+    path: editions/020/art/picks/opener-grok-music-box-v1.jpg
+    alt_text: 'A boy unscrews the base of an old music box while a small robot shines a flashlight and a girl pulls out a hidden drawer full of folded notes.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-grok-wind-and-listen-v1.jpg
+- id: securing-ai-agents-lessons-from-real-world-deplo
+  title: 'Securing AI Agents: Lessons From Real-World Deployment'
+  short_title: Securing AI Agents
+  display_emphasis: Securing AI Agents
+  opener_variant: stepped_title
+  author: Sean Tout, Max Zhurovich, Adi Raghavendra
+  author_note: Engineers at Uber.
+  content_mode: article
+  source_ids:
+  - securing-ai-agents-lessons-from-real-world-deplo-c5293c0a
+  manuscript: editions/020/articles/securing-ai-agents-lessons-from-real-world-deplo.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: securing-ai-agents-lessons-from-real-world-deplo-c5293c0a
+    path: media/001.jpg
+    caption: AI agent governance flowchart showing access control, manipulation risks, and layered guardrails for safe operation.
+    alt_text: AI agent governance flowchart showing access control, manipulation risks, and layered guardrails for safe operation.
+    anchor: Why access control wasn't enough
+    layout: evidence_band
+  - id: figure-2
+    source_id: securing-ai-agents-lessons-from-real-world-deplo-c5293c0a
+    path: media/002.jpg
+    caption: 'Three-phase AI security workflow: provisioning, runtime enforcement, and continuous assurance with feedback loop.'
+    alt_text: 'Three-phase AI security workflow: provisioning, runtime enforcement, and continuous assurance with feedback loop.'
+    anchor: The three layers
+    layout: compact_band
+  - id: figure-3
+    source_id: securing-ai-agents-lessons-from-real-world-deplo-c5293c0a
+    path: media/003.jpg
+    caption: 'Four-step process: Identity, Authorization, Behavioral Authorization, and Action, each with brief descriptions and icons.'
+    alt_text: 'Four-step process: Identity, Authorization, Behavioral Authorization, and Action, each with brief descriptions and icons.'
+    anchor: Why access control wasn't enough
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: securing-ai-agents-lessons-from-real-world-deplo-c5293c0a
+  #   path: media/004.jpg
+  #   caption: Flowchart of continuous monitoring and assurance, showing user requests, agent actions, and a feedback assurance loop.
+  #   alt_text: Flowchart of continuous monitoring and assurance, showing user requests, agent actions, and a feedback assurance loop.
+  #   anchor: Architecture
+  #   layout: evidence_band
+  opener_art:
+    path: editions/020/art/picks/opener-secure-bumper-path-v1.jpg
+    alt_text: 'A small robot rides a scooter along a garden path while a boy holds open the gate and a girl sets a padded bumper rail that keeps it on course.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-secure-dusk-ride-v1.jpg
+- id: see-the-agents-set-the-terms-new-visibility-and
+  title: 'See the agents, set the terms: new visibility and control for personal agents'
+  short_title: See the agents, set the terms
+  display_emphasis: personal agents
+  opener_variant: stepped_title
+  author: Marina Elmore, Nicole Justus
+  author_note: Work at Cloudflare.
+  content_mode: article
+  source_ids:
+  - see-the-agents-set-the-terms-new-visibility-and-982ed481
+  manuscript: editions/020/articles/see-the-agents-set-the-terms-new-visibility-and.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: see-the-agents-set-the-terms-new-visibility-and-982ed481
+    path: media/001.png
+    caption: 'Bot analysis splits a site''s requests into automated, likely automated, likely human, verified bot, and personal assistant traffic.'
+    alt_text: 'Bot analysis splits a site''s requests into automated, likely automated, likely human, verified bot, and personal assistant traffic.'
+    anchor: See the agents
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: see-the-agents-set-the-terms-new-visibility-and-982ed481
+  #   path: media/004.png
+  #   caption: AAP- individual profile.png
+  #   alt_text: AAP- individual profile.png
+  #   anchor: See how agents access your site
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: see-the-agents-set-the-terms-new-visibility-and-982ed481
+  #   path: media/005.png
+  #   caption: image7.png
+  #   alt_text: image7.png
+  #   anchor: Set access policies that reflect your preferences
+  #   layout: evidence_band
+  opener_art:
+    path: editions/020/art/picks/opener-terms-dutch-door-v1.jpg
+    alt_text: 'A girl leans over a half-open dutch door to look at a small robot holding a basket on the step, while a boy waves from behind to show the robot is on his errand.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/020/art/picks/tail-terms-full-basket-v1.jpg
+tail_art_fit: contain
+closing_plates:
+- title: 'Giant clipboard tree'
+  art_path: editions/020/art/picks/closing-giant-clipboard-tree-v1.jpg
+- title: 'Rooftop kite dusk'
+  art_path: editions/020/art/picks/closing-rooftop-kite-dusk-v1.jpg
+- title: 'Lantern tower stairs'
+  art_path: editions/020/art/picks/closing-lantern-tower-stairs-v1.jpg
+- title: 'One umbrella rain'
+  art_path: editions/020/art/picks/closing-one-umbrella-rain-v1.jpg
+- title: 'One giant bubble'
+  art_path: editions/020/art/picks/closing-one-giant-bubble-v1.jpg
+- title: 'Stone well reflection'
+  art_path: editions/020/art/picks/closing-stone-well-reflection-v1.jpg
+- title: 'Tide pool shell'
+  art_path: editions/020/art/picks/closing-tide-pool-shell-v1.jpg

@@ -1,0 +1,9 @@
+id: scaling-git-at-openai-277870ff
+title: 'Scaling Git at OpenAI'
+author: 'Aaron Friel, Taylor Blau, and Ted Nyman'
+url: https://openai.com/index/scaling-git-at-openai
+site: 'OpenAI'
+captured_at: '2026-11-10T01:47:03Z'
+published_at: '2026-11-02'
+tags: []
+synopsis: 'OpenAI describes Pando, a Git-compatible backend it built with Codex in 10 weeks that scales concurrent pushes by ordering updates per branch and serves fetches from reused, compacted packfiles, cutting median push latency and delivering nearly a petabyte of Git data per day.'

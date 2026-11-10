@@ -1,0 +1,9 @@
+id: the-post-quantum-future-of-web-privacy-0788fb80
+title: 'The post-quantum future of web privacy'
+author: 'Christopher Patton, Tianyu Zhang, Bas Westerbaan'
+url: https://blog.cloudflare.com/vole-mole
+site: 'Cloudflare Blog'
+captured_at: '2026-11-10T01:35:21Z'
+published_at: '2026-11-06'
+tags: []
+synopsis: 'Cloudflare researchers describe how VOLE-in-the-Head proofs combined with UOV multivariate signatures could yield compact post-quantum blind signatures and anonymous credentials, such as MOLE endorsements, for web privacy.'

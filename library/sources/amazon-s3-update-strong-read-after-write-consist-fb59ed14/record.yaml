@@ -1,0 +1,9 @@
+id: amazon-s3-update-strong-read-after-write-consist-fb59ed14
+title: 'Amazon S3 Update – Strong Read-After-Write Consistency'
+author: 'Jeff Barr'
+url: https://aws.amazon.com/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/
+site: 'Amazon Web Services'
+captured_at: '2026-11-10T01:50:43Z'
+published_at: '2020-12-01'
+tags: []
+synopsis: 'AWS announces that all S3 GET, PUT, LIST and metadata operations are now strongly consistent in all regions at no extra charge and with no performance impact, removing the need for EMRFS Consistent View or S3Guard.'

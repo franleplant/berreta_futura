@@ -1,0 +1,9 @@
+id: agent-state-machines-building-deterministic-scaf-f4e0b120
+title: 'Agent State Machines: Building Deterministic Scaffolding for Agents'
+author: 'Josh Rosen'
+url: https://x.com/JoshARosen/article/2117687393213932003
+site: 'X'
+captured_at: '2026-11-10T02:02:04Z'
+published_at: '2026-11-03'
+tags: []
+synopsis: 'The article surveys how developers use state machines at several layers of agent infrastructure, from the internal agent loop to workflows, supervision, and the work itself, and why many build their own.'

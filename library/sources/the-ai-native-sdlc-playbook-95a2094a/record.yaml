@@ -1,0 +1,9 @@
+id: the-ai-native-sdlc-playbook-95a2094a
+title: 'The AI-native SDLC playbook'
+author: 'Louis Claxton'
+url: https://claude.com/resources/articles/the-ai-native-sdlc-playbook
+site: 'Claude'
+captured_at: '2026-11-10T01:28:11Z'
+published_at: '2026-08-21'
+tags: []
+synopsis: 'Anthropic''s Applied AI team presents a stage-by-stage playbook for rebuilding the software development lifecycle (plan, design, build, test, deploy, maintain) around Claude, with committed artifacts, skills, hooks, evals, and gated autonomy keeping humans accountable while code stops being the bottleneck.'

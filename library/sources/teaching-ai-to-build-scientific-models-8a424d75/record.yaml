@@ -1,0 +1,9 @@
+id: teaching-ai-to-build-scientific-models-8a424d75
+title: 'Teaching AI to build scientific models'
+author: 'Jakob Macke, Daniel Gedon, and Stefan Wahl'
+url: https://www.anthropic.com/research/teaching-ai-to-build-scientific-models
+site: 'anthropic.com'
+captured_at: '2026-11-10T01:36:04Z'
+published_at: '2026-11-06'
+tags: []
+synopsis: 'Using the Hodgkin-Huxley model as a guide, the authors argue that AI systems can now help build, constrain, and interpret scientific models, but that real insight requires returning the whole distribution of plausible models rather than a single best fit.'

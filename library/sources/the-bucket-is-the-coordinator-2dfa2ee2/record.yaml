@@ -1,0 +1,8 @@
+id: the-bucket-is-the-coordinator-2dfa2ee2
+title: 'The bucket is the coordinator'
+author: ''
+url: https://tlockney.github.io/celld-book/bucket.html
+site: 'tlockney.github.io'
+captured_at: '2026-11-10T01:51:11Z'
+tags: []
+synopsis: 'celld has no membership protocol or consensus service; the shared object-storage bucket holds cell ownership records, node leases, and replicated state, and RPO=0 is earned by a bucket proof with one node or a fleet proof with two or more, relying on conditional writes, read-after-write consistency, and exact ranged reads that a startup probe verifies.'

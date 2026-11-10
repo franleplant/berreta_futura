@@ -1,0 +1,9 @@
+id: diving-deep-on-s3-consistency-a5bf47a7
+title: 'Diving Deep on S3 Consistency'
+author: 'Werner Vogels'
+url: https://www.allthingsdistributed.com/2021/04/s3-strong-consistency.html
+site: 'All Things Distributed'
+captured_at: '2026-11-10T01:50:25Z'
+published_at: '2021-04-20'
+tags: []
+synopsis: 'Werner Vogels explains how Amazon S3 moved from eventual to strong consistency by adding a witness component and cache coherence protocol, at no extra cost and with no performance or availability tradeoffs, verified through proofs and model checking.'

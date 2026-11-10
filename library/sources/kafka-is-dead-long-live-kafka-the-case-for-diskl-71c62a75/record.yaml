@@ -1,0 +1,9 @@
+id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+title: 'Kafka Is Dead, Long Live Kafka: The Case for Diskless, S3-Native Streaming'
+author: 'Richard Artoul'
+url: https://www.warpstream.com/blog/kafka-is-dead-long-live-kafka
+site: 'warpstream.com'
+captured_at: '2026-11-10T01:54:08Z'
+published_at: '2023-07-25'
+tags: []
+synopsis: 'WarpStream''s co-founder argues that Kafka''s inter-zone replication costs and operational burden are a poor fit for the cloud, and presents WarpStream, a stateless, S3-native, Kafka-protocol-compatible system that trades higher latency for 5-10x lower cost.'

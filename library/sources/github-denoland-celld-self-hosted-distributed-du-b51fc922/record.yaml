@@ -1,0 +1,8 @@
+id: github-denoland-celld-self-hosted-distributed-du-b51fc922
+title: 'GitHub - denoland/celld: self-hosted, distributed Durable Objects'
+author: 'denoland'
+url: https://github.com/denoland/celld
+site: 'GitHub'
+captured_at: '2026-11-10T01:51:49Z'
+tags: []
+synopsis: 'celld is an open-source daemon that runs Cloudflare Workers applications, including Durable Objects, KV, Queues, D1, R2, and Workflows, on your own machines, storing long-term state in an S3-compatible, Google Cloud Storage, or Azure Blob Storage bucket without a consensus service.'

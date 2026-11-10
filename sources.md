@@ -18,6 +18,8 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `020` (34 queued)._
+
 _Collecting: `019` (14 queued)._
 
 _Collecting: `018` (19 queued)._
@@ -31,6 +33,340 @@ _Collecting: `015` (9 queued)._
 _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
+
+## Formally verifying agent-written full-stack web apps with PDD Kit — Alex Lavaee, Matthai Philipose
+
+- ID: `formally-verifying-agent-written-full-stack-web-b28ecfb7`
+- Source: https://www.microsoft.com/en-us/research/blog/formally-verifying-agent-written-full-stack-web-apps-with-pdd-kit/
+- Published: 2026-11-05
+- Captured: 2026-11-10T02:04:33Z
+- Release: queued for `020`
+
+Microsoft Research introduces PDD Kit, a Proof-Driven Development toolkit that turns developer intent into a formal Verus spec, proves agent-written Rust code meets it for every input, tests the trusted boundary, and demonstrates this by verifying the login logic of a full-stack Pet Store web app.
+
+## Critical thinking when agents do the work — Addy Osmani
+
+- ID: `critical-thinking-when-agents-do-the-work-dcced816`
+- Source: https://x.com/addyosmani/article/2117512471930167377
+- Published: 2026-11-03
+- Captured: 2026-11-10T02:02:42Z
+- Release: queued for `020`
+
+Addy Osmani argues that as agentic workflows make outputs fast and mostly correct, engineers must deliberately build in critical thinking by forming hypotheses first, defining verification up front, reviewing what agents decided, writing clear prompts, and keeping accountability for what ships.
+
+## Agent State Machines: Building Deterministic Scaffolding for Agents — Josh Rosen
+
+- ID: `agent-state-machines-building-deterministic-scaf-f4e0b120`
+- Source: https://x.com/JoshARosen/article/2117687393213932003
+- Published: 2026-11-03
+- Captured: 2026-11-10T02:02:04Z
+- Release: queued for `020`
+
+The article surveys how developers use state machines at several layers of agent infrastructure, from the internal agent loop to workflows, supervision, and the work itself, and why many build their own.
+
+## Recall: how a skill became our company brain — Miguel Ríos Berríos
+
+- ID: `recall-how-a-skill-became-our-company-brain-bb5ea734`
+- Source: https://x.com/MiguelriosEN/article/2118075831780340092
+- Published: 2026-11-04
+- Captured: 2026-11-10T02:01:45Z
+- Release: queued for `020`
+
+Miguel Ríos Berríos describes how Parcha's "recall" skill grew from a prompt for searching Claude Code and Codex transcripts into a hosted system of object storage, Turbopuffer search, Parquet files, a catalog and a sandbox exposed through four MCP tools, and how the team uses it as a company brain.
+
+## Software Factory Engineer: Job Description — Itamar Friedman
+
+- ID: `software-factory-engineer-job-description-08e49b62`
+- Source: https://x.com/itamar_mar/article/2118356299612033305
+- Published: 2026-11-05
+- Captured: 2026-11-10T02:01:00Z
+- Release: queued for `020`
+
+Itamar Friedman presents a job description for a Software Factory Engineer, a role that designs, builds, and operates an autonomous L4 software factory covering orchestration, context engineering, independent verification, autonomy boundaries, production feedback, and economics, followed by an appendix arguing why this is becoming a distinct discipline.
+
+## Addressing the code review bottleneck — Ben Holmes
+
+- ID: `addressing-the-code-review-bottleneck-9386e979`
+- Source: https://x.com/BHolmesDev/article/2118411592627052937
+- Published: 2026-11-05
+- Captured: 2026-11-10T02:00:11Z
+- Release: queued for `020`
+
+The article proposes three ways to cut the time human reviewers spend on agent-written PRs: adversarial rounds of review by your own review agent, end-to-end verification with computer use and artifacts, and scoring merge risk across five criteria.
+
+## AWS re:Invent 2024 - Dive deep on Amazon S3 (STG302) — Seth Markle, James Bornholt
+
+- ID: `aws-re-invent-2024-dive-deep-on-amazon-s3-stg302-2c5c8e42`
+- Source: https://www.youtube.com/watch?v=NXehLy7IiPM
+- Published: 2024-12-05
+- Captured: 2026-11-10T01:59:47Z
+- Release: queued for `020`
+
+In this AWS re:Invent 2024 talk, two S3 engineers explain how S3's scale improves customer outcomes through workload aggregation across millions of drives, shuffle sharding, the power of two random choices, and erasure coding, which together give decorrelated, fault-tolerant, high-throughput storage and let the team deploy new hardware and software faster.
+
+## Building and operating a pretty big storage system called S3 — Andy Warfield
+
+- ID: `building-and-operating-a-pretty-big-storage-syst-7f2204cf`
+- Source: https://www.allthingsdistributed.com/2023/07/building-and-operating-a-pretty-big-storage-system.html
+- Published: 2023-07-27
+- Captured: 2026-11-10T01:57:30Z
+- Release: queued for `020`
+
+Andy Warfield, a VP and distinguished engineer at S3, describes what he learned about the technical scale of S3's hard-disk fleet, the human and organizational practices around it, and the role of ownership in scaling himself and his teams.
+
+## Kafka Is Dead, Long Live Kafka: The Case for Diskless, S3-Native Streaming — Richard Artoul
+
+- ID: `kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75`
+- Source: https://www.warpstream.com/blog/kafka-is-dead-long-live-kafka
+- Published: 2023-07-25
+- Captured: 2026-11-10T01:54:08Z
+- Release: queued for `020`
+
+WarpStream's co-founder argues that Kafka's inter-zone replication costs and operational burden are a poor fit for the cloud, and presents WarpStream, a stateless, S3-native, Kafka-protocol-compatible system that trades higher latency for 5-10x lower cost.
+
+## How to build a distributed queue in a single JSON file on object storage — Dan Harrison (Engineer)
+
+- ID: `how-to-build-a-distributed-queue-in-a-single-jso-ada83d75`
+- Source: https://turbopuffer.com/blog/object-storage-queue
+- Published: 2026-02-12
+- Captured: 2026-11-10T01:52:40Z
+- Release: queued for `020`
+
+turbopuffer describes building a distributed indexing job queue from a single queue.json file on object storage, progressing from compare-and-set writes to group commit, a stateless broker, and heartbeat-based failover.
+
+## Leader Election With S3 Conditional Writes — Gunnar Morling
+
+- ID: `leader-election-with-s3-conditional-writes-fb7d9e5f`
+- Source: https://www.morling.dev/blog/leader-election-with-s3-conditional-writes/
+- Published: 2024-08-26
+- Captured: 2026-11-10T01:52:16Z
+- Release: queued for `020`
+
+Gunnar Morling shows how S3's new If-None-Match conditional writes let nodes elect a leader by racing to create per-epoch lock files, with expiry, validity timeouts, and epoch-based fencing tokens to handle crashes, clock drift, and zombie leaders.
+
+## Add preconditions to S3 operations with conditional requests - Amazon Simple Storage Service
+
+- ID: `add-preconditions-to-s3-operations-with-conditio-8c695bf4`
+- Source: https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html
+- Captured: 2026-11-10T01:51:58Z
+- Release: queued for `020`
+
+Amazon S3 conditional requests let you add a header to read, write, or delete operations so that the operation fails if a precondition on the object's ETag, last modified date, or existence is not met.
+
+## GitHub - denoland/celld: self-hosted, distributed Durable Objects — denoland
+
+- ID: `github-denoland-celld-self-hosted-distributed-du-b51fc922`
+- Source: https://github.com/denoland/celld
+- Captured: 2026-11-10T01:51:49Z
+- Release: queued for `020`
+
+celld is an open-source daemon that runs Cloudflare Workers applications, including Durable Objects, KV, Queues, D1, R2, and Workflows, on your own machines, storing long-term state in an S3-compatible, Google Cloud Storage, or Azure Blob Storage bucket without a consensus service.
+
+## The bucket is the coordinator
+
+- ID: `the-bucket-is-the-coordinator-2dfa2ee2`
+- Source: https://tlockney.github.io/celld-book/bucket.html
+- Captured: 2026-11-10T01:51:11Z
+- Release: queued for `020`
+
+celld has no membership protocol or consensus service; the shared object-storage bucket holds cell ownership records, node leases, and replicated state, and RPO=0 is earned by a bucket proof with one node or a fleet proof with two or more, relying on conditional writes, read-after-write consistency, and exact ranged reads that a startup probe verifies.
+
+## Best practices design patterns: optimizing Amazon S3 performance - Amazon Simple Storage Service
+
+- ID: `best-practices-design-patterns-optimizing-amazon-496d6ca3`
+- Source: https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
+- Captured: 2026-11-10T01:50:54Z
+- Release: queued for `020`
+
+Amazon S3 automatically scales to at least 3,500 write or 5,500 read requests per second per prefix, and the page points to guidelines and design patterns, plus CloudFront, ElastiCache and Transfer Acceleration, for further performance tuning.
+
+## Using Lightweight Formal Methods to Validate a Key-Value Storage Node in Amazon S3
+
+- ID: `using-lightweight-formal-methods-to-validate-a-k-a1b41482`
+- Source: https://jamesbornholt.com/papers/shardstore-sosp21.pdf
+- Captured: 2026-11-10T01:50:44Z
+- Release: queued for `020`
+
+This paper reports our experience applying lightweight for-mal methods to validate the correctness of ShardStore, a new key-value storage node implementation for the Amazon S3 cloud object storage service. By “lightweight formal methods” we mean a pragmatic approach to verifying
+
+## Amazon S3 Update – Strong Read-After-Write Consistency — Jeff Barr
+
+- ID: `amazon-s3-update-strong-read-after-write-consist-fb59ed14`
+- Source: https://aws.amazon.com/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/
+- Published: 2020-12-01
+- Captured: 2026-11-10T01:50:43Z
+- Release: queued for `020`
+
+AWS announces that all S3 GET, PUT, LIST and metadata operations are now strongly consistent in all regions at no extra charge and with no performance impact, removing the need for EMRFS Consistent View or S3Guard.
+
+## Diving Deep on S3 Consistency — Werner Vogels
+
+- ID: `diving-deep-on-s3-consistency-a5bf47a7`
+- Source: https://www.allthingsdistributed.com/2021/04/s3-strong-consistency.html
+- Published: 2021-04-20
+- Captured: 2026-11-10T01:50:25Z
+- Release: queued for `020`
+
+Werner Vogels explains how Amazon S3 moved from eventual to strong consistency by adding a witness component and cache coherence protocol, at no extra cost and with no performance or availability tradeoffs, verified through proofs and model checking.
+
+## What is Amazon S3? - Amazon Simple Storage Service
+
+- ID: `what-is-amazon-s3-amazon-simple-storage-service-e380da8d`
+- Source: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
+- Captured: 2026-11-10T01:49:52Z
+- Release: queued for `020`
+
+Amazon S3 is an object storage service whose user guide introduces its features, bucket types, objects and keys, strong consistency model, related services, access methods, pricing, and PCI DSS compliance.
+
+## Scaling Git at OpenAI — Aaron Friel, Taylor Blau, and Ted Nyman
+
+- ID: `scaling-git-at-openai-277870ff`
+- Source: https://openai.com/index/scaling-git-at-openai
+- Published: 2026-11-02
+- Captured: 2026-11-10T01:47:03Z
+- Release: queued for `020`
+
+OpenAI describes Pando, a Git-compatible backend it built with Codex in 10 weeks that scales concurrent pushes by ordering updates per branch and serves fetches from reused, compacted packfiles, cutting median push latency and delivering nearly a petabyte of Git data per day.
+
+## Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights — Rikiya Takehi, Jayden Teoh, Alex Zhang, Omar Khattab
+
+- ID: `sparks-of-weight-space-programming-llms-can-nati-f9ecf66c`
+- Source: https://rikiyat.github.io/blog/weight-space-programming/
+- Published: 2026-11-02
+- Captured: 2026-11-10T01:44:42Z
+- Release: queued for `020`
+
+The authors show that GPT-6 Astra can read neural network weights to infer what a network does, fix a failing network by editing its weights, and write small game-playing networks from scratch, including a weight edit that raises Qwen3.5-0.8B's MATH-500 score from 7.9% to 48.1%.
+
+## Progress on provable inference for large language models — Roy Rinberg, Alex Allain, Alessandro Chiesa, Miranda Christ, Rahul Dalal, Giacomo Fenzi, Ben Mayer, Guy Weissenberg
+
+- ID: `progress-on-provable-inference-for-large-languag-43862ef7`
+- Source: https://www.anthropic.com/research/provable-inference
+- Published: 2026-11-02
+- Captured: 2026-11-10T01:41:35Z
+- Release: queued for `020`
+
+Anthropic researchers present FlashProve, an open-source zkSNARK-based prototype that proves Llama 4 Maverick inference at about 110 tokens/second on a single H100 with roughly 19 MB proofs, backed by Lean-verified security statements, and discuss its applications, prior work, and limitations.
+
+## A thousand fewer paths to root — OpenAI
+
+- ID: `a-thousand-fewer-paths-to-root-86d5c720`
+- Source: https://openai.com/index/a-thousand-fewer-paths-to-root/
+- Published: 2026-11-04
+- Captured: 2026-11-10T01:39:49Z
+- Release: queued for `020`
+
+OpenAI describes an autonomous pipeline that discovered, validated, exploited, and generated patches for 948 Linux kernel local privilege escalation vulnerabilities in one run costing about $1.2 million in API credits, and shares cost analysis and lessons learned.
+
+## OpenAI to acquire Pierre Computer Company, Inc. — OpenAI
+
+- ID: `openai-to-acquire-pierre-computer-company-inc-27c88439`
+- Source: https://openai.com/index/openai-to-acquire-pierre/
+- Published: 2026-11-04
+- Captured: 2026-11-10T01:38:33Z
+- Release: queued for `020`
+
+OpenAI announces it will acquire Pierre Computer Company, Inc., maker of Code Storage and the open-source Trees and Diffs libraries, to expand Codex's tools for building, understanding, and reviewing code.
+
+## Rebuilding the global town square from scratch — Yagiz Nizipli
+
+- ID: `rebuilding-the-global-town-square-from-scratch-37909cd9`
+- Source: https://blog.x.com/en/engineering/rebuilding-the-global-town-square-from-scratch
+- Published: 2026-11-04
+- Captured: 2026-11-10T01:38:24Z
+- Release: queued for `020`
+
+X's engineering team explains how five engineers working with AI coding agents replaced three web servers with one new server-rendered app, how it is rolling out country by country, and how its lab performance compares with the old rweb app.
+
+## See the agents, set the terms: new visibility and control for personal agents — Marina Elmore, Nicole Justus
+
+- ID: `see-the-agents-set-the-terms-new-visibility-and-982ed481`
+- Source: https://blog.cloudflare.com/personal-agents-visibility-control
+- Published: 2026-11-04
+- Captured: 2026-11-10T01:37:26Z
+- Release: queued for `020`
+
+Cloudflare announces new Security Analytics views and per-agent access policies (Allow, Block on pages with ads, Block) that let site owners see which personal agents visit their sites and set terms for each.
+
+## I Reverse Engineered Grok Bot's Memory System, and Here's What I Found — Manthan Gupta
+
+- ID: `i-reverse-engineered-grok-bot-s-memory-system-an-1ec399b8`
+- Source: https://manthanguptaa.in/posts/grok_bot_memory/
+- Published: 2026-11-04
+- Captured: 2026-11-10T01:36:34Z
+- Release: queued for `020`
+
+The author reverse engineers Grok Bot's memory by reading its desktop client and running experiments, finding that all of a user's bots share one pool of short dated notes, injected in a capped window and otherwise reachable only by keyword search, with no automatic cleanup of contradictory notes.
+
+## Teaching AI to build scientific models — Jakob Macke, Daniel Gedon, and Stefan Wahl
+
+- ID: `teaching-ai-to-build-scientific-models-8a424d75`
+- Source: https://www.anthropic.com/research/teaching-ai-to-build-scientific-models
+- Published: 2026-11-06
+- Captured: 2026-11-10T01:36:04Z
+- Release: queued for `020`
+
+Using the Hodgkin-Huxley model as a guide, the authors argue that AI systems can now help build, constrain, and interpret scientific models, but that real insight requires returning the whole distribution of plausible models rather than a single best fit.
+
+## The post-quantum future of web privacy — Christopher Patton, Tianyu Zhang, Bas Westerbaan
+
+- ID: `the-post-quantum-future-of-web-privacy-0788fb80`
+- Source: https://blog.cloudflare.com/vole-mole
+- Published: 2026-11-06
+- Captured: 2026-11-10T01:35:21Z
+- Release: queued for `020`
+
+Cloudflare researchers describe how VOLE-in-the-Head proofs combined with UOV multivariate signatures could yield compact post-quantum blind signatures and anonymous credentials, such as MOLE endorsements, for web privacy.
+
+## The components of agent memory — Lance Martin
+
+- ID: `the-components-of-agent-memory-f0247d2b`
+- Source: https://www.anthropic.com/research/components-of-agent-memory
+- Published: 2026-11-06
+- Captured: 2026-11-10T01:29:21Z
+- Release: queued for `020`
+
+Anthropic's engineering team describes how agent memory can be organized into notes, wikis, and injected context, and presents evaluations showing how Claude judges salience and how offline "dreaming" can correct, restructure, and promote memories.
+
+## The AI-native SDLC playbook — Louis Claxton
+
+- ID: `the-ai-native-sdlc-playbook-95a2094a`
+- Source: https://claude.com/resources/articles/the-ai-native-sdlc-playbook
+- Published: 2026-08-21
+- Captured: 2026-11-10T01:28:11Z
+- Release: queued for `020`
+
+Anthropic's Applied AI team presents a stage-by-stage playbook for rebuilding the software development lifecycle (plan, design, build, test, deploy, maintain) around Claude, with committed artifacts, skills, hooks, evals, and gated autonomy keeping humans accountable while code stops being the bottleneck.
+
+## Your AI coding agents need a manager — Addy Osmani
+
+- ID: `your-ai-coding-agents-need-a-manager-92402d58`
+- Source: https://addyosmani.com/blog/coding-agents-manager/
+- Published: 2026-01-08
+- Captured: 2026-11-10T01:25:57Z
+- Release: queued for `020`
+
+Addy Osmani argues that running multiple parallel AI coding agents is a management problem, so skills like clear scoping, delegation, verification loops, and async check-ins determine how well developers orchestrate them.
+
+## Securing AI Agents: Lessons From Real-World Deployment — Sean Tout, Max Zhurovich, Adi Raghavendra
+
+- ID: `securing-ai-agents-lessons-from-real-world-deplo-c5293c0a`
+- Source: https://www.uber.com/us/en/blog/securing-ai-agents/
+- Published: 2026-11-06
+- Captured: 2026-11-10T01:25:33Z
+- Release: queued for `020`
+
+Uber describes its Secure AI framework for agents, a three-layer defense-in-depth architecture (provisioning-time validation, runtime enforcement, continuous assurance) that governs agent behavior through personas, intents, and constraints, and shares the production lessons learned.
+
+## Introducing Claude Fable 5.2 and Claude Mythos 5.2
+
+- ID: `introducing-claude-fable-5-2-and-claude-mythos-5-a989f158`
+- Source: https://www.anthropic.com/claude-fable-and-mythos-5-2
+- Published: 2026-11-09
+- Captured: 2026-11-10T01:24:47Z
+- Release: queued for `020`
+
+Anthropic announces Claude Fable 5.2 and Claude Mythos 5.2, describing their benchmark results, coding, cybersecurity, science and research applications, safety and alignment testing, safeguards, and availability.
 
 ## Get started with Claude Managed Agents
 

@@ -1,0 +1,9 @@
+id: rebuilding-the-global-town-square-from-scratch-37909cd9
+title: 'Rebuilding the global town square from scratch'
+author: 'Yagiz Nizipli'
+url: https://blog.x.com/en/engineering/rebuilding-the-global-town-square-from-scratch
+site: 'X Blog'
+captured_at: '2026-11-10T01:38:24Z'
+published_at: '2026-11-04'
+tags: []
+synopsis: 'X''s engineering team explains how five engineers working with AI coding agents replaced three web servers with one new server-rendered app, how it is rolling out country by country, and how its lab performance compares with the old rweb app.'

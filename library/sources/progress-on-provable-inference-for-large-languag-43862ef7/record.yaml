@@ -1,0 +1,9 @@
+id: progress-on-provable-inference-for-large-languag-43862ef7
+title: 'Progress on provable inference for large language models'
+author: 'Roy Rinberg, Alex Allain, Alessandro Chiesa, Miranda Christ, Rahul Dalal, Giacomo Fenzi, Ben Mayer, Guy Weissenberg'
+url: https://www.anthropic.com/research/provable-inference
+site: 'anthropic.com'
+captured_at: '2026-11-10T01:41:35Z'
+published_at: '2026-11-02'
+tags: []
+synopsis: 'Anthropic researchers present FlashProve, an open-source zkSNARK-based prototype that proves Llama 4 Maverick inference at about 110 tokens/second on a single H100 with roughly 19 MB proofs, backed by Lean-verified security statements, and discuss its applications, prior work, and limitations.'
