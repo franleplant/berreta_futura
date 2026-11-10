@@ -11,6 +11,8 @@ static MEDIA_LINE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^[ \t]*!\[[^\]]*\]\(media/([^)\s]+)\)[ \t]*\n?").unwrap());
 static YAML_FENCE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?s)```ya?ml\s*\n(.*?)```").unwrap());
+static REASON_LINE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?m)^(\s*reason:[ \t]*)([^\s>|].*?)[ \t]*$").unwrap());
 const CONTEXT_CHARS: usize = 500;
 const BATCH: usize = 12;
 
@@ -44,8 +46,11 @@ fn parse(reply: &str, files: &[String]) -> Result<Vec<Verdict>> {
         .captures_iter(reply)
         .last()
         .map_or(reply, |c| c.get(1).map_or(reply, |m| m.as_str()));
+    let body = REASON_LINE.replace_all(body, |c: &regex::Captures| {
+        format!("{}'{}'", &c[1], c[2].replace('\'', "''"))
+    });
     let doc: Reply =
-        serde_norway::from_str(body).context("figure curation reply is not the yaml asked for")?;
+        serde_norway::from_str(&body).context("figure curation reply is not the yaml asked for")?;
     let named: Vec<&str> = doc.images.iter().map(|v| v.file.as_str()).collect();
     if named != files.iter().map(String::as_str).collect::<Vec<_>>() {
         bail!("figure curation named {named:?}; expected exactly {files:?} in order");
@@ -131,6 +136,11 @@ mod tests {
         assert!(parse(missing, &files).is_err());
         let odd = ok.replace("drop", "maybe");
         assert!(parse(&odd, &files).is_err());
+        let quoted = ok.replace("a chart", "\"S3 by the numbers\" graphic, it's kept");
+        assert_eq!(
+            parse(&quoted, &files).unwrap()[0].reason,
+            "\"S3 by the numbers\" graphic, it's kept"
+        );
     }
 
     #[test]
