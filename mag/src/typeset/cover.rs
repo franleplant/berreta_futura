@@ -1,4 +1,4 @@
-use crate::cover::art::{art_zones, extreme_pixels, graded_art, luminance};
+use crate::cover::art::{art_zones, extreme_pixels, graded_art, luminance, refuse_edge_band};
 use crate::cover::text::{cover_contributors, cover_date, cover_issue};
 use crate::model::manifest::Edition;
 use crate::typeset::content::{string_literal, File, Tree};
@@ -202,6 +202,7 @@ fn front(design: &Value, edition: &Edition, work: &Path) -> Result<Value> {
     let (art, scrim) = match (edition.cover_art.as_deref(), layout.as_str()) {
         (Some(art), layout) => {
             ensure!(art.is_file(), "Cover art is missing: {}", art.display());
+            refuse_edge_band(art)?;
             std::fs::create_dir_all(work)?;
             let graded = work.join("cover-art.jpg");
             std::fs::write(&graded, graded_art(art)?)?;

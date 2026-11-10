@@ -710,12 +710,12 @@ fn generate_all(
     round_dir: &Path,
     workers: usize,
 ) -> Result<Vec<GeneratedItem>> {
-    let jobs: Vec<(String, u32, String, String, GenEnv)> = briefs
+    let jobs: Vec<(String, ArtPurpose, u32, String, String, GenEnv)> = briefs
         .iter()
         .flat_map(|b| (1..=variants(b, candidates)).map(move |v| (b, v)))
         .map(|(b, v)| {
             let (file, cmd, env) = candidate_command(gen_cmd, b, v, round_dir)?;
-            Ok((b.id.clone(), v, file, cmd, env))
+            Ok((b.id.clone(), b.purpose, v, file, cmd, env))
         })
         .collect::<Result<_>>()?;
     let next = AtomicUsize::new(0);
@@ -730,7 +730,7 @@ fn generate_all(
         for _ in 0..workers.max(1).min(jobs.len()) {
             s.spawn(|| loop {
                 let i = next.fetch_add(1, Ordering::Relaxed);
-                let Some((brief, variant, file, cmd, env)) = jobs.get(i) else {
+                let Some((brief, purpose, variant, file, cmd, env)) = jobs.get(i) else {
                     break;
                 };
                 let out_path = round_dir.join(file);
@@ -749,6 +749,18 @@ fn generate_all(
                             e
                         }
                     }
+                };
+                let outcome = match outcome.as_str() {
+                    "ok" | "kept" if *purpose == ArtPurpose::Cover => {
+                        match crate::cover::art::refuse_edge_band(&out_path) {
+                            Ok(()) => outcome,
+                            Err(e) => {
+                                eprintln!("    {brief} v{variant}: REJECTED: {e:#}");
+                                format!("{e:#}")
+                            }
+                        }
+                    }
+                    _ => outcome,
                 };
                 let ok = matches!(outcome.as_str(), "ok" | "kept");
                 let line = serde_json::json!({

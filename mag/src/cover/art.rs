@@ -68,6 +68,61 @@ pub fn art_zones(path: &Path, band_x: f64, page_height: f64) -> Result<(Zone, Zo
     ))
 }
 
+const SIDES: [&str; 4] = ["left", "right", "top", "bottom"];
+
+fn edge_line(image: &Rgb, side: usize, depth: u32) -> Vec<[i32; 3]> {
+    let (width, height) = (image.width, image.height);
+    let points: Vec<(u32, u32)> = match side {
+        0 => (0..height).map(|y| (depth, y)).collect(),
+        1 => (0..height).map(|y| (width - 1 - depth, y)).collect(),
+        2 => (0..width).map(|x| (x, depth)).collect(),
+        _ => (0..width).map(|x| (x, height - 1 - depth)).collect(),
+    };
+    points
+        .into_iter()
+        .map(|(x, y)| {
+            let at = (y as usize * width as usize + x as usize) * 3;
+            [0, 1, 2].map(|c| i32::from(image.data[at + c]))
+        })
+        .collect()
+}
+
+fn share(line: &[[i32; 3]], colour: [i32; 3], test: impl Fn(i32) -> bool) -> f64 {
+    let hits = line
+        .iter()
+        .filter(|p| test((0..3).map(|c| (p[c] - colour[c]).abs()).max().unwrap_or(0)))
+        .count();
+    hits as f64 / line.len().max(1) as f64
+}
+
+pub fn edge_band(image: &Rgb) -> Option<String> {
+    SIDES.iter().enumerate().find_map(|(side, name)| {
+        let span = if side < 2 { image.width } else { image.height };
+        let edge = edge_line(image, side, 0);
+        let count = i32::try_from(edge.len().max(1)).unwrap_or(i32::MAX);
+        let colour = [0, 1, 2].map(|c| edge.iter().map(|p| p[c]).sum::<i32>() / count);
+        let flat = (0..span / 4)
+            .take_while(|&depth| share(&edge_line(image, side, depth), colour, |d| d <= 28) >= 0.95)
+            .count();
+        let flat = u32::try_from(flat).unwrap_or(u32::MAX);
+        let inside = || edge_line(image, side, flat + 4);
+        (flat >= (span / 100).max(8)
+            && flat < span / 4
+            && share(&inside(), colour, |d| d > 60) >= 0.8)
+            .then(|| format!("a flat {flat}px strip along its {name} edge"))
+    })
+}
+
+pub fn refuse_edge_band(path: &Path) -> Result<()> {
+    match edge_band(&decode_rgb(path)?) {
+        Some(band) => anyhow::bail!(
+            "{} has {band}: generated art must not paint layout elements; crop it off or pick another candidate",
+            path.display()
+        ),
+        None => Ok(()),
+    }
+}
+
 pub fn luminance(rgb: [f64; 3]) -> f64 {
     let linear = |c: f64| match c <= 0.04045 {
         true => c / 12.92,
@@ -139,4 +194,41 @@ pub fn graded_art(path: &Path) -> Result<Vec<u8>> {
         ExtendedColorType::Rgb8,
     )?;
     Ok(jpeg)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn field(paint: impl Fn(u32, u32) -> [u8; 3]) -> Rgb {
+        let (width, height) = (300, 450);
+        let paint = &paint;
+        let data = (0..height)
+            .flat_map(|y| (0..width).flat_map(move |x| paint(x, y)))
+            .collect();
+        Rgb {
+            width,
+            height,
+            data,
+        }
+    }
+
+    #[test]
+    fn edge_band_finds_a_painted_strip_and_spares_a_flat_ground() {
+        let blue = [20, 40, 200];
+        let striped = field(|x, _| if x >= 285 { [250, 80, 40] } else { blue });
+        assert_eq!(
+            edge_band(&striped).as_deref(),
+            Some("a flat 15px strip along its right edge")
+        );
+        assert_eq!(edge_band(&field(|_, _| blue)), None);
+        let subject = field(|x, y| {
+            if x >= 285 && y > 300 {
+                [220, 30, 30]
+            } else {
+                blue
+            }
+        });
+        assert_eq!(edge_band(&subject), None);
+    }
 }
