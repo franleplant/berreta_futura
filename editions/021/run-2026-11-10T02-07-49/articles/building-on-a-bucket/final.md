@@ -6,51 +6,71 @@ source_ids:
 - leader-election-with-s3-conditional-writes-fb7d9e5f
 - how-to-build-a-distributed-queue-in-a-single-jso-ada83d75
 - kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
-content_mode: in_a_nutshell
-label: IN A NUTSHELL
+content_mode: explainer
+label: EXPLAINER
 ---
 
-celld runs a Cloudflare Workers application, Durable Objects included, on your own machines. It has no membership protocol, no failure detector, and no consensus service; the bucket does that work. A node owns a cell because it won one atomic write to the bucket, and every cell's SQLite state is replicated there. With one node, a write is acknowledged once it reaches the bucket. With two or more, it is acknowledged once another node holds it on disk, and the upload follows. Either way, losing a node cannot lose an acknowledged write. The price is a strict contract on the store, checked at every startup.
+celld is an open-source daemon from Deno that runs a Cloudflare Workers application on your own machines. Each object in it is a **cell**: a named server with its own SQLite database. You run one celld process on each machine and point them all at one object storage bucket. Nothing else coordinates them. A machine takes charge of a cell with one atomic write of a small record into the bucket, so only one machine runs a cell at a time. celld does not answer a write until the data would survive the loss of a machine. With one machine, that means the bucket holds the data. With two or more, another machine holds it on disk and the bucket catches up afterwards, which is much faster.
 
-## The example
+**The example.** This app is invented for this piece. An office has a small Workers app called Shelf for lending things off shared shelves. It has one Durable Object class, `Shelf`, with one instance per physical shelf. The third-floor shelf is the cell `Shelf:third-floor`. When someone borrows the stapler, the app records the loan in that cell's SQLite database. The office runs two machines, `node-a` and `node-b`, against the bucket `s3://office-cells`.
 
-Take a hypothetical shop with one Durable Object per cart. The cart `Cart:alice` is a cell: a named server with its own SQLite database. Two nodes, A and B, start against the same bucket, `s3://shop-cells`. Neither is configured with the other's address. Each finds the other through the node leases in the bucket.
+## As a user
 
-## Who owns the cart
+A **node** is one celld process. A **fleet** is the set of nodes that share one bucket, the **fleet bucket**. Every node embeds V8, the JavaScript engine, and runs the bundles Wrangler produces. A **Durable Object** is a Cloudflare Workers object with its own storage. On celld, each one is a cell.
 
-When the first event reaches `Cart:alice`, its owner writes an ownership record with a conditional create, which fails if the record already exists. Say A wins. If B tried the same create, it would fail. Exactly one node owns a cell at a time.
+You touch four things.
 
-Alice's next request lands on B. Any node can take a request, but only the owner can run the cell, so B proxies the call to A over the peer tunnel. That hop is why routing a cell's traffic to its owner is worth doing when latency matters.
+- **Your existing `wrangler.json`.** celld deploys from it. It runs Workers, Durable Objects, KV, Queues, D1, R2, Workflows, Cron Triggers, and static assets. Containers are experimental. The README rules out anything that needs the Cloudflare network, a GPU, or a browser farm.
+- **`celld dev`.** It runs one node on your laptop with a local object store, with no Docker and no cloud bucket. Shelf answers at `http://127.0.0.1:9876` and keeps its state in `.celld/dev` between runs.
+- **`celld deploy . --bucket s3://office-cells`.** It bundles the Worker code with esbuild, which must be on `PATH`, and writes the deployment into the bucket.
+- **`celld --bucket s3://office-cells ...`** on each machine. Each node gets two listeners. The public one, port 8080 in the README's example, sits behind your load balancer. The internal one, 8081, carries traffic between nodes and must stay on a private network or an encrypted overlay such as WireGuard or Tailscale. `node-b` needs no extra configuration, because nodes find each other through the bucket.
 
-## When a write counts
+You can count on these things. One node owns a cell at a time. Losing a node cannot lose an acknowledged write; the celld documentation calls this **RPO=0**. An inactive cell costs almost nothing. There is no serving control plane to run.
 
-Alice adds a book. A commits it, captures the change as LTX, Litestream's replica format, and sends it to B. When B has it on its own disk, A answers Alice. The bucket upload finishes afterwards. This is the fleet proof. In a fleet of three or more, A picks two followers, and an acknowledged write exists in three copies.
+celld qualifies Amazon S3, Cloudflare R2, Google Cloud Storage, Tigris, and Azure Blob Storage. MinIO passes the test but is not qualified. Backblaze B2, Hetzner Object Storage, and DigitalOcean Spaces are not qualified.
 
-Run A alone and the rule changes. A has no one to send to, so every write waits for the bucket: one storage round trip. This is the bucket proof. `CELLD_DURABILITY` defaults to `fleet`; a lone node requests it and falls back.
+## As a developer
 
-The numbers: about 90 ms for a write to a region-local store. One loaded lab fleet measured about 600 ms against a store that was not region-local, and about 25 ms once a second node held the write.
+A fleet runs one application, and every node loads the latest successful deployment from `deploy/current.json`. `celld diagnose` lists every node **lease** (a node's record of itself in the bucket) and probes each live peer.
 
-In both modes the bucket keeps the long-term state. The bucket holds the truth; nodes only borrow it. If A dies, another node acquires the cart through the same bucket protocol. Before the takeover restores the cell, celld recovers the open log from the prior owner. A large cell comes back page by page, each page read from the bucket on first use.
+The durability mode decides your write latency. `CELLD_DURABILITY` defaults to `fleet`. A single node asks for that mode, does not get it, and falls back to waiting on the bucket. The README gives the figures: about 90 ms per write to a region-local store. One loaded lab fleet measured about 600 ms against a store that was not region-local, and about 25 ms once a second node held the write. For Shelf, `node-b` is worth more as a second witness than as spare capacity.
 
-## What the store must promise
+The mistakes that cost you:
 
-- **Conditional create:** creating a record fails when it already exists.
-- **Conditional overwrite:** a compare-and-swap fails when the object changed since the read.
-- **Read-after-write consistency:** a read after a successful write returns that write.
-- **Exact ranged reads:** a `Range` request returns precisely those bytes. Restore reads pages by range, so a wrong range is a correctness failure.
+- **Trusting old dev state.** The state in `.celld/dev` survives a configuration change and is not migrated. An object can keep a value the new configuration rejects, and the failure looks unrelated to the change. `celld dev --clean` starts from empty.
+- **Using an unqualified store.** Each node probes the store at startup and stops at once on a clear contract violation. The probe cannot be turned off: a node with `CELLD_STORAGE_PROBE` set does not start.
+- **Exposing the internal port, or handing out bucket credentials.** celld rejects a literal public advertise address unless you pass `--unsafe-public-advertise`. The bucket holds deployments, leases, the peer secret, and all state. In the documentation's words, "whoever holds the bucket credentials controls the fleet."
+- **Upgrading node by node.** Mixed versions cannot share a serving fleet. Stop all old nodes, then start the new ones.
 
-No store publishes whether it honors conditional writes, so every node probes at startup. A clear violation stops the node rather than risk a second owner. An ambiguous failure gets three attempts, then a warning. The probe cannot be disabled.
+## Inside
 
-Amazon S3, Cloudflare R2, Google Cloud Storage, Tigris, and Azure Blob Storage qualify. MinIO community passes the test but is not qualified. Backblaze B2, Hetzner Object Storage, and DigitalOcean Spaces do not.
+### One request
 
-The bucket also holds deployments, node leases, the peer-authentication secret, alarm wake entries, large KV values, and all R2 objects. Whoever holds the bucket credentials controls the fleet.
+Follow the stapler.
 
-## Where the pattern comes from
+The load balancer hands the borrow request to `node-b`. The ownership record in the bucket says `node-a` owns `Shelf:third-floor`, so `node-b` forwards the call to `node-a` over the peer tunnel, the versioned HTTP path on the internal listener. That hop is why routing a cell's traffic to its owner pays when latency matters.
 
-S3 notoriously lacked compare-and-swap. In August 2024, AWS added `If-None-Match` to `PutObject`: the put succeeds only if no object has that key, and otherwise returns `412 Precondition Failed`. Gunnar Morling showed this is enough for leader election. Nodes race to create a lock file for the next epoch, `lock_0000000001.json`, then `lock_0000000002.json`, an endless numbered succession; the winner leads. Checking a lock's validity and doing the work are never atomic, so work by a stale leader must be detected and fenced off, with the epoch as the fencing token. S3's guide now also describes checking an object's ETag before updating it.
+On `node-a`, the `Shelf` code runs and commits a SQLite write. celld captures that commit as an **LTX segment**, the replica format of Ben Johnson's Litestream. It sends the segment to its **followers**, the one or two other nodes it has picked for this cell; the owner and its followers form the cell's **ensemble**. A node never picks itself, so here the only candidate is `node-b`. When `node-b` has the segment on its disk, `node-a` answers the client. The upload to the bucket finishes afterwards. That is the **fleet proof**. Alone, `node-a` would wait for the bucket before answering, which is the **bucket proof**. In both modes the bucket is the long-term store. The only difference is where the acknowledgement falls.
 
-turbopuffer built its indexing queue as one file, `queue.json`, rewritten by CAS. A replace can take up to 200 ms, so it batches writes with group commit, and a stateless broker runs the single commit loop so no one contends for the object. The broker does not acknowledge a write until it lands in object storage. If two brokers exist briefly, CAS keeps the queue correct; the old one learns it was replaced when its CAS fails.
+If `node-a` dies, another node takes over the cell. Before it restores the cell, celld recovers the open log from the prior owner. The README leaves the full protocol to celld's guarantees page, and so does this piece.
 
-WarpStream made the same bet for Kafka: stateless agents, data in S3, no local disks. It says this makes it 5 to 10 times cheaper than Kafka in the cloud, because inter-zone bandwidth fees can be over 80% of a Kafka deployment's infrastructure cost at scale. The trade was latency: a P99 of about 400 ms for produce requests, since nothing is acknowledged until it is durable in S3. Produce latency is now tunable down to about 33 ms median with Lightning Topics.
+### What makes it correct and durable
 
-celld faces the same latency. Its fleet proof takes the upload off the response path.
+The documentation names four properties the store must have:
+
+- **Conditional create.** Creating a record fails if the object already exists, so two nodes cannot both claim a cell.
+- **Conditional overwrite.** A **compare-and-swap** on the prior record fails if the object changed after it was read; compare-and-swap means "write this only if the object is still what I saw."
+- **Read-after-write consistency.** A read after a successful write returns that write.
+- **Exact ranged reads.** A request for a byte range returns exactly those bytes. A large cell restores page by page, fetching each page from the bucket the first time it is used, so a wrong range is a correctness failure, not a slow one.
+
+No store publishes whether it honors these, so each node asks at startup. A clear violation (an unsupported operation, wrong bytes, an ignored condition) stops the node rather than risk a second owner for a cell. An ambiguous failure gets three attempts and then a warning, since a transient outage can clear.
+
+In a fleet of three or more nodes, an acknowledged write exists in three copies, and the ensemble keeps acknowledging while one follower remains.
+
+### The primitive underneath
+
+Gunnar Morling wrote in August 2024, the week after S3 gained `If-None-Match`, that S3 had notoriously lacked such an operation, while Google Cloud Storage and Azure had offered compare-and-swap for some time. He built leader election on it: one lock file per **epoch**, a number that only grows, and a `412 Precondition Failed` for the loser. He also warned that leader election "will only ever be eventually correct," because checking a lock and doing the work are never one atomic step. Following Martin Kleppmann, he proposed the epoch as a **fencing token**, so that requests from a stale leader can be recognized and discarded.
+
+Dan Harrison of turbopuffer built a job queue on one JSON file with the same primitive and hit its limit: a file replacement can take up to 200 ms. He answered with **group commit**, which batches waiting requests into the next write.
+
+Each of these designs puts a slow, honest store at the center and then works around its slowness. celld works around it with a second disk on another machine. The bucket still decides who owns what.

@@ -26,3 +26,10 @@
 {"attempt":0,"label":"building-on-a-bucket figure anchors","model":"haiku","seconds":8.7,"usd":0.0036}
 {"attempt":0,"label":"article-labels","model":"opus","seconds":4.4,"usd":0.1098}
 {"attempt":0,"label":"author-bios","model":"opus","seconds":6.6,"usd":0.1036}
+{"attempt":0,"label":"building-on-a-bucket write","model":"opus","seconds":83.9,"usd":0.4777}
+{"attempt":0,"label":"how-s3-works-and-why-it-scales write","model":"opus","seconds":93.1,"usd":0.9062}
+{"attempt":0,"label":"building-on-a-bucket trim1","model":"opus","seconds":28.6,"usd":0.4009}
+{"attempt":0,"label":"how-s3-works-and-why-it-scales trim1","model":"opus","seconds":32.0,"usd":0.8322}
+{"attempt":0,"label":"building-on-a-bucket trim2","model":"opus","seconds":28.7,"usd":0.3925}
+{"attempt":1,"label":"how-s3-works-and-why-it-scales figure anchors","model":"haiku","seconds":3.4,"usd":0.0032}
+{"attempt":0,"label":"building-on-a-bucket figure anchors","model":"haiku","seconds":5.5,"usd":0.0034}

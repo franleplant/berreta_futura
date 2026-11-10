@@ -4,7 +4,7 @@ articles:
 - id: how-s3-works-and-why-it-scales
   title: How S3 works and why it scales
   author: 'Andy Warfield, Seth Markle, James Bornholt'
-  content_mode: in_a_nutshell
+  content_mode: explainer
   source_ids:
   - building-and-operating-a-pretty-big-storage-syst-7f2204cf
   - what-is-amazon-s3-amazon-simple-storage-service-e380da8d
@@ -17,7 +17,7 @@ articles:
 - id: building-on-a-bucket
   title: 'Building on a bucket: celld as the case study'
   author: 'celld, Gunnar Morling, Dan Harrison, Richard Artoul'
-  content_mode: in_a_nutshell
+  content_mode: explainer
   source_ids:
   - the-bucket-is-the-coordinator-2dfa2ee2
   - github-denoland-celld-self-hosted-distributed-du-b51fc922

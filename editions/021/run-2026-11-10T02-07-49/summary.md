@@ -1,8 +1,9 @@
 # Run summary: edition 021
 
-- 0 model calls, $0.00, 0.0 minutes
+- 5 model calls, $3.01, 2.4 minutes
 - writer `opus`
 
 | piece | words |
 |---|---|
-| firecracker-vm-escape-pwnescape-part-2 | 2293 |
+| how-s3-works-and-why-it-scales | 1309 |
+| building-on-a-bucket | 1372 |

@@ -27,7 +27,7 @@ articles:
   opener_variant: stepped_title
   author: Andy Warfield, Seth Markle, James Bornholt
   author_note: Engineers at Amazon Web Services.
-  content_mode: in_a_nutshell
+  content_mode: explainer
   source_ids:
   - building-and-operating-a-pretty-big-storage-syst-7f2204cf
   - what-is-amazon-s3-amazon-simple-storage-service-e380da8d
@@ -46,7 +46,7 @@ articles:
     path: media/004.png
     caption: The first magnetic memory device
     alt_text: The first magnetic memory device
-    anchor: The drive
+    anchor: Why it is fast
     layout: evidence_band
   # - id: figure-4
   #   source_id: building-and-operating-a-pretty-big-storage-syst-7f2204cf
@@ -116,7 +116,7 @@ articles:
   opener_variant: stepped_title
   author: 'celld, Gunnar Morling, Dan Harrison, Richard Artoul'
   author_note: Engineers and data infrastructure firms.
-  content_mode: in_a_nutshell
+  content_mode: explainer
   source_ids:
   - the-bucket-is-the-coordinator-2dfa2ee2
   - github-denoland-celld-self-hosted-distributed-du-b51fc922
@@ -128,21 +128,21 @@ articles:
   # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
   # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
   # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
-  figures:
-  - id: figure-1
-    source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
-    path: media/001.png
-    caption: 'Kafka across three zones: producer traffic and each replica copy pay $0.02/GiB in inter-zone transfer.'
-    alt_text: 'Kafka across three zones: producer traffic and each replica copy pay $0.02/GiB in inter-zone transfer.'
-    anchor: 'Where the pattern comes from'
-    layout: evidence_band
-  - id: figure-2
-    source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
-    path: media/002.png
-    caption: 'WarpStream: stateless agents with no disks, storage and inter-zone transfer through S3, and only metadata in WarpStream Cloud.'
-    alt_text: 'WarpStream: stateless agents with no disks, storage and inter-zone transfer through S3, and only metadata in WarpStream Cloud.'
-    anchor: 'Where the pattern comes from'
-    layout: evidence_band
+  # figures:
+  # - id: figure-1
+  #   source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+  #   path: media/001.png
+  #   caption: 'Kafka across three zones: producer traffic and each replica copy pay $0.02/GiB in inter-zone transfer.'
+  #   alt_text: 'Kafka across three zones: producer traffic and each replica copy pay $0.02/GiB in inter-zone transfer.'
+  #   anchor: 'Where the pattern comes from'
+  #   layout: evidence_band
+  # - id: figure-2
+  #   source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
+  #   path: media/002.png
+  #   caption: 'WarpStream: stateless agents with no disks, storage and inter-zone transfer through S3, and only metadata in WarpStream Cloud.'
+  #   alt_text: 'WarpStream: stateless agents with no disks, storage and inter-zone transfer through S3, and only metadata in WarpStream Cloud.'
+  #   anchor: 'Where the pattern comes from'
+  #   layout: evidence_band
   # - id: figure-4
   #   source_id: kafka-is-dead-long-live-kafka-the-case-for-diskl-71c62a75
   #   path: media/004.png
@@ -497,3 +497,5 @@ closing_plates:
   art_path: editions/021/art/picks/closing-firefly-jar-dusk-v1.jpg
 - title: 'Paper boats stream'
   art_path: editions/021/art/picks/closing-paper-boats-stream-v1.jpg
+- title: 'Clock opened'
+  art_path: editions/021/art/picks/closing-clock-opened-v1.jpg
