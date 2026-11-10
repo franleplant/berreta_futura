@@ -14,6 +14,7 @@ recorded in `meta/judge-inventory.md` and lives in git history.
 |---|---|---|
 | `article.md` | `faithful_synthesis`, `faithful_edit` | general articles |
 | `in-a-nutshell.md` | `in_a_nutshell` | `{topic}` is replaced with the article title from the plan row |
+| `explainer.md` | `explainer` | multi-source teaching piece: user, developer, then internals; `{topic}` as above |
 | `opening-editorial.md` | editorial | prompt is preceded by the accepted articles wrapped in `<articles><article N>…` |
 
 How a writer call is assembled — this is the *whole* prompt:

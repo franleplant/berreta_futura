@@ -128,7 +128,7 @@ pub fn byline_roster(author: &str) -> String {
 }
 
 pub fn ui(language: &str, key: &str) -> String {
-    const ENGLISH: [(&str, &str); 20] = [
+    const ENGLISH: [(&str, &str); 21] = [
         ("issue", "Issue"),
         ("contents", "Contents"),
         ("sources", "Sources"),
@@ -140,6 +140,7 @@ pub fn ui(language: &str, key: &str) -> String {
         ("original_argument", "An original argument"),
         ("article", "ARTICLE"),
         ("in_a_nutshell", "IN A NUTSHELL"),
+        ("explainer", "EXPLAINER"),
         ("original_editorial", "ORIGINAL EDITORIAL"),
         ("source_introduction", "THE SOURCE"),
         ("source_record", "SOURCE RECORD"),
@@ -150,7 +151,7 @@ pub fn ui(language: &str, key: &str) -> String {
         ("key_ideas", "KEY IDEAS"),
         ("verbatim", "VERBATIM"),
     ];
-    const SPANISH: [(&str, &str); 20] = [
+    const SPANISH: [(&str, &str); 21] = [
         ("issue", "Número"),
         ("contents", "Índice"),
         ("sources", "Fuentes"),
@@ -162,6 +163,7 @@ pub fn ui(language: &str, key: &str) -> String {
         ("original_argument", "Un argumento original"),
         ("article", "ARTÍCULO"),
         ("in_a_nutshell", "EN POCAS PALABRAS"),
+        ("explainer", "EXPLICADO"),
         ("original_editorial", "EDITORIAL ORIGINAL"),
         ("source_introduction", "LA FUENTE"),
         ("source_record", "REGISTRO DE FUENTE"),

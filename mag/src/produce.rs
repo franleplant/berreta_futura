@@ -55,6 +55,7 @@ fn writer_prompt_file(mode: ContentMode) -> Result<&'static str> {
     match mode {
         ContentMode::Article => Ok("article.md"),
         ContentMode::InANutshell => Ok("in-a-nutshell.md"),
+        ContentMode::Explainer => Ok("explainer.md"),
         ContentMode::Verbatim => bail!("content_mode 'verbatim' has no writer prompt"),
     }
 }

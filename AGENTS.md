@@ -135,7 +135,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   Captions and anchors localize; the run itself never does. Declare the row
   in plan.yaml and carry it into edition.yaml at assembly.
 - Content modes: `faithful_edit`, `faithful_synthesis`, `selected_extracts`,
-  `original_synthesis`, `in_a_nutshell`, `verbatim` (source text unchanged, no
+  `original_synthesis`, `in_a_nutshell`, `explainer` (multi-source teaching piece:
+  user, developer, internals; `prompts/explainer.md`), `verbatim` (source text unchanged, no
   writer call, ten-page cap instead of seven), plus the `original_editorial`
   opener.
   See `docs/EDITORIAL_POLICY.md`.
