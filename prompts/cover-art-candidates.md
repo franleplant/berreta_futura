@@ -59,11 +59,10 @@ checklists or meta-commentary. No two prompts share an opening phrase.
 
 ## Hard constraints (every brief, restated in its prompt)
 
-- Portrait 2:3 artwork, 1440 x 2160, full-bleed: the scene runs to all
-  four edges with no border, frame, margin, stripe, or band of flat color
-  along any edge. Keep the top-left corner, the left edge, and the bottom
-  strip free of anything critical. Name only that clear space in the
-  prompt, never the layout elements that will cover it.
+- Portrait 2:3 artwork, 1440 x 2160, full bleed: top-left corner plain,
+  the background calm and unbroken at every edge, bottom strip quiet.
+  Restate it in those terms only: never name the wordmark, spine, or type
+  that layout lays over the art, or the image model paints them.
 - The dominant field is a saturated color or a light tone, never black,
   near-black, or a muddy dark ground: uncoated stock prints them as mud.
 - No text, letters, numerals, logos, pseudo-writing, or watermark in the
