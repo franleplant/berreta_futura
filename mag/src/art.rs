@@ -124,7 +124,7 @@ static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-v\d+$").
 
 fn variants(brief: &Brief, candidates: u32) -> u32 {
     match brief.purpose {
-        ArtPurpose::Cover => candidates.min(COVER_VARIANTS),
+        ArtPurpose::Cover | ArtPurpose::Endpaper => candidates.min(COVER_VARIANTS),
         _ => candidates,
     }
 }
@@ -324,6 +324,19 @@ fn previous_briefs(edition_dir: &Path, purposes: &[ArtPurpose]) -> Result<Vec<Br
     Ok(out)
 }
 
+fn picked_cover_prompt(edition_dir: &Path, art_path: &str) -> Option<String> {
+    let picked = Path::new(art_path)
+        .file_stem()?
+        .to_string_lossy()
+        .to_string();
+    let id = VARIANT_SUFFIX.replace(&picked, "").to_string();
+    previous_briefs(edition_dir, &[ArtPurpose::Cover])
+        .ok()?
+        .into_iter()
+        .find(|b| b.id == id)
+        .map(|b| b.prompt)
+}
+
 fn approved_covers(edition_dir: &Path) -> Vec<(String, String)> {
     let Some(root) = edition_dir.parent() else {
         return Vec::new();
@@ -337,16 +350,7 @@ fn approved_covers(edition_dir: &Path) -> Vec<(String, String)> {
         .filter_map(|dir| {
             let spec: serde_norway::Value =
                 serde_norway::from_str(&read(&dir.join("edition.yaml")).ok()?).ok()?;
-            let picked = Path::new(spec["cover"]["art_path"].as_str()?)
-                .file_stem()?
-                .to_string_lossy()
-                .to_string();
-            let id = VARIANT_SUFFIX.replace(&picked, "").to_string();
-            let prompt = previous_briefs(dir, &[ArtPurpose::Cover])
-                .ok()?
-                .into_iter()
-                .find(|b| b.id == id)?
-                .prompt;
+            let prompt = picked_cover_prompt(dir, spec["cover"]["art_path"].as_str()?)?;
             Some((dir.file_name()?.to_string_lossy().to_string(), prompt))
         })
         .collect()
@@ -386,6 +390,57 @@ fn approved_section(approved: &[(String, String)]) -> String {
     )
 }
 
+fn rejected_section(rejected: &[Brief]) -> String {
+    if rejected.is_empty() {
+        return String::new();
+    }
+    let body: String = rejected
+        .iter()
+        .map(|b| format!("--- {} [{}]\n{}\n\n", b.id, b.purpose, b.prompt))
+        .collect();
+    produce::section("rejected earlier briefs (do not repeat)", &body)
+}
+
+const ENDPAPER_SHEET: &str = "Format: one full-bleed landscape A4 sheet, the inside of a \
+magazine cover printed on one side of the sheet and folded down the vertical centre into \
+two A5 pages. Tile the pattern edge to edge with every motif upright for a viewer holding \
+the sheet landscape. The pattern runs continuously across the centre fold: no seam, no \
+gap, no motif centred on the fold line. No border, no frame, no text, no letters, no \
+numbers. The attached image is this issue's front cover, not a character sheet: take its \
+object, palette, and print texture from it, never its composition, and never draw it as \
+one big picture.";
+
+fn build_endpaper_prompt(
+    edition_yaml_text: &str,
+    cover_prompt: Option<&str>,
+    rejected: &[Brief],
+    note: Option<&str>,
+) -> Result<String> {
+    let mut out = INLINE_PREAMBLE.to_string();
+    out += &produce::section("prompts/endpaper.md", &read(&prompts_path("endpaper.md"))?);
+    if let Some((path, text)) = art_direction_section(edition_yaml_text)? {
+        out += &produce::section(&path, &text);
+    }
+    out += &produce::section("edition.yaml", edition_yaml_text);
+    if let Some(prompt) = cover_prompt {
+        out += &produce::section("the picked cover's brief", prompt);
+    }
+    out += &rejected_section(rejected);
+    if let Some(note) = note {
+        out += &produce::section("editor's note for this round", note);
+    }
+    out += "\nPropose this edition's eight endpaper briefs now, one per pattern \
+         structure in prompts/endpaper.md. Return exactly one fenced yaml code block \
+         (```yaml ... ```) and nothing else of consequence outside it. The block holds \
+         a top-level `briefs:` list where every entry has:\n\
+         - `id`: a short, unique kebab-case slug starting with `endpaper-`\n\
+         - `purpose`: `endpaper`\n\
+         - `prompt`: the complete, standalone image-generation prompt for the \
+           pattern, restating motif, structure, palette, and medium, since the \
+           image generator sees nothing else\n";
+    Ok(out)
+}
+
 fn build_brief_prompt(
     edition_yaml_text: &str,
     candidates: u32,
@@ -409,13 +464,7 @@ fn build_brief_prompt(
     out += &produce::section("edition.yaml", edition_yaml_text);
     out += FRAME_GUIDE;
     out += &cast_section(&cast);
-    if !rejected.is_empty() {
-        let mut body = String::new();
-        for b in rejected {
-            body += &format!("--- {} [{}]\n{}\n\n", b.id, b.purpose, b.prompt);
-        }
-        out += &produce::section("rejected earlier briefs (do not repeat)", &body);
-    }
+    out += &rejected_section(rejected);
     let covers_in_scope = articles.is_none() && only.is_none_or(|p| p.contains(&ArtPurpose::Cover));
     if covers_in_scope {
         out += &approved_section(approved);
@@ -490,7 +539,7 @@ fn build_brief_prompt(
     Ok(out)
 }
 
-fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
+fn extract_briefs(reply: &str, label: &str, allowed: &[ArtPurpose]) -> Result<Vec<Brief>> {
     let fence = YAML_FENCE
         .captures_iter(reply)
         .last()
@@ -529,11 +578,11 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
             bail!("{label}: brief id '{}' is used more than once", b.id);
         }
         let purpose = b.purpose;
-        if !SLOT_PURPOSES.contains(&purpose) {
+        if !allowed.contains(&purpose) {
             bail!(
-                "{label}: brief '{}' has purpose '{purpose}', expected \
-                 cover, opener, tail, or closing",
-                b.id
+                "{label}: brief '{}' has purpose '{purpose}', expected {}",
+                b.id,
+                join(allowed)
             );
         }
         let article_id = b.article_id.as_deref().unwrap_or("").trim();
@@ -541,7 +590,7 @@ fn extract_briefs(reply: &str, label: &str) -> Result<Vec<Brief>> {
             bail!("{label}: {purpose} brief '{}' needs an article_id", b.id);
         }
         let alt = b.alt_text.as_deref().unwrap_or("").trim();
-        if !matches!(purpose, ArtPurpose::Cover) && alt.is_empty() {
+        if !matches!(purpose, ArtPurpose::Cover | ArtPurpose::Endpaper) && alt.is_empty() {
             bail!("{label}: {purpose} brief '{}' needs alt_text", b.id);
         }
     }
@@ -1126,6 +1175,7 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Pre
     let article_or_brief = item.article_id.as_deref().unwrap_or(&item.brief_id);
     let slot = match item.purpose {
         Some(ArtPurpose::Cover) => "cover".to_string(),
+        Some(ArtPurpose::Endpaper) => "endpaper".to_string(),
         Some(ArtPurpose::Closing) => format!("closing:{}", item.brief_id),
         Some(p) => format!("{p}:{article_or_brief}"),
         None => format!("unknown:{article_or_brief}"),
@@ -1249,6 +1299,10 @@ fn showcase_sections(
         (Some(ArtPurpose::Opener), "Article openers"),
         (Some(ArtPurpose::Tail), "Article tails"),
         (Some(ArtPurpose::Closing), "Closing plates"),
+        (
+            Some(ArtPurpose::Endpaper),
+            "Endpaper (inside of the A4 cover sheet)",
+        ),
         (None, "Unmatched"),
     ] {
         let mut section: Vec<&ShowcaseItem> =
@@ -1393,6 +1447,7 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
     return pickedPaths().map(function (e) {
       var s = e.slot, p = e.path;
       if (s === 'cover') return 'cover:\n  art_path: ' + p;
+      if (s === 'endpaper') return 'cover:\n  endpaper_path: ' + p;
       if (s.indexOf('closing:') === 0) return '# ' + s.slice(8) + '\n- art_path: ' + p;
       var kind = s.split(':')[0], article = s.split(':').slice(1).join(':');
       if (kind === 'tail') return '# article ' + article + '\n  tail_art_path: ' + p;
@@ -1901,7 +1956,7 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
         .briefs
         .iter()
         .map(|b| {
-            let a = b.purpose != ArtPurpose::Cover
+            let a = !matches!(b.purpose, ArtPurpose::Cover | ArtPurpose::Endpaper)
                 || cast
                     .iter()
                     .any(|m| b.prompt.to_lowercase().contains(&m.name.to_lowercase()));
@@ -2113,6 +2168,7 @@ fn size_for(purpose: ArtPurpose) -> &'static str {
         ArtPurpose::Opener => "1760x1024",
         ArtPurpose::Tail => "2160x720",
         ArtPurpose::Closing | ArtPurpose::CastSheet => "1536x2160",
+        ArtPurpose::Endpaper => "2176x1536",
     }
 }
 
@@ -2149,8 +2205,12 @@ fn parse_only_purposes(only: Option<&str>) -> Result<Option<Vec<ArtPurpose>>> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(|p| {
-            slot_purpose(p)
-                .map_err(|_| anyhow!("--only accepts {}; got '{p}'", join(SLOT_PURPOSES)))
+            slot_purpose(p).map_err(|_| {
+                anyhow!(
+                    "--only accepts {}, or endpaper alone; got '{p}'",
+                    join(SLOT_PURPOSES)
+                )
+            })
         })
         .collect::<Result<Vec<_>>>()?;
     if purposes.is_empty() {
@@ -2322,15 +2382,14 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
         edition,
         gen_cmd,
         candidates,
-        jobs,
         model,
-        dry_run,
         showcase_only,
         only,
         note,
         articles,
         resume_round: resume,
         promote,
+        ..
     } = *opts;
     let edition_dir = crate::render::resolve_edition_dir(edition)?;
     let edition_label = edition_dir
@@ -2347,6 +2406,9 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
     }
     if let Some(resume) = resume {
         return resume_round(opts, resume, &edition_dir, &edition_label);
+    }
+    if only.map(str::trim) == Some("endpaper") {
+        return endpaper_round(opts, &edition_dir, &edition_label);
     }
 
     if let Some(cmd) = gen_cmd {
@@ -2385,7 +2447,7 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
     };
     let label = "art-briefs";
     let briefs = caller.call_with_parse(label, model, &prompt, |r| {
-        let briefs = extract_briefs(r, label)?;
+        let briefs = extract_briefs(r, label, SLOT_PURPOSES)?;
         check_scope(
             &briefs,
             only_purposes.as_deref(),
@@ -2398,33 +2460,97 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
 
     let mut briefs = briefs;
     inject_cast(&mut briefs, &cast, &license);
-    if let Some(cmd) = gen_cmd {
-        ensure_ref_placeholder(cmd, &briefs)?;
-    }
+    launch(opts, &briefs, &round_dir, &edition_dir, &edition_label)
+}
 
+fn launch(
+    opts: &ArtRun,
+    briefs: &[Brief],
+    round_dir: &Path,
+    edition_dir: &Path,
+    edition_label: &str,
+) -> Result<i32> {
+    if let Some(cmd) = opts.gen_cmd {
+        ensure_ref_placeholder(cmd, briefs)?;
+    }
     let briefs_doc = BriefsDoc {
-        briefs: briefs.clone(),
+        briefs: briefs.to_vec(),
     };
     write_atomic(
         round_dir.join("briefs.yaml"),
         serde_norway::to_string(&briefs_doc)?,
     )?;
     println!("  {} brief(s) proposed", briefs.len());
-
-    if dry_run {
-        return dry_run_report(opts, &briefs, &round_dir, &edition_dir, &edition_label);
+    if opts.dry_run {
+        return dry_run_report(opts, briefs, round_dir, edition_dir, edition_label);
     }
-    let gen_cmd = gen_cmd.expect("clap requires --gen-cmd when not a dry run");
-
+    let gen_cmd = opts
+        .gen_cmd
+        .expect("clap requires --gen-cmd when not a dry run");
     generate_and_finish(
-        &briefs,
-        candidates,
+        briefs,
+        opts.candidates,
         gen_cmd,
-        jobs,
-        &round_dir,
-        &edition_dir,
-        &edition_label,
+        opts.jobs,
+        round_dir,
+        edition_dir,
+        edition_label,
     )
+}
+
+fn settled_cover(spec: &EditionFile, edition_label: &str) -> Result<String> {
+    let art = spec
+        .cover
+        .art_path
+        .as_deref()
+        .map(str::trim)
+        .filter(|path| !path.is_empty() && *path != "TODO");
+    match art {
+        Some(path) if Path::new(path).is_file() => Ok(path.to_string()),
+        _ => bail!(
+            "the endpaper answers the picked cover, and {edition_label} has none yet: pick \
+             cover.art_path in editions/{edition_label}/art/showcase.html, then rerun \
+             mag art {edition_label} --only endpaper"
+        ),
+    }
+}
+
+fn endpaper_round(opts: &ArtRun, edition_dir: &Path, edition_label: &str) -> Result<i32> {
+    ensure!(
+        opts.articles.is_none(),
+        "--articles and --only are separate scopes; pass one"
+    );
+    if let Some(cmd) = opts.gen_cmd {
+        expand_placeholders(cmd)?;
+    }
+    let text = read(&edition_dir.join("edition.yaml"))?;
+    let spec: EditionFile = parse_yaml(&text).context("parsing edition.yaml")?;
+    let cover = settled_cover(&spec, edition_label)?;
+    let round_dir = edition_dir
+        .join("art")
+        .join("rounds")
+        .join(crate::caller::now_stamp());
+    crate::caller::create_fresh_dir(&round_dir)?;
+    println!("round dir: {}", round_dir.display());
+    let prompt = build_endpaper_prompt(
+        &text,
+        picked_cover_prompt(edition_dir, &cover).as_deref(),
+        &previous_briefs(edition_dir, &[ArtPurpose::Endpaper])?,
+        opts.note,
+    )?;
+    let label = "endpaper-briefs";
+    let briefs = Caller::new(&round_dir).call_with_parse(label, opts.model, &prompt, |r| {
+        extract_briefs(r, label, &[ArtPurpose::Endpaper])
+    })?;
+    let briefs: Vec<Brief> = briefs
+        .into_iter()
+        .map(|b| Brief {
+            prompt: format!("{}\n\n{ENDPAPER_SHEET}", b.prompt.trim_end()),
+            cast_references: Some(vec![cover.clone()]),
+            ..b
+        })
+        .collect();
+    launch(opts, &briefs, &round_dir, edition_dir, edition_label)
 }
 
 const ANATOMY_PROMPT: &str = "You check generated illustrations for broken anatomy before they \
@@ -2473,10 +2599,12 @@ fn parse_anatomy(reply: &str) -> Result<Option<String>> {
 
 fn anatomy_gate(edition_dir: &Path) -> Result<()> {
     let text = read(&edition_dir.join("edition.yaml"))?;
-    let picks: Vec<PathBuf> = crate::picks::round_paths(&serde_norway::from_str(&text)?)
+    let picks: Vec<PathBuf> = art_slots(&serde_norway::from_str(&text)?)
         .into_iter()
-        .filter(|p| !p.contains("/cover-"))
-        .map(|p| Path::new(&p).canonicalize())
+        .filter(|(slot, path)| {
+            path.contains("art/rounds/") && slot != "cover" && slot != "endpaper"
+        })
+        .map(|(_, p)| Path::new(&p).canonicalize())
         .collect::<std::io::Result<_>>()?;
     if art_direction_section(&text)?.is_none() || picks.is_empty() {
         return Ok(());
@@ -2537,8 +2665,16 @@ fn promote_picks(edition_dir: &Path, edition_label: &str) -> Result<i32> {
     for (pick, round) in &moves {
         println!("  {round} -> {pick}");
     }
+    let spec: EditionFile = parse_yaml(&read(&edition_dir.join("edition.yaml"))?)?;
+    let endpaper = match spec.cover.endpaper_path.as_deref().map(str::trim) {
+        Some(path) if !path.is_empty() => String::new(),
+        _ if settled_cover(&spec, edition_label).is_ok() => format!(
+            "  first: mag art {edition_label} --only endpaper   (inside of the A4 cover sheet, drawn from the picked cover; pick, then promote again)\n"
+        ),
+        _ => String::new(),
+    };
     println!(
-        "promoted {} pick(s) into {}/art/picks\n\nnext:\n  1. mag source-codes {edition_label}   (opener QR codes)\n  2. mag render {edition_label}\n  3. commit {}/art/picks and edition.yaml",
+        "promoted {} pick(s) into {}/art/picks\n\nnext:\n{endpaper}  1. mag source-codes {edition_label}   (opener QR codes)\n  2. mag render {edition_label}\n  3. commit {}/art/picks and edition.yaml",
         moves.len(),
         edition_dir.display(),
         edition_dir.display()
@@ -2598,7 +2734,7 @@ fn generate_and_finish(
     println!(
         "\nnext:\n  1. off-model and malformed candidates are badged in the showcase (cast-check ran on this round)\n  \
          2. open editions/{edition_label}/art/showcase.html and pick; clicking writes the paths to copy into edition.yaml \
-         (cover.art_path / opener_art.path / tail_art_path / closing_plates); rounds stay local, out of git\n  \
+         (cover.art_path / cover.endpaper_path / opener_art.path / tail_art_path / closing_plates); rounds stay local, out of git\n  \
          3. mag art {edition_label} --promote   (picks become committed JPEGs in art/picks)\n  \
          4. mag source-codes {edition_label}   (opener QR codes; reads the picked opener art)\n  \
          5. mag render {edition_label}"
@@ -2627,22 +2763,51 @@ mod tests {
              \x20 alt_text: a robot\n\
              - id: plate-one\n  purpose: closing\n  prompt: p\n  alt_text: a plate\n",
         );
-        let briefs = extract_briefs(&reply, "t").unwrap();
+        let briefs = extract_briefs(&reply, "t", SLOT_PURPOSES).unwrap();
         assert_eq!(briefs.len(), 4);
         assert_eq!(briefs[1].article_id.as_deref(), Some("a"));
     }
 
     #[test]
+    fn endpaper_briefs_need_no_alt_text_and_stay_out_of_the_slate() {
+        let reply = yaml_reply("briefs:\n- id: endpaper-a\n  purpose: endpaper\n  prompt: p\n");
+        assert_eq!(
+            extract_briefs(&reply, "t", &[ArtPurpose::Endpaper])
+                .unwrap()
+                .len(),
+            1
+        );
+        let err = extract_briefs(&reply, "t", SLOT_PURPOSES)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("expected cover, opener, tail, closing"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn the_endpaper_waits_for_a_picked_cover() {
+        let spec: EditionFile = serde_norway::from_str("cover:\n  art_path: TODO\n").unwrap();
+        let err = settled_cover(&spec, "020").unwrap_err().to_string();
+        assert!(err.contains("--only endpaper"), "{err}");
+    }
+
+    #[test]
     fn extract_briefs_rejects_unknown_purpose() {
         let reply = yaml_reply("briefs:\n- id: x\n  purpose: poster\n  prompt: p\n");
-        let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+        let err = extract_briefs(&reply, "t", SLOT_PURPOSES)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("poster"), "{err}");
     }
 
     #[test]
     fn extract_briefs_feedback_lists_only_slot_purposes() {
         let reply = yaml_reply("briefs:\n- id: x\n  purpose: poster\n  prompt: p\n");
-        let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+        let err = extract_briefs(&reply, "t", SLOT_PURPOSES)
+            .unwrap_err()
+            .to_string();
         assert!(
             err.contains("closing") && !err.contains("cast-sheet"),
             "{err}"
@@ -2652,14 +2817,18 @@ mod tests {
     #[test]
     fn extract_briefs_rejects_opener_without_article_id() {
         let reply = yaml_reply("briefs:\n- id: x\n  purpose: opener\n  prompt: p\n  alt_text: a\n");
-        let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+        let err = extract_briefs(&reply, "t", SLOT_PURPOSES)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("needs an article_id"), "{err}");
     }
 
     #[test]
     fn extract_briefs_rejects_interior_brief_without_alt_text() {
         let reply = yaml_reply("briefs:\n- id: x\n  purpose: closing\n  prompt: p\n");
-        let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+        let err = extract_briefs(&reply, "t", SLOT_PURPOSES)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("needs alt_text"), "{err}");
     }
 
@@ -3221,13 +3390,17 @@ mod tests {
             let reply = yaml_reply(&format!(
                 "briefs:\n- id: \"{bad}\"\n  purpose: cover\n  prompt: p\n"
             ));
-            let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+            let err = extract_briefs(&reply, "t", SLOT_PURPOSES)
+                .unwrap_err()
+                .to_string();
             assert!(err.contains("brief id"), "{bad}: {err}");
         }
         let reply = yaml_reply(
             "briefs:\n- id: x\n  purpose: cover\n  prompt: p\n- id: x\n  purpose: cover\n  prompt: p\n",
         );
-        let err = extract_briefs(&reply, "t").unwrap_err().to_string();
+        let err = extract_briefs(&reply, "t", SLOT_PURPOSES)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("more than once"), "{err}");
     }
 }

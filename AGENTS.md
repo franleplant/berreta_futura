@@ -20,7 +20,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   since the opener needs a paragraph first;
   one gated call drafts short_title and display_emphasis; art stays TODO) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
   `tools/imagegen`) -> pick in `art/showcase.html` -> `mag art NNN --promote`
-  -> `mag render NNN`. If a
+  -> `mag art NNN --only endpaper` (once the cover is picked; promote prints
+  it) -> pick and promote again -> `mag render NNN`. If a
   step leaves you guessing what comes next, fix the step's output in code;
   documenting the gap here is the fallback, not the fix.
 - `mag render` typesets through Typst in Rust (`mag/src/typeset/`): it
@@ -165,6 +166,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   paths. Editions 001-009 still track their rounds and need a promote to render.
 - Cover art carries no baked-in masthead or cover lines; layout owns all
   typography.
+- The endpaper is the inside face of the A4 cover sheet, one landscape
+  pattern across both inside covers and the fold (`cover.endpaper_path`,
+  `prompts/endpaper.md`). `mag art NNN --only endpaper` refuses until
+  `cover.art_path` is picked, drafts eight pattern briefs from the cover's
+  brief, and passes the cover pick to the generator as `{ref}`. Render
+  appends it as side 2 of `booklet-a4-cover.pdf` only (duplex, short edge);
+  the reader PDF, EPUB, site, and all-in-one booklet never carry it.
 - The inside front cover carries the credits (`[credits]` in magazine.toml,
   the site, and the issue's URL); keep the inside back cover blank.
 - Typesetting is chosen per edition by `format.typesetting` in edition.yaml:

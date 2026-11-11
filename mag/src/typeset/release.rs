@@ -145,6 +145,12 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         .as_deref()
         .map(Path::canonicalize)
         .transpose()?;
+    let endpaper = p
+        .edition
+        .endpaper
+        .as_deref()
+        .map(Path::canonicalize)
+        .transpose()?;
     super::cover::confine(p.document)?;
     let runs = super::runs::pages(p.document);
     let written = package_release(Release {
@@ -152,6 +158,7 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         destination: p.out_dir,
         manifest: manifest(p)?,
         cover_art: cover_art.as_deref(),
+        endpaper: endpaper.as_deref(),
         cover_art_size_points: None,
         figure_placements: &figures,
         language: &p.edition.language,

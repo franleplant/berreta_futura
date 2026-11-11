@@ -1040,12 +1040,14 @@ fn cover_booklet_checks(
     cover_spreads: &[Spread],
     expected_sides: usize,
 ) {
-    if legs.cover.pages() != expected_sides {
+    let endpaper = legs.cover.pages() == expected_sides + 1
+        && legs.cover.normalized_page(expected_sides + 1).is_empty();
+    if legs.cover.pages() != expected_sides && !endpaper {
         recorder.whole(
             "cover-booklet-side-count",
             "error",
             format!(
-                "Cover booklet has {} sides; {expected_sides} are expected for the single-sided wrap.",
+                "Cover booklet has {} sides; {expected_sides} are expected for the wrap, plus one text-free endpaper side when the edition has one.",
                 legs.cover.pages()
             ),
         );

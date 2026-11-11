@@ -151,9 +151,9 @@ fn booklet_section_facts(
     } else {
         Vec::new()
     };
-    let single_sided = section == "cover";
     let sides = document.page_count();
-    let expected_sheets = if single_sided {
+    let single_sided = section == "cover" && sides == 1;
+    let expected_sheets = if section == "cover" {
         1
     } else {
         expected.len().div_ceil(4)
@@ -161,7 +161,7 @@ fn booklet_section_facts(
     Ok(json!({
         "reader_pages": expected,
         "sheet_sides": sides,
-        "sheets": if single_sided { sides } else { sides / 2 },
+        "sheets": if single_sided { sides } else { sides.div_ceil(2) },
         "expected_sheets": expected_sheets,
         "all_pages_a4_landscape": document.all_near(A4_LANDSCAPE_POINTS),
         "encrypted": document.encrypted,

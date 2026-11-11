@@ -63,6 +63,7 @@ rows! {
         deck: Option<String>,
         edition_label: Option<String>,
         back_text: Option<String>,
+        endpaper_path: Option<String>,
         footer_caption: Option<String>,
         layout: Option<String>,
     }

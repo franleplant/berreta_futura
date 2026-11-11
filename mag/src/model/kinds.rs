@@ -51,7 +51,7 @@ kinds! {
         MeasureEdition = "measure_edition",
         RenderEdition = "render_edition"
     }
-    ArtPurpose { Cover = "cover", Opener = "opener", Tail = "tail", Closing = "closing", CastSheet = "cast-sheet" }
+    ArtPurpose { Cover = "cover", Opener = "opener", Tail = "tail", Closing = "closing", CastSheet = "cast-sheet", Endpaper = "endpaper" }
     FigureLayout {
         EvidenceBand = "evidence_band",
         EvidenceBandProse = "evidence_band_prose",

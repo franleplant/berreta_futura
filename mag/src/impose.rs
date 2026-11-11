@@ -416,6 +416,73 @@ fn as_name(object: &Object) -> Option<Vec<u8>> {
     }
 }
 
+pub fn append_endpaper(pdf: &Path, art: &Path) -> Result<()> {
+    let bytes = crate::typeset::art::jpeg_bytes(art)?;
+    let decoder = image::codecs::jpeg::JpegDecoder::new(std::io::Cursor::new(&bytes))
+        .with_context(|| format!("reading endpaper {}", art.display()))?;
+    let ((width, height), color) = (
+        image::ImageDecoder::dimensions(&decoder),
+        image::ImageDecoder::color_type(&decoder),
+    );
+    let space = match color {
+        image::ColorType::Rgb8 => "DeviceRGB",
+        image::ColorType::L8 => "DeviceGray",
+        other => bail!("endpaper {} is {other:?}; it must be RGB", art.display()),
+    };
+    let mut doc = Document::load(pdf).with_context(|| format!("reading {}", pdf.display()))?;
+    let mut picture = Dictionary::new();
+    picture.set("Type", Object::Name(b"XObject".to_vec()));
+    picture.set("Subtype", Object::Name(b"Image".to_vec()));
+    picture.set("Width", Object::Integer(i64::from(width)));
+    picture.set("Height", Object::Integer(i64::from(height)));
+    picture.set("ColorSpace", Object::Name(space.as_bytes().to_vec()));
+    picture.set("BitsPerComponent", Object::Integer(8));
+    picture.set("Filter", Object::Name(b"DCTDecode".to_vec()));
+    let picture = doc.add_object(lopdf::Stream::new(picture, bytes).with_compression(false));
+    let (page_w, page_h) = A4_LANDSCAPE_POINTS;
+    let scale = (page_w / f64::from(width)).max(page_h / f64::from(height));
+    let (drawn_w, drawn_h) = (f64::from(width) * scale, f64::from(height) * scale);
+    let content = format!(
+        "q\n0 0 {} {} re\nW\nn\n{} 0 0 {} {} {} cm\n/Endpaper Do\nQ\n",
+        real(page_w),
+        real(page_h),
+        real(drawn_w),
+        real(drawn_h),
+        real((page_w - drawn_w) / 2.0),
+        real((page_h - drawn_h) / 2.0),
+    );
+    let contents = doc.add_object(lopdf::Stream::new(Dictionary::new(), content.into_bytes()));
+    let pages_id = doc.catalog()?.get(b"Pages")?.as_reference()?;
+    let mut xobjects = Dictionary::new();
+    xobjects.set("Endpaper", Object::Reference(picture));
+    let mut resources = Dictionary::new();
+    resources.set("XObject", Object::Dictionary(xobjects));
+    let mut page = Dictionary::new();
+    page.set("Type", Object::Name(b"Page".to_vec()));
+    page.set("Parent", Object::Reference(pages_id));
+    page.set("Resources", Object::Dictionary(resources));
+    page.set(
+        "MediaBox",
+        Object::Array(
+            [0.0, 0.0, page_w, page_h]
+                .into_iter()
+                .map(|value| Object::Real(value as f32))
+                .collect(),
+        ),
+    );
+    page.set("Contents", Object::Reference(contents));
+    let page = doc.add_object(page);
+    let pages = doc.get_dictionary_mut(pages_id)?;
+    pages
+        .get_mut(b"Kids")?
+        .as_array_mut()?
+        .push(Object::Reference(page));
+    let count = pages.get(b"Count")?.as_i64()?;
+    pages.set("Count", Object::Integer(count + 1));
+    doc.save(pdf)?;
+    Ok(())
+}
+
 fn write_sheets(
     doc: &mut Document,
     sheets: Vec<(Vec<u8>, Dictionary)>,
@@ -508,6 +575,38 @@ mod tests {
     fn a_side_with_no_pages_still_carries_ink_so_printers_never_skip_it() {
         let (content, _) = sheet(&[], (None, None)).expect("an empty side imposes");
         assert!(content.windows(3).any(|w| w == b"re\n"), "no mark drawn");
+    }
+
+    #[test]
+    fn an_endpaper_becomes_a_full_bleed_inside_face_of_the_cover_sheet() {
+        let dir = std::env::temp_dir().join(format!("mag-endpaper-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let art = dir.join("endpaper.png");
+        image::RgbImage::from_pixel(300, 200, image::Rgb([40, 200, 120]))
+            .save(&art)
+            .unwrap();
+        let pdf = dir.join("cover.pdf");
+        let mut doc = Document::with_version("1.5");
+        let catalog = doc.add_object(lopdf::dictionary! {"Type" => "Catalog"});
+        doc.trailer.set("Root", Object::Reference(catalog));
+        write_sheets(
+            &mut doc,
+            vec![(blank_side_mark(), Dictionary::new())],
+            "cover",
+            &pdf,
+        )
+        .unwrap();
+        append_endpaper(&pdf, &art).unwrap();
+        let saved = Document::load(&pdf).unwrap();
+        let pages: Vec<ObjectId> = saved.get_pages().into_values().collect();
+        assert_eq!(pages.len(), 2);
+        let media = page_box(&saved, pages[1], b"MediaBox").unwrap().unwrap();
+        assert!((media[2] - A4_LANDSCAPE_POINTS.0).abs() < 0.01);
+        let content = String::from_utf8(saved.get_page_content(pages[1])).unwrap();
+        assert!(content.contains("/Endpaper Do"), "{content}");
+        let scale: f64 = content.split_whitespace().nth(8).unwrap().parse().unwrap();
+        assert!(scale >= A4_LANDSCAPE_POINTS.0 - 0.01, "{content}");
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

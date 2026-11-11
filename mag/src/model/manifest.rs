@@ -106,6 +106,7 @@ pub struct Edition {
     pub sections: Vec<Section>,
     pub cover: Cover,
     pub cover_art: Option<PathBuf>,
+    pub endpaper: Option<PathBuf>,
     pub closing_plates: Vec<ClosingPlate>,
     pub format: Format,
     pub tail_art_fit: TailArtFit,
@@ -182,7 +183,18 @@ pub fn load_edition(
     let articles = load_articles(&context, &spec.articles, &mut errors);
     let editorial = load_edition_editorial(root, &edition_dir, &spec, &mut errors);
     let sections = load_sections(root, &edition_dir, &spec.sections, &mut errors);
-    let cover_art = load_cover_art(root, &edition_dir, &spec.cover, &mut errors);
+    let cover_art = load_art(
+        root,
+        &edition_dir,
+        spec.cover.art_path.as_deref(),
+        &mut errors,
+    );
+    let endpaper = load_art(
+        root,
+        &edition_dir,
+        spec.cover.endpaper_path.as_deref(),
+        &mut errors,
+    );
     let closing_plates = load_closing_plates(&context, &spec.closing_plates, &mut errors);
     check_unique_art(&spec, &mut errors);
     if !errors.is_empty() {
@@ -207,6 +219,7 @@ pub fn load_edition(
         sections,
         cover: spec.cover,
         cover_art,
+        endpaper,
         closing_plates,
         format: spec.format,
         tail_art_fit: spec.tail_art_fit.unwrap_or_default(),
@@ -652,13 +665,13 @@ fn load_section(
     })
 }
 
-fn load_cover_art(
+fn load_art(
     root: &Path,
     edition_dir: &Path,
-    cover: &Cover,
+    art_path: Option<&str>,
     errors: &mut Vec<String>,
 ) -> Option<PathBuf> {
-    let art_path = cover.art_path.as_deref().filter(|path| !path.is_empty())?;
+    let art_path = art_path.filter(|path| !path.is_empty())?;
     gather(edition_path(root, edition_dir, art_path, true), errors)
 }
 
@@ -686,6 +699,7 @@ pub fn art_slots(spec: &EditionFile) -> Vec<(String, String)> {
         }
     };
     push("cover".to_string(), spec.cover.art_path.as_deref());
+    push("endpaper".to_string(), spec.cover.endpaper_path.as_deref());
     for row in &spec.articles {
         let opener = row.opener_art.as_ref().map(|art| art.path.as_str());
         push(format!("article {} opener", row.id), opener);
