@@ -64,16 +64,18 @@ pub struct Issue {
     pub assets: PublishRecord,
 }
 
-const FONTS: [&str; 9] = [
+const FONTS: [&str; 11] = [
     "web/Geist-Variable.woff2",
     "web/Geist-Italic-Variable.woff2",
     "web/GeistMono-Regular.woff2",
     "web/NotoSansMath-Regular.woff2",
     "web/NotoEmoji-Variable.woff2",
+    "web/Inter-Regular.woff2",
     "geist/OFL.txt",
     "geist-mono/OFL.txt",
     "noto-sans-math/OFL.txt",
     "noto-emoji/OFL.txt",
+    "inter/LICENSE.txt",
 ];
 
 fn check_font_coverage(root: &Path, files: &[(String, String)]) -> Result<()> {
