@@ -406,9 +406,8 @@ magazine cover printed on one side of the sheet and folded down the vertical cen
 two A5 pages. Tile the pattern edge to edge with every motif upright for a viewer holding \
 the sheet landscape. The pattern runs continuously across the centre fold: no seam, no \
 gap, no motif centred on the fold line. No border, no frame, no text, no letters, no \
-numbers. The attached image is this issue's front cover, not a character sheet: take its \
-object, palette, and print texture from it, never its composition, and never draw it as \
-one big picture.";
+numbers. The attached image is this issue's front cover, not a character sheet: start \
+from its world and colours, never its composition, and never draw it as one big picture.";
 
 fn build_endpaper_prompt(
     edition_yaml_text: &str,
@@ -429,14 +428,14 @@ fn build_endpaper_prompt(
     if let Some(note) = note {
         out += &produce::section("editor's note for this round", note);
     }
-    out += "\nPropose this edition's eight endpaper briefs now, one per pattern \
-         structure in prompts/endpaper.md. Return exactly one fenced yaml code block \
+    out += "\nPropose this edition's eight endpaper briefs now, eight genuinely \
+         different ideas as prompts/endpaper.md asks. Return exactly one fenced yaml code block \
          (```yaml ... ```) and nothing else of consequence outside it. The block holds \
          a top-level `briefs:` list where every entry has:\n\
          - `id`: a short, unique kebab-case slug starting with `endpaper-`\n\
          - `purpose`: `endpaper`\n\
          - `prompt`: the complete, standalone image-generation prompt for the \
-           pattern, restating motif, structure, palette, and medium, since the \
+           pattern, restating idea, motifs, palette, and medium, since the \
            image generator sees nothing else\n";
     Ok(out)
 }
