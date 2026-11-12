@@ -9,7 +9,7 @@ use crate::util::{escape_html, parallel, prompts_path, read};
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -1153,11 +1153,11 @@ fn cover_previews(edition_dir: &Path, items: &[ShowcaseItem]) -> HashMap<String,
 }
 
 fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Preview>) -> String {
-    let mut html = String::new();
-    let off: Vec<&MemberVerdict> = item
+    let off: Vec<&str> = item
         .verdicts
         .iter()
         .filter(|v| v.verdict == "off_model" || v.verdict == "malformed")
+        .map(|v| v.name.as_str())
         .collect();
     let mut classes = Vec::new();
     if item.selected {
@@ -1180,53 +1180,55 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Pre
         Some(p) => format!("{p}:{article_or_brief}"),
         None => format!("unknown:{article_or_brief}"),
     };
-    html += &format!(
-        "<figure class=\"{}\" data-path=\"{}\" data-slot=\"{}\">\n",
+    let full = format!("rounds/{}/{}", item.round, item.file);
+    let name = item
+        .purpose
+        .and_then(|p| item.brief_id.strip_prefix(&format!("{p}-")))
+        .unwrap_or(&item.brief_id);
+    let mut html = format!(
+        "<figure class=\"{}\" data-path=\"{}\" data-slot=\"{}\" data-name=\"{}\">\n<div class=\"frame\">\n",
         classes.join(" "),
         escape_html(&repo_path),
-        escape_html(&slot)
+        escape_html(&slot),
+        escape_html(&format!("{} v{}", item.brief_id, item.variant))
     );
     if item.selected {
-        html += "<span class=\"badge\">SELECTED</span>\n";
+        html += "<span class=\"badge\">SELECTED in edition.yaml</span>\n";
     }
     if !off.is_empty() {
-        let names: Vec<&str> = off.iter().map(|v| v.name.as_str()).collect();
         html += &format!(
             "<span class=\"offbadge\">OFF-MODEL: {}</span>\n",
-            escape_html(&names.join(", "))
+            escape_html(&off.join(", "))
         );
     }
-    let img_tag = format!(
-        "<img src=\"rounds/{}/{}\" loading=\"lazy\">",
-        escape_html(&item.round),
-        escape_html(&item.file)
+    let shown = match preview {
+        Some(Ok(href)) => href.as_str(),
+        _ => full.as_str(),
+    };
+    html += &format!(
+        "<img src=\"{}\" loading=\"lazy\" title=\"click to zoom\">\n",
+        escape_html(shown)
     );
-    match preview {
-        Some(Ok(href)) => {
-            html += &format!("<img src=\"{}\" loading=\"lazy\">\n", escape_html(href));
-        }
-        Some(Err(error)) => {
-            html += &format!(
-                "<span class=\"errbadge\">PREVIEW FAILED</span>\n{img_tag}\n\
-                 <div class=\"previewerror\">{}</div>\n",
-                escape_html(error)
-            );
-        }
-        None => html += &format!("{img_tag}\n"),
+    if let Some(Err(error)) = preview {
+        html += &format!(
+            "<span class=\"errbadge\">PREVIEW FAILED</span>\n</div>\n\
+             <details class=\"previewerror\"><summary>why the typeset preview failed</summary>{}</details>\n",
+            escape_html(error)
+        );
+    } else {
+        html += "</div>\n";
     }
     html += &format!(
-        "<figcaption>{} v{} ({})</figcaption>\n",
-        escape_html(&item.brief_id),
+        "<figcaption><b>{}</b> <span>v{} · round {}</span></figcaption>\n",
+        escape_html(name),
         item.variant,
         escape_html(&item.round)
     );
     html += &format!(
-        "<div class=\"btnrow\"><a href=\"rounds/{}/{}\" target=\"_blank\">view</a>\
-         <button data-copy=\"path\">copy path</button>\
-         <button data-copy=\"preview\">preview cmd</button>\
-         <button data-copy=\"finder\">finder cmd</button></div>\n",
-        escape_html(&item.round),
-        escape_html(&item.file)
+        "<div class=\"btnrow\"><button class=\"pick\">Pick</button>\
+         <a href=\"{}\" target=\"_blank\">full size</a>\
+         <button data-copy=\"path\">copy path</button></div>\n",
+        escape_html(&full)
     );
     if !item.verdicts.is_empty() {
         let lines: Vec<String> = item
@@ -1245,150 +1247,212 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Pre
             escape_html(&item.prompt)
         );
     }
-    html += "</figure>\n";
-    html
+    html + "</figure>\n"
 }
 
 const SHOWCASE_CSS: &str = "<style>\n\
-        body { font-family: -apple-system, sans-serif; margin: 2rem; background: #111; color: #eee; }\n\
-        h1 { font-size: 1.3rem; }\n\
-        h2 { font-size: 1.1rem; margin-top: 2.5rem; border-bottom: 1px solid #333; padding-bottom: 0.3rem; }\n\
-        h3 { font-size: 0.95rem; color: #bbb; margin: 1.5rem 0 0.5rem; }\n\
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }\n\
-        figure { margin: 0; background: #1b1b1b; border: 1px solid #333; border-radius: 6px; padding: 0.75rem; position: relative; }\n\
-        figure.selected { border-color: #4a4; box-shadow: 0 0 0 2px #4a4; }\n\
-        figure img { width: 100%; height: auto; display: block; border-radius: 4px; background: #000; }\n\
-        .badge { position: absolute; top: 1rem; right: 1rem; background: #4a4; color: #041; font-weight: bold;\n\
-            font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }\n\
-        .offbadge { position: absolute; top: 1rem; left: 1rem; background: #c73; color: #310; font-weight: bold;\n\
-            font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }\n\
-        figure.offmodel { border-color: #c73; }\n\
-        .verdicts { margin-top: 0.4rem; font-size: 0.8rem; color: #c95; }\n\
-        figcaption { margin-top: 0.5rem; font-size: 0.85rem; color: #aaa; }\n\
-        details { margin-top: 0.4rem; }\n\
-        details pre { white-space: pre-wrap; font-size: 0.8rem; color: #ccc; }\n\
-        .empty { color: #777; font-style: italic; }\n\
-        .rounds { font-size: 0.85rem; color: #9ab; }\n\
+        * { box-sizing: border-box; }\n\
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 0 2rem 5rem; background: #111; color: #eee; }\n\
+        h1 { font-size: 1.4rem; margin: 1.5rem 0 0.5rem; }\n\
+        .howto { color: #bbb; font-size: 0.9rem; margin: 0 0 1rem; padding-left: 1.2rem; line-height: 1.6; }\n\
+        .howto code { background: #222; padding: 0.05rem 0.35rem; border-radius: 3px; color: #ddd; }\n\
+        nav { position: sticky; top: 0; z-index: 5; background: #111e; backdrop-filter: blur(6px);\n\
+            display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 0.6rem 0; border-bottom: 1px solid #333; }\n\
+        nav a { color: #eee; text-decoration: none; background: #1d1d1d; border: 1px solid #333;\n\
+            border-radius: 6px; padding: 0.3rem 0.7rem; font-size: 0.85rem; }\n\
+        nav a:hover { border-color: #4ad; }\n\
+        nav small { display: block; color: #888; font-size: 0.7rem; }\n\
+        section { scroll-margin-top: 4.5rem; }\n\
+        h2 { font-size: 1.2rem; margin: 2.5rem 0 0.2rem; }\n\
+        .status { color: #888; font-size: 0.85rem; margin: 0 0 1rem; }\n\
+        h3 { font-size: 0.95rem; color: #ccc; margin: 1.8rem 0 0.6rem; }\n\
+        .chip { font-size: 0.7rem; font-weight: normal; padding: 0.1rem 0.5rem; border-radius: 999px; margin-left: 0.4rem; }\n\
+        .chip.ok { background: #243; color: #8d8; }\n\
+        .chip.todo { background: #432; color: #db8; }\n\
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; }\n\
+        .grid.wide { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }\n\
+        details.earlier { margin-top: 1rem; }\n\
+        details.earlier > summary { color: #9ab; font-size: 0.85rem; cursor: pointer; margin-bottom: 0.8rem; }\n\
+        figure { margin: 0; background: #1b1b1b; border: 1px solid #333; border-radius: 6px; padding: 0.6rem; }\n\
+        figure.selected { border-color: #4a4; }\n\
         figure.picked { border-color: #4ad; box-shadow: 0 0 0 2px #4ad; }\n\
-        figure img { cursor: pointer; }\n\
+        figure.offmodel { border-color: #c73; }\n\
+        .frame { position: relative; }\n\
+        .frame img { width: 100%; height: auto; display: block; border-radius: 4px; background: #000; cursor: zoom-in; }\n\
+        .badge, .offbadge, .errbadge { position: absolute; font-weight: bold; font-size: 0.65rem;\n\
+            padding: 0.15rem 0.5rem; border-radius: 999px; pointer-events: none; }\n\
+        .badge { top: 0.4rem; right: 0.4rem; background: #4a4; color: #041; }\n\
+        .offbadge { top: 0.4rem; left: 0.4rem; background: #c73; color: #310; }\n\
+        .errbadge { bottom: 0.4rem; left: 0.4rem; background: #d33; color: #fff; }\n\
+        figcaption { margin-top: 0.5rem; font-size: 0.85rem; }\n\
+        figcaption span { display: block; color: #777; font-size: 0.72rem; }\n\
+        .verdicts { margin-top: 0.4rem; font-size: 0.78rem; color: #c95; }\n\
+        details { margin-top: 0.4rem; font-size: 0.78rem; color: #999; }\n\
+        details pre { white-space: pre-wrap; color: #ccc; }\n\
+        .previewerror { color: #f88; white-space: pre-wrap; }\n\
+        .empty { color: #777; font-style: italic; }\n\
         .btnrow { margin-top: 0.5rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }\n\
-        .btnrow a, .btnrow button, #basket button {\n\
-            background: #2a2a2a; color: #ddd; border: 1px solid #444; border-radius: 4px;\n\
-            font-size: 0.72rem; padding: 0.2rem 0.55rem; cursor: pointer; text-decoration: none; }\n\
-        .btnrow a:hover, .btnrow button:hover, #basket button:hover { border-color: #4ad; color: #fff; }\n\
-        #basket { position: fixed; left: 0; right: 0; bottom: 0; background: #181d20ee;\n\
+        button, .btnrow a { background: #2a2a2a; color: #ddd; border: 1px solid #444; border-radius: 4px;\n\
+            font-size: 0.75rem; padding: 0.25rem 0.6rem; cursor: pointer; text-decoration: none; }\n\
+        button:hover, .btnrow a:hover { border-color: #4ad; color: #fff; }\n\
+        button.pick { background: #1d3340; border-color: #4ad; color: #cef; font-weight: bold; }\n\
+        figure.picked button.pick, #lb button.on { background: #4ad; color: #012; }\n\
+        #basket { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: #181d20f2;\n\
             border-top: 1px solid #345; padding: 0.6rem 2rem; display: flex; gap: 0.5rem;\n\
             align-items: center; flex-wrap: wrap; backdrop-filter: blur(4px); }\n\
         #basket .count { font-size: 0.85rem; color: #9cd; margin-right: 0.5rem; }\n\
         #flash { font-size: 0.8rem; color: #4a4; margin-left: 0.5rem; }\n\
-        body { padding-bottom: 4.5rem; }\n\
-        .errbadge { position: absolute; bottom: 1rem; left: 1rem; background: #d33; color: #fff; font-weight: bold;\n\
-            font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; }\n\
-        figure:has(.errbadge) { border-color: #d33; }\n\
-        .previewerror { margin-top: 0.4rem; font-size: 0.75rem; color: #f88; white-space: pre-wrap; }\n\
-        </style>\n</head>\n<body>\n";
+        #lb { position: fixed; inset: 0; z-index: 10; background: #000e; display: none; flex-direction: column; }\n\
+        #lb.open { display: flex; }\n\
+        #lb .stage { flex: 1; overflow: auto; display: flex; }\n\
+        #lb img { margin: auto; max-width: 100%; max-height: 100%; cursor: zoom-in; }\n\
+        #lb.zoom img { max-width: none; max-height: none; cursor: zoom-out; }\n\
+        #lb .bar { display: flex; gap: 0.5rem; align-items: center; padding: 0.6rem 1rem; background: #181818; }\n\
+        #lb .bar .name { flex: 1; font-size: 0.85rem; color: #ccc; }\n\
+        </style>\n</head>\n";
+
+const SHOWCASE_SECTIONS: [(Option<ArtPurpose>, &str, &str); 6] = [
+    (Some(ArtPurpose::Cover), "cover", "Cover"),
+    (
+        Some(ArtPurpose::Endpaper),
+        "endpaper",
+        "Endpaper (inside of the A4 cover sheet)",
+    ),
+    (Some(ArtPurpose::Opener), "openers", "Article openers"),
+    (Some(ArtPurpose::Tail), "tails", "Article tails"),
+    (Some(ArtPurpose::Closing), "closing", "Closing plates"),
+    (None, "unmatched", "Unmatched"),
+];
+
+fn showcase_group(
+    members: Vec<&ShowcaseItem>,
+    wide: bool,
+    edition_dir: &Path,
+    previews: &HashMap<String, Preview>,
+) -> String {
+    let newest = members.iter().map(|i| i.round.clone()).max();
+    let (mut current, mut earlier): (Vec<&ShowcaseItem>, Vec<&ShowcaseItem>) = members
+        .into_iter()
+        .partition(|i| i.selected || Some(&i.round) == newest.as_ref());
+    let order = |a: &&ShowcaseItem, b: &&ShowcaseItem| {
+        (
+            !a.selected,
+            std::cmp::Reverse(&a.round),
+            &a.brief_id,
+            a.variant,
+        )
+            .cmp(&(
+                !b.selected,
+                std::cmp::Reverse(&b.round),
+                &b.brief_id,
+                b.variant,
+            ))
+    };
+    current.sort_by(order);
+    earlier.sort_by(order);
+    let grid = |list: &[&ShowcaseItem]| {
+        let cells: String = list
+            .iter()
+            .map(|item| {
+                showcase_figure(
+                    item,
+                    edition_dir,
+                    previews.get(&format!("{}/{}", item.round, item.file)),
+                )
+            })
+            .collect();
+        format!(
+            "<div class=\"grid{}\">\n{cells}</div>\n",
+            if wide { " wide" } else { "" }
+        )
+    };
+    let mut html = grid(&current);
+    if !earlier.is_empty() {
+        html += &format!(
+            "<details class=\"earlier\"><summary>{} more from earlier rounds</summary>\n{}</details>\n",
+            earlier.len(),
+            grid(&earlier)
+        );
+    }
+    html
+}
 
 fn showcase_sections(
     items: &[ShowcaseItem],
     edition_dir: &Path,
     previews: &HashMap<String, Preview>,
-) -> String {
+) -> (String, String) {
+    let mut nav = String::new();
     let mut html = String::new();
-    for (purpose, heading) in [
-        (Some(ArtPurpose::Cover), "Cover"),
-        (Some(ArtPurpose::Opener), "Article openers"),
-        (Some(ArtPurpose::Tail), "Article tails"),
-        (Some(ArtPurpose::Closing), "Closing plates"),
-        (
-            Some(ArtPurpose::Endpaper),
-            "Endpaper (inside of the A4 cover sheet)",
-        ),
-        (None, "Unmatched"),
-    ] {
-        let mut section: Vec<&ShowcaseItem> =
-            items.iter().filter(|i| i.purpose == purpose).collect();
-        if section.is_empty() {
-            if purpose.is_some() {
-                html += &format!("<h2>{heading}</h2>\n<p class=\"empty\">none generated yet</p>\n");
-            }
+    for (purpose, anchor, heading) in SHOWCASE_SECTIONS {
+        let section: Vec<&ShowcaseItem> = items.iter().filter(|i| i.purpose == purpose).collect();
+        if section.is_empty() && purpose.is_none() {
             continue;
         }
-        section.sort_by(|a, b| {
-            (&a.brief_id, &a.round, a.variant).cmp(&(&b.brief_id, &b.round, b.variant))
-        });
-        html += &format!("<h2>{heading}</h2>\n");
-        let mut current_brief = "";
-        let mut open = false;
+        let selected = section.iter().filter(|i| i.selected).count();
+        let status = if section.is_empty() {
+            "none generated yet".to_string()
+        } else {
+            format!("{} candidates · {selected} selected", section.len())
+        };
+        let short = heading.split(" (").next().unwrap_or(heading);
+        nav += &format!("<a href=\"#{anchor}\">{short}<small>{status}</small></a>\n");
+        html += &format!(
+            "<section id=\"{anchor}\">\n<h2>{heading}</h2>\n<p class=\"status\">{status}</p>\n"
+        );
+        let per_article = matches!(purpose, Some(ArtPurpose::Opener | ArtPurpose::Tail) | None);
+        let mut groups: BTreeMap<String, Vec<&ShowcaseItem>> = BTreeMap::new();
         for item in section {
-            if item.brief_id != current_brief {
-                if open {
-                    html += "</div>\n";
-                }
-                current_brief = &item.brief_id;
-                let article_note = item
-                    .article_id
-                    .as_deref()
-                    .map(|a| format!(": {}", escape_html(a)))
-                    .unwrap_or_default();
-                html += &format!(
-                    "<h3>{}{article_note}</h3>\n<div class=\"grid\">\n",
-                    escape_html(&item.brief_id)
-                );
-                open = true;
+            let key = if per_article {
+                item.article_id
+                    .clone()
+                    .unwrap_or_else(|| item.brief_id.clone())
+            } else {
+                String::new()
+            };
+            groups.entry(key).or_default().push(item);
+        }
+        for (key, members) in groups {
+            if !key.is_empty() {
+                let chip = if members.iter().any(|i| i.selected) {
+                    "<span class=\"chip ok\">selected</span>"
+                } else {
+                    "<span class=\"chip todo\">no pick yet</span>"
+                };
+                html += &format!("<h3>article {}{chip}</h3>\n", escape_html(&key));
             }
-            html += &showcase_figure(
-                item,
-                edition_dir,
-                previews.get(&format!("{}/{}", item.round, item.file)),
-            );
+            let wide = purpose == Some(ArtPurpose::Endpaper);
+            html += &showcase_group(members, wide, edition_dir, previews);
         }
-        if open {
-            html += "</div>\n";
-        }
+        html += "</section>\n";
     }
-    html
+    (nav, html)
 }
 
 fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     let selected = showcase_selected(edition_dir)?;
     let items = collect_showcase_items(edition_dir, &selected)?;
     let previews = cover_previews(edition_dir, &items);
-
-    let mut html = String::new();
-    html += "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
-    html += &format!(
-        "<title>Art showcase: {}</title>\n",
-        escape_html(edition_label)
+    let label = escape_html(edition_label);
+    let id = escape_html(
+        &edition_dir
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy(),
     );
-    html += SHOWCASE_CSS;
-    let mut rounds: Vec<&str> = items.iter().map(|i| i.round.as_str()).collect();
-    rounds.sort_unstable();
-    rounds.dedup();
-    let rounds_line = rounds
-        .iter()
-        .map(|r| {
-            let n = items.iter().filter(|i| i.round == *r).count();
-            format!("{} ({n})", escape_html(r))
-        })
-        .collect::<Vec<_>>()
-        .join(" · ");
-    html += &format!(
-        "<h1>Art showcase: {} ({} image(s))</h1>\n\
-         <p class=\"rounds\">Rounds: {rounds_line}</p>\n\
-         <p>Every generated candidate across every round. A green badge marks \
-         what edition.yaml currently selects. Click an image to pick it for its \
-         slot (cover, per-article opener/tail: one pick; closing plates: toggle). \
-         The bar below copies commands to run from the repo root, and \
-         edition.yaml lines for the picks. Give feedback per image as \
-         <code>brief-id vN (round)</code>.</p>\n",
-        escape_html(edition_label),
-        items.len()
+    let (nav, sections) = showcase_sections(&items, edition_dir, &previews);
+    let html = format!(
+        "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n\
+         <title>Art showcase: {label}</title>\n{SHOWCASE_CSS}<body data-edition=\"{id}\">\n\
+         <h1>Art showcase: {label}</h1>\n\
+         <ol class=\"howto\">\n\
+         <li>Click a picture to see it full screen (click again to zoom, arrow keys to browse, Esc to close).</li>\n\
+         <li>Press <b>Pick</b> on the ones you want: one per slot, several for closing plates. \
+         Green marks what edition.yaml selects today.</li>\n\
+         <li><b>copy edition.yaml lines</b> in the bottom bar, paste them into \
+         <code>editions/{id}/edition.yaml</code>, then run <code>mag art {id} --promote</code>.</li>\n\
+         </ol>\n<nav>\n{nav}</nav>\n{sections}{SHOWCASE_BASKET}</body>\n</html>\n"
     );
-
-    html += &showcase_sections(&items, edition_dir, &previews);
-    html += SHOWCASE_BASKET;
-    html += "</body>\n</html>\n";
-
     let path = edition_dir.join("art").join("showcase.html");
     fs::create_dir_all(path.parent().unwrap())?;
     fs::write(&path, html)?;
@@ -1397,29 +1461,48 @@ fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
 
 const SHOWCASE_BASKET: &str = r#"<div id="basket">
 <span class="count">0 picked</span>
-<button data-bar="preview">open picked in Preview</button>
-<button data-bar="finder">reveal picked in Finder</button>
-<button data-bar="paths">copy picked paths</button>
 <button data-bar="yaml">copy edition.yaml lines</button>
+<button data-bar="promote">copy promote command</button>
+<button data-bar="paths">copy picked paths</button>
+<button data-bar="preview">copy "open in Preview" command</button>
 <button data-bar="clear">clear picks</button>
 <span id="flash"></span>
 </div>
+<div id="lb"><div class="stage"><img alt=""></div>
+<div class="bar"><span class="name"></span>
+<button data-lb="prev">&larr; prev</button><button data-lb="next">next &rarr;</button>
+<button data-lb="pick">Pick</button><button data-lb="close">close (Esc)</button></div></div>
 <script>
 (function () {
-  var picks = {}; // slot -> array of paths (closing slots toggle, others hold one)
+  var picks = {};
   var q = function (s) { return "'" + s.replace(/'/g, "'\\''") + "'"; };
+  var lb = document.getElementById('lb'), lbImg = lb.querySelector('img'), current = null;
 
   function figs() { return Array.prototype.slice.call(document.querySelectorAll('figure[data-path]')); }
+  function isPicked(f) { return (picks[f.dataset.slot] || []).indexOf(f.dataset.path) >= 0; }
   function repaint() {
-    var chosen = {};
-    Object.keys(picks).forEach(function (slot) {
-      picks[slot].forEach(function (p) { chosen[p] = true; });
-    });
+    var n = 0;
     figs().forEach(function (f) {
-      f.classList.toggle('picked', !!chosen[f.dataset.path]);
+      var on = isPicked(f);
+      n += on ? 1 : 0;
+      f.classList.toggle('picked', on);
+      f.querySelector('button.pick').textContent = on ? 'Picked ✓' : 'Pick';
     });
-    var n = Object.keys(chosen).length;
     document.querySelector('#basket .count').textContent = n + ' picked';
+    if (current) {
+      var b = lb.querySelector('[data-lb=pick]');
+      b.textContent = isPicked(current) ? 'Picked ✓' : 'Pick';
+      b.classList.toggle('on', isPicked(current));
+    }
+  }
+  function toggle(f) {
+    var slot = f.dataset.slot, p = f.dataset.path, cur = picks[slot] || [];
+    if (slot.indexOf('closing:') === 0) {
+      picks[slot] = cur.indexOf(p) >= 0 ? cur.filter(function (x) { return x !== p; }) : cur.concat([p]);
+    } else {
+      picks[slot] = cur.length === 1 && cur[0] === p ? [] : [p];
+    }
+    repaint();
   }
   function pickedPaths() {
     var out = [];
@@ -1454,40 +1537,66 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
       return '# article ' + article + '\n  opener_art:\n    path: ' + p;
     }).join('\n');
   }
+  function visible() {
+    return figs().filter(function (f) { return f.offsetParent !== null; });
+  }
+  function show(f) {
+    current = f;
+    lb.classList.remove('zoom');
+    lbImg.src = f.querySelector('.frame img').src;
+    lb.querySelector('.name').textContent = f.dataset.name;
+    lb.classList.add('open');
+    repaint();
+  }
+  function step(d) {
+    var list = visible(), i = list.indexOf(current);
+    if (i >= 0 && list.length) show(list[(i + d + list.length) % list.length]);
+  }
+  function close() { lb.classList.remove('open'); current = null; }
 
   figs().forEach(function (f) {
     if (f.classList.contains('selected')) {
-      var slot = f.dataset.slot;
-      picks[slot] = (picks[slot] || []).concat([f.dataset.path]);
+      picks[f.dataset.slot] = (picks[f.dataset.slot] || []).concat([f.dataset.path]);
     }
-    f.querySelector('img').addEventListener('click', function () {
-      var slot = f.dataset.slot, p = f.dataset.path;
-      var cur = picks[slot] || [];
-      if (slot.indexOf('closing:') === 0) {
-        picks[slot] = cur.indexOf(p) >= 0 ? cur.filter(function (x) { return x !== p; }) : cur.concat([p]);
-      } else {
-        picks[slot] = cur.length === 1 && cur[0] === p ? [] : [p];
-      }
-      repaint();
+    f.querySelector('.frame img').addEventListener('click', function () { show(f); });
+    f.querySelector('button.pick').addEventListener('click', function () { toggle(f); });
+    f.querySelector('button[data-copy]').addEventListener('click', function () { copy(f.dataset.path, 'path'); });
+  });
+  lbImg.addEventListener('click', function (e) {
+    var stage = lb.querySelector('.stage'), r = lbImg.getBoundingClientRect();
+    var fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    lb.classList.toggle('zoom');
+    if (lb.classList.contains('zoom')) {
+      stage.scrollLeft = fx * lbImg.width - stage.clientWidth / 2;
+      stage.scrollTop = fy * lbImg.height - stage.clientHeight / 2;
+    }
+  });
+  lb.querySelector('.stage').addEventListener('click', function (e) { if (e.target === this) close(); });
+  lb.querySelectorAll('[data-lb]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var a = b.dataset.lb;
+      if (a === 'close') close();
+      if (a === 'prev') step(-1);
+      if (a === 'next') step(1);
+      if (a === 'pick' && current) toggle(current);
     });
-    f.querySelectorAll('button[data-copy]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var p = f.dataset.path;
-        if (b.dataset.copy === 'path') copy(p, 'path');
-        if (b.dataset.copy === 'preview') copy('open -a Preview ' + q(p), 'Preview command');
-        if (b.dataset.copy === 'finder') copy('open -R ' + q(p), 'Finder command');
-      });
-    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!current) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft') step(-1);
+    if (e.key === 'ArrowRight') step(1);
+    if (e.key === 'p') toggle(current);
   });
   document.querySelectorAll('#basket button[data-bar]').forEach(function (b) {
     b.addEventListener('click', function () {
-      var entries = pickedPaths();
+      var entries = pickedPaths(), id = document.body.dataset.edition;
       if (b.dataset.bar === 'clear') { picks = {}; repaint(); return; }
+      if (b.dataset.bar === 'promote') { copy('mag art ' + id + ' --promote', 'promote command'); return; }
       if (!entries.length) { copy('', 'nothing (no picks)'); return; }
       var paths = entries.map(function (e) { return e.path; });
       if (b.dataset.bar === 'paths') copy(paths.join('\n'), 'paths');
       if (b.dataset.bar === 'preview') copy('open -a Preview ' + paths.map(q).join(' '), 'Preview command');
-      if (b.dataset.bar === 'finder') copy(paths.map(function (p) { return 'open -R ' + q(p); }).join('\n'), 'Finder commands');
       if (b.dataset.bar === 'yaml') copy(yamlLines(), 'edition.yaml lines');
     });
   });
@@ -2733,7 +2842,7 @@ fn generate_and_finish(
     }
     println!(
         "\nnext:\n  1. off-model and malformed candidates are badged in the showcase (cast-check ran on this round)\n  \
-         2. open editions/{edition_label}/art/showcase.html and pick; clicking writes the paths to copy into edition.yaml \
+         2. open editions/{edition_label}/art/showcase.html and press Pick; the bottom bar copies the edition.yaml lines \
          (cover.art_path / cover.endpaper_path / opener_art.path / tail_art_path / closing_plates); rounds stay local, out of git\n  \
          3. mag art {edition_label} --promote   (picks become committed JPEGs in art/picks)\n  \
          4. mag source-codes {edition_label}   (opener QR codes; reads the picked opener art)\n  \
@@ -3270,7 +3379,11 @@ mod tests {
         assert!(html.contains("<h2>Cover</h2>"), "{html}");
         assert!(html.contains("<h2>Article openers</h2>"), "{html}");
         assert!(
-            html.contains("opener-a</h3>") || html.contains("opener-a: a</h3>"),
+            html.contains("<h3>article a<span class=\"chip ok\">"),
+            "{html}"
+        );
+        assert!(
+            html.contains("<a href=\"#endpaper\">Endpaper<small>none generated yet"),
             "{html}"
         );
 
