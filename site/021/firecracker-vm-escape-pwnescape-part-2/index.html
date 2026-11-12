@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Firecracker VM Escape: PwnEscape Part 2 · Berreta Futura</title>
+<meta name="description" content="Firecracker is supposed to keep untrusted code inside a microVM. We escaped it and achieved code execution as root on the host.">
+<link rel="canonical" href="https://berreta.franleplant.com/021/firecracker-vm-escape-pwnescape-part-2/">
+<meta property="og:site_name" content="Berreta Futura">
+<meta property="og:title" content="Firecracker VM Escape: PwnEscape Part 2 · Berreta Futura">
+<meta property="og:description" content="Firecracker is supposed to keep untrusted code inside a microVM. We escaped it and achieved code execution as root on the host.">
+<meta property="og:url" content="https://berreta.franleplant.com/021/firecracker-vm-escape-pwnescape-part-2/">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://berreta.franleplant.com/img/1f4bd64d608767e1-1760.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../site.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="g-pdf" viewBox="0 0 24 24"><path d="M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-epub" viewBox="0 0 24 24"><path d="M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-down" viewBox="0 0 24 24"><path d="M12 4v13m-5-5 5 5 5-5M5 20.25h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></defs></svg>
+<header class="masthead"><a class="brand" href="../../"><svg class="logo" viewBox="3.91 -72.75 576.8 181.51" role="img" aria-label="Berreta Futura"><path fill="var(--ink, #0a0b0d)" d="M3.91 0V-72.75H35.45Q47.9 -72.75 54.37 -67.65Q60.84 -62.55 60.84 -54.59Q60.84 -48.24 56.98 -43.9Q53.12 -39.55 46.78 -38.33V-38.23Q51.46 -38.09 55.2 -35.82Q58.94 -33.54 61.11 -29.64Q63.28 -25.73 63.28 -20.61Q63.28 -14.65 60.3 -9.99Q57.32 -5.32 51.71 -2.66Q46.09 0 38.18 0ZM23.63 -15.23H34.38Q38.09 -15.23 40.28 -17.19Q42.48 -19.14 42.48 -22.41Q42.48 -25.68 40.28 -27.64Q38.09 -29.59 34.38 -29.59H23.63ZM23.63 -43.95H33.15Q36.52 -43.95 38.53 -45.8Q40.53 -47.66 40.53 -50.73Q40.53 -53.81 38.53 -55.66Q36.52 -57.52 33.15 -57.52H23.63ZM66.9 0V-72.75H123.24V-55.57H87.21V-44.63H120.46V-28.03H87.21V-17.19H123.24V0ZM128.08 0V-72.75H158.99Q167.68 -72.75 174.03 -69.65Q180.38 -66.55 183.82 -60.86Q187.26 -55.18 187.26 -47.36Q187.26 -40.58 184.35 -35.42Q181.45 -30.27 176.18 -27.15L189.51 0H168.36L157.47 -22.75H148.39V0ZM148.39 -38.48H157.47Q162.06 -38.48 164.75 -40.92Q167.44 -43.36 167.44 -47.36Q167.44 -51.37 164.75 -53.81Q162.06 -56.25 157.47 -56.25H148.39ZM192.63 0V-72.75H223.54Q232.23 -72.75 238.58 -69.65Q244.93 -66.55 248.37 -60.86Q251.81 -55.18 251.81 -47.36Q251.81 -40.58 248.91 -35.42Q246 -30.27 240.73 -27.15L254.06 0H232.92L222.03 -22.75H212.95V0ZM212.95 -38.48H222.03Q226.62 -38.48 229.3 -40.92Q231.99 -43.36 231.99 -47.36Q231.99 -51.37 229.3 -53.81Q226.62 -56.25 222.03 -56.25H212.95ZM257.19 0V-72.75H313.53V-55.57H277.5V-44.63H310.75V-28.03H277.5V-17.19H313.53V0ZM316.42 -55.57V-72.75H378.13V-55.57H357.43V0H337.12V-55.57ZM368.32 0 392.74 -72.75H420.08L444.74 0H421.89L418.42 -11.96H394.1L390.54 0ZM398.79 -27.59H413.93L413.73 -28.22Q411.83 -34.81 410.02 -41.26Q408.21 -47.71 406.46 -54.35Q404.65 -47.71 402.79 -41.26Q400.94 -34.81 398.99 -28.22Z"/><path fill="var(--box, #0a0b0d)" d="M156.50 10.00L580.71 10.00L563.29 108.75L139.09 108.75Z"/><path fill="var(--red, #f05738)" d="M146.65 101.57 159.48 28.82H214.12L211.09 46.01H176.76L174.49 58.9H206.86L203.95 75.4H171.58L166.97 101.57ZM236.29 102.75Q226.77 102.75 220.33 99.4Q213.89 96.06 211.08 89.98Q208.27 83.9 209.71 75.7L217.98 28.82H237.71L229.73 74.04Q228.85 79.06 231.56 82.36Q234.28 85.66 239.31 85.66Q244.43 85.66 248.26 82.38Q252.08 79.11 252.98 74.04L260.95 28.82H280.67L272.41 75.7Q270.96 83.9 266.01 89.98Q261.06 96.06 253.43 99.4Q245.81 102.75 236.29 102.75ZM281.5 46.01 284.53 28.82H346.25L343.22 46.01H322.52L312.72 101.57H292.41L302.21 46.01ZM368.42 102.75Q358.9 102.75 352.46 99.4Q346.02 96.06 343.21 89.98Q340.4 83.9 341.85 75.7L350.11 28.82H369.84L361.87 74.04Q360.98 79.06 363.69 82.36Q366.41 85.66 371.44 85.66Q376.56 85.66 380.39 82.38Q384.21 79.11 385.11 74.04L393.08 28.82H412.81L404.54 75.7Q403.1 83.9 398.14 89.98Q393.19 96.06 385.57 99.4Q377.95 102.75 368.42 102.75ZM405.79 101.57 418.62 28.82H449.53Q458.22 28.82 464.02 31.92Q469.82 35.02 472.26 40.71Q474.7 46.4 473.32 54.21Q472.13 61 468.31 66.15Q464.5 71.3 458.67 74.43L467.22 101.57H446.07L439.2 78.82H430.12L426.1 101.57ZM432.89 63.1H441.97Q446.56 63.1 449.68 60.66Q452.79 58.21 453.5 54.21Q454.2 50.21 451.95 47.77Q449.69 45.32 445.1 45.32H436.02ZM466.44 101.57 503.68 28.82H531.02L542.85 101.57H520L518.64 89.61H494.33L488.65 101.57ZM501.77 73.99H516.91L516.82 73.35Q516.08 66.76 515.41 60.31Q514.74 53.87 514.16 47.23Q511.18 53.87 508.19 60.31Q505.19 66.76 502.08 73.35Z"/><path fill="var(--paper, #ffffff)" d="M155.38 95.75 168.21 23H222.85L219.82 40.19H185.49L183.22 53.08H215.59L212.68 69.58H180.31L175.7 95.75ZM245.02 96.93Q235.5 96.93 229.06 93.58Q222.62 90.24 219.81 84.16Q217 78.08 218.44 69.88L226.71 23H246.44L238.46 68.21Q237.58 73.24 240.29 76.54Q243.01 79.84 248.04 79.84Q253.16 79.84 256.99 76.56Q260.81 73.29 261.71 68.21L269.68 23H289.41L281.14 69.88Q279.69 78.08 274.74 84.16Q269.79 90.24 262.16 93.58Q254.54 96.93 245.02 96.93ZM290.23 40.19 293.26 23H354.98L351.95 40.19H331.25L321.45 95.75H301.14L310.94 40.19ZM377.16 96.93Q367.63 96.93 361.19 93.58Q354.75 90.24 351.94 84.16Q349.13 78.08 350.58 69.88L358.84 23H378.57L370.6 68.21Q369.71 73.24 372.42 76.54Q375.14 79.84 380.17 79.84Q385.3 79.84 389.12 76.56Q392.94 73.29 393.84 68.21L401.81 23H421.54L413.27 69.88Q411.83 78.08 406.87 84.16Q401.92 90.24 394.3 93.58Q386.68 96.93 377.16 96.93ZM414.52 95.75 427.35 23H458.26Q466.95 23 472.75 26.1Q478.55 29.2 480.99 34.89Q483.43 40.58 482.05 48.39Q480.86 55.18 477.04 60.33Q473.23 65.48 467.4 68.61L475.95 95.75H454.81L447.93 73H438.85L434.83 95.75ZM441.62 57.28H450.7Q455.29 57.28 458.41 54.84Q461.52 52.39 462.23 48.39Q462.93 44.39 460.68 41.95Q458.42 39.5 453.83 39.5H444.75ZM475.17 95.75 512.41 23H539.75L551.58 95.75H528.73L527.38 83.79H503.06L497.39 95.75ZM510.5 68.17H525.64L525.55 67.53Q524.81 60.94 524.14 54.49Q523.47 48.05 522.89 41.41Q519.91 48.05 516.92 54.49Q513.92 60.94 510.81 67.53Z"/></svg></a><a class="crumb" href="../">Issue 21</a><nav class="topnav"><a href="../../">Issues</a><a href="../../search/">Search</a></nav></header>
+<main>
+<article class="piece">
+<header class="piece-head">
+<p class="kicker">Feature 12 · VERBATIM · 2026 11</p>
+<h1>Firecracker VM Escape: PwnEscape Part 2</h1>
+<p class="byline">By PWN Research, Paulos Yibelo</p>
+<p class="author-note">Offensive security researchers at an AI-driven security company.</p>
+<p class="source"><a href="https://pwn.ai/blog/firecracker-escape">Read the original <span>pwn.ai</span></a></p>
+</header>
+<p class="standfirst">Firecracker is supposed to keep untrusted code inside a microVM. We escaped it and achieved code execution as root on the host.</p>
+<figure class="opener"><img src="../../img/1f4bd64d608767e1-800.jpg" srcset="../../img/1f4bd64d608767e1-800.jpg 800w, ../../img/1f4bd64d608767e1-1200.jpg 1200w, ../../img/1f4bd64d608767e1-1760.jpg 1760w" sizes="(min-width: 44rem) 40rem, 100vw" width="800" height="465" alt="Flopaz drops one marble into a sealed glass jar and it rolls out through a tube to ring a bell outside, startling Pedro while Maro listens at the glass." fetchpriority="high" decoding="async"></figure>
+<p class="first">We found how it saved registers, changed where it would resume, and made it execute a call of our choosing when it returned from KVM. The guest then restored the temporary stack changes. Firecracker kept running, and the VM remained accessible over SSH.</p>
+<p><a href="https://pwn.ai/blog/pwnescape">PwnEscape Part 1</a> introduced the host memory primitive behind this work. Here we follow the next part of the chain: using that access to find Firecracker in memory and take over a live thread from inside the guest. This is a continuation to show CVE-2026-99999 on a Firecracker setup.</p>
+<h2>00 / Choosing where to take control</h2>
+<figure class="figure" id="figure-figure-1"><a class="zoom" href="../../img/295750c8beab61de-1528.jpg"><img src="../../img/295750c8beab61de-800.jpg" srcset="../../img/295750c8beab61de-800.jpg 800w, ../../img/295750c8beab61de-1200.jpg 1200w, ../../img/295750c8beab61de-1528.jpg 1528w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="800" height="506" alt="Block diagram of Firecracker microVMs, their guests, KVM, file block devices, and a network bridge across host user and kernel space." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>Firecracker’s host integration: each microVM’s guest runs under KVM in the host kernel, with a per-VM file block device and a shared network bridge in host user space.</figcaption></figure>
+<figure class="figure" id="figure-figure-2"><a class="zoom" href="../../img/490e0d15ea33b761-960.webp"><img src="../../img/490e0d15ea33b761-960.webp" srcset="../../img/490e0d15ea33b761-960.webp 960w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="960" height="690" alt="Three-column flow from guest microVM through host kernel and KVM to the Firecracker process, ending in a resumed thread that runs a controlled call." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>The exploit chain end to end: a known guest page leads through host memory to the Firecracker process image, and a one-byte serial trigger redirects a saved KVM_RUN frame into a controlled host call.</figcaption></figure>
+<p>A Firecracker microVM has a process on the host that manages it. Each virtual CPU, or vCPU, has a thread in that process. The thread enters KVM to run the guest and returns to Firecracker when an event needs handling in userspace. Firecracker documents this arrangement in its <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md#internal-architecture">architecture overview</a>.</p>
+<p>The call that runs the virtual CPU looks like this:</p>
+<pre><code class="language-c"><span class="n">ioctl</span><span class="p">(</span><span class="n">vcpu_fd</span><span class="p">,</span><span class="w"> </span><span class="n">KVM_RUN</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+</code></pre>
+<p>While the thread is in that system call, the host kernel holds its saved userspace registers in a structure called <code>pt_regs</code>. These registers describe the Firecracker thread: its instruction pointer says where execution should resume, and its stack pointer says which userspace stack it should use.</p>
+<p>That made the return from <code>KVM_RUN</code> an attractive target. If we could locate and modify the saved frame, we could choose the code Firecracker executed when the thread returned to userspace. A guest operation that caused such a return would provide the trigger.</p>
+<p>We already had access to selected host physical memory through a guest mapping. To use it, we needed to identify the Firecracker process, find code we could call in that process, and locate the register frame belonging to its active vCPU thread. The starting point was a page of memory we controlled inside the guest.</p>
+<p><em>Figure 1. The guest identifies its Firecracker process, finds the saved registers for a vCPU thread, and redirects the thread when it returns from KVM.</em></p>
+<h2>01 / Finding our guest page on the host</h2>
+<p>The guest and host use different physical address spaces. A page has a guest physical address, or GPA, inside the VM and a host physical address, or HPA, in the machine backing it. On the target, Extended Page Tables (EPT) provide the translation between them.</p>
+<p>We placed a recognizable byte pattern, a nonce, in a guest page. The first resolver took that page’s known GPA and its contents as inputs. Together, they gave us an address to translate and a way to check whether the translation reached our page.</p>
+<p>The resolver searched the host physical ranges covered by the memory primitive for candidate EPT roots. An EPT root is the starting point of the translation tables. For each candidate, the resolver followed the entries selected by the guest address until it reached a physical page, then checked that page for the nonce.</p>
+<p>The snippets below are explanatory pseudocode with descriptive helper names. They show the data passed between stages and the checks used to connect them.</p>
+<pre><code class="language-text">for root in candidate_ept_roots:
+    page_hpa = walk_ept(root, guest_gpa)
+    if page_hpa is invalid:
+        continue
+
+    contents = read_host(page_hpa, length(nonce))
+    if contents == nonce:
+        candidates.append((root, page_hpa))
+</code></pre>
+<p>The nonce check connected a proposed translation to memory we controlled. The broader search produced two candidates; validation of the nested page tables reduced them to one EPT root. Walking that root gave us the host physical address of our guest page.</p>
+<p>We called this result <code>guest_page_hpa</code> and passed it to the next resolver. We now had a recognizable object in host memory. The next task was finding the host process that mapped it.</p>
+<h2>02 / Finding the Firecracker process</h2>
+<figure class="figure" id="figure-figure-3"><a class="zoom" href="../../img/6ca7a86dd119e117-960.webp"><img src="../../img/6ca7a86dd119e117-960.webp" srcset="../../img/6ca7a86dd119e117-960.webp 960w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="960" height="790" alt="Four stacked stages (recognize guest page, walk EPT roots, reverse host page mapping, locate and validate Firecracker) each with its resolved address value." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>Resolving the Firecracker address space in four checked stages, from recognizing a known guest page to locating and validating the Firecracker ELF image by its code bytes.</figcaption></figure>
+<p>Firecracker maps memory used by the guest into its own address space. That mapping gave us a way to work backward from the guest page to the process.</p>
+<p>Host processes use page tables to translate their virtual addresses into physical memory. The top level is called the page global directory, or PGD. Recovering the appropriate PGD would let us translate addresses inside Firecracker and read its code and stack through the memory primitive.</p>
+<p>Our reverse mapper searched the native host page tables for a mapping of <code>guest_page_hpa</code>. A normal page table walk starts with a virtual address and produces a physical address. Here, we looked for a mapping to a physical page we already knew, then recovered the virtual address and page table root associated with it.</p>
+<p>The check runs in both directions:</p>
+<pre><code class="language-text">for mapping in reverse_map_host_page_tables(guest_page_hpa):
+    pgd = mapping.root
+    guest_page_va = mapping.virtual_address
+
+    resolved_hpa = walk_host_page_tables(pgd, guest_page_va)
+    if resolved_hpa != guest_page_hpa:
+        continue
+
+    if read_host(resolved_hpa, length(nonce)) != nonce:
+        continue
+
+    process_candidates.append((pgd, guest_page_va))
+</code></pre>
+<p>This connected the host process’s virtual mapping to the physical page found through EPT. The reverse mapper returned one validated address space. We retained its root as <code>host_pgd</code> and used it to inspect the process.</p>
+<p>The next resolver looked for the Firecracker executable in those mappings. It identified an ELF image and checked a known byte sequence in Firecracker’s <code>write(2)</code> wrapper. That connected the recovered address space to the binary we were targeting.</p>
+<p>ASLR changes where an executable is loaded. The difference between an address in the ELF image and its corresponding runtime address is the load bias. Once the mapper had identified the image, it could recover that bias and use it to locate the code required by the exploit:</p>
+<pre><code class="language-text">runtime_code_address = load_bias + code_address_in_elf
+</code></pre>
+<p>The mapper returned the load bias as <code>firecracker_base</code>. With that value and <code>host_pgd</code>, we could locate code in the running process, translate its virtual address to host physical memory, and compare the bytes there with the expected binary.</p>
+<p>We checked three locations: the <code>write(2)</code> wrapper that would produce our proof, the continuation after the KVM ioctl, and a short <code>xor eax,eax; ret</code> sequence needed to return cleanly. Their purposes become relevant when we construct the return path below.</p>
+<p>At this point, the guest could inspect the Firecracker image and its private mappings. We still needed the saved registers of the thread currently running our VM.</p>
+<p><em>Figure 2. The nonce identifies the guest page in host memory. Its mapping leads to a host page table root, which lets the next resolver locate and validate the Firecracker image.</em></p>
+<h2>03 / Locating the live vCPU frame</h2>
+<figure class="figure" id="figure-figure-4"><a class="zoom" href="../../img/a58ceef2e2b2a914-960.jpg"><img src="../../img/a58ceef2e2b2a914-960.jpg" srcset="../../img/a58ceef2e2b2a914-960.jpg 960w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="960" height="760" alt="A candidate saved-register frame narrowed by four tests to the one live vCPU return frame." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>Picking the live vCPU return frame: a candidate set of saved registers is kept only if the saved syscall is KVM_RUN, the stack maps through the recovered page tables, the return points into Firecracker, and the code bytes still match.</figcaption></figure>
+<p>The frame finder took <code>host_pgd</code> and <code>firecracker_base</code> from the preceding stages. It used them to recognize the host thread’s saved state.</p>
+<p>The most useful clue was the return address. A vCPU thread in <code>KVM_RUN</code> should have a saved instruction pointer at the corresponding ioctl continuation in Firecracker. We could calculate that address from the validated binary and its load bias.</p>
+<p>We then searched host memory for a <code>pt_regs</code> frame consistent with that call. An address match alone would also pick up stale stack contents, so the candidate had to satisfy several related checks:</p>
+<p>The stack check tied the frame to the same address space we had recovered from the guest page. The instruction and caller addresses tied it to the Firecracker image. The syscall fields tied it to the operation running the vCPU.</p>
+<p>The search left one candidate. Its location was stored as <code>frame_hpa</code>, the host physical address of the saved register frame. We passed it, the PGD, and the load bias to the final helper.</p>
+<p>Before changing memory, the helper repeated the code signature, frame, and stack checks. This ensured that the active stage used the same process state the resolvers had identified. The subsequent execution and recovery checks would establish that the selected frame was live.</p>
+<p><em>Figure 3. The candidate register frame must agree with the KVM ioctl, the recovered process page tables, and the validated Firecracker code.</em></p>
+<h2>04 / Redirecting the return from KVM</h2>
+<figure class="figure" id="figure-figure-5"><a class="zoom" href="../../img/1f14230d9cc84ca3-960.webp"><img src="../../img/1f14230d9cc84ca3-960.webp" srcset="../../img/1f14230d9cc84ca3-960.webp 960w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="960" height="790" alt="Four-step reversible control flow from a guest serial byte to a planted host call and back to the original execution path." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>Redirecting the return from KVM: a guest serial byte forces a userspace exit, Firecracker runs the planted write(2) call, then the original return value and stack words are restored.</figcaption></figure>
+<p>We chose a simple payload: make the Firecracker process write a recognizable string to its own stderr. This would give the host runner an observable result from the process we had taken over.</p>
+<p>The string was <code>N8V23M2\n</code>, seven characters followed by a newline. It occupies eight bytes and fits in one stack word. The call we wanted Firecracker to execute was:</p>
+<pre><code class="language-c"><span class="n">write</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">"N8V23M2</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span>
+</code></pre>
+<p>Here <code>2</code> is Firecracker’s stderr file descriptor. The buffer pointer must refer to the string in Firecracker’s address space, so we stored the string on its private userspace stack.</p>
+<p>We saved three stack words before modifying them. One held the string; the other two held the return addresses for the temporary call sequence. We then changed the saved register frame to supply the wrapper address, its arguments, and a stack pointer for that sequence:</p>
+<pre><code class="language-text">RIP  = address of Firecracker's write wrapper
+RDI  = 2
+RSI  = virtual address of the marker on Firecracker's stack
+RDX  = 8
+RSP  = virtual address of the temporary return sequence
+</code></pre>
+<p>Returning from <code>write</code> also needed care. A successful write of eight bytes returns <code>8</code>, while a successful <a href="https://docs.kernel.org/virt/kvm/api.html#kvm-run"><code>KVM_RUN</code> call returns zero</a>. We placed the address of <code>xor eax,eax; ret</code> first in the return sequence. It clears the return value before the second address brings execution back to Firecracker’s original ioctl continuation.</p>
+<p>The resulting control flow was:</p>
+<pre><code class="language-text">KVM_RUN returns to userspace
+    -&gt; Firecracker's write wrapper emits the marker
+    -&gt; xor eax,eax; ret sets the return value to zero
+    -&gt; execution resumes at the original ioctl continuation
+</code></pre>
+<p>With the stack and saved registers prepared, the guest wrote one byte to its serial port. That operation caused the vCPU thread to return from <code>KVM_RUN</code>. The kernel restored the modified registers, and Firecracker entered the <code>write</code> wrapper with our arguments.</p>
+<p>The wrapper emitted the marker, the return sequence cleared <code>eax</code>, and the thread rejoined its original execution path. After control returned to the guest, the helper restored all three stack words.</p>
+<p><em>Figure 4. The saved register frame enters the write wrapper. Two return addresses lead through the return-value adjustment and back into the original Firecracker path.</em></p>
+<h2>05 / Checking execution and recovery</h2>
+<figure class="figure" id="figure-figure-6"><a class="zoom" href="../../img/8307f686bd72a20a-960.webp"><img src="../../img/8307f686bd72a20a-960.webp" srcset="../../img/8307f686bd72a20a-960.webp 960w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="960" height="740" alt="A proof receipt pairing the guest-side trigger record with the host-side marker capture and a post-restore validation." loading="lazy" decoding="async"></a><figcaption><span class="fig-label">Figure</span>The proof receipt, checked on both sides of the VM boundary: the host emitted the marker once from PID 2936, and after restore the frame still passed its checks with the guest SSH session healthy.</figcaption></figure>
+<p>The host runner captured Firecracker’s stderr separately from the guest. The complete output was:</p>
+<pre><code class="language-text">N8V23M2
+</code></pre>
+<p>The capture contained exactly eight bytes, including the final newline. Firecracker was still running, guest SSH was responsive, and the helper had restored the three temporary stack words.</p>
+<p>We checked recovery with a fresh pass that made no memory changes. It was given the same frame address and repeated the register, code, and stack checks after the trigger. The checks passed, and it found no stale marker in the temporary stack location.</p>
+<p>These observations answered three different questions. The guest log recorded the trigger and restoration. The host capture showed that Firecracker executed the selected operation. The final validation checked the state after execution.</p>
+<p><em>Figure 5. The guest log, Firecracker stderr capture, and final validation record the trigger, host execution, and restored state.</em></p>
+<h2>06 / Root execution on the host</h2>
+<p>By the time the marker appeared, the guest had selected the host thread’s instruction pointer, function arguments, stack data, and return path. Firecracker executed the call using its own privileges.</p>
+<p>The target was Firecracker v1.16.1 on x86-64, with host kernel <code>7.0.0-1011-aws</code> and guest kernel <code>6.18.44+</code>. We launched Firecracker directly as root under <code>systemd-run</code> and pinned it with <code>taskset</code>. Consequently, the controlled call executed as root on the host.</p>
+<p>The existing write wrapper gave us a compact proof of that control. Extending it to other calls would require choosing code and arguments compatible with the process’s mappings and syscall policy.</p>
+<p>The configuration used here had no jailer. Firecracker’s <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md#sandboxing">production containment</a> includes dropping privileges and restricting the process through namespaces and seccomp. A deployment using those controls requires a separate assessment of the privileges and resources available after compromising its VMM.</p>
+<p>The address discovery is what lets the exploit follow the running instance. The EPT resolver connects a guest page to host memory; the reverse mapper recovers the host address space; the image mapper locates Firecracker under ASLR; and the frame finder identifies the vCPU’s saved state. Adapting the final stage to another build requires validating that binary’s code signatures and return path.</p>
+<p>The guest had used access to host memory to take over the thread running the VM itself. A serial write supplied the trigger, and the next userspace operation belonged to us.</p>
+<h2>Captured resolver values and artifacts</h2>
+<p>The following values come from the preserved execution record. The methods above use symbolic names so that the role of each value is clear; this table connects those names to the recorded addresses.</p>
+<p>The records use run ID <code>eventpath-v23-0907self02</code> and boot ID <code>2b3cd5ac-2311-427f-a50a-6a79ecb8daa7</code>. These identifiers connect the resolver records, host capture, and validation after restoration.</p>
+<p>The earlier memory provider also received host-selected task and canary page frame numbers as independent validation overlays after constructing the memory aperture. Those addresses were not consumed by the EPT resolver, reverse mapper, Firecracker mapper, frame finder, or final marker helper.</p>
+<p>The release bundle contains the final helper source, JSONL resolver records, host capture, recovery manifest, four preserved read-only resolver binaries with provenance, and SHA-256 manifests. The final helper accepts the PGD, load bias, and frame HPA produced by the resolvers. Its checks cover the run identifier, address ranges, code signatures, saved registers, and stack geometry; its dry-run mode performs validation without writing memory.</p>
+<p>The artifact hashes are:</p>
+<pre><code class="language-text">Firecracker stderr capture:
+5b8c0c0b5d5acb9ddf96891c79db8004832fd084e5e2d77484075995396fabbf
+
+Final helper ELF:
+fabf71650b76f7bbc9908df9474ab3aa7ec503dcc6c168cf5cb7236f50318faa
+
+Final helper source:
+fb6b4215ebc2a1d7fe14e5488ea2ff88417b5b81b4a6db8c39b9113fa7ce703c
+</code></pre>
+<p>Verify the bundle against its manifest with:</p>
+<pre><code class="language-sh">shasum<span class="w"> </span>-a<span class="w"> </span><span class="m">256</span><span class="w"> </span>-c<span class="w"> </span>SHA256SUMS
+</code></pre>
+<h2>Technical references</h2>
+<ul><li><p><a href="https://pwn.ai/blog/pwnescape">PwnEscape Part 1</a></p></li><li><p><a href="https://vercel.com/blog/findings-from-the-1-million-dollar-vercel-sandbox-challenge#the-kernel-zero-day">Vercel: Findings from the $1M Sandbox challenge</a></p></li><li><p><a href="https://docs.kernel.org/virt/kvm/api.html#kvm-run">KVM API: KVM_RUN</a></p></li><li><p><a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md">Firecracker architecture and containment</a></p></li><li><p><a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/jailer.md">Firecracker jailer documentation</a></p></li><li><p><a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/seccomp.md">Firecracker seccomp documentation</a></p></li></ul>
+<figure class="tail" aria-hidden="true"><img src="../../img/5f737f8006f31bbf-800.jpg" srcset="../../img/5f737f8006f31bbf-800.jpg 800w, ../../img/5f737f8006f31bbf-1200.jpg 1200w, ../../img/5f737f8006f31bbf-1600.jpg 1600w, ../../img/5f737f8006f31bbf-2160.jpg 2160w" sizes="(min-width: 44rem) 40rem, calc(100vw - 2.5rem)" width="800" height="266" alt="" loading="lazy" decoding="async"></figure>
+</article>
+<div class="piece-end"><a class="back" href="../">Back to Issue 21, Show Your Work</a><a class="dl" href="../#get"><svg class="glyph" aria-hidden="true"><use href="#g-down"/></svg>Get the issue: PDF, EPUB</a></div>
+<nav class="pager"><a rel="prev" href="../sparks-of-weight-space-programming-llms-can-nati/"><span class="kicker">Previous</span>Sparks of Weight-Space Programming: LLMs can natively read &amp; write neural network weights</a></nav>
+<script src="../../share.js" data-copy="Copy link" data-done="Link copied" data-failed="Copy the link by hand" defer></script>
+</main>
+<footer class="colophon"><a href="../../">Berreta Futura</a><span>Printed on a laptop, read anywhere.</span></footer>
+</body>
+</html>
