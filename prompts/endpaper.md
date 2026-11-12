@@ -17,14 +17,18 @@ cover's echo, not a second cover: the reader should open the issue,
 see the pattern, and recognise the front cover's object, joke, or world
 in it.
 
-- Take the motif from the picked cover: its main object, a detail of it,
-  the joke it makes, or the props of its world. At least half the briefs
-  repeat the cover's own object; the rest may widen to its world or to
-  the issue's themes in the edition's title and deck.
-- Take the palette from the picked cover: its two or three inks and its
-  paper colour, at full strength. Name them concretely.
-- Draw small motifs, many of them: a reader holding the sheet sees
-  dozens of repeats, never one big picture.
+- Take the motifs from the cover's world, never its composition. Split
+  the cover into its elements (an animal, an object, a prop) and repeat
+  those on their own, mixed with two or three related props of the same
+  world. Never repeat the cover's scene itself (one thing inside or on
+  top of another, exactly as the cover stages it).
+- Take the palette from the picked cover: its two or three inks, named
+  concretely, used on the motifs. The ground is a warm off-white or a
+  very pale tint of one cover ink, never a saturated full-page fill and
+  never bare white.
+- Medium density: small motifs, dozens of repeats, comfortable breathing
+  room between them, but no large empty areas. Lively, playful drawing;
+  neither crammed nor sparse.
 
 Make the eight briefs eight different pattern structures, so the editor
 chooses between real alternatives. Draw from these, one each:
@@ -36,7 +40,7 @@ chooses between real alternatives. Draw from these, one each:
 5. stamp grid: a grid of tiles, each tile a different tiny vignette
 6. trails: motifs travelling along looping dotted or drawn paths
 7. stripes: a block-printed folk band repeat with the motif between borders
-8. busy all-over: a dense jumble of many small related objects
+8. all-over: many small related objects spread evenly, close but never crammed
 
 ## Fixed rules
 
