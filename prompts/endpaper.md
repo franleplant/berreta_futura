@@ -22,10 +22,12 @@ in it.
   those on their own, mixed with two or three related props of the same
   world. Never repeat the cover's scene itself (one thing inside or on
   top of another, exactly as the cover stages it).
-- Take the palette from the picked cover: its two or three inks, named
-  concretely, used on the motifs. The ground is a warm off-white or a
-  very pale tint of one cover ink, never a saturated full-page fill and
-  never bare white.
+- Start the palette from the picked cover's inks and widen it: add two
+  or three cheerful accent colours that sit well with them (a sunny
+  yellow, a leaf green, a tangerine, a teal), named concretely, so the
+  motifs come in four or five colours and the sheet never reads as
+  monochrome. The ground is a warm off-white or a very pale tint, never
+  a saturated full-page fill and never bare white.
 - Medium density: small motifs, dozens of repeats, comfortable breathing
   room between them, but no large empty areas. Lively, playful drawing;
   neither crammed nor sparse.
