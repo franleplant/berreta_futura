@@ -1,6 +1,6 @@
 @font-face { font-family: "Geist"; src: url(fonts/Geist-Variable.woff2) format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
 @font-face { font-family: "Geist"; src: url(fonts/Geist-Italic-Variable.woff2) format("woff2"); font-weight: 100 900; font-style: italic; font-display: swap; }
-@font-face { font-family: "Math Symbols"; src: url(fonts/NotoSansMath-Regular.woff2) format("woff2"); unicode-range: U+2190-22FF, U+25A0-25FF; font-display: swap; }
+@font-face { font-family: "Math Symbols"; src: url(fonts/NotoSansMath-Regular.woff2) format("woff2"); unicode-range: U+0370-03FF, U+2190-22FF, U+25A0-25FF; font-display: swap; }
 @font-face { font-family: "Blocks"; src: url(fonts/GeistMono-Regular.woff2) format("woff2"); unicode-range: U+2580-259F; font-display: swap; }
 @font-face { font-family: "Emoji"; src: url(fonts/NotoEmoji-Variable.woff2) format("woff2"); unicode-range: U+2600-27BF, U+FE00-FE0F, U+1F300-1FAFF; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }

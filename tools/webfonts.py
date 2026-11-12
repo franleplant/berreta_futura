@@ -29,6 +29,7 @@ SYMBOLS = ["noto-sans-math/NotoSansMath-Regular.ttf"]
 EMOJI = "noto-emoji/NotoEmoji-Variable.ttf"
 
 LATIN = [(0x20, 0x7E), (0xA0, 0x17F), (0x2000, 0x209F), (0x20A0, 0x20CF), (0x2122, 0x2122)]
+GREEK = [(0x370, 0x3FF)]
 ARROWS_AND_SHAPES = [(0x2190, 0x21FF), (0x2200, 0x22FF), (0x25A0, 0x25FF)]
 BLOCKS = [(0x2580, 0x259F)]
 EMOJI_RANGES = [(0x2600, 0x27BF), (0xFE00, 0xFE0F), (0x1F300, 0x1FAFF)]
@@ -74,7 +75,7 @@ def coverage() -> str:
 
     sans = [cmap(n) for n in TEXT[:2]]
     stacks = {"serif": sans, "display": sans, "sans": sans, "poster": sans, "mono": [cmap(TEXT[2])]}
-    math = cmap(SYMBOLS[0], ARROWS_AND_SHAPES) | cmap(TEXT[2], BLOCKS)
+    math = cmap(SYMBOLS[0], GREEK + ARROWS_AND_SHAPES) | cmap(TEXT[2], BLOCKS)
     emoji = cmap(EMOJI, EMOJI_RANGES)
     return "".join(f"{k}: {runs_of(set().union(*v, math, emoji))}\n" for k, v in stacks.items())
 
@@ -84,7 +85,7 @@ def main() -> None:
         raise SystemExit(__doc__)
     OUT.mkdir(exist_ok=True)
     targets = [build(ROOT / name, LATIN + ARROWS_AND_SHAPES + BLOCKS) for name in TEXT]
-    targets += [build(ROOT / name, ARROWS_AND_SHAPES) for name in SYMBOLS]
+    targets += [build(ROOT / name, GREEK + ARROWS_AND_SHAPES) for name in SYMBOLS]
     targets.append(build(ROOT / EMOJI, EMOJI_RANGES))
     for target in targets:
         print(f"{target.name}: {target.stat().st_size}")
