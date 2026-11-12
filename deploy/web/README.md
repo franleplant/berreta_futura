@@ -25,14 +25,14 @@ git add site editions/011/publish.yaml && git commit && git push
 uv run tools/deploy.py
 ```
 
-`tools/deploy.py` waits for the Workers Build of the pushed commit and fails
-if it fails. GitHub push events are occasionally dropped (2026-10-06: the push
-of 97d4cce9 never produced a build); when no build appears within three
-minutes it deploys `site/` with wrangler from the laptop instead.
+`tools/deploy.py` refuses while `site/` has uncommitted changes, then runs
+`npx wrangler@4 deploy --config deploy/web/wrangler.jsonc` from the laptop.
+Wrangler hashes every asset and uploads only the changed ones, so a deploy
+takes seconds. Workers Builds then repeats the same deploy from the pushed
+commit, which also covers a push made without running the script.
 
 Run `publish` only when there is a new PDF or EPUB. The push to `main` triggers
-Workers Builds, which deploys when `site/**` changed. Fallback from the laptop:
-`npx wrangler@4 deploy --config deploy/web/wrangler.jsonc`.
+Workers Builds, which deploys when `site/**` changed.
 
 ## One-time Cloudflare setup
 
@@ -41,10 +41,10 @@ Builds > Connect (Git repository):
 
 1. Authorize the GitHub app and pick repository `franleplant/berreta_futura`.
 2. Production branch: `main`.
-3. Root directory: `/`.
+3. Root directory: `deploy/web` (so the build detects no Python or other tooling at the repo root).
 4. Build command: leave empty.
-5. Deploy command: `npx wrangler deploy --config deploy/web/wrangler.jsonc`.
-6. Build watch paths: Include paths `site/*`, Exclude paths empty.
+5. Deploy command: `npx wrangler@4 deploy`.
+6. Build watch paths: Include paths `site/*` and `deploy/web/*`, Exclude paths empty.
 7. Save, then push a change under `site/` and watch the build in the Builds tab.
 
 Non-production branch builds: there is no wrangler config at the repo root, so

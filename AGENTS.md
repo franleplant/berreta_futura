@@ -62,9 +62,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   `editions/NNN/publish.yaml` as `<lang>: {pdf: {url, bytes, sha256}, epub:
   {...}}`; committing that file publishes the links, which the site adds
   with `?v=<sha8>`.
-- After pushing a `site/` change, run `uv run tools/deploy.py`: it waits for
-  the commit's Workers Build and deploys with wrangler when the push event was
-  dropped (no build within three minutes).
+- After pushing a `site/` change, run `uv run tools/deploy.py`: it deploys the
+  committed `site/` from the laptop with wrangler (only changed assets upload);
+  Workers Builds repeats the same deploy from the pushed commit.
 - `tools/letter.py`, `coverproof.py`, `compare.py`, and `read.py` are
   standalone Python side scripts (`uv run --with <dep> tools/<name>.py`), not
   pipeline steps; nothing in `mag` calls them.
