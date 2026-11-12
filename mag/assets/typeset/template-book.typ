@@ -258,6 +258,7 @@
   regular: ("Inter", 400),
   display: ("Archivo", 700),
   serif: ("Source Serif 4 SmText", 400),
+  shout: ("Inter Display", 900),
 )
 #let COVER-ROSTER = 6.5
 #let COVER-WORDMARK-INSET = (2.85, -28.91)
@@ -382,8 +383,6 @@
   )
 }
 
-#let cover-spine(d) = cover-put(-1.5, -1.5, cover-box(d.spine.wrap + 1.5, COVER-H + 3, fill: rgb(d.color.orange)))
-
 #let cover-headline(d, source) = {
   let words = upper(source).trim().split().filter(w => w != "")
   let width-of = (line, size) => cover-width("display", size, line)
@@ -461,7 +460,6 @@
 
 #let cover-framed(d, t, spec) = {
   let (ink, a) = (rgb(d.color.ink), d.art)
-  cover-spine(d)
   cover-wordmark(d, false, 1, d.spine.wrap / 2, 0)
   cover-headline(d, t.headline)
   if spec.art == none {
@@ -488,7 +486,6 @@
     let ink = rgb(d.color.ink)
     cover-fade(COVER-W + 1.5, 0, 120, ((ink.transparentize(58%), 0%), (ink.transparentize(100%), 100%)))
   }
-  cover-spine(d)
   cover-wordmark(d, s.on_dark, c.wordmark_scale, left - (d.wordmark.x + 0.36) * c.wordmark_scale, c.wordmark_dy)
   let (base, edges, gap) = (COVER-H - 46, ("cap-height", "baseline"), 11)
   let day = cover-run("bold", 6.5, t.date_line, fill: fill, tracking: 1.4, edges: edges)
@@ -554,7 +551,6 @@
   let title = upper(t.headline).trim()
   cover-put(left, margin, image(spec.art, width: width * 1pt, height: height * 1pt, fit: "cover"))
   cover-put(left, margin, cover-box(width, height, stroke: 0.7pt + ink))
-  cover-spine(d)
   cover-wordmark(d, false, p.wordmark_scale, 6 + d.spine.wrap, COVER-H - p.footer - 36)
   let size = cover-title(title, 190, p.title_size)
   cover-put(right - cover-width("display", size, title, tracking: 0.2), COVER-H - p.footer + 22, cover-run("display", size, title, fill: ink, tracking: 0.2))
@@ -565,48 +561,71 @@
   cover-right(t.issue + " / " + t.date_line, right, COVER-H - 13, COVER-ROSTER - 0.5, ink)
 }
 
+#let cover-spine-mm(d) = (2 * calc.ceil(counter(page).final().first() / 4) + d.spine.extra_leaves) * d.spine.leaf_mm + d.spine.glue_mm
+
+#let cover-spine-wrap(d) = (cover-spine-mm(d) / 2 + d.spine.tolerance_mm) * 72 / 25.4
+
+#let cover-spine-ticks(d, x) = {
+  let size = d.spine.dot_mm * 72 / 25.4
+  for y in (0, COVER-H - size) { cover-put(x - size / 2, y, circle(width: size * 1pt, fill: rgb(d.color.ink), stroke: none)) }
+}
+
+#let cover-spine-face(d, t, x) = {
+  let spine = cover-spine-mm(d) * 72 / 25.4
+  let size = spine * d.spine.text_ratio
+  let (font, weight) = COVER-FACES.shout
+  let run(body, fill) = text(font: font, weight: weight, size: size * 1pt, top-edge: "cap-height", bottom-edge: "baseline", tracking: -0.01em, fill: fill, body)
+  let mark = read("/brand/mark-square.svg").replace(regex("var\\(--[a-z]+, *(#[0-9a-fA-F]+)\\)"), m => m.captures.first())
+  let side = spine * d.spine.mark_ratio
+  let length = COVER-H - 2 * d.spine.text_inset
+  assert(measure(run(upper(t.headline), white)).width.pt() <= length, message: "Spine title cannot fit: " + t.headline)
+  cover-put(0, 0, block(width: COVER-W * 1pt, height: COVER-H * 1pt, clip: true, {
+    cover-put(x - side / 2, d.spine.end_inset, image(bytes(mark), format: "svg", width: side * 1pt))
+    cover-put(x - spine / 2, d.spine.text_inset, rotate(90deg, reflow: true, box(width: length * 1pt, height: spine * 1pt, align(center + horizon, run(upper(t.headline), rgb(d.color.paper))))))
+    let tail = 3 * size
+    cover-put(x - spine / 2, COVER-H - d.spine.end_inset - tail, rotate(90deg, reflow: true, box(width: tail * 1pt, height: spine * 1pt, align(right + horizon, run(t.issue, rgb(d.color.orange))))))
+  }))
+}
+
 #let cover-front-page(spec) = {
   let d = spec.design
+  d.spine.wrap = cover-spine-wrap(d)
   cover-put(0, 0, cover-box(COVER-W, COVER-H, fill: rgb(d.color.paper)))
   let modes = (framed: cover-framed, footer_caption: cover-caption, honored_plate: cover-plate)
   assert(spec.layout in modes, message: "Unknown cover layout '" + spec.layout + "': expected framed, footer_caption, or honored_plate")
   (modes.at(spec.layout))(d, spec.text, spec)
+  cover-put(-1.5, -1.5, cover-box(d.spine.wrap + 1.5, COVER-H + 3, fill: rgb(d.color.at(d.spine.color))))
+  cover-spine-ticks(d, cover-spine-mm(d) * 36 / 25.4)
+  cover-spine-face(d, spec.text, 0)
+  [#metadata(d.spine.wrap)<mag-cover-wrap>]
+  [#metadata(cover-spine-mm(d))<mag-spine-mm>]
 }
 
-#let cover-statement(b, source, panel, height) = {
-  let size = b.statement_max_size
-  while size >= b.statement_min_size {
-    let lines = cover-wrap(source, panel, line => cover-width("serif", size, line))
-    let leading = size * b.statement_leading_ratio
-    let rise = measure(cover-run("serif", size, lines.first(), edges: ("bounds", "baseline"))).height.pt()
-    let drop = measure(cover-run("serif", size, lines.last(), edges: ("baseline", "bounds"))).height.pt()
-    let extent = rise + (lines.len() - 1) * leading + drop
-    if extent <= height { return (lines: lines, size: size, rise: rise, leading: leading, extent: extent) }
-    size -= 0.5
+#let cover-shout(source, size, palette) = {
+  set par(leading: 0.08em, justify: false)
+  let quoted = source.replace(regex("\"([^\"]*)\""), m => "\u{201C}" + m.captures.first() + "\u{201D}").replace("'", "\u{2019}")
+  for (index, word) in quoted.split().enumerate() {
+    let (font, weight) = COVER-FACES.shout
+    text(font: font, weight: weight, size: size * 1pt, top-edge: "cap-height", bottom-edge: "baseline", tracking: -0.03em, fill: palette.at(calc.rem(index, 2)), hyphenate: false, upper(word))
+    [ #h(0.12em) ]
   }
-  assert(false, message: "Back-cover issue statement cannot fit: " + source)
 }
 
 #let cover-back-page(spec) = {
   let (d, b, t) = (spec.design, spec.design.back, spec.text)
-  let (ink, paper) = (rgb(d.color.ink), rgb(d.color.paper))
-  cover-put(-b.overdraw, -b.overdraw, cover-box(COVER-W + 2 * b.overdraw, COVER-H + 2 * b.overdraw, fill: rgb(d.color.orange)))
-  let room = COVER-W - d.spine.wrap - b.mass_x - 6
-  let size = b.mass_size
-  while size >= 72 and not t.mass.all(word => cover-width("bold", size, word, tracking: b.mass_tracking) <= room) { size -= 0.5 }
-  assert(size >= 72, message: "Back-cover display words cannot fit: " + t.mass.join(" / "))
-  cover-put(0, 0, block(width: (COVER-W - d.spine.wrap) * 1pt, height: COVER-H * 1pt, clip: true, {
-    for (index, word) in t.mass.enumerate() {
-      let fill = if index == 0 { rgb(d.color.violet) } else { ink }
-      cover-put(b.mass_x, b.mass_top + size + index * b.mass_leading * size / b.mass_size, cover-run("bold", size, word, fill: fill, tracking: b.mass_tracking))
-    }
-  }))
-  let (panel, pad) = (COVER-W - b.panel_x - b.panel_right, b.panel_padding)
-  let fit = cover-statement(b, t.statement, panel - 2 * pad, COVER-H - b.panel_top - b.panel_bottom - 2 * pad)
-  cover-put(b.panel_x, b.panel_top, cover-box(panel, fit.extent + 2 * pad, fill: paper))
-  for (index, line) in fit.lines.enumerate() {
-    cover-put(b.panel_x + pad, b.panel_top + pad + fit.rise + index * fit.leading, cover-run("serif", fit.size, line, fill: ink, tracking: -0.12))
-  }
+  let palette = (rgb(d.color.paper), rgb(d.color.orange))
+  cover-put(-b.overdraw, -b.overdraw, cover-box(COVER-W + 2 * b.overdraw, COVER-H + 2 * b.overdraw, fill: rgb(d.color.at(d.spine.color))))
+  let wrap = cover-spine-wrap(d)
+  let width = (COVER-W - 2 * b.shout_x - wrap) * 1pt
+  let size = b.shout_max_size
+  while size > b.shout_min_size and measure(block(width: width, cover-shout(t.statement, size, palette))).height.pt() > b.shout_height { size -= 1 }
+  assert(measure(block(width: width, cover-shout(t.statement, size, palette))).height.pt() <= b.shout_height, message: "Back-cover hook cannot fit: " + t.statement)
+  cover-put(b.shout_x, b.shout_top, block(width: width, cover-shout(t.statement, size, palette)))
+  let mark = read("/brand/mark-square.svg").replace(regex("var\\(--[a-z]+, *(#[0-9a-fA-F]+)\\)"), m => m.captures.first())
+  cover-put(b.shout_x, COVER-H - b.foot_bottom - b.mark_size, image(bytes(mark), format: "svg", width: b.mark_size * 1pt))
+  cover-right("N\u{BA} " + t.issue, COVER-W - b.shout_x - wrap, COVER-H - b.foot_bottom, 7, palette.first())
+  cover-spine-ticks(d, COVER-W - cover-spine-mm(d) * 36 / 25.4)
+  cover-spine-face(d, t, COVER-W)
 }
 
 #let column(body) = pad(left: RAIL, right: RAIL - MEASURE-DELTA, body)

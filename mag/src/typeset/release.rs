@@ -5,9 +5,7 @@ use crate::package::release::{package_release, Release};
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
-use typst::utils::Scalar;
 use typst_layout::PagedDocument;
-use typst_render::RenderOptions;
 
 const CONTRACT_VERSION: &str = "magazine-renderer/1";
 const STUDIO_BLOCKER: &str = "A named printer profile and preflight are required.";
@@ -127,13 +125,7 @@ fn manifest(p: &Publish) -> Result<Value> {
 pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
     let work = p.work;
     std::fs::create_dir_all(p.out_dir)?;
-    let front = typst_render::render(
-        &p.document.pages()[0],
-        &RenderOptions {
-            pixel_per_pt: Scalar::new(300.0 / 72.0),
-            render_bleed: false,
-        },
-    );
+    let front = super::cover::screen_front(p.document, 300.0 / 72.0)?;
     let cover = p.out_dir.join("cover.png");
     std::fs::write(&cover, front.encode_png()?)?;
     let reader = work.join("reader.pdf");
@@ -159,6 +151,7 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
         manifest: manifest(p)?,
         cover_art: cover_art.as_deref(),
         endpaper: endpaper.as_deref(),
+        spine_mm: super::cover::metadata_float(p.document, "mag-spine-mm"),
         cover_art_size_points: None,
         figure_placements: &figures,
         language: &p.edition.language,

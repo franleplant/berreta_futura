@@ -8,10 +8,42 @@ use image::codecs::jpeg::JpegEncoder;
 use image::{ExtendedColorType, ImageEncoder};
 use serde_json::{json, Value};
 use std::path::Path;
+use typst::introspection::MetadataElem;
 use typst::layout::{Frame, FrameItem, Point, Transform};
 use typst::utils::Scalar;
 use typst_layout::PagedDocument;
 use typst_render::RenderOptions;
+
+pub fn metadata_float(document: &PagedDocument, label: &str) -> Option<f64> {
+    document
+        .introspector()
+        .elements()
+        .all()
+        .filter(|c| c.label().is_some_and(|l| l.resolve().as_str() == label))
+        .find_map(|c| match c.to_packed::<MetadataElem>().map(|m| &m.value) {
+            Some(typst::foundations::Value::Float(value)) => Some(*value),
+            _ => None,
+        })
+}
+
+pub fn screen_front(document: &PagedDocument, pixel_per_pt: f64) -> Result<tiny_skia::Pixmap> {
+    let page = document
+        .pages()
+        .first()
+        .context("the document has no cover page")?;
+    let full = typst_render::render(
+        page,
+        &RenderOptions {
+            pixel_per_pt: Scalar::new(pixel_per_pt),
+            render_bleed: false,
+        },
+    );
+    let wrap = metadata_float(document, "mag-cover-wrap").unwrap_or(0.0);
+    let left = format!("{:.0}", wrap * pixel_per_pt).parse::<u32>()?;
+    tiny_skia::IntRect::from_xywh(i32::try_from(left)?, 0, full.width() - left, full.height())
+        .and_then(|rect| full.clone_rect(rect))
+        .context("the spine wrap is wider than the cover")
+}
 
 pub fn confine(document: &PagedDocument) -> Result<()> {
     let pages = document.pages();
@@ -26,7 +58,7 @@ pub fn confine(document: &PagedDocument) -> Result<()> {
                     && at[1] >= -0.5
                     && at[2] <= bounds.0 + 0.5
                     && at[3] <= bounds.1 + 0.5,
-                "Cover page {number} text leaves the page: {text}"
+                "Cover page {number} text leaves the page: {text} at {at:?}"
             );
             for (other, to) in &boxes[index + 1..] {
                 let across = at[2].min(to[2]) - at[0].max(to[0]);
@@ -46,6 +78,23 @@ fn ink(frame: &Frame, base: Transform, out: &mut Vec<(String, [f64; 4])>) {
     for (at, item) in frame.items() {
         let ts = base.pre_concat(Transform::translate(at.x, at.y));
         match item {
+            FrameItem::Group(group) if group.clip.is_some() => {
+                let inner = ts.pre_concat(group.transform);
+                let size = group.frame.size();
+                let corners = [(0.0, 0.0), (1.0, 1.0)]
+                    .map(|(x, y)| Point::new(size.x * x, size.y * y).transform(inner));
+                let mut clipped = vec![];
+                ink(&group.frame, inner, &mut clipped);
+                out.extend(clipped.into_iter().filter_map(|(text, at)| {
+                    let kept = [
+                        at[0].max(corners[0].x.to_pt()),
+                        at[1].max(corners[0].y.to_pt()),
+                        at[2].min(corners[1].x.to_pt()),
+                        at[3].min(corners[1].y.to_pt()),
+                    ];
+                    (kept[0] < kept[2] && kept[1] < kept[3]).then_some((text, kept))
+                }));
+            }
             FrameItem::Group(group) => ink(&group.frame, ts.pre_concat(group.transform), out),
             FrameItem::Text(text) => {
                 let (width, size) = (text.width(), text.size);
@@ -112,6 +161,9 @@ pub fn design(root: &Path) -> Result<Value> {
             });
         }
         doc["layout"][name] = table;
+    }
+    if crate::typeset::style::current() == crate::typeset::style::Style::Book {
+        doc["spine"]["wrap"] = json!(0.0);
     }
     Ok(doc)
 }
@@ -246,6 +298,8 @@ fn back(design: &Value, edition: &Edition) -> Value {
             "mass": mass,
             "statement": edition.cover.back_text.as_deref().unwrap_or(statement).trim(),
             "slug": format!("{end} / {}", cover_date(&edition.publication_date)),
+            "issue": cover_issue(edition),
+            "headline": edition.cover.headline.as_deref().unwrap_or(&edition.title),
         },
     })
 }
@@ -382,13 +436,7 @@ pub fn preview(root: &Path, edition: &Edition, work: &Path, width: f64) -> Resul
     let document = template::document(&template::world_in(&tree, &[work.to_path_buf()])?)?;
     confine(&document)?;
     let page = document.pages().first().context("the cover has no page")?;
-    let pixmap = typst_render::render(
-        page,
-        &RenderOptions {
-            pixel_per_pt: Scalar::new(width / page.frame.width().to_pt()),
-            render_bleed: false,
-        },
-    );
+    let pixmap = screen_front(&document, width / page.frame.width().to_pt())?;
     let rgb: Vec<u8> = pixmap
         .data()
         .chunks_exact(4)

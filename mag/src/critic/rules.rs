@@ -643,7 +643,17 @@ pub fn spread_text(glyphs: &[Glyph], media: [f64; 4]) -> String {
     } else {
         f64::INFINITY
     };
-    let (left, right): (Vec<_>, Vec<_>) = glyphs.iter().partition(|glyph| glyph.device_x < middle);
+    let mut seen = std::collections::HashSet::new();
+    let (left, right): (Vec<_>, Vec<_>) = glyphs
+        .iter()
+        .filter(|glyph| (media[0]..=media[2]).contains(&glyph.device_x))
+        .filter(|glyph| {
+            seen.insert((
+                glyph.text.clone(),
+                format!("{:.1} {:.1}", glyph.device_x, glyph.y),
+            ))
+        })
+        .partition(|glyph| glyph.device_x < middle);
     normalized(
         &left
             .into_iter()

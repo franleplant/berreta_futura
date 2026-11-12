@@ -12,6 +12,16 @@ orange = "#f05738"
 
 [spine]
 wrap = 28.35
+leaf_mm = 0.1
+extra_leaves = 4
+glue_mm = 1.7
+dot_mm = 0.2
+tolerance_mm = 2.0
+text_ratio = 0.5
+mark_ratio = 0.62
+text_inset = 40.0
+end_inset = 12.0
+color = "violet"
 
 [issue]
 place = "tag"
@@ -67,6 +77,13 @@ slug_x = 38.0
 slug_bottom = 26.0
 slug_size = 7.0
 slug_tracking = 1.6
+shout_x = 32.0
+shout_top = 28.0
+shout_height = 470.0
+shout_max_size = 90.0
+shout_min_size = 18.0
+mark_size = 34.0
+foot_bottom = 26.0
 
 [reference]
 en = "references/en.png"

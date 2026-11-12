@@ -22,6 +22,7 @@ pub struct Release<'a> {
     pub manifest: Value,
     pub cover_art: Option<&'a Path>,
     pub endpaper: Option<&'a Path>,
+    pub spine_mm: Option<f64>,
     pub cover_art_size_points: Option<(f64, f64)>,
     pub figure_placements: &'a [FigurePlacement],
     pub language: &'a str,
@@ -357,6 +358,7 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
             Pdf::read(&booklet)?.page_count() / 2,
             Pdf::read(&interior)?.page_count() / 2,
             Pdf::read(&cover)?.page_count(),
+            release.spine_mm,
             &parts
                 .iter()
                 .map(|part| Ok(Pdf::read(part)?.page_count() / 2))
@@ -440,6 +442,7 @@ pub fn printing_instructions(
     all_in_one_sheets: usize,
     interior_sheets: usize,
     cover_sides: usize,
+    spine_mm: Option<f64>,
     parts: &[usize],
 ) -> String {
     let first_interior = 3;
@@ -453,6 +456,7 @@ pub fn printing_instructions(
             1 => "1 hoja A4, a una sola cara: la contracubierta junto a la cubierta. El PDF es esa única página; no hay cara interior que imprimir.",
             _ => "1 hoja A4, a doble cara y volteando por el borde corto: la contracubierta junto a la cubierta por fuera y la guarda ilustrada por dentro, que cubre el interior de ambas tapas y cruza el pliegue.",
         };
+        let spine_es = spine_mm.map_or(String::new(), |mm| format!(" Lomo estimado: {} mm (el bloque de hojas A5 cortadas, más la hoja de cubierta interior, la hoja en blanco y la cola); los puntos negros en los bordes superior e inferior de la hoja señalan sus dos bordes, a {} mm a cada lado del centro.", spanish_mm(mm), format!("{:.2}", mm / 2.0).replace('.', ",")));
         return format!(
             "# Impresión doméstica\n\nImprimir al 100 % en A4 horizontal, a doble cara y volteando por el borde corto. En una impresora de una sola cara, imprimir primero las páginas impares del PDF y después las pares en orden inverso. Doblar el bloque por la mitad y graparlo a caballete. Hacer primero una prueba para confirmar la orientación de alimentación de la impresora.\n\n\
 Hay tres imposiciones de la misma revista. Imprimir el cuadernillo completo o bien la pareja de interior y cubierta, no ambas cosas.\n\n\
@@ -461,7 +465,7 @@ La revista entera, cubierta incluida: {all_in_one_sheets} hojas A4 en un solo pa
 ## booklet-a4-interior.pdf: interior en papel de texto\n\n\
 La página de créditos en una hoja propia (el resto de esa hoja queda en blanco) y luego las páginas {first_interior} a {last_interior} del PDF de lectura. Son {interior_sheets} hojas A4 en papel corriente de 80 a 100 g/m².\n\n\
 {split_es}## booklet-a4-cover.pdf: cubierta en papel más grueso\n\n\
-{cover_es} Usar papel más grueso (de 160 a 250 g/m², que dobla bien) y dejar secar la tinta antes de doblar.\n\n\
+{cover_es}{spine_es} Usar papel más grueso (de 160 a 250 g/m², que dobla bien) y dejar secar la tinta antes de doblar.\n\n\
 ## Montaje de la impresión en dos papeles\n\n\
 Doblar por separado el bloque interior y la hoja de cubierta, encajar el interior dentro de la cubierta doblada y grapar a caballete atravesando ambos por el lomo.\n"
         );
@@ -474,6 +478,7 @@ Doblar por separado el bloque interior y la hoja de cubierta, encajar el interio
         1 => "1 A4 sheet, printed single-sided: the back cover beside the front cover. The PDF is that one page; there is no inside face to print.",
         _ => "1 A4 sheet, printed duplex flipping on the short edge: the back cover beside the front cover outside, and the endpaper pattern inside, which lines both inside covers and runs across the fold.",
     };
+    let spine_en = spine_mm.map_or(String::new(), |mm| format!(" Estimated spine: {mm:.1} mm (the stack of cut A5 leaves, plus the inside cover sheet, the blank sheet, and the glue); the small black dots on the top and bottom edges of the sheet mark its two edges, {:.2} mm either side of the centre.", mm / 2.0));
     format!(
         "# Home printing\n\nPrint at 100% on A4 landscape, duplex, flipping on the short edge. On a simplex printer, print odd PDF pages first, then even PDF pages in reverse order. Fold the stack in half and saddle-staple. First run a test to confirm your printer's feed direction.\n\n\
 Three impositions of the same magazine are included. Print either the all-in-one booklet or the interior-and-cover pair, not both.\n\n\
@@ -482,10 +487,14 @@ The whole magazine, cover included: {all_in_one_sheets} A4 sheets on one stock. 
 ## booklet-a4-interior.pdf: interior on text stock\n\n\
 The credits page on a sheet of its own (the rest of that sheet stays blank), then reader pages {first_interior} to {last_interior}. {interior_sheets} A4 sheets on ordinary 80-100 gsm text stock.\n\n\
 {split_en}## booklet-a4-cover.pdf: cover wrap on heavier stock\n\n\
-{cover_en} Use heavier stock (160-250 gsm folds well) and let the ink dry before folding.\n\n\
+{cover_en}{spine_en} Use heavier stock (160-250 gsm folds well) and let the ink dry before folding.\n\n\
 ## Assembling the two-stock print\n\n\
 Fold the interior stack and the cover sheet separately, nest the interior inside the folded cover, then saddle-staple through the spine of both.\n"
     )
+}
+
+fn spanish_mm(mm: f64) -> String {
+    format!("{mm:.1}").replace('.', ",")
 }
 
 pub fn studio_note(language: &str) -> &'static str {
