@@ -602,12 +602,14 @@
 }
 
 #let cover-shout(source, size, palette) = {
+  let (font, weight) = COVER-FACES.shout
+  set text(font: font, weight: weight, size: size * 1pt, top-edge: "cap-height", bottom-edge: "baseline", tracking: -0.03em, spacing: 70%, hyphenate: false)
   set par(leading: 0.08em, justify: false)
   let quoted = source.replace(regex("\"([^\"]*)\""), m => "\u{201C}" + m.captures.first() + "\u{201D}").replace("'", "\u{2019}")
-  for (index, word) in quoted.split().enumerate() {
-    let (font, weight) = COVER-FACES.shout
-    text(font: font, weight: weight, size: size * 1pt, top-edge: "cap-height", bottom-edge: "baseline", tracking: -0.03em, fill: palette.at(calc.rem(index, 2)), hyphenate: false, upper(word))
-    [ #h(0.12em) ]
+  let words = quoted.split()
+  for (index, word) in words.enumerate() {
+    text(fill: palette.at(calc.rem(index, 2)), upper(word))
+    if index < words.len() - 1 [ ]
   }
 }
 
