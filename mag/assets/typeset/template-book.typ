@@ -604,7 +604,7 @@
 #let cover-shout(source, size, palette) = {
   let (font, weight) = COVER-FACES.shout
   set text(font: font, weight: weight, size: size * 1pt, top-edge: "cap-height", bottom-edge: "baseline", tracking: -0.03em, spacing: 70%, hyphenate: false)
-  set par(leading: 0.08em, justify: false)
+  set par(leading: 0.04em, justify: false)
   let quoted = source.replace(regex("\"([^\"]*)\""), m => "\u{201C}" + m.captures.first() + "\u{201D}").replace("'", "\u{2019}")
   let words = quoted.split()
   for (index, word) in words.enumerate() {
