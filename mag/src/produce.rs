@@ -1100,7 +1100,13 @@ fn parse_front_matter(
     names: &[String],
     past: &[(String, String)],
 ) -> Result<HashMap<String, String>> {
-    let keys = ["title", "subtitle", "back_text", "title_options"];
+    let keys = [
+        "title",
+        "subtitle",
+        "back_text",
+        "title_options",
+        "title_why",
+    ];
     let drafted: HashMap<String, String> = reply
         .lines()
         .filter_map(|line| line.split_once(':'))
@@ -1116,6 +1122,12 @@ fn parse_front_matter(
         if value.is_empty() || value.contains('\u{2014}') {
             bail!("front matter {key} is missing, empty, or carries an em dash");
         }
+    }
+    if let Some(bare) = drafted["title_options"]
+        .split(" | ")
+        .find(|o| !(o.trim_end().ends_with(')') && o.contains(" (")))
+    {
+        bail!("front matter title option {bare:?} has no explainer in parentheses");
     }
     let back = &drafted["back_text"];
     let words = back.split_whitespace().count();
@@ -1155,6 +1167,9 @@ fn parse_front_matter(
 }
 
 const REJECTED_TITLE: &str = "# rejected title: ";
+const TITLE_WHY: &str = "# why this title: ";
+const TITLE_OPTIONS: &str = "# other title directions:";
+const TITLE_OPTION: &str = "#   - ";
 const REJECTED_BACK: &str = "# rejected back_text: ";
 
 fn reject_front_matter(edition_yaml: &Path) -> Result<()> {
@@ -1165,10 +1180,11 @@ fn reject_front_matter(edition_yaml: &Path) -> Result<()> {
         spec["title"].as_str().unwrap_or_default(),
         spec["cover"]["back_text"].as_str().unwrap_or_default()
     );
-    for line in text
-        .lines()
-        .filter(|l| !l.starts_with("# other title directions: "))
-    {
+    for line in text.lines().filter(|l| {
+        ![TITLE_WHY, TITLE_OPTIONS, TITLE_OPTION]
+            .iter()
+            .any(|p| l.starts_with(p))
+    }) {
         let todo = FRONT_TODOS
             .iter()
             .find(|(todo, _)| line.starts_with(&todo[..todo.len() - 4]));
@@ -1422,8 +1438,12 @@ fn fill_todos(text: &str, drafted: &HashMap<String, String>) -> String {
         .lines()
         .map(|line| match front_todo(line) {
             Some((todo, "title")) if !todo.starts_with(' ') => format!(
-                "# other title directions: {}\ntitle: {}",
-                drafted["title_options"].trim(),
+                "{TITLE_WHY}{}\n{TITLE_OPTIONS}\n{}title: {}",
+                drafted["title_why"].trim(),
+                drafted["title_options"]
+                    .split(" | ")
+                    .map(|o| format!("{TITLE_OPTION}{}\n", o.trim()))
+                    .collect::<String>(),
                 yq(&drafted["title"])
             ),
             Some((todo, key)) => format!("{}{}", &todo[..todo.len() - 4], yq(&drafted[*key])),
@@ -1721,6 +1741,20 @@ mod tests {
     }
 
     #[test]
+    fn every_title_comes_with_its_explainer() {
+        let reply = |options: &str| {
+            format!("title: T\nsubtitle: S\nback_text: Count the spoons.\ntitle_options: {options}\ntitle_why: W holds all.\n")
+        };
+        assert!(parse_front_matter(&reply("A (a) | B"), &[], &[]).is_err());
+        let drafted = parse_front_matter(&reply("A (pictures a) | B (holds b)"), &[], &[]).unwrap();
+        let filled = fill_todos("title: TODO\n", &drafted);
+        assert_eq!(
+            filled,
+            "# why this title: W holds all.\n# other title directions:\n#   - A (pictures a)\n#   - B (holds b)\ntitle: T\n"
+        );
+    }
+
+    #[test]
     fn the_back_cover_names_no_article_title_or_author() {
         let names = [
             "Introducing PACT".to_string(),
@@ -1728,7 +1762,7 @@ mod tests {
             "Mitchell Hashimoto".to_string(),
         ];
         let reply = |back: &str| {
-            format!("title: T\nsubtitle: S\nback_text: {back}\ntitle_options: A | B\n")
+            format!("title: T\nsubtitle: S\nback_text: {back}\ntitle_options: A (a) | B (b)\ntitle_why: W\n")
         };
         assert!(parse_front_matter(
             &reply("Your agent has more keys than you do. Count them."),
@@ -1760,7 +1794,7 @@ mod tests {
                 .to_string(),
         )];
         let reply = |title: &str, back: &str| {
-            format!("title: {title}\nsubtitle: S\nback_text: {back}\ntitle_options: A | B\n")
+            format!("title: {title}\nsubtitle: S\nback_text: {back}\ntitle_options: A (a) | B (b)\ntitle_why: W\n")
         };
         assert!(parse_front_matter(
             &reply("Hard Hats", "Your new coworker works all night."),

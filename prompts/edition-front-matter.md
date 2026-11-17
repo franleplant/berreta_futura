@@ -33,7 +33,9 @@ the last few (if they are all two-word idioms, do not write a third).
 Before choosing, draft candidates in genuinely different directions: a
 concrete object, a place, a verb or command, a question, a number, a
 joke, a borrowed phrase bent out of shape. Pick the strongest, and report
-four of the others as `title_options` so the editor can steer.
+four of the others as `title_options` so the editor can steer. Explain
+every title in one short sentence: what it pictures and which articles it
+holds, so the editor can judge it without rereading the issue.
 
 The subtitle/deck may then do the inventory work plainly: what is actually
 inside, concretely, without theme-speak.
@@ -69,7 +71,8 @@ Reply with YAML only, no fences and no commentary, with exactly these keys,
 each a single-line string:
 
 title: the edition title
-title_options: four other title candidates in different directions, separated by " | "
+title_why: one short sentence explaining the title against the articles
+title_options: four other title candidates in different directions, each followed by its one-sentence explainer in parentheses, separated by " | "
 subtitle: the deck (inventory line)
 back_text: the back cover
 
