@@ -101,33 +101,11 @@ fn append_rows(plan_text: &str, rows: &[serde_norway::Value]) -> Result<String> 
     Ok(appended)
 }
 
-const VERBATIM_AUTO_WORD_LIMIT: usize = 1750;
-const IMAGE_WORD_COST: usize = 210;
-
-fn mode_for_source_text(text: &str) -> ContentMode {
-    let cost = text.split_whitespace().count() + text.matches("![").count() * IMAGE_WORD_COST;
-    if cost <= VERBATIM_AUTO_WORD_LIMIT {
-        ContentMode::Verbatim
-    } else {
-        ContentMode::Article
-    }
-}
-
-fn default_mode(sid: &str) -> Result<ContentMode> {
-    let path = PathBuf::from("library/sources")
-        .join(sid)
-        .join("article.md");
-    Ok(mode_for_source_text(&read(&path)?))
-}
-
 fn row_from_record(
     sid: &str,
     mode: Option<ContentMode>,
 ) -> Result<(serde_norway::Value, ContentMode)> {
-    let mode = match mode {
-        Some(m) => m,
-        None => default_mode(sid)?,
-    };
+    let mode = mode.unwrap_or(ContentMode::Article);
     let record_path = PathBuf::from("library/sources")
         .join(sid)
         .join("record.yaml");
@@ -444,16 +422,6 @@ edition:
             .unwrap_err()
             .to_string();
         assert!(err.contains("merged-nutshell, solo-article"), "{err}");
-    }
-
-    #[test]
-    fn mode_for_source_text_promotes_when_it_fits_seven_pages() {
-        let short = ["word"; 1700].join(" ");
-        assert_eq!(mode_for_source_text(&short), ContentMode::Verbatim);
-        let long = ["word"; 1800].join(" ");
-        assert_eq!(mode_for_source_text(&long), ContentMode::Article);
-        let with_images = format!("{} ![a](m/1.png) ![b](m/2.png)", ["word"; 1400].join(" "));
-        assert_eq!(mode_for_source_text(&with_images), ContentMode::Article);
     }
 
     #[test]

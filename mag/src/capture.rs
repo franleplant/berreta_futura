@@ -1279,7 +1279,7 @@ pub struct CaptureArgs {
     pub article: Option<String>,
     #[arg(
         long,
-        help = "Content mode for the new plan row (default: verbatim when the source fits seven reader pages, else article)"
+        help = "Content mode for the new plan row (default: article; verbatim only when asked)"
     )]
     pub mode: Option<crate::model::kinds::ContentMode>,
     #[arg(long, default_value = "sonnet")]
