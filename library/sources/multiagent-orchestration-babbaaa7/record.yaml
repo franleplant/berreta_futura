@@ -1,0 +1,8 @@
+id: multiagent-orchestration-babbaaa7
+title: 'Multiagent orchestration'
+author: 'Claude Platform Docs'
+url: https://platform.claude.com/docs/en/managed-agents/multiagent-orchestration
+site: 'Claude Platform Docs'
+captured_at: '2026-11-17T00:20:52Z'
+tags: []
+synopsis: 'Documentation for configuring Managed Agents multiagent orchestration, covering subagents, dynamic workflows, advisor models, predefined and inline agents, MCP and vault handling, and migration from the coordinator type.'

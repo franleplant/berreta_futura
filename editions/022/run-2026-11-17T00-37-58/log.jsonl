@@ -1,0 +1,33 @@
+{"attempt":0,"label":"announcing-the-graphql-over-http-specification cleanup","model":"sonnet","seconds":4.7,"usd":0.0615}
+{"attempt":0,"label":"the-home-repo-pattern cleanup","model":"sonnet","seconds":5.0,"usd":0.0662}
+{"attempt":0,"label":"kitesurf-is-now-open-source cleanup","model":"sonnet","seconds":5.1,"usd":0.064}
+{"attempt":0,"label":"cursor-projects-is-now-multiplayer cleanup","model":"sonnet","seconds":5.6,"usd":0.0578}
+{"attempt":0,"label":"introducing-alphaproof-code-a-breakthrough-in-ve cleanup","model":"sonnet","seconds":7.3,"usd":0.0659}
+{"attempt":0,"label":"introducing-claude-meetings-now-in-beta cleanup","model":"sonnet","seconds":8.4,"usd":0.0632}
+{"attempt":0,"label":"amazon-saves-millions-by-replacing-sonnet-4-6-wi cleanup","model":"sonnet","seconds":4.1,"usd":0.0646}
+{"attempt":0,"label":"multiagent-orchestration cleanup","model":"sonnet","seconds":9.3,"usd":0.1184}
+{"attempt":0,"label":"claude-can-design-electronic-prototypes-from-sta write","model":"opus","seconds":17.2,"usd":0.1919}
+{"attempt":0,"label":"building-always-on-agents write","model":"opus","seconds":22.6,"usd":0.2027}
+{"attempt":0,"label":"how-complex-systems-fail write","model":"opus","seconds":23.2,"usd":0.1827}
+{"attempt":0,"label":"push-events-into-a-running-session-with-channels write","model":"opus","seconds":25.6,"usd":0.2247}
+{"attempt":0,"label":"choosing-quepaxa-an-unusual-consensus-algorithm write","model":"opus","seconds":32.7,"usd":0.2565}
+{"attempt":0,"label":"how-the-claude-code-team-thinks-about-verificati write","model":"opus","seconds":41.5,"usd":0.2455}
+{"attempt":0,"label":"adapting-to-ai-penetration-testing-orchestrators write","model":"opus","seconds":41.5,"usd":0.2365}
+{"attempt":0,"label":"which-claude-model-should-you-build-with-fable-o write","model":"opus","seconds":50.1,"usd":0.2957}
+{"attempt":0,"label":"building-strong-safety-evaluations write","model":"opus","seconds":52.7,"usd":0.3052}
+{"attempt":0,"label":"which-claude-model-should-you-build-with-fable-o trim1","model":"opus","seconds":21.9,"usd":0.2693}
+{"attempt":0,"label":"building-strong-safety-evaluations trim1","model":"opus","seconds":25.9,"usd":0.2866}
+{"attempt":0,"label":"article-labels","model":"opus","seconds":16.1,"usd":0.144}
+{"attempt":2,"label":"author-bios","model":"opus","seconds":20.5,"usd":0.1569}
+{"attempt":1,"label":"adapting-to-ai-penetration-testing-orchestrators figure anchors","model":"haiku","seconds":5.4,"usd":0.0035}
+{"attempt":0,"label":"building-always-on-agents figure anchors","model":"haiku","seconds":3.2,"usd":0.0032}
+{"attempt":0,"label":"choosing-quepaxa-an-unusual-consensus-algorithm figure anchors","model":"haiku","seconds":5.2,"usd":0.0035}
+{"attempt":0,"label":"how-the-claude-code-team-thinks-about-verificati figure anchors","model":"haiku","seconds":3.9,"usd":0.0033}
+{"attempt":0,"label":"claude-can-design-electronic-prototypes-from-sta figure anchors","model":"haiku","seconds":3.9,"usd":0.0031}
+{"attempt":0,"label":"front-matter","model":"opus","seconds":19.9,"usd":0.5094}
+{"attempt":0,"label":"introducing-claude-meetings-now-in-beta cleanup","model":"sonnet","seconds":2.8,"usd":0.0597}
+{"attempt":0,"label":"introducing-claude-meetings-now-in-beta write","model":"opus","seconds":34.0,"usd":0.1657}
+{"attempt":0,"label":"cursor-projects-is-now-multiplayer write","model":"opus","seconds":34.0,"usd":0.1491}
+{"attempt":0,"label":"amazon-saves-millions-by-replacing-sonnet-4-6-wi write","model":"opus","seconds":39.1,"usd":0.1895}
+{"attempt":0,"label":"the-home-repo-pattern write","model":"opus","seconds":42.6,"usd":0.1916}
+{"attempt":0,"label":"introducing-claude-meetings-now-in-beta figure anchors","model":"haiku","seconds":3.9,"usd":0.0035}

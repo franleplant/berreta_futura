@@ -1,0 +1,105 @@
+edition:
+  id: '022'
+articles:
+- id: multiagent-orchestration
+  title: Multiagent orchestration
+  author: Claude Platform Docs
+  content_mode: verbatim
+  source_ids:
+  - multiagent-orchestration-babbaaa7
+- id: push-events-into-a-running-session-with-channels
+  title: Push events into a running session with channels
+  author: Claude Code Docs
+  content_mode: article
+  source_ids:
+  - push-events-into-a-running-session-with-channels-a5b416ea
+- id: kitesurf-is-now-open-source
+  title: Kitesurf is now open source
+  author: Celso Martinho, Rui Figueira, Bernardo Pereira, Luís Duarte
+  content_mode: verbatim
+  source_ids:
+  - kitesurf-is-now-open-source-a443b3b0
+- id: adapting-to-ai-penetration-testing-orchestrators
+  title: 'Adapting to AI penetration testing orchestrators: The Modern Security Model'
+  author: Blake Darché, Myles Sloan, Jacob Crisp, Cloudforce One
+  content_mode: article
+  source_ids:
+  - adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+- id: building-always-on-agents
+  title: Building always-on agents
+  author: William Hu
+  content_mode: article
+  source_ids:
+  - building-always-on-agents-2fce942b
+- id: building-strong-safety-evaluations
+  title: Building strong safety evaluations
+  author: Ruth Appel, Evan Frondorf, Jeremy Hadfield, Rebecca Hiscott, Kamya Jagadish, Shayne Longpre, Madeleine Tucker, Brett Wittmershaus
+  content_mode: article
+  source_ids:
+  - building-strong-safety-evaluations-3007f82c
+- id: the-home-repo-pattern
+  title: The Home Repo Pattern
+  author: Matt Pocock
+  content_mode: article
+  source_ids:
+  - the-home-repo-pattern-32e9cfe4
+- id: introducing-claude-meetings-now-in-beta
+  title: Introducing Claude Meetings, now in beta
+  author: Anthropic
+  content_mode: article
+  source_ids:
+  - introducing-claude-meetings-now-in-beta-779abe28
+- id: announcing-the-graphql-over-http-specification
+  title: Announcing the GraphQL over HTTP specification
+  author: GraphQL TSC
+  content_mode: verbatim
+  source_ids:
+  - announcing-the-graphql-over-http-specification-eb1359d5
+- id: introducing-alphaproof-code-a-breakthrough-in-ve
+  title: 'Introducing AlphaProof Code: a breakthrough in verifying complex software at depth'
+  author: Pushmeet Kohli and Swarat Chaudhuri
+  content_mode: verbatim
+  source_ids:
+  - introducing-alphaproof-code-a-breakthrough-in-ve-f321c904
+- id: choosing-quepaxa-an-unusual-consensus-algorithm
+  title: Choosing QuePaxa, an unusual consensus algorithm
+  author: João Pedro Leite, Bob Halley, James Larisch
+  content_mode: article
+  source_ids:
+  - choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+- id: cursor-projects-is-now-multiplayer
+  title: Cursor Projects is now multiplayer
+  author: Aryaman Khandelwal
+  content_mode: article
+  source_ids:
+  - cursor-projects-is-now-multiplayer-f971ad04
+- id: which-claude-model-should-you-build-with-fable-o
+  title: Which Claude model should you build with? Fable, Opus, Sonnet, or Haiku
+  author: Addy Osmani
+  content_mode: article
+  source_ids:
+  - which-claude-model-should-you-build-with-fable-o-5c11131c
+- id: amazon-saves-millions-by-replacing-sonnet-4-6-wi
+  title: Amazon saves millions by replacing Sonnet 4.6 with Strands Decider
+  author: Carr Onstott, Mehul Jaiswal, Strands Agents Team
+  content_mode: article
+  source_ids:
+  - amazon-saves-millions-by-replacing-sonnet-4-6-wi-d8522f99
+- id: how-complex-systems-fail
+  title: How Complex Systems Fail
+  author: Richard I. Cook, MD
+  content_mode: article
+  source_ids:
+  - how-complex-systems-fail-f68b1a5e
+- id: how-the-claude-code-team-thinks-about-verificati
+  title: How the Claude Code team thinks about verification
+  author: Addy Osmani
+  content_mode: article
+  source_ids:
+  - how-the-claude-code-team-thinks-about-verificati-fdb3c1f1
+- id: claude-can-design-electronic-prototypes-from-sta
+  title: Claude can design electronic prototypes from start to finish
+  author: Mike Cretella, Connor Jennings, Brent Yi, Craig Chen
+  content_mode: article
+  source_ids:
+  - claude-can-design-electronic-prototypes-from-sta-0c77ff5e

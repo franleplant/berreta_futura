@@ -1,0 +1,9 @@
+id: building-always-on-agents-2fce942b
+title: 'Building always-on agents'
+author: 'William Hu'
+url: https://claude.com/resources/articles/building-always-on-agents
+site: 'Claude'
+captured_at: '2026-11-17T00:23:37Z'
+published_at: '2026-11-13'
+tags: []
+synopsis: 'Always-on agents run on the same core loop as other agents but add five primitives (event inbox, timers, memory, permissions, and outbox) that control when they wake, what persists between runs, and how their work reaches the user.'

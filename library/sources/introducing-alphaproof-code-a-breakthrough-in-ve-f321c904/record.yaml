@@ -1,0 +1,9 @@
+id: introducing-alphaproof-code-a-breakthrough-in-ve-f321c904
+title: 'Introducing AlphaProof Code: a breakthrough in verifying complex software at depth'
+author: 'Pushmeet Kohli and Swarat Chaudhuri'
+url: https://deepmind.google/blog/introducing-alphaproof-code/
+site: 'Google DeepMind'
+captured_at: '2026-11-17T00:26:31Z'
+published_at: '2026-11-10'
+tags: []
+synopsis: 'Google DeepMind researchers used AlphaProof Code, a multi-LLM agentic framework combining human experts and AI agents, to formally verify in Lean the actual code of Signal''s cryptographic protocol in four weeks.'

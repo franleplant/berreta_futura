@@ -1,0 +1,9 @@
+id: announcing-the-graphql-over-http-specification-eb1359d5
+title: 'Announcing the GraphQL over HTTP specification'
+author: 'GraphQL TSC'
+url: https://graphql.org/blog/2026-11-12-announcing-the-graphql-over-http-spec/
+site: 'GraphQL'
+captured_at: '2026-11-17T00:25:55Z'
+published_at: '2026-11-12'
+tags: []
+synopsis: 'The GraphQL Foundation announces the first release of the GraphQL over HTTP specification, which standardizes the application/graphql-response+json media type, status code rules, and HTTP request handling, with QUERY verb, persisted documents, and batching planned next.'

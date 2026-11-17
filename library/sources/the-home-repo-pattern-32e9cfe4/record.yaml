@@ -1,0 +1,9 @@
+id: the-home-repo-pattern-32e9cfe4
+title: 'The Home Repo Pattern'
+author: 'Matt Pocock'
+url: https://www.aihero.dev/the-home-repo-pattern
+site: 'aihero.dev'
+captured_at: '2026-11-17T00:25:15Z'
+published_at: '2026-11-12'
+tags: []
+synopsis: 'A Home Repo is a single repository holding a developer''s skills, AGENTS.md and shared docs, with navigation pointers to their other repos, so an agent run from it can work across all of them, and the article supplies a copyable setup prompt and an FAQ.'

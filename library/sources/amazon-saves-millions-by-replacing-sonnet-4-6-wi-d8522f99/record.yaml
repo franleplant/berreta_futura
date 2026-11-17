@@ -1,0 +1,9 @@
+id: amazon-saves-millions-by-replacing-sonnet-4-6-wi-d8522f99
+title: 'Amazon saves millions by replacing Sonnet 4.6 with Strands Decider'
+author: 'Carr Onstott, Mehul Jaiswal, Strands Agents Team'
+url: https://strandsagents.com/blog/amazon-saves-millions-replacing-sonnet-with-strands-decider/
+site: 'Strands Agents'
+captured_at: '2026-11-17T00:29:18Z'
+published_at: '2026-11-09'
+tags: []
+synopsis: 'Two Amazon engineers replaced Claude Sonnet 4.6 with the Strands Decider E4B decision model for labeling internal tickets, matching its quality at about 98% lower cost and 78% lower latency, using a three-way AppConfig switch to run both models side by side before cutting over.'

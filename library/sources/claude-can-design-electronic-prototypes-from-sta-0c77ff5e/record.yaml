@@ -1,0 +1,9 @@
+id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+title: 'Claude can design electronic prototypes from start to finish'
+author: 'Mike Cretella, Connor Jennings, Brent Yi, Craig Chen'
+url: https://www.anthropic.com/research/claude-electronics-design
+site: 'anthropic.com'
+captured_at: '2026-11-17T00:35:00Z'
+published_at: '2026-11-09'
+tags: []
+synopsis: 'Anthropic and Diode Computers report that Claude Fable 5.2 designed three electronic devices (a speakerphone, a voice-assistant hub, and a handheld virtual pet) from specification through PCB layout, enclosure, and firmware, and that Diode''s prototypes worked without circuit fixes.'

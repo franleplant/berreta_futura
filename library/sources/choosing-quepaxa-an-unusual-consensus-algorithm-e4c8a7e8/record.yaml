@@ -1,0 +1,9 @@
+id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+title: 'Choosing QuePaxa, an unusual consensus algorithm'
+author: 'João Pedro Leite, Bob Halley, James Larisch'
+url: https://blog.cloudflare.com/choosing-quepaxa
+site: 'Cloudflare Blog'
+captured_at: '2026-11-17T00:27:50Z'
+published_at: '2026-11-11'
+tags: []
+synopsis: 'Cloudflare explains why its Meerkat consensus service uses the leader-optional QuePaxa algorithm instead of Raft or Paxos, since leader-based protocols stall under destructive interference and fault-detection errors on volatile global networks, and walks through QuePaxa''s four-phase protocol.'

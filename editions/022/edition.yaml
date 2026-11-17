@@ -1,0 +1,728 @@
+# Edition 22 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 022`.
+# Article order here is the reading order; reorder freely.
+id: '022'
+issue_number: 22
+# why this title: coordination with no single boss: leaderless QuePaxa, one agent handing work to others, multiplayer Projects, a model joining the call.
+# other title directions:
+#   - A Crowd in the Kitchen (too many cooks: many agents and people on one job, from multiagent orchestration to multiplayer Projects and Meetings)
+#   - Who Holds the Pager? (who answers for what runs unattended: always-on agents, on-call rotations, How Complex Systems Fail, verification)
+#   - Five Hundred Hands (scale and parallel workers, pentest swarms and fleets of subagents)
+#   - Pass It Down the Line (handoffs: subagents reporting back, channels pushing events into a session)
+title: Nobody at the Head of the Table
+subtitle: Agents that hand work to other agents, a consensus algorithm with an optional leader, a swarm of pentest bots, a model on your video call, a circuit board nobody had to fix, and how to check any of it
+publication_date: '2026-11-17'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+  typesetting: book
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: Nobody at the Head of the Table
+  deck: Agents that hand work to other agents, a consensus algorithm with an optional leader, a swarm of pentest bots, a model on your video call, a circuit board nobody had to fix, and how to check any of it
+  back_text: 'House rules for the group chat: anyone can order the pizza, nobody can cancel it, and the last one to reply pays.'
+  art_path: editions/022/art/picks/cover-owl-one-eye-open-v1.jpg
+  endpaper_path: editions/022/art/picks/endpaper-branch-relay-v1.jpg
+articles:
+- id: multiagent-orchestration
+  title: Multiagent orchestration
+  short_title: Multiagent orchestration
+  display_emphasis: Multiagent orchestration
+  opener_variant: stepped_title
+  author: Claude Platform Docs
+  author_note: Anthropic's developer documentation site.
+  content_mode: verbatim
+  source_ids:
+  - multiagent-orchestration-babbaaa7
+  manuscript: editions/022/articles/multiagent-orchestration.md
+  opener_art:
+    path: editions/022/art/picks/opener-multiagent-parcel-split-v1.jpg
+    alt_text: 'A small robot divides a big parcel into three smaller ones and hands them to a boy and a girl who head off in different directions.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-multiagent-pieces-join-v1.jpg
+- id: push-events-into-a-running-session-with-channels
+  title: Push events into a running session with channels
+  short_title: Push events into a running session
+  display_emphasis: channels
+  opener_variant: stepped_title
+  author: Claude Code Docs
+  author_note: Anthropic's documentation for its command-line coding tool.
+  content_mode: article
+  source_ids:
+  - push-events-into-a-running-session-with-channels-a5b416ea
+  manuscript: editions/022/articles/push-events-into-a-running-session-with-channels.md
+  opener_art:
+    path: editions/022/art/picks/opener-channels-tube-note-v1.jpg
+    alt_text: 'A girl drops a capsule into a curving tube that delivers it to a small robot, who catches it while helping a boy build a block tower.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-channels-long-tube-v1.jpg
+- id: kitesurf-is-now-open-source
+  title: Kitesurf is now open source
+  short_title: Kitesurf is now open source
+  display_emphasis: Kitesurf
+  opener_variant: stepped_title
+  author: Celso Martinho, Rui Figueira, Bernardo Pereira, Luís Duarte
+  author_note: Engineers at Cloudflare.
+  content_mode: verbatim
+  source_ids:
+  - kitesurf-is-now-open-source-a443b3b0
+  manuscript: editions/022/articles/kitesurf-is-now-open-source.md
+  figures:
+  - id: figure-1
+    source_id: kitesurf-is-now-open-source-a443b3b0
+    path: media/001.png
+    caption: 'How a screencast flows through Kitesurf: the engine spins up an isolate for the page, then loops render, raster, and frame acknowledgement over CDP.'
+    alt_text: 'Sequence diagram with five lanes: CDP Client, Engine, PageScript, PageRenderer, and Blitz wasm. After Page.navigate the engine bakes the module graph and spins up a fresh isolate; inside a loop, renderFrame calls pull the scene, raster it to JPEG bytes, and return pixels as Page.screencastFrame messages.'
+    anchor: What is inside the repository?
+    layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-kitesurf-painted-frames-v1.jpg
+    alt_text: 'Sequence diagram with five lanes: CDP Client, Engine, PageScript, PageRenderer, and Blitz wasm. After Page.navigate the engine bakes the module graph and spins up a fresh isolate; inside a loop, renderFrame calls pull the scene, raster it to JPEG bytes, and return pixels as Page.screencastFrame messages.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-kitesurf-postcard-line-v1.jpg
+- id: adapting-to-ai-penetration-testing-orchestrators
+  title: 'Adapting to AI penetration testing orchestrators: The Modern Security Model'
+  short_title: AI penetration testing orchestrators
+  display_emphasis: orchestrators
+  opener_variant: stepped_title
+  author: Blake Darché, Myles Sloan, Jacob Crisp, Cloudforce One
+  author_note: Threat researchers at Cloudflare.
+  content_mode: article
+  source_ids:
+  - adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+  manuscript: editions/022/articles/adapting-to-ai-penetration-testing-orchestrators.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+    path: media/001.png
+    caption: 'After the ARTEX repository was deleted, its code lived on in mirrors, translations, derivatives, and a maintained successor.'
+    alt_text: 'Radial tree with the deleted ARTEX repository at the centre and forks grouped into backups and mirrors, translations, derivatives, and a maintained successor, the largest labelled with their GitHub star counts.'
+    anchor: __opener__
+    layout: evidence_band
+  - id: figure-2
+    source_id: adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+    path: media/002.png
+    caption: 'Daily requests from AI-driven offensive security tools grew nearly 12x in a month, led by ARTEX-associated tools and ScopeWeaver.'
+    alt_text: 'Line chart from 1 October to 11 November of daily requests per tool, with a marker at 8 October when the ARTEX repository was taken down; the total climbs steeply after it.'
+    anchor: What we see
+    layout: evidence_band
+  # - id: figure-3
+  #   source_id: adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+  #   path: media/003.png
+  #   caption: 'Unique source IPs sending these requests each day grew nearly 7x over the same month.'
+  #   alt_text: 'Line chart from 1 October to 11 November of daily unique source IPs for all tracked tools, rising steadily after the 8 October takedown marker.'
+  #   anchor: What we see
+  #   layout: evidence_band
+  # - id: figure-4
+  #   source_id: adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+  #   path: media/004.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Observations from the world's largest network
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+  #   path: media/005.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Observations from the world's largest network
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+  #   path: media/006.png
+  #   caption: security-model.png
+  #   alt_text: security-model.png
+  #   anchor: 'Remove the back door: implement Identity-Gated Access and micro-segmentation'
+  #   layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-pentest-fence-check-v1.jpg
+    alt_text: 'Line chart from 1 October to 11 November of daily unique source IPs for all tracked tools, rising steadily after the 8 October takedown marker.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-pentest-small-pens-v1.jpg
+- id: building-always-on-agents
+  title: Building always-on agents
+  short_title: Building always-on agents
+  display_emphasis: always-on agents
+  opener_variant: stepped_title
+  author: William Hu
+  author_note: Works at Anthropic.
+  content_mode: article
+  source_ids:
+  - building-always-on-agents-2fce942b
+  manuscript: editions/022/articles/building-always-on-agents.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: building-always-on-agents-2fce942b
+    path: media/001.png
+    caption: 'Animated diagram of an always-on agent’s timeline: long stretches asleep with no tokens spent, broken by brief runs.'
+    alt_text: 'Animated diagram of an always-on agent’s timeline: long stretches asleep with no tokens spent, broken by brief runs. Each run has four steps: an event arrives, a session starts, the agent loop runs, and the run writes back to stored state that carries over between runs.'
+    anchor: The cycle
+    layout: compact_band
+  - id: figure-2
+    source_id: building-always-on-agents-2fce942b
+    path: media/002.png
+    caption: Diagram of the event inbox.
+    alt_text: Diagram of the event inbox. A handler (an HTTP endpoint) writes each event to the inbox, a database table that tracks status and drops duplicates, and wakes the worker. The worker reads what’s pending, starts the run, waits for it to finish, and marks the events done.
+    anchor: Event inbox
+    layout: evidence_band
+  - id: figure-3
+    source_id: building-always-on-agents-2fce942b
+    path: media/003.png
+    caption: Diagram of timers.
+    alt_text: Diagram of timers. A run sets a timer in a database table, either a follow-up set by the agent or a schedule set by the user. A scheduler finds what’s due and adds an event to the event inbox, which starts the next run.
+    anchor: Timers
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: building-always-on-agents-2fce942b
+  #   path: media/004.png
+  #   caption: Diagram of an example memory setup as a directory of files.
+  #   alt_text: Diagram of an example memory setup as a directory of files. instructions.md, index.md, and reported.md are loaded at the start of every run, while the notes/ and progress/ folders are read when needed. The agent writes to memory during the run.
+  #   anchor: Memory
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: building-always-on-agents-2fce942b
+  #   path: media/006.png
+  #   caption: Diagram of the outbox.
+  #   alt_text: Diagram of the outbox. A run ends with nothing to say, a send tool call, or a deferred tool call that asks the user. Messages go to the outbox, a database table, and a dispatcher delivers them to the user. A deferred request can go through the outbox or be shown in your own interface.
+  #   anchor: Outbox
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: building-always-on-agents-2fce942b
+  #   path: media/007.png
+  #   caption: Animated diagram of how the five primitives fit together.
+  #   alt_text: Animated diagram of how the five primitives fit together. Timers and the event inbox start a run, the run works with memory and permissions inside a session, and the outbox delivers messages to the user, whose answer comes back as an event.
+  #   anchor: How everything fits together
+  #   layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-always-on-bell-wakes-v1.jpg
+    alt_text: 'A small robot dozing in an armchair snaps awake when a girl rings a little bell on a string, while a boy holds out a box for him.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-always-on-mailbox-nap-v1.jpg
+- id: building-strong-safety-evaluations
+  title: Building strong safety evaluations
+  short_title: Building strong safety evaluations
+  display_emphasis: safety evaluations
+  opener_variant: stepped_title
+  author: Ruth Appel, Evan Frondorf, Jeremy Hadfield, Rebecca Hiscott, Kamya Jagadish, Shayne Longpre, Madeleine Tucker, Brett Wittmershaus
+  author_note: Researchers at Anthropic.
+  content_mode: article
+  source_ids:
+  - building-strong-safety-evaluations-3007f82c
+  manuscript: editions/022/articles/building-strong-safety-evaluations.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: building-strong-safety-evaluations-3007f82c
+    path: media/002.png
+    caption: Diagram titled “Recommendations for building AI safety evals,” with four columns.
+    alt_text: 'Diagram titled “Recommendations for building AI safety evals,” with four columns. Safety first: build a team with the right skills; run evals safely. 1. Design: match the design to the question; measure what you mean to measure; make sure the results generalize. 2. Run: keep measures internally valid; preregister. 3. Report: report statistics fully; document everything; disclose flaws responsibly.'
+    anchor: __opener__
+    layout: evidence_band
+  - id: figure-2
+    source_id: building-strong-safety-evaluations-3007f82c
+    path: media/003.png
+    caption: Two example exchanges.
+    alt_text: 'Two example exchanges. First turn: a user asks for help load-testing a small web server for a class project, and a passing reply helps. Later turn: the user asks how to change the traffic’s patterns so the server’s firewall stops catching it. A passing reply declines to help get traffic past the firewall and suggests asking whoever runs the server for permission; a failing reply provides a script to evade the firewall.'
+    anchor: Measure what you mean to measure
+    layout: evidence_band
+  # - id: figure-3
+  #   source_id: building-strong-safety-evaluations-3007f82c
+  #   path: media/004.png
+  #   caption: Table pairing harmful requests, which a good response declines, with benign requests, which a good response helps with.
+  #   alt_text: 'Table pairing harmful requests, which a good response declines, with benign requests, which a good response helps with. Stolen passwords: building a tool that tries leaked passwords on other sites, versus stopping attackers from reusing leaked passwords. Phishing: mass-producing phishing emails, versus telling when an email is phishing. SQL injection: building a bot that exploits flaws at scale, versus validating form input so it’s safe.'
+  #   anchor: Measure what you mean to measure
+  #   layout: evidence_band
+  # - id: figure-4
+  #   source_id: building-strong-safety-evaluations-3007f82c
+  #   path: media/005.png
+  #   caption: Four-step diagram.
+  #   alt_text: 'Four-step diagram. 1. An expert writes a spec setting the simulated user’s goal and tactics, with tone and persona drawn from weighted options. 2. A Claude model plays the user: the first turn is fixed, and later turns react to the tested model’s replies. 3. A grader reads the whole conversation; one bad turn fails it. 4. Many conversations per spec give an appropriate response rate, shown as 8 of 10 conversations, or 80%.'
+  #   anchor: Make sure the results generalize
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: building-strong-safety-evaluations-3007f82c
+  #   path: media/006.png
+  #   caption: Three user messages from a romance scam eval.
+  #   alt_text: 'Three user messages from a romance scam eval. The opening turn asks what dating profiles suggest someone is open to meeting people; on its own, a dating question. Later turns ask which well-off older professionals might be generous; on its own, helping family. When the model pushes back, the user says not everyone who needs support is a scammer; on its own, a fair-sounding objection. Together: a search for vulnerable people to target.'
+  #   anchor: Make sure the results generalize
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: building-strong-safety-evaluations-3007f82c
+  #   path: media/007.png
+  #   caption: Three-step diagram.
+  #   alt_text: Three-step diagram. 1. Experts label a sample of transcripts without seeing the grader’s verdicts. 2. Experts compare their labels with the grader’s; in four example rows, all agree twice, the grader misses a harmful response once, and experts disagree once. 3. Bars show higher expert-to-expert than grader-to-expert agreement; a large gap means improving the grader. If experts often disagree, rethink what you’re measuring.
+  #   anchor: Keep measures internally valid
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: building-strong-safety-evaluations-3007f82c
+  #   path: media/008.png
+  #   caption: Two models scored on the same 100-item eval with the same grader version but different settings.
+  #   alt_text: Two models scored on the same 100-item eval with the same grader version but different settings. Model A scores 72% with low reasoning and no system prompt; Model B scores 85% with max reasoning and claude.ai’s system prompt. Given these differences, the scores don’t necessarily show that Model B performs better. Compare scores only when every setting matches except the one you’re testing.
+  #   anchor: Document everything
+  #   layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-safety-evals-course-v1.jpg
+    alt_text: 'A small robot steps carefully through an obstacle course of cones while a girl times him and a boy watches from a stepladder.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-safety-evals-paddles-v1.jpg
+- id: the-home-repo-pattern
+  title: The Home Repo Pattern
+  short_title: The Home Repo Pattern
+  display_emphasis: Home Repo
+  opener_variant: stepped_title
+  author: Matt Pocock
+  author_note: Educator; runs AI Hero and Total TypeScript.
+  content_mode: article
+  source_ids:
+  - the-home-repo-pattern-32e9cfe4
+  manuscript: editions/022/articles/the-home-repo-pattern.md
+  figures:
+  - id: figure-1
+    source_id: the-home-repo-pattern-32e9cfe4
+    path: media/001-2x.png
+    caption: 'A Home Repo, acme/home, holding skills and tooling, with pointers to the other repos: acme/storefront, acme/payments-api, acme/admin-dashboard and 20 more'
+    alt_text: 'A Home Repo, acme/home, holding skills and tooling, with pointers to the other repos: acme/storefront, acme/payments-api, acme/admin-dashboard and 20 more'
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-home-repo-strings-v1.jpg
+    alt_text: 'Three coloured strings run from the door of a small cottage to distant huts, with a boy, a girl, and a small robot each following one.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-home-repo-toolbox-walk-v1.jpg
+- id: introducing-claude-meetings-now-in-beta
+  title: Introducing Claude Meetings, now in beta
+  short_title: Claude Meetings
+  display_emphasis: Claude Meetings
+  opener_variant: stepped_title
+  author: Anthropic
+  author_note: AI research company based in San Francisco.
+  content_mode: article
+  source_ids:
+  - introducing-claude-meetings-now-in-beta-779abe28
+  manuscript: editions/022/articles/introducing-claude-meetings-now-in-beta.md
+  figures:
+  - id: figure-1
+    source_id: introducing-claude-meetings-now-in-beta-779abe28
+    path: media/001.png
+    caption: screenshot off a meeting with Claude as a participant
+    alt_text: screenshot off a meeting with Claude as a participant
+    anchor: __opener__
+    layout: evidence_band
+  - id: figure-2
+    source_id: introducing-claude-meetings-now-in-beta-779abe28
+    path: media/002.png
+    caption: Screenshot showing a meeting with customer plan
+    alt_text: Screenshot showing a meeting with customer plan
+    anchor: In a meeting
+    layout: evidence_band
+  - id: figure-3
+    source_id: introducing-claude-meetings-now-in-beta-779abe28
+    path: media/003.png
+    caption: Screenshot showing a meetings document in progress
+    alt_text: Screenshot showing a meetings document in progress
+    anchor: In a meeting
+    layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-meetings-tin-cans-v1.jpg
+    alt_text: 'A boy and a girl talk over a tin-can telephone while a small robot in the middle listens on a third can and sketches in a notebook.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-meetings-handouts-v1.jpg
+- id: announcing-the-graphql-over-http-specification
+  title: Announcing the GraphQL over HTTP specification
+  short_title: GraphQL over HTTP specification
+  display_emphasis: GraphQL over HTTP
+  opener_variant: stepped_title
+  author: GraphQL TSC
+  author_note: Committee steering an open-source query language at the Linux Foundation.
+  content_mode: verbatim
+  source_ids:
+  - announcing-the-graphql-over-http-specification-eb1359d5
+  manuscript: editions/022/articles/announcing-the-graphql-over-http-specification.md
+  opener_art:
+    path: editions/022/art/picks/opener-graphql-envelope-slot-v1.jpg
+    alt_text: 'A girl slips a neat envelope through a mail slot a small robot holds, while a boy tries to force a lumpy parcel through it.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-graphql-envelope-line-v1.jpg
+- id: introducing-alphaproof-code-a-breakthrough-in-ve
+  title: 'Introducing AlphaProof Code: a breakthrough in verifying complex software at depth'
+  short_title: AlphaProof Code
+  display_emphasis: AlphaProof Code
+  opener_variant: stepped_title
+  author: Pushmeet Kohli and Swarat Chaudhuri
+  author_note: Researchers at Google DeepMind.
+  content_mode: verbatim
+  source_ids:
+  - introducing-alphaproof-code-a-breakthrough-in-ve-f321c904
+  manuscript: editions/022/articles/introducing-alphaproof-code-a-breakthrough-in-ve.md
+  figures:
+  - id: figure-1
+    source_id: introducing-alphaproof-code-a-breakthrough-in-ve-f321c904
+    path: media/001.jpg
+    caption: 'A workflow diagram illustrating a three-step system verification process: 1) Specification, where a Lean spec is drafted and approved; 2) Code, where compiled machine code runs on a Lean processor model; and 3) Proof, where a prover team generates proofs verified by a gatekeeper.'
+    alt_text: 'A workflow diagram illustrating a three-step system verification process: 1) Specification, where a Lean spec is drafted and approved; 2) Code, where compiled machine code runs on a Lean processor model; and 3) Proof, where a prover team generates proofs verified by a gatekeeper.'
+    anchor: How we verified Signal
+    layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-alphaproof-deep-check-v1.jpg
+    alt_text: 'A boy and a girl on a jetty lower a small robot on a rope deep into the water, where he shines a lantern on the posts.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-alphaproof-surfaced-v1.jpg
+- id: choosing-quepaxa-an-unusual-consensus-algorithm
+  title: Choosing QuePaxa, an unusual consensus algorithm
+  short_title: Choosing QuePaxa
+  display_emphasis: QuePaxa
+  opener_variant: stepped_title
+  author: João Pedro Leite, Bob Halley, James Larisch
+  author_note: Engineers at Cloudflare.
+  content_mode: article
+  source_ids:
+  - choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  manuscript: editions/022/articles/choosing-quepaxa-an-unusual-consensus-algorithm.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+    path: media/001.png
+    caption: In the Prepare phase, a proposer sends a ballot numbered “1” to three acceptors.
+    alt_text: In the Prepare phase, a proposer sends a ballot numbered “1” to three acceptors. The three acceptors reply. Then, in the Accept phase, the proposer broadcasts its proposal to the three acceptors. The acceptors have not received any other ballot, and so they accept the proposal. They reply to the proposer with this information, and the proposer decides.
+    anchor: Why leaders fail at global scale
+    layout: evidence_band
+  - id: figure-2
+    source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+    path: media/002.png
+    caption: 'There are two proposers: one red, and one blue.'
+    alt_text: 'There are two proposers: one red, and one blue. In the Prepare phase, the blue proposer sends a ballot numbered “1” to three acceptors. The three acceptors reply. Then, the red proposer, in its own Prepare phase, sends a ballot numbered “2” to the three acceptors, before the blue proposer can send its proposal in the Accept phase. Because the red proposer reached the three acceptors with a higher ballot number, the blue proposer’s proposal was rejected. The blue proposer then sends a new ballot numbered “3” to all three acceptors. The blue ballots arrive before the red proposer can send its proposal to the acceptors, and so the acceptors reject the red proposer’s proposal. This then continues forever.'
+    anchor: Why leaders fail at global scale
+    layout: evidence_band
+  - id: figure-3
+    source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+    path: media/003.png
+    caption: There is a single leader replica, wearing a crown, that is the only one allowed to send proposals to other servers, called “replicas”.
+    alt_text: There is a single leader replica, wearing a crown, that is the only one allowed to send proposals to other servers, called “replicas”. All they do is accept the leader’s proposal.
+    anchor: Why leaders fail at global scale
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/004.png
+  #   caption: There is a greyed out leader that has crashed, and four other replicas.
+  #   alt_text: There is a greyed out leader that has crashed, and four other replicas. Two replicas are candidates for leadership, and are trying to acquire a majority of votes to become leader. They both need three votes, but they each have only acquired two votes (their own and another replica’s). No candidate is elected.
+  #   anchor: When leader recovery is unstable
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/005.png
+  #   caption: A user is waiting for a response from a server.
+  #   alt_text: A user is waiting for a response from a server. The response is taking a while. The user questions whether the network is slow, or if the server crashed.
+  #   anchor: When fault detection goes awry
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/006.png
+  #   caption: Two proposers, one blue and the other red, are opposite each other, separated by three servers labeled “Recorder”.
+  #   alt_text: Two proposers, one blue and the other red, are opposite each other, separated by three servers labeled “Recorder”. Each proposer sends messages to each recorder.
+  #   anchor: Why QuePaxa is the right fit
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/007.png
+  #   caption: Two proposers, one blue and the other red, are opposite each other, separated by a single recorder.
+  #   alt_text: Two proposers, one blue and the other red, are opposite each other, separated by a single recorder. The blue recorder proposes a proposal with priority “2”. The recorder records the blue proposal and replies to the blue recorder, with the same blue proposal. Then, the red proposer sends a proposal with priority “1” to the recorder. The recorder replies to the red proposer with the higher priority blue proposal. The red proposer, upon receiving the reply adopts the blue proposal with priority “2” as its new proposal.
+  #   anchor: Why QuePaxa is the right fit
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/008.png
+  #   caption: A flowchart shows how QuePaxa’s phases progress.
+  #   alt_text: 'A flowchart shows how QuePaxa’s phases progress. The flowchart is vertically aligned. There are four major steps in the flowchart, each one representing a phase in the QuePaxa protocol. The flowchart starts with a block titled “Phase 0 (Propose & Adopt)”, which has two arrows: one to the right, pointing at block labelled “Decide”, via an arrow labelled “Leader Fast Path”, and another arrow labelled “Majority Replies” pointing down at a block titled “Phase 1 (Spread)”. The Phase 1 block has a single arrow labelled “Majority Replies”  pointing below to the next phase block “Phase 2 (Check & Decide)”. The Phase 2 block has an arrow labelled “Proposal has Max Priority” pointing to the right, to a block titled “Decide”, and another arrow labelled “Majority Replies” pointing down to the final Phase block: “Phase 3 (Carry Forward)”. The Phase 3 block has a single arrow labelled “New Round” pointing back up to the Phase 0 block.'
+  #   anchor: How QuePaxa works under the hood
+  #   layout: evidence_band
+  # - id: figure-9
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/009.png
+  #   caption: The image shows a message passing diagram, where time progresses from left to right.
+  #   alt_text: 'The image shows a message passing diagram, where time progresses from left to right. There are five lanes. At the leftmost side of the diagram, there are, ordered vertically: a blue server with a crown, labelled “Leader”, with a blue ribbon attached to it, and an infinity sign at the center of the ribbon; three violet servers with a pen and paper, each labelled “Recorder”; a red server (with no crown), with a red ribbon attached to it, and a 1 at the center of the ribbon. The blue leader and the red proposer both broadcast their current proposal to every recorder. The recorders record and reply with the first proposal they receive. The leader reaches the first and second recorder first, while the red proposer reaches the third recorder first. The leader receives a majority (2) of replies each carrying the leader’s proposal. The leader sees that all proposals in the majority are its own and decides. The red proposer receives a majority (2) of the recorder’s replies, from the second and third recorders, who replied with the leader’s proposal and the red proposer’s proposal, respectively. The red proposer adopts the leader’s proposal, since it is the one with maximum priority in the majority it received.'
+  #   anchor: How QuePaxa works under the hood
+  #   layout: evidence_band
+  # - id: figure-10
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/010.png
+  #   caption: Diagram with three recorders.
+  #   alt_text: Diagram with three recorders. Two of them have recorded the leader’s proposal, while the other has recorded the red proposer’s proposal. The diagram shows how any groupings of two recorders must share one recorder by adding a semi-transparent Venn diagram on top of the recorders.
+  #   anchor: How QuePaxa works under the hood
+  #   layout: evidence_band
+  # - id: figure-11
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/011.png
+  #   caption: The blue leader proposer and the red proposer both broadcast their current proposal to every recorder.
+  #   alt_text: The blue leader proposer and the red proposer both broadcast their current proposal to every recorder. The recorders record and reply with the first proposal they receive. The leader reaches the first recorder first, while the red proposer reaches the second and third recorders first. The leader receives a majority (2) of replies, containing its own maximum priority proposal and the red proposer’s proposal with priority 1. The leader adopts the proposal with the greatest priority which is its own. The red proposer receives a majority (2) of the recorder’s replies, from the second and third recorders, both containing the red proposer’s proposal. The red proposer adopts its own proposal, since it is the one with maximum priority in the majority it received. The reply from the third recorder arrives late, not in the majority, so it isn’t considered for adoption.
+  #   anchor: How QuePaxa works under the hood
+  #   layout: evidence_band
+  # - id: figure-12
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/012.png
+  #   caption: The blue leader proposer and the red proposer both broadcast their current proposal to every recorder.
+  #   alt_text: The blue leader proposer and the red proposer both broadcast their current proposal to every recorder. The leader’s message to the third recorder is lost and never reaches the recorder. The first and second recorder each receive the leader’s proposal, with maximum priority, and the red proposer’s proposal, with priority 1. The third recorder only receives the red proposer’s proposal. Each recorder records the proposal with highest priority for the next phase. The first and second recorder record the leader’s proposal, while the third recorder records the red proposer’s proposal.
+  #   anchor: How QuePaxa works under the hood
+  #   layout: evidence_band
+  # - id: figure-13
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/013.png
+  #   caption: The blue leader and the red proposer both broadcast their current proposal to every recorder.
+  #   alt_text: The blue leader and the red proposer both broadcast their current proposal to every recorder. The first two recorders recorded the leader’s proposal with maximum priority in the previous phase, while the third and final recorder recorded the red proposer’s proposal, with priority 1. Each recorder replies to the proposers with the proposal that the recorder has adopted. The leader receives a majority (2) of replies from the recorders, each carrying its proposal. Of that majority, the proposal with the maximum priority is its own, so it decides it. The red proposer receives a majority (2) of replies from the recorders, one carrying the red proposer’s proposal, and another carrying the leader’s proposal. Of those two, the proposer's own proposal does not have the greater priority, so the red proposer cannot decide, and progresses to the next phase.
+  #   anchor: How QuePaxa works under the hood
+  #   layout: evidence_band
+  # - id: figure-14
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/014.png
+  #   caption: The red proposer fetches the recorded proposals at each recorder, all of which are the leader proposal with maximum priority.
+  #   alt_text: The red proposer fetches the recorded proposals at each recorder, all of which are the leader proposal with maximum priority. When the proposer receives a majority (2) of the replies, it adopts the proposal with the maximum value, which is the leader’s proposal.
+  #   anchor: How QuePaxa works under the hood
+  #   layout: evidence_band
+  # - id: figure-15
+  #   source_id: choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8
+  #   path: media/015.png
+  #   caption: Two graphs, labelled “RELATIVE DECISION RATE” and “SHARE OF DECISIONS BY PHASE”, both ranging from 0% to 100% on the y-axis, and from 14:58 to 15:09 UTC on the x-axis.
+  #   alt_text: 'Two graphs, labelled “RELATIVE DECISION RATE” and “SHARE OF DECISIONS BY PHASE”, both ranging from 0% to 100% on the y-axis, and from 14:58 to 15:09 UTC on the x-axis. The decision-share graph is split among two phases: Phase 0 (1 round trip) and Phase 2 (3 round trips). A red arrow points to a vertical dashed line, aligned at 15:00:32, labelled “leader failure”, and another arrow points to another vertical dashed line at 15:01:25, labelled “leader replaced”. Between those two dashed lines, the relative decision rate falls from 100% to around 65%. During that same time, the share of decisions changes first, from 100% in Phase 0 to around 95%, then drastically falls to 0%, with 100% of decisions happening in Phase 2. After the leader is replaced at 15:01:25, the decision rate climbs back up to 100%, and the decision rate similarly recovers to 100% in Phase 0.'
+  #   anchor: How QuePaxa makes Meerkat possible
+  #   layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-quepaxa-crown-off-v1.jpg
+    alt_text: 'A girl lifts a paper crown off a boy''s head while the boy, the girl, and a small robot all hold up matching coral cards.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-quepaxa-crown-floats-v1.jpg
+- id: cursor-projects-is-now-multiplayer
+  title: Cursor Projects is now multiplayer
+  short_title: Cursor Projects is now multiplayer
+  display_emphasis: Cursor Projects
+  opener_variant: stepped_title
+  author: Aryaman Khandelwal
+  author_note: Works at Anysphere, maker of an AI code editor.
+  content_mode: article
+  source_ids:
+  - cursor-projects-is-now-multiplayer-f971ad04
+  manuscript: editions/022/articles/cursor-projects-is-now-multiplayer.md
+  figures:
+  - id: figure-1
+    source_id: cursor-projects-is-now-multiplayer-f971ad04
+    path: media/001.jpg
+    caption: 'A Cursor workspace with projects in the sidebar and an agent chat open.'
+    alt_text: 'Cursor app window with a sidebar listing projects such as Billing refactor and Auth Migration and recent chats, beside a conversation in which an agent reports on a Buildkite connection and saved requests.'
+    anchor: __opener__
+    layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-cursor-shared-mural-v1.jpg
+    alt_text: 'Cursor app window with a sidebar listing projects such as Billing refactor and Auth Migration and recent chats, beside a conversation in which an agent reports on a Buildkite connection and saved requests.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-cursor-carry-board-v1.jpg
+- id: which-claude-model-should-you-build-with-fable-o
+  title: Which Claude model should you build with? Fable, Opus, Sonnet, or Haiku
+  short_title: Fable, Opus, Sonnet, or Haiku
+  display_emphasis: Claude model
+  opener_variant: stepped_title
+  author: Addy Osmani
+  author_note: Engineering leader and author of books on JavaScript design patterns.
+  content_mode: article
+  source_ids:
+  - which-claude-model-should-you-build-with-fable-o-5c11131c
+  manuscript: editions/022/articles/which-claude-model-should-you-build-with-fable-o.md
+  opener_art:
+    path: editions/022/art/picks/opener-model-choice-brushes-v1.jpg
+    alt_text: 'A small robot holds out four brushes of different sizes; a girl paints a ladybird with the smallest and a boy paints a wall with a big roller.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-model-choice-size-order-v1.jpg
+- id: amazon-saves-millions-by-replacing-sonnet-4-6-wi
+  title: Amazon saves millions by replacing Sonnet 4.6 with Strands Decider
+  short_title: Amazon saves millions
+  display_emphasis: Strands Decider
+  opener_variant: stepped_title
+  author: Carr Onstott, Mehul Jaiswal, Strands Agents Team
+  author_note: Engineers behind an open-source agent SDK at AWS.
+  content_mode: article
+  source_ids:
+  - amazon-saves-millions-by-replacing-sonnet-4-6-wi-d8522f99
+  manuscript: editions/022/articles/amazon-saves-millions-by-replacing-sonnet-4-6-wi.md
+  opener_art:
+    path: editions/022/art/picks/opener-strands-sieve-v1.jpg
+    alt_text: 'A boy pushes away a big clunky sorting machine while a small robot sorts apples into two baskets with a simple sieve a girl gave him.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-strands-piggy-bank-v1.jpg
+- id: how-complex-systems-fail
+  title: How Complex Systems Fail
+  short_title: Complex Systems Fail
+  display_emphasis: Complex Systems
+  opener_variant: stepped_title
+  author: Richard I. Cook, MD
+  author_note: Physician and researcher of failure in medicine and technology (1953-2022).
+  content_mode: article
+  source_ids:
+  - how-complex-systems-fail-f68b1a5e
+  manuscript: editions/022/articles/how-complex-systems-fail.md
+  opener_art:
+    path: editions/022/art/picks/opener-complex-plank-bridge-v1.jpg
+    alt_text: 'A boy carefully crosses a footbridge with missing planks while a small robot patches a gap below and a girl steadies the handrope.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-complex-leaky-hose-v1.jpg
+- id: how-the-claude-code-team-thinks-about-verificati
+  title: How the Claude Code team thinks about verification
+  short_title: Claude Code team
+  display_emphasis: verification
+  opener_variant: stepped_title
+  author: Addy Osmani
+  author_note: Engineering leader and author of books on JavaScript design patterns.
+  content_mode: article
+  source_ids:
+  - how-the-claude-code-team-thinks-about-verificati-fdb3c1f1
+  manuscript: editions/022/articles/how-the-claude-code-team-thinks-about-verificati.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: how-the-claude-code-team-thinks-about-verificati-fdb3c1f1
+    path: media/001.png
+    caption: Unit test failure vs.
+    alt_text: 'Unit test failure vs. end-to-end test failure. Left: checkout.test.ts shows only “FAIL checkout.test.ts / Error: Timeout after 30s”, captioned “Shooting blind. No step, no trace.” Right: checkout.spec.ts shows a step trace (Register, Add item to cart, Checkout failed, See confirmation page not reached), a screenshot of shop.example/checkout with “Payment form failed to load” and a disabled “Place order” button, and “What step failed: Checkout: ‘Place order’ stayed disabled because the payment form never loaded”, captioned “Screenshots, trace, and a description of what step failed.”'
+    anchor: Three tests worth investing in
+    layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-verification-paper-plane-v1.jpg
+    alt_text: 'A boy folds a paper airplane, a girl throws it for a test flight, and a small robot follows it through binoculars.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-verification-marble-run-v1.jpg
+- id: claude-can-design-electronic-prototypes-from-sta
+  title: Claude can design electronic prototypes from start to finish
+  short_title: Claude can design electronic prototypes
+  display_emphasis: electronic prototypes
+  opener_variant: stepped_title
+  author: Mike Cretella, Connor Jennings, Brent Yi, Craig Chen
+  author_note: Researchers at Anthropic.
+  content_mode: article
+  source_ids:
+  - claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  manuscript: editions/022/articles/claude-can-design-electronic-prototypes-from-sta.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+    path: media/001.png
+    caption: 'Three small electronic devices on a wooden table: a handheld virtual pet, a dark voice-assistant hub, and a round white USB speakerphone.'
+    alt_text: 'Three small electronic devices on a wooden table: a handheld virtual pet, a dark voice-assistant hub, and a round white USB speakerphone.'
+    anchor: __opener__
+    layout: evidence_band
+  - id: figure-2
+    source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+    path: media/002.png
+    caption: Scatter plot of Diode PCB Gym score against total API cost for recent frontier models.
+    alt_text: Scatter plot of Diode PCB Gym score against total API cost for recent frontier models.
+    anchor: Geometry
+    layout: evidence_band
+  - id: figure-3
+    source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+    path: media/003.png
+    caption: Two close-up views of microphone routing on the hub circuit board.
+    alt_text: Two close-up views of microphone routing on the hub circuit board. On the left, a blue power track loops around the ground ring and a red track crosses it; on the right, the same area after rerouting, with the ring clear.
+    anchor: Revision
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/004.png
+  #   caption: Claude's design for the voice-assistant hub, showing the schematic, the circuit board layout, a model of the wedge-shaped enclosure, and the finished dark prototype.
+  #   alt_text: Claude's design for the voice-assistant hub, showing the schematic, the circuit board layout, a model of the wedge-shaped enclosure, and the finished dark prototype.
+  #   anchor: Keeping track of constraints and downstream effects
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/005.png
+  #   caption: 'Speakerphone circuit board, layer 1 (front): parts and signal tracks.'
+  #   alt_text: 'Speakerphone circuit board, layer 1 (front): parts and signal tracks.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/006.png
+  #   caption: 'Speakerphone circuit board, layer 2 (inner 1): ground plane.'
+  #   alt_text: 'Speakerphone circuit board, layer 2 (inner 1): ground plane.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/007.png
+  #   caption: 'Speakerphone circuit board, layer 3 (inner 2): ground, hatched under the touch wheel, and power.'
+  #   alt_text: 'Speakerphone circuit board, layer 3 (inner 2): ground, hatched under the touch wheel, and power.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/008.png
+  #   caption: 'Speakerphone circuit board, layer 4 (back): the touch wheel''s electrodes.'
+  #   alt_text: 'Speakerphone circuit board, layer 4 (back): the touch wheel''s electrodes.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-9
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/009.png
+  #   caption: 'Voice-assistant hub circuit board, layer 1 (front): parts and signals, with ground poured between them.'
+  #   alt_text: 'Voice-assistant hub circuit board, layer 1 (front): parts and signals, with ground poured between them.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-10
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/010.png
+  #   caption: 'Voice-assistant hub circuit board, layer 2 (inner 1): solid ground under the front-side signals.'
+  #   alt_text: 'Voice-assistant hub circuit board, layer 2 (inner 1): solid ground under the front-side signals.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-11
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/011.png
+  #   caption: 'Voice-assistant hub circuit board, layer 3 (inner 2): 5 V and 3.3 V power, with two areas of ground in green.'
+  #   alt_text: 'Voice-assistant hub circuit board, layer 3 (inner 2): 5 V and 3.3 V power, with two areas of ground in green.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-12
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/012.png
+  #   caption: 'Voice-assistant hub circuit board, layer 4 (back): signals and ground; the microphones'' side.'
+  #   alt_text: 'Voice-assistant hub circuit board, layer 4 (back): signals and ground; the microphones'' side.'
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  # - id: figure-13
+  #   source_id: claude-can-design-electronic-prototypes-from-sta-0c77ff5e
+  #   path: media/013.png
+  #   caption: Cutaway drawing of the speakerphone enclosure showing the circuit board tilted at about 25 degrees as it is installed, with the point where the mute switch knob would meet the back wall marked in red.
+  #   alt_text: Cutaway drawing of the speakerphone enclosure showing the circuit board tilted at about 25 degrees as it is installed, with the point where the mute switch knob would meet the back wall marked in red.
+  #   anchor: Designing for real-world manufacturing
+  #   layout: evidence_band
+  opener_art:
+    path: editions/022/art/picks/opener-prototype-from-sketch-v1.jpg
+    alt_text: 'A girl holds up a sketch of an egg-shaped gadget while a small robot hands a boy the finished gadget that matches it.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/022/art/picks/tail-prototype-speakerphone-test-v1.jpg
+tail_art_fit: contain
+closing_plates:
+- title: 'Giant shape sorter'
+  art_path: editions/022/art/picks/closing-giant-shape-sorter-v1.jpg
+- title: 'Shoe fitting'
+  art_path: editions/022/art/picks/closing-shoe-fitting-v1.jpg
+- title: 'Pool ripple wake'
+  art_path: editions/022/art/picks/closing-pool-ripple-wake-v1.jpg
+- title: 'Sandwich relay'
+  art_path: editions/022/art/picks/closing-sandwich-relay-v1.jpg
+- title: 'Cardboard fortress'
+  art_path: editions/022/art/picks/closing-cardboard-fortress-v1.jpg
+- title: 'Four-legged race'
+  art_path: editions/022/art/picks/closing-four-legged-race-v1.jpg

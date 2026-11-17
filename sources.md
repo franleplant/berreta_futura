@@ -18,6 +18,8 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `022` (17 queued)._
+
 _Collecting: `020` (34 queued)._
 
 _Collecting: `019` (14 queued)._
@@ -33,6 +35,174 @@ _Collecting: `015` (9 queued)._
 _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
+
+## Claude can design electronic prototypes from start to finish — Mike Cretella, Connor Jennings, Brent Yi, Craig Chen
+
+- ID: `claude-can-design-electronic-prototypes-from-sta-0c77ff5e`
+- Source: https://www.anthropic.com/research/claude-electronics-design
+- Published: 2026-11-09
+- Captured: 2026-11-17T00:35:00Z
+- Release: queued for `022`
+
+Anthropic and Diode Computers report that Claude Fable 5.2 designed three electronic devices (a speakerphone, a voice-assistant hub, and a handheld virtual pet) from specification through PCB layout, enclosure, and firmware, and that Diode's prototypes worked without circuit fixes.
+
+## How the Claude Code team thinks about verification — Addy Osmani
+
+- ID: `how-the-claude-code-team-thinks-about-verificati-fdb3c1f1`
+- Source: https://claude.dev/blog/how-the-claude-code-team-thinks-about-verification/
+- Published: 2026-11-16
+- Captured: 2026-11-17T00:31:48Z
+- Release: queued for `022`
+
+The article explains how end-to-end, property, and differential tests let coding agents verify their work with evidence, and describes the practices the Claude Code team uses to keep its verification and review checks honest.
+
+## How Complex Systems Fail — Richard I. Cook, MD
+
+- ID: `how-complex-systems-fail-f68b1a5e`
+- Source: https://how.complexsystems.fail/
+- Published: 1998-01-01
+- Captured: 2026-11-17T00:31:19Z
+- Release: queued for `022`
+
+Eighteen numbered points argue that complex systems are inherently hazardous yet heavily defended, that catastrophe arises from combinations of latent failures rather than a single root cause, and that people continuously create safety through adaptation.
+
+## Amazon saves millions by replacing Sonnet 4.6 with Strands Decider — Carr Onstott, Mehul Jaiswal, Strands Agents Team
+
+- ID: `amazon-saves-millions-by-replacing-sonnet-4-6-wi-d8522f99`
+- Source: https://strandsagents.com/blog/amazon-saves-millions-replacing-sonnet-with-strands-decider/
+- Published: 2026-11-09
+- Captured: 2026-11-17T00:29:18Z
+- Release: queued for `022`
+
+Two Amazon engineers replaced Claude Sonnet 4.6 with the Strands Decider E4B decision model for labeling internal tickets, matching its quality at about 98% lower cost and 78% lower latency, using a three-way AppConfig switch to run both models side by side before cutting over.
+
+## Which Claude model should you build with? Fable, Opus, Sonnet, or Haiku — Addy Osmani
+
+- ID: `which-claude-model-should-you-build-with-fable-o-5c11131c`
+- Source: https://claude.dev/blog/which-claude-model-should-you-build-with/
+- Published: 2026-11-09
+- Captured: 2026-11-17T00:29:01Z
+- Release: queued for `022`
+
+The article recommends starting most work on Claude Opus 5.5 at medium effort, explains when to move to Haiku 5.5, Sonnet 5.5 or Fable 5.2, and covers cost, latency and context trade-offs, mixing models, migration compatibility, and measuring on your own tasks.
+
+## Cursor Projects is now multiplayer — Aryaman Khandelwal
+
+- ID: `cursor-projects-is-now-multiplayer-f971ad04`
+- Source: https://cursor.com/blog/projects-multiplayer
+- Published: 2026-11-10
+- Captured: 2026-11-17T00:28:09Z
+- Release: queued for `022`
+
+Cursor announces that its Projects multi-agent system is now multiplayer, letting teams share context, a task board, and agent-to-agent communication in one workspace, rolling out in beta to all users.
+
+## Choosing QuePaxa, an unusual consensus algorithm — João Pedro Leite, Bob Halley, James Larisch
+
+- ID: `choosing-quepaxa-an-unusual-consensus-algorithm-e4c8a7e8`
+- Source: https://blog.cloudflare.com/choosing-quepaxa
+- Published: 2026-11-11
+- Captured: 2026-11-17T00:27:50Z
+- Release: queued for `022`
+
+Cloudflare explains why its Meerkat consensus service uses the leader-optional QuePaxa algorithm instead of Raft or Paxos, since leader-based protocols stall under destructive interference and fault-detection errors on volatile global networks, and walks through QuePaxa's four-phase protocol.
+
+## Introducing AlphaProof Code: a breakthrough in verifying complex software at depth — Pushmeet Kohli and Swarat Chaudhuri
+
+- ID: `introducing-alphaproof-code-a-breakthrough-in-ve-f321c904`
+- Source: https://deepmind.google/blog/introducing-alphaproof-code/
+- Published: 2026-11-10
+- Captured: 2026-11-17T00:26:31Z
+- Release: queued for `022`
+
+Google DeepMind researchers used AlphaProof Code, a multi-LLM agentic framework combining human experts and AI agents, to formally verify in Lean the actual code of Signal's cryptographic protocol in four weeks.
+
+## Announcing the GraphQL over HTTP specification — GraphQL TSC
+
+- ID: `announcing-the-graphql-over-http-specification-eb1359d5`
+- Source: https://graphql.org/blog/2026-11-12-announcing-the-graphql-over-http-spec/
+- Published: 2026-11-12
+- Captured: 2026-11-17T00:25:55Z
+- Release: queued for `022`
+
+The GraphQL Foundation announces the first release of the GraphQL over HTTP specification, which standardizes the application/graphql-response+json media type, status code rules, and HTTP request handling, with QUERY verb, persisted documents, and batching planned next.
+
+## Introducing Claude Meetings, now in beta — Anthropic
+
+- ID: `introducing-claude-meetings-now-in-beta-779abe28`
+- Source: https://claude.com/resources/articles/claude-meetings
+- Published: 2026-11-12
+- Captured: 2026-11-17T00:25:41Z
+- Release: queued for `022`
+
+Anthropic announces Claude Meetings, a beta feature that lets Claude join Google Meet video calls as a visible participant to answer questions, build docs and whiteboards, and write notes and action items, with defaults limiting it to calls within an organization.
+
+## The Home Repo Pattern — Matt Pocock
+
+- ID: `the-home-repo-pattern-32e9cfe4`
+- Source: https://www.aihero.dev/the-home-repo-pattern
+- Published: 2026-11-12
+- Captured: 2026-11-17T00:25:15Z
+- Release: queued for `022`
+
+A Home Repo is a single repository holding a developer's skills, AGENTS.md and shared docs, with navigation pointers to their other repos, so an agent run from it can work across all of them, and the article supplies a copyable setup prompt and an FAQ.
+
+## Building strong safety evaluations — Ruth Appel, Evan Frondorf, Jeremy Hadfield, Rebecca Hiscott, Kamya Jagadish, Shayne Longpre, Madeleine Tucker, Brett Wittmershaus
+
+- ID: `building-strong-safety-evaluations-3007f82c`
+- Source: https://www.anthropic.com/research/building-strong-safety-evaluations
+- Published: 2026-11-13
+- Captured: 2026-11-17T00:24:48Z
+- Release: queued for `022`
+
+Anthropic shares recommendations for building trustworthy AI safety evaluations, covering team composition and safe execution, design choices, grader calibration, preregistration, statistical reporting, documentation, and responsible disclosure of flaws.
+
+## Building always-on agents — William Hu
+
+- ID: `building-always-on-agents-2fce942b`
+- Source: https://claude.com/resources/articles/building-always-on-agents
+- Published: 2026-11-13
+- Captured: 2026-11-17T00:23:37Z
+- Release: queued for `022`
+
+Always-on agents run on the same core loop as other agents but add five primitives (event inbox, timers, memory, permissions, and outbox) that control when they wake, what persists between runs, and how their work reaches the user.
+
+## Adapting to AI penetration testing orchestrators: The Modern Security Model — Blake Darché, Myles Sloan, Jacob Crisp, Cloudforce One
+
+- ID: `adapting-to-ai-penetration-testing-orchestrators-a009bbdb`
+- Source: https://blog.cloudflare.com/adapting-to-ai-penetration-testing-orchestrators/
+- Published: 2026-11-13
+- Captured: 2026-11-17T00:22:54Z
+- Release: queued for `022`
+
+Cloudflare reports a rapid proliferation of ARTEX-derived and other LLM penetration testing orchestrators scanning its customers since October 2026, and recommends a six-pillar "Modern Security Model" (WAF, anomaly detection, bot defense, identity-gated access with micro-segmentation, schema validation, and threat intelligence) to defend against them.
+
+## Kitesurf is now open source — Celso Martinho, Rui Figueira, Bernardo Pereira, Luís Duarte
+
+- ID: `kitesurf-is-now-open-source-a443b3b0`
+- Source: https://blog.cloudflare.com/kitesurf-open-source
+- Published: 2026-11-13
+- Captured: 2026-11-17T00:22:06Z
+- Release: queued for `022`
+
+Cloudflare announces that Kitesurf, its Workers-based stateless browser for AI agents, is now open source under Apache 2.0, with instructions for running it locally, deploying it to your own account, and contributing.
+
+## Push events into a running session with channels — Claude Code Docs
+
+- ID: `push-events-into-a-running-session-with-channels-a5b416ea`
+- Source: https://code.claude.com/docs/en/channels
+- Captured: 2026-11-17T00:21:38Z
+- Release: queued for `022`
+
+Channels are MCP servers installed as plugins that push events such as chat messages, alerts, and webhooks into a running Claude Code session, with setup steps for Telegram, Discord, iMessage, and fakechat, plus sender allowlists and enterprise controls, in research preview.
+
+## Multiagent orchestration — Claude Platform Docs
+
+- ID: `multiagent-orchestration-babbaaa7`
+- Source: https://platform.claude.com/docs/en/managed-agents/multiagent-orchestration
+- Captured: 2026-11-17T00:20:52Z
+- Release: queued for `022`
+
+Documentation for configuring Managed Agents multiagent orchestration, covering subagents, dynamic workflows, advisor models, predefined and inline agents, MCP and vault handling, and migration from the coordinator type.
 
 ## Firecracker VM Escape: PwnEscape Part 2 — PWN Research, Paulos Yibelo
 

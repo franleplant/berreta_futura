@@ -1,0 +1,9 @@
+id: building-strong-safety-evaluations-3007f82c
+title: 'Building strong safety evaluations'
+author: 'Ruth Appel, Evan Frondorf, Jeremy Hadfield, Rebecca Hiscott, Kamya Jagadish, Shayne Longpre, Madeleine Tucker, Brett Wittmershaus'
+url: https://www.anthropic.com/research/building-strong-safety-evaluations
+site: 'anthropic.com'
+captured_at: '2026-11-17T00:24:48Z'
+published_at: '2026-11-13'
+tags: []
+synopsis: 'Anthropic shares recommendations for building trustworthy AI safety evaluations, covering team composition and safe execution, design choices, grader calibration, preregistration, statistical reporting, documentation, and responsible disclosure of flaws.'

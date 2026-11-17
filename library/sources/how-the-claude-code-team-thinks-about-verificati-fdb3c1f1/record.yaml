@@ -1,0 +1,9 @@
+id: how-the-claude-code-team-thinks-about-verificati-fdb3c1f1
+title: 'How the Claude Code team thinks about verification'
+author: 'Addy Osmani'
+url: https://claude.dev/blog/how-the-claude-code-team-thinks-about-verification/
+site: 'claude.dev Blog'
+captured_at: '2026-11-17T00:31:48Z'
+published_at: '2026-11-16'
+tags: []
+synopsis: 'The article explains how end-to-end, property, and differential tests let coding agents verify their work with evidence, and describes the practices the Claude Code team uses to keep its verification and review checks honest.'

@@ -1,0 +1,9 @@
+id: which-claude-model-should-you-build-with-fable-o-5c11131c
+title: 'Which Claude model should you build with? Fable, Opus, Sonnet, or Haiku'
+author: 'Addy Osmani'
+url: https://claude.dev/blog/which-claude-model-should-you-build-with/
+site: 'claude.dev Blog'
+captured_at: '2026-11-17T00:29:01Z'
+published_at: '2026-11-09'
+tags: []
+synopsis: 'The article recommends starting most work on Claude Opus 5.5 at medium effort, explains when to move to Haiku 5.5, Sonnet 5.5 or Fable 5.2, and covers cost, latency and context trade-offs, mixing models, migration compatibility, and measuring on your own tasks.'

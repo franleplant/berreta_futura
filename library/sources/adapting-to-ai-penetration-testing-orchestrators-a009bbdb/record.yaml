@@ -1,0 +1,9 @@
+id: adapting-to-ai-penetration-testing-orchestrators-a009bbdb
+title: 'Adapting to AI penetration testing orchestrators: The Modern Security Model'
+author: 'Blake Darché, Myles Sloan, Jacob Crisp, Cloudforce One'
+url: https://blog.cloudflare.com/adapting-to-ai-penetration-testing-orchestrators/
+site: 'Cloudflare Blog'
+captured_at: '2026-11-17T00:22:54Z'
+published_at: '2026-11-13'
+tags: []
+synopsis: 'Cloudflare reports a rapid proliferation of ARTEX-derived and other LLM penetration testing orchestrators scanning its customers since October 2026, and recommends a six-pillar "Modern Security Model" (WAF, anomaly detection, bot defense, identity-gated access with micro-segmentation, schema validation, and threat intelligence) to defend against them.'

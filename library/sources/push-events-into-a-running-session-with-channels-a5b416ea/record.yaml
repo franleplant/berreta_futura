@@ -1,0 +1,8 @@
+id: push-events-into-a-running-session-with-channels-a5b416ea
+title: 'Push events into a running session with channels'
+author: 'Claude Code Docs'
+url: https://code.claude.com/docs/en/channels
+site: 'Claude Code Docs'
+captured_at: '2026-11-17T00:21:38Z'
+tags: []
+synopsis: 'Channels are MCP servers installed as plugins that push events such as chat messages, alerts, and webhooks into a running Claude Code session, with setup steps for Telegram, Discord, iMessage, and fakechat, plus sender allowlists and enterprise controls, in research preview.'
