@@ -42,6 +42,7 @@ fn stage(request: &Request, into: &Path) -> Result<usize> {
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
         fs::copy(&row.source_path, &target)
             .with_context(|| format!("staging {} into {}", row.source_path, target.display()))?;
+        art::cap_print_pixels(&target)?;
     }
     Ok(request.inputs.len())
 }

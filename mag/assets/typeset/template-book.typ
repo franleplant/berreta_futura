@@ -772,6 +772,7 @@
   credits-page()
   body
   about-page()
+  plain-page()
   cover-page("mag-cover-back", cover-back-page)
 }
 

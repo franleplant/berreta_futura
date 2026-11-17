@@ -176,8 +176,12 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   appends it as side 2 of `booklet-a4-cover.pdf` only (duplex, short edge);
   the reader PDF, EPUB, site, and all-in-one booklet never carry it.
 - The inside front cover carries the credits (`[credits]` in magazine.toml,
-  the site, and the issue's URL); the inside back cover of book issues
-  carries the about page (`[about]` in magazine.toml).
+  the site, and the issue's URL); book issues end on the about page
+  (`[about]` in magazine.toml) as the last interior page, so it prints in the
+  A4 interior; the inside back cover stays blank (the endpaper covers it).
+- Render stages raster figures capped at 2480 px on the long side (a full
+  A5 page at 300 ppi) and embeds art as print JPEG copies at q80; picks stay
+  q90. The EPUB carries images at 1200 px, q78.
 - Typesetting is chosen per edition by `format.typesetting` in edition.yaml:
   `book` (EB Garamond, `mag/assets/typeset/template-book.typ`, 018 on, and
   what `mag produce` scaffolds) or `classic` (the default, the frozen

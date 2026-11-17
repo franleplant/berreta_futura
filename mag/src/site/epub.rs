@@ -12,7 +12,7 @@ use std::thread;
 use zip::write::SimpleFileOptions;
 use zip::CompressionMethod;
 
-const MAX_WIDTH: u32 = 1600;
+const MAX_WIDTH: u32 = 1200;
 const FONTS: [&str; 4] = [
     "SourceSerif4SmText-Regular.ttf",
     "SourceSerif4SmText-It.ttf",
@@ -57,7 +57,7 @@ fn jpeg(path: &Path) -> Result<(Vec<u8>, u32, u32)> {
         rgb = image::imageops::resize(&rgb, MAX_WIDTH, height, FilterType::Lanczos3);
     }
     let mut bytes = Vec::new();
-    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut bytes, 82).encode_image(&rgb)?;
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut bytes, 78).encode_image(&rgb)?;
     Ok((bytes, rgb.width(), rgb.height()))
 }
 
