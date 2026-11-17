@@ -45,6 +45,35 @@ pub fn screen_front(document: &PagedDocument, pixel_per_pt: f64) -> Result<tiny_
         .context("the spine wrap is wider than the cover")
 }
 
+fn unspined(frame: &mut typst::layout::Frame) {
+    frame.retain(|item| match item {
+        FrameItem::Group(group)
+            if group
+                .label
+                .is_some_and(|l| l.resolve().as_str() == "mag-spine") =>
+        {
+            false
+        }
+        FrameItem::Group(group) => {
+            unspined(&mut group.frame);
+            true
+        }
+        _ => true,
+    });
+}
+
+pub fn without_spine(document: &PagedDocument) -> PagedDocument {
+    let mut pages: typst::ecow::EcoVec<typst_layout::Page> =
+        document.pages().iter().cloned().collect();
+    let last = pages.len().saturating_sub(1);
+    for index in [0, last] {
+        if let Some(page) = pages.make_mut().get_mut(index) {
+            unspined(&mut page.frame);
+        }
+    }
+    PagedDocument::new(pages, document.clone().info_mut().clone())
+}
+
 pub fn confine(document: &PagedDocument) -> Result<()> {
     let pages = document.pages();
     for (number, page) in [(1, pages.first()), (pages.len(), pages.last())] {

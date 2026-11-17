@@ -607,6 +607,8 @@
   }))
 }
 
+#let cover-spine-layer(body) = place(top + left, [#block(width: COVER-W * 1pt, height: COVER-H * 1pt, body)<mag-spine>])
+
 #let cover-front-page(spec) = {
   let d = spec.design
   d.spine.wrap = cover-spine-wrap(d)
@@ -614,9 +616,11 @@
   let modes = (framed: cover-framed, footer_caption: cover-caption, honored_plate: cover-plate)
   assert(spec.layout in modes, message: "Unknown cover layout '" + spec.layout + "': expected framed, footer_caption, or honored_plate")
   (modes.at(spec.layout))(d, spec.text, spec)
-  cover-put(-1.5, -1.5, cover-box(d.spine.wrap + 1.5, COVER-H + 3, fill: rgb(d.color.at(d.spine.color))))
-  cover-spine-ticks(d, cover-spine-mm(d) * 36 / 25.4)
-  cover-spine-face(d, spec.text, 0)
+  cover-spine-layer({
+    cover-put(-1.5, -1.5, cover-box(d.spine.wrap + 1.5, COVER-H + 3, fill: rgb(d.color.at(d.spine.color))))
+    cover-spine-ticks(d, cover-spine-mm(d) * 36 / 25.4)
+    cover-spine-face(d, spec.text, 0)
+  })
   [#metadata(d.spine.wrap)<mag-cover-wrap>]
   [#metadata(cover-spine-mm(d))<mag-spine-mm>]
 }
@@ -646,8 +650,10 @@
   let mark = read("/brand/mark-square.svg").replace(regex("var\\(--[a-z]+, *(#[0-9a-fA-F]+)\\)"), m => m.captures.first())
   cover-put(b.shout_x, COVER-H - b.foot_bottom - b.mark_size, image(bytes(mark), format: "svg", width: b.mark_size * 1pt))
   cover-right("N\u{BA} " + t.issue, COVER-W - b.shout_x - wrap, COVER-H - b.foot_bottom, 7, palette.first())
-  cover-spine-ticks(d, COVER-W - cover-spine-mm(d) * 36 / 25.4)
-  cover-spine-face(d, t, COVER-W)
+  cover-spine-layer({
+    cover-spine-ticks(d, COVER-W - cover-spine-mm(d) * 36 / 25.4)
+    cover-spine-face(d, t, COVER-W)
+  })
 }
 
 #let column(body) = pad(left: RAIL, right: RAIL - MEASURE-DELTA, body)

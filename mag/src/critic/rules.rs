@@ -1830,6 +1830,7 @@ pub fn opener_crop_fidelity_checks(
 
 pub struct Inputs<'a> {
     pub reader_pdf: &'a Path,
+    pub wrap_pdf: &'a Path,
     pub booklet_pdf: &'a Path,
     pub interior_booklet_pdf: &'a Path,
     pub cover_booklet_pdf: &'a Path,
@@ -1905,7 +1906,7 @@ pub fn geometry(page_count: usize, toc: &BTreeMap<String, usize>) -> Geometry {
 }
 
 fn read_legs(inputs: &Inputs) -> Result<Legs> {
-    let reader = read_leg(inputs.reader_pdf, inputs.runs)?;
+    let reader = read_leg(inputs.wrap_pdf, inputs.runs)?;
     let imposed =
         |pdf: &Path, section: &str| read_leg(pdf, &imposed_runs(&reader, inputs.runs, section)?);
     Ok(Legs {

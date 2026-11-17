@@ -18,6 +18,7 @@ const INTERIOR_RATIONALE: &str = "Interior sides re-impose reader pages that the
 
 pub struct Release<'a> {
     pub reader_pdf: &'a Path,
+    pub wrap_pdf: &'a Path,
     pub destination: &'a Path,
     pub manifest: Value,
     pub cover_art: Option<&'a Path>,
@@ -270,6 +271,7 @@ fn inspect(release: &Release, legs: &Legs) -> Result<(PathBuf, Vec<PathBuf>)> {
     let reader = root.join("reader.pdf");
     let critique = rules::inspect_render(&Inputs {
         reader_pdf: &reader,
+        wrap_pdf: release.wrap_pdf,
         booklet_pdf: legs.booklet,
         interior_booklet_pdf: legs.interior,
         cover_booklet_pdf: legs.cover,
@@ -328,13 +330,14 @@ pub fn package_release(release: Release) -> Result<Vec<PathBuf>> {
     let reader = root.join("reader.pdf");
     std::fs::copy(release.reader_pdf, &reader)
         .with_context(|| format!("cannot copy {}", release.reader_pdf.display()))?;
-    let booklet = impose_a5_on_a4(&reader, &root.join("booklet-a4.pdf"), "all")?;
-    let interior = impose_a5_on_a4(&reader, &root.join("booklet-a4-interior.pdf"), "interior")?;
-    let cover = impose_a5_on_a4(&reader, &root.join("booklet-a4-cover.pdf"), "cover")?;
+    let wrap = release.wrap_pdf;
+    let booklet = impose_a5_on_a4(wrap, &root.join("booklet-a4.pdf"), "all")?;
+    let interior = impose_a5_on_a4(wrap, &root.join("booklet-a4-interior.pdf"), "interior")?;
+    let cover = impose_a5_on_a4(wrap, &root.join("booklet-a4-cover.pdf"), "cover")?;
     if let Some(endpaper) = release.endpaper {
         crate::impose::append_endpaper(&cover, endpaper)?;
     }
-    let parts = crate::impose::impose_interior_parts(&reader, &interior)?;
+    let parts = crate::impose::impose_interior_parts(wrap, &interior)?;
     let manifest = root.join("edition-manifest.json");
     write(&manifest, &json_text(&release.manifest))?;
     let legs = Legs {

@@ -128,8 +128,13 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
     let front = super::cover::screen_front(p.document, 300.0 / 72.0)?;
     let cover = p.out_dir.join("cover.png");
     std::fs::write(&cover, front.encode_png()?)?;
+    let wrap = work.join("wrap.pdf");
+    std::fs::write(&wrap, super::template::pdf(p.document)?)?;
     let reader = work.join("reader.pdf");
-    std::fs::write(&reader, super::template::pdf(p.document)?)?;
+    std::fs::write(
+        &reader,
+        super::template::pdf(&super::cover::without_spine(p.document))?,
+    )?;
     let figures = placements(&p.layout, &p.staged.canonicalize()?);
     let cover_art = p
         .edition
@@ -147,6 +152,7 @@ pub fn publish(p: &Publish) -> Result<(Vec<FileRow>, String)> {
     let runs = super::runs::pages(p.document);
     let written = package_release(Release {
         reader_pdf: &reader,
+        wrap_pdf: &wrap,
         destination: p.out_dir,
         manifest: manifest(p)?,
         cover_art: cover_art.as_deref(),
