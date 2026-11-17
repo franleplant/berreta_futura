@@ -195,6 +195,22 @@ fn runt(block: &Block, metrics: &Metrics, english: bool) -> Result<Option<(Ancho
         .map(|(start, end)| (start.1, end.1)))
 }
 
+fn prose_space(text: &str) -> Option<usize> {
+    let (mut depth, mut quoted, mut escaped) = (0i32, false, false);
+    text.char_indices().find_map(|(i, c)| {
+        let open = depth <= 0 && !quoted;
+        match c {
+            _ if escaped => escaped = false,
+            '\\' => escaped = true,
+            '"' if depth > 0 => quoted = !quoted,
+            '(' if !quoted => depth += 1,
+            ')' if !quoted => depth -= 1,
+            _ => {}
+        }
+        (open && c.is_whitespace()).then_some(i)
+    })
+}
+
 fn gap(sources: &dyn World, (from, to): (Anchor, Anchor)) -> Option<(FileId, usize, usize)> {
     let file = from.0.id()?;
     (to.0.id()? == file).then_some(())?;
@@ -202,7 +218,7 @@ fn gap(sources: &dyn World, (from, to): (Anchor, Anchor)) -> Option<(FileId, usi
     let start = sources.range(from.0)?.start + from.1;
     let end = sources.range(to.0)?.start + to.1;
     let text = source.text().get(start..end)?;
-    let open = text.find(char::is_whitespace)?;
+    let open = prose_space(text)?;
     let run = text[open..]
         .find(|c: char| !c.is_whitespace())
         .unwrap_or(text.len() - open);
@@ -410,6 +426,16 @@ pub fn bound(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_bind_after_a_link_takes_the_prose_space_not_the_markup_space() {
+        assert_eq!(prose_space("]]#text(hyphenate: true)[ table"), Some(25));
+        assert_eq!(prose_space(" next"), Some(0));
+        assert_eq!(
+            prose_space("]#doc-link(destination: \"a b\", title: none)[x"),
+            None
+        );
+    }
     use crate::typeset::content::File;
     use crate::typeset::decisions::unit;
 
