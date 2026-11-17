@@ -124,7 +124,9 @@ static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-v\d+$").
 
 fn variants(brief: &Brief, candidates: u32) -> u32 {
     match brief.purpose {
-        ArtPurpose::Cover | ArtPurpose::Endpaper => candidates.min(COVER_VARIANTS),
+        ArtPurpose::Cover | ArtPurpose::Endpaper | ArtPurpose::Closing => {
+            candidates.min(COVER_VARIANTS)
+        }
         _ => candidates,
     }
 }
@@ -356,6 +358,36 @@ fn approved_covers(edition_dir: &Path) -> Vec<(String, String)> {
         .collect()
 }
 
+fn past_plates(edition_dir: &Path) -> Vec<String> {
+    let Some(root) = edition_dir.parent() else {
+        return Vec::new();
+    };
+    let mut dirs: Vec<PathBuf> = fs::read_dir(root)
+        .map(|entries| entries.filter_map(|e| e.ok().map(|e| e.path())).collect())
+        .unwrap_or_default();
+    dirs.sort();
+    dirs.iter()
+        .filter(|dir| dir.as_path() != edition_dir)
+        .filter_map(|dir| {
+            serde_norway::from_str::<serde_norway::Value>(&read(&dir.join("edition.yaml")).ok()?)
+                .ok()
+        })
+        .flat_map(|spec| {
+            spec["closing_plates"]
+                .as_sequence()
+                .into_iter()
+                .flatten()
+                .filter_map(|p| p["title"].as_str().map(str::to_string))
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+struct Past {
+    covers: Vec<(String, String)>,
+    plates: Vec<String>,
+}
+
 fn cast_section(cast: &[CastMember]) -> String {
     if cast.is_empty() {
         return String::new();
@@ -446,7 +478,7 @@ fn build_brief_prompt(
     only: Option<&[ArtPurpose]>,
     articles: Option<&[String]>,
     rejected: &[Brief],
-    approved: &[(String, String)],
+    past: &Past,
     note: Option<&str>,
 ) -> Result<String> {
     let process_doc = read(&prompts_path("illustrations.md"))?;
@@ -466,7 +498,16 @@ fn build_brief_prompt(
     out += &rejected_section(rejected);
     let covers_in_scope = articles.is_none() && only.is_none_or(|p| p.contains(&ArtPurpose::Cover));
     if covers_in_scope {
-        out += &approved_section(approved);
+        out += &approved_section(&past.covers);
+    }
+    if articles.is_none()
+        && only.is_none_or(|p| p.contains(&ArtPurpose::Closing))
+        && !past.plates.is_empty()
+    {
+        out += &produce::section(
+            "closing plates already printed in past editions (never repeat their idea, setting, or action)",
+            &past.plates.join("\n"),
+        );
     }
     if let Some(note) = note {
         out += &produce::section("editor's note for this round", note);
@@ -496,7 +537,7 @@ fn build_brief_prompt(
                  briefs.\n\n\
                  You are not generating images yourself; a later pipeline \
                  step will run each brief through an image generator \
-                 {candidates} time(s) ({cover} for a cover brief) to produce \
+                 {candidates} time(s) ({cover} for a cover or closing brief) to produce \
                  that many variants.\n\n",
                     join(purposes),
                     cover = candidates.min(COVER_VARIANTS)
@@ -507,11 +548,11 @@ fn build_brief_prompt(
                     "\nPropose the complete art-brief slate for this edition now. You are \
          not generating images yourself; a later pipeline step will run each \
          brief through an image generator {candidates} time(s) ({cover} for a \
-         cover brief) to produce that many variants. Per prompts/illustrations.md \
+         cover or closing brief) to produce that many variants. Per prompts/illustrations.md \
          the slate covers the cover (as many briefs as the cover document asks \
          for), one opener brief and one tail \
-         brief per article, and closing-plate briefs keeping the approved pool \
-         at three or more.\n\n",
+         brief per article, and the closing-plate briefs prompts/illustrations.md \
+         asks for.\n\n",
                     cover = candidates.min(COVER_VARIANTS)
                 );
             }
@@ -2275,7 +2316,8 @@ fn size_for(purpose: ArtPurpose) -> &'static str {
         ArtPurpose::Cover => "1440x2160",
         ArtPurpose::Opener => "1760x1024",
         ArtPurpose::Tail => "2160x720",
-        ArtPurpose::Closing | ArtPurpose::CastSheet => "1536x2160",
+        ArtPurpose::Closing => "1440x2160",
+        ArtPurpose::CastSheet => "1536x2160",
         ArtPurpose::Endpaper => "2176x1536",
     }
 }
@@ -2286,8 +2328,8 @@ that frame and nothing else. cover: portrait 2:3, 1440x2160, a full A5 page with
 wordmark and the bottom 90pt tolerant of a caption line. opener: landscape 1.71:1 \
 (the frame is 348x203pt, object-fit cover), 1760x1024; keep every head, hand, \
 and essential prop well inside the frame with headroom, since nothing outside \
-prints. tail: a 3:1 strip, 2160x720. closing: portrait 1:1.41 (an A5 page), \
-1536x2160. Never describe a composition as square unless it is the cover.\n";
+prints. tail: a 3:1 strip, 2160x720. closing: portrait 2:3, \
+1440x2160, printed whole on an A5 page. Never describe a composition as square unless it is the cover.\n";
 
 struct ArtRun<'a> {
     pub edition: &'a str,
@@ -2546,7 +2588,10 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
         only_purposes.as_deref(),
         only_articles.as_deref(),
         &rejected,
-        &approved_covers(&edition_dir),
+        &Past {
+            covers: approved_covers(&edition_dir),
+            plates: past_plates(&edition_dir),
+        },
         note,
     )?;
     let (cast, license) = match art_direction_section(&edition_yaml_text)? {
@@ -3444,7 +3489,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let briefs = vec![Brief {
             id: "cover-wildcard".into(),
-            purpose: ArtPurpose::Closing,
+            purpose: ArtPurpose::Tail,
             article_id: None,
             prompt: "one improbable idea".into(),
             subject: None,
@@ -3457,7 +3502,7 @@ mod tests {
             write_generate_script(&dir, "005", &briefs, 2, "gen '{prompt}' -o {out}").unwrap();
         let script = fs::read_to_string(&path).unwrap();
         assert!(script.starts_with("#!/bin/sh\n"), "{script}");
-        assert!(script.contains("# cover-wildcard [closing]"), "{script}");
+        assert!(script.contains("# cover-wildcard [tail]"), "{script}");
         assert!(script.contains("variation 1"), "{script}");
         assert!(script.contains("variation 2"), "{script}");
         assert!(script.contains("cover-wildcard-v2.png"), "{script}");

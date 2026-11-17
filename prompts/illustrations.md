@@ -30,10 +30,23 @@ round and an explicit new selection.
   crop. An article that declares a key-ideas closing box does not print a
   tail, but still keeps one approved for the rewrite that drops the box.
 - **Closing plates** — full-page titled plates that fill the blank pages at
-  the end of the edition (the booklet signature rarely lands exactly).
-  Maintain an approved pool of at least three; the render takes however many
-  the final page count demands. Genuinely vertical, poster-weight subjects
-  belong here.
+  the end of the edition (the booklet signature rarely lands exactly). The
+  render takes however many the final page count demands, up to seven.
+  Each round proposes eight closing briefs, one variant each, so the editor
+  picks from eight different ideas rather than four takes on one.
+  They are the fun pages of the issue: each is a visual gag drawn from one
+  article in this edition, named in its `subject`, played by the cast at
+  full-page poster weight. Take a concrete idea from the piece (agents
+  passing work to each other, a consensus vote, a pentest swarm, a model on
+  a video call, a circuit board) and turn it into a playful scene the
+  reader recognises after reading the issue. Eight briefs, eight different
+  articles, eight different settings and actions. Brighter and more
+  colourful than the openers: saturated inks, a strong colour field or
+  sky behind the figures is welcome. Never repeat a past plate (their
+  titles are listed) and never fall back on the stock idyll: no wells,
+  water towers, ladders, pulleys, ropes, lifting or hoisting, treehouses,
+  lanterns, umbrellas in the rain, kites, picnics, or the cast simply
+  sitting under a tree.
 
 ## Interior look: sparse, on paper
 
@@ -136,7 +149,7 @@ direction file, and `edition.yaml`. A complete slate covers:
 - the cover, the eight briefs the cover document asks for;
 - one opener brief per article, carrying that article's `article_id`;
 - one tail brief per article, carrying that article's `article_id`;
-- closing-plate briefs to keep the approved pool at three or more.
+- eight closing-plate briefs, each from a different article (see above).
 
 Every brief is a standalone image-generation prompt: the generator sees
 nothing but the prompt text, so the art direction's visual language,

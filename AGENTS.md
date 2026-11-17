@@ -177,7 +177,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   appends it as side 2 of `booklet-a4-cover.pdf` only (duplex, short edge);
   the reader PDF, EPUB, site, and all-in-one booklet never carry it.
 - The inside front cover carries the credits (`[credits]` in magazine.toml,
-  the site, and the issue's URL); keep the inside back cover blank.
+  the site, and the issue's URL); the inside back cover of book issues
+  carries the about page (`[about]` in magazine.toml).
 - Typesetting is chosen per edition by `format.typesetting` in edition.yaml:
   `book` (EB Garamond, `mag/assets/typeset/template-book.typ`, 018 on, and
   what `mag produce` scaffolds) or `classic` (the default, the frozen

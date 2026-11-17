@@ -378,6 +378,7 @@ fn credits(root: &Path, edition: &Edition) -> Value {
         "deck": edition.subtitle,
         "issue": cover_issue(edition),
         "date": long_date(&edition.publication_date),
+        "about": config.get("about"),
     })
 }
 

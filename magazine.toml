@@ -4,7 +4,7 @@ name = "Berreta Futura"
 [intake]
 # `mag capture` adds new sources to this edition's plan.yaml unless --edition
 # says otherwise; capturing into a new edition makes it the intake edition.
-edition = "021"
+edition = "022"
 
 [render]
 # English prose hyphenates (Typst patterns); no prose block ends more than two
@@ -19,6 +19,15 @@ hyphenate_english = true
 base_url = "https://berreta.franleplant.com"
 editions = ["021", "020", "019", "018", "017", "016", "015", "014", "013", "012", "011", "010", "009", "008", "007", "006"]
 repo = "franleplant/berreta_futura"
+
+[about]
+# The inside back cover of book-typeset issues: what the magazine is for.
+title = "About Berreta Futura"
+paragraphs = [
+  "Berreta Futura collects the writing worth reading about software and AI, from the people building it, and sets it as a magazine you can read properly.",
+  "Read it the way that suits you: print the PDF and take a pen to it, open the EPUB in your phone's book reader, or read the distraction-free web edition. It is a tool for learning efficiently. Then put it down and get outside. Read it in a park, on a train, at a café table. The screen will still be there when you get back.",
+]
+creed = ["Slow down.", "Touch grass.", "Keep learning.", "Stay in the vanguard.", "Drink coffee."]
 
 [credits]
 # The colophon after the front cover credits the maker and prints the site,
