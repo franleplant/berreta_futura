@@ -449,7 +449,7 @@ pub fn printing_instructions(
     parts: &[usize],
 ) -> String {
     let first_interior = 3;
-    let last_interior = reader_page_count as i64 - 2;
+    let last_interior = reader_page_count as i64 - 3;
     if is_spanish(language) {
         let split_es = match parts {
             [one, two] => format!("El mismo interior viene partido en dos tandas, para no tener que repetir todo si la impresora falla: booklet-a4-interior-part-1.pdf ({one} hojas, las exteriores) y booklet-a4-interior-part-2.pdf ({two} hojas, las interiores). Imprimir una tanda, comprobarla, imprimir la otra y apilar la parte 2 sobre la parte 1 antes de doblar.\n\n"),
@@ -466,7 +466,7 @@ Hay tres imposiciones de la misma revista. Imprimir el cuadernillo completo o bi
 ## booklet-a4.pdf: todo en uno\n\n\
 La revista entera, cubierta incluida: {all_in_one_sheets} hojas A4 en un solo papel. Es la opción para imprimir con un único gramaje y sin nada que intercalar.\n\n\
 ## booklet-a4-interior.pdf: interior en papel de texto\n\n\
-Una hoja propia por fuera en blanco que lleva los créditos en su cara interior, frente al índice, y luego las páginas {first_interior} a {last_interior} del PDF de lectura. Son {interior_sheets} hojas A4 en papel corriente de 80 a 100 g/m².\n\n\
+Una hoja exterior, en blanco por fuera, con los créditos y la página «Acerca de» en su cara interior; dentro, las páginas {first_interior} a {last_interior} del PDF de lectura. Son {interior_sheets} hojas A4 en papel corriente de 80 a 100 g/m².\n\n\
 {split_es}## booklet-a4-cover.pdf: cubierta en papel más grueso\n\n\
 {cover_es}{spine_es} Usar papel más grueso (de 160 a 250 g/m², que dobla bien) y dejar secar la tinta antes de doblar.\n\n\
 ## Montaje de la impresión en dos papeles\n\n\
@@ -488,7 +488,7 @@ Three impositions of the same magazine are included. Print either the all-in-one
 ## booklet-a4.pdf: all in one\n\n\
 The whole magazine, cover included: {all_in_one_sheets} A4 sheets on one stock. This is the single-stock print, with nothing to collate.\n\n\
 ## booklet-a4-interior.pdf: interior on text stock\n\n\
-A sheet of its own, blank outside, with the credits on its inside face, opposite the contents,, then reader pages {first_interior} to {last_interior}. {interior_sheets} A4 sheets on ordinary 80-100 gsm text stock.\n\n\
+An outer sheet, blank outside, with the credits and the about page on its inside face; inside it, reader pages {first_interior} to {last_interior}. {interior_sheets} A4 sheets on ordinary 80-100 gsm text stock.\n\n\
 {split_en}## booklet-a4-cover.pdf: cover wrap on heavier stock\n\n\
 {cover_en}{spine_en} Use heavier stock (160-250 gsm folds well) and let the ink dry before folding.\n\n\
 ## Assembling the two-stock print\n\n\

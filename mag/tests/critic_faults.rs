@@ -27,7 +27,7 @@ fn authored_expectations_follow_the_imposition_plan() {
 }
 
 #[test]
-fn the_interior_opens_with_the_credits_facing_the_contents_and_splits_on_a_sheet() {
+fn the_interior_wraps_the_credits_and_about_on_one_sheet_and_splits_on_a_sheet() {
     let plan = impose::section_plan(108, "interior").unwrap();
     assert_eq!(
         plan[0],
@@ -36,10 +36,10 @@ fn the_interior_opens_with_the_credits_facing_the_contents_and_splits_on_a_sheet
     );
     assert_eq!(
         plan[1],
-        (Some(2), None),
-        "its inside left half carries the credits, facing the contents"
+        (Some(2), Some(106)),
+        "its inside carries the credits and the about page"
     );
-    assert_eq!(plan[2].1, Some(3), "the contents open the next sheet");
+    assert_eq!(plan[2], (None, Some(3)), "the contents open the next sheet");
     let mut printed: Vec<usize> = plan.iter().flat_map(|(l, r)| [*l, *r]).flatten().collect();
     printed.sort_unstable();
     assert_eq!(

@@ -71,8 +71,8 @@ pub fn section_plan(
         "interior" => {
             let padded: Vec<Option<usize>> = [None, Some(2)]
                 .into_iter()
-                .chain((3..page_count - 1).map(Some))
-                .chain([None, None])
+                .chain((3..page_count - 2).map(Some))
+                .chain([None, Some(page_count - 2), None])
                 .collect();
             booklet_spreads(padded.len())
                 .into_iter()
