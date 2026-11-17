@@ -334,18 +334,28 @@
   let c = state("mag-credits").final()
   let a = if c == none { none } else { c.at("about", default: none) }
   if a == none { return }
-  place(top + left, dx: MARGIN-OUTER + 18pt, dy: COLOPHON-TOP - 52pt, block(width: LIVE-WIDTH - 36pt, {
+  let mark = image(bytes(read("/brand/mark.svg").replace(regex("var\\(--[a-z]+, *(#[0-9a-fA-F]+)\\)"), m => m.captures.first())), format: "svg", width: 30pt)
+  let (lede, ..rest) = a.paragraphs
+  place(top + left, dx: MARGIN-OUTER + 14pt, dy: 64pt, block(width: LIVE-WIDTH - 28pt, {
     set par(leading: 0pt, spacing: 0pt, justify: false)
-    align(center, text(font: SERIF, size: 13pt, weight: 600, tracking: 0.02em, fill: INK, ..flat, a.title))
-    v(26pt)
-    for p in a.paragraphs {
-      block(below: 11pt, text(font: SERIF, size: 10.5pt, fill: INK, features: OLDSTYLE, hyphenate: false, ..pinned(15pt), p))
+    align(center, mark)
+    v(16pt)
+    align(center, text(font: SERIF, size: 9pt, fill: RUBRIC, tracking: 0.16em, features: ALL-SMALL-CAPS, ..flat, "About"))
+    v(12pt)
+    align(center, text(font: SERIF, size: 24pt, weight: 600, fill: INK, hyphenate: false, ..edges(24pt, 28pt, HALF-SERIF), a.title.replace(regex("^About "), "")))
+    v(14pt)
+    align(center, line(length: 36pt, stroke: 0.8pt + RUBRIC))
+    v(18pt)
+    align(center, text(font: SERIF, size: 12pt, style: "italic", fill: INK, features: OLDSTYLE, hyphenate: false, ..pinned(16.5pt), lede))
+    v(14pt)
+    for p in rest {
+      block(below: 10pt, par(justify: true, text(font: SERIF, size: 10pt, fill: STONE, features: OLDSTYLE, hyphenate: true, ..pinned(14.5pt), p)))
     }
-    v(22pt)
-    for line in a.creed {
-      align(center, block(below: 0pt, text(font: SERIF, size: 12.5pt, style: "italic", fill: RUBRIC, ..pinned(19pt), line)))
+    v(24pt)
+    for (index, line) in a.creed.enumerate() {
+      align(center, block(below: 0pt, text(font: SERIF, size: 17pt, weight: 600, style: "italic", fill: if calc.even(index) { INK } else { RUBRIC }, hyphenate: false, ..pinned(22pt), line)))
     }
-    v(22pt)
+    v(20pt)
     align(center, ornament())
   }))
 })
