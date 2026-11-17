@@ -27,14 +27,19 @@ fn authored_expectations_follow_the_imposition_plan() {
 }
 
 #[test]
-fn the_interior_opens_with_the_credits_on_a_sheet_of_their_own_and_splits_on_a_sheet() {
+fn the_interior_opens_with_the_credits_facing_the_contents_and_splits_on_a_sheet() {
     let plan = impose::section_plan(108, "interior").unwrap();
     assert_eq!(
         plan[0],
-        (None, Some(2)),
-        "the outermost sheet carries only the credits"
+        (None, None),
+        "the outermost sheet's outside is blank"
     );
-    assert_eq!(plan[1], (None, None), "and nothing on its inside");
+    assert_eq!(
+        plan[1],
+        (Some(2), None),
+        "its inside left half carries the credits, facing the contents"
+    );
+    assert_eq!(plan[2].1, Some(3), "the contents open the next sheet");
     let mut printed: Vec<usize> = plan.iter().flat_map(|(l, r)| [*l, *r]).flatten().collect();
     printed.sort_unstable();
     assert_eq!(

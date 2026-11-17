@@ -69,7 +69,7 @@ pub fn section_plan(
     Ok(match section {
         "cover" => cover_wrap_plan(page_count)?,
         "interior" => {
-            let padded: Vec<Option<usize>> = [Some(2), None]
+            let padded: Vec<Option<usize>> = [None, Some(2)]
                 .into_iter()
                 .chain((3..page_count - 1).map(Some))
                 .chain([None, None])
