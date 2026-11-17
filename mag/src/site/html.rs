@@ -46,6 +46,8 @@ fn say(language: &str, key: &str) -> &'static str {
         "pdf" => "A5 print layout",
         "epub" if spanish => "para lectores electrónicos",
         "epub" => "for e-readers",
+        "booklet" if spanish => "pliegos A4 para imprimir en casa",
+        "booklet" => "A4 sheets to print at home",
         "original" if spanish => "Leer el original",
         "original" => "Read the original",
         "next" if spanish => "Siguiente",
@@ -128,6 +130,7 @@ fn megabytes(bytes: u64) -> String {
 
 const SPRITE: &str = "<svg width=\"0\" height=\"0\" style=\"position:absolute\" aria-hidden=\"true\"><defs>\
 <symbol id=\"g-pdf\" viewBox=\"0 0 24 24\"><path d=\"M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
+<symbol id=\"g-booklet\" viewBox=\"0 0 24 24\"><path d=\"M12 6.5 3 4v14l9 2.5 9-2.5V4zM12 6.5v14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
 <symbol id=\"g-epub\" viewBox=\"0 0 24 24\"><path d=\"M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
 <symbol id=\"g-down\" viewBox=\"0 0 24 24\"><path d=\"M12 4v13m-5-5 5 5 5-5M5 20.25h14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></symbol>\
 </defs></svg>\n";
@@ -790,6 +793,7 @@ pub fn issue_dir(edition: &Edition) -> String {
 fn mime(kind: &str) -> &'static str {
     match kind {
         "pdf" => "application/pdf",
+        "booklet" => "application/zip",
         _ => "application/epub+zip",
     }
 }
@@ -810,15 +814,23 @@ fn formats(assets: Option<&super::Assets>) -> Vec<(&'static str, &super::Asset)>
     let Some(assets) = assets else {
         return Vec::new();
     };
-    [("pdf", &assets.pdf), ("epub", &assets.epub)]
-        .into_iter()
-        .filter_map(|(kind, asset)| Some((kind, asset.as_ref()?)))
-        .collect()
+    [
+        ("pdf", &assets.pdf),
+        ("epub", &assets.epub),
+        ("booklet", &assets.booklet),
+    ]
+    .into_iter()
+    .filter_map(|(kind, asset)| Some((kind, asset.as_ref()?)))
+    .collect()
 }
 
 fn get_issue(language: &str, assets: Option<&super::Assets>, heading: &str) -> String {
     let found = formats(assets);
-    let solo = if found.len() == 1 { " solo" } else { "" };
+    let solo = match found.len() {
+        1 => " solo",
+        3 => " trio",
+        _ => "",
+    };
     let buttons: String = found
         .into_iter()
         .map(|(kind, asset)| download(language, kind, asset))

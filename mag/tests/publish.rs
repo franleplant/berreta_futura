@@ -16,6 +16,8 @@ fn scratch(tag: &str) -> PathBuf {
     .unwrap();
     std::fs::write(root.join("a.pdf"), "%PDF-1.7 english").unwrap();
     std::fs::write(root.join("a.epub"), "PK book").unwrap();
+    std::fs::write(root.join("booklet-a4-cover.pdf"), "%PDF-1.7 cover").unwrap();
+    std::fs::write(root.join("booklet-a4-interior.pdf"), "%PDF-1.7 inside").unwrap();
     root
 }
 
@@ -67,6 +69,10 @@ fn a_dry_run_calls_no_gh_and_writes_nothing_and_a_wrong_file_is_refused() {
         stdout.contains("as berreta-futura-011-en.epub to o/r"),
         "{stdout}"
     );
+    assert!(
+        stdout.contains("as berreta-futura-011-en-a4-booklet.zip to o/r"),
+        "{stdout}"
+    );
     assert!(log(&root).is_empty());
     assert!(!root.join("editions/011/publish.yaml").exists());
     let refused = Command::new(env!("CARGO_BIN_EXE_mag"))
@@ -87,7 +93,7 @@ fn publish_creates_the_release_once_uploads_with_clobber_and_skips_what_is_uncha
     let out = publish(&root, &path, &["--epub", "a.epub"]);
     assert!(out.status.success(), "{out:?}");
     let calls = log(&root);
-    assert_eq!(calls.len(), 4, "{calls:?}");
+    assert_eq!(calls.len(), 5, "{calls:?}");
     assert_eq!(calls[0], "api repos/o/r/releases/tags/issue-011");
     assert_eq!(
         calls[1],
@@ -99,8 +105,10 @@ fn publish_creates_the_release_once_uploads_with_clobber_and_skips_what_is_uncha
             "berreta-futura-011-en.{name} --clobber --repo o/r"
         )));
     }
+    assert!(calls[4].contains("berreta-futura-011-en-a4-booklet.zip --clobber --repo o/r"));
     let yaml = root.join("editions/011/publish.yaml");
     let record = std::fs::read_to_string(&yaml).unwrap();
+    assert!(record.contains("booklet:"), "{record}");
     let base = "https://github.com/o/r/releases/download/issue-011/berreta-futura-011-en";
     assert!(record.contains(&format!("url: {base}.pdf")), "{record}");
     assert!(record.contains(&format!("url: {base}.epub")), "{record}");
@@ -120,7 +128,7 @@ fn publish_creates_the_release_once_uploads_with_clobber_and_skips_what_is_uncha
     let out = publish(&root, &path, &["--epub", "a.epub"]);
     assert!(out.status.success(), "{out:?}");
     let calls = log(&root);
-    assert_eq!(calls.len(), 2, "{calls:?}");
+    assert_eq!(calls.len(), 3, "{calls:?}");
     assert!(calls[1].contains("berreta-futura-011-en.epub --clobber"));
     let record = std::fs::read_to_string(&yaml).unwrap();
     assert!(record.contains("bytes: 10"), "{record}");

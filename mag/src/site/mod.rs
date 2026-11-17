@@ -55,6 +55,8 @@ pub struct Assets {
     pub pdf: Option<Asset>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub epub: Option<Asset>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub booklet: Option<Asset>,
 }
 
 pub type PublishRecord = BTreeMap<String, Assets>;
@@ -125,7 +127,11 @@ pub fn parse_publish_record(text: &str, path: &str) -> Result<PublishRecord> {
             false => format!("reading {path}"),
         }
     })?;
-    for asset in record.values().flat_map(|a| [&a.pdf, &a.epub]).flatten() {
+    for asset in record
+        .values()
+        .flat_map(|a| [&a.pdf, &a.epub, &a.booklet])
+        .flatten()
+    {
         ensure!(
             asset.sha256.len() == 64
                 && asset

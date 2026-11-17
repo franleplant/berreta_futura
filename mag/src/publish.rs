@@ -70,7 +70,12 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             site.repo
         )
     };
-    let pdf = upload(&args.pdf, "pdf", b"%PDF-", &stem, &url)?;
+    let staging = std::env::temp_dir().join(format!("mag-publish-{}", std::process::id()));
+    fs::create_dir_all(staging.join("booklet"))?;
+    let _staging = Staging(staging.clone());
+    let pdf = upload(&args.pdf, "pdf", b"%PDF-", format!("{stem}.pdf"), &url)?;
+    let zip = booklet_zip(&args.pdf, &staging.join("booklet"), &stem)?;
+    let booklet = upload(&zip, "zip", b"PK", format!("{stem}-a4-booklet.zip"), &url)?;
     let epub = match &args.epub {
         Some(epub) => epub.clone(),
         None => {
@@ -82,7 +87,11 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             dir.join("epub").join(format!("{stem}.epub"))
         }
     };
-    let uploads = vec![pdf, upload(&epub, "epub", b"PK", &stem, &url)?];
+    let uploads = vec![
+        pdf,
+        upload(&epub, "epub", b"PK", format!("{stem}.epub"), &url)?,
+        booklet,
+    ];
     let path = dir.join("publish.yaml");
     if args.dry_run {
         for one in &uploads {
@@ -102,9 +111,6 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
         .as_str()
         .context("edition.yaml has no title")?;
     let current = current_digests(&site.repo, &tag, &format!("Issue {edition}: {title}"))?;
-    let staging = std::env::temp_dir().join(format!("mag-publish-{}", std::process::id()));
-    fs::create_dir_all(&staging)?;
-    let _staging = Staging(staging.clone());
     let mut record = publish_record(&path)?;
     for one in uploads {
         match current.contains(&format!("{}:{}", one.name, one.asset.sha256)) {
@@ -114,6 +120,7 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
         let assets = record.entry(args.lang.clone()).or_default();
         match one.kind {
             "pdf" => assets.pdf = Some(one.asset),
+            "zip" => assets.booklet = Some(one.asset),
             _ => assets.epub = Some(one.asset),
         }
     }
@@ -127,11 +134,33 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
     Ok(0)
 }
 
+fn booklet_zip(pdf: &Path, into: &Path, stem: &str) -> Result<PathBuf> {
+    let render = pdf.parent().context("--pdf has no parent directory")?;
+    let zip_path = into.join(format!("{stem}-a4-booklet.zip"));
+    let mut zip = zip::ZipWriter::new(fs::File::create(&zip_path)?);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Stored)
+        .last_modified_time(zip::DateTime::default());
+    for part in ["cover", "interior"] {
+        let source = render.join(format!("booklet-a4-{part}.pdf"));
+        let bytes = fs::read(&source).with_context(|| {
+            format!(
+                "publish ships the A4 booklet from beside --pdf; {} is missing (pass the reader.pdf of a full render)",
+                source.display()
+            )
+        })?;
+        zip.start_file(format!("{stem}-a4-{part}.pdf"), options)?;
+        std::io::Write::write_all(&mut zip, &bytes)?;
+    }
+    zip.finish()?;
+    Ok(zip_path)
+}
+
 fn upload(
     path: &Path,
     kind: &'static str,
     magic: &[u8],
-    stem: &str,
+    name: String,
     url: &dyn Fn(&str) -> String,
 ) -> Result<Upload> {
     let bytes = fs::read(path).with_context(|| format!("reading {}", path.display()))?;
@@ -140,7 +169,6 @@ fn upload(
         "{} is not a {kind}",
         path.display()
     );
-    let name = format!("{stem}.{kind}");
     Ok(Upload {
         kind,
         source: path.to_path_buf(),

@@ -210,6 +210,7 @@ pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .
 @media (min-width: 34rem) {
   .btns { grid-template-columns: 1fr 1fr; }
   .btns.solo { grid-template-columns: 1fr; }
+  .btns.trio { grid-template-columns: 1fr 1fr 1fr; }
 }
 
 @media (min-width: 52rem) {
