@@ -1248,16 +1248,9 @@ pub fn page_row_issues(
     for row in rows {
         let page = row.inspection.page;
         if context.inside_cover_pages.contains(&page) {
-            if !row.inspection.blank {
-                recorder.at(
-                    "inside-cover-reader-not-blank",
-                    "error",
-                    "The inside back cover must be completely blank (a pure-white raster with no extractable text); the inside front cover carries the credits."
-                        .to_string(),
-                    page,
-                );
-            }
-        } else if row.inspection.ink_free {
+            continue;
+        }
+        if row.inspection.ink_free {
             recorder.at(
                 "blank-page",
                 "error",
@@ -1351,7 +1344,7 @@ pub fn booklet_side_issues(
     spreads: &[Spread],
     rows: &[PageInspection],
     inside_cover_pages: &BTreeSet<usize>,
-    codes: (&str, &str),
+    code: &str,
 ) -> BTreeSet<usize> {
     let inside_sides: BTreeSet<usize> = spreads
         .iter()
@@ -1366,27 +1359,11 @@ pub fn booklet_side_issues(
         .collect();
     for row in rows {
         let side = row.page;
-        if inside_sides.contains(&side) {
-            if !row.blank {
-                recorder.at(codes.0, "error", inside_message(codes.0), side);
-            }
-        } else if row.ink_free {
-            recorder.at(codes.1, "error", blank_message(codes.1), side);
+        if !inside_sides.contains(&side) && row.ink_free {
+            recorder.at(code, "error", blank_message(code), side);
         }
     }
     inside_sides
-}
-
-fn inside_message(code: &str) -> String {
-    match code {
-        "inside-cover-booklet-not-blank" => {
-            "The imposed side containing both inside covers must be completely blank (a pure-white raster with no extractable text)."
-        }
-        _ => {
-            "The cover booklet's inside side must be completely blank (a pure-white raster with no extractable text)."
-        }
-    }
-    .to_string()
 }
 
 fn blank_message(code: &str) -> String {
@@ -2070,14 +2047,14 @@ pub fn inspect_render(inputs: &Inputs) -> Result<Critique> {
         &imposition.spreads,
         &prepared.booklet_pages,
         &shape.inside_cover_pages,
-        ("inside-cover-booklet-not-blank", "blank-booklet-side"),
+        "blank-booklet-side",
     );
     let cover_booklet_inside_sides = booklet_side_issues(
         &mut recorder,
         &imposition.cover_spreads,
         &prepared.cover_booklet_pages,
         &shape.inside_cover_pages,
-        ("cover-booklet-inside-not-blank", "blank-cover-booklet-side"),
+        "blank-cover-booklet-side",
     );
     let editorial_page_cap = contents_issues(
         &mut recorder,

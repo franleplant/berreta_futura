@@ -251,26 +251,6 @@
 
 #let plain-page() = page(margin: 0pt, foreground: none, [])
 
-#let about-page() = page(margin: 0pt, foreground: none, context {
-  let c = state("mag-credits").final()
-  let a = if c == none { none } else { c.at("about", default: none) }
-  if a == none { return }
-  place(top + left, dx: MARGIN-OUTER + 18pt, dy: COLOPHON-TOP - 52pt, block(width: LIVE-WIDTH - 36pt, {
-    set par(leading: 0pt, spacing: 0pt, justify: false)
-    align(center, text(font: SERIF, size: 13pt, weight: 600, tracking: 0.02em, fill: INK, ..flat, a.title))
-    v(26pt)
-    for p in a.paragraphs {
-      block(below: 11pt, text(font: SERIF, size: 10.5pt, fill: INK, features: OLDSTYLE, hyphenate: false, ..pinned(15pt), p))
-    }
-    v(22pt)
-    for line in a.creed {
-      align(center, block(below: 0pt, text(font: SERIF, size: 12.5pt, style: "italic", fill: RUBRIC, ..pinned(19pt), line)))
-    }
-    v(22pt)
-    align(center, ornament())
-  }))
-})
-
 #let COVER-W = PAGE-WIDTH.pt()
 #let COVER-H = PAGE-HEIGHT.pt()
 #let COVER-FACES = (
@@ -348,6 +328,26 @@
       }
     }))
   }
+})
+
+#let about-page() = page(margin: 0pt, foreground: none, context {
+  let c = state("mag-credits").final()
+  let a = if c == none { none } else { c.at("about", default: none) }
+  if a == none { return }
+  place(top + left, dx: MARGIN-OUTER + 18pt, dy: COLOPHON-TOP - 52pt, block(width: LIVE-WIDTH - 36pt, {
+    set par(leading: 0pt, spacing: 0pt, justify: false)
+    align(center, text(font: SERIF, size: 13pt, weight: 600, tracking: 0.02em, fill: INK, ..flat, a.title))
+    v(26pt)
+    for p in a.paragraphs {
+      block(below: 11pt, text(font: SERIF, size: 10.5pt, fill: INK, features: OLDSTYLE, hyphenate: false, ..pinned(15pt), p))
+    }
+    v(22pt)
+    for line in a.creed {
+      align(center, block(below: 0pt, text(font: SERIF, size: 12.5pt, style: "italic", fill: RUBRIC, ..pinned(19pt), line)))
+    }
+    v(22pt)
+    align(center, ornament())
+  }))
 })
 
 #let cover-page(key, draw) = page(margin: 0pt, foreground: none, context {
