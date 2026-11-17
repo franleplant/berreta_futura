@@ -396,6 +396,108 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
     Ok(BLANK_RUN.replace_all(body.trim(), "\n\n\n").into_owned() + "\n")
 }
 
+const CLEANUP_HEAD_BLOCKS: usize = 3;
+const CLEANUP_MAX_SHARE: f64 = 0.15;
+
+fn blocks(body: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut fenced = false;
+    for line in body.lines() {
+        fenced ^= line.trim_start().starts_with("```");
+        if line.trim().is_empty() && !fenced {
+            if !cur.is_empty() {
+                out.push(std::mem::take(&mut cur));
+            }
+            continue;
+        }
+        if !cur.is_empty() {
+            cur.push('\n');
+        }
+        cur.push_str(line);
+    }
+    if !cur.is_empty() {
+        out.push(cur);
+    }
+    out
+}
+
+fn parse_cuts(reply: &str, blocks: &[String]) -> Result<Vec<usize>> {
+    if reply.trim().trim_matches('`').eq_ignore_ascii_case("none") {
+        return Ok(Vec::new());
+    }
+    let mut cuts = reply
+        .lines()
+        .filter_map(|l| l.split_once('|'))
+        .map(|(n, _)| {
+            let n = n.trim().trim_matches(['[', ']']);
+            n.parse::<usize>()
+                .ok()
+                .filter(|&n| (1..=blocks.len()).contains(&n))
+                .ok_or_else(|| anyhow!("'{n}' is not a block number"))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    if cuts.is_empty() {
+        bail!("reply `none` or one `N | reason` line per block to cut");
+    }
+    cuts.sort_unstable();
+    cuts.dedup();
+    let tail = cuts
+        .iter()
+        .rev()
+        .zip((1..=blocks.len()).rev())
+        .take_while(|(c, b)| **c == *b)
+        .count();
+    let stray: Vec<&usize> = cuts[..cuts.len() - tail]
+        .iter()
+        .filter(|&&n| n > CLEANUP_HEAD_BLOCKS)
+        .collect();
+    if !stray.is_empty() {
+        bail!("blocks {stray:?} sit mid-article; cut only among the first {CLEANUP_HEAD_BLOCKS} blocks or a run that ends the article");
+    }
+    if let Some(n) = cuts.iter().find(|&&n| blocks[n - 1].contains("```")) {
+        bail!("block {n} holds code; never cut code");
+    }
+    let words = |b: &String| b.split_whitespace().count();
+    let cut: usize = cuts.iter().map(|&n| words(&blocks[n - 1])).sum();
+    let total: usize = blocks.iter().map(words).sum();
+    if cut as f64 > total as f64 * CLEANUP_MAX_SHARE {
+        bail!("the cuts remove {cut} of {total} words; cut only what is not part of the article");
+    }
+    Ok(cuts)
+}
+
+fn verbatim_cleanup(caller: &Caller, piece_id: &str, body: &str) -> Result<String> {
+    let blocks = blocks(body);
+    let numbered: String = blocks
+        .iter()
+        .enumerate()
+        .map(|(i, b)| format!("[{}]\n{b}\n\n", i + 1))
+        .collect();
+    let prompt = format!(
+        "{INLINE_PREAMBLE}\n\n{}\n\n{}",
+        read(&prompts_path("verbatim-cleanup.md"))?,
+        section("article", &numbered)
+    );
+    let cuts = caller.call_with_parse(
+        &format!("{piece_id} cleanup"),
+        &ModelSpec::parse("sonnet")?,
+        &prompt,
+        |reply| parse_cuts(reply, &blocks),
+    )?;
+    for &n in &cuts {
+        let first: String = blocks[n - 1].chars().take(70).collect();
+        println!("  {piece_id}: cut block {n}: {}", first.replace('\n', " "));
+    }
+    let kept: Vec<&str> = blocks
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !cuts.contains(&(i + 1)))
+        .map(|(_, b)| b.as_str())
+        .collect();
+    Ok(kept.join("\n\n") + "\n")
+}
+
 fn is_byline(line: &str) -> bool {
     let words = line.split_whitespace().count();
     line.len() < 240
@@ -467,7 +569,7 @@ fn produce_piece(
 
     {
         if content_mode(article)? == ContentMode::Verbatim {
-            let body = verbatim_body(sources)?;
+            let body = verbatim_cleanup(caller, piece_id, &verbatim_body(sources)?)?;
             write_atomic(&final_path, article_frontmatter(article)? + &body)?;
             let status = PieceStatus {
                 piece: piece_id.to_string(),
@@ -1392,6 +1494,25 @@ mod tests {
                 serde_norway::from_str(&format!("k: {}\n", yq(raw))).unwrap();
             assert_eq!(doc["k"].as_str(), Some(raw), "{raw:?} -> {}", yq(raw));
         }
+    }
+
+    #[test]
+    fn cleanup_cuts_only_head_or_tail_prose() {
+        let body = "Lede\n\n```\na\n\nb\n```\n\nOne two three\n\nMiddle words here\n\nMore words\n\nFollow us";
+        let b = blocks(body);
+        assert_eq!(b.len(), 6);
+        assert_eq!(b[1], "```\na\n\nb\n```");
+        let mut long = vec!["word ".repeat(20); 10];
+        long[9] = "Join our Discord".to_string();
+        assert_eq!(
+            parse_cuts("1 | dup\n10 | promo", &long).unwrap(),
+            vec![1, 10]
+        );
+        assert!(parse_cuts("none", &long).unwrap().is_empty());
+        assert!(parse_cuts("5 | mid", &long).is_err());
+        assert!(parse_cuts("2 | code", &b).is_err());
+        assert!(parse_cuts("1 | a\n2 | b\n3 | c", &long).is_err());
+        assert!(parse_cuts("sure", &long).is_err());
     }
 
     #[test]

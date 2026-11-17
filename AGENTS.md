@@ -17,7 +17,10 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (every one in verbatim) become figure rows captioned from their alt and
   re-anchored to the run's headings, the rest commented out; a verbatim
   body drops bare-URL lines, headings that repeat the title, and a heading that opens it,
-  since the opener needs a paragraph first;
+  since the opener needs a paragraph first, then one gated cleanup call
+  (`prompts/verbatim-cleanup.md`) cuts whole blocks that are not the article
+  (repeated intros, promo and link footers, docs boilerplate), only among the
+  first three blocks or a run that ends it, never code, at most 15% of words;
   one gated call drafts short_title and display_emphasis; art stays TODO) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
   `tools/imagegen`) -> pick in `art/showcase.html` -> `mag art NNN --promote`
   -> `mag art NNN --only endpaper` (once the cover is picked; promote prints
@@ -138,7 +141,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - Content modes: `faithful_edit`, `faithful_synthesis`, `selected_extracts`,
   `original_synthesis`, `in_a_nutshell`, `explainer` (multi-source teaching piece:
   user, developer, internals; `prompts/explainer.md`), `verbatim` (source text unchanged, no
-  writer call, ten-page cap instead of seven), plus the `original_editorial`
+  writer call, head/tail cleanup only, ten-page cap instead of seven), plus the `original_editorial`
   opener.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for

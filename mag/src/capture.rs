@@ -28,6 +28,8 @@ static LATEX_BIBLIOGRAPHY: LazyLock<Regex> = LazyLock::new(|| {
 });
 static HTML_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<[^>]*>").unwrap());
 static HTML_COMMENT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?s)<!--.*?-->").unwrap());
+static FIGCAPTION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)<figcaption\b[^>]*>.*?</figcaption>").unwrap());
 static DATA_URI_SRC: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"(?s)\bsrc="data:[^"]*""#).unwrap());
 static SRC_ATTR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"\bsrc="([^"]*)""#).unwrap());
@@ -346,7 +348,17 @@ fn visible_html(html: &str) -> String {
     for tag in ["script", "style", "svg", "noscript", "button"] {
         s = strip_block(&s, tag);
     }
-    HTML_COMMENT.replace_all(&s, " ").into_owned()
+    let s = HTML_COMMENT.replace_all(&s, " ");
+    let mut seen = std::collections::HashSet::new();
+    FIGCAPTION
+        .replace_all(&s, |c: &regex::Captures| {
+            if seen.insert(plain_text(&c[0])) {
+                c[0].to_string()
+            } else {
+                " ".to_string()
+            }
+        })
+        .into_owned()
 }
 
 fn plain_text(html: &str) -> String {
@@ -2158,6 +2170,18 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(err.contains("out of page order"), "{err}");
+    }
+
+    #[test]
+    fn gate_reads_a_caption_repeated_across_tabs_once() {
+        let (a, b, cap) = (
+            numbered_paragraph("a", 90),
+            numbered_paragraph("b", 90),
+            numbered_paragraph("cap", 110),
+        );
+        let tabs = format!("<figure><figcaption>{cap}</figcaption></figure>").repeat(4);
+        let page = format!("<html><body><p>{a}</p>{tabs}<p>{b}</p></body></html>");
+        assert!(gate(&format!("# T\nByline\n\n{a}\n\n{cap}\n\n{b}"), &page).is_ok());
     }
 
     #[test]
