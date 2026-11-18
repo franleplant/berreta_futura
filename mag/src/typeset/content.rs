@@ -448,8 +448,10 @@ impl Writer<'_> {
                 "{ILLUSTRATED} requires a paragraph as the first manuscript block"
             )));
         }
-        let (head, trim) = self.article_head(article, document, index, illustrated)?;
-        let mut out = card_page(article) + &head;
+        let (mut out, trim) = match self.card_head(article, index) {
+            Some(head) => (head, 0.0),
+            None => self.article_head(article, document, index, illustrated)?,
+        };
         if !illustrated {
             out.push_str("  #opener-end()\n");
         }
@@ -491,6 +493,35 @@ impl Writer<'_> {
             self.flowing(&moved, true),
         );
         Ok(self.cut(false, held) + &self.cut(false, rest))
+    }
+
+    fn card_head(&self, article: &Article, index: usize) -> Option<String> {
+        let spread = article.card.as_ref()?;
+        let art = spread.art.as_ref()?;
+        if crate::typeset::style::current() != crate::typeset::style::Style::Book {
+            return None;
+        }
+        let card = serde_json::to_value(&spread.card).ok()?;
+        let kicker = format!(
+            "{} {index:02} / {}",
+            self.ui("feature"),
+            self.ui(article.content_mode.as_str())
+        );
+        Some(format!(
+            "#piece(\n  id: {},\n  kind: {},\n  short-title: {},\n  source-ids: {},\n  figure-layouts: {},\n  opener: \"plain\",\n  art: none,\n  titles: none,\n)[\n\
+             #model-card-opener(kicker: {}, title: {}, card: {}, art: {}, labs: {}, date: {})\n",
+            string_literal(&format!("article-{}", article.id)),
+            string_literal(article.content_mode.as_str()),
+            string_literal(&article.short_title),
+            string_array(&article.source_ids),
+            string_array(&figure_layouts(article)),
+            self.said(&kicker),
+            self.said(&article.title),
+            crate::typeset::cover::literal(&card),
+            path_literal(art),
+            path_literal(&Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs")),
+            article.dateline.as_deref().map_or("none".to_string(), string_literal),
+        ))
     }
 
     fn article_head(
@@ -1048,30 +1079,6 @@ fn text_locale(locale: &str) -> String {
         ),
         None => format!("lang: {}", string_literal(locale)),
     }
-}
-
-fn card_page(article: &Article) -> String {
-    let Some((spread, art)) = article
-        .card
-        .as_ref()
-        .and_then(|c| Some((c, c.art.as_ref()?)))
-    else {
-        return String::new();
-    };
-    if crate::typeset::style::current() != crate::typeset::style::Style::Book {
-        return String::new();
-    }
-    let card = serde_json::to_value(&spread.card).unwrap_or_default();
-    format!(
-        "#model-card-page(card: {}, art: {}, labs: {}, date: {})\n\n",
-        crate::typeset::cover::literal(&card),
-        path_literal(art),
-        path_literal(&Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs")),
-        article
-            .dateline
-            .as_deref()
-            .map_or("none".to_string(), string_literal)
-    )
 }
 
 fn path_literal(path: &Path) -> String {

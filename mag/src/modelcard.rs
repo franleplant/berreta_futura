@@ -365,11 +365,69 @@ pub fn card_errors(card: &Card, source: &str) -> Vec<String> {
             errs.push(format!("model_id '{id}' does not appear in the sources"));
         }
     }
+    errs.extend(art_errors(card, &page));
+    if let Some(date) = card.released.as_deref().filter(|d| !date_on_page(d, &page)) {
+        errs.push(format!("released '{date}' is not a date the sources print"));
+    }
     if let Some(f) = &card.flavor {
         if !page.contains(squash(&f.quote).trim_end_matches('.')) {
             errs.push("flavor quote is not a verbatim run of the sources".into());
         }
         over(&mut errs, "flavor quote", &f.quote, 120);
+    }
+    errs
+}
+
+const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+fn date_on_page(date: &str, page: &str) -> bool {
+    let parts: Vec<usize> = date.split('-').filter_map(|p| p.parse().ok()).collect();
+    let [year, month, day] = parts[..] else {
+        return false;
+    };
+    let Some(name) = MONTHS.get(month.wrapping_sub(1)) else {
+        return false;
+    };
+    [
+        date.to_string(),
+        format!("{name} {day}, {year}"),
+        format!("{} {day}, {year}", &name[..3]),
+        format!("{}. {day}, {year}", &name[..3]),
+        format!("{day} {name} {year}"),
+    ]
+    .iter()
+    .any(|form| page.contains(form.as_str()))
+}
+
+static MACHINE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)\b(?:robot|automaton|android|cyborg|mech)s?\b").unwrap());
+static MANY_ARMED: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)\b(?:many|multi|four|six|eight)[- ]armed\b").unwrap());
+
+fn art_errors(card: &Card, page: &str) -> Vec<String> {
+    let robotics = Regex::new(r"(?i)\brobot").unwrap().find_iter(page).count() >= 10;
+    let mut errs = Vec::new();
+    for (i, brief) in card.art_briefs.iter().enumerate() {
+        let subject = brief.split(['.', ',', ':']).next().unwrap_or_default();
+        if !robotics && MACHINE.is_match(subject) {
+            errs.push(format!("art brief {}: the subject is a robot or automaton, but the post is not about robotics; pick a beast, giant, spirit, ship, tower, tree, or another being", i + 1));
+        }
+        if MANY_ARMED.is_match(brief) {
+            errs.push(format!("art brief {}: no many-armed figures", i + 1));
+        }
     }
     errs
 }
@@ -393,6 +451,88 @@ pub fn missing(card: &Card) -> Vec<&'static str> {
     .into_iter()
     .filter_map(|(gap, what)| gap.then_some(what))
     .collect()
+}
+
+const LAB_SITES: [(&str, &[&str]); 4] = [
+    ("anthropic", &["anthropic.com", "claude.com"]),
+    ("openai", &["openai.com"]),
+    (
+        "google",
+        &[
+            "google.dev",
+            "blog.google",
+            "deepmind.google",
+            "google.com",
+            "googleblog.com",
+        ],
+    ),
+    ("meta", &["meta.com", "llama.com", "facebook.com"]),
+];
+
+fn host(url: &str) -> Option<&str> {
+    let rest = url.strip_prefix("https://")?;
+    let host = rest.split(['/', '?', '#']).next()?;
+    Some(host.strip_prefix("www.").unwrap_or(host))
+}
+
+pub fn lab_domains(lab: &str, source_url: &str) -> Vec<String> {
+    let squashed = lab.to_lowercase().replace(' ', "");
+    let mut domains: Vec<String> = LAB_SITES
+        .iter()
+        .filter(|(key, _)| squashed.contains(key))
+        .flat_map(|(_, sites)| sites.iter().map(|s| (*s).to_string()))
+        .collect();
+    if let Some(h) = host(source_url) {
+        let labels: Vec<&str> = h.split('.').collect();
+        domains.push(labels[labels.len().saturating_sub(2)..].join("."));
+    }
+    domains.sort();
+    domains.dedup();
+    domains
+}
+
+#[derive(Deserialize)]
+struct Pages {
+    urls: Vec<String>,
+}
+
+pub fn parse_pages(reply: &str, domains: &[String]) -> Result<Vec<String>> {
+    let pages: Pages = json_reply(reply)?;
+    if pages.urls.len() > 3 {
+        bail!("list at most three pages");
+    }
+    for url in &pages.urls {
+        let Some(h) = host(url) else {
+            bail!("{url} is not an https URL");
+        };
+        if !domains
+            .iter()
+            .any(|d| h == d || h.ends_with(&format!(".{d}")))
+        {
+            bail!(
+                "{url} is not on the lab's own sites ({}); list only the lab's own pages",
+                domains.join(", ")
+            );
+        }
+    }
+    Ok(pages.urls)
+}
+
+pub fn find_pages(
+    caller: &Caller,
+    label: &str,
+    card: &Card,
+    source_url: &str,
+) -> Result<Vec<String>> {
+    let domains = lab_domains(&card.lab, source_url);
+    let prompt = read(&prompts_path("model-card-sources.md"))?
+        .replace("{model}", &card.name)
+        .replace("{lab}", &card.lab)
+        .replace("{missing}", &missing(card).join(", "))
+        .replace("{domains}", &domains.join(", "));
+    let mut spec = ModelSpec::parse("sonnet")?;
+    spec.web = true;
+    caller.call_with_parse(label, &spec, &prompt, |reply| parse_pages(reply, &domains))
 }
 
 pub fn write_card(caller: &Caller, label: &str, model: &ModelSpec, sources: &str) -> Result<Card> {
@@ -452,7 +592,7 @@ mod tests {
             }),
             released: None,
             art_briefs: vec![
-                "a calm automaton. Background: a sun. Red palette.".into(),
+                "a calm heron. Background: a sun. Red palette.".into(),
                 "a tall figure. Background: sea. Blue palette.".into(),
             ],
         }
@@ -492,6 +632,50 @@ mod tests {
         assert!(card_errors(&c, SOURCE)
             .iter()
             .any(|e| e.contains("flavor quote")));
+    }
+
+    #[test]
+    fn found_pages_must_be_on_the_labs_own_sites() {
+        let domains = lab_domains("OpenAI", "https://openai.com/index/introducing-gpt-6-2/");
+        assert_eq!(domains, vec!["openai.com".to_string()]);
+        let ok = r#"{"urls": ["https://platform.openai.com/docs/pricing", "https://www.openai.com/api/pricing/"]}"#;
+        assert_eq!(parse_pages(ok, &domains).unwrap().len(), 2);
+        assert!(parse_pages(
+            r#"{"urls": ["https://techcrunch.com/openai-pricing"]}"#,
+            &domains
+        )
+        .is_err());
+        assert!(parse_pages(r#"{"urls": ["http://openai.com/pricing"]}"#, &domains).is_err());
+        assert!(
+            lab_domains("Google", "https://blog.google/technology/gemini-4/")
+                .contains(&"google.dev".to_string())
+        );
+    }
+
+    #[test]
+    fn the_art_is_not_always_a_robot() {
+        let mut c = card();
+        c.art_briefs[0] =
+            "a calm automaton made of brass, holding a lamp. Background: a sun. Red palette."
+                .into();
+        assert!(card_errors(&c, SOURCE)
+            .iter()
+            .any(|e| e.contains("robot or automaton")));
+        c.art_briefs[0] =
+            "a vast tortoise made of tiles, carrying a robot arm. Background: sea. Red palette."
+                .into();
+        assert!(card_errors(&c, SOURCE).is_empty());
+        c.art_briefs[1] = "a four-armed giant made of glass. Background: sea. Blue palette.".into();
+        assert!(card_errors(&c, SOURCE)
+            .iter()
+            .any(|e| e.contains("many-armed")));
+    }
+
+    #[test]
+    fn a_release_date_must_be_printed_in_the_sources() {
+        assert!(date_on_page("2026-11-17", "Published November 17, 2026 by"));
+        assert!(date_on_page("2026-11-09", "Nov 9, 2026"));
+        assert!(!date_on_page("2026-11-18", "Published November 17, 2026"));
     }
 
     #[test]

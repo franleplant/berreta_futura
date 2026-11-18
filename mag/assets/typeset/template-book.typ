@@ -1914,8 +1914,24 @@
         move(dy: -9pt, mc-bench(p, c.benchmark))),
     ))))
 
-#let model-card-page(card: none, art: none, labs: none, date: none) = {
+#let mc-scaled(card, art, labs, date) = layout(sz => align(center + top, {
+  let s = calc.min(1, sz.height / 184mm, sz.width / 128mm)
+  scale(s * 100%, reflow: true, box(width: 128mm, height: 184mm, align(left, mc-card(card, art, mc-palette(card.lab, labs), if card.released != none { card.released } else { date }))))
+}))
+
+#let model-card-opener(kicker: none, title: none, card: none, art: none, labs: none, date: none) = {
+  block(width: 100%, height: PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM, breakable: false, spacing: 0pt, {
+    set par(leading: 0.3em, spacing: 0pt, justify: false)
+    align(center, {
+      text(font: SERIF, size: 8.4pt, fill: RUBRIC, tracking: 0.16em, features: ("c2sc", "smcp", "onum"), kicker)
+      v(2mm)
+      text(font: SERIF, size: 15pt, weight: 600, fill: INK, hyphenate: false, title)
+    })
+    v(3mm)
+    block(width: 100%, height: 1fr, mc-scaled(card, art, labs, date))
+  })
   pagebreak(weak: true)
-  page(header: none, footer: none, foreground: none, margin: (x: 10mm, top: 12mm, bottom: 14mm),
-    mc-card(card, art, mc-palette(card.lab, labs), if card.released != none { card.released } else { date }))
 }
+
+#let model-card-image(card: none, art: none, labs: none, date: none) = page(width: 128mm, height: 184mm, margin: 0pt, fill: none, header: none, footer: none, foreground: none, background: none,
+  mc-card(card, art, mc-palette(card.lab, labs), if card.released != none { card.released } else { date }))

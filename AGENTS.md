@@ -146,15 +146,21 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   launch post: the article writer as usual plus one gated call, `prompts/model-card.md`, writing
   `articles/<id>/card.json` in the run; every number, the model id, and the tester quote must
   appear in the row's sources, each fact once; produce names missing slots such as the price and
-  prints the `mag capture <url> --article <id>` that fills them from a pricing or docs page; the
-  book template prints the card as a full trading-card page before the article's opener, art from
-  `card_art_path`), plus the `original_editorial` opener.
+  searches the lab's own sites for them (one sonnet call with WebSearch/WebFetch, prompts/
+  model-card-sources.md; every URL must be on the lab's domains), captures what it finds with
+  `--article <id>` (the page joins the row), and rewrites the card; the release date must be printed
+  in the sources too. The article's opener is the title plus the card on one page (no opener art,
+  no author note; the card art from `card_art_path` is the only picture), and `mag render` writes
+  each card as a standalone 300 ppi PNG to `editions/NNN/cards/<id>.png`, which the site and EPUB
+  use as the article's lead image and social preview), plus the `original_editorial` opener.
 - `mag capture` without `--mode` or `--article` checks for a model launch post: a regex
   prefilter (benchmark names or a per-million-token price), then one gated sonnet call
   (`prompts/model-card-detect.md`, the evidence sentence and model name must be on the page);
   a launch becomes a `model_card` row, `--mode article` overrides. Card art is its own slot:
   `mag art NNN --only card` builds two briefs per card from card.json in the 1970s airbrush
-  card style (no brief model, no anatomy gate), pick in the showcase, then `--promote`.
+  card style (no brief model, no anatomy gate), pick in the showcase, then `--promote`. The card
+  gate refuses robot or automaton subjects unless the post is about robotics, and many-armed
+  figures always, so cards vary.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for
   `verbatim`). No edition carries an opening editorial: produce no longer

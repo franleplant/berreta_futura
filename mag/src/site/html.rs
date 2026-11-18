@@ -196,7 +196,11 @@ pub fn art_paths(edition: &Edition) -> Vec<PathBuf> {
     let art = edition.articles.iter().flat_map(|article| {
         let figures = article.figures.iter().map(|f| f.path.clone());
         let opener = article.opener_art.iter().map(|o| o.path.clone());
-        opener.chain(article.tail_art.clone()).chain(figures)
+        let card = article.card.as_ref().and_then(|c| c.image.clone());
+        opener
+            .chain(card)
+            .chain(article.tail_art.clone())
+            .chain(figures)
     });
     edition.cover_art.clone().into_iter().chain(art).collect()
 }
@@ -422,6 +426,12 @@ fn anchored(ctx: &Ctx, language: &str, article: Option<&Article>, key: &str) -> 
 }
 
 fn opener(ctx: &Ctx, piece: &Piece) -> String {
+    if let Some((image, name)) = piece.article.and_then(card_image) {
+        return format!(
+            "<figure class=\"opener card\" style=\"max-width: 26rem; margin: 0 auto 1.5em;\">{}</figure>",
+            ctx.picture(image, &format!("Model card: {name}"), WIDE_SIZES, true)
+        );
+    }
     piece
         .article
         .and_then(|a| a.opener_art.as_ref())
@@ -432,6 +442,11 @@ fn opener(ctx: &Ctx, piece: &Piece) -> String {
             )
         })
         .unwrap_or_default()
+}
+
+fn card_image(article: &Article) -> Option<(&Path, &str)> {
+    let card = article.card.as_ref()?;
+    Some((card.image.as_deref()?, card.card.name.as_str()))
 }
 
 fn body(ctx: &Ctx, language: &str, piece: &Piece) -> Result<String> {
@@ -1035,8 +1050,12 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
     let language = &issued.edition.language;
     let image = piece
         .article
-        .and_then(|a| a.opener_art.as_ref())
-        .map(|o| images[&o.path].large().to_string())
+        .and_then(|a| {
+            card_image(a)
+                .map(|(p, _)| p)
+                .or(a.opener_art.as_ref().map(|o| o.path.as_path()))
+        })
+        .map(|p| images[p].large().to_string())
         .or_else(|| issued.cover_image(images));
     let body = format!(
         "<article class=\"piece\">\n<header class=\"piece-head\">\n{}\n</header>\n{}\n{}\n</article>\n{}{}",

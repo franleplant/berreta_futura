@@ -1,7 +1,7 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
 use crate::model::kinds::ContentMode;
 use crate::model::records::MAX_ARTICLE_FIGURES;
-use crate::model::shared::parse_yaml;
+use crate::model::shared::{parse_yaml, read_spec};
 use crate::model::spec::{EditionFile, SourceRecord};
 use crate::util::{parallel, prompts_path, read};
 use anyhow::{anyhow, bail, Context, Result};
@@ -574,18 +574,102 @@ fn model_card(
         .map(|(_, t)| t.trim())
         .collect::<Vec<_>>()
         .join("\n\n");
-    let card = crate::modelcard::write_card(caller, &format!("{piece_id} card"), model, &text)?;
+    let mut card = crate::modelcard::write_card(caller, &format!("{piece_id} card"), model, &text)?;
+    if !crate::modelcard::missing(&card).is_empty() {
+        let found = fetch_missing(caller, out, piece_id, &card, sources)?;
+        if !found.is_empty() {
+            let all = format!("{text}\n\n{found}");
+            card = crate::modelcard::write_card(
+                caller,
+                &format!("{piece_id} card, more sources"),
+                model,
+                &all,
+            )?;
+        }
+    }
     write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;
     let gaps = crate::modelcard::missing(&card);
     if gaps.is_empty() {
         println!("  {piece_id}: model card written");
     } else {
         println!(
-            "  {piece_id}: model card written, missing {}; capture a page that states it (pricing, docs) with `mag capture <url> --article {piece_id}`, then produce again",
-            gaps.join(", ")
+            "  {piece_id}: model card written, still missing {}; capture a page that states it with `mag capture <url> --article {piece_id}`, delete {}, and produce again",
+            gaps.join(", "),
+            path.display()
         );
     }
     Ok(())
+}
+
+fn fetch_missing(
+    caller: &Caller,
+    out: &Path,
+    piece_id: &str,
+    card: &crate::modelcard::Card,
+    sources: &[(String, String)],
+) -> Result<String> {
+    let edition = out
+        .ancestors()
+        .nth(3)
+        .and_then(Path::file_name)
+        .context("the run dir is not under editions/NNN")?
+        .to_string_lossy()
+        .to_string();
+    let url = sources
+        .first()
+        .and_then(|(sid, _)| {
+            read_spec::<SourceRecord>(
+                &PathBuf::from("library/sources")
+                    .join(sid)
+                    .join("record.yaml"),
+            )
+            .ok()
+        })
+        .map(|r| r.url)
+        .unwrap_or_default();
+    let urls =
+        match crate::modelcard::find_pages(caller, &format!("{piece_id} card sources"), card, &url)
+        {
+            Ok(urls) => urls,
+            Err(e) => {
+                println!("  {piece_id}: searching for the missing card facts failed ({e:#})");
+                return Ok(String::new());
+            }
+        };
+    for page in &urls {
+        println!("  {piece_id}: capturing {page} for the missing card facts");
+        let status = std::process::Command::new(std::env::current_exe()?)
+            .args([
+                "capture",
+                page,
+                "--article",
+                piece_id,
+                "--edition",
+                &edition,
+            ])
+            .status()?;
+        if !status.success() {
+            println!("  {piece_id}: could not capture {page}; skipped");
+        }
+    }
+    let plan: Plan = parse_yaml(&read(
+        &PathBuf::from("editions").join(&edition).join("plan.yaml"),
+    )?)?;
+    let known: HashSet<&str> = sources.iter().map(|(sid, _)| sid.as_str()).collect();
+    let added: Vec<String> = plan
+        .articles
+        .iter()
+        .filter(|a| a.get("id").and_then(value_to_string).as_deref() == Some(piece_id))
+        .filter_map(|a| a.get("source_ids").and_then(|v| v.as_sequence()).cloned())
+        .flatten()
+        .filter_map(|v| value_to_string(&v))
+        .filter(|sid| !known.contains(sid.as_str()))
+        .collect();
+    added
+        .iter()
+        .map(|sid| source_text(sid))
+        .collect::<Result<Vec<_>>>()
+        .map(|texts| texts.join("\n\n"))
 }
 
 fn write_piece(
@@ -779,6 +863,7 @@ fn source_site(sids: &[String]) -> (String, String) {
 }
 
 fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String> {
+    let carded = content_mode(a).is_ok_and(|mode| mode == ContentMode::ModelCard);
     let get = |k: &str| a.get(k).and_then(value_to_string).unwrap_or_default();
     let mut y = String::new();
     let id = get("id");
@@ -798,7 +883,7 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
     y += &format!(
         "  author: {}\n  author_note: {}\n  content_mode: {}\n",
         yq(&get("author")),
-        match crate::model::manifest::is_house_byline(&get("author")) {
+        match carded || crate::model::manifest::is_house_byline(&get("author")) {
             true => "''",
             false => "TODO",
         },
@@ -827,13 +912,14 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
         y += "  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of\n  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;\n  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.\n";
     }
     y += &figures;
-    y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
-    y += "  tail_art_path: TODO\n";
-    if content_mode(a).is_ok_and(|mode| mode == ContentMode::ModelCard) {
+    if carded {
         y += &format!(
             "  card: editions/{edition_id}/articles/{id}.card.json\n  card_art_path: TODO\n"
         );
+    } else {
+        y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
     }
+    y += "  tail_art_path: TODO\n";
     Ok(y)
 }
 
@@ -1576,6 +1662,8 @@ mod tests {
         let yaml = article_scaffold(&row, "023").unwrap();
         assert!(
             yaml.contains("  card: editions/023/articles/astra.card.json\n  card_art_path: TODO\n")
+                && !yaml.contains("opener_art")
+                && yaml.contains("author_note: ''")
         );
         assert_eq!(
             writer_prompt_file(ContentMode::ModelCard).unwrap(),

@@ -1,7 +1,7 @@
 use crate::typeset::content::{compose, Tree};
 use crate::typeset::hyphen::Hyphenation;
 use crate::typeset::world::Sources;
-use anyhow::{bail, ensure, Result};
+use anyhow::{bail, ensure, Context, Result};
 use std::path::PathBuf;
 use typst::foundations::{Smart, Value};
 use typst::introspection::MetadataElem;
@@ -28,6 +28,57 @@ pub fn world(tree: &Tree) -> Result<Sources> {
 
 pub fn world_in(tree: &Tree, roots: &[PathBuf]) -> Result<Sources> {
     Sources::new(tree, template_typ(), ROOT_TYP)?.allowing(roots)
+}
+
+pub fn card_images(
+    edition: &crate::model::manifest::Edition,
+    out_dir: &std::path::Path,
+    roots: &[PathBuf],
+) -> Result<Vec<PathBuf>> {
+    let mut written = Vec::new();
+    for article in &edition.articles {
+        let Some((spread, art)) = article
+            .card
+            .as_ref()
+            .and_then(|c| Some((c, c.art.as_ref()?)))
+        else {
+            continue;
+        };
+        let labs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs");
+        let source = format!(
+            "#import \"/template.typ\": *\n#model-card-image(card: {}, art: {}, labs: {}, date: {})\n",
+            crate::typeset::cover::literal(&serde_json::to_value(&spread.card)?),
+            crate::typeset::content::string_literal(&std::path::absolute(art)?.to_string_lossy()),
+            crate::typeset::content::string_literal(&labs.to_string_lossy()),
+            article.dateline.as_deref().map_or("none".to_string(), crate::typeset::content::string_literal),
+        );
+        let tree = Tree {
+            files: vec![crate::typeset::content::File {
+                path: "main.typ".to_string(),
+                source,
+            }],
+            ..Tree::default()
+        };
+        let document = document(
+            &Sources::new(&tree, BOOK_TEMPLATE_TYP, "#include \"/main.typ\"\n")?.allowing(roots)?,
+        )?;
+        let page = document
+            .pages()
+            .first()
+            .context("the card image has no page")?;
+        let pixmap = typst_render::render(
+            page,
+            &typst_render::RenderOptions {
+                pixel_per_pt: typst::utils::Scalar::new(300.0 / 72.0),
+                render_bleed: false,
+            },
+        );
+        std::fs::create_dir_all(out_dir)?;
+        let path = out_dir.join(format!("{}.png", article.id));
+        std::fs::write(&path, pixmap.encode_png()?)?;
+        written.push(path);
+    }
+    Ok(written)
 }
 
 pub fn composed(
@@ -308,11 +359,11 @@ mod tests {
     }
 
     #[test]
-    fn a_model_card_is_one_page_of_its_own() {
+    fn a_model_card_opener_is_one_page_of_its_own() {
         let card: serde_json::Value = serde_json::from_str(r#"{"name": "Example 2 Long Context Preview", "model_id": "example-2-long-context-preview-2026-11-17", "lab": "OpenAI", "cost": [{"label": "in", "value": "$12.50"}, {"label": "cached", "value": "$0.125"}, {"label": "out", "value": "$100"}], "type_line": {"kind": "Frontier Model", "roles": ["Coder", "Analyst"]}, "traits": ["Uses fewer output tokens on demanding tasks and long agentic runs.", "Matches its tools and effort to the workflow."], "effort": ["Low", "High"], "advice": [{"key": "Use it for", "value": "your hardest projects"}], "strength": "Spreadsheets and slides", "weakness": null, "resistance": "Blocks high-risk cyber help", "benchmark": {"name": "FrontierCode", "score": "49.1", "unit": "%"}, "flavor": null, "released": null, "art_briefs": []}"#).unwrap();
         let fixtures = Path::new(env!("CARGO_MANIFEST_DIR"));
         let call = format!(
-            "#model-card-page(card: {}, art: {}, labs: {}, date: none)\n",
+            "#model-card-opener(kicker: [Feature 01 / Model card], title: [Introducing Example 2], card: {}, art: {}, labs: {}, date: none)\n",
             crate::typeset::cover::literal(&card),
             crate::typeset::content::string_literal(
                 &fixtures
@@ -326,6 +377,30 @@ mod tests {
         let bare = pages_of(&synthetic("Body.\n".to_string()), BOOK_TEMPLATE_TYP).unwrap();
         let carded = pages_of(&synthetic(call + "Body.\n"), BOOK_TEMPLATE_TYP).unwrap();
         assert_eq!(carded, bare + 1);
+    }
+
+    #[test]
+    fn every_card_becomes_a_standalone_image() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let card: crate::modelcard::Card = serde_json::from_str(r#"{"name": "Example 2", "model_id": null, "lab": "Meta", "cost": [], "type_line": {"kind": "Frontier Model", "roles": ["Agent"]}, "traits": ["Asks before acting.", "Remembers context."], "effort": null, "advice": [{"key": "Use it for", "value": "agent work"}], "strength": "Agents", "weakness": null, "resistance": null, "benchmark": null, "flavor": null, "released": "2026-10-12", "art_briefs": []}"#).unwrap();
+        let article = crate::model::manifest::Article {
+            id: "example".into(),
+            card: Some(crate::model::manifest::CardSpread {
+                card,
+                art: Some(root.join("tests/typeset_fixtures/media/landscape.png")),
+                image: None,
+            }),
+            ..Default::default()
+        };
+        let edition = crate::model::manifest::Edition {
+            articles: vec![article],
+            ..Default::default()
+        };
+        let out = std::env::temp_dir().join(format!("mag-cards-{}", std::process::id()));
+        let written = card_images(&edition, &out, &[root.join("tests")]).unwrap();
+        let png = image::open(&written[0]).unwrap();
+        assert_eq!((png.width(), png.height()), (1512, 2173));
+        std::fs::remove_dir_all(&out).unwrap();
     }
 
     fn refusal(main: &str) -> String {

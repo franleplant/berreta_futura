@@ -71,36 +71,31 @@ article, not the card. The card picks; it never summarizes the post.
   quotes nobody.
 - `released`: the post's date as YYYY-MM-DD, null if the post has none.
 - `art_briefs`: two different subjects for the card's painting, each one
-  paragraph of at most 90 words in this exact shape:
+  paragraph of at most 90 words: [the subject, what it is made of],
+  [what it is doing], [three or four concrete things the post shows the
+  model doing, drawn as physical objects in or around the scene].
+  Background: [one simple, surreal setting]. [three colours] palette.
 
-  "a [calm / slender / ... adjective] [being] made of [materials], [pose],
-  [three or four concrete things the post shows the model doing, as objects
-  in its hands or around it]. Background: [one surreal setting]. [three
-  colours] palette."
+  The subject is the model as a mythic trading-card being, and it changes
+  from card to card. Pick it from what the post is about, from a wide range:
+  a beast (a stag, a whale, a heron, a tortoise carrying a city), a
+  giant or titan, a spirit or elemental, a ship, a tower or living building,
+  a tree or garden, a constellation, a mask, a swarm turned into one shape,
+  a craftsman figure. A robot, automaton, or android is allowed only when
+  the post is mainly about robotics, and never with many arms. The two
+  briefs use two different kinds of subject and two different settings.
 
-  Two examples of the shape, for other models:
+  One example of the shape, for another model:
 
-  "a calm, many-armed librarian automaton made of brass and paper, sitting
-  cross-legged on a floating island of stacked books, each of its eight
-  hands working on something different: soldering a tiny circuit board,
-  writing an equation, holding a protein model, steering a small robot arm.
-  Background: a huge pale orange sun over a teal desert."
+  "a vast tortoise made of brass gears and terracotta tiles, wading slowly
+  through a shallow sea, a small city of glowing workshops on its shell:
+  one roof smelting a circuit board, one window printing a protein model,
+  a crane lifting a tiny robot arm. Background: a low pink moon on a
+  flat horizon. Terracotta, teal and cream palette."
 
-  "a slender star-navigator automaton with a halo of small orbiting stars,
-  standing at a floating drafting table in space and folding a scalloped
-  paper lamp shaped like two round towers; a tiny futuristic race car loops
-  around it on a glowing ribbon of track. Deep violet, cyan and pale gold
-  palette."
-
-  One serene humanoid figure with a face, never a monster or a swarm, large
-  and centred in the frame, with one huge simple shape behind or around it
-  that reads from across a room: a giant sun disk, a ringed planet, a halo
-  of stars, a glowing orbit. Background stays simple: one horizon or one
-  sky, nothing that competes with the figure. The
-  objects are things the post describes the model making or doing, drawn as
-  physical objects. The two briefs differ in figure, pose, objects, and
-  setting. No text, letters, numbers, screens with writing, logos, the lab's
-  name, or the model's name.
+  No text, letters, numbers, screens with writing, logos, the lab's name,
+  or the model's name. Avoid the generic glowing sun disk behind a centred
+  figure.
 
 ## Rules
 

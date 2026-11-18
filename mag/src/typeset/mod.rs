@@ -103,6 +103,15 @@ pub(crate) fn run_request(
             false => render_dir.join(format!("typst-{language}")),
         };
         let one = render_language(render_dir, request, &staged, &edition, &work, hyphenation)?;
+        if language == primary {
+            let cards = repo_root
+                .join("editions")
+                .join(&request.edition_id)
+                .join("cards");
+            for path in template::card_images(&edition, &cards, &[render_dir.to_path_buf()])? {
+                println!("card image: {}", path.display());
+            }
+        }
         result.files.extend(one.files);
         result.layouts.extend(one.layouts);
         result.warnings.extend(one.warnings);

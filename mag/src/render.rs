@@ -577,6 +577,14 @@ fn stage_manuscripts(
             );
         }
     }
+    for article in edition_yaml.articles.iter().filter(|a| a.card.is_some()) {
+        let image = edition_dir
+            .join("cards")
+            .join(format!("{}.png", article.id));
+        if staging.repo_root.join(&image).is_file() {
+            staging.add(&image);
+        }
+    }
 }
 
 fn stage_source_codes(staging: &mut Staging, edition_dir: &Path, repo_root: &Path) {

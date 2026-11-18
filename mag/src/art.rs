@@ -2624,7 +2624,17 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
         Ok(briefs)
     })?;
 
+    let carded: Vec<String> = parse_yaml::<EditionFile>(&edition_yaml_text)?
+        .articles
+        .into_iter()
+        .filter(|a| a.card.is_some())
+        .map(|a| a.id)
+        .collect();
     let mut briefs = briefs;
+    briefs.retain(|b| {
+        b.purpose != ArtPurpose::Opener
+            || !b.article_id.as_ref().is_some_and(|id| carded.contains(id))
+    });
     inject_cast(&mut briefs, &cast, &license);
     launch(opts, &briefs, &round_dir, &edition_dir, &edition_label)
 }

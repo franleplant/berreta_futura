@@ -75,6 +75,7 @@ pub struct Article {
 pub struct CardSpread {
     pub card: crate::modelcard::Card,
     pub art: Option<PathBuf>,
+    pub image: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -517,7 +518,7 @@ fn load_article<'a>(
     }
     let (manuscript, tail_art) = article_paths(context, row, errors)?;
     let mut opener_art = None;
-    if context.illustrated {
+    if context.illustrated && row.content_mode != Some(ContentMode::ModelCard) {
         if author_note.is_empty() && !house_byline {
             errors.push(format!(
                 "{label} requires author_note for format.article_opener {ILLUSTRATED_OPENER}"
@@ -639,7 +640,10 @@ fn article_card(
             None
         }
     };
-    Some(CardSpread { card, art })
+    let image = edition_path(root, dir, &format!("cards/{}.png", row.id), false)
+        .ok()
+        .filter(|path| path.is_file());
+    Some(CardSpread { card, art, image })
 }
 
 fn check_verbatim_title(

@@ -47,6 +47,7 @@ pub struct ModelSpec {
     pub effort: Option<String>,
 
     pub full: String,
+    pub web: bool,
 }
 
 impl ModelSpec {
@@ -76,6 +77,7 @@ impl ModelSpec {
             model,
             effort,
             full: spec.to_string(),
+            web: false,
         })
     }
 }
@@ -424,7 +426,9 @@ impl Caller {
                     "json",
                     "--no-session-persistence",
                 ]);
-                if images.is_empty() {
+                if spec.web {
+                    c.args(["--allowedTools", "WebSearch,WebFetch"]);
+                } else if images.is_empty() {
                     c.args(["--disallowedTools", "*"]);
                 } else {
                     c.args(["--allowedTools", "Read"]);
