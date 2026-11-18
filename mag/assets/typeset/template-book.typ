@@ -597,7 +597,7 @@
 
 #let cover-spine-ticks(d, x) = {
   let size = d.spine.dot_mm * 72 / 25.4
-  for y in (0, COVER-H - size) { cover-put(x - size / 2, y, circle(width: size * 1pt, fill: rgb(d.color.paper), stroke: none)) }
+  for y in (0, COVER-H - 2 * size) { cover-put(x - size / 2, y, ellipse(width: size * 1pt, height: 2 * size * 1pt, fill: rgb(d.color.paper), stroke: none)) }
 }
 
 #let cover-spine-face(d, t, x) = {
