@@ -8,6 +8,7 @@ mod curate;
 pub mod highlight;
 pub mod impose;
 pub mod model;
+pub mod modelcard;
 pub mod package;
 pub mod pdf_text;
 mod picks;

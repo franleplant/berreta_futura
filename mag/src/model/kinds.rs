@@ -44,14 +44,14 @@ macro_rules! kinds {
 }
 
 kinds! {
-    ContentMode { Article = "article", InANutshell = "in_a_nutshell", Explainer = "explainer", Verbatim = "verbatim" }
+    ContentMode { Article = "article", InANutshell = "in_a_nutshell", Explainer = "explainer", Verbatim = "verbatim", ModelCard = "model_card" }
     PrintLayout { A5 = "a5", Columns = "columns", Single = "single" }
     RenderOperation {
         MeasureArticle = "measure_article",
         MeasureEdition = "measure_edition",
         RenderEdition = "render_edition"
     }
-    ArtPurpose { Cover = "cover", Opener = "opener", Tail = "tail", Closing = "closing", CastSheet = "cast-sheet", Endpaper = "endpaper" }
+    ArtPurpose { Cover = "cover", Opener = "opener", Tail = "tail", Closing = "closing", CastSheet = "cast-sheet", Endpaper = "endpaper", Card = "card" }
     FigureLayout {
         EvidenceBand = "evidence_band",
         EvidenceBandProse = "evidence_band_prose",

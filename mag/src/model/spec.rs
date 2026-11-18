@@ -84,6 +84,8 @@ rows! {
         key_ideas: Option<Vec<String>>,
         figures: Vec<FigureRow>,
         extracts: Vec<ExtractRow>,
+        card: Option<String>,
+        card_art_path: Option<String>,
     }
     OpenerArtRow {
         path: String,

@@ -25,6 +25,7 @@ fn article(author: &str) -> Article {
         key_ideas: Vec::new(),
         dateline: None,
         extracts: Vec::new(),
+        card: None,
     }
 }
 

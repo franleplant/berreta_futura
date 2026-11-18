@@ -333,7 +333,7 @@ fn back(design: &Value, edition: &Edition) -> Value {
     })
 }
 
-fn literal(value: &Value) -> String {
+pub(crate) fn literal(value: &Value) -> String {
     match value {
         Value::Null => "none".to_string(),
         Value::String(text) => string_literal(text),

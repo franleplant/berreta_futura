@@ -448,7 +448,8 @@ impl Writer<'_> {
                 "{ILLUSTRATED} requires a paragraph as the first manuscript block"
             )));
         }
-        let (mut out, trim) = self.article_head(article, document, index, illustrated)?;
+        let (head, trim) = self.article_head(article, document, index, illustrated)?;
+        let mut out = card_page(article) + &head;
         if !illustrated {
             out.push_str("  #opener-end()\n");
         }
@@ -1047,6 +1048,30 @@ fn text_locale(locale: &str) -> String {
         ),
         None => format!("lang: {}", string_literal(locale)),
     }
+}
+
+fn card_page(article: &Article) -> String {
+    let Some((spread, art)) = article
+        .card
+        .as_ref()
+        .and_then(|c| Some((c, c.art.as_ref()?)))
+    else {
+        return String::new();
+    };
+    if crate::typeset::style::current() != crate::typeset::style::Style::Book {
+        return String::new();
+    }
+    let card = serde_json::to_value(&spread.card).unwrap_or_default();
+    format!(
+        "#model-card-page(card: {}, art: {}, labs: {}, date: {})\n\n",
+        crate::typeset::cover::literal(&card),
+        path_literal(art),
+        path_literal(&Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs")),
+        article
+            .dateline
+            .as_deref()
+            .map_or("none".to_string(), string_literal)
+    )
 }
 
 fn path_literal(path: &Path) -> String {

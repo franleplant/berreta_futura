@@ -53,7 +53,7 @@ pub(crate) fn section(title: &str, body: &str) -> String {
 
 fn writer_prompt_file(mode: ContentMode) -> Result<&'static str> {
     match mode {
-        ContentMode::Article => Ok("article.md"),
+        ContentMode::Article | ContentMode::ModelCard => Ok("article.md"),
         ContentMode::InANutshell => Ok("in-a-nutshell.md"),
         ContentMode::Explainer => Ok("explainer.md"),
         ContentMode::Verbatim => bail!("content_mode 'verbatim' has no writer prompt"),
@@ -545,6 +545,57 @@ fn produce_piece(
     sources: &[(String, String)],
     writer_model: &ModelSpec,
 ) -> Result<PieceStatus> {
+    let status = write_piece(caller, run_dir, piece_id, article, sources, writer_model)?;
+    if content_mode(article)? == ContentMode::ModelCard {
+        model_card(
+            caller,
+            &run_dir.join("articles").join(piece_id),
+            piece_id,
+            sources,
+            writer_model,
+        )?;
+    }
+    Ok(status)
+}
+
+fn model_card(
+    caller: &Caller,
+    out: &Path,
+    piece_id: &str,
+    sources: &[(String, String)],
+    model: &ModelSpec,
+) -> Result<()> {
+    let path = out.join("card.json");
+    if path.exists() {
+        return Ok(());
+    }
+    let text = sources
+        .iter()
+        .map(|(_, t)| t.trim())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let card = crate::modelcard::write_card(caller, &format!("{piece_id} card"), model, &text)?;
+    write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;
+    let gaps = crate::modelcard::missing(&card);
+    if gaps.is_empty() {
+        println!("  {piece_id}: model card written");
+    } else {
+        println!(
+            "  {piece_id}: model card written, missing {}; capture a page that states it (pricing, docs) with `mag capture <url> --article {piece_id}`, then produce again",
+            gaps.join(", ")
+        );
+    }
+    Ok(())
+}
+
+fn write_piece(
+    caller: &Arc<Caller>,
+    run_dir: &Path,
+    piece_id: &str,
+    article: &serde_norway::Value,
+    sources: &[(String, String)],
+    writer_model: &ModelSpec,
+) -> Result<PieceStatus> {
     let out = run_dir.join("articles").join(piece_id);
     fs::create_dir_all(&out)?;
     let final_path = out.join("final.md");
@@ -778,6 +829,11 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
     y += &figures;
     y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
     y += "  tail_art_path: TODO\n";
+    if content_mode(a).is_ok_and(|mode| mode == ContentMode::ModelCard) {
+        y += &format!(
+            "  card: editions/{edition_id}/articles/{id}.card.json\n  card_art_path: TODO\n"
+        );
+    }
     Ok(y)
 }
 
@@ -1497,12 +1553,35 @@ fn print_next_steps(
         run_dir.display(),
         edition_yaml.display()
     );
+    if plan
+        .articles
+        .iter()
+        .any(|a| content_mode(a).is_ok_and(|m| m == ContentMode::ModelCard))
+    {
+        println!("  and for the model cards: mag art {edition_id} --only card   (pick in art/showcase.html, then --promote)");
+    }
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_model_card_row_scaffolds_its_card_and_card_art() {
+        let row: serde_norway::Value = serde_norway::from_str(
+            "id: astra\ntitle: Astra\nauthor: OpenAI\ncontent_mode: model_card\nsource_ids: [a-1]\n",
+        )
+        .unwrap();
+        let yaml = article_scaffold(&row, "023").unwrap();
+        assert!(
+            yaml.contains("  card: editions/023/articles/astra.card.json\n  card_art_path: TODO\n")
+        );
+        assert_eq!(
+            writer_prompt_file(ContentMode::ModelCard).unwrap(),
+            "article.md"
+        );
+    }
 
     #[test]
     fn yq_round_trips_every_awkward_scalar() {

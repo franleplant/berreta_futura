@@ -1447,6 +1447,7 @@ mod tests {
             key_ideas: Vec::new(),
             dateline: None,
             extracts: Vec::new(),
+            card: None,
         };
         let piece = Piece {
             slug: "x".into(),

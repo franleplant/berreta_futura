@@ -307,6 +307,27 @@ mod tests {
         );
     }
 
+    #[test]
+    fn a_model_card_is_one_page_of_its_own() {
+        let card: serde_json::Value = serde_json::from_str(r#"{"name": "Example 2 Long Context Preview", "model_id": "example-2-long-context-preview-2026-11-17", "lab": "OpenAI", "cost": [{"label": "in", "value": "$12.50"}, {"label": "cached", "value": "$0.125"}, {"label": "out", "value": "$100"}], "type_line": {"kind": "Frontier Model", "roles": ["Coder", "Analyst"]}, "traits": ["Uses fewer output tokens on demanding tasks and long agentic runs.", "Matches its tools and effort to the workflow."], "effort": ["Low", "High"], "advice": [{"key": "Use it for", "value": "your hardest projects"}], "strength": "Spreadsheets and slides", "weakness": null, "resistance": "Blocks high-risk cyber help", "benchmark": {"name": "FrontierCode", "score": "49.1", "unit": "%"}, "flavor": null, "released": null, "art_briefs": []}"#).unwrap();
+        let fixtures = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let call = format!(
+            "#model-card-page(card: {}, art: {}, labs: {}, date: none)\n",
+            crate::typeset::cover::literal(&card),
+            crate::typeset::content::string_literal(
+                &fixtures
+                    .join("tests/typeset_fixtures/media/landscape.png")
+                    .to_string_lossy()
+            ),
+            crate::typeset::content::string_literal(
+                &fixtures.join("assets/labs").to_string_lossy()
+            ),
+        );
+        let bare = pages_of(&synthetic("Body.\n".to_string()), BOOK_TEMPLATE_TYP).unwrap();
+        let carded = pages_of(&synthetic(call + "Body.\n"), BOOK_TEMPLATE_TYP).unwrap();
+        assert_eq!(carded, bare + 1);
+    }
+
     fn refusal(main: &str) -> String {
         let world = Sources::fixture(&synthetic(main.to_string()), TEMPLATE_TYP, ROOT_TYP)
             .expect("the world builds");

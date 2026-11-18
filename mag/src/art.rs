@@ -120,6 +120,7 @@ static KEBAB_ID: LazyLock<Regex> =
 
 const DEFAULT_JOBS: usize = 14;
 const COVER_VARIANTS: u32 = 1;
+const CARD_VARIANTS: u32 = 2;
 static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-v\d+$").unwrap());
 
 fn variants(brief: &Brief, candidates: u32) -> u32 {
@@ -127,6 +128,7 @@ fn variants(brief: &Brief, candidates: u32) -> u32 {
         ArtPurpose::Cover | ArtPurpose::Endpaper | ArtPurpose::Closing => {
             candidates.min(COVER_VARIANTS)
         }
+        ArtPurpose::Card => candidates.min(CARD_VARIANTS),
         _ => candidates,
     }
 }
@@ -1351,7 +1353,7 @@ const SHOWCASE_CSS: &str = "<style>\n\
         #lb .bar .name { flex: 1; font-size: 0.85rem; color: #ccc; }\n\
         </style>\n</head>\n";
 
-const SHOWCASE_SECTIONS: [(Option<ArtPurpose>, &str, &str); 6] = [
+const SHOWCASE_SECTIONS: [(Option<ArtPurpose>, &str, &str); 7] = [
     (Some(ArtPurpose::Cover), "cover", "Cover"),
     (
         Some(ArtPurpose::Endpaper),
@@ -1360,6 +1362,7 @@ const SHOWCASE_SECTIONS: [(Option<ArtPurpose>, &str, &str); 6] = [
     ),
     (Some(ArtPurpose::Opener), "openers", "Article openers"),
     (Some(ArtPurpose::Tail), "tails", "Article tails"),
+    (Some(ArtPurpose::Card), "cards", "Model cards"),
     (Some(ArtPurpose::Closing), "closing", "Closing plates"),
     (None, "unmatched", "Unmatched"),
 ];
@@ -1440,7 +1443,10 @@ fn showcase_sections(
         html += &format!(
             "<section id=\"{anchor}\">\n<h2>{heading}</h2>\n<p class=\"status\">{status}</p>\n"
         );
-        let per_article = matches!(purpose, Some(ArtPurpose::Opener | ArtPurpose::Tail) | None);
+        let per_article = matches!(
+            purpose,
+            Some(ArtPurpose::Opener | ArtPurpose::Tail | ArtPurpose::Card) | None
+        );
         let mut groups: BTreeMap<String, Vec<&ShowcaseItem>> = BTreeMap::new();
         for item in section {
             let key = if per_article {
@@ -1574,6 +1580,7 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
       if (s.indexOf('closing:') === 0) return '# ' + s.slice(8) + '\n- art_path: ' + p;
       var kind = s.split(':')[0], article = s.split(':').slice(1).join(':');
       if (kind === 'tail') return '# article ' + article + '\n  tail_art_path: ' + p;
+      if (kind === 'card') return '# article ' + article + '\n  card_art_path: ' + p;
       return '# article ' + article + '\n  opener_art:\n    path: ' + p;
     }).join('\n');
   }
@@ -2105,10 +2112,12 @@ fn check_targets(round_dir: &Path, cast: &[CastMember]) -> Result<Vec<CheckTarge
         .briefs
         .iter()
         .map(|b| {
-            let a = !matches!(b.purpose, ArtPurpose::Cover | ArtPurpose::Endpaper)
-                || cast
-                    .iter()
-                    .any(|m| b.prompt.to_lowercase().contains(&m.name.to_lowercase()));
+            let a = !matches!(
+                b.purpose,
+                ArtPurpose::Cover | ArtPurpose::Endpaper | ArtPurpose::Card
+            ) || cast
+                .iter()
+                .any(|m| b.prompt.to_lowercase().contains(&m.name.to_lowercase()));
             (b.id.as_str(), (a, b.purpose))
         })
         .collect();
@@ -2319,6 +2328,7 @@ fn size_for(purpose: ArtPurpose) -> &'static str {
         ArtPurpose::Closing => "1440x2160",
         ArtPurpose::CastSheet => "1536x2160",
         ArtPurpose::Endpaper => "2176x1536",
+        ArtPurpose::Card => "1536x1024",
     }
 }
 
@@ -2357,7 +2367,7 @@ fn parse_only_purposes(only: Option<&str>) -> Result<Option<Vec<ArtPurpose>>> {
         .map(|p| {
             slot_purpose(p).map_err(|_| {
                 anyhow!(
-                    "--only accepts {}, or endpaper alone; got '{p}'",
+                    "--only accepts {}, or endpaper or card alone; got '{p}'",
                     join(SLOT_PURPOSES)
                 )
             })
@@ -2560,6 +2570,9 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
     if only.map(str::trim) == Some("endpaper") {
         return endpaper_round(opts, &edition_dir, &edition_label);
     }
+    if only.map(str::trim) == Some("card") {
+        return card_round(opts, &edition_dir, &edition_label);
+    }
 
     if let Some(cmd) = gen_cmd {
         expand_placeholders(cmd)?;
@@ -2706,6 +2719,63 @@ fn endpaper_round(opts: &ArtRun, edition_dir: &Path, edition_label: &str) -> Res
     launch(opts, &briefs, &round_dir, edition_dir, edition_label)
 }
 
+fn card_round(opts: &ArtRun, edition_dir: &Path, edition_label: &str) -> Result<i32> {
+    ensure!(
+        opts.articles.is_none(),
+        "--articles and --only are separate scopes; pass one"
+    );
+    let spec: EditionFile =
+        parse_yaml(&read(&edition_dir.join("edition.yaml"))?).context("parsing edition.yaml")?;
+    let cards: Vec<String> = spec
+        .articles
+        .iter()
+        .filter(|a| a.card.is_some())
+        .map(|a| a.id.clone())
+        .collect();
+    ensure!(
+        !cards.is_empty(),
+        "edition.yaml names no card: row; model_card articles get one from mag produce"
+    );
+    let run =
+        crate::render::latest_complete_run(edition_dir, &cards, false).with_context(|| {
+            format!(
+                "no run in {} has every article's final.md; run mag produce first",
+                edition_dir.display()
+            )
+        })?;
+    let mut briefs = Vec::new();
+    for id in &cards {
+        let path = run.join("articles").join(id).join("card.json");
+        let card: crate::modelcard::Card = serde_json::from_str(&read(&path)?)
+            .with_context(|| format!("parsing {}", path.display()))?;
+        for (n, brief) in card.art_briefs.iter().enumerate() {
+            briefs.push(Brief {
+                id: format!("card-{id}-{}", n + 1),
+                purpose: ArtPurpose::Card,
+                article_id: Some(id.clone()),
+                prompt: format!(
+                    "{}{}{}",
+                    crate::modelcard::ART_STYLE,
+                    brief.trim(),
+                    crate::modelcard::ART_FRAME
+                ),
+                subject: None,
+                composition: None,
+                alt_text: Some(format!("Card art for {}: {}", card.name, brief.trim())),
+                credit: Some("Illustration generated for this edition.".into()),
+                cast_references: None,
+            });
+        }
+    }
+    let round_dir = edition_dir
+        .join("art")
+        .join("rounds")
+        .join(crate::caller::now_stamp());
+    crate::caller::create_fresh_dir(&round_dir)?;
+    println!("round dir: {}", round_dir.display());
+    launch(opts, &briefs, &round_dir, edition_dir, edition_label)
+}
+
 const ANATOMY_PROMPT: &str = "You check generated illustrations for broken anatomy before they \
      go to print. Look at the attached image (if it is not attached, view it with the Read tool \
      at the path below). List every hand you can see, including hands holding props and robot \
@@ -2755,7 +2825,10 @@ fn anatomy_gate(edition_dir: &Path) -> Result<()> {
     let picks: Vec<PathBuf> = art_slots(&serde_norway::from_str(&text)?)
         .into_iter()
         .filter(|(slot, path)| {
-            path.contains("art/rounds/") && slot != "cover" && slot != "endpaper"
+            path.contains("art/rounds/")
+                && slot != "cover"
+                && slot != "endpaper"
+                && !slot.ends_with(" card")
         })
         .map(|(_, p)| Path::new(&p).canonicalize())
         .collect::<std::io::Result<_>>()?;
@@ -2887,7 +2960,7 @@ fn generate_and_finish(
     println!(
         "\nnext:\n  1. off-model and malformed candidates are badged in the showcase (cast-check ran on this round)\n  \
          2. open editions/{edition_label}/art/showcase.html and press Pick; the bottom bar copies the edition.yaml lines \
-         (cover.art_path / cover.endpaper_path / opener_art.path / tail_art_path / closing_plates); rounds stay local, out of git\n  \
+         (cover.art_path / cover.endpaper_path / opener_art.path / tail_art_path / card_art_path / closing_plates); rounds stay local, out of git\n  \
          3. mag art {edition_label} --promote   (picks become committed JPEGs in art/picks)\n  \
          4. mag source-codes {edition_label}   (opener QR codes; reads the picked opener art)\n  \
          5. mag render {edition_label}"

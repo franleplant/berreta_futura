@@ -1370,6 +1370,29 @@ fn transcribe(html: &str, url: &str, sid: &str, spec: &ModelSpec) -> Result<(Ext
     Ok((extraction, caller.cost_label()))
 }
 
+fn split_tags(tags: Option<&str>) -> Vec<String> {
+    tags.unwrap_or("")
+        .split(',')
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty())
+        .collect()
+}
+
+fn launch_mode(article: &str, sid: &str) -> Option<crate::model::kinds::ContentMode> {
+    let caller = Caller::new(Path::new(RAW_DIR));
+    match crate::modelcard::detect_launch(&caller, &format!("detect {sid}"), article) {
+        Ok(Some(model)) => {
+            println!("  model launch post ({model}): queued as a model_card row; pass --mode article to keep it a plain article");
+            Some(crate::model::kinds::ContentMode::ModelCard)
+        }
+        Ok(None) => None,
+        Err(e) => {
+            println!("  model launch check failed ({e:#}); queued as an article, pass --mode model_card if it is a launch post");
+            None
+        }
+    }
+}
+
 type ResolvedInput = (Option<PathBuf>, String, Option<Extraction>);
 
 fn resolve_input(html_file: Option<&Path>, url: &str) -> Result<ResolvedInput> {
@@ -1494,12 +1517,7 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         .or_else(|| (!extraction.published.is_empty()).then(|| extraction.published.clone()))
         .or_else(|| page_published(&html))
         .unwrap_or_default();
-    let tags: Vec<String> = tags
-        .unwrap_or("")
-        .split(',')
-        .map(|t| t.trim().to_string())
-        .filter(|t| !t.is_empty())
-        .collect();
+    let tags = split_tags(tags);
     let meta = SourceMeta {
         sid: &sid,
         title: &title,
@@ -1511,6 +1529,11 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         tags: &tags,
         synopsis: &extraction.synopsis,
     };
+    let mode = mode.or_else(|| {
+        join_article
+            .is_none()
+            .then(|| launch_mode(&article, &sid))?
+    });
     let lock = StateLock::acquire()?;
     publish_source(&meta, &src_dir, &edition, join_article, mode)?;
     if let Some(toml) = new_toml {
@@ -1518,9 +1541,9 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
     }
     drop(lock);
 
-    let words = article.split_whitespace().count();
     println!(
-        "  captured: {words} words, {image_count} images, queued for {edition} ({model_cost})"
+        "  captured: {} words, {image_count} images, queued for {edition} ({model_cost})",
+        article.split_whitespace().count()
     );
     Ok(0)
 }

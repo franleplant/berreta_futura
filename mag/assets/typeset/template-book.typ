@@ -1778,3 +1778,144 @@
   })
   page-cap(id, kind)
 }
+
+#let MC-GOLD = rgb("#c9a45c")
+#let MC-PAPER = rgb(250, 247, 241)
+#let MC-ICE = rgb("#d6e6ee")
+#let MC-LABS = (
+  anthropic: (frame: rgb("#b0623c"), deep: rgb("#5e2a14"), plate: rgb("#f4e6d6"), pip: rgb("#eab896"), word-h: 0.62),
+  openai: (frame: rgb("#34448a"), deep: rgb("#141a3a"), plate: rgb("#e4e8f4"), pip: rgb("#b4bfea"), word-h: 1.0),
+  google: (frame: rgb("#2f7350"), deep: rgb("#143522"), plate: rgb("#e2efe6"), pip: rgb("#a8d4b8"), word-h: 1.25),
+  meta: (frame: rgb("#56408f"), deep: rgb("#24183f"), plate: rgb("#ebe5f4"), pip: rgb("#c4b5e6"), word-h: 0.9),
+  other: (frame: rgb("#5b6470"), deep: rgb("#24292f"), plate: rgb("#e8eaec"), pip: rgb("#bcc3cb"), word-h: 1.0),
+)
+
+#let mc-palette(lab, dir) = {
+  let key = ("anthropic", "openai", "google", "meta").find(k => lower(lab).replace(" ", "").contains(k))
+  let logo(part) = if key == none { none } else { dir + "/" + key + "-" + part + ".svg" }
+  (..MC-LABS.at(if key == none { "other" } else { key }), mark: logo("mark"), wm: logo("mark-wm"), word: logo("word-w"), name: lab)
+}
+
+#let mc-fit-text(max, min, width, body) = context {
+  let s = max
+  while s > min and measure(text(size: s, body)).width > width { s -= 0.25pt }
+  text(size: s, body)
+}
+
+#let mc-fit-block(sizes, fn) = layout(sz => {
+  for s in sizes {
+    if measure(block(width: sz.width, fn(s, false))).height <= sz.height { return block(width: 100%, height: 100%, fn(s, true)) }
+  }
+  block(width: 100%, height: 100%, fn(sizes.last(), false))
+})
+
+#let mc-plate(p, body, height: auto) = block(
+  width: 100%, height: height, radius: 4pt, fill: gradient.linear(p.plate.lighten(55%), p.plate, p.plate.darken(4%), angle: 90deg),
+  stroke: 0.9pt + p.deep, inset: (x: 6pt, y: 3pt), align(horizon, body),
+)
+
+#let mc-glyph(kind, sz, col) = box(width: sz, height: sz, {
+  let P(x, y) = (x * sz, y * sz)
+  let pt(r, t) = (sz * (0.5 + r * calc.cos(t)), sz * (0.5 + r * calc.sin(t)))
+  let st = (paint: col, thickness: sz * 0.12, cap: "round")
+  if kind == "cached" {
+    for k in range(6) {
+      let t = k * 60deg + 30deg
+      place(line(start: pt(0, t), end: pt(0.46, t), stroke: st))
+      for d in (-1, 1) {
+        let b = pt(0.25, t)
+        place(line(start: b, end: (b.at(0) + sz * 0.15 * calc.cos(t + d * 50deg), b.at(1) + sz * 0.15 * calc.sin(t + d * 50deg)), stroke: (..st, thickness: sz * 0.09)))
+      }
+    }
+  } else if kind == "in" {
+    place(curve(fill: col, curve.move(P(0.12, 0.24)), curve.line(P(0.88, 0.24)), curve.line(P(0.5, 0.84)), curve.close()))
+  } else {
+    place(curve(fill: col, curve.move(P(0.12, 0.76)), curve.line(P(0.88, 0.76)), curve.line(P(0.5, 0.16)), curve.close()))
+  }
+})
+
+#let mc-pip(p, c, d) = {
+  let (f, ink) = if c.label == "out" { (p.deep, white) } else if c.label == "cached" { (MC-ICE, rgb("#23485a")) } else { (p.pip, INK) }
+  let orb = box(width: d, height: d, baseline: 18%, {
+    place(dx: 0.5pt, dy: 0.7pt, circle(radius: d / 2, fill: INK.transparentize(60%)))
+    place(circle(radius: d / 2, fill: gradient.radial(f.lighten(40%), f, f.darken(10%), center: (35%, 30%)), stroke: 0.6pt + INK))
+    place(center + horizon, mc-glyph(c.label, d * 0.52, ink))
+  })
+  box(height: d, radius: d / 2, fill: white.transparentize(20%), stroke: 0.6pt + INK, inset: (right: d * 0.36),
+    stack(dir: ltr, spacing: d * 0.22, orb, align(horizon, text(font: SANS, size: d * 0.5, weight: 700, fill: INK, c.value))))
+}
+
+#let mc-pips(p, cost, d) = stack(dir: ltr, spacing: d * 0.25, ..cost.map(c => mc-pip(p, c, d)))
+
+#let mc-type-plate(c, p) = mc-plate(p, height: 18pt, layout(sz => {
+  let id = if c.model_id != none { box(fill: white.transparentize(25%), radius: 2pt, inset: (x: 3pt, y: 1.6pt), mc-fit-text(6.7pt, 4.5pt, sz.width * 0.42, text(font: MONO, fill: INK, c.model_id))) }
+  let idw = if id != none { measure(id).width } else { 0pt }
+  let mark = if p.mark != none { box(height: 10.5pt, baseline: 20%, image(p.mark, height: 10.5pt)) }
+  grid(columns: (1fr, auto, auto), column-gutter: 5pt, align: horizon,
+    mc-fit-text(9.6pt, 5.3pt, sz.width - idw - 28pt, text(font: SERIF, weight: 600, fill: INK)[#c.type_line.kind #sym.dash.en #c.type_line.roles.join(" · ")]),
+    id, mark)
+}))
+
+#let mc-rule(p, s) = block(above: s * 0.5, below: s * 0.5, line(length: 100%, stroke: 0.4pt + p.deep.transparentize(55%)))
+
+#let mc-rules(c, p, s, spread) = {
+  set text(font: SERIF, size: s, fill: INK, hyphenate: false, top-edge: "cap-height", bottom-edge: "baseline")
+  set par(leading: 0.42em, spacing: 0.62em, justify: false, first-line-indent: 0pt)
+  let kw(k) = text(weight: 700, k)
+  let gap = v(s * 0.3) + if spread { v(1fr) }
+  gap
+  for t in c.traits { par(t) }
+  gap
+  if c.effort != none { par[#kw[Effort] #h(0.25em) #c.effort.join(" · ")] }
+  for a in c.advice { par[#kw(a.key) #a.value.] }
+  gap
+  mc-rule(p, s)
+  gap
+  for (k, label) in (("strength", "Strength"), ("weakness", "Weakness"), ("resistance", "Resistance")) {
+    if c.at(k) != none { par[#kw(label) #h(0.2em) #c.at(k).] }
+  }
+  if c.flavor != none {
+    gap
+    mc-rule(p, s)
+    gap
+    par(text(style: "italic", size: s * 0.95)[#c.flavor.quote #h(0.3em) #text(style: "normal", size: s * 0.8, fill: STONE)[#sym.dash.en #c.flavor.who]])
+  }
+  gap
+}
+
+#let mc-bench(p, b) = if b != none and b.score != none {
+  block(radius: 3pt, fill: gradient.linear(p.plate.lighten(55%), p.plate, angle: 90deg), stroke: 1pt + p.deep, inset: (x: 6.3pt, y: 3.2pt), stack(spacing: 2.7pt,
+    align(center, text(font: SERIF, size: 15.3pt, weight: 600, fill: INK, number-type: "lining")[#b.score#text(size: 8.1pt, if b.unit == "Elo" { " Elo" } else { b.unit })]),
+    align(center, text(font: SANS, size: 5pt, weight: 600, fill: p.deep, tracking: 0.03em, upper(b.name)))))
+}
+
+#let mc-card(c, art, p, date) = block(width: 100%, height: 100%, radius: 5mm, fill: INK, inset: 3mm,
+  block(width: 100%, height: 100%, radius: 3mm, stroke: 0.6pt + MC-GOLD, inset: 2.7mm,
+    fill: gradient.linear(p.frame.lighten(18%), p.frame, p.deep.lighten(10%), p.frame.darken(8%), p.frame.lighten(6%), angle: 62deg),
+    layout(sz => grid(
+      rows: (auto, sz.width * 2 / 3, auto, 1fr, auto),
+      row-gutter: 1.5mm,
+      mc-plate(p, height: 24pt, layout(inner => {
+        let pips = mc-pips(p, c.cost, 15.2pt)
+        grid(columns: (1fr, auto), align: horizon,
+          mc-fit-text(15pt, 9pt, inner.width - measure(pips).width - 6pt, text(font: SERIF, weight: 600, fill: INK, c.name)), pips)
+      })),
+      block(width: 100%, height: 100%, stroke: (paint: MC-GOLD, thickness: 1.1pt), clip: true,
+        block(width: 100%, height: 100%, stroke: 1pt + INK, clip: true, image(art, width: 100%, height: 100%, fit: "cover"))),
+      mc-type-plate(c, p),
+      block(width: 100%, height: 100%, radius: 2pt, fill: MC-PAPER, stroke: 0.8pt + p.deep, inset: (x: 8pt, top: 7pt, bottom: 9pt), clip: true, {
+        if p.wm != none { place(center + horizon, image(p.wm, height: 55%)) }
+        mc-fit-block(range(54, 29, step: -1).map(i => i * 0.25pt), (s, spread) => mc-rules(c, p, s, spread))
+      }),
+      grid(columns: (1fr, auto), align: (left + horizon, right + top),
+        pad(top: 3pt, stack(dir: ltr, spacing: 4.3pt,
+          if p.word != none { box(height: 8.6pt * p.word-h, image(p.word, height: 8.6pt * p.word-h)) } else { text(font: SANS, size: 6pt, weight: 700, fill: white, upper(p.name)) },
+          if date != none { box(height: 8.6pt, align(horizon, text(font: SANS, size: 5.4pt, weight: 600, fill: white.darken(6%), tracking: 0.06em, date))) })),
+        move(dy: -9pt, mc-bench(p, c.benchmark))),
+    ))))
+
+#let model-card-page(card: none, art: none, labs: none, date: none) = {
+  pagebreak(weak: true)
+  page(header: none, footer: none, foreground: none, margin: (x: 10mm, top: 12mm, bottom: 14mm),
+    mc-card(card, art, mc-palette(card.lab, labs), if card.released != none { card.released } else { date }))
+}

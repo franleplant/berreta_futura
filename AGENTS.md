@@ -142,8 +142,19 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - Content modes: `faithful_edit`, `faithful_synthesis`, `selected_extracts`,
   `original_synthesis`, `in_a_nutshell`, `explainer` (multi-source teaching piece:
   user, developer, internals; `prompts/explainer.md`), `verbatim` (source text unchanged, no
-  writer call, head/tail cleanup only, ten-page cap instead of seven), plus the `original_editorial`
-  opener.
+  writer call, head/tail cleanup only, ten-page cap instead of seven), `model_card` (an AI model
+  launch post: the article writer as usual plus one gated call, `prompts/model-card.md`, writing
+  `articles/<id>/card.json` in the run; every number, the model id, and the tester quote must
+  appear in the row's sources, each fact once; produce names missing slots such as the price and
+  prints the `mag capture <url> --article <id>` that fills them from a pricing or docs page; the
+  book template prints the card as a full trading-card page before the article's opener, art from
+  `card_art_path`), plus the `original_editorial` opener.
+- `mag capture` without `--mode` or `--article` checks for a model launch post: a regex
+  prefilter (benchmark names or a per-million-token price), then one gated sonnet call
+  (`prompts/model-card-detect.md`, the evidence sentence and model name must be on the page);
+  a launch becomes a `model_card` row, `--mode article` overrides. Card art is its own slot:
+  `mag art NNN --only card` builds two briefs per card from card.json in the 1970s airbrush
+  card style (no brief model, no anatomy gate), pick in the showcase, then `--promote`.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for
   `verbatim`). No edition carries an opening editorial: produce no longer

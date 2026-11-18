@@ -42,3 +42,5 @@ specs per `mag/src/caller.rs`).
 
 - `translation-es.md` (+ output schema) — `mag translate`
 - `cover-art-candidates.md` — `mag art`
+- `model-card.md` - the `model_card` card call in `mag produce` (gated in `mag/src/modelcard.rs`)
+- `model-card-detect.md` - the launch-post check in `mag capture`

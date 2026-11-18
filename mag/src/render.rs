@@ -128,7 +128,7 @@ pub(crate) fn manuscript_headings(path: &Path) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn latest_complete_run(
+pub(crate) fn latest_complete_run(
     edition_dir: &Path,
     article_ids: &[String],
     needs_editorial: bool,
@@ -566,6 +566,14 @@ fn stage_manuscripts(
             stage(
                 resolve_field(&article.manuscript, edition_dir),
                 PathBuf::from("articles").join(&article.id).join("final.md"),
+            );
+        }
+        if let Some(card) = article.card.as_deref().filter(|card| !card.is_empty()) {
+            stage(
+                resolve_field(card, edition_dir),
+                PathBuf::from("articles")
+                    .join(&article.id)
+                    .join("card.json"),
             );
         }
     }
