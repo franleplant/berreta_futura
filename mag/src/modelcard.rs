@@ -365,7 +365,7 @@ pub fn card_errors(card: &Card, source: &str) -> Vec<String> {
             errs.push(format!("model_id '{id}' does not appear in the sources"));
         }
     }
-    errs.extend(art_errors(card, &page));
+    errs.extend(art_errors(card));
     if let Some(date) = card.released.as_deref().filter(|d| !date_on_page(d, &page)) {
         errs.push(format!("released '{date}' is not a date the sources print"));
     }
@@ -412,18 +412,18 @@ fn date_on_page(date: &str, page: &str) -> bool {
     .any(|form| page.contains(form.as_str()))
 }
 
-static MACHINE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?i)\b(?:robot|automaton|android|cyborg|mech)s?\b").unwrap());
+static NOT_A_CHARACTER: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)\b(?:tower|building|house|castle|city|ship|boat|vehicle|car|tree|garden|lantern|lamp|machine|engine|factory)s?\b").unwrap()
+});
 static MANY_ARMED: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\b(?:many|multi|four|six|eight)[- ]armed\b").unwrap());
 
-fn art_errors(card: &Card, page: &str) -> Vec<String> {
-    let robotics = Regex::new(r"(?i)\brobot").unwrap().find_iter(page).count() >= 10;
+fn art_errors(card: &Card) -> Vec<String> {
     let mut errs = Vec::new();
     for (i, brief) in card.art_briefs.iter().enumerate() {
-        let subject = brief.split(['.', ',', ':']).next().unwrap_or_default();
-        if !robotics && MACHINE.is_match(subject) {
-            errs.push(format!("art brief {}: the subject is a robot or automaton, but the post is not about robotics; pick a beast, giant, spirit, ship, tower, tree, or another being", i + 1));
+        let subject = brief.split([',', ':', ';']).next().unwrap_or_default();
+        if let Some(word) = NOT_A_CHARACTER.find(subject) {
+            errs.push(format!("art brief {}: the subject is a {}, not a character; make it a dragon, robot, knight, beast, golem, spirit, or another being with a face", i + 1, word.as_str()));
         }
         if MANY_ARMED.is_match(brief) {
             errs.push(format!("art brief {}: no many-armed figures", i + 1));
@@ -653,17 +653,13 @@ mod tests {
     }
 
     #[test]
-    fn the_art_is_not_always_a_robot() {
+    fn the_art_is_always_a_character() {
         let mut c = card();
-        c.art_briefs[0] =
-            "a calm automaton made of brass, holding a lamp. Background: a sun. Red palette."
-                .into();
+        c.art_briefs[0] = "a walking marble lantern tower full of drawers, in a desert. Background: moons. Red palette.".into();
         assert!(card_errors(&c, SOURCE)
             .iter()
-            .any(|e| e.contains("robot or automaton")));
-        c.art_briefs[0] =
-            "a vast tortoise made of tiles, carrying a robot arm. Background: sea. Red palette."
-                .into();
+            .any(|e| e.contains("not a character")));
+        c.art_briefs[0] = "a brass robot with a kind face, carrying a lamp and a tiny city. Background: sea. Red palette.".into();
         assert!(card_errors(&c, SOURCE).is_empty());
         c.art_briefs[1] = "a four-armed giant made of glass. Background: sea. Blue palette.".into();
         assert!(card_errors(&c, SOURCE)

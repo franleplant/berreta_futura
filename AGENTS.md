@@ -159,8 +159,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   a launch becomes a `model_card` row, `--mode article` overrides. Card art is its own slot:
   `mag art NNN --only card` builds two briefs per card from card.json in the 1970s airbrush
   card style (no brief model, no anatomy gate), pick in the showcase, then `--promote`. The card
-  gate refuses robot or automaton subjects unless the post is about robotics, and many-armed
-  figures always, so cards vary.
+  art is always a character (dragon, robot, knight, beast, golem, spirit...), never a building
+  or object, chosen from what the post is about; the gate refuses non-character subjects and
+  many-armed figures.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for
   `verbatim`). No edition carries an opening editorial: produce no longer

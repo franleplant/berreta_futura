@@ -76,22 +76,22 @@ article, not the card. The card picks; it never summarizes the post.
   model doing, drawn as physical objects in or around the scene].
   Background: [one simple, surreal setting]. [three colours] palette.
 
-  The subject is the model as a mythic trading-card being, and it changes
-  from card to card. Pick it from what the post is about, from a wide range:
-  a beast (a stag, a whale, a heron, a tortoise carrying a city), a
-  giant or titan, a spirit or elemental, a ship, a tower or living building,
-  a tree or garden, a constellation, a mask, a swarm turned into one shape,
-  a craftsman figure. A robot, automaton, or android is allowed only when
-  the post is mainly about robotics, and never with many arms. The two
-  briefs use two different kinds of subject and two different settings.
+  The subject is always a character: the model as a trading-card creature
+  with a face, a body, and a personality, the kind a player would name. A
+  dragon, a robot, a knight, a wizard, a golem, a beast (a stag, a heron, a
+  bear, an owl), a giant, a spirit, a sea serpent, a mechanical animal.
+  Never a building, a tower, a vehicle, a tree, a city, or an object. Pick
+  the character from what the post is about, so cards differ from model to
+  model, and make the two briefs two different kinds of character in two
+  different settings. No many-armed figures.
 
   One example of the shape, for another model:
 
-  "a vast tortoise made of brass gears and terracotta tiles, wading slowly
-  through a shallow sea, a small city of glowing workshops on its shell:
-  one roof smelting a circuit board, one window printing a protein model,
-  a crane lifting a tiny robot arm. Background: a low pink moon on a
-  flat horizon. Terracotta, teal and cream palette."
+  "a young copper dragon with paper wings covered in handwritten equations,
+  curled on a floating island of books, one claw soldering a tiny circuit
+  board, its tail holding a protein model up to the light, a small robot
+  arm perched on its horn like a bird. Background: a huge pale orange sun
+  over a teal desert. Copper, teal and cream palette."
 
   No text, letters, numbers, screens with writing, logos, the lab's name,
   or the model's name. Avoid the generic glowing sun disk behind a centred
