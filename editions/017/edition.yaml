@@ -18,6 +18,7 @@ cover:
   deck: A Redis rebuilt until the proofs passed, an assistant that asks before it acts, a review bill cut by two thirds, and binders designed against scorpion venom
   back_text: The robot finished the job in four seconds. You will spend the whole afternoon deciding whether to believe it.
   art_path: editions/017/art/picks/cover-tuning-fork-splash-v1.jpg
+  endpaper_path: editions/017/art/picks/endpaper-toile-tuning-fork-orchard-v1.jpg
 articles:
 - id: closing-the-verification-loop-observability-driv
   title: 'Closing the Verification Loop'
