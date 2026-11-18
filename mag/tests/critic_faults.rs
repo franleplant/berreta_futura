@@ -27,19 +27,18 @@ fn authored_expectations_follow_the_imposition_plan() {
 }
 
 #[test]
-fn the_interior_wraps_the_credits_and_about_on_one_sheet_and_splits_on_a_sheet() {
+fn the_interior_opens_on_rectos_and_splits_on_a_sheet() {
     let plan = impose::section_plan(108, "interior").unwrap();
     assert_eq!(
         plan[0],
-        (None, None),
-        "the outermost sheet's outside is blank"
+        (Some(106), Some(2)),
+        "the outer sheet's outside: about on the last verso, credits on the first recto"
     );
-    assert_eq!(
-        plan[1],
-        (Some(2), Some(106)),
-        "its inside carries the credits and the about page"
-    );
-    assert_eq!(plan[2], (None, Some(3)), "the contents open the next sheet");
+    assert_eq!(plan[1], (None, None), "the credits' back stays blank");
+    assert_eq!(plan[2], (None, Some(3)), "the contents open on a recto");
+    for (left, right) in &plan {
+        assert!(left.is_none_or(|p| p % 2 == 0) && right.is_none_or(|p| p % 2 == 1 || p == 2));
+    }
     let mut printed: Vec<usize> = plan.iter().flat_map(|(l, r)| [*l, *r]).flatten().collect();
     printed.sort_unstable();
     assert_eq!(

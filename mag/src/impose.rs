@@ -69,10 +69,15 @@ pub fn section_plan(
     Ok(match section {
         "cover" => cover_wrap_plan(page_count)?,
         "interior" => {
-            let padded: Vec<Option<usize>> = [None, Some(2)]
+            let body: Vec<Option<usize>> = [Some(2), None]
                 .into_iter()
                 .chain((3..page_count - 2).map(Some))
-                .chain([None, Some(page_count - 2), None])
+                .collect();
+            let blanks = (body.len() + 1).div_ceil(4) * 4 - body.len() - 1;
+            let padded: Vec<Option<usize>> = body
+                .into_iter()
+                .chain(std::iter::repeat_n(None, blanks))
+                .chain([Some(page_count - 2)])
                 .collect();
             booklet_spreads(padded.len())
                 .into_iter()
