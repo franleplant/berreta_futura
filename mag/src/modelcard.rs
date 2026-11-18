@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-pub const ART_STYLE: &str = "Collectible-card creature art in the style of a 1970s science-fiction paperback cover: smooth airbrushed gradients, crisp highlights, a little film grain. Subject: ";
+pub const ART_STYLE: &str = "Collectible-card art of a beautiful, majestic giant in the style of a 1970s science-fiction paperback cover: smooth airbrushed gradients, crisp highlights, a little film grain. Subject: ";
 pub const ART_FRAME: &str = " Full-bleed, no border, no frame, no text, no letters, no numbers, no logos anywhere in the image. Landscape card art window composition.";
 const ADVICE_KEYS: [&str; 3] = ["Use it for", "Start with", "Tip"];
 const PRICE_LABELS: [&str; 3] = ["in", "cached", "out"];
@@ -415,6 +415,8 @@ fn date_on_page(date: &str, page: &str) -> bool {
 static NOT_A_CHARACTER: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)\b(?:tower|building|house|castle|city|ship|boat|vehicle|car|tree|garden|lantern|lamp|machine|engine|factory)s?\b").unwrap()
 });
+static GIANT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)\b(?:giant|colossal|colossus|titan)s?\b").unwrap());
 static MANY_ARMED: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\b(?:many|multi|four|six|eight)[- ]armed\b").unwrap());
 
@@ -423,7 +425,10 @@ fn art_errors(card: &Card) -> Vec<String> {
     for (i, brief) in card.art_briefs.iter().enumerate() {
         let subject = brief.split([',', ':', ';']).next().unwrap_or_default();
         if let Some(word) = NOT_A_CHARACTER.find(subject) {
-            errs.push(format!("art brief {}: the subject is a {}, not a character; make it a dragon, robot, knight, beast, golem, spirit, or another being with a face", i + 1, word.as_str()));
+            errs.push(format!("art brief {}: the subject is a {}, not a character; make it a beautiful, majestic giant with a face", i + 1, word.as_str()));
+        }
+        if !GIANT.is_match(subject) {
+            errs.push(format!("art brief {}: open with the subject as a beautiful, majestic giant (giant, colossal, colossus, or titan)", i + 1));
         }
         if MANY_ARMED.is_match(brief) {
             errs.push(format!("art brief {}: no many-armed figures", i + 1));
@@ -592,8 +597,8 @@ mod tests {
             }),
             released: None,
             art_briefs: vec![
-                "a calm heron. Background: a sun. Red palette.".into(),
-                "a tall figure. Background: sea. Blue palette.".into(),
+                "a calm giant heron. Background: a sun. Red palette.".into(),
+                "a colossal stone figure. Background: sea. Blue palette.".into(),
             ],
         }
     }
@@ -659,8 +664,15 @@ mod tests {
         assert!(card_errors(&c, SOURCE)
             .iter()
             .any(|e| e.contains("not a character")));
-        c.art_briefs[0] = "a brass robot with a kind face, carrying a lamp and a tiny city. Background: sea. Red palette.".into();
+        c.art_briefs[0] = "a giant brass knight with a kind face, carrying a lamp and a tiny city. Background: sea. Red palette.".into();
         assert!(card_errors(&c, SOURCE).is_empty());
+        c.art_briefs[0] =
+            "a small grey mouse with a kind face. Background: sea. Red palette.".into();
+        assert!(card_errors(&c, SOURCE)
+            .iter()
+            .any(|e| e.contains("majestic giant")));
+        c.art_briefs[0] =
+            "a giant brass knight with a kind face. Background: sea. Red palette.".into();
         c.art_briefs[1] = "a four-armed giant made of glass. Background: sea. Blue palette.".into();
         assert!(card_errors(&c, SOURCE)
             .iter()

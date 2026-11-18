@@ -21,8 +21,8 @@ Start from the cover's world (its elements, its joke, its colours) and
 the issue's themes in the title and deck, then go wherever the idea is
 best. A repeat can tell a tiny story across its tiles, hide one odd
 motif among hundreds, make the motifs interact with each other, play
-with scale, or turn the cover's object into an ornament, a creature, or
-a landscape. Borrow freely from real pattern traditions (toile, ikat,
+with scale, or turn the cover's object into an ornament, a majestic giant,
+or a landscape. Borrow freely from real pattern traditions (toile, ikat,
 chintz, Bauhaus geometrics, papel picado, katagami stencils, mid-century
 textiles, Arts and Crafts wallpaper) and from any hand medium (linocut,
 gouache, cut paper, crayon, screen print, risograph, stencil, collage,
