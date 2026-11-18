@@ -73,12 +73,13 @@ pub fn section_plan(
                 .into_iter()
                 .chain((3..page_count - 2).map(Some))
                 .collect();
-            let blanks = (body.len() + 1).div_ceil(4) * 4 - body.len() - 1;
-            let padded: Vec<Option<usize>> = body
+            let odd = body.len() % 2;
+            let mut padded: Vec<Option<usize>> = body
                 .into_iter()
-                .chain(std::iter::repeat_n(None, blanks))
+                .chain(std::iter::repeat_n(None, odd))
                 .chain([Some(page_count - 2)])
                 .collect();
+            padded.resize(padded.len().div_ceil(4) * 4, None);
             booklet_spreads(padded.len())
                 .into_iter()
                 .map(|(left, right)| (padded[left - 1], padded[right - 1]))

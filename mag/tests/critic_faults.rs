@@ -31,13 +31,20 @@ fn the_interior_opens_on_rectos_and_splits_on_a_sheet() {
     let plan = impose::section_plan(108, "interior").unwrap();
     assert_eq!(
         plan[0],
-        (Some(106), Some(2)),
-        "the outer sheet's outside: about on the last verso, credits on the first recto"
+        (None, Some(2)),
+        "the credits open on the first recto"
     );
-    assert_eq!(plan[1], (None, None), "the credits' back stays blank");
+    assert_eq!(
+        plan[1],
+        (None, Some(106)),
+        "the credits' back is blank and the about page closes on the last recto"
+    );
     assert_eq!(plan[2], (None, Some(3)), "the contents open on a recto");
     for (left, right) in &plan {
-        assert!(left.is_none_or(|p| p % 2 == 0) && right.is_none_or(|p| p % 2 == 1 || p == 2));
+        assert!(
+            left.is_none_or(|p| p % 2 == 0)
+                && right.is_none_or(|p| p % 2 == 1 || p == 2 || p == 106)
+        );
     }
     let mut printed: Vec<usize> = plan.iter().flat_map(|(l, r)| [*l, *r]).flatten().collect();
     printed.sort_unstable();
