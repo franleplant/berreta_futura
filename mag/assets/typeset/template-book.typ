@@ -1549,17 +1549,20 @@
 )
 
 #let END-MARK-DROP = 42pt
+#let END-MARK-LIFT = 20pt
 #let end-mark(body) = {
   set par(spacing: 0pt)
-  v(-20pt)
+  v(-END-MARK-LIFT)
   block(
     height: 0pt,
     width: 100%,
     above: auto,
     below: 0pt,
-    {
-      place(top + left, dy: END-MARK-DROP, [#metadata(none)<mag-end-baseline>])
-      place(top + left, dy: END-MARK-DROP, box(width: 100%, align(center, ornament(size: 12pt))))
+    context {
+      let folio-top = PAGE-HEIGHT - FOLIO-BASELINE - FOLIO-SIZE
+      let dy = calc.min(END-MARK-DROP, (folio-top - here().position().y + END-MARK-LIFT) / 2)
+      place(top + left, dy: dy, [#metadata(none)<mag-end-baseline>])
+      place(top + left, dy: dy, box(width: 100%, align(center, ornament(size: 12pt))))
     },
   )
 }

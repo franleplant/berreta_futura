@@ -1053,6 +1053,32 @@ mod tests {
         assert!((fits.room - spills.room - 1.0).abs() < 1e-6);
     }
 
+    #[test]
+    fn the_book_end_mark_never_reaches_the_folio() {
+        let folio_ink_top = 595.2756 - 24.0 - 5.0;
+        for gap in (380..560).step_by(4) {
+            let run = piece_run(&format!("#v({gap}pt)\nLast line.\n#end-mark[End / 01]\n"));
+            let world = Sources::fixture(&run, template::BOOK_TEMPLATE_TYP, ROOT_TYP)
+                .expect("the world builds");
+            let document = template::document(&world).expect("the tree compiles");
+            let introspector = document.introspector();
+            let mark = introspector
+                .elements()
+                .all()
+                .filter(|c| {
+                    c.label()
+                        .is_some_and(|l| l.resolve().as_str() == "mag-end-baseline")
+                })
+                .find_map(|c| introspector.position(c.location()?))
+                .expect("the end mark is placed");
+            assert!(
+                mark.point.y.to_pt() + 4.0 < folio_ink_top,
+                "at a {gap}pt gap the end mark's baseline sits at {:?}",
+                mark.point.y
+            );
+        }
+    }
+
     fn anchor_gap(lead: &str) -> f64 {
         let run = piece_run(&format!(
             "{lead}#doc-heading(level: 2)[Anchor]\n\
