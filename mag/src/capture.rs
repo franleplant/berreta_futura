@@ -1024,14 +1024,7 @@ pub fn prepend_sources_md(text: &str, entry: &[String], edition: &str, queued: u
         let at = (last_meta + 1).min(lines.len());
         lines.splice(at..at, [String::new(), collecting_line]);
     }
-    let first_entry = lines
-        .iter()
-        .position(|l| l.starts_with("## "))
-        .unwrap_or(lines.len());
-    let mut block: Vec<String> = entry.to_vec();
-    block.push(String::new());
-    lines.splice(first_entry..first_entry, block);
-    lines.join("\n").trim_end().to_string() + "\n"
+    prepend_entry(&lines.join("\n"), entry)
 }
 
 fn sources_md_entry(m: &SourceMeta, release: &str) -> Vec<String> {
@@ -1102,20 +1095,50 @@ impl Drop for StateLock {
 fn publish_source(
     m: &SourceMeta,
     src_dir: &Path,
-    edition: &str,
+    edition: Option<&str>,
     article: Option<&str>,
     mode: Option<crate::model::kinds::ContentMode>,
 ) -> Result<()> {
     write_atomic(src_dir.join("record.yaml"), record_yaml(m))?;
-    let queued = crate::plan_cmd::add_source(edition, m.sid, article, mode)?;
     let sources_path = PathBuf::from("sources.md");
-    let entry = sources_md_entry(m, &format!("queued for `{edition}`"));
     let sources_text = fs::read_to_string(&sources_path).context("reading sources.md")?;
-    write_atomic(
-        &sources_path,
-        prepend_sources_md(&sources_text, &entry, edition, queued),
-    )?;
+    let text = match edition {
+        Some(edition) => {
+            let queued = crate::plan_cmd::add_source(edition, m.sid, article, mode)?;
+            let entry = sources_md_entry(m, &format!("queued for `{edition}`"));
+            prepend_sources_md(&sources_text, &entry, edition, queued)
+        }
+        None => prepend_entry(&sources_text, &sources_md_entry(m, "library only")),
+    };
+    write_atomic(&sources_path, text)?;
     Ok(())
+}
+
+fn prepend_entry(text: &str, entry: &[String]) -> String {
+    let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
+    let first_entry = lines
+        .iter()
+        .position(|l| l.starts_with("## "))
+        .unwrap_or(lines.len());
+    let mut block: Vec<String> = entry.to_vec();
+    block.push(String::new());
+    lines.splice(first_entry..first_entry, block);
+    lines.join("\n").trim_end().to_string() + "\n"
+}
+
+fn target_edition(root: &Path, edition: Option<&str>) -> Result<(String, Option<String>)> {
+    let edition = match edition {
+        Some(e) => e.to_string(),
+        None => intake_edition(root)?,
+    };
+    let edition = crate::plan_cmd::intake_edition_for(root, &edition)?;
+    let new_toml = if Path::new("editions").join(&edition).exists() {
+        None
+    } else {
+        let toml = fs::read_to_string(root.join("magazine.toml"))?;
+        Some(set_intake_edition(&toml, &edition)?)
+    };
+    Ok((edition, new_toml))
 }
 
 fn iso_now() -> String {
@@ -1282,6 +1305,12 @@ pub struct CaptureArgs {
         help = "Content mode for the new plan row (default: article; verbatim only when asked)"
     )]
     pub mode: Option<crate::model::kinds::ContentMode>,
+    #[arg(
+        long = "library-only",
+        conflicts_with_all = ["edition", "article", "mode"],
+        help = "Record the source in the library only: no plan row, no intake change (for sources a standalone card or a later issue will use)"
+    )]
+    pub library_only: bool,
     #[arg(long, default_value = "sonnet")]
     pub model: String,
 }
@@ -1466,19 +1495,16 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
     }
 
     let root = Path::new(".");
-    let edition = match edition {
-        Some(e) => e.to_string(),
-        None => intake_edition(root)?,
+    let (edition, new_toml) = match args.library_only {
+        true => (None, None),
+        false => {
+            let (edition, toml) = target_edition(root, edition)?;
+            (Some(edition), toml)
+        }
     };
-    let edition = crate::plan_cmd::intake_edition_for(root, &edition)?;
-    let new_toml = if Path::new("editions").join(&edition).exists() {
-        None
-    } else {
-        let toml = fs::read_to_string(root.join("magazine.toml"))?;
-        Some(set_intake_edition(&toml, &edition)?)
-    };
-    if let Some(article) = join_article {
-        crate::plan_cmd::check_join(&edition, article)?;
+    let edition = edition.as_deref();
+    if let (Some(edition), Some(article)) = (edition, join_article) {
+        crate::plan_cmd::check_join(edition, article)?;
     }
 
     write_raw(pdf.as_ref(), &html, &sid)?;
@@ -1530,20 +1556,22 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
         synopsis: &extraction.synopsis,
     };
     let mode = mode.or_else(|| {
-        join_article
-            .is_none()
-            .then(|| launch_mode(&article, &sid))?
+        (join_article.is_none() && edition.is_some()).then(|| launch_mode(&article, &sid))?
     });
     let lock = StateLock::acquire()?;
-    publish_source(&meta, &src_dir, &edition, join_article, mode)?;
+    publish_source(&meta, &src_dir, edition, join_article, mode)?;
     if let Some(toml) = new_toml {
         write_atomic(root.join("magazine.toml"), toml)?;
     }
     drop(lock);
 
     println!(
-        "  captured: {} words, {image_count} images, queued for {edition} ({model_cost})",
-        article.split_whitespace().count()
+        "  captured: {} words, {image_count} images, {} ({model_cost})",
+        article.split_whitespace().count(),
+        edition.map_or_else(
+            || format!("library only, id {sid}"),
+            |e| format!("queued for {e}")
+        )
     );
     Ok(0)
 }

@@ -73,6 +73,17 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - `tools/letter.py`, `coverproof.py`, `compare.py`, and `read.py` are
   standalone Python side scripts (`uv run --with <dep> tools/<name>.py`), not
   pipeline steps; nothing in `mag` calls them.
+- `mag cards` makes standalone model cards outside any issue, for sharing and printing:
+  `mag cards write <slug> --source <id>...` writes `cards/<slug>/card.json` through the same
+  gated card writer produce uses; `mag cards art <slug>` generates two candidates per art brief
+  into `cards/<slug>/candidates/` (gitignored) plus `preview.pdf` with each set in the card;
+  `--pick <n-vN>` promotes one to `cards/<slug>/art.jpg`; `mag cards sheet <slug|card.json[:art]>...
+  [--out pdf]` lays cards three to an A4 landscape sheet with crop marks, each sheet followed by
+  the brand pattern back (`mag/assets/typeset/card-sheet.typ`: violet, halftone waves, wordmark +
+  site + BF tiles on a -30 degree half-drop). The back is a uniform all-over pattern on purpose:
+  duplex alignment is never trusted and every trimmed card must still read. Print duplex, short
+  edge. A source for a card alone is captured with `mag capture <url> --library-only` (no plan
+  row, no intake change).
 - `mag print <url> [--html file] [--out dir] [--chrome bin]` is a standalone
   side tool, not an edition step: it turns one blog post into
   `output/print/<slug>/print.pdf` ready to print (plus the self-contained

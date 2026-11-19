@@ -651,7 +651,7 @@ fn shell_single_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))
 }
 
-type GenEnv = [(&'static str, String); 4];
+pub(crate) type GenEnv = [(&'static str, String); 4];
 
 const GEN_PLACEHOLDERS: [(&str, &str); 4] = [
     ("{prompt}", "MAG_PROMPT"),
@@ -660,7 +660,7 @@ const GEN_PLACEHOLDERS: [(&str, &str); 4] = [
     ("{size}", "MAG_SIZE"),
 ];
 
-fn expand_placeholders(gen_cmd: &str) -> Result<String> {
+pub(crate) fn expand_placeholders(gen_cmd: &str) -> Result<String> {
     for word in gen_cmd.split_whitespace() {
         for (placeholder, _) in GEN_PLACEHOLDERS {
             let whole = [
@@ -772,7 +772,7 @@ fn write_generate_script(
     Ok(path)
 }
 
-fn run_gen_command(cmd_str: &str, env: &GenEnv, out_path: &Path) -> Result<(), String> {
+pub(crate) fn run_gen_command(cmd_str: &str, env: &GenEnv, out_path: &Path) -> Result<(), String> {
     let output = Command::new("sh")
         .arg("-c")
         .arg(cmd_str)

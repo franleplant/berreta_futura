@@ -38,3 +38,7 @@ art-directions/experiments/
 .wrangler/
 editions/*/epub/
 **/showcase.html
+
+# Standalone card art candidates stay local; `mag cards art <slug> --pick` commits cards/<slug>/art.jpg.
+cards/*/candidates/
+cards/*/log.jsonl

@@ -1,0 +1,65 @@
+{
+  "name": "Claude Opus 5.5",
+  "model_id": "claude-opus-5-5",
+  "lab": "Anthropic",
+  "cost": [
+    {
+      "label": "in",
+      "value": "$4"
+    },
+    {
+      "label": "cached",
+      "value": "$0.20"
+    },
+    {
+      "label": "out",
+      "value": "$20"
+    }
+  ],
+  "type_line": {
+    "kind": "Frontier Model",
+    "roles": [
+      "Coder",
+      "Analyst"
+    ]
+  },
+  "traits": [
+    "Generates output more than 30% faster than Opus 5.",
+    "Puts the most important information up front.",
+    "Always thinks before it replies; thinking can no longer be switched off."
+  ],
+  "effort": [
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+  ],
+  "advice": [
+    {
+      "key": "Use it for",
+      "value": "work you supervise: feature work, debugging, and code review"
+    },
+    {
+      "key": "Tip",
+      "value": "give the model a way to check its work, such as a test to run"
+    }
+  ],
+  "strength": "Long codebase-wide migrations and audits",
+  "weakness": "Trails GPT-6 Astra on agentic science research",
+  "resistance": "Cyber and biology safeguards, falls back transparently",
+  "benchmark": {
+    "name": "Terminal-Bench 4.0",
+    "score": "66.4",
+    "unit": "%"
+  },
+  "flavor": {
+    "quote": "it detected that the minute indexing in our own instructions was off by one and corrected for it",
+    "who": "Frank Corrao, Walleye Capital"
+  },
+  "released": "2026-09-22",
+  "art_briefs": [
+    "a colossal slate-grey owl with feathers of folded blueprint paper, calm and noble, perched on a cliff of stacked crates and carefully carrying them one by one across a gap to a new cliff, a brass magnifying lens hanging from one talon over an open ledger, a wooden chessboard balanced on its wing, a small parcel tied with string at its feet. Background: a floating archipelago of crates over still violet water. Slate, violet and saffron palette.",
+    "a giant knight carved from pale sandstone with moss-green enamel armour, serene and patient, kneeling to rebuild a long arched stone bridge brick by brick, a bundle of rolled spreadsheets tucked under one arm, a tiny arcade cabinet glowing at its knee, a loose thread of red yarn it is tracing back along the bridge to a hidden crack. Background: a bridge spanning two clouds over a dusk desert. Sandstone, moss green and coral palette."
+  ]
+}

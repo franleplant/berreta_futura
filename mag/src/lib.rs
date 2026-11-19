@@ -2,6 +2,7 @@ pub mod anchors;
 pub mod art;
 pub mod caller;
 pub mod capture;
+pub mod cards;
 pub mod cover;
 pub mod critic;
 mod curate;

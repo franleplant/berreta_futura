@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use mag::{
-    anchors, art, capture, plan_cmd, print_cmd, produce, publish, render, site, sourcecodes,
+    anchors, art, capture, cards, plan_cmd, print_cmd, produce, publish, render, site, sourcecodes,
     translate,
 };
 use std::path::Path;
@@ -22,6 +22,8 @@ enum Cmd {
     /// fidelity-gated model call, download media, update sources.md, and
     /// record it in the edition's plan.yaml (own row, or --article to join one)
     Capture(capture::CaptureArgs),
+    /// Standalone model cards: write a card from library sources, generate and pick its art, and lay out printable card sheets with the brand pattern back
+    Cards(cards::CardsArgs),
     /// Produce a printable, self-contained HTML version of a blog post: keep
     /// the page's own style, content, and images; strip site chrome, scripts,
     /// players, and other unprintable parts (no model call)
@@ -73,6 +75,7 @@ fn run(cli: Cli) -> Result<i32> {
     match cli.cmd {
         Cmd::Plan(args) => plan_cmd::run(&args),
         Cmd::Capture(args) => capture::run(&args),
+        Cmd::Cards(args) => cards::run(&args),
         Cmd::Print(args) => print_cmd::run(&args),
         Cmd::Produce(args) => produce::run(&args),
         Cmd::Translate(args) => translate::run(&args),
