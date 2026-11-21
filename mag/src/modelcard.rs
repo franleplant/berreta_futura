@@ -1,13 +1,14 @@
 use crate::caller::{Caller, ModelSpec};
 use crate::produce::{section, INLINE_PREAMBLE};
 use crate::util::{prompts_path, read};
-use anyhow::{bail, Result};
+use anyhow::{bail, ensure, Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-pub const ART_BRIEFS: usize = 4;
+pub const SEED_PROMPTS: usize = 2;
+const ART_SEEDS_DIR: &str = "model-card-art";
 const ART_FRAME: &str = "No text, letters, numbers, or logos anywhere in the image.";
 
 pub fn art_prompt(brief: &str) -> String {
@@ -395,18 +396,13 @@ fn date_on_page(date: &str, page: &str) -> bool {
     .any(|form| page.contains(form.as_str()))
 }
 
-static NOT_A_CHARACTER: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)\b(?:tower|building|house|castle|city|ship|boat|vehicle|car|tree|garden|lantern|lamp|machine|engine|factory)s?\b").unwrap()
-});
-static GIANT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?i)\b(?:giant|colossal|colossus|titan)s?\b").unwrap());
 static MANY_ARMED: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\b(?:many|multi|four|six|eight)[- ]armed\b").unwrap());
 
 fn brief_errors(card: &Card, briefs: &[String]) -> Vec<String> {
     let mut errs = Vec::new();
-    if briefs.len() != ART_BRIEFS {
-        errs.push(format!("art_briefs must be {ART_BRIEFS}"));
+    if briefs.len() != SEED_PROMPTS {
+        errs.push(format!("write exactly {SEED_PROMPTS} prompts"));
     }
     let first_name = card
         .name
@@ -417,29 +413,20 @@ fn brief_errors(card: &Card, briefs: &[String]) -> Vec<String> {
     for (i, brief) in briefs.iter().enumerate() {
         let n = i + 1;
         if brief.split_whitespace().count() > 120 {
-            errs.push(format!("art brief {n} over 120 words"));
+            errs.push(format!("prompt {n} over 120 words"));
         }
         let lower = brief.to_lowercase();
         if [card.lab.to_lowercase(), first_name.clone()]
             .iter()
             .any(|w| !w.is_empty() && lower.contains(w.as_str()))
         {
-            errs.push(format!("art brief {n} names the lab or the model"));
-        }
-        let subject = brief.split([',', ':', ';']).next().unwrap_or_default();
-        if let Some(word) = NOT_A_CHARACTER.find(subject) {
-            errs.push(format!("art brief {n}: the subject is a {}, not a character; make it a beautiful, majestic giant with a face", word.as_str()));
-        }
-        if !GIANT.is_match(brief) {
-            errs.push(format!(
-                "art brief {n}: name the subject as a giant, colossus, or titan"
-            ));
+            errs.push(format!("prompt {n} names the lab or the model"));
         }
         if MANY_ARMED.is_match(brief) {
-            errs.push(format!("art brief {n}: no many-armed figures"));
+            errs.push(format!("prompt {n}: no many-armed figures"));
         }
         if brief.contains('\u{2014}') {
-            errs.push(format!("art brief {n}: em dash"));
+            errs.push(format!("prompt {n}: em dash"));
         }
     }
     errs
@@ -447,22 +434,37 @@ fn brief_errors(card: &Card, briefs: &[String]) -> Vec<String> {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Briefs {
-    #[serde(default)]
-    obvious: Vec<String>,
-    art_briefs: Vec<String>,
+struct SeedReply {
+    prompts: Vec<String>,
 }
 
 pub fn parse_briefs(reply: &str, card: &Card) -> Result<Vec<String>> {
-    let briefs: Briefs = json_reply(reply)?;
-    let mut errs = brief_errors(card, &briefs.art_briefs);
-    if briefs.obvious.is_empty() {
-        errs.push("list the obvious ideas first, under obvious".into());
-    }
+    let reply: SeedReply = json_reply(reply)?;
+    let errs = brief_errors(card, &reply.prompts);
     if !errs.is_empty() {
         bail!("fix every problem:\n- {}", errs.join("\n- "));
     }
-    Ok(briefs.art_briefs)
+    Ok(reply.prompts)
+}
+
+pub fn art_seeds() -> Result<Vec<(String, String)>> {
+    let dir = prompts_path(ART_SEEDS_DIR);
+    let mut seeds = std::fs::read_dir(&dir)
+        .with_context(|| format!("reading {}", dir.display()))?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.file_name().is_some_and(|n| n != "rules.md"))
+        .map(|p| {
+            let name = p
+                .file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
+            Ok((name, read(&p)?))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    seeds.sort();
+    ensure!(!seeds.is_empty(), "no seed prompts in {}", dir.display());
+    Ok(seeds)
 }
 
 pub fn write_briefs(
@@ -470,27 +472,36 @@ pub fn write_briefs(
     label: &str,
     model: &ModelSpec,
     card: &Card,
-    tried: &[String],
 ) -> Result<Vec<String>> {
     let shown = Card {
         art_briefs: Vec::new(),
         ..card.clone()
     };
-    let mut prompt = format!(
-        "{INLINE_PREAMBLE}\n\n{}\n\n{}",
-        read(&prompts_path("model-card-art.md"))?,
-        section("card", &serde_json::to_string_pretty(&shown)?)
-    );
-    if !tried.is_empty() {
-        prompt.push_str(&format!(
-            "\n\n{}",
-            section(
-                "already tried, so none of these ideas again",
-                &tried.join("\n\n")
-            )
-        ));
-    }
-    caller.call_with_parse(label, model, &prompt, |reply| parse_briefs(reply, card))
+    let rules = read(&prompts_path(&format!("{ART_SEEDS_DIR}/rules.md")))?;
+    let json = serde_json::to_string_pretty(&shown)?;
+    let seeds = art_seeds()?;
+    let replies: Vec<Result<Vec<String>>> = std::thread::scope(|scope| {
+        let handles: Vec<_> = seeds
+            .iter()
+            .map(|(name, seed)| {
+                let prompt = format!(
+                    "{INLINE_PREAMBLE}\n\n{}\n\n{}\n\n---\n\n{json}\n",
+                    seed.trim(),
+                    rules.trim()
+                );
+                let label = format!("{label} {name}");
+                scope.spawn(move || {
+                    caller
+                        .call_with_parse(&label, model, &prompt, |reply| parse_briefs(reply, card))
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().expect("a seed thread panicked"))
+            .collect()
+    });
+    Ok(replies.into_iter().collect::<Result<Vec<_>>>()?.concat())
 }
 
 pub fn parse_card(reply: &str, source: &str) -> Result<Card> {
@@ -604,7 +615,7 @@ pub fn write_card(caller: &Caller, label: &str, model: &ModelSpec, sources: &str
     );
     let mut card =
         caller.call_with_parse(label, model, &prompt, |reply| parse_card(reply, sources))?;
-    card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card, &[])?;
+    card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card)?;
     Ok(card)
 }
 
@@ -719,32 +730,21 @@ mod tests {
     }
 
     #[test]
-    fn the_art_is_always_a_character() {
-        let mut c = card();
-        c.art_briefs[0] = "a walking marble lantern tower full of drawers, in a desert. Background: moons. Red palette.".into();
-        assert!(brief_errors(&c, &c.art_briefs)
-            .iter()
-            .any(|e| e.contains("not a character")));
-        c.art_briefs[0] = "a giant brass knight with a kind face, carrying a lamp and a tiny city. Background: sea. Red palette.".into();
-        assert!(brief_errors(&c, &c.art_briefs).is_empty());
-        c.art_briefs[0] =
-            "a small grey mouse with a kind face. Background: sea. Red palette.".into();
-        assert!(brief_errors(&c, &c.art_briefs)
-            .iter()
-            .any(|e| e.contains("giant, colossus, or titan")));
-        c.art_briefs[0] =
-            "a giant brass knight with a kind face. Background: sea. Red palette.".into();
-        c.art_briefs[1] = "a four-armed giant made of glass. Background: sea. Blue palette.".into();
-        assert!(brief_errors(&c, &c.art_briefs)
-            .iter()
-            .any(|e| e.contains("many-armed")));
-        let reply = r#"{"obvious": ["a giant reading"], "art_briefs": ["a titan of glass resting by a lake.", "Seen from behind, a colossal bronze woman in snow.", "Upside down, a giant hangs from a library ceiling.", "Close-up of a titan's eye."]}"#;
-        assert_eq!(parse_briefs(reply, &c).unwrap().len(), 4);
-        assert!(parse_briefs(
-            r#"{"obvious": ["x"], "art_briefs": ["a titan of glass by a lake."]}"#,
-            &c
-        )
-        .is_err());
+    fn each_seed_writes_two_prompts_free_of_names_and_extra_arms() {
+        let c = card();
+        let ok = r#"{"prompts": ["a brass cartographer of smoked glass in an orbital archive.", "a quartz stag on a salt plain at dawn."]}"#;
+        assert_eq!(parse_briefs(ok, &c).unwrap().len(), 2);
+        assert!(parse_briefs(r#"{"prompts": ["a quartz stag."]}"#, &c).is_err());
+        let armed = r#"{"prompts": ["a six-armed librarian of brass.", "a quartz stag."]}"#;
+        assert!(parse_briefs(armed, &c)
+            .unwrap_err()
+            .to_string()
+            .contains("many-armed"));
+        let named = r#"{"prompts": ["Example as a brass sentinel.", "a quartz stag."]}"#;
+        assert!(parse_briefs(named, &c)
+            .unwrap_err()
+            .to_string()
+            .contains("names the lab or the model"));
     }
 
     #[test]

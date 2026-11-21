@@ -1,0 +1,3 @@
+Write two image prompts, each casting a completely different character; the character need not be human. Each is 50 to 80 words and names its palette. The character is beautiful and majestic, with whole, natural, well-proportioned anatomy for what it is. Draw on science fiction, classical myth, or pure invention; no folk or national costume, no birds. Never name the model or its maker, never use the word "creature", and put no writing in the scene. Each prompt closes with this exact style line: "1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain."
+
+Reply with JSON only: {"prompts": ["...", "..."]}

@@ -80,9 +80,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   gated card writer produce uses; `mag cards art <slug>` generates one candidate per art brief
   into `cards/<slug>/candidates/` (gitignored; earlier ones move to `earlier-<time>/`) plus a
   labelled `preview.pdf` with each set in the card; `--rebrief` rewrites only the art briefs
-  (every other field stays) before generating, after the writer lists its six obvious ideas and
-  avoids them and every brief already in `cards/<slug>/briefs-tried.txt` (committed, grows each rebrief);
-  `--pick <n-vN>` promotes one to `cards/<slug>/art.jpg`; `mag cards sheet <slug|card.json[:art]>...
+  (every other field stays) before generating; `--pick <n-vN>` promotes one to `cards/<slug>/art.jpg`; `mag cards sheet <slug|card.json[:art]>...
   [--out pdf]` lays cards three to an A4 landscape sheet with crop marks, each sheet followed by
   the brand pattern back (`mag/assets/typeset/card-sheet.typ`: violet, halftone waves, wordmark +
   site + BF tiles on a -30 degree half-drop). The back is a uniform all-over pattern on purpose:
@@ -173,13 +171,15 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   prefilter (benchmark names or a per-million-token price), then one gated sonnet call
   (`prompts/model-card-detect.md`, the evidence sentence and model name must be on the page);
   a launch becomes a `model_card` row, `--mode article` overrides. Card art is its own slot:
-  the card's four art briefs come from their own gated call after the card text
-  (`prompts/model-card-art.md`, from the card alone: a beautiful giant, surreal and free, each
-  brief a different idea, composition, and painting style; no menu or example in the prompt, they
-  bias every card the same way). `mag art NNN --only card` makes one image per brief, verbatim
-  plus a no-text line (no anatomy gate), pick in the showcase, then `--promote`. Never a
-  "creature", never birds; the gate refuses a brief that never says giant, colossus, or titan,
-  a non-character subject, and many-armed figures.
+  the card's art briefs come after the card text from the seed prompts in
+  `prompts/model-card-art/` (one call per seed file, in parallel, each writing two prompts from
+  the card alone, plus the shared `rules.md`: free hand, lost 1970s novel cover, deed as legend,
+  substance-first portrait). Different seeds, not rerenders of one prompt, are what keep the
+  characters varied; add a seed file to add an approach. No menus or worked examples inside a
+  seed: they bias every card the same way. `mag art NNN --only card` makes one image per brief,
+  verbatim plus a no-text line (no anatomy gate), pick in the showcase, then `--promote`. Never
+  "creature", never birds; the gate checks two prompts per seed, no lab or model name, no
+  many-armed figures, no em dash.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for
   `verbatim`). No edition carries an opening editorial: produce no longer
