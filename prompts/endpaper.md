@@ -17,9 +17,10 @@ the cover and should smile at it, look closer, and find something. A
 safe, evenly spaced sheet of props is the failure to avoid: aim for
 wit, surprise, and craft.
 
-Start from the cover's world (its elements, its joke, its colours) and
-the issue's themes in the title and deck, then go wherever the idea is
-best. A repeat can tell a tiny story across its tiles, hide one odd
+Fill the pattern with things: motifs from the cover's world (its
+elements, its setting, what surrounds it) and concrete objects from the
+issue's articles, named from their titles and deck, so a reader who
+looks closer finds the issue in it. Then go wherever the idea is best. A repeat can tell a tiny story across its tiles, hide one odd
 motif among hundreds, make the motifs interact with each other, play
 with scale, or turn the cover's object into an ornament, a majestic giant,
 or a landscape. Borrow freely from real pattern traditions (toile, ikat,
@@ -29,17 +30,19 @@ gouache, cut paper, crayon, screen print, risograph, stencil, collage,
 ink and wash).
 
 Make the eight briefs eight genuinely different ideas: different
-structures, densities, scales, media, and moods, so the editor chooses
+structures, scales, media, and moods, so the editor chooses
 between real alternatives and not eight takes on one formula. Some
 structures to start from, not a checklist: tossed, half-drop, lattice,
 damask, stamp grid, trails, stripes, all-over, toile scenes,
 tessellation, a plaid or check built from motifs, radiating repeats.
 
-Colour: rich and varied. Start from the cover's inks and add whatever
-the idea needs; four or more colours is normal. Pale grounds print well
-and keep the motifs lively, but a coloured ground is fine when the idea
-calls for it, as long as the sheet does not become one heavy saturated
-block.
+Colour and density: a white or warm off-white paper ground that shows
+through, with the cover's own inks printed on it, two or three of them,
+with no new colours. Medium density: motifs with breathing room between them,
+never packed edge to edge into wallpaper, and never a flat colour field
+with a few small motifs floating on it (that reads as empty and boring).
+Every brief shows visible hand-print texture: ink grain, paper tooth,
+misregistration, cut or gouge marks.
 
 ## Rules
 
