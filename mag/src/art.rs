@@ -2964,8 +2964,9 @@ fn generate_and_finish(
     }
     println!(
         "\nnext:\n  1. off-model and malformed candidates are badged in the showcase (cast-check ran on this round)\n  \
-         2. open editions/{edition_label}/art/showcase.html and press Pick; the bottom bar copies the edition.yaml lines \
-         (cover.art_path / cover.endpaper_path / opener_art.path / tail_art_path / card_art_path / closing_plates); rounds stay local, out of git\n  \
+         2. the agent picks opener_art.path, tail_art_path, and closing_plates itself (skip badged candidates) and writes them into edition.yaml; \
+         the editor picks cover.art_path, cover.endpaper_path, and card_art_path in editions/{edition_label}/art/showcase.html and gives the final ok on all of it; \
+         rounds stay local, out of git\n  \
          3. mag art {edition_label} --promote   (picks become committed JPEGs in art/picks)\n  \
          4. mag source-codes {edition_label}   (opener QR codes; reads the picked opener art)\n  \
          5. mag render {edition_label}"
