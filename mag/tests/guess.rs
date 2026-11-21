@@ -10,7 +10,7 @@ fn family(language: &str) -> Option<&str> {
     match language.to_lowercase().as_str() {
         "ts" | "typescript" | "js" | "javascript" | "tsx" | "jsx" => Some("script"),
         "sh" | "bash" | "shell" | "zsh" | "console" => Some("sh"),
-        "json" | "jsonc" | "json5" => Some("json"),
+        "json" | "jsonc" | "json5" | "jsonl" | "ndjson" => Some("json"),
         "py" | "python" | "python3" => Some("python"),
         "yml" | "yaml" => Some("yaml"),
         "rs" | "rust" => Some("rust"),

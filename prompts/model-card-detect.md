@@ -17,7 +17,10 @@ Answer with one JSON object and nothing else, no code fence:
 
 When the page launches a family of models (for example a flagship and a
 smaller sibling released together), list every one, the most capable first.
-List only models this post releases, never earlier models it compares against.
+List only models this post releases as products people can use, never earlier
+models it compares against, and never research checkpoints or ablation models
+the post shares alongside the product (for example a model trained only to
+study a technique, even when its weights are published).
 
 ---
 

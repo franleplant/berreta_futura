@@ -91,7 +91,7 @@ const LANGUAGES: &[(&str, Signatures)] = &[
         &[
             (r"^package\s+\w+$", 6),
             (r"^func\s", 4),
-            (r":=", 3),
+            (r":=[^;]*$", 3),
             (r"^import\s+\($", 4),
             (r"\bfmt\.\w", 3),
             (r"\berr\s*!=\s*nil\b", 4),
