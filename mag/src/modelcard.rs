@@ -7,8 +7,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-pub const ART_STYLE: &str = "Collectible-card art of a beautiful, majestic giant in the style of a 1970s science-fiction paperback cover: smooth airbrushed gradients, crisp highlights, a little film grain. Subject: ";
-pub const ART_FRAME: &str = " Full-bleed, no border, no frame, no text, no letters, no numbers, no logos anywhere in the image. Landscape card art window composition.";
+pub const ART_BRIEFS: usize = 4;
+const ART_FRAME: &str = "No text, letters, numbers, or logos anywhere in the image.";
+
+pub fn art_prompt(brief: &str) -> String {
+    format!("{} {ART_FRAME}", brief.trim())
+}
 const ADVICE_KEYS: [&str; 3] = ["Use it for", "Start with", "Tip"];
 const PRICE_LABELS: [&str; 3] = ["in", "cached", "out"];
 
@@ -48,6 +52,7 @@ pub struct Card {
     pub benchmark: Option<Benchmark>,
     pub flavor: Option<Flavor>,
     pub released: Option<String>,
+    #[serde(default)]
     pub art_briefs: Vec<String>,
 }
 
@@ -287,27 +292,6 @@ pub fn shape_errors(card: &Card) -> Vec<String> {
             errs.push("a benchmark with no score must be null".into());
         }
     }
-    if card.art_briefs.len() != 2 {
-        errs.push("art_briefs must be two".into());
-    }
-    let first_name = card
-        .name
-        .split_whitespace()
-        .next()
-        .unwrap_or_default()
-        .to_lowercase();
-    for (i, brief) in card.art_briefs.iter().enumerate() {
-        if brief.split_whitespace().count() > 90 {
-            errs.push(format!("art brief {} over 90 words", i + 1));
-        }
-        let lower = brief.to_lowercase();
-        if [card.lab.to_lowercase(), first_name.clone()]
-            .iter()
-            .any(|w| !w.is_empty() && lower.contains(w.as_str()))
-        {
-            errs.push(format!("art brief {} names the lab or the model", i + 1));
-        }
-    }
     let mut unquoted = card.clone();
     unquoted.flavor = None;
     if serde_json::to_string(&unquoted)
@@ -365,7 +349,6 @@ pub fn card_errors(card: &Card, source: &str) -> Vec<String> {
             errs.push(format!("model_id '{id}' does not appear in the sources"));
         }
     }
-    errs.extend(art_errors(card));
     if let Some(date) = card.released.as_deref().filter(|d| !date_on_page(d, &page)) {
         errs.push(format!("released '{date}' is not a date the sources print"));
     }
@@ -420,21 +403,79 @@ static GIANT: LazyLock<Regex> =
 static MANY_ARMED: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\b(?:many|multi|four|six|eight)[- ]armed\b").unwrap());
 
-fn art_errors(card: &Card) -> Vec<String> {
+fn brief_errors(card: &Card, briefs: &[String]) -> Vec<String> {
     let mut errs = Vec::new();
-    for (i, brief) in card.art_briefs.iter().enumerate() {
+    if briefs.len() != ART_BRIEFS {
+        errs.push(format!("art_briefs must be {ART_BRIEFS}"));
+    }
+    let first_name = card
+        .name
+        .split_whitespace()
+        .next()
+        .unwrap_or_default()
+        .to_lowercase();
+    for (i, brief) in briefs.iter().enumerate() {
+        let n = i + 1;
+        if brief.split_whitespace().count() > 120 {
+            errs.push(format!("art brief {n} over 120 words"));
+        }
+        let lower = brief.to_lowercase();
+        if [card.lab.to_lowercase(), first_name.clone()]
+            .iter()
+            .any(|w| !w.is_empty() && lower.contains(w.as_str()))
+        {
+            errs.push(format!("art brief {n} names the lab or the model"));
+        }
         let subject = brief.split([',', ':', ';']).next().unwrap_or_default();
         if let Some(word) = NOT_A_CHARACTER.find(subject) {
-            errs.push(format!("art brief {}: the subject is a {}, not a character; make it a beautiful, majestic giant with a face", i + 1, word.as_str()));
+            errs.push(format!("art brief {n}: the subject is a {}, not a character; make it a beautiful, majestic giant with a face", word.as_str()));
         }
-        if !GIANT.is_match(subject) {
-            errs.push(format!("art brief {}: open with the subject as a beautiful, majestic giant (giant, colossal, colossus, or titan)", i + 1));
+        if !GIANT.is_match(brief) {
+            errs.push(format!(
+                "art brief {n}: name the subject as a giant, colossus, or titan"
+            ));
         }
         if MANY_ARMED.is_match(brief) {
-            errs.push(format!("art brief {}: no many-armed figures", i + 1));
+            errs.push(format!("art brief {n}: no many-armed figures"));
+        }
+        if brief.contains('\u{2014}') {
+            errs.push(format!("art brief {n}: em dash"));
         }
     }
     errs
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Briefs {
+    art_briefs: Vec<String>,
+}
+
+pub fn parse_briefs(reply: &str, card: &Card) -> Result<Vec<String>> {
+    let briefs: Briefs = json_reply(reply)?;
+    let errs = brief_errors(card, &briefs.art_briefs);
+    if !errs.is_empty() {
+        bail!("fix every problem:\n- {}", errs.join("\n- "));
+    }
+    Ok(briefs.art_briefs)
+}
+
+pub fn write_briefs(
+    caller: &Caller,
+    label: &str,
+    model: &ModelSpec,
+    card: &Card,
+) -> Result<Vec<String>> {
+    let shown = Card {
+        art_briefs: Vec::new(),
+        ..card.clone()
+    };
+    let prompt = format!(
+        "{INLINE_PREAMBLE}\n\n{}\n\n{}",
+        read(&prompts_path("model-card-art.md"))?,
+        section("card", &serde_json::to_string_pretty(&shown)?)
+    );
+    caller.call_with_parse(label, model, &prompt, |reply| parse_briefs(reply, card))
 }
 
 pub fn parse_card(reply: &str, source: &str) -> Result<Card> {
@@ -546,7 +587,10 @@ pub fn write_card(caller: &Caller, label: &str, model: &ModelSpec, sources: &str
         read(&prompts_path("model-card.md"))?,
         section("sources", sources)
     );
-    caller.call_with_parse(label, model, &prompt, |reply| parse_card(reply, sources))
+    let mut card =
+        caller.call_with_parse(label, model, &prompt, |reply| parse_card(reply, sources))?;
+    card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card)?;
+    Ok(card)
 }
 
 #[cfg(test)]
@@ -599,6 +643,8 @@ mod tests {
             art_briefs: vec![
                 "a calm giant heron. Background: a sun. Red palette.".into(),
                 "a colossal stone figure. Background: sea. Blue palette.".into(),
+                "a titan asleep on a moon.".into(),
+                "a giant of glass, seen from behind.".into(),
             ],
         }
     }
@@ -661,22 +707,25 @@ mod tests {
     fn the_art_is_always_a_character() {
         let mut c = card();
         c.art_briefs[0] = "a walking marble lantern tower full of drawers, in a desert. Background: moons. Red palette.".into();
-        assert!(card_errors(&c, SOURCE)
+        assert!(brief_errors(&c, &c.art_briefs)
             .iter()
             .any(|e| e.contains("not a character")));
         c.art_briefs[0] = "a giant brass knight with a kind face, carrying a lamp and a tiny city. Background: sea. Red palette.".into();
-        assert!(card_errors(&c, SOURCE).is_empty());
+        assert!(brief_errors(&c, &c.art_briefs).is_empty());
         c.art_briefs[0] =
             "a small grey mouse with a kind face. Background: sea. Red palette.".into();
-        assert!(card_errors(&c, SOURCE)
+        assert!(brief_errors(&c, &c.art_briefs)
             .iter()
-            .any(|e| e.contains("majestic giant")));
+            .any(|e| e.contains("giant, colossus, or titan")));
         c.art_briefs[0] =
             "a giant brass knight with a kind face. Background: sea. Red palette.".into();
         c.art_briefs[1] = "a four-armed giant made of glass. Background: sea. Blue palette.".into();
-        assert!(card_errors(&c, SOURCE)
+        assert!(brief_errors(&c, &c.art_briefs)
             .iter()
             .any(|e| e.contains("many-armed")));
+        let reply = r#"{"art_briefs": ["a titan of glass resting by a lake.", "Seen from behind, a colossal bronze woman in snow.", "Upside down, a giant hangs from a library ceiling.", "Close-up of a titan's eye."]}"#;
+        assert_eq!(parse_briefs(reply, &c).unwrap().len(), 4);
+        assert!(parse_briefs(r#"{"art_briefs": ["a titan of glass by a lake."]}"#, &c).is_err());
     }
 
     #[test]

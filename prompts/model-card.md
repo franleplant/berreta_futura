@@ -70,34 +70,6 @@ article, not the card. The card picks; it never summarizes the post.
   surprising claim, not praise. `who` is "Name, Company". Null when the post
   quotes nobody.
 - `released`: the post's date as YYYY-MM-DD, null if the post has none.
-- `art_briefs`: two different subjects for the card's painting, each one
-  paragraph of at most 90 words: [the subject, what it is made of],
-  [what it is doing], [three or four concrete things the post shows the
-  model doing, drawn as physical objects in or around the scene].
-  Background: [one simple, surreal setting]. [three colours] palette.
-
-  The subject is always a beautiful, majestic giant: the model as a
-  colossal being with a face, a body, and a calm, noble presence, the kind a
-  player would name. A titan, a giant knight, a colossal stag, heron, bear,
-  or owl, a giant sea serpent, a dragon the size of a mountain, a stone
-  colossus, a giant spirit. Graceful and awe-inspiring, never grotesque,
-  menacing, or cute. Open the brief with the word giant, colossal, colossus,
-  or titan. Never a building, a tower, a vehicle, a tree, a city, or an
-  object. Pick the giant from what the post is about, so cards differ from
-  model to model, and make the two briefs two different kinds of giant in
-  two different settings. No many-armed figures.
-
-  One example of the shape, for another model:
-
-  "a colossal copper dragon with paper wings covered in handwritten
-  equations, resting serenely on a floating island of books, one claw
-  soldering a tiny circuit board, its tail holding a protein model up to the
-  light, a small robot arm perched on its horn like a bird. Background: a
-  teal desert under a pale sky. Copper, teal and cream palette."
-
-  No text, letters, numbers, screens with writing, logos, the lab's name,
-  or the model's name. Avoid the generic glowing sun disk behind a centred
-  figure.
 
 ## Rules
 

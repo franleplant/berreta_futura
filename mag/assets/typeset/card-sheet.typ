@@ -75,6 +75,9 @@
       let x = start + k * (CS-CW + CS-GAP)
       place(top + left, dx: x, dy: CS-TOP, cs-card(entry, labs))
       cs-crops(x, CS-TOP)
+      if entry.at("label", default: none) != none {
+        place(top + left, dx: x, dy: CS-TOP + CS-CH + 4mm, box(width: CS-CW, align(center, text(font: "Inter", weight: 700, size: 13pt, fill: CS-INK, entry.label))))
+      }
     }
     place(bottom + center, dy: -14mm, stack(dir: ltr, spacing: 4mm,
       box(height: 9mm, cs-mark(9mm)),

@@ -35,16 +35,23 @@ enum CardsCmd {
         model: String,
     },
     #[command(
-        about = "Generate card art candidates for cards/<slug> (two per brief) and a preview sheet of each one set in the card; --pick promotes one to cards/<slug>/art.jpg"
+        about = "Generate card art candidates for cards/<slug> (one per brief) and a preview sheet of each one set in the card; --pick promotes one to cards/<slug>/art.jpg"
     )]
     Art {
         slug: String,
         #[arg(long = "gen-cmd", default_value = crate::art::DEFAULT_GEN_CMD)]
         gen_cmd: String,
-        #[arg(long, default_value_t = 2, help = "Candidates per art brief")]
+        #[arg(long, default_value_t = 1, help = "Candidates per art brief")]
         variants: u32,
         #[arg(long, help = "Candidate to promote, e.g. 2-v1 for brief 2 variant 1")]
         pick: Option<String>,
+        #[arg(
+            long,
+            help = "Rewrite only the art briefs from the card (gated call), leaving every other field alone, then generate"
+        )]
+        rebrief: bool,
+        #[arg(long, default_value = "opus", help = "Model for --rebrief")]
+        model: String,
     },
     #[command(
         about = "Lay out cards three to an A4 landscape sheet, each sheet followed by the all-over brand pattern for its back (print duplex, short edge; the back needs no alignment)"
@@ -60,6 +67,11 @@ enum CardsCmd {
             help = "Output PDF (default: output/cards/<first slug>-sheet.pdf)"
         )]
         out: Option<PathBuf>,
+        #[arg(
+            long,
+            help = "Print each card's art file name under it, to tell candidates apart"
+        )]
+        labels: bool,
     },
 }
 
@@ -75,11 +87,22 @@ pub fn run(args: &CardsArgs) -> Result<i32> {
             gen_cmd,
             variants,
             pick,
+            rebrief,
+            model,
         } => match pick {
             Some(name) => promote(slug, name),
-            None => art(slug, gen_cmd, *variants),
+            None => {
+                if *rebrief {
+                    rewrite_briefs(slug, model)?;
+                }
+                art(slug, gen_cmd, *variants)
+            }
         },
-        CardsCmd::Sheet { entries, out } => {
+        CardsCmd::Sheet {
+            entries,
+            out,
+            labels,
+        } => {
             let first = entries[0].split(':').next().unwrap_or("cards");
             let stem = Path::new(first)
                 .file_stem()
@@ -91,7 +114,7 @@ pub fn run(args: &CardsArgs) -> Result<i32> {
                 .iter()
                 .map(|e| entry(e))
                 .collect::<Result<Vec<_>>>()?;
-            sheet(&cards, &out, &site()?)?;
+            sheet(&cards, &out, &site()?, *labels)?;
             println!("sheet: {} ({} cards)", out.display(), cards.len());
             Ok(0)
         }
@@ -135,11 +158,51 @@ fn write(slug: &str, sources: &[String], model: &str) -> Result<i32> {
     Ok(0)
 }
 
+fn rewrite_briefs(slug: &str, model: &str) -> Result<()> {
+    let dir = card_dir(slug);
+    let path = dir.join("card.json");
+    let mut card = load(&path)?;
+    card.art_briefs = modelcard::write_briefs(
+        &Caller::new(&dir),
+        &format!("{slug} art"),
+        &ModelSpec::parse(model)?,
+        &card,
+    )?;
+    write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;
+    for (n, brief) in card.art_briefs.iter().enumerate() {
+        println!("  brief {}: {brief}", n + 1);
+    }
+    Ok(())
+}
+
+fn shelve(candidates: &Path) -> Result<()> {
+    let old: Vec<PathBuf> = std::fs::read_dir(candidates)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.is_file())
+        .collect();
+    if old.is_empty() {
+        return Ok(());
+    }
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_secs();
+    let shelf = candidates.join(format!("earlier-{stamp}"));
+    std::fs::create_dir_all(&shelf)?;
+    for path in old {
+        if let Some(name) = path.file_name() {
+            std::fs::rename(&path, shelf.join(name))?;
+        }
+    }
+    println!("earlier candidates: {}", shelf.display());
+    Ok(())
+}
+
 fn art(slug: &str, gen_cmd: &str, variants: u32) -> Result<i32> {
     let dir = card_dir(slug);
     let card = load(&dir.join("card.json"))?;
     let candidates = dir.join("candidates");
     std::fs::create_dir_all(&candidates)?;
+    shelve(&candidates)?;
     let cmd = crate::art::expand_placeholders(gen_cmd)?;
     let jobs: Vec<(String, PathBuf, String)> = card
         .art_briefs
@@ -149,12 +212,7 @@ fn art(slug: &str, gen_cmd: &str, variants: u32) -> Result<i32> {
             let candidates = &candidates;
             (1..=variants).map(move |v| {
                 let name = format!("{}-v{v}", n + 1);
-                let prompt = format!(
-                    "{}{}{} (variation {v})",
-                    modelcard::ART_STYLE,
-                    brief.trim(),
-                    modelcard::ART_FRAME
-                );
+                let prompt = modelcard::art_prompt(brief);
                 (name.clone(), candidates.join(format!("{name}.png")), prompt)
             })
         })
@@ -201,6 +259,7 @@ fn art(slug: &str, gen_cmd: &str, variants: u32) -> Result<i32> {
         &made.iter().map(|e| entry(e)).collect::<Result<Vec<_>>>()?,
         &preview,
         &site()?,
+        true,
     )?;
     println!(
         "preview: {} (candidates in order: {})",
@@ -212,7 +271,7 @@ fn art(slug: &str, gen_cmd: &str, variants: u32) -> Result<i32> {
             .collect::<Vec<_>>()
             .join(", ")
     );
-    println!("next: mag cards art {slug} --pick <candidate>");
+    println!("next: mag cards art {slug} --pick <candidate>, or --rebrief for new ideas");
     Ok(0)
 }
 
@@ -269,13 +328,18 @@ fn site() -> Result<String> {
         .to_string())
 }
 
-fn sheet(entries: &[Entry], out: &Path, site: &str) -> Result<()> {
+fn sheet(entries: &[Entry], out: &Path, site: &str, labels: bool) -> Result<()> {
     let labs = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs");
     let items = entries
         .iter()
         .map(|e| {
+            let label = e
+                .art
+                .file_stem()
+                .filter(|_| labels)
+                .map_or("none".into(), |s| string_literal(&s.to_string_lossy()));
             Ok(format!(
-                "(card: {}, art: {}, date: none)",
+                "(card: {}, art: {}, date: none, label: {label})",
                 literal(&serde_json::to_value(&e.card)?),
                 string_literal(&e.art.to_string_lossy())
             ))
@@ -324,7 +388,7 @@ mod tests {
             })
             .collect();
         let out = std::env::temp_dir().join(format!("mag-card-sheet-{}.pdf", std::process::id()));
-        sheet(&entries, &out, "example.org").unwrap();
+        sheet(&entries, &out, "example.org", true).unwrap();
         let pdf = lopdf::Document::load(&out).unwrap();
         let sizes: Vec<(i64, i64)> = pdf
             .get_pages()

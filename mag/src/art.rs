@@ -120,7 +120,7 @@ static KEBAB_ID: LazyLock<Regex> =
 
 const DEFAULT_JOBS: usize = 14;
 const COVER_VARIANTS: u32 = 1;
-const CARD_VARIANTS: u32 = 2;
+const CARD_VARIANTS: u32 = 1;
 static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-v\d+$").unwrap());
 
 fn variants(brief: &Brief, candidates: u32) -> u32 {
@@ -2763,12 +2763,7 @@ fn card_round(opts: &ArtRun, edition_dir: &Path, edition_label: &str) -> Result<
                 id: format!("card-{id}-{}", n + 1),
                 purpose: ArtPurpose::Card,
                 article_id: Some(id.clone()),
-                prompt: format!(
-                    "{}{}{}",
-                    crate::modelcard::ART_STYLE,
-                    brief.trim(),
-                    crate::modelcard::ART_FRAME
-                ),
+                prompt: crate::modelcard::art_prompt(brief),
                 subject: None,
                 composition: None,
                 alt_text: Some(format!("Card art for {}: {}", card.name, brief.trim())),
