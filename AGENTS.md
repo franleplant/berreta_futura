@@ -80,7 +80,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   gated card writer produce uses; `mag cards art <slug>` generates one candidate per art brief
   into `cards/<slug>/candidates/` (gitignored; earlier ones move to `earlier-<time>/`) plus a
   labelled `preview.pdf` with each set in the card; `--rebrief` rewrites only the art briefs
-  (every other field stays) before generating;
+  (every other field stays) before generating, after the writer lists its six obvious ideas and
+  avoids them and every brief already in `cards/<slug>/briefs-tried.txt` (committed, grows each rebrief);
   `--pick <n-vN>` promotes one to `cards/<slug>/art.jpg`; `mag cards sheet <slug|card.json[:art]>...
   [--out pdf]` lays cards three to an A4 landscape sheet with crop marks, each sheet followed by
   the brand pattern back (`mag/assets/typeset/card-sheet.typ`: violet, halftone waves, wordmark +

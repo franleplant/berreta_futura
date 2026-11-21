@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 const CARDS_DIR: &str = "cards";
 const CARD_SHEET_TYP: &str = include_str!("../assets/typeset/card-sheet.typ");
 const ART_SIZE: &str = "1536x1024";
+const TRIED: &str = "briefs-tried.txt";
 
 #[derive(clap::Args)]
 pub struct CardsArgs {
@@ -161,17 +162,32 @@ fn write(slug: &str, sources: &[String], model: &str) -> Result<i32> {
 fn rewrite_briefs(slug: &str, model: &str) -> Result<()> {
     let dir = card_dir(slug);
     let path = dir.join("card.json");
+    let history = dir.join(TRIED);
     let mut card = load(&path)?;
+    let mut tried: Vec<String> = std::fs::read_to_string(&history)
+        .unwrap_or_default()
+        .lines()
+        .map(str::to_string)
+        .collect();
+    tried.extend(card.art_briefs.iter().map(|b| b.replace('\n', " ")));
+    tried.dedup();
     card.art_briefs = modelcard::write_briefs(
         &Caller::new(&dir),
         &format!("{slug} art"),
         &ModelSpec::parse(model)?,
         &card,
+        &tried,
     )?;
+    write_atomic(&history, tried.join("\n") + "\n")?;
     write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;
     for (n, brief) in card.art_briefs.iter().enumerate() {
         println!("  brief {}: {brief}", n + 1);
     }
+    println!(
+        "  ({} earlier briefs kept out, listed in {})",
+        tried.len(),
+        history.display()
+    );
     Ok(())
 }
 

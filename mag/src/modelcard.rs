@@ -448,12 +448,17 @@ fn brief_errors(card: &Card, briefs: &[String]) -> Vec<String> {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Briefs {
+    #[serde(default)]
+    obvious: Vec<String>,
     art_briefs: Vec<String>,
 }
 
 pub fn parse_briefs(reply: &str, card: &Card) -> Result<Vec<String>> {
     let briefs: Briefs = json_reply(reply)?;
-    let errs = brief_errors(card, &briefs.art_briefs);
+    let mut errs = brief_errors(card, &briefs.art_briefs);
+    if briefs.obvious.is_empty() {
+        errs.push("list the obvious ideas first, under obvious".into());
+    }
     if !errs.is_empty() {
         bail!("fix every problem:\n- {}", errs.join("\n- "));
     }
@@ -465,16 +470,26 @@ pub fn write_briefs(
     label: &str,
     model: &ModelSpec,
     card: &Card,
+    tried: &[String],
 ) -> Result<Vec<String>> {
     let shown = Card {
         art_briefs: Vec::new(),
         ..card.clone()
     };
-    let prompt = format!(
+    let mut prompt = format!(
         "{INLINE_PREAMBLE}\n\n{}\n\n{}",
         read(&prompts_path("model-card-art.md"))?,
         section("card", &serde_json::to_string_pretty(&shown)?)
     );
+    if !tried.is_empty() {
+        prompt.push_str(&format!(
+            "\n\n{}",
+            section(
+                "already tried, so none of these ideas again",
+                &tried.join("\n\n")
+            )
+        ));
+    }
     caller.call_with_parse(label, model, &prompt, |reply| parse_briefs(reply, card))
 }
 
@@ -589,7 +604,7 @@ pub fn write_card(caller: &Caller, label: &str, model: &ModelSpec, sources: &str
     );
     let mut card =
         caller.call_with_parse(label, model, &prompt, |reply| parse_card(reply, sources))?;
-    card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card)?;
+    card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card, &[])?;
     Ok(card)
 }
 
@@ -723,9 +738,13 @@ mod tests {
         assert!(brief_errors(&c, &c.art_briefs)
             .iter()
             .any(|e| e.contains("many-armed")));
-        let reply = r#"{"art_briefs": ["a titan of glass resting by a lake.", "Seen from behind, a colossal bronze woman in snow.", "Upside down, a giant hangs from a library ceiling.", "Close-up of a titan's eye."]}"#;
+        let reply = r#"{"obvious": ["a giant reading"], "art_briefs": ["a titan of glass resting by a lake.", "Seen from behind, a colossal bronze woman in snow.", "Upside down, a giant hangs from a library ceiling.", "Close-up of a titan's eye."]}"#;
         assert_eq!(parse_briefs(reply, &c).unwrap().len(), 4);
-        assert!(parse_briefs(r#"{"art_briefs": ["a titan of glass by a lake."]}"#, &c).is_err());
+        assert!(parse_briefs(
+            r#"{"obvious": ["x"], "art_briefs": ["a titan of glass by a lake."]}"#,
+            &c
+        )
+        .is_err());
     }
 
     #[test]
