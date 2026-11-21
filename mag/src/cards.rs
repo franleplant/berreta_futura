@@ -143,6 +143,7 @@ fn write(slug: &str, sources: &[String], model: &str) -> Result<i32> {
         &format!("{slug} card"),
         &ModelSpec::parse(model)?,
         &text,
+        None,
     )?;
     let path = dir.join("card.json");
     write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;

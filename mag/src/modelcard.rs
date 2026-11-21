@@ -119,31 +119,40 @@ pub fn looks_like_launch(article: &str) -> bool {
 #[derive(Deserialize)]
 struct Launch {
     launch: bool,
-    model: Option<String>,
+    models: Option<Vec<String>>,
     evidence: Option<String>,
 }
 
-pub fn parse_launch(reply: &str, article: &str) -> Result<Option<String>> {
+pub fn parse_launch(reply: &str, article: &str) -> Result<Vec<String>> {
     let verdict: Launch = json_reply(reply)?;
     if !verdict.launch {
-        return Ok(None);
+        return Ok(Vec::new());
     }
-    let (Some(model), Some(evidence)) = (verdict.model, verdict.evidence) else {
-        bail!("a launch needs both model and evidence");
+    let (Some(models), Some(evidence)) = (verdict.models, verdict.evidence) else {
+        bail!("a launch needs both models and evidence");
     };
+    ensure!(!models.is_empty(), "a launch names at least one model");
     let page = squash(article);
-    for (what, text) in [("model", &model), ("evidence", &evidence)] {
+    for (what, text) in models
+        .iter()
+        .map(|m| ("model", m))
+        .chain([("evidence", &evidence)])
+    {
         if !page.contains(&squash(text)) {
             bail!("the {what} {text:?} is not on the page; copy it character for character");
         }
     }
-    Ok(Some(model))
+    Ok(models)
 }
 
-pub fn detect_launch(caller: &Caller, label: &str, article: &str) -> Result<Option<String>> {
+pub fn detect_launch(caller: &Caller, label: &str, article: &str) -> Result<Vec<String>> {
     if !looks_like_launch(article) {
-        return Ok(None);
+        return Ok(Vec::new());
     }
+    launched_models(caller, label, article)
+}
+
+pub fn launched_models(caller: &Caller, label: &str, article: &str) -> Result<Vec<String>> {
     let prompt = format!(
         "{}\n{article}",
         read(&prompts_path("model-card-detect.md"))?
@@ -151,6 +160,20 @@ pub fn detect_launch(caller: &Caller, label: &str, article: &str) -> Result<Opti
     caller.call_with_parse(label, &ModelSpec::parse("sonnet")?, &prompt, |reply| {
         parse_launch(reply, article)
     })
+}
+
+pub fn card_file(n: usize) -> String {
+    match n {
+        0 => "card.json".to_string(),
+        _ => format!("card-{}.json", n + 1),
+    }
+}
+
+pub fn card_stem(id: &str, n: usize) -> String {
+    match n {
+        0 => id.to_string(),
+        _ => format!("{id}-{}", n + 1),
+    }
 }
 
 fn strip_versions(text: &str) -> String {
@@ -607,14 +630,31 @@ pub fn find_pages(
     caller.call_with_parse(label, &spec, &prompt, |reply| parse_pages(reply, &domains))
 }
 
-pub fn write_card(caller: &Caller, label: &str, model: &ModelSpec, sources: &str) -> Result<Card> {
+pub fn write_card(
+    caller: &Caller,
+    label: &str,
+    model: &ModelSpec,
+    sources: &str,
+    name: Option<&str>,
+) -> Result<Card> {
+    let which = name.map_or_else(
+        || "the post's headline model; if the post launches two or more models, the most capable one".to_string(),
+        |n| format!("{n}, and no other model the post launches"),
+    );
     let prompt = format!(
         "{INLINE_PREAMBLE}\n\n{}\n\n{}",
-        read(&prompts_path("model-card.md"))?,
+        read(&prompts_path("model-card.md"))?.replace("{model}", &which),
         section("sources", sources)
     );
-    let mut card =
-        caller.call_with_parse(label, model, &prompt, |reply| parse_card(reply, sources))?;
+    let mut card = caller.call_with_parse(label, model, &prompt, |reply| {
+        let card = parse_card(reply, sources)?;
+        if let Some(n) =
+            name.filter(|n| squash(&card.name).to_lowercase() != squash(n).to_lowercase())
+        {
+            bail!("this card is for {n:?}; its name is {:?}", card.name);
+        }
+        Ok(card)
+    })?;
     card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card)?;
     Ok(card)
 }
@@ -760,19 +800,29 @@ mod tests {
     }
 
     #[test]
-    fn a_launch_needs_its_evidence_on_the_page() {
-        let yes =
-            r#"{"launch": true, "model": "Example 2", "evidence": "Today we release Example 2."}"#;
-        assert_eq!(parse_launch(yes, SOURCE).unwrap(), Some("Example 2".into()));
-        let made_up = r#"{"launch": true, "model": "Example 2", "evidence": "We are thrilled to launch Example 2."}"#;
-        assert!(parse_launch(made_up, SOURCE).is_err());
+    fn a_launch_names_its_family_and_its_evidence_on_the_page() {
+        let yes = r#"{"launch": true, "models": ["Example 2", "Example 1"], "evidence": "Today we release Example 2."}"#;
         assert_eq!(
-            parse_launch(
-                r#"{"launch": false, "model": null, "evidence": null}"#,
-                SOURCE
-            )
-            .unwrap(),
-            None
+            parse_launch(yes, SOURCE).unwrap(),
+            vec!["Example 2", "Example 1"]
+        );
+        let made_up = r#"{"launch": true, "models": ["Example 2"], "evidence": "We are thrilled to launch Example 2."}"#;
+        assert!(parse_launch(made_up, SOURCE).is_err());
+        let ghost = r#"{"launch": true, "models": ["Example 2", "Example 9"], "evidence": "Today we release Example 2."}"#;
+        assert!(parse_launch(ghost, SOURCE).is_err());
+        let no = r#"{"launch": false, "models": null, "evidence": null}"#;
+        assert!(parse_launch(no, SOURCE).unwrap().is_empty());
+    }
+
+    #[test]
+    fn family_cards_get_numbered_files_and_stems() {
+        assert_eq!(
+            (card_file(0), card_file(1)),
+            ("card.json".into(), "card-2.json".into())
+        );
+        assert_eq!(
+            (card_stem("a", 0), card_stem("a", 2)),
+            ("a".into(), "a-3".into())
         );
     }
 

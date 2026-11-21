@@ -565,35 +565,87 @@ fn model_card(
     sources: &[(String, String)],
     model: &ModelSpec,
 ) -> Result<()> {
-    let path = out.join("card.json");
-    if path.exists() {
-        return Ok(());
-    }
     let text = sources
         .iter()
         .map(|(_, t)| t.trim())
         .collect::<Vec<_>>()
         .join("\n\n");
-    let mut card = crate::modelcard::write_card(caller, &format!("{piece_id} card"), model, &text)?;
+    let family = out.join("models.json");
+    let names: Vec<String> = match read(&family) {
+        Ok(json) => serde_json::from_str(&json)?,
+        Err(_) => {
+            let names =
+                crate::modelcard::launched_models(caller, &format!("{piece_id} models"), &text)?;
+            write_atomic(&family, serde_json::to_string_pretty(&names)? + "\n")?;
+            names
+        }
+    };
+    let names: Vec<Option<&str>> = match names.is_empty() {
+        true => vec![None],
+        false => names.iter().map(|n| Some(n.as_str())).collect(),
+    };
+    let job = CardJob {
+        caller,
+        out,
+        piece_id,
+        sources,
+        model,
+        text: &text,
+    };
+    for (n, name) in names.into_iter().enumerate() {
+        family_card(&job, n, name)?;
+    }
+    Ok(())
+}
+
+struct CardJob<'a> {
+    caller: &'a Caller,
+    out: &'a Path,
+    piece_id: &'a str,
+    sources: &'a [(String, String)],
+    model: &'a ModelSpec,
+    text: &'a str,
+}
+
+fn family_card(job: &CardJob, n: usize, name: Option<&str>) -> Result<()> {
+    let CardJob {
+        caller,
+        out,
+        piece_id,
+        sources,
+        model,
+        text,
+    } = *job;
+    let path = out.join(crate::modelcard::card_file(n));
+    if path.exists() {
+        return Ok(());
+    }
+    let label = format!(
+        "{piece_id} {}",
+        path.file_stem().unwrap_or_default().to_string_lossy()
+    );
+    let mut card = crate::modelcard::write_card(caller, &label, model, text, name)?;
     if !crate::modelcard::missing(&card).is_empty() {
         let found = fetch_missing(caller, out, piece_id, &card, sources)?;
         if !found.is_empty() {
             let all = format!("{text}\n\n{found}");
             card = crate::modelcard::write_card(
                 caller,
-                &format!("{piece_id} card, more sources"),
+                &format!("{label}, more sources"),
                 model,
                 &all,
+                name,
             )?;
         }
     }
     write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;
     let gaps = crate::modelcard::missing(&card);
     if gaps.is_empty() {
-        println!("  {piece_id}: model card written");
+        println!("  {piece_id}: {} card written", card.name);
     } else {
         println!(
-            "  {piece_id}: model card written, still missing {}; capture a page that states it with `mag capture <url> --article {piece_id}`, delete {}, and produce again",
+            "  {piece_id}: {} card written, still missing {}; capture a page that states it with `mag capture <url> --article {piece_id}`, delete {}, and produce again",
+            card.name,
             gaps.join(", "),
             path.display()
         );
@@ -913,9 +965,7 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
     }
     y += &figures;
     if carded {
-        y += &format!(
-            "  card: editions/{edition_id}/articles/{id}.card.json\n  card_art_path: TODO\n"
-        );
+        y += &format!("  cards:\n{}", card_row(edition_id, &id, 0));
     } else {
         y += "  opener_art:\n    path: TODO\n    alt_text: TODO\n    credit: Illustration generated for this edition.\n";
     }
@@ -960,6 +1010,72 @@ fn append_missing_articles(path: &Path, edition_id: &str, plan: &Plan) -> Result
         added.join(", "),
         path.display()
     ))
+}
+
+fn card_row(edition_id: &str, id: &str, n: usize) -> String {
+    let file = crate::modelcard::card_file(n).replacen("card", &format!("{id}.card"), 1);
+    format!("  - path: editions/{edition_id}/articles/{file}\n    art_path: TODO\n")
+}
+
+fn sync_cards(path: &Path, edition_id: &str, run_dir: &Path) -> Result<Vec<String>> {
+    let spec: EditionFile = parse_yaml(&read(path)?)?;
+    let mut lines: Vec<String> = read(path)?.lines().map(String::from).collect();
+    let mut added = Vec::new();
+    for row in spec
+        .articles
+        .iter()
+        .filter(|a| a.content_mode == Some(ContentMode::ModelCard))
+    {
+        let made = (0..)
+            .take_while(|n| {
+                run_dir
+                    .join("articles")
+                    .join(&row.id)
+                    .join(crate::modelcard::card_file(*n))
+                    .is_file()
+            })
+            .count();
+        if made <= row.cards.len() {
+            continue;
+        }
+        let start = lines
+            .iter()
+            .position(|l| {
+                l.strip_prefix("- id: ")
+                    .map(|v| v.trim_matches(['\'', '"']))
+                    == Some(row.id.as_str())
+            })
+            .ok_or_else(|| anyhow!("{} has no row for {}", path.display(), row.id))?;
+        let end = lines[start + 1..]
+            .iter()
+            .position(|l| !l.is_empty() && !l.starts_with("  "))
+            .map_or(lines.len(), |i| start + 1 + i);
+        let cards_at = lines[start..end]
+            .iter()
+            .position(|l| l == "  cards:")
+            .map(|i| start + i);
+        let insert_at = cards_at.map_or(end, |at| {
+            lines[at + 1..end]
+                .iter()
+                .position(|l| !(l.starts_with("  - ") || l.starts_with("    ")))
+                .map_or(end, |i| at + 1 + i)
+        });
+        let mut rows: String = (row.cards.len()..made)
+            .map(|n| card_row(edition_id, &row.id, n))
+            .collect();
+        if cards_at.is_none() {
+            rows = format!("  cards:\n{rows}");
+        }
+        lines.splice(insert_at..insert_at, rows.lines().map(String::from));
+        added.push(format!("{} ({} more)", row.id, made - row.cards.len()));
+    }
+    if !added.is_empty() {
+        let out = lines.join("\n") + "\n";
+        parse_yaml::<EditionFile>(&out)
+            .with_context(|| format!("{} no longer parses after adding cards", path.display()))?;
+        write_atomic(path, out)?;
+    }
+    Ok(added)
 }
 
 fn scaffold_edition_yaml(edition_dir: &Path, edition_id: &str, plan: &Plan) -> Result<String> {
@@ -1608,6 +1724,9 @@ fn print_next_steps(
         "\n{}",
         scaffold_edition_yaml(edition_dir, edition_id, plan)?
     );
+    for added in sync_cards(&edition_yaml, edition_id, run_dir)? {
+        println!("added card rows for {added} to {}", edition_yaml.display());
+    }
     if article_labels(caller, model, &edition_yaml)? {
         println!("drafted short titles and display emphasis (review them)");
     }
@@ -1661,8 +1780,9 @@ mod tests {
         .unwrap();
         let yaml = article_scaffold(&row, "023").unwrap();
         assert!(
-            yaml.contains("  card: editions/023/articles/astra.card.json\n  card_art_path: TODO\n")
-                && !yaml.contains("opener_art")
+            yaml.contains(
+                "  cards:\n  - path: editions/023/articles/astra.card.json\n    art_path: TODO\n"
+            ) && !yaml.contains("opener_art")
                 && yaml.contains("author_note: ''")
         );
         assert_eq!(

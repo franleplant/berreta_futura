@@ -196,7 +196,7 @@ pub fn art_paths(edition: &Edition) -> Vec<PathBuf> {
     let art = edition.articles.iter().flat_map(|article| {
         let figures = article.figures.iter().map(|f| f.path.clone());
         let opener = article.opener_art.iter().map(|o| o.path.clone());
-        let card = article.card.as_ref().and_then(|c| c.image.clone());
+        let card = article.cards.iter().filter_map(|c| c.image.clone());
         opener
             .chain(card)
             .chain(article.tail_art.clone())
@@ -426,11 +426,17 @@ fn anchored(ctx: &Ctx, language: &str, article: Option<&Article>, key: &str) -> 
 }
 
 fn opener(ctx: &Ctx, piece: &Piece) -> String {
-    if let Some((image, name)) = piece.article.and_then(card_image) {
-        return format!(
-            "<figure class=\"opener card\" style=\"max-width: 26rem; margin: 0 auto 1.5em;\">{}</figure>",
-            ctx.picture(image, &format!("Model card: {name}"), WIDE_SIZES, true)
-        );
+    let cards = piece.article.map(card_images).unwrap_or_default();
+    if !cards.is_empty() {
+        return cards
+            .iter()
+            .map(|(image, name)| {
+                format!(
+                    "<figure class=\"opener card\" style=\"max-width: 26rem; margin: 0 auto 1.5em;\">{}</figure>",
+                    ctx.picture(image, &format!("Model card: {name}"), WIDE_SIZES, true)
+                )
+            })
+            .collect();
     }
     piece
         .article
@@ -444,9 +450,12 @@ fn opener(ctx: &Ctx, piece: &Piece) -> String {
         .unwrap_or_default()
 }
 
-fn card_image(article: &Article) -> Option<(&Path, &str)> {
-    let card = article.card.as_ref()?;
-    Some((card.image.as_deref()?, card.card.name.as_str()))
+fn card_images(article: &Article) -> Vec<(&Path, &str)> {
+    article
+        .cards
+        .iter()
+        .filter_map(|c| Some((c.image.as_deref()?, c.card.name.as_str())))
+        .collect()
 }
 
 fn body(ctx: &Ctx, language: &str, piece: &Piece) -> Result<String> {
@@ -1051,8 +1060,9 @@ fn piece_page(issued: &Issued, index: usize, images: &Images) -> Result<Page> {
     let image = piece
         .article
         .and_then(|a| {
-            card_image(a)
-                .map(|(p, _)| p)
+            card_images(a)
+                .first()
+                .map(|(p, _)| *p)
                 .or(a.opener_art.as_ref().map(|o| o.path.as_path()))
         })
         .map(|p| images[p].large().to_string())
@@ -1466,7 +1476,7 @@ mod tests {
             key_ideas: Vec::new(),
             dateline: None,
             extracts: Vec::new(),
-            card: None,
+            cards: Vec::new(),
         };
         let piece = Piece {
             slug: "x".into(),

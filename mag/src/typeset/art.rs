@@ -43,7 +43,7 @@ pub fn print_art(mut edition: Edition, staged: &Path) -> Result<Edition> {
             .map(|o| &mut o.path)
             .into_iter()
             .chain(a.tail_art.as_mut())
-            .chain(a.card.as_mut().and_then(|c| c.art.as_mut()))
+            .chain(a.cards.iter_mut().filter_map(|c| c.art.as_mut()))
     });
     let plates = edition.closing_plates.iter_mut().map(|p| &mut p.art_path);
     for path in edition.cover_art.iter_mut().chain(articles).chain(plates) {

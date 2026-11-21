@@ -36,14 +36,21 @@ pub fn card_images(
     roots: &[PathBuf],
 ) -> Result<Vec<PathBuf>> {
     let mut written = Vec::new();
-    for article in &edition.articles {
-        let Some((spread, art)) = article
-            .card
-            .as_ref()
-            .and_then(|c| Some((c, c.art.as_ref()?)))
-        else {
-            continue;
-        };
+    let spreads = edition.articles.iter().flat_map(|article| {
+        article
+            .cards
+            .iter()
+            .enumerate()
+            .filter_map(move |(n, spread)| {
+                Some((
+                    article,
+                    crate::modelcard::card_stem(&article.id, n),
+                    spread,
+                    spread.art.as_ref()?,
+                ))
+            })
+    });
+    for (article, stem, spread, art) in spreads {
         let labs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs");
         let source = format!(
             "#import \"/template.typ\": *\n#model-card-image(card: {}, art: {}, labs: {}, date: {})\n",
@@ -74,7 +81,7 @@ pub fn card_images(
             },
         );
         std::fs::create_dir_all(out_dir)?;
-        let path = out_dir.join(format!("{}.png", article.id));
+        let path = out_dir.join(format!("{stem}.png"));
         std::fs::write(&path, pixmap.encode_png()?)?;
         written.push(path);
     }
@@ -375,8 +382,16 @@ mod tests {
             ),
         );
         let bare = pages_of(&synthetic("Body.\n".to_string()), BOOK_TEMPLATE_TYP).unwrap();
-        let carded = pages_of(&synthetic(call + "Body.\n"), BOOK_TEMPLATE_TYP).unwrap();
+        let carded = pages_of(&synthetic(call.clone() + "Body.\n"), BOOK_TEMPLATE_TYP).unwrap();
         assert_eq!(carded, bare + 1);
+        let sibling = call
+            .replace("#model-card-opener(kicker: [Feature 01 / Model card], title: [Introducing Example 2], ", "#model-card-page(");
+        let family = pages_of(&synthetic(call + &sibling + "Body.\n"), BOOK_TEMPLATE_TYP).unwrap();
+        assert_eq!(
+            family,
+            bare + 2,
+            "each sibling card takes one page of its own"
+        );
     }
 
     #[test]
@@ -385,11 +400,14 @@ mod tests {
         let card: crate::modelcard::Card = serde_json::from_str(r#"{"name": "Example 2", "model_id": null, "lab": "Meta", "cost": [], "type_line": {"kind": "Frontier Model", "roles": ["Agent"]}, "traits": ["Asks before acting.", "Remembers context."], "effort": null, "advice": [{"key": "Use it for", "value": "agent work"}], "strength": "Agents", "weakness": null, "resistance": null, "benchmark": null, "flavor": null, "released": "2026-10-12", "art_briefs": []}"#).unwrap();
         let article = crate::model::manifest::Article {
             id: "example".into(),
-            card: Some(crate::model::manifest::CardSpread {
-                card,
-                art: Some(root.join("tests/typeset_fixtures/media/landscape.png")),
-                image: None,
-            }),
+            cards: vec![
+                crate::model::manifest::CardSpread {
+                    card: card.clone(),
+                    art: Some(root.join("tests/typeset_fixtures/media/landscape.png")),
+                    image: None,
+                };
+                2
+            ],
             ..Default::default()
         };
         let edition = crate::model::manifest::Edition {
@@ -398,7 +416,9 @@ mod tests {
         };
         let out = std::env::temp_dir().join(format!("mag-cards-{}", std::process::id()));
         let written = card_images(&edition, &out, &[root.join("tests")]).unwrap();
-        let png = image::open(&written[0]).unwrap();
+        let names: Vec<_> = written.iter().filter_map(|p| p.file_name()).collect();
+        assert_eq!(names, ["example.png", "example-2.png"]);
+        let png = image::open(&written[1]).unwrap();
         assert_eq!((png.width(), png.height()), (1512, 2173));
         std::fs::remove_dir_all(&out).unwrap();
     }

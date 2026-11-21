@@ -1,8 +1,8 @@
 # Model card
 
 The text below the line is a lab's launch post for a new AI model. Fill in a
-trading card for one model in it: the post's headline model. If the post
-launches two or more models, the card is for the most capable one.
+trading card for one model in it: {model}. Every slot describes that model;
+facts the sources state only for a sibling model stay off this card.
 
 A reader looks at the card for ten seconds before the article and should come
 away knowing: what this model is, what it costs, how to run it, when to reach

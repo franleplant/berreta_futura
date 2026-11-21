@@ -1580,7 +1580,7 @@ const SHOWCASE_BASKET: &str = r#"<div id="basket">
       if (s.indexOf('closing:') === 0) return '# ' + s.slice(8) + '\n- art_path: ' + p;
       var kind = s.split(':')[0], article = s.split(':').slice(1).join(':');
       if (kind === 'tail') return '# article ' + article + '\n  tail_art_path: ' + p;
-      if (kind === 'card') return '# article ' + article + '\n  card_art_path: ' + p;
+      if (kind === 'card') return '# card ' + article + ' (its cards: row)\n    art_path: ' + p;
       return '# article ' + article + '\n  opener_art:\n    path: ' + p;
     }).join('\n');
   }
@@ -2627,7 +2627,7 @@ fn run_round(opts: &ArtRun) -> Result<i32> {
     let carded: Vec<String> = parse_yaml::<EditionFile>(&edition_yaml_text)?
         .articles
         .into_iter()
-        .filter(|a| a.card.is_some())
+        .filter(|a| !a.cards.is_empty())
         .map(|a| a.id)
         .collect();
     let mut briefs = briefs;
@@ -2736,33 +2736,36 @@ fn card_round(opts: &ArtRun, edition_dir: &Path, edition_label: &str) -> Result<
     );
     let spec: EditionFile =
         parse_yaml(&read(&edition_dir.join("edition.yaml"))?).context("parsing edition.yaml")?;
-    let cards: Vec<String> = spec
+    let cards: Vec<(String, usize)> = spec
         .articles
         .iter()
-        .filter(|a| a.card.is_some())
-        .map(|a| a.id.clone())
+        .flat_map(|a| (0..a.cards.len()).map(|n| (a.id.clone(), n)))
         .collect();
     ensure!(
         !cards.is_empty(),
-        "edition.yaml names no card: row; model_card articles get one from mag produce"
+        "edition.yaml names no cards: rows; model_card articles get them from mag produce"
     );
-    let run =
-        crate::render::latest_complete_run(edition_dir, &cards, false).with_context(|| {
-            format!(
-                "no run in {} has every article's final.md; run mag produce first",
-                edition_dir.display()
-            )
-        })?;
+    let ids: Vec<String> = cards.iter().map(|(id, _)| id.clone()).collect();
+    let run = crate::render::latest_complete_run(edition_dir, &ids, false).with_context(|| {
+        format!(
+            "no run in {} has every article's final.md; run mag produce first",
+            edition_dir.display()
+        )
+    })?;
     let mut briefs = Vec::new();
-    for id in &cards {
-        let path = run.join("articles").join(id).join("card.json");
+    for (id, n) in &cards {
+        let path = run
+            .join("articles")
+            .join(id)
+            .join(crate::modelcard::card_file(*n));
+        let stem = crate::modelcard::card_stem(id, *n);
         let card: crate::modelcard::Card = serde_json::from_str(&read(&path)?)
             .with_context(|| format!("parsing {}", path.display()))?;
         for (n, brief) in card.art_briefs.iter().enumerate() {
             briefs.push(Brief {
-                id: format!("card-{id}-{}", n + 1),
+                id: format!("card-{stem}-{}", n + 1),
                 purpose: ArtPurpose::Card,
-                article_id: Some(id.clone()),
+                article_id: Some(stem.clone()),
                 prompt: crate::modelcard::art_prompt(brief),
                 subject: None,
                 composition: None,

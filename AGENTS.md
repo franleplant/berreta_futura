@@ -158,14 +158,16 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   user, developer, internals; `prompts/explainer.md`), `verbatim` (source text unchanged, no
   writer call, head/tail cleanup only, ten-page cap instead of seven), `model_card` (an AI model
   launch post: the article writer as usual plus one gated call, `prompts/model-card.md`, writing
-  `articles/<id>/card.json` in the run; every number, the model id, and the tester quote must
+  one card per model the post launches (a family such as Astra and Sol gets
+  one card each, flagship first): `articles/<id>/card.json`, `card-2.json`, ... in the run,
+  listed as `cards:` rows (path + art_path) in edition.yaml; every number, the model id, and the tester quote must
   appear in the row's sources, each fact once; produce names missing slots such as the price and
   searches the lab's own sites for them (one sonnet call with WebSearch/WebFetch, prompts/
   model-card-sources.md; every URL must be on the lab's domains), captures what it finds with
   `--article <id>` (the page joins the row), and rewrites the card; the release date must be printed
-  in the sources too. The article's opener is the title plus the card on one page (no opener art,
+  in the sources too. The article's opener is the title plus the flagship card on one page, each further card a full page after it (no opener art,
   no author note; the card art from `card_art_path` is the only picture), and `mag render` writes
-  each card as a standalone 300 ppi PNG to `editions/NNN/cards/<id>.png`, which the site and EPUB
+  each card as a standalone 300 ppi PNG to `editions/NNN/cards/<id>.png` (`<id>-2.png` for the second card, and on), which the site and EPUB
   use as the article's lead image and social preview), plus the `original_editorial` opener.
 - `mag capture` without `--mode` or `--article` checks for a model launch post: a regex
   prefilter (benchmark names or a per-million-token price), then one gated sonnet call

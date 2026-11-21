@@ -1933,5 +1933,10 @@
   pagebreak(weak: true)
 }
 
+#let model-card-page(card: none, art: none, labs: none, date: none) = {
+  block(width: 100%, height: PAGE-HEIGHT - MARGIN-TOP - MARGIN-BOTTOM, breakable: false, spacing: 0pt, mc-scaled(card, art, labs, date))
+  pagebreak(weak: true)
+}
+
 #let model-card-image(card: none, art: none, labs: none, date: none) = page(width: 128mm, height: 184mm, margin: 0pt, fill: none, header: none, footer: none, foreground: none, background: none,
   mc-card(card, art, mc-palette(card.lab, labs), if card.released != none { card.released } else { date }))

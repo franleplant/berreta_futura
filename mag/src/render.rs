@@ -568,21 +568,22 @@ fn stage_manuscripts(
                 PathBuf::from("articles").join(&article.id).join("final.md"),
             );
         }
-        if let Some(card) = article.card.as_deref().filter(|card| !card.is_empty()) {
+        for (n, card) in article.cards.iter().enumerate() {
             stage(
-                resolve_field(card, edition_dir),
+                resolve_field(&card.path, edition_dir),
                 PathBuf::from("articles")
                     .join(&article.id)
-                    .join("card.json"),
+                    .join(crate::modelcard::card_file(n)),
             );
         }
     }
-    for article in edition_yaml.articles.iter().filter(|a| a.card.is_some()) {
-        let image = edition_dir
-            .join("cards")
-            .join(format!("{}.png", article.id));
-        if staging.repo_root.join(&image).is_file() {
-            staging.add(&image);
+    for article in &edition_yaml.articles {
+        for n in 0..article.cards.len() {
+            let stem = crate::modelcard::card_stem(&article.id, n);
+            let image = edition_dir.join("cards").join(format!("{stem}.png"));
+            if staging.repo_root.join(&image).is_file() {
+                staging.add(&image);
+            }
         }
     }
 }

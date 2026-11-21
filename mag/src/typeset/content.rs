@@ -496,7 +496,7 @@ impl Writer<'_> {
     }
 
     fn card_head(&self, article: &Article, index: usize) -> Option<String> {
-        let spread = article.card.as_ref()?;
+        let spread = article.cards.first()?;
         let art = spread.art.as_ref()?;
         if crate::typeset::style::current() != crate::typeset::style::Style::Book {
             return None;
@@ -521,7 +521,16 @@ impl Writer<'_> {
             path_literal(art),
             path_literal(&Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs")),
             article.dateline.as_deref().map_or("none".to_string(), string_literal),
-        ))
+        ) + &article.cards[1..]
+            .iter()
+            .filter_map(|c| Some(format!(
+                "#model-card-page(card: {}, art: {}, labs: {}, date: {})\n",
+                crate::typeset::cover::literal(&serde_json::to_value(&c.card).ok()?),
+                path_literal(c.art.as_ref()?),
+                path_literal(&Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs")),
+                article.dateline.as_deref().map_or("none".to_string(), string_literal),
+            )))
+            .collect::<String>())
     }
 
     fn article_head(

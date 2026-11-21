@@ -13,9 +13,11 @@ safety or incident report that mentions a model.
 
 Answer with one JSON object and nothing else, no code fence:
 
-{"launch": true or false, "model": "the launched model's name as the page writes it, or null", "evidence": "the one sentence from the page that announces the release, copied character for character, or null"}
+{"launch": true or false, "models": ["every launched model's name as the page writes it", "..."] or null, "evidence": "the one sentence from the page that announces the release, copied character for character, or null"}
 
-When the page launches several models, name the most capable one.
+When the page launches a family of models (for example a flagship and a
+smaller sibling released together), list every one, the most capable first.
+List only models this post releases, never earlier models it compares against.
 
 ---
 

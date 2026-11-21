@@ -6,7 +6,7 @@ use super::records::{
 };
 use super::shared::{normalize, quoted, read_spec, safe_project_path, Result, ValidationError};
 use super::spec::{
-    ArticleRow, Cover, EditionFile, Format, OpenerArtRow, SectionRow, SourceRecord,
+    ArticleRow, CardRow, Cover, EditionFile, Format, OpenerArtRow, SectionRow, SourceRecord,
     TranslatedArticleRow, TranslationFile,
 };
 use regex::Regex;
@@ -68,7 +68,7 @@ pub struct Article {
     pub key_ideas: Vec<String>,
     pub dateline: Option<String>,
     pub extracts: Vec<Extract>,
-    pub card: Option<CardSpread>,
+    pub cards: Vec<CardSpread>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -558,7 +558,7 @@ fn load_article<'a>(
         manuscript: &manuscript,
         allow_unanchored,
     };
-    let card = article_card(context, &label, row, content_mode, errors);
+    let cards = article_cards(context, &label, row, content_mode, errors);
     let figures = gather(resolve_figures(&figures, &row.figures), errors).unwrap_or_default();
     let extracts = gather(resolve_extracts(&extracts, &row.extracts), errors).unwrap_or_default();
     let records = context.options.source_records;
@@ -581,34 +581,44 @@ fn load_article<'a>(
         opener_art,
         key_ideas,
         extracts,
-        card,
+        cards,
     })
 }
 
-fn article_card(
+fn article_cards(
     context: &ArticleContext,
     label: &str,
     row: &ArticleRow,
     mode: ContentMode,
     errors: &mut Vec<String>,
-) -> Option<CardSpread> {
-    let declared = row.card.as_deref().filter(|path| !path.trim().is_empty());
-    let Some(path) = declared else {
-        if mode == ContentMode::ModelCard {
-            errors.push(format!(
-                "{label} is a model_card article but names no card: path"
-            ));
-        }
-        return None;
-    };
-    if mode != ContentMode::ModelCard {
-        errors.push(format!(
-            "{label} names a card but its content_mode is {}, not model_card",
+) -> Vec<CardSpread> {
+    match (mode == ContentMode::ModelCard, row.cards.is_empty()) {
+        (true, true) => errors.push(format!(
+            "{label} is a model_card article but names no cards: rows"
+        )),
+        (false, false) => errors.push(format!(
+            "{label} names cards but its content_mode is {}, not model_card",
             mode.as_str()
-        ));
+        )),
+        _ => {}
     }
+    row.cards
+        .iter()
+        .enumerate()
+        .filter_map(|(n, card)| article_card(context, label, &row.id, n, card, errors))
+        .collect()
+}
+
+fn article_card(
+    context: &ArticleContext,
+    label: &str,
+    id: &str,
+    n: usize,
+    row: &CardRow,
+    errors: &mut Vec<String>,
+) -> Option<CardSpread> {
     let (root, dir) = (context.root, context.edition_dir);
-    let file = gather(edition_path(root, dir, path, true), errors)?;
+    let file = gather(edition_path(root, dir, &row.path, true), errors)?;
     let card = match std::fs::read_to_string(&file)
         .map_err(|e| e.to_string())
         .and_then(|text| {
@@ -623,10 +633,10 @@ fn article_card(
     errors.extend(
         crate::modelcard::shape_errors(&card)
             .into_iter()
-            .map(|e| format!("{label} card: {e}")),
+            .map(|e| format!("{label} card {}: {e}", card.name)),
     );
     let art = match row
-        .card_art_path
+        .art_path
         .as_deref()
         .filter(|path| !path.trim().is_empty() && *path != "TODO")
     {
@@ -636,11 +646,15 @@ fn article_card(
         ),
         None if context.options.allow_missing_art => None,
         None => {
-            errors.push(format!("{label} has a card but no card_art_path; generate it with mag art <edition> --only card"));
+            errors.push(format!(
+                "{label} card {} has no art_path; generate it with mag art <edition> --only card",
+                card.name
+            ));
             None
         }
     };
-    let image = edition_path(root, dir, &format!("cards/{}.png", row.id), false)
+    let stem = crate::modelcard::card_stem(id, n);
+    let image = edition_path(root, dir, &format!("cards/{stem}.png"), false)
         .ok()
         .filter(|path| path.is_file());
     Some(CardSpread { card, art, image })
@@ -778,10 +792,12 @@ pub fn art_slots(spec: &EditionFile) -> Vec<(String, String)> {
             format!("article {} tail", row.id),
             row.tail_art_path.as_deref(),
         );
-        push(
-            format!("article {} card", row.id),
-            row.card_art_path.as_deref(),
-        );
+        for (n, card) in row.cards.iter().enumerate() {
+            push(
+                format!("article {} card {}", row.id, n + 1),
+                card.art_path.as_deref(),
+            );
+        }
     }
     for plate in &spec.closing_plates {
         let label = format!("closing plate {}", quoted(&plate.title));

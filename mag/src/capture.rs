@@ -1410,11 +1410,11 @@ fn split_tags(tags: Option<&str>) -> Vec<String> {
 fn launch_mode(article: &str, sid: &str) -> Option<crate::model::kinds::ContentMode> {
     let caller = Caller::new(Path::new(RAW_DIR));
     match crate::modelcard::detect_launch(&caller, &format!("detect {sid}"), article) {
-        Ok(Some(model)) => {
-            println!("  model launch post ({model}): queued as a model_card row; pass --mode article to keep it a plain article");
+        Ok(models) if !models.is_empty() => {
+            println!("  model launch post ({}): queued as a model_card row; pass --mode article to keep it a plain article", models.join(", "));
             Some(crate::model::kinds::ContentMode::ModelCard)
         }
-        Ok(None) => None,
+        Ok(_) => None,
         Err(e) => {
             println!("  model launch check failed ({e:#}); queued as an article, pass --mode model_card if it is a launch post");
             None
