@@ -22,7 +22,9 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (repeated intros, promo and link footers, docs boilerplate), only among the
   first three blocks or a run that ends it, never code, at most 15% of words;
   one gated call drafts short_title and display_emphasis; art stays TODO) -> edit `edition.yaml` -> `mag art NNN` (default gen-cmd is
-  `tools/imagegen`) -> pick in `art/showcase.html` -> `mag art NNN --promote`
+  `tools/imagegen`) -> the agent always picks openers, tails, and closing
+  plates itself; the editor picks cover, endpaper, and card art in
+  `art/showcase.html` and gives the final ok on everything -> `mag art NNN --promote`
   -> `mag art NNN --only endpaper` (once the cover is picked; promote prints
   it) -> pick and promote again -> `mag render NNN`. If a
   step leaves you guessing what comes next, fix the step's output in code;
