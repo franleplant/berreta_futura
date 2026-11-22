@@ -59,7 +59,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   ships through `mag publish`).
 - `mag publish NNN --pdf <file> [--epub <file>] [--lang en] [--dry-run]` ships
   the approved files to the issue's GitHub Release (every issue ships both the
-  reader PDF, the EPUB, and `-a4-booklet.zip` holding `booklet-a4-cover.pdf`
+  reader PDF, the EPUB, a Kindle `.mobi` converted from that EPUB by Calibre's
+  `ebook-convert --mobi-file-type both` (Kindle browsers refuse EPUB), and `-a4-booklet.zip` holding `booklet-a4-cover.pdf`
   and `booklet-a4-interior.pdf` from beside `--pdf`, so pass a full render's
   reader.pdf; without `--epub` it builds one with `mag epub`) (`gh`, logged in on the
   owner's laptop; repo from `[site] repo`): tag `issue-NNN`, created when

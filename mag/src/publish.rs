@@ -18,7 +18,7 @@ pub struct PublishArgs {
     pub pdf: PathBuf,
     #[arg(
         long,
-        help = "The EPUB to upload with it; without it, publish builds one with `mag epub` (every issue ships both)"
+        help = "The EPUB to upload with it; without it, publish builds one with `mag epub` (every issue ships both, plus a Kindle MOBI converted from it)"
     )]
     pub epub: Option<PathBuf>,
     #[arg(long, default_value = "en", help = "The language these files are")]
@@ -87,9 +87,11 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
             dir.join("epub").join(format!("{stem}.epub"))
         }
     };
+    let mobi = kindle(&epub, &staging.join("kindle").join(format!("{stem}.mobi")))?;
     let uploads = vec![
         pdf,
         upload(&epub, "epub", b"PK", format!("{stem}.epub"), &url)?,
+        upload(&mobi, "mobi", b"", format!("{stem}.mobi"), &url)?,
         booklet,
     ];
     let path = dir.join("publish.yaml");
@@ -121,6 +123,7 @@ pub fn run(args: &PublishArgs) -> Result<i32> {
         match one.kind {
             "pdf" => assets.pdf = Some(one.asset),
             "zip" => assets.booklet = Some(one.asset),
+            "mobi" => assets.mobi = Some(one.asset),
             _ => assets.epub = Some(one.asset),
         }
     }
@@ -154,6 +157,33 @@ fn booklet_zip(pdf: &Path, into: &Path, stem: &str) -> Result<PathBuf> {
     }
     zip.finish()?;
     Ok(zip_path)
+}
+
+fn kindle(epub: &Path, mobi: &Path) -> Result<PathBuf> {
+    let app = Path::new("/Applications/calibre.app/Contents/MacOS/ebook-convert");
+    let tool = match app.exists() {
+        true => app,
+        false => Path::new("ebook-convert"),
+    };
+    fs::create_dir_all(mobi.parent().context("no kindle dir")?)?;
+    let out = Command::new(tool)
+        .arg(epub)
+        .arg(mobi)
+        .args(["--mobi-file-type", "both"])
+        .output()
+        .context("running ebook-convert for the Kindle MOBI; install Calibre: brew install --cask calibre")?;
+    ensure!(
+        out.status.success(),
+        "ebook-convert could not make the Kindle MOBI: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let bytes = fs::read(mobi)?;
+    ensure!(
+        bytes.get(60..68) == Some(b"BOOKMOBI".as_slice()),
+        "{} is not a MOBI",
+        mobi.display()
+    );
+    Ok(mobi.to_path_buf())
 }
 
 fn upload(

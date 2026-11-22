@@ -56,6 +56,8 @@ pub struct Assets {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub epub: Option<Asset>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mobi: Option<Asset>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub booklet: Option<Asset>,
 }
 
@@ -129,7 +131,7 @@ pub fn parse_publish_record(text: &str, path: &str) -> Result<PublishRecord> {
     })?;
     for asset in record
         .values()
-        .flat_map(|a| [&a.pdf, &a.epub, &a.booklet])
+        .flat_map(|a| [&a.pdf, &a.epub, &a.mobi, &a.booklet])
         .flatten()
     {
         ensure!(

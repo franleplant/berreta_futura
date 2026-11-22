@@ -29,6 +29,19 @@ fn prose(value: &str) -> String {
     escape_html(&educate_reader_quotes(value))
 }
 
+fn format_note(language: &str, kind: &str) -> &'static str {
+    match (kind, language == "es") {
+        ("pdf", true) => "diseño A5 para imprimir",
+        ("pdf", false) => "A5 print layout",
+        ("epub", true) => "para lectores electrónicos",
+        ("epub", false) => "for e-readers",
+        ("mobi", true) => "para Kindle",
+        ("mobi", false) => "for Kindle",
+        (_, true) => "pliegos A4 para imprimir en casa",
+        (_, false) => "A4 sheets to print at home",
+    }
+}
+
 fn say(language: &str, key: &str) -> &'static str {
     let spanish = language == "es";
     match key {
@@ -42,12 +55,6 @@ fn say(language: &str, key: &str) -> &'static str {
         "getn" => "Get",
         "back" if spanish => "Volver al",
         "back" => "Back to",
-        "pdf" if spanish => "diseño A5 para imprimir",
-        "pdf" => "A5 print layout",
-        "epub" if spanish => "para lectores electrónicos",
-        "epub" => "for e-readers",
-        "booklet" if spanish => "pliegos A4 para imprimir en casa",
-        "booklet" => "A4 sheets to print at home",
         "original" if spanish => "Leer el original",
         "original" => "Read the original",
         "next" if spanish => "Siguiente",
@@ -132,6 +139,7 @@ const SPRITE: &str = "<svg width=\"0\" height=\"0\" style=\"position:absolute\" 
 <symbol id=\"g-pdf\" viewBox=\"0 0 24 24\"><path d=\"M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
 <symbol id=\"g-booklet\" viewBox=\"0 0 24 24\"><path d=\"M12 6.5 3 4v14l9 2.5 9-2.5V4zM12 6.5v14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
 <symbol id=\"g-epub\" viewBox=\"0 0 24 24\"><path d=\"M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
+<symbol id=\"g-mobi\" viewBox=\"0 0 24 24\"><path d=\"M6 2.75h12a1.25 1.25 0 0 1 1.25 1.25v16a1.25 1.25 0 0 1-1.25 1.25H6A1.25 1.25 0 0 1 4.75 20V4A1.25 1.25 0 0 1 6 2.75zM7.75 6h8.5v10h-8.5zM10.5 18.75h3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></symbol>\
 <symbol id=\"g-down\" viewBox=\"0 0 24 24\"><path d=\"M12 4v13m-5-5 5 5 5-5M5 20.25h14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></symbol>\
 </defs></svg>\n";
 
@@ -818,6 +826,7 @@ fn mime(kind: &str) -> &'static str {
     match kind {
         "pdf" => "application/pdf",
         "booklet" => "application/zip",
+        "mobi" => "application/x-mobipocket-ebook",
         _ => "application/epub+zip",
     }
 }
@@ -830,7 +839,7 @@ fn download(language: &str, kind: &str, asset: &super::Asset) -> String {
         mime(kind),
         kind.to_uppercase(),
         megabytes(asset.bytes),
-        say(language, kind)
+        format_note(language, kind)
     )
 }
 
@@ -841,6 +850,7 @@ fn formats(assets: Option<&super::Assets>) -> Vec<(&'static str, &super::Asset)>
     [
         ("pdf", &assets.pdf),
         ("epub", &assets.epub),
+        ("mobi", &assets.mobi),
         ("booklet", &assets.booklet),
     ]
     .into_iter()
