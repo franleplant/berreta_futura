@@ -1315,6 +1315,18 @@ pub struct CaptureArgs {
     pub model: String,
 }
 
+const MIN_PAGE_WORDS: usize = 20;
+
+fn enough_text(article: &str, url: &str) -> Result<()> {
+    let words = article.split_whitespace().count();
+    anyhow::ensure!(
+        words >= MIN_PAGE_WORDS,
+        "{url} gave {words} words of text; the page is probably drawn by JavaScript. \
+         Save its DOM from a browser and pass it as --html <file>, or capture a page that prints the text"
+    );
+    Ok(())
+}
+
 fn pdf_to_extraction(pdf: &Path) -> Result<Extraction> {
     let article = pdf_text::transcribe(pdf)?.trim().to_string() + "\n";
     if article.split_whitespace().count() < 50 {
@@ -1521,7 +1533,8 @@ pub fn run(args: &CaptureArgs) -> Result<i32> {
     fs::create_dir_all(&media_dir)?;
     let labeled = snap_image_urls(&label_fences(&extraction.article, &html), &html);
     let curated = localize_images(&labeled, &media_dir)
-        .and_then(|(article, _)| crate::curate::curate(&article, &title, &media_dir, spec));
+        .and_then(|(article, _)| crate::curate::curate(&article, &title, &media_dir, spec))
+        .and_then(|article| enough_text(&article, url).map(|()| article));
     let article = match curated {
         Ok(v) => v,
         Err(e) => {

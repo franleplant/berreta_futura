@@ -2739,11 +2739,17 @@ fn card_round(opts: &ArtRun, edition_dir: &Path, edition_label: &str) -> Result<
     let cards: Vec<(String, usize)> = spec
         .articles
         .iter()
-        .flat_map(|a| (0..a.cards.len()).map(|n| (a.id.clone(), n)))
+        .flat_map(|a| {
+            a.cards
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.art_path.as_deref().is_none_or(|p| p == "TODO"))
+                .map(|(n, _)| (a.id.clone(), n))
+        })
         .collect();
     ensure!(
         !cards.is_empty(),
-        "edition.yaml names no cards: rows; model_card articles get them from mag produce"
+        "no cards: row in edition.yaml waits for art; set a card's art_path to TODO to draw it again"
     );
     let ids: Vec<String> = cards.iter().map(|(id, _)| id.clone()).collect();
     let run = crate::render::latest_complete_run(edition_dir, &ids, false).with_context(|| {
