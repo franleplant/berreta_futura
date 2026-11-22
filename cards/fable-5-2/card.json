@@ -1,0 +1,67 @@
+{
+  "name": "Claude Fable 5.2",
+  "model_id": "claude-fable-5-2",
+  "lab": "Anthropic",
+  "cost": [
+    {
+      "label": "in",
+      "value": "$8"
+    },
+    {
+      "label": "out",
+      "value": "$40"
+    }
+  ],
+  "type_line": {
+    "kind": "Frontier Model",
+    "roles": [
+      "Coder",
+      "Scientist"
+    ]
+  },
+  "traits": [
+    "Same underlying model as Claude Mythos 5.2.",
+    "Communicates more clearly than past Fable and Mythos models.",
+    "Generates outputs up to 30% faster than Claude Fable 5.1."
+  ],
+  "effort": [
+    "Low",
+    "Medium",
+    "High",
+    "Xhigh",
+    "Max"
+  ],
+  "advice": [
+    {
+      "key": "Use it for",
+      "value": "the most ambitious, open-ended technical work"
+    },
+    {
+      "key": "Start with",
+      "value": "Claude Opus 5.5 for most coding and knowledge tasks"
+    }
+  ],
+  "strength": "Hardware design and robot control",
+  "weakness": "Trails Gemini 4 Carbon on business workflows",
+  "resistance": "Blocks high-risk cyber tasks and most research biology",
+  "benchmark": {
+    "name": "FrontierCode 2.0",
+    "score": "49.1",
+    "unit": "%"
+  },
+  "flavor": {
+    "quote": "At one point it told me its last estimate was wrong and that it wouldn’t give a number until it had measured the change.",
+    "who": "Adhyyan Sekhsaria, Cognition"
+  },
+  "released": "2026-11-09",
+  "art_briefs": [
+    "A towering bronze automaton-smith with a serene, sculpted face kneels in a vast orbital foundry, cradling a half-built robotic hand whose fingers flex awake under its touch. Its own chest is open like a cathedral clock, revealing glowing circuit-lattice gears. It holds a fine caliper up to the light, measuring before speaking. Tiny drones hover like sparks; a blueprint hologram of a walking machine flickers nearby. Palette: burnished copper, deep teal, molten amber. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A majestic silver-maned lioness of living glass and starlight stands on a crystalline mesa beneath twin moons, one paw raised over a floating schematic of a delicate chip that glows like a city at night. Through her translucent body, constellations rearrange into tidy equations. Beside her, a small brass surveying instrument ticks patiently, and a pale seedling sprouts from cracked circuitry. Palette: violet dusk, ice blue, pale gold. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A tall silver-skinned woman engineer in a sleek white pressure suit kneels on a red desert plateau, one hand steadying a calipered instrument against the knee joint of a towering walking robot, her calm gaze fixed on its glowing core. Twin moons hang low behind. Palette: burnt orange, cobalt blue, chrome silver. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A majestic centaur of living bronze and smoked glass, his human torso bare and muscled, stands in an orbital foundry, raising a slender rod of light to measure a half-built crystalline engine suspended in zero gravity. Behind him, a ringed gas giant fills the dark. Palette: deep violet, molten gold, teal. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A serene giantess of polished bronze kneels astride a freshly split canyon after a world-shaking quake, lowering a plumb bob the size of a moon on a gleaming chain to measure how far the land has truly moved, her first marker stake pulled up and laid aside in the dust. Palette: burnt orange, deep violet, molten gold. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A colossal silver tiger with luminous sapphire stripes stands on a ringed moon, one paw steadying a glowing crystal measuring rod laid across a vast new crater, eyes intent on its notches while a toppled first marker spire lies behind it. Distant planets hang patiently, awaiting its verdict. Palette: ice blue, chrome silver, magenta dusk. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A tall, serene titan of clear optical glass stands knee-deep in a perfectly still alpine lake at dawn, shoulders squared, head slightly bowed as if listening. Fine brass filaments trace its veins like calibrated instrument wiring, and a steady prism of light rests in its chest. Palette: ice blue, pale gold, slate grey, soft rose. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A colossal reclining sphinx-like sentinel of dark polished basalt rimmed with hoarfrost rests on a high desert plateau under a cold twilight sky, forepaws aligned, gaze level and unhurried toward the horizon. Thin seams of cool silver light run along its flanks like plumb lines, and a faint aurora gleams on its brow. Palette: indigo, frost white, silver, muted copper. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain."
+  ]
+}
