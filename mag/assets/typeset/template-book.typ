@@ -94,7 +94,6 @@
 #let ROTATED-PLATE-LENGTH = 523pt
 #let ROTATED-PLATE-DEPTH = 295pt
 #let COMPACT-BAND-INSET = 32.5pt
-#let FIGURE-RULE = 0.55pt
 #let CAPTION-NUDGE = 0.1166pt
 #let CREDIT-NUDGE = -0.09023pt
 #let TAIL-MAX-HEIGHT = 214pt
@@ -1197,7 +1196,7 @@
     let (low, high) = (0, cuts.len())
     while low < high {
       let middle = calc.quo(low + high + 1, 2)
-      if lines-of(cuts.at(middle - 1).first() + linebreak()) <= DROP-LINES { low = middle } else { high = middle - 1 }
+      if lines-of(cuts.at(middle - 1).first()) <= DROP-LINES { low = middle } else { high = middle - 1 }
     }
     if low > 0 { (head, tail) = cuts.at(low - 1) }
   }
@@ -1205,7 +1204,8 @@
   block(above: 0pt, below: 0pt, width: 100%, {
     set par(first-line-indent: 0pt)
     place(top + left, dy: rise, cap)
-    pad(left: indent, par(set-text(if tail == none { head } else { head + linebreak() })))
+    let indented = pad(left: indent, par(set-text(if tail == none { head } else { head + linebreak() })))
+    block(spacing: 0pt, height: calc.max(DROP-LINES * leading, measure(block(width: region.width, indented)).height), indented)
     if tail != none { par(set-text(tail)) }
   })
 })
@@ -1584,7 +1584,6 @@
 #let framed-image(id, path, width, height, turned: false) = block(width: width, height: height, spacing: 0pt, {
   place(top + left, [#metadata((id: id, width: width, height: height, turned: turned))<mag-figure-box>])
   place(top + left, clipped(width, height, image(path, width: width, height: height, fit: "stretch")))
-  place(top + left, rect(width: width, height: height, stroke: FIGURE-RULE + INK))
 })
 
 #let figure-image(id, path, pixels, spec) = layout(size => {
