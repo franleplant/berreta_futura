@@ -126,7 +126,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   [--paper-mm 0.1]` writes `books/<slug>/print/` (gitignored) for hand binding:
   `reader-a5.pdf` (half-title, title, colophon, contents, small-caps opener,
   running heads, padded to a multiple of four; 10.6pt instead of 10.75pt when
-  that saves a page), `interior-a4.pdf` (one nested saddle signature through
+  that saves a page), `booklet-a4.pdf` (the interior only: one nested saddle signature through
   `impose`), `cover-a4.pdf` (back, spine from the leaf count, front, centred on
   A4 landscape with crop and fold marks for a 140 x 198 mm trim, the opener as
   the back blurb), and `endpaper-a4.pdf` (a vector tiling). Colours and the

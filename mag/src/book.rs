@@ -952,7 +952,8 @@ fn print(slug: &str, paper_mm: f64) -> Result<i32> {
     std::fs::create_dir_all(&out)?;
     let reader = out.join("reader-a5.pdf");
     std::fs::write(&reader, template::pdf(&document)?)?;
-    crate::impose::impose_a5_on_a4(&reader, &out.join("interior-a4.pdf"), "all")?;
+    let booklet = out.join("booklet-a4.pdf");
+    crate::impose::impose_a5_on_a4(&reader, &booklet, "all")?;
     let spine = pages as f64 / 2.0 * paper_mm + 0.3;
     let cover = compile(format!(
         "#book-cover(title: {}, author: {}, blurb: [{}], {colors}, spine: {spine:.2}mm, motif: {})\n",
@@ -972,11 +973,11 @@ fn print(slug: &str, paper_mm: f64) -> Result<i32> {
         out.display(),
         pages / 4
     );
-    println!("  interior-a4.pdf: print double-sided, flip on the short edge; nest the sheets in order and fold once");
+    println!("  booklet-a4.pdf: the interior; print double-sided, flip on the short edge; nest the sheets in order and fold once");
     println!("  endpaper-a4.pdf: print two, one side only; fold each pattern-in, one at the front and one at the back");
     println!("  cover-a4.pdf: print one side on heavier stock; fold on the dashed spine marks");
     println!("  after binding, trim the book to the crop marks: 140 x 198 mm (8.5 mm off the fore-edge, 6 mm off head and foot)");
-    println!("next: open {} and proof it", reader.display());
+    println!("next: open {} and proof it", booklet.display());
     Ok(0)
 }
 
