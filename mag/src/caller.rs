@@ -216,6 +216,7 @@ pub struct Caller {
     log_path: std::path::PathBuf,
     log_lock: Mutex<()>,
     root: std::path::PathBuf,
+    neutral: std::path::PathBuf,
     total_cost: Mutex<f64>,
     unpriced: AtomicUsize,
     calls: AtomicUsize,
@@ -229,6 +230,7 @@ impl Caller {
             log_path: run_dir.join("log.jsonl"),
             log_lock: Mutex::new(()),
             root: std::env::current_dir().unwrap_or_else(|_| ".".into()),
+            neutral: neutral_dir(),
             total_cost: Mutex::new(0.0),
             unpriced: AtomicUsize::new(0),
             calls: AtomicUsize::new(0),
@@ -476,6 +478,7 @@ impl Caller {
         };
         cmd.current_dir(match scratch {
             Some(s) => s.dir.as_path(),
+            None if spec.backend == Backend::Claude && images.is_empty() => self.neutral.as_path(),
             None => self.root.as_path(),
         })
         .stdin(Stdio::piped())
@@ -483,6 +486,12 @@ impl Caller {
         .stderr(Stdio::piped());
         cmd
     }
+}
+
+fn neutral_dir() -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join("mag-claude");
+    std::fs::create_dir_all(&dir).ok();
+    dir
 }
 
 fn stdin_payload(spec: &ModelSpec, prompt: &str) -> String {
