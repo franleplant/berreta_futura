@@ -160,13 +160,15 @@ fn booklet_zip(pdf: &Path, into: &Path, stem: &str) -> Result<PathBuf> {
 }
 
 fn kindle(epub: &Path, mobi: &Path) -> Result<PathBuf> {
-    let app = Path::new("/Applications/calibre.app/Contents/MacOS/ebook-convert");
-    let tool = match app.exists() {
-        true => app,
-        false => Path::new("ebook-convert"),
-    };
+    let tool = std::env::var_os("PATH")
+        .and_then(|path| {
+            std::env::split_paths(&path)
+                .map(|dir| dir.join("ebook-convert"))
+                .find(|tool| tool.exists())
+        })
+        .unwrap_or_else(|| "/Applications/calibre.app/Contents/MacOS/ebook-convert".into());
     fs::create_dir_all(mobi.parent().context("no kindle dir")?)?;
-    let out = Command::new(tool)
+    let out = Command::new(&tool)
         .arg(epub)
         .arg(mobi)
         .args(["--mobi-file-type", "both"])
