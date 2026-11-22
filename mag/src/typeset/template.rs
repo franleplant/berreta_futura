@@ -195,8 +195,13 @@ pub fn document(world: &Sources) -> Result<PagedDocument> {
         Err(errors) => bail!(
             "the Typst reader template did not compile:\n  {}",
             joined(errors.iter().map(|e| format!(
-                "{}{}",
+                "{}{}{}",
                 e.message,
+                std::iter::once(e.span)
+                    .chain(e.trace.iter().map(|t| t.span.into()))
+                    .filter_map(|span| at(world, span))
+                    .map(|place| format!("\n    at {place}"))
+                    .collect::<String>(),
                 if e.hints.is_empty() {
                     String::new()
                 } else {
@@ -208,6 +213,19 @@ pub fn document(world: &Sources) -> Result<PagedDocument> {
             )))
         ),
     }
+}
+
+fn at(world: &Sources, span: typst::syntax::DiagSpan) -> Option<String> {
+    use typst::{World, WorldExt};
+    let file = span.id()?;
+    let (source, range) = (world.source(file).ok()?, world.range(span)?);
+    let line = source.text()[..range.start].lines().count().max(1);
+    let text = source.text()[range].lines().next().unwrap_or("").trim();
+    Some(format!(
+        "{}:{line}: {}",
+        file.vpath().get_with_slash(),
+        text.chars().take(100).collect::<String>()
+    ))
 }
 
 fn missing_glyph(frame: &Frame) -> Option<String> {

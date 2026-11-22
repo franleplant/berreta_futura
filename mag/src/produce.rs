@@ -365,9 +365,11 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
             sources.len()
         );
     };
+    let (preface, text) = heading_preface(text);
     let mut lines = text.lines().skip_while(|l| l.trim().is_empty()).peekable();
     let title = lines
         .peek()
+        .filter(|_| preface.is_none())
         .and_then(|l| l.strip_prefix("# "))
         .map(|t| t.trim().to_lowercase());
     if title.is_some() {
@@ -389,11 +391,29 @@ fn verbatim_body(sources: &[(String, String)]) -> Result<String> {
         .filter(|l| !IMAGE_LINE.is_match(l) && !is_bare_link(l) && !repeats_title(l))
         .skip_while(|l| l.trim().is_empty())
         .collect();
-    if body.first().is_some_and(|l| l.starts_with('#')) {
+    if preface.is_none() && body.first().is_some_and(|l| l.starts_with('#')) {
         body.remove(0);
     }
-    let body = body.join("\n");
+    let body = preface.map_or_else(
+        || body.join("\n"),
+        |p| format!("{p}\n\n{}", body.join("\n")),
+    );
     Ok(BLANK_RUN.replace_all(body.trim(), "\n\n\n").into_owned() + "\n")
+}
+
+fn heading_preface(text: &str) -> (Option<String>, &str) {
+    let mut rest = text.trim_start();
+    let mut run = Vec::new();
+    let mut last = rest;
+    while let Some(line) = rest.lines().next().and_then(|l| l.strip_prefix("# ")) {
+        run.push(line.trim());
+        last = rest;
+        rest = rest[rest.find('\n').unwrap_or(rest.len())..].trim_start();
+    }
+    match run.len() {
+        0..=2 => (None, text),
+        n => (Some(run[..n - 1].join("\\\n")), last),
+    }
 }
 
 const CLEANUP_HEAD_BLOCKS: usize = 3;
@@ -1837,6 +1857,9 @@ mod tests {
         let opens_on_heading = "# T\n\n## Section\n\nFirst.\n";
         let body = verbatim_body(&[("s".to_string(), opens_on_heading.to_string())]).unwrap();
         assert_eq!(body, "First.\n");
+        let preface = "# A guide\n\n# for you\n\n# Objective\n\nGo.\n";
+        let body = verbatim_body(&[("s".to_string(), preface.to_string())]).unwrap();
+        assert_eq!(body, "A guide\\\nfor you\n\n# Objective\n\nGo.\n");
     }
 
     #[test]
