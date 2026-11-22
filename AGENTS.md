@@ -119,7 +119,13 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   with the claims it merged). write: one call (`prompts/book-write.md`) must cover every outline point
   (marker lines, stripped), write at least 75% of 430 words per page and typeset (measured in the gate) to
   no more than 20 pages (130% of `--pages` when given), use no em
-  dash outside quotations, and quote only what the book says. Runs live in
+  dash outside quotations, and quote only what the book says (block quotes
+  included); then one sonnet call (`prompts/book-talk.md`) flags sentences that
+  talk about the book, its author, argument, or parts, each with the words that
+  do it (which must be in the sentence), and one call (`prompts/book-restate.md`)
+  rewrites only those, applied as exact replacements and judged once more.
+  `mag book write <slug> <run>` reruns only the write step on a run's cached
+  ideas and outline.json. Runs live in
   `books/<slug>/runs/<stamp>/` (`--resume <run>` reuses the cached stage JSON);
   `digest.md` is tracked, `text.md`, runs, and `digest.pdf` are not. `mag book
   render <slug>` re-typesets a hand-edited digest.md. `mag book print <slug>

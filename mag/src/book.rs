@@ -92,6 +92,20 @@ enum BookCmd {
         )]
         resume: Option<PathBuf>,
     },
+    #[command(
+        about = "Run only the write step again on a run's cached ideas and outline.json (one model call)"
+    )]
+    Write {
+        slug: String,
+        run: PathBuf,
+        #[arg(
+            long,
+            help = "Target A5 pages (default: one per 7,000 book words, 10 to 20)"
+        )]
+        pages: Option<usize>,
+        #[arg(long, default_value = "opus", help = "Model for the piece")]
+        model: String,
+    },
     #[command(about = "Typeset books/<slug>/digest.md as an A5 PDF again (no model call)")]
     Render { slug: String },
     #[command(
@@ -200,6 +214,12 @@ pub fn run(args: &BookArgs) -> Result<i32> {
             &ModelSpec::parse(read_model)?,
             resume.as_deref(),
         ),
+        BookCmd::Write {
+            slug,
+            run,
+            pages,
+            model,
+        } => rewrite(slug, run, *pages, &ModelSpec::parse(model)?),
         BookCmd::Render { slug } => {
             let dir = book_dir(slug);
             let pages = render(&dir, &load_record(&dir)?)?;
@@ -500,8 +520,7 @@ fn distill(
     let dir = book_dir(slug);
     let record = load_record(&dir)?;
     let text = read(&dir.join("text.md"))?;
-    let most = pages.map_or(MAX_PAGES, |p| (p * 13 / 10).min(MAX_PAGES));
-    let pages = pages.unwrap_or_else(|| (record.words / 7000).clamp(10, MAX_PAGES));
+    let (pages, most) = page_targets(&record, pages);
     let run = resume.map_or_else(|| dir.join("runs").join(now_stamp()), Path::to_path_buf);
     std::fs::create_dir_all(&run)?;
     let caller = Caller::new(&run);
@@ -509,19 +528,100 @@ fn distill(
     let outline = cached(&run.join("outline.json"), || {
         collate(&caller, model, &record, &ideas, pages)
     })?;
-    let brief = brief(&ideas, &outline);
-    write_atomic(run.join("outline.md"), &brief.0)?;
-    let digest = write_digest(
+    finish(
         &caller,
         model,
-        &record,
+        (slug, &record),
+        &run,
+        &ideas,
+        &outline,
+        (pages, most),
+    )
+}
+
+fn rewrite(slug: &str, run: &Path, pages: Option<usize>, model: &ModelSpec) -> Result<i32> {
+    let record = load_record(&book_dir(slug))?;
+    let (pages, most) = page_targets(&record, pages);
+    let ideas = load_ideas(run)?;
+    let outline: Outline = serde_json::from_str(&read(&run.join("outline.json"))?)?;
+    finish(
+        &Caller::new(run),
+        model,
+        (slug, &record),
+        run,
+        &ideas,
+        &outline,
+        (pages, most),
+    )
+}
+
+fn page_targets(record: &Record, pages: Option<usize>) -> (usize, usize) {
+    let most = pages.map_or(MAX_PAGES, |p| (p * 13 / 10).min(MAX_PAGES));
+    (
+        pages.unwrap_or_else(|| (record.words / 7000).clamp(10, MAX_PAGES)),
+        most,
+    )
+}
+
+fn load_ideas(run: &Path) -> Result<Vec<Idea>> {
+    let mut files: Vec<(usize, PathBuf)> = std::fs::read_dir(run)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter_map(|p| {
+            let n = p
+                .file_name()?
+                .to_str()?
+                .strip_prefix("ideas-")?
+                .strip_suffix(".json")?
+                .parse()
+                .ok()?;
+            Some((n, p))
+        })
+        .collect();
+    files.sort();
+    ensure!(!files.is_empty(), "no ideas-NN.json in {}", run.display());
+    let mut ideas = Vec::new();
+    for (n, path) in files {
+        let found: Ideas = serde_json::from_str(&read(&path)?)?;
+        ideas.extend(with_ids(n, found));
+    }
+    Ok(ideas)
+}
+
+fn with_ids(n: usize, found: Ideas) -> impl Iterator<Item = Idea> {
+    found
+        .ideas
+        .into_iter()
+        .enumerate()
+        .map(move |(k, mut idea)| {
+            idea.id = format!("{n}.{}", k + 1);
+            idea
+        })
+}
+
+fn finish(
+    caller: &Caller,
+    model: &ModelSpec,
+    (slug, record): (&str, &Record),
+    run: &Path,
+    ideas: &[Idea],
+    outline: &Outline,
+    (pages, most): (usize, usize),
+) -> Result<i32> {
+    let dir = book_dir(slug);
+    let text = read(&dir.join("text.md"))?;
+    let brief = brief(ideas, outline);
+    write_atomic(run.join("outline.md"), &brief.0)?;
+    let digest = write_digest(
+        caller,
+        model,
+        record,
         &brief,
         (pages, most),
         &Index::new(&text),
     )?;
     write_atomic(run.join("digest.md"), &digest)?;
     write_atomic(dir.join("digest.md"), &digest)?;
-    let printed = render(&dir, &record)?;
+    let printed = render(&dir, record)?;
     println!(
         "digest: {} ({printed} pages for a {pages}-page target, {} words, {} ideas, {} dropped, {})",
         dir.join("digest.pdf").display(),
@@ -558,10 +658,7 @@ fn read_book(
     let mut failed = Vec::new();
     for ((n, _), result) in numbered.iter().zip(results) {
         match result {
-            Ok(found) => ideas.extend(found.ideas.into_iter().enumerate().map(|(k, mut idea)| {
-                idea.id = format!("{n}.{}", k + 1);
-                idea
-            })),
+            Ok(found) => ideas.extend(with_ids(*n, found)),
             Err(e) => failed.push(format!("passage {n}: {e:#}")),
         }
     }
@@ -818,16 +915,125 @@ fn write_digest(
     let sent = format!(
         "{}\n\n<outline>\n{brief}\n</outline>\n\n{}",
         book_tag(record),
-        prompt("book-write.md", &[("words", words.to_string())])?
+        prompt("book-write.md", &[])?
     );
-    caller.call_with_parse("write", spec, &sent, |reply| {
-        let body = check_digest(reply, *points, words, book)?;
-        let printed = typeset(&body, record)?.pages().len() - 1;
+    let fits = |body: &str| -> Result<()> {
+        let printed = typeset(body, record)?.pages().len() - 1;
         ensure!(
             printed <= most,
             "the piece typesets to {printed} pages; it must fit in {most}, so cut detail, not points"
         );
+        Ok(())
+    };
+    let body = caller.call_with_parse("write", spec, &sent, |reply| {
+        let body = check_digest(reply, *points, words, book)?;
+        fits(&body)?;
         Ok(body)
+    })?;
+    let talk = book_talk(caller, record, &body)?;
+    if talk.is_empty() {
+        return Ok(body);
+    }
+    let (body, rewritten) = restate(caller, spec, record, &body, &talk)?;
+    let left = book_talk(caller, record, &rewritten.join("\n"))?;
+    ensure!(
+        left.is_empty(),
+        "the piece still talks about the book after one repair: {}",
+        left.join(" | ")
+    );
+    fits(&body)?;
+    Ok(body)
+}
+
+#[derive(Deserialize)]
+struct Fix {
+    old: String,
+    new: String,
+}
+
+#[derive(Deserialize)]
+struct Fixes {
+    fixes: Vec<Fix>,
+}
+
+fn restate(
+    caller: &Caller,
+    spec: &ModelSpec,
+    record: &Record,
+    body: &str,
+    talk: &[String],
+) -> Result<(String, Vec<String>)> {
+    let sent = format!(
+        "{}\n\n<piece>\n{body}</piece>\n\n<sentences>\n{}\n</sentences>\n\n{}",
+        book_tag(record),
+        talk.join("\n"),
+        prompt("book-restate.md", &[])?
+    );
+    caller.call_with_parse("restate", spec, &sent, |reply| {
+        let fixes: Fixes = json_reply(reply)?;
+        let mut out = body.to_string();
+        for fix in &fixes.fixes {
+            ensure!(
+                out.matches(&fix.old).count() == 1,
+                "each old must be copied exactly from the piece and occur once: {:?}",
+                fix.old
+            );
+            ensure!(
+                !fix.new.contains('\u{2014}') && !QUOTED.is_match(&fix.new),
+                "no em dashes and no quotations in a new sentence: {:?}",
+                fix.new
+            );
+            out = out.replacen(&fix.old, &fix.new, 1);
+        }
+        let missed: Vec<&String> = talk.iter().filter(|t| out.contains(t.as_str())).collect();
+        ensure!(
+            missed.is_empty(),
+            "these sentences are still there: {missed:?}"
+        );
+        Ok((out, fixes.fixes.iter().map(|f| f.new.clone()).collect()))
+    })
+}
+
+#[derive(Deserialize)]
+struct Talk {
+    sentences: Vec<Flagged>,
+}
+
+#[derive(Deserialize)]
+struct Flagged {
+    sentence: String,
+    reference: String,
+}
+
+fn book_talk(caller: &Caller, record: &Record, body: &str) -> Result<Vec<String>> {
+    let sent = format!(
+        "{}\n\n<piece>\n{body}</piece>\n\n{}",
+        book_tag(record),
+        prompt("book-talk.md", &[])?
+    );
+    let flat = |t: &str| t.split_whitespace().collect::<Vec<_>>().join(" ");
+    let piece = flat(body);
+    caller.call_with_parse("talk", &ModelSpec::parse("sonnet")?, &sent, |reply| {
+        let talk: Talk = json_reply(reply)?;
+        let absent: Vec<&String> = talk
+            .sentences
+            .iter()
+            .filter(|f| !piece.contains(&flat(&f.sentence)))
+            .map(|f| &f.sentence)
+            .collect();
+        ensure!(
+            absent.is_empty(),
+            "copy each sentence exactly as it stands in the piece; these are not in it: {absent:?}"
+        );
+        Ok(talk
+            .sentences
+            .into_iter()
+            .filter(|f| {
+                let r = f.reference.trim().to_lowercase();
+                !r.is_empty() && f.sentence.to_lowercase().contains(&r)
+            })
+            .map(|f| f.sentence)
+            .collect())
     })
 }
 
@@ -865,11 +1071,16 @@ fn check_digest(reply: &str, points: usize, words: usize, book: &Index) -> Resul
                 .or_else(|| c.get(2))
                 .map(|m| m.as_str().to_string())
         })
+        .chain(
+            body.lines()
+                .filter_map(|l| l.strip_prefix('>'))
+                .map(str::to_string),
+        )
         .filter(|q| words_of(q).len() >= CHECKED_QUOTE_WORDS && !book.quotes(q))
         .collect();
     ensure!(
         invented.is_empty(),
-        "these quotations are not in the book; quote only the outline's quotes, word for word, or drop the quotation marks and say it in your own words: {}",
+        "these quotations are not in the book; quote only the outline's quotes, word for word, or drop the quotation marks or the block quote and say it in your own words (a block quote must also come from the outline): {}",
         invented.join(" | ")
     );
     Ok(body)
