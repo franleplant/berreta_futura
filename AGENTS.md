@@ -100,6 +100,22 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (`--image-cap` pins one). `--layout` picks the page: `a5` (default,
   booklet: two numbered A5 pages per landscape A4 sheet in reading order,
   no imposition yet), `columns` (A4 two columns), `single` (A4 one column).
+- `mag book` is a standalone side tool, not an edition step: whole books in, the
+  ideas a friend who read it would tell you out, as an A5 PDF. `mag book ingest
+  <files>... --title --author [--slug]` writes `books/<slug>/text.md` (PDF via
+  pdftotext, TXT, MD, HTML in reading order; Gutenberg wrapper, folios, broken
+  hyphens dropped) and `record.yaml`. `mag book distill <slug> [--pages N]` cuts
+  the text into ~12k-word stretches; one call per stretch lists every idea
+  (`prompts/book-ideas.md`) with a quote the stretch must contain (word-bigram
+  alignment, survives OCR noise); one outline call (`prompts/book-outline.md`)
+  must place every idea id once and may drop only supporting ones, with a reason;
+  one writer call (`prompts/book-digest.md`) must cover every outline point
+  (marker lines, stripped), write at least 75% of 430 words per page and typeset (measured in the gate) to
+  no more than 130% of the target pages and never past 20, use no em
+  dash outside quotations, and quote only what the book says. Runs live in
+  `books/<slug>/runs/<stamp>/` (`--resume <run>` reuses the cached stage JSON);
+  `digest.md` is tracked, `text.md`, runs, and `digest.pdf` are not. `mag book
+  render <slug>` re-typesets a hand-edited digest.md.
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.
 

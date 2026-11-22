@@ -42,3 +42,8 @@ editions/*/epub/
 # Standalone card art candidates stay local; `mag cards art <slug> --pick` commits cards/<slug>/art.jpg.
 cards/*/candidates/
 cards/*/log.jsonl
+
+# Book digests: the full text and the run scratch stay local; record.yaml and digest.md are tracked.
+books/*/text.md
+books/*/runs/
+books/*/digest.pdf
