@@ -94,6 +94,18 @@ enum BookCmd {
     },
     #[command(about = "Typeset books/<slug>/digest.md as an A5 PDF again (no model call)")]
     Render { slug: String },
+    #[command(
+        about = "Write books/<slug>/print/: the digest as a hand-bound book, A4 imposed interior, cover wrap with spine, and endpaper (no model call)"
+    )]
+    Print {
+        slug: String,
+        #[arg(
+            long = "paper-mm",
+            default_value_t = 0.1,
+            help = "Thickness of one interior sheet in mm (80 gsm office paper is about 0.1)"
+        )]
+        paper_mm: f64,
+    },
 }
 
 #[derive(Serialize, Deserialize)]
@@ -103,6 +115,25 @@ struct Record {
     files: Vec<String>,
     words: usize,
     ingested_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    print: Option<PrintStyle>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct PrintStyle {
+    ink: String,
+    accent: String,
+    motif: String,
+}
+
+impl Default for PrintStyle {
+    fn default() -> Self {
+        Self {
+            ink: "#1b1816".into(),
+            accent: "#ba341f".into(),
+            motif: "lattice".into(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -178,6 +209,7 @@ pub fn run(args: &BookArgs) -> Result<i32> {
             );
             Ok(0)
         }
+        BookCmd::Print { slug, paper_mm } => print(slug, *paper_mm),
     }
 }
 
@@ -216,6 +248,7 @@ fn ingest(files: &[PathBuf], title: &str, author: &str, slug: Option<&str>) -> R
             .collect(),
         words,
         ingested_at: now_stamp(),
+        print: load_record(&dir).ok().and_then(|r| r.print),
     };
     write_atomic(dir.join("record.yaml"), serde_norway::to_string(&record)?)?;
     println!(
@@ -850,11 +883,134 @@ fn render(dir: &Path, record: &Record) -> Result<usize> {
 
 fn typeset(markdown: &str, record: &Record) -> Result<typst_layout::PagedDocument> {
     let body = typst_markup(markdown);
-    let source = format!(
+    compile(format!(
         "#show: digest.with(title: {}, author: {})\n\n{body}",
         string_literal(&record.title),
         string_literal(&record.author)
+    ))
+}
+
+const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+fn print(slug: &str, paper_mm: f64) -> Result<i32> {
+    let dir = book_dir(slug);
+    let record = load_record(&dir)?;
+    let style = record.print.clone().unwrap_or_default();
+    let digest = read(&dir.join("digest.md"))?;
+    let (first, rest) = digest
+        .trim()
+        .split_once("\n\n")
+        .context("digest.md has a single paragraph")?;
+    ensure!(
+        !first.starts_with('#'),
+        "digest.md must open with the 30-second paragraph, not a heading"
     );
+    let words: Vec<&str> = first.split_whitespace().collect();
+    let lead = words.len().min(4);
+    let colors = format!(
+        "ink: rgb({}), accent: rgb({})",
+        string_literal(&style.ink),
+        string_literal(&style.accent)
+    );
+    let interior = |size: f64, pad: usize| {
+        compile(format!(
+            "#show: book.with(title: {}, author: {}, colophon: [{}], {colors}, size: {size}pt)\n\n#opener([{}], rgb({}), rgb({}), [{}])\n\n{}\n\n#blank-pages({pad}, rgb({}))\n",
+            string_literal(&record.title),
+            string_literal(&record.author),
+            colophon(&record),
+            escape_markup(&words[..lead].join(" ")),
+            string_literal(&style.ink),
+            string_literal(&style.accent),
+            typst_markup(&words[lead..].join(" ")).trim(),
+            typst_markup(rest),
+            string_literal(&style.accent)
+        ))
+    };
+    let pages_at = |size: f64| interior(size, 0).map(|d| d.pages().len());
+    let size = if pages_at(10.6)? < pages_at(10.75)? {
+        10.6
+    } else {
+        10.75
+    };
+    let pages = pages_at(size)?;
+    let document = interior(size, (4 - pages % 4) % 4)?;
+    let pages = document.pages().len();
+    let out = dir.join("print");
+    std::fs::create_dir_all(&out)?;
+    let reader = out.join("reader-a5.pdf");
+    std::fs::write(&reader, template::pdf(&document)?)?;
+    crate::impose::impose_a5_on_a4(&reader, &out.join("interior-a4.pdf"), "all")?;
+    let spine = pages as f64 / 2.0 * paper_mm + 0.3;
+    let cover = compile(format!(
+        "#book-cover(title: {}, author: {}, blurb: [{}], {colors}, spine: {spine:.2}mm, motif: {})\n",
+        string_literal(&record.title),
+        string_literal(&record.author),
+        typst_markup(first).trim(),
+        string_literal(&style.motif)
+    ))?;
+    std::fs::write(out.join("cover-a4.pdf"), template::pdf(&cover)?)?;
+    let endpaper = compile(format!(
+        "#book-endpaper({colors}, motif: {})\n",
+        string_literal(&style.motif)
+    ))?;
+    std::fs::write(out.join("endpaper-a4.pdf"), template::pdf(&endpaper)?)?;
+    println!(
+        "print: {} ({pages} A5 pages on {} A4 sheets, spine {spine:.1} mm)",
+        out.display(),
+        pages / 4
+    );
+    println!("  interior-a4.pdf: print double-sided, flip on the short edge; nest the sheets in order and fold once");
+    println!("  endpaper-a4.pdf: print two, one side only; fold each pattern-in, one at the front and one at the back");
+    println!("  cover-a4.pdf: print one side on heavier stock; fold on the dashed spine marks");
+    println!("  after binding, trim the book to the crop marks: 140 x 198 mm (8.5 mm off the fore-edge, 6 mm off head and foot)");
+    println!("next: open {} and proof it", reader.display());
+    Ok(0)
+}
+
+fn colophon(record: &Record) -> String {
+    let month = record
+        .ingested_at
+        .get(5..7)
+        .and_then(|m| m.parse::<usize>().ok())
+        .and_then(|m| MONTHS.get(m.wrapping_sub(1)))
+        .copied()
+        .unwrap_or_default();
+    let year = record.ingested_at.get(..4).unwrap_or_default();
+    escape_markup(&format!(
+        "The ideas in {} by {}: what a friend who read it closely would tell you, so you know what the book offers and which parts to go read in full.",
+        record.title, record.author
+    )) + &escape_markup(&format!(
+        "\n\nDistilled in {month} {year} from the whole text of the book, {} words. Set in EB Garamond. Printed on A4, folded, sewn, and trimmed by hand.",
+        group_thousands(record.words)
+    ))
+}
+
+fn group_thousands(n: usize) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
+}
+
+fn compile(source: String) -> Result<typst_layout::PagedDocument> {
     let tree = Tree {
         files: vec![File {
             path: "main.typ".to_string(),

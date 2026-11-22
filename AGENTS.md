@@ -122,7 +122,15 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   dash outside quotations, and quote only what the book says. Runs live in
   `books/<slug>/runs/<stamp>/` (`--resume <run>` reuses the cached stage JSON);
   `digest.md` is tracked, `text.md`, runs, and `digest.pdf` are not. `mag book
-  render <slug>` re-typesets a hand-edited digest.md.
+  render <slug>` re-typesets a hand-edited digest.md. `mag book print <slug>
+  [--paper-mm 0.1]` writes `books/<slug>/print/` (gitignored) for hand binding:
+  `reader-a5.pdf` (half-title, title, colophon, contents, small-caps opener,
+  running heads, padded to a multiple of four; 10.6pt instead of 10.75pt when
+  that saves a page), `interior-a4.pdf` (one nested saddle signature through
+  `impose`), `cover-a4.pdf` (back, spine from the leaf count, front, centred on
+  A4 landscape with crop and fold marks for a 140 x 198 mm trim, the opener as
+  the back blurb), and `endpaper-a4.pdf` (a vector tiling). Colours and the
+  motif (`lattice`, `peaks`) come from `print:` in record.yaml.
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.
 

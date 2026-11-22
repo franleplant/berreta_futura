@@ -47,3 +47,4 @@ cards/*/log.jsonl
 books/*/text.md
 books/*/runs/
 books/*/digest.pdf
+books/*/print/

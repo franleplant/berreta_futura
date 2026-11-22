@@ -4,3 +4,7 @@ files:
 - b.txt
 words: 83804
 ingested_at: 2026-11-22T00-07-42
+print:
+  ink: "#16413f"
+  accent: "#e0a12b"
+  motif: lattice
