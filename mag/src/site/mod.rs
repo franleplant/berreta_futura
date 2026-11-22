@@ -1,4 +1,5 @@
 use crate::model::kinds::RenderOperation;
+mod about;
 pub mod epub;
 mod html;
 mod images;
@@ -296,13 +297,14 @@ pub fn at_head(live: &Path) -> Result<(PathBuf, AtHead)> {
 fn build(args: &SiteArgs) -> Result<()> {
     let _scratch = Scratch;
     let root = std::env::current_dir()?.canonicalize()?;
-    let (site, mut issues) = {
+    let (site, about, mut issues) = {
         let (head, _at) = at_head(&root)?;
         let site = config(&head)?;
+        let about = about::load(&head)?;
         let issues = crate::util::parallel(&site.editions, |id| issue(&head, id))
             .into_iter()
             .collect::<Result<Vec<_>>>()?;
-        (site, issues)
+        (site, about, issues)
     };
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
     prepare(&args.out)?;
@@ -316,7 +318,7 @@ fn build(args: &SiteArgs) -> Result<()> {
         .map_or("Magazine", |i| i.editions[0].publication_name.as_str())
         .to_string();
     let logo = logo::build(&name)?;
-    let files = html::pages(&issues, &images, &site, &name, &logo.inline)?;
+    let files = html::pages(&issues, &images, (&site, &about), &name, &logo.inline)?;
     check_font_coverage(&root, &files)?;
     for (path, body) in &files {
         let target = args.out.join(path);

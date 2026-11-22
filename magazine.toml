@@ -29,6 +29,15 @@ paragraphs = [
 ]
 creed = ["Slow down.", "Touch grass.", "Keep learning.", "Stay in the vanguard.", "Drink coffee."]
 
+[about.es]
+# The Spanish about page of the site.
+title = "Acerca de Berreta Futura"
+paragraphs = [
+  "Berreta Futura reúne lo que vale la pena leer sobre software e IA, escrito por quienes lo construyen, y lo compone como una revista que se puede leer como corresponde.",
+  "Leela como más te convenga: imprimí el PDF y anotalo con una lapicera, abrí el EPUB en el lector de libros del teléfono o leé la edición web, sin distracciones. Es una herramienta para aprender con eficiencia. Después dejala y salí afuera. Leela en una plaza, en un tren, en la mesa de un café. La pantalla va a seguir ahí cuando vuelvas.",
+]
+creed = ["Bajá la velocidad.", "Tocá pasto.", "Seguí aprendiendo.", "Mantenete en la vanguardia.", "Tomá café."]
+
 [credits]
 # The colophon after the front cover credits the maker and prints the site,
 # the issue's page on the site, and the email.

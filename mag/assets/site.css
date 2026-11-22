@@ -273,3 +273,10 @@ pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .
 .hits .byline { display: block; margin-top: 0.15rem; color: var(--muted); font-size: 0.875rem; }
 .hits .quote { margin: var(--sp-2) 0 0; font-size: 0.9375rem; line-height: 1.5; color: var(--muted); }
 .hits mark { background: none; color: var(--ink); font-weight: 600; }
+
+.about { max-width: var(--measure); padding: var(--sp-6) 0 0; }
+.about .lede { font: italic 400 var(--t1)/1.42 var(--serif); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--ink); }
+.creed { list-style: none; margin: var(--sp-6) 0; padding: 0; font: 650 var(--t1)/1.3 var(--display); letter-spacing: -0.02em; }
+.creed li { margin: 0; }
+.creed li:nth-child(even) { color: var(--red-text); }
+.about .credits { margin-top: var(--sp-6); padding-top: var(--sp-3); border-top: 1px solid var(--rule); color: var(--muted); font: 400 0.88rem/1.45 var(--sans); }
