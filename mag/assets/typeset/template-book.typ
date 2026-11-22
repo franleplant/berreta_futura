@@ -1424,11 +1424,22 @@
 #let code-runs(source, inks) = {
   let runs = if inks.len() == 0 { ((source.len(), none),) } else { inks }
   assert(runs.map(r => r.at(0)).sum() == source.len(), message: "the code inks do not cover the code block")
+  let spans = ()
   let at = 0
   for (length, ink) in runs {
-    let run = source.slice(at, at + length)
+    spans.push((at, at + length, ink))
     at += length
-    if ink == none { unbroken(run) } else { text(fill: ink, unbroken(run)) }
+  }
+  let from = 0
+  for line in source.split("\n") {
+    let end = from + line.len()
+    let indent = line.len() - line.trim(at: start).len()
+    let body = spans.filter(((a, b, _)) => b > from and a < end).map(((a, b, ink)) => {
+      let run = unbroken(source.slice(calc.max(a, from), calc.min(b, end)))
+      if ink == none { run } else { text(fill: ink, run) }
+    })
+    par(hanging-indent: (indent + 2) * MONO-ADVANCE * 1em, if body.len() == 0 { "\u{200B}" } else { body.join() })
+    from = end + 1
   }
 }
 
