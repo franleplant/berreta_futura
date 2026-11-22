@@ -132,11 +132,8 @@ fn load(path: &Path) -> Result<Card> {
 fn write(slug: &str, sources: &[String], model: &str) -> Result<i32> {
     let dir = card_dir(slug);
     std::fs::create_dir_all(&dir)?;
-    let text = sources
-        .iter()
-        .map(|id| read(&Path::new("library/sources").join(id).join("article.md")))
-        .collect::<Result<Vec<_>>>()?
-        .join("\n\n");
+    write_atomic(dir.join("sources.txt"), sources.join("\n") + "\n")?;
+    let text = source_text(sources)?;
     let caller = Caller::new(&dir);
     let card = modelcard::write_card(
         &caller,
@@ -159,15 +156,29 @@ fn write(slug: &str, sources: &[String], model: &str) -> Result<i32> {
     Ok(0)
 }
 
+fn source_text(ids: &[String]) -> Result<String> {
+    Ok(ids
+        .iter()
+        .map(|id| read(&Path::new("library/sources").join(id).join("article.md")))
+        .collect::<Result<Vec<_>>>()?
+        .join("\n\n"))
+}
+
 fn rewrite_briefs(slug: &str, model: &str) -> Result<()> {
     let dir = card_dir(slug);
     let path = dir.join("card.json");
     let mut card = load(&path)?;
+    let ids: Vec<String> = read(&dir.join("sources.txt"))?
+        .lines()
+        .map(str::to_string)
+        .filter(|l| !l.is_empty())
+        .collect();
     card.art_briefs = modelcard::write_briefs(
         &Caller::new(&dir),
         &format!("{slug} art"),
         &ModelSpec::parse(model)?,
         &card,
+        &source_text(&ids)?,
     )?;
     write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;
     let seeds = modelcard::art_seeds()?;

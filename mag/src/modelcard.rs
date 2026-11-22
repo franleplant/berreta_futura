@@ -7,12 +7,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-pub const SEED_PROMPTS: usize = 2;
+pub const SEED_PROMPTS: usize = 4;
 const ART_SEEDS_DIR: &str = "model-card-art";
-const ART_FRAME: &str = "No text, letters, numbers, or logos anywhere in the image.";
+const ART_STYLE: &str = "Collectible-card art in the style of a 1970s science-fiction paperback cover: smooth airbrushed gradients, crisp highlights, a little film grain. Subject: ";
+const ART_FRAME: &str = "Full-bleed, no border, no frame, no text, no letters, no numbers, no logos anywhere in the image. Landscape card art window composition.";
 
 pub fn art_prompt(brief: &str) -> String {
-    format!("{} {ART_FRAME}", brief.trim())
+    format!("{ART_STYLE}{} {ART_FRAME}", brief.trim())
 }
 const ADVICE_KEYS: [&str; 3] = ["Use it for", "Start with", "Tip"];
 const PRICE_LABELS: [&str; 3] = ["in", "cached", "out"];
@@ -495,6 +496,7 @@ pub fn write_briefs(
     label: &str,
     model: &ModelSpec,
     card: &Card,
+    sources: &str,
 ) -> Result<Vec<String>> {
     let shown = Card {
         art_briefs: Vec::new(),
@@ -508,9 +510,11 @@ pub fn write_briefs(
             .iter()
             .map(|(name, seed)| {
                 let prompt = format!(
-                    "{INLINE_PREAMBLE}\n\n{}\n\n{}\n\n---\n\n{json}\n",
+                    "{INLINE_PREAMBLE}\n\n{}\n\n{}{}{}",
                     seed.trim(),
-                    rules.trim()
+                    rules.trim(),
+                    section("card", &json),
+                    section("launch post", sources)
                 );
                 let label = format!("{label} {name}");
                 scope.spawn(move || {
@@ -655,7 +659,7 @@ pub fn write_card(
         }
         Ok(card)
     })?;
-    card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card)?;
+    card.art_briefs = write_briefs(caller, &format!("{label} art"), model, &card, sources)?;
     Ok(card)
 }
 
@@ -770,10 +774,10 @@ mod tests {
     }
 
     #[test]
-    fn each_seed_writes_two_prompts_free_of_names_and_extra_arms() {
+    fn each_seed_writes_four_prompts_free_of_names_and_extra_arms() {
         let c = card();
-        let ok = r#"{"prompts": ["a brass cartographer of smoked glass in an orbital archive.", "a quartz stag on a salt plain at dawn."]}"#;
-        assert_eq!(parse_briefs(ok, &c).unwrap().len(), 2);
+        let ok = r#"{"prompts": ["a brass cartographer of smoked glass.", "a quartz sentinel.", "a walnut archivist.", "a porcelain engineer."]}"#;
+        assert_eq!(parse_briefs(ok, &c).unwrap().len(), 4);
         assert!(parse_briefs(r#"{"prompts": ["a quartz stag."]}"#, &c).is_err());
         let armed = r#"{"prompts": ["a six-armed librarian of brass.", "a quartz stag."]}"#;
         assert!(parse_briefs(armed, &c)
