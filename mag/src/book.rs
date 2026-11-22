@@ -16,7 +16,9 @@ use std::sync::LazyLock;
 
 const BOOKS_DIR: &str = "books";
 const DIGEST_TYP: &str = include_str!("../assets/typeset/book-digest.typ");
-const STRETCH_WORDS: usize = 12_000;
+const PASSAGE_MIN: usize = 8_000;
+const PASSAGE_MAX: usize = 16_000;
+const OVERLAP_WORDS: usize = 1_500;
 const WORDS_PER_PAGE: usize = 430;
 const MAX_PAGES: usize = 20;
 const POINTS_PER_PAGE: usize = 7;
@@ -31,6 +33,10 @@ static BROKEN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(\p{Ll})[-\x{ac}]\n[ \t]*(\p{Ll})").unwrap());
 static FOLIO: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^[ \t]*\d{1,4}[ \t]*\n").unwrap());
+static CHAPTER: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^\s*(?:#{1,3} |(?:CHAPTER|Chapter|PART|Part|BOOK|Book|LECTURE|Lecture)\b)")
+        .unwrap()
+});
 static BLANKS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[ \t]*(?:\n[ \t]*)+").unwrap());
 static MARKER: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^[ \t]*<!--([^>]*)-->[ \t]*\n?").unwrap());
@@ -59,7 +65,7 @@ enum BookCmd {
         slug: Option<String>,
     },
     #[command(
-        about = "Write books/<slug>/digest.md and digest.pdf: every idea of every stretch (quote-gated), an outline that accounts for each idea, and the piece that covers every point of it"
+        about = "Write books/<slug>/digest.md and digest.pdf: every idea of every passage (quote-gated), an outline that accounts for each idea, and the piece that covers every point of it"
     )]
     Distill {
         slug: String,
@@ -75,11 +81,11 @@ enum BookCmd {
         )]
         model: String,
         #[arg(
-            long = "map-model",
+            long = "read-model",
             default_value = "opus",
-            help = "Model that lists each stretch's ideas"
+            help = "Model that lists each passage's ideas"
         )]
-        map_model: String,
+        read_model: String,
         #[arg(
             long,
             help = "Reuse a run directory: stages whose JSON is already there are not called again"
@@ -154,13 +160,13 @@ pub fn run(args: &BookArgs) -> Result<i32> {
             slug,
             pages,
             model,
-            map_model,
+            read_model,
             resume,
         } => distill(
             slug,
             *pages,
             &ModelSpec::parse(model)?,
-            &ModelSpec::parse(map_model)?,
+            &ModelSpec::parse(read_model)?,
             resume.as_deref(),
         ),
         BookCmd::Render { slug } => {
@@ -213,9 +219,9 @@ fn ingest(files: &[PathBuf], title: &str, author: &str, slug: Option<&str>) -> R
     };
     write_atomic(dir.join("record.yaml"), serde_norway::to_string(&record)?)?;
     println!(
-        "book: {} ({words} words, {} stretches)",
+        "book: {} ({words} words, {} passages)",
         dir.display(),
-        stretches(&text).len()
+        passages(&text).len()
     );
     println!("next: mag book distill {slug}");
     Ok(0)
@@ -258,8 +264,22 @@ fn html_text(html: &str) -> String {
     let doc = scraper::Html::parse_document(html);
     let blocks = scraper::Selector::parse("h1, h2, h3, h4, p, pre").expect("static selector");
     doc.select(&blocks)
-        .map(|e| e.text().collect::<String>().trim().to_string())
-        .filter(|t| !t.is_empty())
+        .filter_map(|e| {
+            let mark = match e.value().name() {
+                "h1" | "h2" => "# ",
+                "h3" | "h4" => "## ",
+                _ => "",
+            };
+            let text = match mark {
+                "" => e.text().collect::<String>().trim().to_string(),
+                _ => e
+                    .text()
+                    .flat_map(str::split_whitespace)
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            };
+            (!text.is_empty()).then(|| format!("{mark}{text}"))
+        })
         .collect::<Vec<_>>()
         .join("\n\n")
 }
@@ -291,26 +311,67 @@ fn slugify(title: &str) -> String {
         .join("-")
 }
 
-fn stretches(text: &str) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-    let mut current = String::new();
+fn size(text: &str) -> usize {
+    text.split_whitespace().count()
+}
+
+fn passages(text: &str) -> Vec<String> {
+    let mut out: Vec<Vec<&str>> = Vec::new();
+    let mut current: Vec<&str> = Vec::new();
+    let mut carried = 0;
     let mut words = 0;
-    for line in text.lines() {
-        let at_break = line.trim().is_empty() || words >= STRETCH_WORDS * 23 / 20;
-        if words >= STRETCH_WORDS && at_break {
-            out.push(std::mem::take(&mut current));
-            words = 0;
+    let mut last_chapter = None;
+    for para in text.split("\n\n").filter(|p| !p.trim().is_empty()) {
+        let chapter = opens_chapter(para);
+        if words >= PASSAGE_MIN && (chapter || words + size(para) > PASSAGE_MAX) {
+            let at = if chapter { None } else { last_chapter };
+            let rest = current.split_off(at.unwrap_or(current.len()));
+            let full = std::mem::take(&mut current);
+            current = if chapter || at.is_some() {
+                rest
+            } else {
+                overlap(&full)
+            };
+            carried = if at.is_none() && !chapter {
+                current.len()
+            } else {
+                0
+            };
+            words = current.iter().map(|p| size(p)).sum();
+            last_chapter = None;
+            out.push(full);
         }
-        current.push_str(line);
-        current.push('\n');
-        words += line.split_whitespace().count();
+        if chapter && words >= PASSAGE_MIN / 2 {
+            last_chapter = Some(current.len());
+        }
+        current.push(para);
+        words += size(para);
     }
     match out.last_mut() {
-        Some(last) if words < STRETCH_WORDS / 4 => last.push_str(&current),
+        Some(last) if words < PASSAGE_MIN / 2 => last.extend(&current[carried..]),
         _ if words > 0 => out.push(current),
         _ => {}
     }
-    out
+    out.into_iter().map(|p| p.join("\n\n") + "\n").collect()
+}
+
+fn opens_chapter(para: &str) -> bool {
+    let head = para.trim_start().lines().next().unwrap_or_default();
+    head.len() < 100
+        && CHAPTER.is_match(head)
+        && !matches!(head.trim_start_matches('#').trim(), "Footnotes" | "Notes")
+}
+
+fn overlap<'a>(paras: &[&'a str]) -> Vec<&'a str> {
+    let mut words = 0;
+    let start = paras
+        .iter()
+        .rposition(|p| {
+            words += size(p);
+            words >= OVERLAP_WORDS
+        })
+        .unwrap_or(0);
+    paras[start..].to_vec()
 }
 
 struct Index(HashMap<u64, Vec<usize>>);
@@ -400,7 +461,7 @@ fn distill(
     slug: &str,
     pages: Option<usize>,
     model: &ModelSpec,
-    map_model: &ModelSpec,
+    read_model: &ModelSpec,
     resume: Option<&Path>,
 ) -> Result<i32> {
     let dir = book_dir(slug);
@@ -411,15 +472,17 @@ fn distill(
     let run = resume.map_or_else(|| dir.join("runs").join(now_stamp()), Path::to_path_buf);
     std::fs::create_dir_all(&run)?;
     let caller = Caller::new(&run);
-    let ideas = map_book(&caller, map_model, &record, &text, &run)?;
+    let ideas = read_book(&caller, read_model, &record, &text, &run)?;
     let outline = cached(&run.join("outline.json"), || {
-        outline(&caller, model, &record, &ideas, pages)
+        collate(&caller, model, &record, &ideas, pages)
     })?;
+    let brief = brief(&ideas, &outline);
+    write_atomic(run.join("outline.md"), &brief.0)?;
     let digest = write_digest(
         &caller,
         model,
         &record,
-        &brief(&ideas, &outline),
+        &brief,
         (pages, most),
         &Index::new(&text),
     )?;
@@ -441,21 +504,21 @@ fn distill(
     Ok(0)
 }
 
-fn map_book(
+fn read_book(
     caller: &Caller,
     spec: &ModelSpec,
     record: &Record,
     text: &str,
     run: &Path,
 ) -> Result<Vec<Idea>> {
-    let parts = stretches(text);
+    let parts = passages(text);
     let total = parts.len();
-    let ask = prompt("book-ideas.md", &[])?;
+    let ask = prompt("book-read.md", &[])?;
     let numbered: Vec<(usize, &String)> =
         parts.iter().enumerate().map(|(i, s)| (i + 1, s)).collect();
-    let results = parallel(&numbered, |(n, stretch)| {
+    let results = parallel(&numbered, |(n, passage)| {
         cached(&run.join(format!("ideas-{n:02}.json")), || {
-            map_stretch(caller, spec, record, (*n, total), stretch, &ask)
+            read_passage(caller, spec, record, (*n, total), passage, &ask)
         })
     });
     let mut ideas = Vec::new();
@@ -466,7 +529,7 @@ fn map_book(
                 idea.id = format!("{n}.{}", k + 1);
                 idea
             })),
-            Err(e) => failed.push(format!("stretch {n}: {e:#}")),
+            Err(e) => failed.push(format!("passage {n}: {e:#}")),
         }
     }
     ensure!(
@@ -477,26 +540,26 @@ fn map_book(
     );
     let core = ideas.iter().filter(|i| i.weight == "core").count();
     println!(
-        "  {} ideas from {total} stretches ({core} core)",
+        "  {} ideas from {total} passages ({core} core)",
         ideas.len()
     );
     Ok(ideas)
 }
 
-fn map_stretch(
+fn read_passage(
     caller: &Caller,
     spec: &ModelSpec,
     record: &Record,
     (n, total): (usize, usize),
-    stretch: &str,
+    passage: &str,
     ask: &str,
 ) -> Result<Ideas> {
-    let index = Index::new(stretch);
+    let index = Index::new(passage);
     let sent = format!(
-        "{}\n\n<stretch {n} of {total}>\n\n{stretch}\n</stretch>\n\n{ask}",
+        "{}\n\n<passage {n} of {total}>\n\n{passage}\n</passage>\n\n{ask}",
         book_tag(record)
     );
-    caller.call_with_parse(&format!("ideas {n}/{total}"), spec, &sent, |reply| {
+    caller.call_with_parse(&format!("read {n}/{total}"), spec, &sent, |reply| {
         let found: Ideas = json_reply(reply)?;
         check_ideas(&found.ideas, &index)?;
         Ok(found)
@@ -521,13 +584,13 @@ fn check_ideas(ideas: &[Idea], index: &Index) -> Result<()> {
         .collect();
     ensure!(
         missing.is_empty(),
-        "these quotes are not in the stretch word for word; copy each one exactly from the text: {}",
+        "these quotes are not in the passage word for word; copy each one exactly from the text: {}",
         missing.join("; ")
     );
     Ok(())
 }
 
-fn outline(
+fn collate(
     caller: &Caller,
     spec: &ModelSpec,
     record: &Record,
@@ -543,14 +606,14 @@ fn outline(
         book_tag(record),
         lines.join("\n"),
         prompt(
-            "book-outline.md",
+            "book-collate.md",
             &[
                 ("pages", pages.to_string()),
                 ("points", (pages * POINTS_PER_PAGE).to_string()),
             ]
         )?
     );
-    caller.call_with_parse("outline", spec, &sent, |reply| {
+    caller.call_with_parse("collate", spec, &sent, |reply| {
         let mut plan: Outline = json_reply(reply)?;
         check_outline(&plan, ideas, pages * POINTS_PER_PAGE)?;
         split_apart(&mut plan, ideas);
@@ -722,9 +785,9 @@ fn write_digest(
     let sent = format!(
         "{}\n\n<outline>\n{brief}\n</outline>\n\n{}",
         book_tag(record),
-        prompt("book-digest.md", &[("words", words.to_string())])?
+        prompt("book-write.md", &[("words", words.to_string())])?
     );
-    caller.call_with_parse("digest", spec, &sent, |reply| {
+    caller.call_with_parse("write", spec, &sent, |reply| {
         let body = check_digest(reply, *points, words, book)?;
         let printed = typeset(&body, record)?.pages().len() - 1;
         ensure!(
@@ -912,7 +975,7 @@ mod tests {
     }
 
     #[test]
-    fn core_ideas_apart_in_one_stretch_are_split_into_their_own_points() {
+    fn core_ideas_apart_in_one_passage_are_split_into_their_own_points() {
         let idea = |id: &str, weight: &str| Idea {
             id: id.into(),
             claim: format!("claim {id}"),
@@ -947,13 +1010,25 @@ mod tests {
     }
 
     #[test]
-    fn stretches_break_at_blank_lines_and_fold_a_short_tail() {
+    fn passages_cut_at_chapters_and_overlap_only_mid_chapter_cuts() {
         let para = format!("{}\n\n", "word ".repeat(1000));
-        let parts = stretches(&para.repeat(26));
+        let chapter = |n: usize, paras: usize| format!("CHAPTER {n}\n\n{}", para.repeat(paras));
+        let parts = passages(&format!(
+            "{}{}{}",
+            chapter(1, 9),
+            chapter(2, 9),
+            chapter(3, 2)
+        ));
         assert_eq!(parts.len(), 2);
-        assert!(parts
-            .iter()
-            .all(|p| p.split_whitespace().count() >= STRETCH_WORDS));
+        assert!(parts[1].starts_with("CHAPTER 2"));
+        assert!(parts[1].contains("CHAPTER 3"));
+        let late = passages(&format!("{}{}", chapter(1, 7), chapter(2, 12)));
+        assert_eq!(late.len(), 2);
+        assert!(late[1].starts_with("CHAPTER 2"));
+        let long = passages(&chapter(1, 30));
+        assert_eq!(long.len(), 2);
+        let size = |p: &String| p.split_whitespace().count();
+        assert_eq!(size(&long[0]) + size(&long[1]), 30_002 + 2 * 1000);
     }
 
     #[test]

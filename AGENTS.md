@@ -104,14 +104,19 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   ideas a friend who read it would tell you out, as an A5 PDF. `mag book ingest
   <files>... --title --author [--slug]` writes `books/<slug>/text.md` (PDF via
   pdftotext, TXT, MD, HTML in reading order; Gutenberg wrapper, folios, broken
-  hyphens dropped) and `record.yaml`. `mag book distill <slug> [--pages N]` cuts
-  the text into ~12k-word stretches; one call per stretch lists every idea
-  (`prompts/book-ideas.md`) with a quote the stretch must contain (word-bigram
-  alignment, survives OCR noise); one outline call (`prompts/book-outline.md`)
-  must place every idea id once in at most 7 points per target page, may drop
-  only supporting ones (with a reason), and a point merging core ideas more than two
-  places apart in one stretch is split mechanically, each part keeping its claims;
-  one writer call (`prompts/book-digest.md`) must cover every outline point
+  hyphens dropped; HTML h1-h4 kept as `#` lines) and `record.yaml`. `mag book
+  distill <slug> [--pages N]` runs three steps. cut: passages of 8k to 16k words
+  that start at a chapter heading (`#`, CHAPTER, PART, BOOK, LECTURE; on overflow
+  the last heading inside the passage), falling back to a paragraph break that
+  repeats the previous 1,500 words only when no heading fits. read: one call per
+  passage lists every idea (`prompts/book-read.md`) with a quote the passage must
+  contain (word-bigram alignment, survives OCR noise). collate: one call
+  (`prompts/book-collate.md`) merges restatements into points, groups them in
+  sections, and must place every idea id once in at most 7 points per target
+  page, may drop only supporting ones (with a reason); a point merging core ideas
+  more than two places apart in one passage is split mechanically, and the
+  result is written as `outline.json` plus the readable `outline.md` (every point
+  with the claims it merged). write: one call (`prompts/book-write.md`) must cover every outline point
   (marker lines, stripped), write at least 75% of 430 words per page and typeset (measured in the gate) to
   no more than 20 pages (130% of `--pages` when given), use no em
   dash outside quotations, and quote only what the book says. Runs live in
