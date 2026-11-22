@@ -108,10 +108,12 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   the text into ~12k-word stretches; one call per stretch lists every idea
   (`prompts/book-ideas.md`) with a quote the stretch must contain (word-bigram
   alignment, survives OCR noise); one outline call (`prompts/book-outline.md`)
-  must place every idea id once and may drop only supporting ones, with a reason;
+  must place every idea id once in at most 7 points per target page, may drop
+  only supporting ones (with a reason), and a point merging core ideas more than two
+  places apart in one stretch is split mechanically, each part keeping its claims;
   one writer call (`prompts/book-digest.md`) must cover every outline point
   (marker lines, stripped), write at least 75% of 430 words per page and typeset (measured in the gate) to
-  no more than 130% of the target pages and never past 20, use no em
+  no more than 20 pages (130% of `--pages` when given), use no em
   dash outside quotations, and quote only what the book says. Runs live in
   `books/<slug>/runs/<stamp>/` (`--resume <run>` reuses the cached stage JSON);
   `digest.md` is tracked, `text.md`, runs, and `digest.pdf` are not. `mag book
@@ -190,13 +192,16 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   (`prompts/model-card-detect.md`, the evidence sentence and model name must be on the page);
   a launch becomes a `model_card` row, `--mode article` overrides. Card art is its own slot:
   the card's art briefs come after the card text from the seed prompts in
-  `prompts/model-card-art/` (one call per seed file, in parallel, each writing two prompts from
-  the card alone, plus the shared `rules.md`: free hand, lost 1970s novel cover, deed as legend,
-  substance-first portrait). Different seeds, not rerenders of one prompt, are what keep the
-  characters varied; add a seed file to add an approach. No menus or worked examples inside a
-  seed: they bias every card the same way. `mag art NNN --only card` makes one image per brief,
-  verbatim plus a no-text line (no anatomy gate), pick in the showcase, then `--promote`. Never
-  "creature", never birds; the gate checks two prompts per seed, no lab or model name, no
+  `prompts/model-card-art/` (one call per seed file, in parallel, each writing four briefs from
+  the card and the launch post, plus the shared `rules.md`). The one seed, `1-figure.md`, is the
+  first recipe Fran liked best: one serene figure with a face, two arms and two legs, centred,
+  holding or surrounded by three or four objects the post shows the model making or doing, one
+  huge simple shape behind it (sun disk, ringed planet, orbit) over one horizon, three colours.
+  Every image prompt is the 1970s science-fiction paperback airbrush style line, then the brief,
+  then a full-bleed no-text line (`modelcard::art_prompt`). `mag cards write` keeps the source
+  ids in `cards/<slug>/sources.txt` so `--rebrief` reads the post again. `mag art NNN --only
+  card` makes one image per brief (no anatomy gate), pick in the showcase, then `--promote`.
+  Never "creature", never birds; the gate checks four briefs per seed, no lab or model name, no
   many-armed figures, no em dash.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for

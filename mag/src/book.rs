@@ -19,6 +19,8 @@ const DIGEST_TYP: &str = include_str!("../assets/typeset/book-digest.typ");
 const STRETCH_WORDS: usize = 12_000;
 const WORDS_PER_PAGE: usize = 430;
 const MAX_PAGES: usize = 20;
+const POINTS_PER_PAGE: usize = 7;
+const MERGE_GAP: u32 = 2;
 const QUOTE_MATCH: f64 = 0.7;
 const CHECKED_QUOTE_WORDS: usize = 8;
 
@@ -201,7 +203,11 @@ fn ingest(files: &[PathBuf], title: &str, author: &str, slug: Option<&str>) -> R
     let record = Record {
         title: title.to_string(),
         author: author.to_string(),
-        files: files.iter().map(|f| f.display().to_string()).collect(),
+        files: files
+            .iter()
+            .filter_map(|f| f.file_name())
+            .map(|n| n.to_string_lossy().into_owned())
+            .collect(),
         words,
         ingested_at: now_stamp(),
     };
@@ -331,6 +337,14 @@ impl Index {
         Self(at)
     }
 
+    fn quotes(&self, quote: &str) -> bool {
+        quote
+            .split(['\u{2026}', '['])
+            .flat_map(|part| part.split("..."))
+            .filter(|part| words_of(part).len() >= 5)
+            .all(|part| self.score(part) >= QUOTE_MATCH)
+    }
+
     fn score(&self, quote: &str) -> f64 {
         let words = words_of(quote);
         if words.len() < 5 {
@@ -392,6 +406,7 @@ fn distill(
     let dir = book_dir(slug);
     let record = load_record(&dir)?;
     let text = read(&dir.join("text.md"))?;
+    let most = pages.map_or(MAX_PAGES, |p| (p * 13 / 10).min(MAX_PAGES));
     let pages = pages.unwrap_or_else(|| (record.words / 7000).clamp(10, MAX_PAGES));
     let run = resume.map_or_else(|| dir.join("runs").join(now_stamp()), Path::to_path_buf);
     std::fs::create_dir_all(&run)?;
@@ -405,7 +420,7 @@ fn distill(
         model,
         &record,
         &brief(&ideas, &outline),
-        pages,
+        (pages, most),
         &Index::new(&text),
     )?;
     write_atomic(run.join("digest.md"), &digest)?;
@@ -527,16 +542,23 @@ fn outline(
         "{}\n\n<ideas>\n{}\n</ideas>\n\n{}",
         book_tag(record),
         lines.join("\n"),
-        prompt("book-outline.md", &[("pages", pages.to_string())])?
+        prompt(
+            "book-outline.md",
+            &[
+                ("pages", pages.to_string()),
+                ("points", (pages * POINTS_PER_PAGE).to_string()),
+            ]
+        )?
     );
     caller.call_with_parse("outline", spec, &sent, |reply| {
-        let plan: Outline = json_reply(reply)?;
-        check_outline(&plan, ideas)?;
+        let mut plan: Outline = json_reply(reply)?;
+        check_outline(&plan, ideas, pages * POINTS_PER_PAGE)?;
+        split_apart(&mut plan, ideas);
         Ok(plan)
     })
 }
 
-fn check_outline(plan: &Outline, ideas: &[Idea]) -> Result<()> {
+fn check_outline(plan: &Outline, ideas: &[Idea], most: usize) -> Result<()> {
     let weight: HashMap<&str, &str> = ideas
         .iter()
         .map(|i| (i.id.as_str(), i.weight.as_str()))
@@ -577,11 +599,10 @@ fn check_outline(plan: &Outline, ideas: &[Idea]) -> Result<()> {
         "these ids are in no point and not dropped: {}",
         list(missing)
     );
-    let merged = merged_core(plan, &weight);
+    let points = plan.sections.iter().map(|s| s.points.len()).sum::<usize>();
     ensure!(
-        merged.is_empty(),
-        "these points merge core ideas from the same stretch, which are distinct by construction; give each its own point: {}",
-        merged.join("; ")
+        points <= most,
+        "{points} points will not fit the pages; gather related ideas, across chapters too, into at most {most} points"
     );
     ensure!(
         unknown.is_empty(),
@@ -606,21 +627,53 @@ fn check_outline(plan: &Outline, ideas: &[Idea]) -> Result<()> {
     Ok(())
 }
 
-fn merged_core(plan: &Outline, weight: &HashMap<&str, &str>) -> Vec<String> {
-    plan.sections
-        .iter()
-        .flat_map(|s| &s.points)
-        .filter_map(|point| {
-            let mut stretches: Vec<&str> = point
-                .ids
+fn split_apart(plan: &mut Outline, ideas: &[Idea]) {
+    let by_id: HashMap<&str, &Idea> = ideas.iter().map(|i| (i.id.as_str(), i)).collect();
+    for section in &mut plan.sections {
+        section.points = std::mem::take(&mut section.points)
+            .into_iter()
+            .flat_map(|point| split_point(point, &by_id))
+            .collect();
+    }
+}
+
+fn position(id: &str) -> Option<(u32, u32)> {
+    let (s, k) = id.split_once('.')?;
+    Some((s.parse().ok()?, k.parse().ok()?))
+}
+
+fn split_point(point: Point, by_id: &HashMap<&str, &Idea>) -> Vec<Point> {
+    let core = |id: &String| by_id.get(id.as_str()).is_some_and(|i| i.weight == "core");
+    let (mut cores, rest): (Vec<String>, Vec<String>) = point.ids.into_iter().partition(core);
+    cores.sort_by_key(|id| position(id));
+    let mut groups: Vec<Vec<String>> = vec![rest];
+    for id in cores {
+        let at = position(&id);
+        let fits = |group: &Vec<String>| {
+            group
                 .iter()
-                .filter(|id| weight.get(id.as_str()) == Some(&"core"))
-                .filter_map(|id| id.split('.').next())
-                .collect();
-            let all = stretches.len();
-            stretches.sort_unstable();
-            stretches.dedup();
-            (stretches.len() < all).then(|| point.ids.join(", "))
+                .filter(|m| core(m))
+                .all(|m| match (position(m), at) {
+                    (Some((s, k)), Some((t, j))) => s != t || j.abs_diff(k) <= MERGE_GAP,
+                    _ => true,
+                })
+        };
+        match groups.iter_mut().find(|g| fits(g)) {
+            Some(group) => group.push(id),
+            None => groups.push(vec![id]),
+        }
+    }
+    groups
+        .into_iter()
+        .enumerate()
+        .map(|(n, ids)| Point {
+            gist: match n {
+                0 => point.gist.clone(),
+                _ => by_id
+                    .get(ids[0].as_str())
+                    .map_or_else(String::new, |i| i.claim.clone()),
+            },
+            ids,
         })
         .collect()
 }
@@ -662,11 +715,10 @@ fn write_digest(
     spec: &ModelSpec,
     record: &Record,
     (brief, points): &(String, usize),
-    pages: usize,
+    (pages, most): (usize, usize),
     book: &Index,
 ) -> Result<String> {
     let words = pages * WORDS_PER_PAGE;
-    let most = (pages * 13 / 10).min(MAX_PAGES);
     let sent = format!(
         "{}\n\n<outline>\n{brief}\n</outline>\n\n{}",
         book_tag(record),
@@ -717,7 +769,7 @@ fn check_digest(reply: &str, points: usize, words: usize, book: &Index) -> Resul
                 .or_else(|| c.get(2))
                 .map(|m| m.as_str().to_string())
         })
-        .filter(|q| words_of(q).len() >= CHECKED_QUOTE_WORDS && book.score(q) < QUOTE_MATCH)
+        .filter(|q| words_of(q).len() >= CHECKED_QUOTE_WORDS && !book.quotes(q))
         .collect();
     ensure!(
         invented.is_empty(),
@@ -785,7 +837,7 @@ fn markup(event: Event) -> String {
         Event::End(TagEnd::List(_)) => ")\n\n".into(),
         Event::Start(Tag::Item) => "[".into(),
         Event::End(TagEnd::Item) => "],".into(),
-        Event::Text(t) => escape_markup(&t),
+        Event::Text(t) => escape_markup(&t).replace("\\\"", "\"").replace("\\'", "'"),
         Event::Code(t) => format!("#raw({})", string_literal(&t)),
         Event::SoftBreak => " ".into(),
         Event::HardBreak => "#linebreak()".into(),
@@ -807,6 +859,13 @@ mod tests {
                 "the hotel only cared about its own wants, so talking about mine was useless"
             ) < QUOTE_MATCH
         );
+    }
+
+    #[test]
+    fn an_elided_quote_passes_when_each_fragment_is_in_the_book() {
+        let book = Index::new("Pairs provide a primitive glue that we can use to construct compound data objects, and in fact the single compound-data primitive pair is the only glue we need.");
+        assert!(book.quotes("Pairs provide a primitive glue that we can use \u{2026} the single compound-data primitive pair is the only glue we need"));
+        assert!(!book.quotes("the single compound-data primitive pair, implemented as a list, is all the structure a program will ever need"));
     }
 
     #[test]
@@ -845,35 +904,45 @@ mod tests {
                 reason: "r".into(),
             }],
         };
-        assert!(check_outline(&plan("1.2"), &ideas).is_ok());
-        let err = check_outline(&plan("2.1"), &ideas).unwrap_err().to_string();
+        assert!(check_outline(&plan("1.2"), &ideas, 99).is_ok());
+        let err = check_outline(&plan("2.1"), &ideas, 99)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("core ideas were dropped"), "{err}");
     }
 
     #[test]
-    fn two_core_ideas_of_one_stretch_never_share_a_point() {
-        let weight: HashMap<&str, &str> = [
-            ("1.1", "core"),
-            ("1.2", "core"),
-            ("2.1", "core"),
-            ("1.3", "supporting"),
-        ]
-        .into();
-        let plan = |ids: &[&str]| Outline {
-            thesis: "t".into(),
-            sections: vec![Section {
-                heading: "h".into(),
-                points: vec![Point {
-                    ids: ids.iter().map(|s| (*s).into()).collect(),
-                    gist: "g".into(),
-                }],
-            }],
-            dropped: vec![],
+    fn core_ideas_apart_in_one_stretch_are_split_into_their_own_points() {
+        let idea = |id: &str, weight: &str| Idea {
+            id: id.into(),
+            claim: format!("claim {id}"),
+            explanation: String::new(),
+            example: String::new(),
+            quote: String::new(),
+            weight: weight.into(),
         };
-        assert!(merged_core(&plan(&["1.1", "2.1", "1.3"]), &weight).is_empty());
+        let ideas = [
+            idea("1.1", "core"),
+            idea("1.2", "core"),
+            idea("1.3", "supporting"),
+            idea("1.9", "core"),
+            idea("2.1", "core"),
+        ];
+        let by_id: HashMap<&str, &Idea> = ideas.iter().map(|i| (i.id.as_str(), i)).collect();
+        let point = |ids: &[&str]| Point {
+            ids: ids.iter().map(|s| (*s).into()).collect(),
+            gist: "g".into(),
+        };
         assert_eq!(
-            merged_core(&plan(&["1.1", "1.2"]), &weight),
-            vec!["1.1, 1.2"]
+            split_point(point(&["1.1", "1.2", "2.1", "1.3"]), &by_id).len(),
+            1
+        );
+        let parts = split_point(point(&["1.9", "1.1", "1.3"]), &by_id);
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[0].ids, vec!["1.3", "1.1"]);
+        assert_eq!(
+            (parts[1].ids.clone(), parts[1].gist.as_str()),
+            (vec!["1.9".to_string()], "claim 1.9")
         );
     }
 
@@ -896,5 +965,7 @@ mod tests {
             "{out}"
         );
         assert!(out.contains("```\n(define x 1)\n```"), "{out}");
+        let quoted = typst_markup("He said \"go\" and it's done.");
+        assert!(quoted.contains("\"go\" and it's"), "{quoted}");
     }
 }

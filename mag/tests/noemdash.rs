@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-const DETECTION: [&str; 5] = [
+const DETECTION: [&str; 6] = [
+    "src/book.rs",
     "src/capture.rs",
     "src/modelcard.rs",
     "src/produce.rs",
