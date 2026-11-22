@@ -35,7 +35,7 @@
     margin: (top: 17mm, bottom: 19mm, inside: 17mm, outside: 15mm),
     footer: folio,
   )
-  set text(font: SERIF, size: 10.75pt, fill: INK, lang: "en", hyphenate: true, number-type: "old-style")
+  set text(font: SERIF, size: 10.75pt, fill: INK, lang: "en", hyphenate: true, number-type: "old-style", number-width: "proportional", costs: (runt: 3000%, widow: 200%, orphan: 200%))
   set par(justify: true, leading: 0.6em, spacing: 0.6em, first-line-indent: 1.2em)
   show heading.where(level: 1): it => block(below: 6mm, text(size: 16pt, weight: 600, it.body))
   show heading.where(level: 2): it => block(above: 7mm, below: 3mm, sticky: true, text(size: 12.5pt, weight: 600, fill: RUBRIC, hyphenate: false, it.body))
@@ -127,8 +127,8 @@
     header: book-header(title),
     footer: book-footer,
   )
-  set text(font: SERIF, size: size, fill: INK, lang: "en", hyphenate: true, number-type: "old-style")
-  set par(justify: true, leading: 0.62em, spacing: 0.62em, first-line-indent: 1.2em)
+  set text(font: SERIF, size: size, fill: INK, lang: "en", hyphenate: true, number-type: "old-style", number-width: "proportional", costs: (runt: 3000%, widow: 200%, orphan: 200%))
+  set par(justify: true, leading: 0.62em, spacing: 0.62em, first-line-indent: 1.2em, justification-limits: (tracking: (min: -0.012em, max: 0.012em)))
   show heading.where(level: 2): it => block(width: 100%, above: 9mm, below: 4.5mm, sticky: true, align(center, {
     set par(justify: false, leading: 0.5em)
     fleuron(accent, size: 9pt, glyph: "\u{2767}")
@@ -138,9 +138,12 @@
   show heading.where(level: 3): it => block(above: 5mm, below: 2mm, sticky: true, text(style: "italic", it.body))
   show raw.where(block: true): it => block(width: 100%, inset: 3mm, radius: 2pt, fill: PALE, breakable: true, text(font: "Geist Mono", size: 7.5pt, it))
   show raw.where(block: false): set text(font: "Geist Mono", size: 0.85em)
-  show quote.where(block: true): it => pad(left: 1.4em, right: 1em, top: 1mm, bottom: 1mm, text(style: "italic", it.body))
+  show quote.where(block: true): it => block(above: 4mm, below: 4mm, breakable: false, inset: (left: 4mm, right: 6mm, y: 1mm), stroke: (left: 1.2pt + accent), {
+    set par(first-line-indent: 0pt, justify: false)
+    text(size: 1.05em, style: "italic", fill: ink, it.body)
+  })
   set list(indent: 0.6em, spacing: 0.55em, marker: text(fill: accent, "\u{2022}"))
-  set enum(indent: 0.6em, spacing: 0.55em)
+  set enum(indent: 0.6em, spacing: 0.55em, numbering: n => text(fill: accent, weight: 600, str(n) + "."))
   book-front(title, author, colophon, ink, accent)
   in-body.update(true)
   body
@@ -154,7 +157,6 @@
     rest
   })))
   v(2mm)
-  align(center, text(fill: accent, size: 9pt, tracking: 0.6em, "\u{2042}"))
 }
 
 #let blank-pages(n, accent) = {
