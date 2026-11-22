@@ -1147,6 +1147,95 @@ fn cover_preview(root: &Path, edition: &Edition, key: &str, art: &Path) -> Resul
     Ok((out, true))
 }
 
+fn card_sources(edition_dir: &Path) -> Result<HashMap<String, PathBuf>> {
+    let spec: EditionFile =
+        parse_yaml(&read(&edition_dir.join("edition.yaml"))?).context("parsing edition.yaml")?;
+    let ids: Vec<String> = spec
+        .articles
+        .iter()
+        .filter(|a| !a.cards.is_empty())
+        .map(|a| a.id.clone())
+        .collect();
+    let run = crate::render::latest_complete_run(edition_dir, &ids, false)
+        .context("no run holds every card article; run mag produce first")?;
+    Ok(spec
+        .articles
+        .iter()
+        .flat_map(|a| {
+            let run = &run;
+            (0..a.cards.len()).map(move |n| {
+                (
+                    crate::modelcard::card_stem(&a.id, n),
+                    run.join("articles")
+                        .join(&a.id)
+                        .join(crate::modelcard::card_file(n)),
+                )
+            })
+        })
+        .collect())
+}
+
+fn card_preview(card_path: &Path, art: &Path, root: &Path) -> Result<PathBuf> {
+    let text = read(card_path)?;
+    let bytes = fs::read(art).with_context(|| format!("reading {}", art.display()))?;
+    let digest = crate::util::sha256_hex([text.as_bytes(), &bytes].concat());
+    let stem = art
+        .file_stem()
+        .context("a candidate has a file name")?
+        .to_string_lossy();
+    let dir = art
+        .parent()
+        .context("a candidate sits in a round")?
+        .join("previews");
+    let out = dir.join(format!("{stem}-{}.png", &digest[..16]));
+    if !out.is_file() {
+        let card: crate::modelcard::Card = serde_json::from_str(&text)
+            .with_context(|| format!("parsing {}", card_path.display()))?;
+        let png =
+            crate::typeset::template::card_png(&card, art, None, &[root.to_path_buf()], 110.0)?;
+        fs::create_dir_all(&dir)?;
+        write_atomic(&out, png)?;
+    }
+    Ok(out)
+}
+
+fn card_previews(edition_dir: &Path, items: &[ShowcaseItem]) -> HashMap<String, Preview> {
+    let cards: Vec<&ShowcaseItem> = items
+        .iter()
+        .filter(|item| item.purpose == Some(ArtPurpose::Card))
+        .collect();
+    if cards.is_empty() {
+        return HashMap::new();
+    }
+    let rounds = edition_dir.join("art").join("rounds");
+    let root = std::path::absolute(edition_dir)
+        .ok()
+        .and_then(|dir| dir.ancestors().nth(2).map(Path::to_path_buf))
+        .unwrap_or_default();
+    let sources = card_sources(edition_dir).map_err(|e| format!("{e:#}"));
+    let results = parallel(&cards, |item| {
+        let sources = sources.as_ref().map_err(|e| anyhow!("{e}"))?;
+        let stem = item.article_id.as_deref().unwrap_or_default();
+        let card = sources
+            .get(stem)
+            .with_context(|| format!("no cards: row in edition.yaml makes card {stem}"))?;
+        card_preview(card, &rounds.join(&item.round).join(&item.file), &root)
+    });
+    cards
+        .iter()
+        .zip(results)
+        .map(|(item, result)| {
+            let preview = result
+                .map(|path| {
+                    let name = path.file_name().unwrap_or_default().to_string_lossy();
+                    format!("rounds/{}/previews/{name}", item.round)
+                })
+                .map_err(|e| format!("{e:#}"));
+            (format!("{}/{}", item.round, item.file), preview)
+        })
+        .collect()
+}
+
 fn cover_previews(edition_dir: &Path, items: &[ShowcaseItem]) -> HashMap<String, Preview> {
     let covers: Vec<&ShowcaseItem> = items
         .iter()
@@ -1478,7 +1567,8 @@ fn showcase_sections(
 fn write_showcase(edition_dir: &Path, edition_label: &str) -> Result<PathBuf> {
     let selected = showcase_selected(edition_dir)?;
     let items = collect_showcase_items(edition_dir, &selected)?;
-    let previews = cover_previews(edition_dir, &items);
+    let mut previews = cover_previews(edition_dir, &items);
+    previews.extend(card_previews(edition_dir, &items));
     let label = escape_html(edition_label);
     let id = escape_html(
         &edition_dir

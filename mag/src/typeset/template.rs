@@ -51,41 +51,52 @@ pub fn card_images(
             })
     });
     for (article, stem, spread, art) in spreads {
-        let labs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs");
-        let source = format!(
-            "#import \"/template.typ\": *\n#model-card-image(card: {}, art: {}, labs: {}, date: {})\n",
-            crate::typeset::cover::literal(&serde_json::to_value(&spread.card)?),
-            crate::typeset::content::string_literal(&std::path::absolute(art)?.to_string_lossy()),
-            crate::typeset::content::string_literal(&labs.to_string_lossy()),
-            article.dateline.as_deref().map_or("none".to_string(), crate::typeset::content::string_literal),
-        );
-        let tree = Tree {
-            files: vec![crate::typeset::content::File {
-                path: "main.typ".to_string(),
-                source,
-            }],
-            ..Tree::default()
-        };
-        let document = document(
-            &Sources::new(&tree, BOOK_TEMPLATE_TYP, "#include \"/main.typ\"\n")?.allowing(roots)?,
-        )?;
-        let page = document
-            .pages()
-            .first()
-            .context("the card image has no page")?;
-        let pixmap = typst_render::render(
-            page,
-            &typst_render::RenderOptions {
-                pixel_per_pt: typst::utils::Scalar::new(300.0 / 72.0),
-                render_bleed: false,
-            },
-        );
+        let png = card_png(&spread.card, art, article.dateline.as_deref(), roots, 300.0)?;
         std::fs::create_dir_all(out_dir)?;
         let path = out_dir.join(format!("{stem}.png"));
-        std::fs::write(&path, pixmap.encode_png()?)?;
+        std::fs::write(&path, png)?;
         written.push(path);
     }
     Ok(written)
+}
+
+pub fn card_png(
+    card: &crate::modelcard::Card,
+    art: &std::path::Path,
+    date: Option<&str>,
+    roots: &[PathBuf],
+    ppi: f32,
+) -> Result<Vec<u8>> {
+    let labs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/labs");
+    let source = format!(
+        "#import \"/template.typ\": *\n#model-card-image(card: {}, art: {}, labs: {}, date: {})\n",
+        crate::typeset::cover::literal(&serde_json::to_value(card)?),
+        crate::typeset::content::string_literal(&std::path::absolute(art)?.to_string_lossy()),
+        crate::typeset::content::string_literal(&labs.to_string_lossy()),
+        date.map_or("none".to_string(), crate::typeset::content::string_literal),
+    );
+    let tree = Tree {
+        files: vec![crate::typeset::content::File {
+            path: "main.typ".to_string(),
+            source,
+        }],
+        ..Tree::default()
+    };
+    let document = document(
+        &Sources::new(&tree, BOOK_TEMPLATE_TYP, "#include \"/main.typ\"\n")?.allowing(roots)?,
+    )?;
+    let page = document
+        .pages()
+        .first()
+        .context("the card image has no page")?;
+    let pixmap = typst_render::render(
+        page,
+        &typst_render::RenderOptions {
+            pixel_per_pt: typst::utils::Scalar::new(f64::from(ppi) / 72.0),
+            render_bleed: false,
+        },
+    );
+    Ok(pixmap.encode_png()?)
 }
 
 pub fn composed(
