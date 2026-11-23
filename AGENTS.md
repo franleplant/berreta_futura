@@ -216,10 +216,12 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   a launch becomes a `model_card` row, `--mode article` overrides. Card art is its own slot:
   the card's art briefs come after the card text from the seed prompts in
   `prompts/model-card-art/` (one call per seed file, in parallel, each writing four briefs from
-  the card and the launch post, plus the shared `rules.md`). The one seed, `1-figure.md`, is the
-  first recipe Fran liked best: one serene figure with a face, two arms and two legs, centred,
-  holding or surrounded by three or four objects the post shows the model making or doing, one
-  huge simple shape behind it (sun disk, ringed planet, orbit) over one horizon, three colours.
+  the card and the launch post, plus the shared `rules.md`). The one seed, `1-figure.md`, keeps the
+  recipe Fran liked (one figure with a face, two arms and two legs, objects the post shows the
+  model making or doing, one huge simple shape) but the four briefs are four shots, gated in
+  order: "Close portrait:", "Wide vista:", "Workshop interior:", "Low angle:", with a different
+  figure (human, android, suited pilot, at most one "made of" a material, no statues), big
+  shape, light, and palette each, because one centred serene figure four times looked the same.
   Every image prompt is the 1970s science-fiction paperback airbrush style line, then the brief,
   then a full-bleed no-text line (`modelcard::art_prompt`). `mag cards write` keeps the source
   ids in `cards/<slug>/sources.txt` so `--rebrief` reads the post again. `mag art NNN --only

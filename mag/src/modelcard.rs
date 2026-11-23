@@ -423,8 +423,35 @@ fn date_on_page(date: &str, page: &str) -> bool {
 static MANY_ARMED: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\b(?:many|multi|four|six|eight)[- ]armed\b").unwrap());
 
+const SHOTS: [&str; SEED_PROMPTS] = [
+    "Close portrait:",
+    "Wide vista:",
+    "Workshop interior:",
+    "Low angle:",
+];
+
+fn shot_errors(briefs: &[String]) -> Vec<String> {
+    let mut errs: Vec<String> = briefs
+        .iter()
+        .zip(SHOTS)
+        .enumerate()
+        .filter(|(_, (brief, shot))| !brief.starts_with(shot))
+        .map(|(i, (_, shot))| format!("prompt {} must open with {shot:?}", i + 1))
+        .collect();
+    let made_of = briefs.iter().filter(|b| b.contains("made of")).count();
+    if made_of > 1 {
+        errs.push(format!(
+            "{made_of} figures are \"made of\" a material; at most one"
+        ));
+    }
+    if briefs.iter().any(|b| b.to_lowercase().contains("statue")) {
+        errs.push("no statues".into());
+    }
+    errs
+}
+
 fn brief_errors(card: &Card, briefs: &[String]) -> Vec<String> {
-    let mut errs = Vec::new();
+    let mut errs = shot_errors(briefs);
     if briefs.len() != SEED_PROMPTS {
         errs.push(format!("write exactly {SEED_PROMPTS} prompts"));
     }
@@ -776,8 +803,17 @@ mod tests {
     #[test]
     fn each_seed_writes_four_prompts_free_of_names_and_extra_arms() {
         let c = card();
-        let ok = r#"{"prompts": ["a brass cartographer of smoked glass.", "a quartz sentinel.", "a walnut archivist.", "a porcelain engineer."]}"#;
+        let ok = r#"{"prompts": ["Close portrait: a diver made of smoked glass.", "Wide vista: a tiny pilot.", "Workshop interior: an android at a lathe.", "Low angle: a welder in orange."]}"#;
         assert_eq!(parse_briefs(ok, &c).unwrap().len(), 4);
+        let same = ok
+            .replace("Wide vista", "Close portrait")
+            .replace("in orange", "made of quartz");
+        let err = parse_briefs(&same, &c).unwrap_err().to_string();
+        assert!(
+            err.contains("prompt 2 must open with \"Wide vista:\""),
+            "{err}"
+        );
+        assert!(err.contains("at most one"), "{err}");
         assert!(parse_briefs(r#"{"prompts": ["a quartz stag."]}"#, &c).is_err());
         let armed = r#"{"prompts": ["a six-armed librarian of brass.", "a quartz stag."]}"#;
         assert!(parse_briefs(armed, &c)
