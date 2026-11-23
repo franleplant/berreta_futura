@@ -78,7 +78,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   pipeline steps; nothing in `mag` calls them.
 - `mag cards` makes standalone model cards outside any issue, for sharing and printing:
   `mag cards write <slug> --source <id>...` writes `cards/<slug>/card.json` through the same
-  gated card writer produce uses; `mag cards art <slug>` generates one candidate per art brief
+  gated card writer produce uses (`--name <model>` picks one model of a multi-model post); `mag cards art <slug>` generates one candidate per art brief
   into `cards/<slug>/candidates/` (gitignored; earlier ones move to `earlier-<time>/`) plus a
   labelled `preview.pdf` with each set in the card; `--rebrief` rewrites only the art briefs
   (every other field stays) before generating; `--pick <n-vN>` promotes one to `cards/<slug>/art.jpg`; `mag cards sheet <slug|card.json[:art]>...

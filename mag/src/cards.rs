@@ -36,6 +36,11 @@ enum CardsCmd {
         sources: Vec<String>,
         #[arg(long, default_value = "opus")]
         model: String,
+        #[arg(
+            long,
+            help = "The model this card is for, when the post launches more than one (default: its most capable)"
+        )]
+        name: Option<String>,
     },
     #[command(
         about = "Generate card art candidates for cards/<slug> (one per brief) and a preview sheet of each one set in the card; --pick promotes one to cards/<slug>/art.jpg"
@@ -90,7 +95,8 @@ pub fn run(args: &CardsArgs) -> Result<i32> {
             slug,
             sources,
             model,
-        } => write(slug, sources, model),
+            name,
+        } => write(slug, sources, model, name.as_deref()),
         CardsCmd::Art {
             slug,
             gen_cmd,
@@ -271,7 +277,7 @@ fn load(path: &Path) -> Result<Card> {
     serde_json::from_str(&read(path)?).with_context(|| format!("parsing {}", path.display()))
 }
 
-fn write(slug: &str, sources: &[String], model: &str) -> Result<i32> {
+fn write(slug: &str, sources: &[String], model: &str, name: Option<&str>) -> Result<i32> {
     let dir = card_dir(slug);
     std::fs::create_dir_all(&dir)?;
     write_atomic(dir.join("sources.txt"), sources.join("\n") + "\n")?;
@@ -282,7 +288,7 @@ fn write(slug: &str, sources: &[String], model: &str) -> Result<i32> {
         &format!("{slug} card"),
         &ModelSpec::parse(model)?,
         &text,
-        None,
+        name,
     )?;
     let path = dir.join("card.json");
     write_atomic(&path, serde_json::to_string_pretty(&card)? + "\n")?;

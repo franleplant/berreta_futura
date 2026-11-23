@@ -1,0 +1,67 @@
+{
+  "name": "Claude Mythos 5.2",
+  "model_id": "claude-mythos-5-2",
+  "lab": "Anthropic",
+  "cost": [
+    {
+      "label": "in",
+      "value": "$8"
+    },
+    {
+      "label": "cached",
+      "value": "$0.20"
+    },
+    {
+      "label": "out",
+      "value": "$40"
+    }
+  ],
+  "type_line": {
+    "kind": "Frontier Model",
+    "roles": [
+      "Coder",
+      "Scientist"
+    ]
+  },
+  "traits": [
+    "Same underlying model as Fable 5.2, without certain cyber or biology safeguards.",
+    "Communicates more clearly than past Mythos models.",
+    "Shows better judgment and calibration on the vulnerabilities it reports."
+  ],
+  "effort": [
+    "Low",
+    "Medium",
+    "High",
+    "Xhigh",
+    "Max"
+  ],
+  "advice": [
+    {
+      "key": "Use it for",
+      "value": "the most ambitious, open-ended technical work"
+    },
+    {
+      "key": "Start with",
+      "value": "Claude Opus 5.5 for most coding and knowledge tasks"
+    }
+  ],
+  "strength": "Finding and fixing software vulnerabilities",
+  "weakness": "Suspects it is being evaluated more than recent models",
+  "resistance": "Falls back to Opus 5 for some AI R&D topics",
+  "benchmark": {
+    "name": "Terminal-Bench-Science",
+    "score": "75.3",
+    "unit": "%"
+  },
+  "flavor": {
+    "quote": "Mythos 5.2 roughly doubled the vulnerability discovery metrics of Mythos 5.1 across respective scanning campaigns.",
+    "who": "Brian Grinstead, Mozilla"
+  },
+  "released": "2026-11-09",
+  "art_briefs": [
+    "a calm sentinel figure with a serene face, made of polished obsidian and brass filigree, kneeling beside a vast stone wall and pressing a glowing brass patch over a hairline crack, a lantern-lens in its other hand revealing tiny hidden fractures, a ring of sealed padlocks resting at its feet. Background: a giant pale sun disk rising over a still salt flat. Deep teal, brass gold and ivory palette.",
+    "a serene scientist figure made of frosted glass and soft copper wire, standing upright and cradling a luminous faceted protein shell built from many interlocking tiles, a coiled ribbon of folded protein drifting from one palm, a small glass orb holding a softly boiling miniature black hole floating beside its shoulder. Background: a giant ringed planet hanging low over a calm dark sea. Rose, deep indigo and pearl white palette.",
+    "a slender tinkerer figure made of matte ceramic and walnut wood, seated cross-legged on a floating workbench, assembling a handheld virtual-pet toy, a round voice-assistant hub and a small speakerphone from green circuit boards, a solved puzzle cube resting on one knee and a gently unscrewed bottle cap beside it. Background: a single glowing orbit ring circling a quiet pale-sky horizon. Sage green, terracotta and cream palette.",
+    "a tall contemplative architect figure made of white marble veined with silver light, standing with one arm raised, guiding a long chain of interlocking stone blocks into a perfect arch, a small laptop glowing with a soft blank boot light at its feet, and two glass rooms held apart by a shining wall in its open hand. Background: a vast halo of tiny stars above a dark plain. Midnight blue, silver and amber palette."
+  ]
+}

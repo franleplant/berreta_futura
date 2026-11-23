@@ -1,0 +1,8 @@
+id: claude-mythos-5-2-cfeb61f3
+title: 'Claude Mythos 5.2'
+author: 'Claude Platform Docs'
+url: https://platform.claude.com/docs/en/models/mythos-5-2/overview
+site: 'Claude Platform Docs'
+captured_at: '2026-11-23T19:35:47Z'
+tags: []
+synopsis: 'Claude Mythos 5.2 is a model available only to organizations verified through Anthropic''s verification programs, with the same specifications and pricing as Claude Fable 5.2 (1M context, 128K max output, $8 / $40 per MTok).'
