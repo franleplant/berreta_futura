@@ -1136,18 +1136,16 @@ fn print(slug: &str, paper_mm: f64) -> Result<i32> {
         string_literal(&style.ink),
         string_literal(&style.accent)
     );
+    let ink = string_literal(&style.ink);
     let interior = |size: f64, pad: usize| {
         compile(format!(
-            "#show: book.with(title: {}, author: {}, colophon: [{}], {colors}, size: {size}pt)\n\n#opener([{}], rgb({}), rgb({}), [{}])\n\n{}\n\n#blank-pages({pad}, rgb({}))\n",
+            "#show: book.with(title: {}, author: {}, colophon: [{}], ink: rgb({ink}), accent: rgb({ink}), size: {size}pt)\n\n#opener([{}], rgb({ink}), rgb({ink}), [{}])\n\n{}\n\n#blank-pages({pad}, rgb({ink}))\n",
             string_literal(&record.title),
             string_literal(&record.author),
             colophon(&record),
             escape_markup(&words[..lead].join(" ")),
-            string_literal(&style.ink),
-            string_literal(&style.accent),
             typst_markup(&words[lead..].join(" ")).trim(),
             typst_markup(rest),
-            string_literal(&style.accent)
         ))
     };
     let pages_at = |size: f64| interior(size, 0).map(|d| d.pages().len());

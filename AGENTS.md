@@ -136,7 +136,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   that saves a page), `booklet-a4.pdf` (the interior only: one nested saddle signature through
   `impose`), `cover-a4.pdf` (back, spine from the leaf count, front, centred on
   A4 landscape with crop and fold marks for a 140 x 198 mm trim, the opener as
-  the back blurb), and `endpaper-a4.pdf` (a vector tiling). Colours and the
+  the back blurb), and `endpaper-a4.pdf` (a vector tiling). No page is ever fully blank: empty pages carry a short centred hairline, because blank pages break printing. The interior uses the `print:` ink alone. Colours and the
   motif (`lattice`, `peaks`) come from `print:` in record.yaml.
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.

@@ -76,6 +76,8 @@
   }
 }
 
+#let blank-mark(ink) = place(center + horizon, line(length: 14mm, stroke: 0.5pt + ink.transparentize(40%)))
+
 #let bare(body) = page(header: none, footer: none, {
   set par(first-line-indent: 0pt, justify: false)
   body
@@ -83,7 +85,7 @@
 
 #let book-front(title, author, colophon, ink, accent) = {
   bare(align(center, { v(30%); text(size: 12pt, tracking: 0.06em, fill: ink, title) }))
-  bare([])
+  bare(blank-mark(ink))
   bare(align(center, {
     v(18%)
     text(size: 7.5pt, fill: accent, tracking: 0.3em, upper("The ideas in"))
@@ -115,7 +117,7 @@
       ))
     }
   })
-  bare([])
+  bare(blank-mark(ink))
 }
 
 #let book(title: "", author: "", colophon: [], ink: INK, accent: RUBRIC, size: 10.75pt, body) = {
@@ -165,7 +167,7 @@
   in-body.update(false)
   for i in range(n) {
     pagebreak()
-    box()
+    blank-mark(accent)
   }
 }
 
