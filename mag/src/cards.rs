@@ -1,5 +1,8 @@
 use crate::caller::{write_atomic, Caller, ModelSpec};
+use crate::model::shared::read_spec;
+use crate::model::spec::CardRow;
 use crate::modelcard::{self, Card};
+use crate::render::{latest_complete_run, resolve_field};
 use crate::typeset::content::{string_literal, File, Tree};
 use crate::typeset::cover::literal;
 use crate::typeset::template::{self, BOOK_TEMPLATE_TYP};
@@ -58,13 +61,19 @@ enum CardsCmd {
     )]
     Sheet {
         #[arg(
-            required = true,
+            required_unless_present = "all",
             help = "<slug> or <card.json>, optionally :<art image> to override the art; a card may repeat"
         )]
         entries: Vec<String>,
         #[arg(
             long,
-            help = "Output PDF (default: output/cards/<first slug>-sheet.pdf)"
+            conflicts_with = "entries",
+            help = "Every card with picked art: edition cards by edition id, then cards/<slug>; a model on two cards prints once"
+        )]
+        all: bool,
+        #[arg(
+            long,
+            help = "Output PDF (default: output/cards/<first slug>-sheet.pdf, or output/cards/all-sheet.pdf)"
         )]
         out: Option<PathBuf>,
         #[arg(
@@ -100,25 +109,158 @@ pub fn run(args: &CardsArgs) -> Result<i32> {
         },
         CardsCmd::Sheet {
             entries,
+            all,
             out,
             labels,
         } => {
-            let first = entries[0].split(':').next().unwrap_or("cards");
-            let stem = Path::new(first)
-                .file_stem()
-                .map_or("cards".into(), |s| s.to_string_lossy());
+            let (cards, stem) = match all {
+                true => (every_card(Path::new("."))?, "all".to_string()),
+                false => (
+                    entries.iter().map(|e| entry(e)).collect::<Result<_>>()?,
+                    entries[0]
+                        .split(':')
+                        .next()
+                        .map_or("cards".into(), |first| {
+                            Path::new(first)
+                                .file_stem()
+                                .map_or("cards".into(), |s| s.to_string_lossy().into_owned())
+                        }),
+                ),
+            };
+            ensure!(!cards.is_empty(), "no card has picked art yet");
             let out = out
                 .clone()
                 .unwrap_or_else(|| PathBuf::from(format!("output/cards/{stem}-sheet.pdf")));
-            let cards = entries
-                .iter()
-                .map(|e| entry(e))
-                .collect::<Result<Vec<_>>>()?;
             sheet(&cards, &out, &site()?, *labels)?;
-            println!("sheet: {} ({} cards)", out.display(), cards.len());
+            println!(
+                "sheet: {} ({} cards, {} pages)",
+                out.display(),
+                cards.len(),
+                cards.len().div_ceil(3) * 2
+            );
+            println!("next: print it duplex, flip on the short edge, and trim at the crop marks");
             Ok(0)
         }
     }
+}
+
+struct Found {
+    from: String,
+    card: Card,
+    art: Option<PathBuf>,
+}
+
+fn every_card(root: &Path) -> Result<Vec<Entry>> {
+    let mut found = Vec::new();
+    for dir in dirs(&root.join("editions")) {
+        found.extend(edition_cards(root, &dir)?);
+    }
+    for dir in dirs(&root.join(CARDS_DIR)) {
+        found.extend(standalone_card(&dir)?);
+    }
+    let key = |f: &Found| {
+        f.card
+            .model_id
+            .clone()
+            .unwrap_or_else(|| f.card.name.clone())
+            .to_lowercase()
+    };
+    let winner = |f: &Found| {
+        let same = |g: &&Found| key(g) == key(f);
+        let pick = found.iter().filter(same).find(|g| g.art.is_some());
+        pick.or_else(|| found.iter().find(same))
+            .map(|g| g.from.as_str())
+    };
+    let mut entries = Vec::new();
+    for f in &found {
+        match (winner(f).filter(|w| *w != f.from), &f.art) {
+            (Some(w), _) => println!("  dup {}: {} prints from {w}", f.from, f.card.name),
+            (None, None) => println!("  skip {}: {} has no picked art", f.from, f.card.name),
+            (None, Some(art)) => {
+                println!("  card {}: {}", f.from, f.card.name);
+                entries.push(Entry {
+                    card: f.card.clone(),
+                    art: std::path::absolute(art)?,
+                });
+            }
+        }
+    }
+    Ok(entries)
+}
+
+fn dirs(parent: &Path) -> Vec<PathBuf> {
+    let Ok(read) = std::fs::read_dir(parent) else {
+        return Vec::new();
+    };
+    let mut dirs: Vec<PathBuf> = read
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.is_dir())
+        .collect();
+    dirs.sort();
+    dirs
+}
+
+#[derive(serde::Deserialize)]
+struct CardsOnly {
+    editorial: Option<serde_norway::Value>,
+    #[serde(default)]
+    articles: Vec<ArticleCards>,
+}
+
+#[derive(serde::Deserialize)]
+struct ArticleCards {
+    id: String,
+    #[serde(default)]
+    cards: Vec<CardRow>,
+}
+
+fn edition_cards(root: &Path, dir: &Path) -> Result<Vec<Found>> {
+    let yaml = dir.join("edition.yaml");
+    if !yaml.is_file() {
+        return Ok(Vec::new());
+    }
+    let spec: CardsOnly = read_spec(&yaml)?;
+    let name = dir.file_name().unwrap_or_default().to_string_lossy();
+    let rel = Path::new("editions").join(name.as_ref());
+    let ids: Vec<String> = spec.articles.iter().map(|a| a.id.clone()).collect();
+    let run = latest_complete_run(dir, &ids, spec.editorial.is_some());
+    let resolve = |raw: &str| root.join(resolve_field(raw, &rel));
+    let mut found = Vec::new();
+    for article in &spec.articles {
+        for (n, row) in article.cards.iter().enumerate() {
+            let json = run.as_ref().map_or_else(
+                || resolve(&row.path),
+                |run| {
+                    run.join("articles")
+                        .join(&article.id)
+                        .join(modelcard::card_file(n))
+                },
+            );
+            let art = row
+                .art_path
+                .as_deref()
+                .filter(|p| !p.trim().is_empty() && *p != "TODO");
+            found.push(Found {
+                from: format!("{name} {}", modelcard::card_stem(&article.id, n)),
+                card: load(&json)?,
+                art: art.map(resolve).filter(|p| p.is_file()),
+            });
+        }
+    }
+    Ok(found)
+}
+
+fn standalone_card(dir: &Path) -> Result<Option<Found>> {
+    let json = dir.join("card.json");
+    if !json.is_file() {
+        return Ok(None);
+    }
+    let name = dir.file_name().unwrap_or_default().to_string_lossy();
+    Ok(Some(Found {
+        from: format!("{CARDS_DIR}/{name}"),
+        card: load(&json)?,
+        art: Some(dir.join("art.jpg")).filter(|p| p.is_file()),
+    }))
 }
 
 fn card_dir(slug: &str) -> PathBuf {
@@ -391,6 +533,51 @@ fn sheet(entries: &[Entry], out: &Path, site: &str, labels: bool) -> Result<()> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn all_takes_edition_then_standalone_cards_with_art_once_per_model() {
+        let root = std::env::temp_dir().join(format!("mag-cards-all-{}", std::process::id()));
+        let put = |path: &str, text: &str| {
+            let path = root.join(path);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        };
+        let card = |name: &str, id: &str| {
+            format!(
+                r#"{{"name": "{name}", "model_id": "{id}", "lab": "Anthropic", "cost": [], "type_line": {{"kind": "Frontier Model", "roles": []}}, "traits": [], "effort": null, "advice": [], "strength": null, "weakness": null, "resistance": null, "benchmark": null, "flavor": null, "released": null}}"#
+            )
+        };
+        put("editions/900/edition.yaml", "articles:\n- id: launch\n  cards:\n  - path: editions/900/articles/launch.card.json\n    art_path: editions/900/art/picks/one.jpg\n  - path: editions/900/articles/launch.card-2.json\n    art_path: TODO\n");
+        put("editions/900/run-1/articles/launch/final.md", "text\n");
+        put(
+            "editions/900/run-1/articles/launch/card.json",
+            &card("Ed One", "ed-one"),
+        );
+        put(
+            "editions/900/run-1/articles/launch/card-2.json",
+            &card("Twin", "twin"),
+        );
+        put("editions/900/art/picks/one.jpg", "jpg");
+        put("cards/a-twin/card.json", &card("Twin", "twin"));
+        put("cards/a-twin/art.jpg", "jpg");
+        put("cards/b-bare/card.json", &card("Bare", "bare"));
+        put("cards/c-again/card.json", &card("Ed One", "ED-ONE"));
+        put("cards/c-again/art.jpg", "jpg");
+        let picked: Vec<(String, PathBuf)> = every_card(&root)
+            .unwrap()
+            .into_iter()
+            .map(|e| (e.card.name, e.art))
+            .collect();
+        assert_eq!(
+            picked,
+            vec![
+                ("Ed One".into(), root.join("editions/900/art/picks/one.jpg")),
+                ("Twin".into(), root.join("cards/a-twin/art.jpg")),
+            ],
+            "the edition card first, the art-less edition twin replaced by its standalone, the art-less card skipped, the later duplicate dropped"
+        );
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn four_cards_print_as_two_sheets_each_followed_by_its_pattern_back() {

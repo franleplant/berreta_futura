@@ -155,7 +155,7 @@ fn run_is_complete(run: &Path, article_ids: &[String], needs_editorial: bool) ->
             .all(|id| run.join("articles").join(id).join("final.md").exists())
 }
 
-fn resolve_field(raw: &str, manifest_dir: &Path) -> PathBuf {
+pub(crate) fn resolve_field(raw: &str, manifest_dir: &Path) -> PathBuf {
     if raw.split('/').next() == Some("editions") {
         PathBuf::from(raw)
     } else {
