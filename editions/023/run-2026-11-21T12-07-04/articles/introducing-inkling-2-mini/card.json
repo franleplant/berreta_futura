@@ -1,0 +1,62 @@
+{
+  "name": "Inkling 2 Mini",
+  "model_id": "thinkingmachines/Inkling-2-Mini",
+  "lab": "Thinking Machines Lab",
+  "cost": [
+    {
+      "label": "in",
+      "value": "$0.15"
+    },
+    {
+      "label": "cached",
+      "value": "$0.015"
+    },
+    {
+      "label": "out",
+      "value": "$0.50"
+    }
+  ],
+  "type_line": {
+    "kind": "Open-weight Model",
+    "roles": [
+      "Coder",
+      "Agent"
+    ]
+  },
+  "traits": [
+    "Looped transformer that runs its middle layers three times for every token.",
+    "Mixture-of-Experts model with 26.4B total parameters, 3.4B active.",
+    "Trained and deployed natively in NVFP4, with the last four layers in MXFP8."
+  ],
+  "effort": null,
+  "advice": [
+    {
+      "key": "Use it for",
+      "value": "inference where speed is paramount, or running on local hardware"
+    },
+    {
+      "key": "Tip",
+      "value": "set limits on output tokens and agent turns"
+    }
+  ],
+  "strength": "Long-horizon agentic work",
+  "weakness": "Multi-turn chat and many-constraint instructions",
+  "resistance": "Refuses many malicious side tasks in agentic tests",
+  "benchmark": {
+    "name": "DeepSWE v1.1",
+    "score": "48.2",
+    "unit": "%"
+  },
+  "flavor": null,
+  "released": "2026-11-20",
+  "art_briefs": [
+    "A slender tide giantess wades a shallow violet sea at dawn, her body carved from translucent sea glass with a tide circling inside her chest three times. On one open palm she carries a tiny lit harbor town, its boats moored; with the other hand she gently turns away a dark iron ship. Palette: violet, seafoam, coral pink, pale gold. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A regal quicksilver stag races a spiral road that winds three times around a desert mesa, leaping toward open sky. Its antlers are fine copper wire strung with tiny glowing beads, a small brass pack on its back for the long road. Three faint afterimages trace each loop; a distant lighthouse waits ahead. Palette: tangerine, chrome silver, deep teal, dusk magenta. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A tall, lean courier in a silver pressure suit strides along a spiral causeway that loops three times around a red mesa, a small glowing core cradled against her chest, cape streaming behind her. Far below, a quiet desert city lights up at dusk; ahead, the road climbs toward a distant beacon tower. Palette of tangerine, deep violet, and polished chrome. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A great snow leopard sculpted of living jade stands on a moonlit ridge, three thin rings of pale light circling its head like slow halos. Before it, a hooded stranger offers a black dagger; the leopard turns its proud head away, guarding a small domed observatory glowing behind it. Palette of teal, cream, and soft magenta under a starfield. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A towering bronze-skinned titaness strides the third lap of a spiral road wound around a colossal mountain, a glowing ember-lamp cradled against her chest. Her footprints from the earlier laps still smoke on the terraces below, and dawn breaks over a vast canyon plain. Palette of burnt orange, ochre, and deep violet. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A serene giant of pale blue crystal crosses a frozen sea toward a distant beacon. Without breaking stride, he raises one open palm to turn aside a black blade offered by shadowy hands reaching from the storm clouds, while the ice cracks in a long trail behind him. Palette of glacier blue, silver, and magenta dusk. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A slender giant of living quicksilver stands waist-deep in a still black lake at dusk, compact and composed, her surface folding back into itself in three slow rings around her chest. Her face is calm, watchful, gaze fixed on a far horizon. Cold rim light traces her shoulders. Palette: graphite, chrome silver, deep teal, one thin line of violet sky. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A small, dense titan of dark volcanic glass sits upright on a basalt ledge above a night desert, broad-shouldered and patient, hands resting on its knees. Thin seams of ember light pulse beneath its skin, steady and banked, never flaring. A low amber moon lights one side of its face. Palette: obsidian, indigo, banked amber, ash grey. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain."
+  ]
+}

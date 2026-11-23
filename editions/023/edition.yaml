@@ -1,0 +1,867 @@
+# rejected title: Fine Print on the Box
+# rejected back_text: Riddle: what gets smarter every spring, cheaper every summer, and never once mentions the door it couldn't open?
+# Edition 23 spec, scaffolded by `mag produce` from plan.yaml.
+# Title and cover copy are drafted by produce for the editor to revise; TODO marks figure and art picks.
+# Art paths are filled by picking in art/showcase.html after `mag art 023`.
+# Article order here is the reading order; reorder freely.
+id: '023'
+issue_number: 23
+# why this title: Pictures the work that runs while nobody is awake (factories merging around the clock, bots closing the books overnight, agents sleeping until a heartbeat wakes them, swarms told "I am stepping away for 8hrs"), and holds every piece that asks how you trust it in the morning: Raft proofs, simulated clocks, evals, faster lint and CI, compressors that learn as they run, and models whose reasoning gets harder to read.
+# other title directions:
+#   - Lights-Out Factory (a plant that runs with the lights off; fits the factories, the accounting bots, the swarms, and the CI and verification that must hold up with nobody watching)
+#   - Leave a Note for the Morning (the handoff record: Board threads, paused Tasks with questions, nightly-reread manuals, tick-stamped logs and traces the next worker or reviewer reads)
+#   - Who Reads the Logs? (a question over traces, chains of thought, audit trails, trace validation and eval transcripts, the evidence every piece leans on)
+#   - One Megabyte Lighter (a number for the issue's diet: compressed Wikipedia, deleted tests and comments, deferred tool schemas, pruned experts, a CI bill cut to a twentieth)
+title: The Night Shift
+subtitle: A frontier model's safety report, proofs for two Raft libraries, a looped laptop model, Wikipedia squeezed by a learning compressor, accounting bots, an agent message board, two software factories, simulation testing, evals for agents, and a CI bill cut 95%.
+publication_date: '2026-11-18'
+status: draft
+format:
+  article_opener: illustrated_paper_spots_v1
+  typesetting: book
+art_direction_path: art-directions/story-led-boy-and-robot.yaml
+cover:
+  layout: footer_caption
+  headline: The Night Shift
+  deck: A frontier model's safety report, proofs for two Raft libraries, a looped laptop model, Wikipedia squeezed by a learning compressor, accounting bots, an agent message board, two software factories, simulation testing, evals for agents, and a CI bill cut 95%.
+  back_text: 'Handover note for the day shift: four hundred things got done while you slept. Pick one at random and check it yourself. Go on. We''ll wait.'
+  art_path: editions/023/art/picks/cover-squid-boat-lamps-v1.jpg
+  endpaper_path: editions/023/art/picks/endpaper-tide-clock-medallions-v1.jpg
+articles:
+- id: introducing-gpt-6-2-astra-and-sol
+  title: Introducing GPT-6.2 Astra and Sol
+  short_title: GPT-6.2 Astra and Sol
+  display_emphasis: Astra and Sol
+  opener_variant: stepped_title
+  author: OpenAI
+  author_note: ''
+  content_mode: model_card
+  source_ids:
+  - introducing-gpt-6-2-astra-and-sol-0fb76b8d
+  - gpt-6-2-system-card-7ebd05a0
+  manuscript: editions/023/articles/introducing-gpt-6-2-astra-and-sol.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  # - id: figure-1
+  #   source_id: introducing-gpt-6-2-astra-and-sol-0fb76b8d
+  #   path: media/001.png
+  #   caption: Alderfen Field Systems workbook cover and discounted cash flow valuation by GPT-6 Astra.
+  #   alt_text: Alderfen Field Systems workbook cover and discounted cash flow valuation by GPT-6 Astra.
+  #   anchor: Professional work at lower cost
+  #   layout: compact_band
+  # - id: figure-2
+  #   source_id: introducing-gpt-6-2-astra-and-sol-0fb76b8d
+  #   path: media/002.png
+  #   caption: Alderfen Field Systems workbook cover and discounted cash flow valuation by GPT-6.2 Astra.
+  #   alt_text: Alderfen Field Systems workbook cover and discounted cash flow valuation by GPT-6.2 Astra.
+  #   anchor: Professional work at lower cost
+  #   layout: evidence_band
+  # - id: figure-3
+  #   source_id: introducing-gpt-6-2-astra-and-sol-0fb76b8d
+  #   path: media/003.png
+  #   caption: Small Marks, Big Team Energy.
+  #   alt_text: Small Marks, Big Team Energy. Full 13-slide team merch concept deck by GPT-6 Astra.
+  #   anchor: Professional work at lower cost
+  #   layout: evidence_band
+  # - id: figure-4
+  #   source_id: introducing-gpt-6-2-astra-and-sol-0fb76b8d
+  #   path: media/004.png
+  #   caption: Office Wildlife.
+  #   alt_text: Office Wildlife. Full 19-slide team merch field guide by GPT-6.2 Astra.
+  #   anchor: Pricing and availability
+  #   layout: evidence_band
+  tail_art_path: editions/023/art/picks/tail-gpt-star-and-sun-v2.jpg
+  cards:
+  - path: editions/023/articles/introducing-gpt-6-2-astra-and-sol.card.json
+    art_path: editions/023/art/picks/card-introducing-gpt-6-2-astra-and-sol-v3c.jpg
+  - path: editions/023/articles/introducing-gpt-6-2-astra-and-sol.card-2.json
+    art_path: editions/023/art/picks/card-introducing-gpt-6-2-astra-and-sol-2-n3b.jpg
+- id: verifying-formal-models-of-raft-implementations
+  title: Verifying formal models of Raft implementations
+  short_title: formal models of Raft implementations
+  display_emphasis: Raft
+  opener_variant: stepped_title
+  author: Rohan Padhye, Hillel Wayne
+  author_note: Write for the Antithesis blog.
+  content_mode: article
+  source_ids:
+  - verifying-formal-models-of-raft-implementations-69abfaca
+  manuscript: editions/023/articles/verifying-formal-models-of-raft-implementations.md
+  opener_art:
+    path: editions/023/art/picks/opener-raft-matching-rafts-v3.jpg
+    alt_text: 'The boy, the girl, and the robot kneel on three log rafts on a lake, matching rows of coloured pegs, the robot holding a red flag.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-raft-model-on-the-bank-v1.jpg
+- id: effective-swarm-riding-for-engineers
+  title: Effective Swarm Riding for Engineers
+  short_title: Effective Swarm Riding for Engineers
+  display_emphasis: Swarm Riding
+  opener_variant: stepped_title
+  author: Georgios Konstantopoulos
+  author_note: CTO and General Partner at Paradigm.
+  content_mode: article
+  source_ids:
+  - effective-swarm-riding-for-engineers-4ca051fd
+  manuscript: editions/023/articles/effective-swarm-riding-for-engineers.md
+  opener_art:
+    path: editions/023/art/picks/opener-swarm-paper-plane-surf-v3.jpg
+    alt_text: 'The boy, the girl, and the robot surf a flock of giant paper planes across a lilac sky.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-swarm-stepping-away-v3.jpg
+- id: introducing-inkling-2-mini
+  title: Introducing Inkling 2 Mini
+  short_title: Inkling 2 Mini
+  display_emphasis: Inkling 2 Mini
+  opener_variant: stepped_title
+  author: Thinking Machines Lab
+  author_note: ''
+  content_mode: model_card
+  source_ids:
+  - introducing-inkling-2-mini-89c1b500
+  manuscript: editions/023/articles/introducing-inkling-2-mini.md
+  cards:
+  - path: editions/023/articles/introducing-inkling-2-mini.card.json
+    art_path: editions/023/art/picks/card-introducing-inkling-2-mini-n3a.jpg
+  tail_art_path: editions/023/art/picks/tail-inkling-jump-rope-loops-v2.jpg
+- id: introducing-tool-retrieval-in-the-gemini-api
+  title: Introducing Tool Retrieval in the Gemini API
+  short_title: Tool Retrieval in the Gemini API
+  display_emphasis: Tool Retrieval
+  opener_variant: stepped_title
+  author: Lucia Loher, Nora Kassner
+  author_note: Work at Google.
+  content_mode: article
+  source_ids:
+  - introducing-tool-retrieval-in-the-gemini-api-1b3aafed
+  manuscript: editions/023/articles/introducing-tool-retrieval-in-the-gemini-api.md
+  opener_art:
+    path: editions/023/art/picks/opener-tool-retrieval-magnet-v1.jpg
+    alt_text: 'The girl lowers a magnet on a string into a big toy chest and lifts out one wrench while the boy points to a stool and the robot reaches for it.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-tool-light-backpack-v2.jpg
+- id: tufazip-learning-to-compress-a-billion-bytes-of
+  title: 'tufazip: Learning to Compress a Billion Bytes of Wikipedia'
+  short_title: tufazip
+  display_emphasis: tufazip
+  opener_variant: stepped_title
+  author: Tommy He
+  author_note: Researcher at Tufa Labs.
+  content_mode: article
+  source_ids:
+  - tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+  manuscript: editions/023/articles/tufazip-learning-to-compress-a-billion-bytes-of.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+    path: media/001.png
+    caption: Arithmetic coding narrows the interval from zero to one to zero to 0.6, then 0.48 to 0.54, then 0.534 to 0.54.
+    alt_text: Arithmetic coding narrows the interval from zero to one to zero to 0.6, then 0.48 to 0.54, then 0.534 to 0.54. Each row zooms into the preceding selected interval; a black dot marks the encoded value.
+    anchor: How it works
+    layout: evidence_band
+  - id: figure-2
+    source_id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+    path: media/002.png
+    caption: Ten completed enwik9 replay runs show payload size versus estimated model FLOPs, grouped into 163M/4K, 188M/16K, and 267M/16K configurations.
+    alt_text: Ten completed enwik9 replay runs show payload size versus estimated model FLOPs, grouped into 163M/4K, 188M/16K, and 267M/16K configurations.
+    anchor: What helped
+    layout: evidence_band
+  - id: figure-3
+    source_id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+    path: media/003.png
+    caption: The 4K word tokenizer produces the smallest payload; structured XML/wiki tokens produce the largest.
+    alt_text: The 4K word tokenizer produces the smallest payload; structured XML/wiki tokens produce the largest.
+    anchor: What helped
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+  #   path: media/004.png
+  #   caption: Four full enwik9 runs compare 188M and 267M models with a fixed 16K vocabulary.
+  #   alt_text: Four full enwik9 runs compare 188M and 267M models with a fixed 16K vocabulary. The larger model produces a slightly larger payload at both 10M and 15M replay windows.
+  #   anchor: Parameters
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+  #   path: media/005.png
+  #   caption: Five full enwik8 runs compare 14M, 32M, 77M, 163M, and 336M models with a fixed 4K vocabulary and 15M-token replay window.
+  #   alt_text: Five full enwik8 runs compare 14M, 32M, 77M, 163M, and 336M models with a fixed 4K vocabulary and 15M-token replay window. Payload shrinks up to 77M, changes little at 163M, then grows at 336M.
+  #   anchor: Parameters
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+  #   path: media/006.png
+  #   caption: Enwik8 offline-transfer results across full-precision models, dense quantization, LoRA, quantized LoRA, eight low-bit training variants, and depth and repeated-block priors.
+  #   alt_text: Enwik8 offline-transfer results across full-precision models, dense quantization, LoRA, quantized LoRA, eight low-bit training variants, and depth and repeated-block priors.
+  #   anchor: 'Offline transfer: Can offline trained initialization pay for itself?'
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+  #   path: media/007.png
+  #   caption: Enwik9 offline-transfer results across full-precision, shallow and repeated-block models, with C2 inside the winning triangle and L6 outside it.
+  #   alt_text: Enwik9 offline-transfer results across full-precision, shallow and repeated-block models, with C2 inside the winning triangle and L6 outside it.
+  #   anchor: 'Offline transfer: Can offline trained initialization pay for itself?'
+  #   layout: evidence_band
+  opener_art:
+    path: editions/023/art/picks/opener-tufazip-suitcase-v3.jpg
+    alt_text: 'The boy and the girl push down on an overstuffed suitcase full of papers while the robot sits on top to close it.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-tufazip-felt-press-v3.jpg
+- id: introducing-vercel-board
+  title: Introducing Vercel Board
+  short_title: Vercel Board
+  display_emphasis: Vercel Board
+  opener_variant: stepped_title
+  author: Julian Benegas, Nicolás Montone, Malte Ubl, Tom Knickman, Martin Sione, Bani Singh
+  author_note: Team behind a frontend cloud platform, including its CTO.
+  content_mode: article
+  source_ids:
+  - introducing-vercel-board-0a961e0e
+  manuscript: editions/023/articles/introducing-vercel-board.md
+  opener_art:
+    path: editions/023/art/picks/opener-board-reply-chain-v2.jpg
+    alt_text: 'The robot, standing on a stool, pins the last of a chain of coloured notes on a cork board while the boy thinks and the girl holds the next note.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-board-morning-handoff-v2.jpg
+- id: faster-type-aware-linting-with-tsrs
+  title: Faster type-aware linting with tsrs
+  short_title: Faster type-aware linting with tsrs
+  display_emphasis: tsrs
+  opener_variant: stepped_title
+  author: Cameron
+  author_note: Contributor to Oxc, a JavaScript toolchain written in Rust.
+  content_mode: article
+  source_ids:
+  - faster-type-aware-linting-with-tsrs-b54b2be6
+  manuscript: editions/023/articles/faster-type-aware-linting-with-tsrs.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: faster-type-aware-linting-with-tsrs-b54b2be6
+    path: media/001.png
+    caption: Type-aware linting runtime and memory comparison between tsrs, tsgolint, and typescript-eslint
+    alt_text: Type-aware linting runtime and memory comparison between tsrs, tsgolint, and typescript-eslint
+    anchor: Performance
+    layout: evidence_band
+  - id: figure-2
+    source_id: faster-type-aware-linting-with-tsrs-b54b2be6
+    path: media/002.png
+    caption: Combined typechecking and type-aware linting runtime and memory comparison between Oxlint with tsrs, Oxlint with tsgolint, Oxlint with tsgolint and tsgo, and typescript-eslint with tsc
+    alt_text: Combined typechecking and type-aware linting runtime and memory comparison between Oxlint with tsrs, Oxlint with tsgolint, Oxlint with tsgolint and tsgo, and typescript-eslint with tsc
+    anchor: Performance
+    layout: evidence_band
+  opener_art:
+    path: editions/023/art/picks/opener-tsrs-lint-roller-sprint-v2.jpg
+    alt_text: 'The boy races a giant lint roller across a fuzzy orange sweater, leaving a clean stripe, while the robot holds a stopwatch.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-tsrs-scarf-finish-v2.jpg
+- id: deterministic-simulation-testing
+  title: Deterministic Simulation Testing
+  short_title: Deterministic Simulation Testing
+  display_emphasis: Deterministic Simulation Testing
+  opener_variant: stepped_title
+  author: Unmesh Joshi
+  author_note: Principal Consultant at Thoughtworks.
+  content_mode: article
+  source_ids:
+  - deterministic-simulation-testing-64322f58
+  manuscript: editions/023/articles/deterministic-simulation-testing.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: deterministic-simulation-testing-64322f58
+    path: media/001.png
+    caption: 'Chaos engineering focuses on resilience: does the system stay available when a node is killed?'
+    alt_text: 'A three-node key-value store, Athens, Byzantium, and Cyrene, with one node killed during a quorum write.'
+    anchor: 'Why standard tests miss these bugs'
+    layout: evidence_band
+  - id: figure-2
+    source_id: deterministic-simulation-testing-64322f58
+    path: media/002.png
+    caption: 'A quorum write succeeds on Athens and Byzantium while a network partition leaves Cyrene holding the older value.'
+    alt_text: 'Alice writes a new value to Athens and Byzantium while a partition cuts Cyrene off with the old one.'
+    anchor: 'Why standard tests miss these bugs'
+    layout: evidence_band
+  - id: figure-3
+    source_id: deterministic-simulation-testing-64322f58
+    path: media/003.png
+    caption: 'Bob reads from Cyrene and receives the stale value “Before Dawn” even though Alice''s write of “After Dawn” already succeeded.'
+    alt_text: 'Bob reads the stale value from the partitioned Cyrene after Alice''s write succeeded on the majority.'
+    anchor: 'Why standard tests miss these bugs'
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/004.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: The Nondeterminism Problem
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/005.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Sources of Nondeterminism
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/006.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Sources of Nondeterminism
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/007.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Sources of Nondeterminism
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/008.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Sources of Nondeterminism
+  #   layout: evidence_band
+  # - id: figure-9
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/009.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Making Progress Explicit
+  #   layout: evidence_band
+  # - id: figure-10
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/010.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Making Progress Explicit
+  #   layout: evidence_band
+  # - id: figure-11
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/011.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Tick-Based Timeouts in etcd
+  #   layout: evidence_band
+  # - id: figure-12
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/012.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Tick-Based Timeouts in etcd
+  #   layout: evidence_band
+  # - id: figure-13
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/013.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Tick-Based Timeouts in etcd
+  #   layout: evidence_band
+  # - id: figure-14
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/014.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Testing with a Simulated Cluster
+  #   layout: evidence_band
+  # - id: figure-15
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/015.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Seeded Fault Injection
+  #   layout: evidence_band
+  # - id: figure-16
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/016.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Simulating the File System
+  #   layout: evidence_band
+  # - id: figure-17
+  #   source_id: deterministic-simulation-testing-64322f58
+  #   path: media/017.png
+  #   caption: TODO
+  #   alt_text: TODO
+  #   anchor: Simulating the File System
+  #   layout: evidence_band
+  opener_art:
+    path: editions/023/art/picks/opener-dst-one-tick-v2.jpg
+    alt_text: 'The boy turns the crank of a wooden clock while the robot and the girl move a token one step between toy villages on a table, a die mid-roll.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-dst-replay-v2.jpg
+- id: building-an-accounting-team-with-grok-bot
+  title: Building an accounting team with Grok Bot
+  short_title: an accounting team with Grok Bot
+  display_emphasis: accounting team
+  opener_variant: stepped_title
+  author: Annay (Paul) Bains, Will Smerdon, and Erin Jenks
+  author_note: Work at xAI.
+  content_mode: article
+  source_ids:
+  - building-an-accounting-team-with-grok-bot-1475c813
+  manuscript: editions/023/articles/building-an-accounting-team-with-grok-bot.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: building-an-accounting-team-with-grok-bot-1475c813
+    path: media/001.png
+    caption: 'Grok Bots have real places on the SpaceXSI accounting org chart: Provisioning Bot reports to Paul, Billing Bot and Billing Support Bot report to the Billing Lead, and Cash Applications Bot and Collections Bot report to the Collections and Support Lead'
+    alt_text: 'Grok Bots have real places on the SpaceXSI accounting org chart: Provisioning Bot reports to Paul, Billing Bot and Billing Support Bot report to the Billing Lead, and Cash Applications Bot and Collections Bot report to the Collections and Support Lead'
+    anchor: __opener__
+    layout: evidence_band
+  - id: figure-2
+    source_id: building-an-accounting-team-with-grok-bot-1475c813
+    path: media/002.png
+    caption: The Billing Support Bot knowledge base, a read-only operating manual the Bot checks every night
+    alt_text: The Billing Support Bot knowledge base, a read-only operating manual the Bot checks every night
+    anchor: How we build our Bots
+    layout: evidence_band
+  - id: figure-3
+    source_id: building-an-accounting-team-with-grok-bot-1475c813
+    path: media/003.png
+    caption: 'Five bots along one deal lifecycle: Provisioning Bot sets up accounts, Billing Bot sends invoices, Billing Support Bot answers sales questions, Collections Bot works the accounts-receivable inbox, and Cash Applications Bot matches payments'
+    alt_text: 'Five bots along one deal lifecycle: Provisioning Bot sets up accounts, Billing Bot sends invoices, Billing Support Bot answers sales questions, Collections Bot works the accounts-receivable inbox, and Cash Applications Bot matches payments'
+    anchor: What each Bot does
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: building-an-accounting-team-with-grok-bot-1475c813
+  #   path: media/004.png
+  #   caption: Provisioning Bot in Slack checking a closed-won contract against Salesforce, enabling entitlements, and telling the sales rep the account is ready
+  #   alt_text: Provisioning Bot in Slack checking a closed-won contract against Salesforce, enabling entitlements, and telling the sales rep the account is ready
+  #   anchor: Provisioning Bot sets up and closes customer accounts
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: building-an-accounting-team-with-grok-bot-1475c813
+  #   path: media/005.png
+  #   caption: Billing Bot in Slack holding an invoice until a missing VAT ID arrives, then sending it and notifying the sales rep
+  #   alt_text: Billing Bot in Slack holding an invoice until a missing VAT ID arrives, then sending it and notifying the sales rep
+  #   anchor: Billing Bot generates invoices and checks for errors
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: building-an-accounting-team-with-grok-bot-1475c813
+  #   path: media/006.png
+  #   caption: Billing Support Bot in Slack explaining why an invoice total is higher than the usage dashboard, tracing the gap to a seat true-up
+  #   alt_text: Billing Support Bot in Slack explaining why an invoice total is higher than the usage dashboard, tracing the gap to a seat true-up
+  #   anchor: Billing Support Bot answers questions from our go-to-market team
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: building-an-accounting-team-with-grok-bot-1475c813
+  #   path: media/007.png
+  #   caption: Cash Applications Bot in Slack matching a deposit to invoices from remittance advice and flagging a short payment to collections
+  #   alt_text: Cash Applications Bot in Slack matching a deposit to invoices from remittance advice and flagging a short payment to collections
+  #   anchor: Cash Applications Bot reconciles customer payments
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: building-an-accounting-team-with-grok-bot-1475c813
+  #   path: media/008.png
+  #   caption: Collections Bot in Slack verifying a customer's email before coordinating a duplicate-invoice refund with Billing Bot and Cash Applications Bot
+  #   alt_text: Collections Bot in Slack verifying a customer's email before coordinating a duplicate-invoice refund with Billing Bot and Cash Applications Bot
+  #   anchor: Collections Bot handles customer-facing billing inquiries
+  #   layout: evidence_band
+  opener_art:
+    path: editions/023/art/picks/opener-accounting-night-desk-v2.jpg
+    alt_text: 'At night the robot stamps envelopes and the girl sorts coins into jars while the boy, wrapped in a blanket, yawns over a letter.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-accounting-dawn-sill-v3.jpg
+- id: agents-are-users-so-your-software-needs-evals
+  title: Agents are users, so your software needs evals
+  short_title: Agents are users
+  display_emphasis: evals
+  opener_variant: stepped_title
+  author: George Fahmy, Yury Selivanov
+  author_note: Write for the Vercel blog.
+  content_mode: article
+  source_ids:
+  - agents-are-users-so-your-software-needs-evals-c19318be
+  manuscript: editions/023/articles/agents-are-users-so-your-software-needs-evals.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: agents-are-users-so-your-software-needs-evals-c19318be
+    path: media/001.png
+    caption: Fewer agents make it through each stage of the funnel, like humans.
+    alt_text: Fewer agents make it through each stage of the funnel, like humans.
+    anchor: __opener__
+    layout: evidence_band
+  - id: figure-2
+    source_id: agents-are-users-so-your-software-needs-evals-c19318be
+    path: media/002.png
+    caption: Reader agents review trials in parallel.
+    alt_text: Reader agents review trials in parallel. A coordinator combines their findings and requests further investigation when needed.
+    anchor: Analyze traces
+    layout: evidence_band
+  opener_art:
+    path: editions/023/art/picks/opener-evals-marble-funnel-v2.jpg
+    alt_text: 'The boy pours marbles into a big glass funnel on a stand while the robot catches what comes out and the girl watches closely.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-evals-obstacle-course-v1.jpg
+- id: pufferlib-skill-issues-md-at-5-0
+  title: SKILL_ISSUES.md
+  short_title: SKILL_ISSUES.md
+  display_emphasis: SKILL_ISSUES.md
+  opener_variant: stepped_title
+  author: PufferAI
+  author_note: Open-source reinforcement learning lab.
+  content_mode: verbatim
+  source_ids:
+  - pufferlib-skill-issues-md-at-5-0-c82a8c07
+  manuscript: editions/023/articles/pufferlib-skill-issues-md-at-5-0.md
+  opener_art:
+    path: editions/023/art/picks/opener-skill-issues-skates-v3.jpg
+    alt_text: 'The robot wobbles on roller skates between the boy, ready to catch it, and the girl holding out a star.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-skill-issues-glide-v3.jpg
+- id: pi-durable-actors-one-agent-one-owner-any-worker
+  title: 'Pi Durable ♥ Actors: One Agent, One Owner, Any Worker'
+  short_title: Pi Durable ♥ Actors
+  display_emphasis: Pi Durable
+  opener_variant: stepped_title
+  author: Manoj Mahalingam
+  author_note: Software engineer posting on X.
+  content_mode: article
+  source_ids:
+  - pi-durable-actors-one-agent-one-owner-any-worker-57ec0d05
+  manuscript: editions/023/articles/pi-durable-actors-one-agent-one-owner-any-worker.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: pi-durable-actors-one-agent-one-owner-any-worker-57ec0d05
+    path: media/001.jpg
+    caption: 'An agent as an actor: messages land in one mailbox, run one at a time, commit to the agent''s own database, and can message other actors or set a timer to wake it later.'
+    alt_text: 'Diagram: messages enter the agent''s mailbox, where a duplicate hello is dropped; a run commits to storage, sends to other actors, and sleeps until a timer.'
+    anchor: 'Why agents look like actors'
+    layout: compact_band
+  - id: figure-2
+    source_id: pi-durable-actors-one-agent-one-owner-any-worker-57ec0d05
+    path: media/002.jpg
+    caption: 'The client asks the Rivet engine for an agent by key; the engine routes it to the worker node that hosts it, one actor per agent.'
+    alt_text: 'Diagram: a client sends to the Rivet engine, which routes agents b, d, f to worker n1 and a, c, e to worker n2.'
+    anchor: 'A cluster on my laptop'
+    layout: compact_band
+  - id: figure-3
+    source_id: pi-durable-actors-one-agent-one-owner-any-worker-57ec0d05
+    path: media/003.jpg
+    caption: 'Killing n2 mid-run: the engine''s heartbeat restarts agent a on n1, the harness reruns the safe tool, and the tool picks up at tick 12.'
+    alt_text: 'Diagram: worker n2 is killed after agent a''s tick 11; the Rivet engine restarts a on worker n1, which continues from tick 12 to 40.'
+    anchor: 'Killing a node'
+    layout: compact_band
+  opener_art:
+    path: editions/023/art/picks/opener-pi-one-mailbox-v2.jpg
+    alt_text: 'The boy posts a letter into a big blue mailbox while the girl takes letters out the other side and the robot naps beside an alarm clock.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-pi-puzzle-carried-over-v2.jpg
+- id: automate-anything-with-grok-bot
+  title: Automate Anything with Grok Bot
+  short_title: Automate Anything with Grok Bot
+  display_emphasis: Grok Bot
+  opener_variant: stepped_title
+  author: Lauren Tan
+  author_note: Software engineer posting on X.
+  content_mode: article
+  source_ids:
+  - automate-anything-with-grok-bot-0caa2cc5
+  manuscript: editions/023/articles/automate-anything-with-grok-bot.md
+  opener_art:
+    path: editions/023/art/picks/opener-automate-one-string-v2.jpg
+    alt_text: 'The robot pulls one string that tips a watering can over a fern and nudges a cereal bowl while the boy sleeps and the girl gives a thumbs up.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-automate-night-train-v2.jpg
+- id: overcoming-challenges-in-software-factory-adopti
+  title: Overcoming challenges in software factory adoption
+  short_title: software factory adoption
+  display_emphasis: software factory
+  opener_variant: stepped_title
+  author: Zach Lloyd
+  author_note: Founder and CEO of Warp.
+  content_mode: article
+  source_ids:
+  - overcoming-challenges-in-software-factory-adopti-0c459f66
+  manuscript: editions/023/articles/overcoming-challenges-in-software-factory-adopti.md
+  opener_art:
+    path: editions/023/art/picks/opener-adoption-toy-car-belt-v1.jpg
+    alt_text: 'The robot cranks a cardboard conveyor turning out toy cars while the girl shows one off and the boy inspects another doubtfully.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-adoption-cars-lined-up-v2.jpg
+- id: a-look-inside-the-factory
+  title: A Look Inside the Factory
+  short_title: A Look Inside the Factory
+  display_emphasis: Factory
+  opener_variant: stepped_title
+  author: Calvin Grunewald
+  author_note: Writes thebuildingmachine.com.
+  content_mode: article
+  source_ids:
+  - a-look-inside-the-factory-04c53aba
+  manuscript: editions/023/articles/a-look-inside-the-factory.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: a-look-inside-the-factory-04c53aba
+    path: media/001.png
+    caption: 'Is the harness a moat?'
+    alt_text: 'Engraving-style illustration: brass robots carrying spec.csv scrolls march out of a castle gate labelled The Harness, past a dry ditch signed Moat, while a man sips tea and a knight on the wall looks alarmed.'
+    anchor: 'Building the harness'
+    layout: evidence_band
+  - id: figure-2
+    source_id: a-look-inside-the-factory-04c53aba
+    path: media/002.png
+    caption: The task CSV the /goal worked from.
+    alt_text: The task CSV the /goal worked from. Each row is one task with its dependencies and acceptance criteria, and the agent put an x in DONE when it finished one.
+    anchor: Building the harness
+    layout: evidence_band
+  - id: figure-3
+    source_id: a-look-inside-the-factory-04c53aba
+    path: media/003.png
+    caption: The /goal made one commit per task, 130 of them, between the evening of June 27 and the morning of June 29.
+    alt_text: The /goal made one commit per task, 130 of them, between the evening of June 27 and the morning of June 29.
+    anchor: Building the harness
+    layout: evidence_band
+  # - id: figure-4
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/004.png
+  #   caption: 'Astrodev after finishing a change: it reports what it changed, the tests it ran and what the review found.'
+  #   alt_text: 'Astrodev after finishing a change: it reports what it changed, the tests it ran and what the review found.'
+  #   anchor: 'The Beginning: Vibe Coding a Harness'
+  #   layout: evidence_band
+  # - id: figure-5
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/005.png
+  #   caption: I give the overseer a goal.
+  #   alt_text: I give the overseer a goal. It plans tasks, saves them in the cloud and hands them to workers on my machine. Once a worker pushes, the daemon owns the work until the PR merges.
+  #   anchor: 'The Middle: Evolving the coding harness into a factory'
+  #   layout: evidence_band
+  # - id: figure-6
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/006.png
+  #   caption: I touch a Task when I describe the goal and when I approve the plan.
+  #   alt_text: I touch a Task when I describe the goal and when I approve the plan. After that it runs without me unless a question comes up.
+  #   anchor: 'The Middle: Evolving the coding harness into a factory'
+  #   layout: evidence_band
+  # - id: figure-7
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/007.png
+  #   caption: Once a worker pushes, it is done with the Task.
+  #   alt_text: Once a worker pushes, it is done with the Task. The daemon takes it from there.
+  #   anchor: 'The Middle: Evolving the coding harness into a factory'
+  #   layout: evidence_band
+  # - id: figure-8
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/008.png
+  #   caption: The plan review page.
+  #   alt_text: The plan review page. Before I approve, I can see how risky each Task is and which decisions the plan needs from me.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-9
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/009.png
+  #   caption: 'One epic in the Projects view on archdev.ai: 33 of 41 Tasks done, 4 stuck, and the paused ones listed under Needs you with a button to answer or resume each.'
+  #   alt_text: 'One epic in the Projects view on archdev.ai: 33 of 41 Tasks done, 4 stuck, and the paused ones listed under Needs you with a button to answer or resume each.'
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-10
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/010.png
+  #   caption: My approval covers one exact version of the plan.
+  #   alt_text: My approval covers one exact version of the plan. If I leave any note, the overseer revises it and I approve the new version.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-11
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/011.png
+  #   caption: Nothing goes to GitHub until the daemon has run the repo's lint, tests, policy checks and review on the exact commit the worker pushed.
+  #   alt_text: Nothing goes to GitHub until the daemon has run the repo's lint, tests, policy checks and review on the exact commit the worker pushed.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-12
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/012.png
+  #   caption: Each process has one supervisor that restarts it, and stopping a process kills its whole group.
+  #   alt_text: Each process has one supervisor that restarts it, and stopping a process kills its whole group. I built this after the bugs listed above.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-13
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/013.png
+  #   caption: The Workers panel shows the model's state separately from the worker's health, so a quiet model no longer looks like a dead worker.
+  #   alt_text: The Workers panel shows the model's state separately from the worker's health, so a quiet model no longer looks like a dead worker.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-14
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/014.png
+  #   caption: A real question from my inbox.
+  #   alt_text: A real question from my inbox. It has waited 8 days for me to approve four live Slack changes, and it comes with context and a recommended answer.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-15
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/015.png
+  #   caption: The bell's badge counts everything waiting on me.
+  #   alt_text: The bell's badge counts everything waiting on me. Needs you sorts it into agent asks, questions, checks, stalled and paused Tasks, and Catch up walks through all 45 one at a time.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-16
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/016.png
+  #   caption: A Task paused 22 days ago with no recorded reason, so nothing would ever resume it.
+  #   alt_text: A Task paused 22 days ago with no recorded reason, so nothing would ever resume it. Catch up says what it holds up and gives me one keystroke to resume it, close it as done or cancel it.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-17
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/017.png
+  #   caption: If a decision isn't on my list, the overseer makes it and records why.
+  #   alt_text: If a decision isn't on my list, the overseer makes it and records why. If it is, the Task pauses until I answer, and the next worker to pick it up sees my answer.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-18
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/018.png
+  #   caption: A question in the Needs you tab.
+  #   alt_text: A question in the Needs you tab. A worker got a 401 from a production API and needs me to sort out access, and it recommends what to do.
+  #   anchor: Interesting Design Points
+  #   layout: evidence_band
+  # - id: figure-19
+  #   source_id: a-look-inside-the-factory-04c53aba
+  #   path: media/019.png
+  #   caption: 'Bar chart of merged factory PRs per week on firstlanding: 14 in the week of Aug 17, then 53, 41, 100, 143, 120, a peak of 251 the week of Sep 28, then 210, 163, 218, 240, 91, 139, and 157 in the first four days of the week of Nov 16.'
+  #   alt_text: 'Bar chart of merged factory PRs per week on firstlanding: 14 in the week of Aug 17, then 53, 41, 100, 143, 120, a peak of 251 the week of Sep 28, then 210, 163, 218, 240, 91, 139, and 157 in the first four days of the week of Nov 16. 1,940 in total.'
+  #   anchor: The End? - Compute is the new bottleneck and moving to the cloud
+  #   layout: evidence_band
+  opener_art:
+    path: editions/023/art/picks/opener-factory-morning-bell-v1.jpg
+    alt_text: 'The robot rings a bell beside a block tower it built overnight while the boy wakes at the table and the girl brings a mug.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-factory-paused-block-v2.jpg
+- id: making-openclaw-ci-faster-and-95-cheaper
+  title: Making OpenClaw CI faster and 95% cheaper
+  short_title: OpenClaw CI faster and 95% cheaper
+  display_emphasis: OpenClaw CI
+  opener_variant: stepped_title
+  author: Vincent Koc
+  author_note: Writes a personal engineering blog.
+  content_mode: article
+  source_ids:
+  - making-openclaw-ci-faster-and-95-cheaper-97e637dd
+  manuscript: editions/023/articles/making-openclaw-ci-faster-and-95-cheaper.md
+  opener_art:
+    path: editions/023/art/picks/opener-openclaw-one-coin-v2.jpg
+    alt_text: 'The boy drops one coin into a claw machine while the robot works the joystick and the girl holds a pouch of coins.'
+    credit: Illustration generated for this edition.
+  tail_art_path: editions/023/art/picks/tail-openclaw-receipt-stub-v3.jpg
+- id: introducing-gemini-4-neon
+  title: Introducing Gemini 4 Neon
+  short_title: Gemini 4 Neon
+  display_emphasis: Gemini 4 Neon
+  opener_variant: stepped_title
+  author: Koray Kavukcuoglu
+  author_note: ''
+  content_mode: model_card
+  source_ids:
+  - introducing-gemini-4-neon-f539fcda
+  manuscript: editions/023/articles/introducing-gemini-4-neon.md
+  # figures: the first three source images, captioned from their alt text, the rest commented out; three at most. layout is one of
+  # evidence_band, evidence_band_prose, adaptive_band, compact_band, column_plate, landscape_plate, full_band, rotated_plate;
+  # render enlarges small-text figures itself unless the row sets fit: keep, and tone: auto|keep|invert controls dark-image inversion.
+  figures:
+  - id: figure-1
+    source_id: introducing-gemini-4-neon-f539fcda
+    path: media/002.png
+    caption: Gemini 4 Neon against Claude Opus 5.5 and GPT-6.2 Sol across twenty benchmarks, from coding and knowledge work to long context and cybersecurity.
+    alt_text: Gemini 4 Neon against Claude Opus 5.5 and GPT-6.2 Sol across twenty benchmarks, from coding and knowledge work to long context and cybersecurity.
+    anchor: Enterprise and science
+    layout: compact_band
+  - id: figure-2
+    source_id: introducing-gemini-4-neon-f539fcda
+    path: media/003.png
+    caption: 'Artificial Analysis Intelligence Index against cost per task at each thinking level: Neon reaches 61 at xhigh for about $6.40 a task.'
+    alt_text: 'Artificial Analysis Intelligence Index against cost per task at each thinking level: Neon reaches 61 at xhigh for about $6.40 a task.'
+    anchor: Cost and control
+    layout: compact_band
+  - id: figure-3
+    source_id: introducing-gemini-4-neon-f539fcda
+    path: media/004.png
+    caption: 'AutoBaxBench, secure code on the hard tier: Neon scores 76.0%, ahead of Gemini 4 Carbon at 74.0%.'
+    alt_text: 'AutoBaxBench, secure code on the hard tier: Neon scores 76.0%, ahead of Gemini 4 Carbon at 74.0%.'
+    anchor: Cyber defense
+    layout: compact_band
+  # - id: figure-4
+  #   source_id: introducing-gemini-4-neon-f539fcda
+  #   path: media/005.png
+  #   caption: webexploitbench chart
+  #   alt_text: webexploitbench chart
+  #   anchor: Built for fast, low cost, frontier-level cyber defense
+  #   layout: compact_band
+  # - id: figure-5
+  #   source_id: introducing-gemini-4-neon-f539fcda
+  #   path: media/006.png
+  #   caption: sacbenchpro chart
+  #   alt_text: sacbenchpro chart
+  #   anchor: Built for fast, low cost, frontier-level cyber defense
+  #   layout: compact_band
+  # - id: figure-6
+  #   source_id: introducing-gemini-4-neon-f539fcda
+  #   path: media/007.png
+  #   caption: exploitgym benchmark chart
+  #   alt_text: exploitgym benchmark chart
+  #   anchor: Built for fast, low cost, frontier-level cyber defense
+  #   layout: compact_band
+  # - id: figure-7
+  #   source_id: introducing-gemini-4-neon-f539fcda
+  #   path: media/008.png
+  #   caption: CWE bench v2 chart
+  #   alt_text: CWE bench v2 chart
+  #   anchor: Built for fast, low cost, frontier-level cyber defense
+  #   layout: compact_band
+  # - id: figure-8
+  #   source_id: introducing-gemini-4-neon-f539fcda
+  #   path: media/009.png
+  #   caption: grey swan chart
+  #   alt_text: grey swan chart
+  #   anchor: Designed for safe, dependable execution
+  #   layout: compact_band
+  # - id: figure-9
+  #   source_id: introducing-gemini-4-neon-f539fcda
+  #   path: media/010.png
+  #   caption: A chart showing Gemini 4 models
+  #   alt_text: A chart showing Gemini 4 models
+  #   anchor: Where Neon sits in the Gemini 4 family
+  #   layout: compact_band
+  cards:
+  - path: editions/023/articles/introducing-gemini-4-neon.card.json
+    art_path: editions/023/art/picks/card-introducing-gemini-4-neon-3-v1.jpg
+  tail_art_path: editions/023/art/picks/tail-neon-wall-night-watch-v3.jpg
+tail_art_fit: contain
+closing_plates:
+- title: 'Down the funnel'
+  art_path: editions/023/art/picks/closing-down-the-funnel-v1.jpg
+- title: 'Library in a thimble'
+  art_path: editions/023/art/picks/closing-library-in-a-thimble-v1.jpg
+- title: 'Sticky-note suit'
+  art_path: editions/023/art/picks/closing-sticky-note-suit-v1.jpg
+- title: 'Rewind the sun'
+  art_path: editions/023/art/picks/closing-rewind-the-sun-v1.jpg
+- title: 'Prize inside'
+  art_path: editions/023/art/picks/closing-prize-inside-v1.jpg
+- title: 'Formation flight'
+  art_path: editions/023/art/picks/closing-formation-flight-v1.jpg
+- title: 'Wake-up mail'
+  art_path: editions/023/art/picks/closing-mail-for-maro-v1.jpg

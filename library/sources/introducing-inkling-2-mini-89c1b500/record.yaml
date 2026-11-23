@@ -1,0 +1,9 @@
+id: introducing-inkling-2-mini-89c1b500
+title: 'Introducing Inkling 2 Mini'
+author: 'Thinking Machines Lab'
+url: https://thinkingmachines.ai/news/inkling-2-mini/
+site: 'Thinking Machines Lab'
+captured_at: '2026-11-21T10:17:46Z'
+published_at: '2026-11-20'
+tags: []
+synopsis: 'Thinking Machines Lab releases Inkling 2 Mini, a 26.4B-parameter looped Mixture-of-Experts model with open weights that runs on laptops, and reports that looping improves reasoning without a meaningful reduction in chain-of-thought monitorability at this scale.'

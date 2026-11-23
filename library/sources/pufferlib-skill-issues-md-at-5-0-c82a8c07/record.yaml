@@ -1,0 +1,8 @@
+id: pufferlib-skill-issues-md-at-5-0-c82a8c07
+title: 'SKILL_ISSUES.md'
+author: 'PufferAI'
+url: https://github.com/PufferAI/PufferLib/blob/5.0/SKILL_ISSUES.md
+site: 'GitHub'
+captured_at: '2026-11-21T10:35:46Z'
+tags: []
+synopsis: 'A hand-written style and refactoring guide for PufferLib that sets out a refactoring algorithm and syntax rules for general code, C, and CUDA, aimed at reducing source length without changing behavior.'

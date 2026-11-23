@@ -1,0 +1,9 @@
+id: thinkingmachines-inkling-2-mini-1e52228e
+title: 'thinkingmachines/Inkling-2-Mini'
+author: 'Thinking Machines Lab'
+url: https://huggingface.co/thinkingmachines/Inkling-2-Mini
+site: 'huggingface.co'
+captured_at: '2026-11-21T18:48:56Z'
+published_at: '2026-11-20'
+tags: []
+synopsis: 'The Inkling 2 Mini model card describes Thinking Machines Lab''s open-weights multimodal looped-transformer MoE model (26.4B parameters, 3.4B active) that runs on local hardware, with its architecture, benchmark results against four comparison models, safety evaluations, and known limitations.'

@@ -1,0 +1,8 @@
+id: models-pricing-tinker-documentation-4814bdfa
+title: 'Models & Pricing - Tinker Documentation'
+author: ''
+url: https://tinker-docs.thinkingmachines.ai/tinker/models/models_and_pricing/
+site: 'tinker-docs.thinkingmachines.ai'
+captured_at: '2026-11-21T18:50:40Z'
+tags: []
+synopsis: 'The Tinker documentation lists the supported training and serverless inference models with context lengths, sizes, architectures, types, Tinker IDs, and per-million-token prefill, sample, and train prices, along with pricing terms, model types, selection advice, JSON pricing endpoints, and retired models.'

@@ -1,0 +1,9 @@
+id: faster-type-aware-linting-with-tsrs-b54b2be6
+title: 'Faster type-aware linting with tsrs'
+author: 'Cameron'
+url: https://oxc.rs/blog/2026-11-17-faster-type-aware-linting-with-tsrs
+site: 'Oxc'
+captured_at: '2026-11-21T10:25:20Z'
+published_at: '2026-11-17'
+tags: []
+synopsis: 'Oxlint is adding tsrs, a Rust port of TypeScript, as a drop-in alternative to tsgolint for type-aware linting, with up to 7x speed gains and 75% less memory.'

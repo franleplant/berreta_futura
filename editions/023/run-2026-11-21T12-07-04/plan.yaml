@@ -1,0 +1,118 @@
+edition:
+  id: '023'
+articles:
+- id: introducing-gpt-6-2-astra-and-sol
+  title: Introducing GPT-6.2 Astra and Sol
+  author: OpenAI
+  content_mode: model_card
+  source_ids:
+  - introducing-gpt-6-2-astra-and-sol-0fb76b8d
+  - gpt-6-2-system-card-7ebd05a0
+- id: verifying-formal-models-of-raft-implementations
+  title: Verifying formal models of Raft implementations
+  author: Rohan Padhye, Hillel Wayne
+  content_mode: article
+  source_ids:
+  - verifying-formal-models-of-raft-implementations-69abfaca
+- id: effective-swarm-riding-for-engineers
+  title: Effective Swarm Riding for Engineers
+  author: Georgios Konstantopoulos
+  content_mode: article
+  source_ids:
+  - effective-swarm-riding-for-engineers-4ca051fd
+- id: introducing-inkling-2-mini
+  title: Introducing Inkling 2 Mini
+  author: Thinking Machines Lab
+  content_mode: model_card
+  source_ids:
+  - introducing-inkling-2-mini-89c1b500
+  - tinker-pricing-82a338c0
+  - inkling-2-mini-model-card-6abdbaec
+  - thinkingmachines-inkling-2-mini-1e52228e
+  - models-pricing-tinker-documentation-4814bdfa
+  - tml-d24-varloop-research-model-card-ce380b4f
+- id: introducing-tool-retrieval-in-the-gemini-api
+  title: Introducing Tool Retrieval in the Gemini API
+  author: Lucia Loher, Nora Kassner
+  content_mode: article
+  source_ids:
+  - introducing-tool-retrieval-in-the-gemini-api-1b3aafed
+- id: tufazip-learning-to-compress-a-billion-bytes-of
+  title: 'tufazip: Learning to Compress a Billion Bytes of Wikipedia'
+  author: Tommy He
+  content_mode: article
+  source_ids:
+  - tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+- id: introducing-vercel-board
+  title: Introducing Vercel Board
+  author: Julian Benegas, Nicolás Montone, Malte Ubl, Tom Knickman, Martin Sione, Bani Singh
+  content_mode: article
+  source_ids:
+  - introducing-vercel-board-0a961e0e
+- id: faster-type-aware-linting-with-tsrs
+  title: Faster type-aware linting with tsrs
+  author: Cameron
+  content_mode: article
+  source_ids:
+  - faster-type-aware-linting-with-tsrs-b54b2be6
+- id: deterministic-simulation-testing
+  title: Deterministic Simulation Testing
+  author: Unmesh Joshi
+  content_mode: article
+  source_ids:
+  - deterministic-simulation-testing-64322f58
+- id: building-an-accounting-team-with-grok-bot
+  title: Building an accounting team with Grok Bot
+  author: Annay (Paul) Bains, Will Smerdon, and Erin Jenks
+  content_mode: article
+  source_ids:
+  - building-an-accounting-team-with-grok-bot-1475c813
+- id: agents-are-users-so-your-software-needs-evals
+  title: Agents are users, so your software needs evals
+  author: George Fahmy, Yury Selivanov
+  content_mode: article
+  source_ids:
+  - agents-are-users-so-your-software-needs-evals-c19318be
+- id: pufferlib-skill-issues-md-at-5-0
+  title: SKILL_ISSUES.md
+  author: PufferAI
+  content_mode: verbatim
+  source_ids:
+  - pufferlib-skill-issues-md-at-5-0-c82a8c07
+- id: pi-durable-actors-one-agent-one-owner-any-worker
+  title: 'Pi Durable ♥ Actors: One Agent, One Owner, Any Worker'
+  author: Manoj Mahalingam
+  content_mode: article
+  source_ids:
+  - pi-durable-actors-one-agent-one-owner-any-worker-57ec0d05
+- id: automate-anything-with-grok-bot
+  title: Automate Anything with Grok Bot
+  author: Lauren Tan
+  content_mode: article
+  source_ids:
+  - automate-anything-with-grok-bot-0caa2cc5
+- id: overcoming-challenges-in-software-factory-adopti
+  title: Overcoming challenges in software factory adoption
+  author: Zach Lloyd
+  content_mode: article
+  source_ids:
+  - overcoming-challenges-in-software-factory-adopti-0c459f66
+- id: a-look-inside-the-factory
+  title: A Look Inside the Factory
+  author: Calvin Grunewald
+  content_mode: article
+  source_ids:
+  - a-look-inside-the-factory-04c53aba
+- id: making-openclaw-ci-faster-and-95-cheaper
+  title: Making OpenClaw CI faster and 95% cheaper
+  author: Vincent Koc
+  content_mode: article
+  source_ids:
+  - making-openclaw-ci-faster-and-95-cheaper-97e637dd
+- id: introducing-gemini-4-neon
+  title: Introducing Gemini 4 Neon
+  author: Koray Kavukcuoglu
+  content_mode: model_card
+  source_ids:
+  - introducing-gemini-4-neon-f539fcda
+  - gemini-4-neon-7d909646

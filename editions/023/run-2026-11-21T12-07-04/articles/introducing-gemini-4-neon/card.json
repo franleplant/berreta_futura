@@ -1,0 +1,57 @@
+{
+  "name": "Gemini 4 Neon",
+  "model_id": "gemini-4-neon",
+  "lab": "Google",
+  "cost": [
+    {
+      "label": "in",
+      "value": "$3"
+    },
+    {
+      "label": "cached",
+      "value": "$0.15"
+    },
+    {
+      "label": "out",
+      "value": "$15"
+    }
+  ],
+  "type_line": {
+    "kind": "Frontier Model",
+    "roles": [
+      "Coder",
+      "Analyst"
+    ]
+  },
+  "traits": [
+    "Cuts down on redundant file reads and shares progress as it works.",
+    "Handles context compaction reliably in long sessions.",
+    "Records the lowest fabrication rate yet in internal Google testing."
+  ],
+  "effort": [
+    "high",
+    "xhigh"
+  ],
+  "advice": [
+    {
+      "key": "Use it for",
+      "value": "complex coding, analytical reasoning, and production-grade enterprise workflows"
+    }
+  ],
+  "strength": "Legal, tax, finance and spreadsheet work",
+  "weakness": "Ranks behind larger, slower models on intelligence",
+  "resistance": "Blocks cyber and biosecurity misuse in real time",
+  "benchmark": {
+    "name": "AutomationBench",
+    "score": "56.3",
+    "unit": "%"
+  },
+  "flavor": null,
+  "released": "2026-11-18",
+  "art_briefs": [
+    "a calm glass-tube automaton made of bent glowing tubing and frosted borosilicate, standing upright with arms gently open, holding a buzzing gas discharge tube in one hand and a small blue Bunsen flame in the other, with a miniature snowy mountain hovering at its feet, fresh carved ski tracks and a tumbling slab of avalanche snow on its slopes. Background: a giant pale sun disk over a flat salt desert at dusk. Coral pink, ice blue and charcoal palette.",
+    "a slender clockwork scholar made of polished walnut and brass gears, seated cross-legged on a floating oak desk, feeding a long ribbon of blank paper tape through a small brass reading-head machine, a tidy stack of receipts and a utility bill pinned under a magnifying glass beside it. Background: a huge ringed planet rising over a still night sea. Amber, deep teal and cream palette.",
+    "a serene porcelain figure made of white ceramic tiles joined by fine gold seams, standing tall and weaving a vast glowing grid of tiny coloured cells like a quilt that slowly forms a relit landscape picture, a brass balance scale and a neat bundle of ribbon-tied documents resting at its feet. Background: an endless pale dune beneath a wide halo of soft stars. Ivory, emerald and soft gold palette.",
+    "a poised conductor android made of brushed silver and translucent violet glass, standing on a quiet ridge with one arm raised, guiding a ring of small glowing helper lanterns that circle it, one mending a cracked shield with needle and thread, one tightening a bolt on a tiny padlock, one unfolding a map. Background: a single glowing orbit ring across a dark violet sky above a snowy horizon. Violet, silver and electric red palette."
+  ]
+}

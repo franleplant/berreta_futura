@@ -1,0 +1,9 @@
+id: inkling-2-mini-model-card-6abdbaec
+title: 'Inkling 2 Mini Model Card'
+author: 'Thinking Machines Lab'
+url: https://thinkingmachines.ai/model-card/inkling-2-mini/
+site: 'Thinking Machines Lab'
+captured_at: '2026-11-21T12:10:04Z'
+published_at: '2026-11-20'
+tags: []
+synopsis: 'The model card for Inkling 2 Mini, an open-weights multimodal looped transformer from Thinking Machines Lab with 26.4B total and 3.4B active parameters, covering its properties, distribution, training, benchmark evaluations, safety testing, and limitations.'

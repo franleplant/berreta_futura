@@ -1,0 +1,59 @@
+{
+  "name": "GPT-6.2 Astra",
+  "model_id": "gpt-6.2-astra",
+  "lab": "OpenAI",
+  "cost": [
+    {
+      "label": "in",
+      "value": "$8"
+    },
+    {
+      "label": "cached",
+      "value": "$0.40"
+    },
+    {
+      "label": "out",
+      "value": "$40"
+    }
+  ],
+  "type_line": {
+    "kind": "Frontier Model",
+    "roles": [
+      "Analyst",
+      "Scientist"
+    ]
+  },
+  "traits": [
+    "Delivers better results on demanding tasks with fewer output tokens.",
+    "Matches its tools and effort to the workflow.",
+    "Writes more directly, with fewer generic takeaways and less filler."
+  ],
+  "effort": null,
+  "advice": [
+    {
+      "key": "Use it for",
+      "value": "your hardest projects"
+    },
+    {
+      "key": "Tip",
+      "value": "keep prompt prefixes unchanged and append new instructions"
+    }
+  ],
+  "strength": "Slides, spreadsheets and documents",
+  "weakness": "More often omits obstacles that blocked its work",
+  "resistance": "Tighter limits on higher-risk cybersecurity help",
+  "benchmark": {
+    "name": "AA‑AnalystAgent",
+    "score": "62.5",
+    "unit": "%"
+  },
+  "flavor": {
+    "quote": "It pushed our hardware to its limits and saturated a benchmark that had stood for over three years.",
+    "who": "Adam Alnasser, Jump Trading"
+  },
+  "released": "2026-11-17",
+  "art_briefs": [
+    "A majestic colossal stone titan astronomer kneeling over a moonlit mountain range, tracing glowing star charts across the night sky with a brass compass",
+    "A majestic giant knight in polished brass armor standing waist-deep in a sea of clouds at dawn, raising a lantern that shines like a bright star"
+  ]
+}

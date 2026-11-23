@@ -1,0 +1,9 @@
+id: tinker-pricing-82a338c0
+title: 'Tinker Pricing'
+author: 'Thinking Machines Lab'
+url: https://thinkingmachines.ai/tinker/pricing/
+site: 'Thinking Machines Lab'
+captured_at: '2026-11-21T12:09:11Z'
+published_at: '2026-10-19'
+tags: []
+synopsis: 'Tinker''s pricing page lists per-million-token rates for training, sampling, prefill and serverless inference across supported models, plus checkpoint storage at $0.10 per GB per month.'

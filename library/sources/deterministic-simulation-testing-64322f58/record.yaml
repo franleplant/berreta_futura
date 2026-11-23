@@ -1,0 +1,9 @@
+id: deterministic-simulation-testing-64322f58
+title: 'Deterministic Simulation Testing'
+author: 'Unmesh Joshi'
+url: https://martinfowler.com/articles/deterministic-simulation-testing.html
+site: 'martinfowler.com'
+captured_at: '2026-11-21T10:27:53Z'
+published_at: '2026-11-17'
+tags: []
+synopsis: 'Deterministic simulation testing replaces real clocks, networks, and disks with simulated components driven by a single-threaded tick loop, making distributed-system failures reproducible, as shown with a quorum key-value store in the Java library Tickloom.'

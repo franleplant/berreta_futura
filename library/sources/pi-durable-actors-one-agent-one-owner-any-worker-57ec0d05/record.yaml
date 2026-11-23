@@ -1,0 +1,9 @@
+id: pi-durable-actors-one-agent-one-owner-any-worker-57ec0d05
+title: 'Pi Durable ♥ Actors: One Agent, One Owner, Any Worker'
+author: 'Manoj Mahalingam'
+url: https://x.com/manojlds/article/2123896787878453421
+site: 'X'
+captured_at: '2026-11-21T10:36:39Z'
+published_at: '2026-11-20'
+tags: []
+synopsis: 'The author argues that agents are actors, and shows that running Pi Durable harnesses inside Rivet actors on a two-node local cluster handles placement, agent-to-agent calls, durable reminders, and recovery from a killed node, with a scheduled heartbeat needed for automatic recovery.'

@@ -1,0 +1,74 @@
+{"attempt":0,"label":"introducing-tool-retrieval-in-the-gemini-api write","model":"opus","seconds":18.4,"usd":0.1933}
+{"attempt":0,"label":"faster-type-aware-linting-with-tsrs write","model":"opus","seconds":22.4,"usd":0.1904}
+{"attempt":0,"label":"pufferlib-skill-issues-md-at-5-0 cleanup","model":"sonnet","seconds":4.3,"usd":0.0713}
+{"attempt":0,"label":"introducing-vercel-board write","model":"opus","seconds":22.8,"usd":0.1974}
+{"attempt":0,"label":"overcoming-challenges-in-software-factory-adopti write","model":"opus","seconds":26.0,"usd":0.2005}
+{"attempt":0,"label":"building-an-accounting-team-with-grok-bot write","model":"opus","seconds":31.1,"usd":0.2302}
+{"attempt":0,"label":"tufazip-learning-to-compress-a-billion-bytes-of write","model":"opus","seconds":33.3,"usd":0.2974}
+{"attempt":0,"label":"verifying-formal-models-of-raft-implementations write","model":"opus","seconds":36.2,"usd":0.2725}
+{"attempt":0,"label":"introducing-inkling-2-mini write","model":"opus","seconds":40.6,"usd":0.3199}
+{"attempt":0,"label":"deterministic-simulation-testing write","model":"opus","seconds":40.6,"usd":0.413}
+{"attempt":0,"label":"a-look-inside-the-factory write","model":"opus","seconds":42.0,"usd":0.2946}
+{"attempt":0,"label":"pi-durable-actors-one-agent-one-owner-any-worker write","model":"opus","seconds":42.9,"usd":0.2928}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol write","model":"opus","seconds":55.0,"usd":1.0239}
+{"attempt":0,"label":"effective-swarm-riding-for-engineers write","model":"opus","seconds":55.1,"usd":0.2106}
+{"attempt":0,"label":"making-openclaw-ci-faster-and-95-cheaper write","model":"opus","seconds":57.0,"usd":0.3801}
+{"attempt":0,"label":"agents-are-users-so-your-software-needs-evals write","model":"opus","seconds":57.2,"usd":0.3673}
+{"attempt":0,"label":"deterministic-simulation-testing trim1","model":"opus","seconds":27.6,"usd":0.4069}
+{"attempt":1,"label":"introducing-inkling-2-mini card","model":"opus","seconds":15.0,"usd":0.2545}
+{"attempt":0,"label":"agents-are-users-so-your-software-needs-evals trim1","model":"opus","seconds":24.9,"usd":0.2969}
+{"attempt":0,"label":"automate-anything-with-grok-bot write","model":"opus","seconds":83.4,"usd":0.2191}
+{"attempt":0,"label":"introducing-inkling-2-mini card sources","model":"sonnet","seconds":23.1,"usd":0.19}
+{"attempt":1,"label":"introducing-gpt-6-2-astra-and-sol card","model":"opus","seconds":22.4,"usd":0.9606}
+{"attempt":1,"label":"introducing-inkling-2-mini card, more sources","model":"opus","seconds":42.3,"usd":0.3411}
+{"attempt":1,"label":"article-labels","model":"opus","seconds":13.5,"usd":0.1548}
+{"attempt":1,"label":"author-bios","model":"opus","seconds":18.9,"usd":0.1658}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol figure anchors","model":"haiku","seconds":3.9,"usd":0.0042}
+{"attempt":0,"label":"tufazip-learning-to-compress-a-billion-bytes-of figure anchors","model":"haiku","seconds":3.8,"usd":0.0037}
+{"attempt":1,"label":"deterministic-simulation-testing figure anchors","model":"haiku","seconds":5.2,"usd":0.0039}
+{"attempt":0,"label":"building-an-accounting-team-with-grok-bot figure anchors","model":"haiku","seconds":3.9,"usd":0.0035}
+{"attempt":0,"label":"agents-are-users-so-your-software-needs-evals figure anchors","model":"haiku","seconds":3.8,"usd":0.0037}
+{"attempt":0,"label":"a-look-inside-the-factory figure anchors","model":"haiku","seconds":4.2,"usd":0.0037}
+{"attempt":0,"label":"front-matter","model":"opus","seconds":32.5,"usd":0.4392}
+{"attempt":1,"label":"introducing-inkling-2-mini card","model":"opus","seconds":17.6,"usd":0.3884}
+{"attempt":0,"label":"introducing-inkling-2-mini card sources","model":"sonnet","seconds":13.4,"usd":0.1676}
+{"attempt":0,"label":"introducing-inkling-2-mini models","model":"sonnet","seconds":4.5,"usd":0.2038}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol models","model":"sonnet","seconds":6.3,"usd":0.4564}
+{"attempt":0,"label":"introducing-inkling-2-mini card","model":"opus","seconds":14.9,"usd":0.445}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol card-2","model":"opus","seconds":23.6,"usd":0.9712}
+{"attempt":0,"label":"introducing-inkling-2-mini card art 3-legend","model":"opus","seconds":12.1,"usd":0.1461}
+{"attempt":0,"label":"introducing-inkling-2-mini card art 2-lost-novel","model":"opus","seconds":16.7,"usd":0.1629}
+{"attempt":0,"label":"introducing-inkling-2-mini card art 4-substance","model":"opus","seconds":20.4,"usd":0.1582}
+{"attempt":0,"label":"introducing-inkling-2-mini card art 1-free-hand","model":"opus","seconds":21.6,"usd":0.1698}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol card-2 art 3-legend","model":"opus","seconds":11.3,"usd":0.1431}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol card-2 art 2-lost-novel","model":"opus","seconds":12.8,"usd":0.1521}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol card-2 art 4-substance","model":"opus","seconds":16.1,"usd":0.1553}
+{"attempt":0,"label":"introducing-gpt-6-2-astra-and-sol card-2 art 1-free-hand","model":"opus","seconds":20.9,"usd":0.1609}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2","model":"opus","seconds":23.0,"usd":0.4592}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2 art 3-legend","model":"opus","seconds":10.7,"usd":0.1419}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2 art 4-substance","model":"opus","seconds":15.4,"usd":0.154}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2 art 1-free-hand","model":"opus","seconds":17.6,"usd":0.1596}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2 art 2-lost-novel","model":"opus","seconds":20.6,"usd":0.1616}
+{"attempt":0,"label":"introducing-inkling-2-mini card sources","model":"sonnet","seconds":50.7,"usd":0.2127}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2, more sources","model":"opus","seconds":21.4,"usd":0.4776}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2, more sources art 4-substance","model":"opus","seconds":14.1,"usd":0.1545}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2, more sources art 1-free-hand","model":"opus","seconds":14.9,"usd":0.1543}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2, more sources art 2-lost-novel","model":"opus","seconds":15.5,"usd":0.1558}
+{"attempt":0,"label":"introducing-inkling-2-mini card-2, more sources art 3-legend","model":"opus","seconds":17.0,"usd":0.1613}
+{"attempt":0,"label":"pufferlib-skill-issues-md-at-5-0 cleanup","model":"sonnet","seconds":5.9,"usd":0.0015}
+{"attempt":0,"label":"introducing-gemini-4-neon write","model":"opus","seconds":25.8,"usd":0.1146}
+{"attempt":0,"label":"introducing-gemini-4-neon models","model":"sonnet","seconds":5.2,"usd":0.002}
+{"attempt":0,"label":"introducing-gemini-4-neon card","model":"opus","seconds":19.0,"usd":0.114}
+{"attempt":0,"label":"introducing-gemini-4-neon card art 1-figure","model":"opus","seconds":20.7,"usd":0.1025}
+{"attempt":0,"label":"introducing-gemini-4-neon card sources","model":"sonnet","seconds":50.3,"usd":0.1673}
+{"attempt":0,"label":"introducing-gemini-4-neon card, more sources","model":"opus","seconds":20.2,"usd":0.1102}
+{"attempt":0,"label":"introducing-gemini-4-neon card, more sources art 1-figure","model":"opus","seconds":19.3,"usd":0.1028}
+{"attempt":0,"label":"article-labels","model":"opus","seconds":5.5,"usd":0.0249}
+{"attempt":0,"label":"introducing-gemini-4-neon figure anchors","model":"haiku","seconds":5.0,"usd":0.0017}
+{"attempt":0,"label":"introducing-gemini-4-neon card","model":"opus","seconds":19.2,"usd":0.1163}
+{"attempt":0,"label":"introducing-gemini-4-neon card art 1-figure","model":"opus","seconds":20.3,"usd":0.089}
+{"attempt":0,"label":"introducing-gemini-4-neon card sources","model":"sonnet","seconds":39.2,"usd":0.0854}
+{"attempt":0,"label":"introducing-gemini-4-neon card, more sources","model":"opus","seconds":18.7,"usd":0.104}
+{"attempt":0,"label":"introducing-gemini-4-neon card, more sources art 1-figure","model":"opus","seconds":18.4,"usd":0.1027}
+{"attempt":0,"label":"introducing-gemini-4-neon card","model":"opus","seconds":16.0,"usd":0.1138}
+{"attempt":0,"label":"introducing-gemini-4-neon card art 1-figure","model":"opus","seconds":18.3,"usd":0.1051}

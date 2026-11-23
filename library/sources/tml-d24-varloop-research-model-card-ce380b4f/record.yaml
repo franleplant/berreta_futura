@@ -1,0 +1,9 @@
+id: tml-d24-varloop-research-model-card-ce380b4f
+title: 'TML-d24-varloop-research Model Card'
+author: 'Thinking Machines Lab, Inc.'
+url: https://thinkingmachines.ai/model-card/tml-d24-varloop-research/
+site: 'Thinking Machines Lab'
+captured_at: '2026-11-21T19:51:44Z'
+published_at: '2026-11-20'
+tags: []
+synopsis: 'The model card for TML-d24-varloop-research, an open-weights research model whose number of looped-layer passes can be chosen at inference time, describes its architecture, distribution, training, safety evaluation, and limitations.'

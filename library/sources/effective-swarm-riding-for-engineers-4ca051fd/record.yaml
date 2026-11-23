@@ -1,0 +1,9 @@
+id: effective-swarm-riding-for-engineers-4ca051fd
+title: 'Effective Swarm Riding for Engineers'
+author: 'Georgios Konstantopoulos'
+url: https://www.paradigm.xyz/writing/swarms
+site: 'Paradigm'
+captured_at: '2026-11-21T10:13:50Z'
+published_at: '2026-11-20'
+tags: []
+synopsis: 'The author argues that engineers should use swarms of coding agents by being ambitious, keeping setups simple, using cloud agents, prompting with specific phrases, and restructuring codebases (no comments, no agent-written unit tests, deterministic simulation tests, no CI) to remove friction for swarms.'

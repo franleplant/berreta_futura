@@ -18,6 +18,8 @@ _Collecting: `011` (12 queued)._
 
 _Collecting: `012` (12 queued)._
 
+_Collecting: `023` (25 queued)._
+
 _Collecting: `022` (17 queued)._
 
 _Collecting: `020` (34 queued)._
@@ -35,6 +37,272 @@ _Collecting: `015` (9 queued)._
 _Collecting: `014` (8 queued)._
 
 _Collecting: `013` (7 queued)._
+
+## Gemini 4 Neon
+
+- ID: `gemini-4-neon-7d909646`
+- Source: https://aistudio.google.com/docs/models/gemini-4-neon
+- Captured: 2026-11-22T18:12:12Z
+- Release: queued for `023`
+
+Gemini 4 Neon (gemini-4-neon) is a Google model offering frontier-level intelligence for software engineering, knowledge work, and science, with a 1,048,576-token unified context window, multimodal inputs, text output, and long decode up to 1M tokens.
+
+## Introducing Gemini 4 Neon — Koray Kavukcuoglu
+
+- ID: `introducing-gemini-4-neon-f539fcda`
+- Source: https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-neon/
+- Published: 2026-11-18
+- Captured: 2026-11-22T18:01:20Z
+- Release: queued for `023`
+
+Google introduces Gemini 4 Neon, a model offering frontier-level intelligence with fast task completion across coding, enterprise, science and cyber defense workflows, priced at $3 per million input tokens and $15 per million output tokens with a 1 million-token context window.
+
+## Sundar Pichai (@sundarpichai) on X — Sundar Pichai
+
+- ID: `sundar-pichai-sundarpichai-on-x-97fd32a1`
+- Source: https://x.com/sundarpichai/status/2123167785790648751
+- Published: 2026-11-18
+- Captured: 2026-11-22T17:58:51Z
+- Release: queued for `023`
+
+Sundar Pichai posts a "read more" link to Google's blog announcement "Introducing Gemini 4 Neon", a model offering frontier-level intelligence and fast end-to-end task completion.
+
+## TML-d24-varloop-research Model Card — Thinking Machines Lab, Inc.
+
+- ID: `tml-d24-varloop-research-model-card-ce380b4f`
+- Source: https://thinkingmachines.ai/model-card/tml-d24-varloop-research/
+- Published: 2026-11-20
+- Captured: 2026-11-21T19:51:44Z
+- Release: queued for `023`
+
+The model card for TML-d24-varloop-research, an open-weights research model whose number of looped-layer passes can be chosen at inference time, describes its architecture, distribution, training, safety evaluation, and limitations.
+
+## Models & Pricing - Tinker Documentation
+
+- ID: `models-pricing-tinker-documentation-4814bdfa`
+- Source: https://tinker-docs.thinkingmachines.ai/tinker/models/models_and_pricing/
+- Captured: 2026-11-21T18:50:40Z
+- Release: queued for `023`
+
+The Tinker documentation lists the supported training and serverless inference models with context lengths, sizes, architectures, types, Tinker IDs, and per-million-token prefill, sample, and train prices, along with pricing terms, model types, selection advice, JSON pricing endpoints, and retired models.
+
+## thinkingmachines/Inkling-2-Mini — Thinking Machines Lab
+
+- ID: `thinkingmachines-inkling-2-mini-1e52228e`
+- Source: https://huggingface.co/thinkingmachines/Inkling-2-Mini
+- Published: 2026-11-20
+- Captured: 2026-11-21T18:48:56Z
+- Release: queued for `023`
+
+The Inkling 2 Mini model card describes Thinking Machines Lab's open-weights multimodal looped-transformer MoE model (26.4B parameters, 3.4B active) that runs on local hardware, with its architecture, benchmark results against four comparison models, safety evaluations, and known limitations.
+
+## Inkling 2 Mini Model Card — Thinking Machines Lab
+
+- ID: `inkling-2-mini-model-card-6abdbaec`
+- Source: https://thinkingmachines.ai/model-card/inkling-2-mini/
+- Published: 2026-11-20
+- Captured: 2026-11-21T12:10:04Z
+- Release: queued for `023`
+
+The model card for Inkling 2 Mini, an open-weights multimodal looped transformer from Thinking Machines Lab with 26.4B total and 3.4B active parameters, covering its properties, distribution, training, benchmark evaluations, safety testing, and limitations.
+
+## Tinker Pricing — Thinking Machines Lab
+
+- ID: `tinker-pricing-82a338c0`
+- Source: https://thinkingmachines.ai/tinker/pricing/
+- Published: 2026-10-19
+- Captured: 2026-11-21T12:09:11Z
+- Release: queued for `023`
+
+Tinker's pricing page lists per-million-token rates for training, sampling, prefill and serverless inference across supported models, plus checkpoint storage at $0.10 per GB per month.
+
+## Making OpenClaw CI faster and 95% cheaper — Vincent Koc
+
+- ID: `making-openclaw-ci-faster-and-95-cheaper-97e637dd`
+- Source: https://vincent.build/openclaw-ci-cost-reduction/
+- Published: 2026-11-16
+- Captured: 2026-11-21T12:06:56Z
+- Release: queued for `023`
+
+Vincent Koc describes how OpenClaw cut weekly CI runner-hours by 86.5% and the estimated value of sponsored compute by 95.5% by deleting redundant tests, staging checks, deterministic adaptive test selection, reusing setup, and packing and right-sizing jobs, while noting that faster PR delivery was not yet established.
+
+## A Look Inside the Factory — Calvin Grunewald
+
+- ID: `a-look-inside-the-factory-04c53aba`
+- Source: https://thebuildingmachine.com/p/a-look-inside-the-factory
+- Published: 2026-11-19
+- Captured: 2026-11-21T10:39:04Z
+- Release: queued for `023`
+
+The author describes how he vibe-coded an agent harness into a software factory of overseer, workers and a daemon, the design decisions and human-in-the-loop lessons along the way, and why compute limits are pushing it to the cloud.
+
+## Overcoming challenges in software factory adoption — Zach Lloyd
+
+- ID: `overcoming-challenges-in-software-factory-adopti-0c459f66`
+- Source: https://x.com/zachlloydtweets/article/2122348347088683232
+- Published: 2026-11-16
+- Captured: 2026-11-21T10:37:24Z
+- Release: queued for `023`
+
+Zach Lloyd argues that adopting software factories means engineers design the factory rather than work the line, and that leaders must move agent setups from individual laptops to shared team infrastructure despite the loss of personal autonomy.
+
+## Automate Anything with Grok Bot — Lauren Tan
+
+- ID: `automate-anything-with-grok-bot-0caa2cc5`
+- Source: https://x.com/poteto/article/2123159537016533493
+- Published: 2026-11-18
+- Captured: 2026-11-21T10:37:10Z
+- Release: queued for `023`
+
+The author explains that automation means pairing a clear goal with a process, and describes how to use Grok Bot to automate tasks by stating the goal, explaining the process, teaching the bot how you decide, giving it feedback data, and scheduling routines.
+
+## Pi Durable ♥ Actors: One Agent, One Owner, Any Worker — Manoj Mahalingam
+
+- ID: `pi-durable-actors-one-agent-one-owner-any-worker-57ec0d05`
+- Source: https://x.com/manojlds/article/2123896787878453421
+- Published: 2026-11-20
+- Captured: 2026-11-21T10:36:39Z
+- Release: queued for `023`
+
+The author argues that agents are actors, and shows that running Pi Durable harnesses inside Rivet actors on a two-node local cluster handles placement, agent-to-agent calls, durable reminders, and recovery from a killed node, with a scheduled heartbeat needed for automatic recovery.
+
+## SKILL_ISSUES.md — PufferAI
+
+- ID: `pufferlib-skill-issues-md-at-5-0-c82a8c07`
+- Source: https://github.com/PufferAI/PufferLib/blob/5.0/SKILL_ISSUES.md
+- Captured: 2026-11-21T10:35:46Z
+- Release: queued for `023`
+
+A hand-written style and refactoring guide for PufferLib that sets out a refactoring algorithm and syntax rules for general code, C, and CUDA, aimed at reducing source length without changing behavior.
+
+## Agents are users, so your software needs evals — George Fahmy, Yury Selivanov
+
+- ID: `agents-are-users-so-your-software-needs-evals-c19318be`
+- Source: https://vercel.com/blog/agent-evals
+- Published: 2026-11-16
+- Captured: 2026-11-21T10:35:31Z
+- Release: queued for `023`
+
+Agents are now users of software, and the article explains how to build, run, and analyze end-to-end evals with Harbor on Vercel, using a coffee-ordering CLI example, to measure whether agents complete user tasks correctly.
+
+## Building an accounting team with Grok Bot — Annay (Paul) Bains, Will Smerdon, and Erin Jenks
+
+- ID: `building-an-accounting-team-with-grok-bot-1475c813`
+- Source: https://x.ai/news/grok-bot-accounting
+- Published: 2026-11-16
+- Captured: 2026-11-21T10:28:34Z
+- Release: queued for `023`
+
+SpaceXSI describes how it assigned five scoped Grok Bots to own accounting jobs end to end, from provisioning to collections, and what it learned about documenting, permissioning, and training them like new employees.
+
+## Deterministic Simulation Testing — Unmesh Joshi
+
+- ID: `deterministic-simulation-testing-64322f58`
+- Source: https://martinfowler.com/articles/deterministic-simulation-testing.html
+- Published: 2026-11-17
+- Captured: 2026-11-21T10:27:53Z
+- Release: queued for `023`
+
+Deterministic simulation testing replaces real clocks, networks, and disks with simulated components driven by a single-threaded tick loop, making distributed-system failures reproducible, as shown with a quorum key-value store in the Java library Tickloom.
+
+## Faster type-aware linting with tsrs — Cameron
+
+- ID: `faster-type-aware-linting-with-tsrs-b54b2be6`
+- Source: https://oxc.rs/blog/2026-11-17-faster-type-aware-linting-with-tsrs
+- Published: 2026-11-17
+- Captured: 2026-11-21T10:25:20Z
+- Release: queued for `023`
+
+Oxlint is adding tsrs, a Rust port of TypeScript, as a drop-in alternative to tsgolint for type-aware linting, with up to 7x speed gains and 75% less memory.
+
+## Introducing Vercel Board — Julian Benegas, Nicolás Montone, Malte Ubl, Tom Knickman, Martin Sione, Bani Singh
+
+- ID: `introducing-vercel-board-0a961e0e`
+- Source: https://vercel.com/blog/introducing-vercel-board
+- Published: 2026-11-18
+- Captured: 2026-11-21T10:25:02Z
+- Release: queued for `023`
+
+Vercel announces Vercel Board, an experimental headless message-board primitive that lets humans and many agents coordinate tasks, threads, access grants, and synced tools such as Slack and GitHub through a CLI and JavaScript SDK.
+
+## tufazip: Learning to Compress a Billion Bytes of Wikipedia — Tommy He
+
+- ID: `tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7`
+- Source: https://tufalabs.ai/research/tufazip/
+- Published: 2026-10-14
+- Captured: 2026-11-21T10:24:36Z
+- Release: queued for `023`
+
+Tommy He describes tufazip, a 12-layer, 163M-parameter Transformer compressor that took #2 on the Large Text Compression Benchmark by compressing enwik9 to 105,388,353 bytes, including offline trained weights and decoder, using online learning plus a compact offline prior.
+
+## Introducing Tool Retrieval in the Gemini API — Lucia Loher, Nora Kassner
+
+- ID: `introducing-tool-retrieval-in-the-gemini-api-1b3aafed`
+- Source: https://blog.google/innovation-and-ai/technology/developers-tools/gemini-api-tool-retrieval/
+- Published: 2026-11-19
+- Captured: 2026-11-21T10:21:25Z
+- Release: queued for `023`
+
+Google announces Tool Retrieval in preview in the Gemini Interactions API, which lets agents keep a large tool library on standby and load parameter schemas only when a task needs them, reducing input tokens and latency.
+
+## Introducing Inkling 2 Mini — Thinking Machines Lab
+
+- ID: `introducing-inkling-2-mini-89c1b500`
+- Source: https://thinkingmachines.ai/news/inkling-2-mini/
+- Published: 2026-11-20
+- Captured: 2026-11-21T10:17:46Z
+- Release: queued for `023`
+
+Thinking Machines Lab releases Inkling 2 Mini, a 26.4B-parameter looped Mixture-of-Experts model with open weights that runs on laptops, and reports that looping improves reasoning without a meaningful reduction in chain-of-thought monitorability at this scale.
+
+## Effective Swarm Riding for Engineers — Georgios Konstantopoulos
+
+- ID: `effective-swarm-riding-for-engineers-4ca051fd`
+- Source: https://www.paradigm.xyz/writing/swarms
+- Published: 2026-11-20
+- Captured: 2026-11-21T10:13:50Z
+- Release: queued for `023`
+
+The author argues that engineers should use swarms of coding agents by being ambitious, keeping setups simple, using cloud agents, prompting with specific phrases, and restructuring codebases (no comments, no agent-written unit tests, deterministic simulation tests, no CI) to remove friction for swarms.
+
+## Verifying formal models of Raft implementations — Rohan Padhye, Hillel Wayne
+
+- ID: `verifying-formal-models-of-raft-implementations-69abfaca`
+- Source: https://antithesis.com/blog/2026/verifying-formal-models/
+- Published: 2026-11-19
+- Captured: 2026-11-21T10:13:35Z
+- Release: queued for `023`
+
+Antithesis describes using AI, TLA+, trace validation, and its testing platform to formally model and prove core safety properties of the etcd and HashiCorp Raft implementations, finding and patching bugs along the way.
+
+## Introducing Claude Opus 5.5
+
+- ID: `introducing-claude-opus-5-5-0dd3bed5`
+- Source: https://www.anthropic.com/claude-opus-5-5
+- Published: 2026-09-22
+- Captured: 2026-11-19T23:02:11Z
+- Release: library only
+
+Anthropic announces Claude Opus 5.5, the first model in its Claude 5.5 family, which it says performs at the level of Claude Fable 5.1 on most work while costing 40% less to run than Opus 5, and describes its benchmarks, pricing, writing improvements, safety evaluations, safeguards, and availability.
+
+## GPT-6.2 System Card — OpenAI Deployment Safety Hub
+
+- ID: `gpt-6-2-system-card-7ebd05a0`
+- Source: https://deploymentsafety.openai.com/gpt-6-2-astra-sol
+- Published: 2026-11-17
+- Captured: 2026-11-18T19:01:54Z
+- Release: queued for `023`
+
+OpenAI's system card for GPT-6.2 Astra and GPT-6.2 Sol states both models meet the Critical cybersecurity and High biological/chemical thresholds, Astra also meets High for AI Self-Improvement, and reports the capability, safeguard, alignment, and monitorability evaluations behind those determinations.
+
+## Introducing GPT-6.2 Astra and Sol — OpenAI
+
+- ID: `introducing-gpt-6-2-astra-and-sol-0fb76b8d`
+- Source: https://openai.com/index/introducing-gpt-6-2-astra-sol/
+- Captured: 2026-11-18T13:41:37Z
+- Release: queued for `023`
+
+OpenAI introduces GPT-6.2 Astra, a frontier model for hard professional work, and GPT-6.2 Sol, an efficient everyday model, claiming better benchmark results with fewer output tokens, new cybersecurity and safety safeguards, and API pricing and availability details.
 
 ## Claude can design electronic prototypes from start to finish — Mike Cretella, Connor Jennings, Brent Yi, Craig Chen
 

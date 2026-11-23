@@ -1,0 +1,9 @@
+id: a-look-inside-the-factory-04c53aba
+title: 'A Look Inside the Factory'
+author: 'Calvin Grunewald'
+url: https://thebuildingmachine.com/p/a-look-inside-the-factory
+site: 'thebuildingmachine.com'
+captured_at: '2026-11-21T10:39:04Z'
+published_at: '2026-11-19'
+tags: []
+synopsis: 'The author describes how he vibe-coded an agent harness into a software factory of overseer, workers and a daemon, the design decisions and human-in-the-loop lessons along the way, and why compute limits are pushing it to the cloud.'

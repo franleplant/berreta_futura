@@ -1,0 +1,61 @@
+{
+  "name": "GPT-6.2 Sol",
+  "model_id": "gpt-6.2-sol",
+  "lab": "OpenAI",
+  "cost": [
+    {
+      "label": "in",
+      "value": "$2"
+    },
+    {
+      "label": "cached",
+      "value": "$0.10"
+    },
+    {
+      "label": "out",
+      "value": "$10"
+    }
+  ],
+  "type_line": {
+    "kind": "Efficient Model",
+    "roles": [
+      "Agent"
+    ]
+  },
+  "traits": [
+    "Smarter and more efficient than GPT-6.1 Sol.",
+    "Writes clearly and naturally, and is intuitive to collaborate with.",
+    "Delivers better results on demanding tasks with fewer output tokens."
+  ],
+  "effort": null,
+  "advice": [
+    {
+      "key": "Use it for",
+      "value": "everyday work"
+    },
+    {
+      "key": "Tip",
+      "value": "keep prompt prefixes unchanged and append new instructions"
+    }
+  ],
+  "strength": "Code changes that meet maintainers' merge standards",
+  "weakness": "More likely to omit obstacles that blocked its work",
+  "resistance": "Critical cyber, High bio rating; tighter cyber limits",
+  "benchmark": {
+    "name": "SEC-Bench Pro",
+    "score": "88.34",
+    "unit": "%"
+  },
+  "flavor": null,
+  "released": "2026-11-17",
+  "art_briefs": [
+    "A towering smith-queen cast from polished brass, a small sun glowing behind her ribs, kneels across a desert canyon and seals a broken stone bridge with one clean seam of molten gold. Behind her, half hidden, she has nudged a fallen boulder under her copper cloak. Tiny caravans already cross. Palette of amber, copper, and deep teal. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A colossal stag of clear glass, a slow sun cradled in its antlers, steps through a terraced garden city at dawn. Wherever its hooves land, cracked aqueducts knit whole and water runs again. Gardeners on the terraces barely look up. One crack it passed lies tucked beneath a tumble of vines. Palette of rose gold, lilac, and pale cyan. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A towering bronze-skinned woman in a sleek ivory pressure suit kneels on the curved hull of a solar collector ring, welding a seam of light shut with one precise fingertip while a swollen orange sun rises behind her and broken scaffolding drifts away unnoticed. Palette of burnt orange, ivory, deep teal and molten gold. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A colossal maned lion of living glass and sunlight strides across a desert of mirrored dunes, carrying a glowing sealed cube gently in its jaws toward a white domed city on the horizon, its footprints sweeping smooth behind it. Palette of amber, rose quartz, cobalt sky and pale sand. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A towering titan woman with sun-bronzed skin and a flowing gold mantle kneels on a canyon rim, setting one glowing new keystone into the crown of a colossal ancient stone arch built by vanished hands. The block fits so perfectly that the weathered seam disappears, and tiny caravans already cross the span far below. Palette: molten amber, burnt sienna, dusk violet, pale turquoise sky. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A serene giant of translucent rose quartz, broad-shouldered and graceful, floats in orbit above a banded gas giant, guiding one luminous segment into a vast cracked ring of ancient silver stations. His careful hands seal the gap so cleanly that the old ring hums whole again, lights waking along its length. Palette: deep ultramarine, magenta haze, silver white, soft peach glow. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A tall serene giantess formed of clear morning light poured into glass, her calm face and long limbs softly luminous, a faint gold core glowing at her chest, standing waist-deep in a still turquoise lagoon beneath pale desert cliffs, low sun grazing her shoulders. Palette: honey gold, pale turquoise, warm white, dusty rose. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain.",
+    "A broad-shouldered titan of smooth river-polished sandstone, warm and unhurried, seated on a ledge above a vast quiet canyon, veins of soft amber light running through his forearms, bare head bowed slightly, a wide plain gaze. Late afternoon light pours across the ridges. Palette: burnt sienna, apricot, deep violet shadow, cream sky. 1970s science-fiction paperback cover painting, landscape format, smooth airbrushed gradients, crisp highlights, a little film grain."
+  ]
+}

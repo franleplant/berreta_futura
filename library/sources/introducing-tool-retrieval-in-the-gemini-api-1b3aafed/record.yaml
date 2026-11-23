@@ -1,0 +1,9 @@
+id: introducing-tool-retrieval-in-the-gemini-api-1b3aafed
+title: 'Introducing Tool Retrieval in the Gemini API'
+author: 'Lucia Loher, Nora Kassner'
+url: https://blog.google/innovation-and-ai/technology/developers-tools/gemini-api-tool-retrieval/
+site: 'Google'
+captured_at: '2026-11-21T10:21:25Z'
+published_at: '2026-11-19'
+tags: []
+synopsis: 'Google announces Tool Retrieval in preview in the Gemini Interactions API, which lets agents keep a large tool library on standby and load parameter schemas only when a task needs them, reducing input tokens and latency.'

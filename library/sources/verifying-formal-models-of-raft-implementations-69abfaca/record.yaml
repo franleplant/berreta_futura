@@ -1,0 +1,9 @@
+id: verifying-formal-models-of-raft-implementations-69abfaca
+title: 'Verifying formal models of Raft implementations'
+author: 'Rohan Padhye, Hillel Wayne'
+url: https://antithesis.com/blog/2026/verifying-formal-models/
+site: 'Antithesis'
+captured_at: '2026-11-21T10:13:35Z'
+published_at: '2026-11-19'
+tags: []
+synopsis: 'Antithesis describes using AI, TLA+, trace validation, and its testing platform to formally model and prove core safety properties of the etcd and HashiCorp Raft implementations, finding and patching bugs along the way.'

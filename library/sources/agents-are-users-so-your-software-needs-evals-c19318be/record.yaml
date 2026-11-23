@@ -1,0 +1,9 @@
+id: agents-are-users-so-your-software-needs-evals-c19318be
+title: 'Agents are users, so your software needs evals'
+author: 'George Fahmy, Yury Selivanov'
+url: https://vercel.com/blog/agent-evals
+site: 'Vercel'
+captured_at: '2026-11-21T10:35:31Z'
+published_at: '2026-11-16'
+tags: []
+synopsis: 'Agents are now users of software, and the article explains how to build, run, and analyze end-to-end evals with Harbor on Vercel, using a coffee-ordering CLI example, to measure whether agents complete user tasks correctly.'

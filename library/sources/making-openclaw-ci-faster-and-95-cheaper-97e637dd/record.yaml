@@ -1,0 +1,9 @@
+id: making-openclaw-ci-faster-and-95-cheaper-97e637dd
+title: 'Making OpenClaw CI faster and 95% cheaper'
+author: 'Vincent Koc'
+url: https://vincent.build/openclaw-ci-cost-reduction/
+site: 'Vincent Koc'
+captured_at: '2026-11-21T12:06:56Z'
+published_at: '2026-11-16'
+tags: []
+synopsis: 'Vincent Koc describes how OpenClaw cut weekly CI runner-hours by 86.5% and the estimated value of sponsored compute by 95.5% by deleting redundant tests, staging checks, deterministic adaptive test selection, reusing setup, and packing and right-sizing jobs, while noting that faster PR delivery was not yet established.'

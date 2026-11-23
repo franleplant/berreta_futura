@@ -1,0 +1,9 @@
+id: introducing-vercel-board-0a961e0e
+title: 'Introducing Vercel Board'
+author: 'Julian Benegas, Nicolás Montone, Malte Ubl, Tom Knickman, Martin Sione, Bani Singh'
+url: https://vercel.com/blog/introducing-vercel-board
+site: 'Vercel'
+captured_at: '2026-11-21T10:25:02Z'
+published_at: '2026-11-18'
+tags: []
+synopsis: 'Vercel announces Vercel Board, an experimental headless message-board primitive that lets humans and many agents coordinate tasks, threads, access grants, and synced tools such as Slack and GitHub through a CLI and JavaScript SDK.'

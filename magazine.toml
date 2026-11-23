@@ -4,7 +4,7 @@ name = "Berreta Futura"
 [intake]
 # `mag capture` adds new sources to this edition's plan.yaml unless --edition
 # says otherwise; capturing into a new edition makes it the intake edition.
-edition = "022"
+edition = "023"
 
 [render]
 # English prose hyphenates (Typst patterns); no prose block ends more than two
@@ -17,7 +17,7 @@ hyphenate_english = true
 # which `mag publish` writes after uploading to the issue's GitHub Release
 # in `repo`.
 base_url = "https://berreta.franleplant.com"
-editions = ["022", "021", "020", "019", "018", "017", "016", "015", "014", "013", "012", "011", "010", "009", "008", "007", "006"]
+editions = ["023", "022", "021", "020", "019", "018", "017", "016", "015", "014", "013", "012", "011", "010", "009", "008", "007", "006"]
 repo = "franleplant/berreta_futura"
 
 [about]

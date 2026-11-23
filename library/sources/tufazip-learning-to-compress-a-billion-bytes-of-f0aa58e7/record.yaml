@@ -1,0 +1,9 @@
+id: tufazip-learning-to-compress-a-billion-bytes-of-f0aa58e7
+title: 'tufazip: Learning to Compress a Billion Bytes of Wikipedia'
+author: 'Tommy He'
+url: https://tufalabs.ai/research/tufazip/
+site: 'Tufa Labs'
+captured_at: '2026-11-21T10:24:36Z'
+published_at: '2026-10-14'
+tags: []
+synopsis: 'Tommy He describes tufazip, a 12-layer, 163M-parameter Transformer compressor that took #2 on the Large Text Compression Benchmark by compressing enwik9 to 105,388,353 bytes, including offline trained weights and decoder, using online learning plus a compact offline prior.'
