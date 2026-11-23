@@ -406,25 +406,18 @@ fn art(slug: &str, gen_cmd: &str, variants: u32) -> Result<i32> {
             result.as_ref().map_or_else(Clone::clone, |()| "ok".into())
         );
     }
-    let made: Vec<String> = results
+    let made: Vec<&str> = results
         .iter()
         .filter(|(_, r)| r.is_ok())
-        .map(|(name, _)| {
-            format!(
-                "{}:{}",
-                dir.join("card.json").display(),
-                candidates.join(format!("{name}.png")).display()
-            )
-        })
+        .map(|(name, _)| name.as_str())
         .collect();
     ensure!(!made.is_empty(), "no candidate was generated");
-    let preview = candidates.join("preview.pdf");
-    sheet(
-        &made.iter().map(|e| entry(e)).collect::<Result<Vec<_>>>()?,
-        &preview,
-        &site()?,
-        true,
-    )?;
+    let preview = candidates.join("showcase.html");
+    write_atomic(&preview, art_page(slug, &made))?;
+    std::process::Command::new("open")
+        .arg(&preview)
+        .status()
+        .ok();
     println!(
         "preview: {} (candidates in order: {})",
         preview.display(),
@@ -437,6 +430,16 @@ fn art(slug: &str, gen_cmd: &str, variants: u32) -> Result<i32> {
     );
     println!("next: mag cards art {slug} --pick <candidate>, or --rebrief for new ideas");
     Ok(0)
+}
+
+fn art_page(slug: &str, names: &[&str]) -> String {
+    let figures: String = names
+        .iter()
+        .map(|n| format!("<figure><img src=\"{n}.png\"><figcaption>{n}</figcaption></figure>"))
+        .collect();
+    format!(
+        "<!doctype html><meta charset=\"utf-8\"><title>{slug} art</title><style>body{{margin:24px;background:#1b1b1b;color:#eee;font:600 20px system-ui}}main{{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:24px}}figure{{margin:0}}img{{width:100%;display:block;border-radius:6px}}figcaption{{padding:8px 0}}</style><h1>{slug}</h1><main>{figures}</main>"
+    )
 }
 
 fn promote(slug: &str, name: &str) -> Result<i32> {

@@ -79,8 +79,8 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
 - `mag cards` makes standalone model cards outside any issue, for sharing and printing:
   `mag cards write <slug> --source <id>...` writes `cards/<slug>/card.json` through the same
   gated card writer produce uses (`--name <model>` picks one model of a multi-model post); `mag cards art <slug>` generates one candidate per art brief
-  into `cards/<slug>/candidates/` (gitignored; earlier ones move to `earlier-<time>/`) plus a
-  labelled `preview.pdf` with each set in the card; `--rebrief` rewrites only the art briefs
+  into `cards/<slug>/candidates/` (gitignored; earlier ones move to `earlier-<time>/`) plus
+  `candidates/showcase.html`, the bare art labelled by candidate and opened for Fran (never set in cards); `--rebrief` rewrites only the art briefs
   (every other field stays) before generating; `--pick <n-vN>` promotes one to `cards/<slug>/art.jpg`; `mag cards sheet <slug|card.json[:art]>...
   [--out pdf]` lays cards three to an A4 landscape sheet with crop marks, each sheet followed by
   the brand pattern back; `mag cards sheet --all` sets every card with picked art
@@ -216,13 +216,11 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   a launch becomes a `model_card` row, `--mode article` overrides. Card art is its own slot:
   the card's art briefs come after the card text from the seed prompts in
   `prompts/model-card-art/` (one call per seed file, in parallel, each writing four briefs from
-  the card and the launch post, plus the shared `rules.md`). The one seed, `1-figure.md`, keeps the
-  recipe Fran liked (one figure with a face, two arms and two legs, objects the post shows the
-  model making or doing, one huge simple shape) but the four briefs are four shots, gated in
-  order: "Close portrait:", "Wide vista:", "Workshop interior:", "Low angle:", with a different
-  figure (human, android, suited pilot, at most one "made of" a material, no statues), big
-  shape, light, and palette each, because one centred serene figure four times looked the same.
-  Every image prompt is the 1970s science-fiction paperback airbrush style line, then the brief,
+  the card and the launch post, plus the shared `rules.md`). The one seed, `1-figure.md`, is short guidelines
+  with no examples and no fixed shots (Fran: prescriptive briefs and template examples made
+  every option look the same): the model as one otherworldly figure, never an ordinary person,
+  statue, or face close-up (gated by word in `modelcard::ORDINARY`), four clearly different
+  paintings. Every image prompt is the 1970s science-fiction paperback airbrush style line, then the brief,
   then a full-bleed no-text line (`modelcard::art_prompt`). `mag cards write` keeps the source
   ids in `cards/<slug>/sources.txt` so `--rebrief` reads the post again. `mag art NNN --only
   card` makes one image per brief (no anatomy gate), pick in the showcase, then `--promote`.
