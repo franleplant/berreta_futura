@@ -303,7 +303,7 @@ fn blank_side_mark() -> Vec<u8> {
     format!(
         "q\n0 g\n{} {} 0.5 6 re\nf\nQ\n",
         real(A4_LANDSCAPE_POINTS.0 / 2.0 - 0.25),
-        real(A4_LANDSCAPE_POINTS.1 / 2.0 - 3.0)
+        real(8.0)
     )
     .into_bytes()
 }
