@@ -1162,7 +1162,8 @@ fn print(slug: &str, paper_mm: f64) -> Result<i32> {
     let reader = out.join("reader-a5.pdf");
     std::fs::write(&reader, template::pdf(&document)?)?;
     let booklet = out.join("booklet-a4.pdf");
-    crate::impose::impose_a5_on_a4(&reader, &booklet, "all")?;
+    let blank: Vec<bool> = document.pages().iter().map(|p| !inked(&p.frame)).collect();
+    crate::impose::impose_booklet_marking_blanks(&reader, &booklet, &blank)?;
     let spine = pages as f64 / 2.0 * paper_mm + 0.3;
     let cover = compile(format!(
         "#book-cover(title: {}, author: {}, blurb: [{}], {colors}, spine: {spine:.2}mm, motif: {})\n",
@@ -1188,6 +1189,16 @@ fn print(slug: &str, paper_mm: f64) -> Result<i32> {
     println!("  after binding, trim the book to the crop marks: 140 x 198 mm (8.5 mm off the fore-edge, 6 mm off head and foot)");
     println!("next: open {} and proof it", booklet.display());
     Ok(0)
+}
+
+fn inked(frame: &typst::layout::Frame) -> bool {
+    frame.items().any(|(_, item)| match item {
+        typst::layout::FrameItem::Group(group) => inked(&group.frame),
+        typst::layout::FrameItem::Text(_)
+        | typst::layout::FrameItem::Shape(..)
+        | typst::layout::FrameItem::Image(..) => true,
+        _ => false,
+    })
 }
 
 fn colophon(record: &Record) -> String {

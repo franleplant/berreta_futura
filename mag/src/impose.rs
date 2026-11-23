@@ -170,6 +170,19 @@ pub fn impose_a5_on_a4(reader_pdf: &Path, output: &Path, section: &str) -> Resul
     impose_plan(reader_pdf, output, section, &section_plan(pages, section)?)
 }
 
+pub fn impose_booklet_marking_blanks(
+    reader_pdf: &Path,
+    output: &Path,
+    blank: &[bool],
+) -> Result<PathBuf> {
+    let keep = |n: usize| (n <= blank.len() && !blank[n - 1]).then_some(n);
+    let plan: Vec<_> = booklet_spreads(blank.len())
+        .into_iter()
+        .map(|(left, right)| (keep(left), keep(right)))
+        .collect();
+    impose_plan(reader_pdf, output, "all", &plan)
+}
+
 pub fn impose_interior_parts(reader_pdf: &Path, stem: &Path) -> Result<Vec<PathBuf>> {
     let doc =
         Document::load(reader_pdf).with_context(|| format!("reading {}", reader_pdf.display()))?;
@@ -288,8 +301,9 @@ fn sheet(
 
 fn blank_side_mark() -> Vec<u8> {
     format!(
-        "q\n0 g\n{} 24 0.5 6 re\nf\nQ\n",
-        real(A4_LANDSCAPE_POINTS.0 / 2.0 - 0.25)
+        "q\n0 g\n{} {} 0.5 6 re\nf\nQ\n",
+        real(A4_LANDSCAPE_POINTS.0 / 2.0 - 0.25),
+        real(A4_LANDSCAPE_POINTS.1 / 2.0 - 3.0)
     )
     .into_bytes()
 }
