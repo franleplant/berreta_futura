@@ -342,7 +342,7 @@ fn inline(inlines: &[Inline]) -> String {
                     .unwrap_or_default(),
                 inline(children)
             ),
-            Inline::LineBreak { hard: true } => "<br>".to_string(),
+            Inline::LineBreak { hard: true } => "<br>\n".to_string(),
             Inline::LineBreak { hard: false } => "\n".to_string(),
         })
         .collect()
@@ -1414,6 +1414,11 @@ mod tests {
             Block::Paragraph(vec![
                 Inline::Text("Say \"hi\" to ".into()),
                 Inline::Code("\"raw\"".into()),
+            ]),
+            Block::Paragraph(vec![
+                Inline::Text("one line".into()),
+                Inline::LineBreak { hard: true },
+                Inline::Text("the next".into()),
             ]),
             Block::FencedCode {
                 code: code.clone(),
