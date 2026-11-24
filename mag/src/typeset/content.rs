@@ -454,6 +454,9 @@ impl Writer<'_> {
         }
         let (mut out, trim) = match self.card_head(article, index) {
             Some(head) => (head, 0.0),
+            None if article.content_mode == ContentMode::Brief => {
+                (self.brief_head(article, index)?, 0.0)
+            }
             None => self.article_head(article, document, index, illustrated)?,
         };
         if !illustrated {
@@ -497,6 +500,32 @@ impl Writer<'_> {
             self.flowing(&moved, true),
         );
         Ok(self.cut(false, held) + &self.cut(false, rest))
+    }
+
+    fn brief_head(&self, article: &Article, index: usize) -> Result<String> {
+        let code = match &article.source_url {
+            Some(url) => string_array(&source_rows(article, url)?),
+            None => "none".to_string(),
+        };
+        let kicker = [
+            Some(format!("{} {index:02}", self.ui("feature"))),
+            Some(self.ui("brief")),
+            article.dateline.clone().filter(|d| !d.is_empty()),
+        ];
+        let [first, rest @ ..] = kicker.map(|part| part.map(|text| self.prose(&text)));
+        let rest: Vec<String> = rest.into_iter().flatten().collect();
+        Ok(format!(
+            "#piece(\n  id: {},\n  kind: \"brief\",\n  short-title: {},\n  source-ids: {},\n  figure-layouts: (),\n  opener: \"plain\",\n  art: none,\n  titles: none,\n)[\n\
+             #brief-head(kicker: [#label-primary[{}]#h(0.5em)/#h(0.5em){}], title: {}, byline: [#byline-prefix{}#byline-name{}], code: {code})\n",
+            string_literal(&format!("article-{}", article.id)),
+            string_literal(&article.short_title),
+            string_array(&article.source_ids),
+            first.unwrap_or_default(),
+            rest.join("#h(0.5em)/#h(0.5em)"),
+            self.said(&article.title),
+            self.said(&self.ui("by")),
+            self.said(&format!(" {}", byline_roster(&article.author))),
+        ))
     }
 
     fn card_head(&self, article: &Article, index: usize) -> Option<String> {
@@ -548,7 +577,7 @@ impl Writer<'_> {
             "  #content-label[#label-primary{}",
             self.said(&format!("{} {index:02}", self.ui("feature")))
         );
-        if illustrated || article.content_mode == ContentMode::Brief {
+        if illustrated {
             label.push_str(&format!("#label-separator{}", self.said(" / ")));
         }
         label.push_str(&format!(
@@ -647,19 +676,15 @@ impl Writer<'_> {
             &format!("{} {}", self.ui("by"), byline_roster(&article.author)),
             &article.author_note,
             rows,
-            (figure, article.content_mode == ContentMode::Brief),
+            figure,
         )?;
         let title = fold_reader_characters(&educate_reader_quotes(&article.title));
         Ok((
             format!(
-                "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, {}title: {})[\n",
+                "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, title: {})[\n",
                 opener.size,
                 opener.field,
                 opener.tracking,
-                match opener.lift > 0.0 {
-                    true => format!("lift: {}pt, ", opener.lift),
-                    false => String::new(),
-                },
                 string_literal(&title)
             ),
             "]\n",

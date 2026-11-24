@@ -891,8 +891,8 @@
 #let PLAIN-NOTE-DROP = 12pt
 #let NOTE-LEADING = 9.45pt
 
-#let plain-opener(size: 35pt, field: 0pt, tracking: 0pt, lift: 0pt, title: "", wide: false, body) = {
-  plain-head.update((size: size, tracking: tracking, title: title, lift: lift, escape: if wide { RAIL } else { 0pt }))
+#let plain-opener(size: 35pt, field: 0pt, tracking: 0pt, title: "", wide: false, body) = {
+  plain-head.update((size: size, tracking: tracking, title: title, escape: if wide { RAIL } else { 0pt }))
   block(height: field, width: 100%, above: 0pt, below: 0pt, breakable: false, body)
   plain-head.update(none)
 }
@@ -937,7 +937,7 @@
 #let plain-byline-baseline(head) = {
   let leading = head.size * OPENER-TITLE-LEADING-RATIO
   let lines = calc.round(measure(plain-title-block(head, head.title)).height / leading)
-  PLAIN-TITLE-TOP - head.lift + head.size + lines * leading + 10pt
+  PLAIN-TITLE-TOP + head.size + lines * leading + 10pt
 }
 
 #let unspaced(body) = if body.has("children") {
@@ -1000,7 +1000,7 @@
   let items = (if body.has("children") { body.children } else { (body,) }).enumerate().map(((i, item)) => {
     (if i == 1 { box(move(dx: LABEL-TRACKING, item)) } else { unspaced(item) }) + h(LABEL-TRACKING)
   })
-  place(top + left, dx: -escape, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, [#box(width: 100% - MEASURE-DELTA + 2 * escape, small-caps(items.intersperse(if plain-head.get().lift > 0pt { h(0.9em) } else { h(1fr) }).join(), tracking: 0.12em))])
+  place(top + left, dx: -escape, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, [#box(width: 100% - MEASURE-DELTA + 2 * escape, small-caps(items.intersperse(h(1fr)).join(), tracking: 0.12em))])
 } else if opener-parts.get() == none {
   block(kicker-text(body), spacing: 9pt)
 } else {
@@ -1022,7 +1022,7 @@
 #let piece-title(body) = context if plain-head.get() != none {
   let head = plain-head.get()
   let (size, leading) = (head.size, head.size * OPENER-TITLE-LEADING-RATIO)
-  place(top + left, dx: -head.escape, dy: PLAIN-TITLE-TOP - head.lift + size - (leading / 2 + HALF-DISPLAY * size), bookmark(1, body) + plain-title-block(head, body))
+  place(top + left, dx: -head.escape, dy: PLAIN-TITLE-TOP + size - (leading / 2 + HALF-DISPLAY * size), bookmark(1, body) + plain-title-block(head, body))
 } else if opener-parts.get() == none {
   block(
     bookmark(1, body) + title-text(28pt, body, leading: 1.04),
@@ -1744,7 +1744,27 @@
 
 #let BRIEF-PAGE-CAP = 2
 
-#let BRIEF-PAGE-CAP = 2
+#let BRIEF-QR = 44pt
+
+#let brief-head(kicker: none, title: none, byline: none, code: none) = block(width: 100%, above: 0pt, below: 16pt, grid(
+  columns: (1fr, auto),
+  column-gutter: 12pt,
+  align: (left + top, right + top),
+  {
+    set par(leading: 0.45em, spacing: 0pt, justify: false, first-line-indent: 0pt)
+    small-caps(kicker, tracking: 0.12em)
+    v(12pt)
+    layout(room => {
+      let set-title(size) = text(font: SERIF, size: size, weight: 600, fill: INK, top-edge: "cap-height", bottom-edge: "baseline", hyphenate: false, title)
+      let fits(size) = measure(block(width: room.width, set-title(size))).height <= size * 2.2
+      let size = range(36, 27, step: -1).map(n => n * 0.5pt).find(fits)
+      block(bookmark(1, title) + set-title(if size == none { 14pt } else { size }))
+    })
+    v(16pt)
+    byline-text(byline)
+  },
+  if code != none { move(dy: -4pt, box(width: BRIEF-QR, height: BRIEF-QR, qr-symbol(code, side: BRIEF-QR))) },
+))
 
 #let page-cap(id, kind) = context {
   let head = query(<mag-piece>).find(m => m.value.id == id)
