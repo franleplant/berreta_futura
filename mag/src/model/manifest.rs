@@ -305,6 +305,7 @@ fn load_articles(
             articles.push(article);
         }
     }
+    articles.sort_by_key(|article| article.content_mode == ContentMode::Brief);
     articles
 }
 
@@ -518,7 +519,13 @@ fn load_article<'a>(
     }
     let (manuscript, tail_art) = article_paths(context, row, errors)?;
     let mut opener_art = None;
-    if context.illustrated && row.content_mode != Some(ContentMode::ModelCard) {
+    let brief = row.content_mode == Some(ContentMode::Brief);
+    if brief && (row.opener_art.is_some() || tail_art.is_some()) {
+        errors.push(format!(
+            "{label} is a brief, which prints no opener art and no tail; drop its opener_art and tail_art_path"
+        ));
+    }
+    if context.illustrated && !brief && row.content_mode != Some(ContentMode::ModelCard) {
         if author_note.is_empty() && !house_byline {
             errors.push(format!(
                 "{label} requires author_note for format.article_opener {ILLUSTRATED_OPENER}"

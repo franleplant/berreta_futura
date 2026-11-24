@@ -56,6 +56,7 @@ fn writer_prompt_file(mode: ContentMode) -> Result<&'static str> {
         ContentMode::Article | ContentMode::ModelCard => Ok("article.md"),
         ContentMode::InANutshell => Ok("in-a-nutshell.md"),
         ContentMode::Explainer => Ok("explainer.md"),
+        ContentMode::Brief => Ok("brief.md"),
         ContentMode::Verbatim => bail!("content_mode 'verbatim' has no writer prompt"),
     }
 }
@@ -170,6 +171,7 @@ fn strip_frontmatter(text: &str) -> &str {
 }
 
 const ARTICLE_MAX_WORDS: usize = 1450;
+const BRIEF_MAX_WORDS: usize = 400;
 
 fn is_bold_label(line: &str) -> bool {
     let t = line.trim();
@@ -795,7 +797,11 @@ fn write_piece(
     let label = format!("{piece_id} write");
     let prompt = writer_prompt(article, sources)?;
     let frontmatter = article_frontmatter(article)?;
-    let (max_words, heading_cost) = (ARTICLE_MAX_WORDS, 0);
+    let max_words = match content_mode(article)? {
+        ContentMode::Brief => BRIEF_MAX_WORDS,
+        _ => ARTICLE_MAX_WORDS,
+    };
+    let heading_cost = 0;
     let parse_label = label.clone();
     let body = caller.call_with_parse(&label, writer_model, &prompt, |r| {
         extract_body(r, &parse_label)
@@ -935,7 +941,9 @@ fn source_site(sids: &[String]) -> (String, String) {
 }
 
 fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String> {
-    let carded = content_mode(a).is_ok_and(|mode| mode == ContentMode::ModelCard);
+    let mode = content_mode(a).ok();
+    let carded = mode == Some(ContentMode::ModelCard);
+    let brief = mode == Some(ContentMode::Brief);
     let get = |k: &str| a.get(k).and_then(value_to_string).unwrap_or_default();
     let mut y = String::new();
     let id = get("id");
@@ -955,7 +963,7 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
     y += &format!(
         "  author: {}\n  author_note: {}\n  content_mode: {}\n",
         yq(&get("author")),
-        match carded || crate::model::manifest::is_house_byline(&get("author")) {
+        match carded || brief || crate::model::manifest::is_house_byline(&get("author")) {
             true => "''",
             false => "TODO",
         },
@@ -973,7 +981,10 @@ fn article_scaffold(a: &serde_norway::Value, edition_id: &str) -> Result<String>
             y += &format!("  {line}\n");
         }
     }
-    let verbatim = content_mode(a).is_ok_and(|mode| mode == ContentMode::Verbatim);
+    if brief {
+        return Ok(y);
+    }
+    let verbatim = mode == Some(ContentMode::Verbatim);
     let cap = if verbatim {
         usize::MAX
     } else {

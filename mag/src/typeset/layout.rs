@@ -383,9 +383,12 @@ pub fn edition(root: &Path, edition_id: &str, publication_name: &str) -> Result<
     )?)
 }
 
+const BRIEF_PAGE_CAP: usize = 2;
+
 fn page_cap(mode: ContentMode) -> usize {
     match mode {
         ContentMode::Verbatim => geometry().verbatim_cap,
+        ContentMode::Brief => BRIEF_PAGE_CAP,
         _ => geometry().article_cap,
     }
 }

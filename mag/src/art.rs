@@ -495,6 +495,7 @@ fn build_brief_prompt(
         out += &produce::section(&path, &text);
     }
     out += &produce::section("edition.yaml", edition_yaml_text);
+    out += "\nAn article whose content_mode is brief prints no art: propose no opener and no tail brief for it.\n";
     out += FRAME_GUIDE;
     out += &cast_section(&cast);
     out += &rejected_section(rejected);
@@ -935,8 +936,17 @@ struct ShowcaseItem {
     prompt: String,
     variant: u32,
     selected: bool,
-
+    picked: bool,
     verdicts: Vec<MemberVerdict>,
+}
+
+impl ShowcaseItem {
+    fn rel(&self) -> String {
+        match self.picked {
+            true => format!("picks/{}", self.file),
+            false => format!("rounds/{}/{}", self.round, self.file),
+        }
+    }
 }
 
 fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec<ShowcaseItem>> {
@@ -1007,12 +1017,55 @@ fn collect_showcase_items(edition_dir: &Path, selected: &[String]) -> Result<Vec
                 prompt,
                 variant,
                 selected: selected.contains(&repo_path),
+                picked: false,
                 verdicts: checks.get(file).cloned().unwrap_or_default(),
             });
         }
     }
     mark_picked(&mut items, edition_dir, selected);
+    let picks = pick_items(edition_dir, &items)?;
+    items.extend(picks);
     Ok(items)
+}
+
+fn pick_items(edition_dir: &Path, items: &[ShowcaseItem]) -> Result<Vec<ShowcaseItem>> {
+    let shown: HashSet<String> = items
+        .iter()
+        .filter(|item| item.selected)
+        .flat_map(|item| {
+            let path = format!("{}/art/{}", edition_dir.to_string_lossy(), item.rel());
+            [crate::picks::pick_path(&path), path]
+        })
+        .collect();
+    Ok(edition_picks(edition_dir)?
+        .into_iter()
+        .filter(|(_, _, path)| !shown.contains(path))
+        .filter_map(|(purpose, article_id, path)| {
+            let file =
+                path.strip_prefix(&format!("{}/art/picks/", edition_dir.to_string_lossy()))?;
+            let stem = Path::new(file).file_stem()?.to_string_lossy().to_string();
+            let brief_id = stem
+                .rsplit_once("-v")
+                .filter(|(_, n)| n.parse::<u32>().is_ok())
+                .map_or(stem.clone(), |(brief, _)| brief.to_string());
+            edition_dir
+                .join("art/picks")
+                .join(file)
+                .is_file()
+                .then(|| ShowcaseItem {
+                    round: "picks".to_string(),
+                    file: file.to_string(),
+                    brief_id,
+                    purpose: Some(purpose),
+                    article_id,
+                    prompt: String::new(),
+                    variant: 0,
+                    selected: true,
+                    picked: true,
+                    verdicts: Vec::new(),
+                })
+        })
+        .collect())
 }
 
 fn mark_picked(items: &mut [ShowcaseItem], edition_dir: &Path, selected: &[String]) {
@@ -1054,13 +1107,45 @@ const PROOF_SHEET_CSS: &str = "<style>\n\
         </style>\n</head>\n<body>\n";
 
 fn showcase_selected(edition_dir: &Path) -> Result<Vec<String>> {
-    let edition_yaml_path = edition_dir.join("edition.yaml");
-    if !edition_yaml_path.exists() {
+    Ok(edition_picks(edition_dir)?
+        .into_iter()
+        .map(|(_, _, path)| path)
+        .collect())
+}
+
+fn edition_picks(edition_dir: &Path) -> Result<Vec<(ArtPurpose, Option<String>, String)>> {
+    let path = edition_dir.join("edition.yaml");
+    if !path.exists() {
         return Ok(Vec::new());
     }
-    let doc: EditionFile = parse_yaml(&read(&edition_yaml_path)?)
-        .with_context(|| format!("parsing {}", edition_yaml_path.display()))?;
-    Ok(art_slots(&doc).into_iter().map(|(_, path)| path).collect())
+    let doc: EditionFile =
+        parse_yaml(&read(&path)?).with_context(|| format!("parsing {}", path.display()))?;
+    let mut picks = vec![
+        (ArtPurpose::Cover, None, doc.cover.art_path.clone()),
+        (ArtPurpose::Endpaper, None, doc.cover.endpaper_path.clone()),
+    ];
+    for row in &doc.articles {
+        let id = Some(row.id.clone());
+        let opener = row.opener_art.as_ref().map(|art| art.path.clone());
+        picks.push((ArtPurpose::Opener, id.clone(), opener));
+        picks.push((ArtPurpose::Tail, id, row.tail_art_path.clone()));
+        picks.extend(row.cards.iter().enumerate().map(|(n, card)| {
+            let stem = crate::modelcard::card_stem(&row.id, n);
+            (ArtPurpose::Card, Some(stem), card.art_path.clone())
+        }));
+    }
+    picks.extend(
+        doc.closing_plates
+            .iter()
+            .map(|plate| (ArtPurpose::Closing, None, Some(plate.art_path.clone()))),
+    );
+    Ok(picks
+        .into_iter()
+        .filter_map(|(purpose, id, path)| {
+            path.filter(|p| !p.trim().is_empty() && p != "TODO")
+                .map(|p| (purpose, id, p))
+        })
+        .collect())
 }
 
 const PREVIEW_WIDTH: f64 = 720.0;
@@ -1107,7 +1192,13 @@ fn preview_edition(edition_dir: &Path) -> Result<(PathBuf, Edition, String)> {
     Ok((root, edition, key))
 }
 
-fn cover_preview(root: &Path, edition: &Edition, key: &str, art: &Path) -> Result<(PathBuf, bool)> {
+fn cover_preview(
+    root: &Path,
+    edition: &Edition,
+    key: &str,
+    art: &Path,
+    dir: &Path,
+) -> Result<(PathBuf, bool)> {
     let bytes = fs::read(art).with_context(|| format!("reading {}", art.display()))?;
     let digest =
         crate::util::sha256_hex([key.as_bytes(), &PREVIEW_WIDTH.to_le_bytes(), &bytes].concat());
@@ -1116,10 +1207,6 @@ fn cover_preview(root: &Path, edition: &Edition, key: &str, art: &Path) -> Resul
         .file_stem()
         .context("a candidate has a file name")?
         .to_string_lossy();
-    let dir = art
-        .parent()
-        .context("a candidate sits in a round")?
-        .join("previews");
     let out = dir.join(format!("{stem}-{hash}.jpg"));
     if out.is_file() {
         return Ok((out, false));
@@ -1133,8 +1220,8 @@ fn cover_preview(root: &Path, edition: &Edition, key: &str, art: &Path) -> Resul
     let jpeg = cover::preview(root, &candidate, &work, PREVIEW_WIDTH);
     fs::remove_dir_all(&work).ok();
     let jpeg = jpeg?;
-    fs::create_dir_all(&dir)?;
-    for stale in fs::read_dir(&dir)?.filter_map(|e| e.ok().map(|e| e.path())) {
+    fs::create_dir_all(dir)?;
+    for stale in fs::read_dir(dir)?.filter_map(|e| e.ok().map(|e| e.path())) {
         let name = stale.file_stem().unwrap_or_default().to_string_lossy();
         if name
             .rsplit_once('-')
@@ -1175,7 +1262,7 @@ fn card_sources(edition_dir: &Path) -> Result<HashMap<String, PathBuf>> {
         .collect())
 }
 
-fn card_preview(card_path: &Path, art: &Path, root: &Path) -> Result<PathBuf> {
+fn card_preview(card_path: &Path, art: &Path, dir: &Path, root: &Path) -> Result<PathBuf> {
     let text = read(card_path)?;
     let bytes = fs::read(art).with_context(|| format!("reading {}", art.display()))?;
     let digest = crate::util::sha256_hex([text.as_bytes(), &bytes].concat());
@@ -1183,17 +1270,13 @@ fn card_preview(card_path: &Path, art: &Path, root: &Path) -> Result<PathBuf> {
         .file_stem()
         .context("a candidate has a file name")?
         .to_string_lossy();
-    let dir = art
-        .parent()
-        .context("a candidate sits in a round")?
-        .join("previews");
     let out = dir.join(format!("{stem}-{}.png", &digest[..16]));
     if !out.is_file() {
         let card: crate::modelcard::Card = serde_json::from_str(&text)
             .with_context(|| format!("parsing {}", card_path.display()))?;
         let png =
             crate::typeset::template::card_png(&card, art, None, &[root.to_path_buf()], 110.0)?;
-        fs::create_dir_all(&dir)?;
+        fs::create_dir_all(dir)?;
         write_atomic(&out, png)?;
     }
     Ok(out)
@@ -1219,7 +1302,13 @@ fn card_previews(edition_dir: &Path, items: &[ShowcaseItem]) -> HashMap<String, 
         let card = sources
             .get(stem)
             .with_context(|| format!("no cards: row in edition.yaml makes card {stem}"))?;
-        card_preview(card, &rounds.join(&item.round).join(&item.file), &root)
+        let previews = rounds.join(&item.round).join("previews");
+        card_preview(
+            card,
+            &edition_dir.join("art").join(item.rel()),
+            &previews,
+            &root,
+        )
     });
     cards
         .iter()
@@ -1252,7 +1341,8 @@ fn cover_previews(edition_dir: &Path, items: &[ShowcaseItem]) -> HashMap<String,
             root,
             edition,
             key,
-            &rounds.join(&item.round).join(&item.file),
+            &edition_dir.join("art").join(item.rel()),
+            &rounds.join(&item.round).join("previews"),
         )
     });
     let mut rendered = 0;
@@ -1297,12 +1387,7 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Pre
     if !off.is_empty() {
         classes.push("offmodel");
     }
-    let repo_path = format!(
-        "{}/art/rounds/{}/{}",
-        edition_dir.display(),
-        item.round,
-        item.file
-    );
+    let repo_path = format!("{}/art/{}", edition_dir.display(), item.rel());
     let article_or_brief = item.article_id.as_deref().unwrap_or(&item.brief_id);
     let slot = match item.purpose {
         Some(ArtPurpose::Cover) => "cover".to_string(),
@@ -1311,7 +1396,7 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Pre
         Some(p) => format!("{p}:{article_or_brief}"),
         None => format!("unknown:{article_or_brief}"),
     };
-    let full = format!("rounds/{}/{}", item.round, item.file);
+    let full = item.rel();
     let name = item
         .purpose
         .and_then(|p| item.brief_id.strip_prefix(&format!("{p}-")))
@@ -1349,11 +1434,14 @@ fn showcase_figure(item: &ShowcaseItem, edition_dir: &Path, preview: Option<&Pre
     } else {
         html += "</div>\n";
     }
+    let origin = match item.picked {
+        true => "art/picks".to_string(),
+        false => format!("v{} · round {}", item.variant, item.round),
+    };
     html += &format!(
-        "<figcaption><b>{}</b> <span>v{} · round {}</span></figcaption>\n",
+        "<figcaption><b>{}</b> <span>{}</span></figcaption>\n",
         escape_html(name),
-        item.variant,
-        escape_html(&item.round)
+        escape_html(&origin)
     );
     html += &format!(
         "<div class=\"btnrow\"><button class=\"pick\">Pick</button>\
@@ -3642,7 +3730,8 @@ mod tests {
         };
         edition.cover.layout = Some("footer_caption".into());
         let key = cover::preview_key(&root, &edition).unwrap();
-        let (path, fresh) = cover_preview(&root, &edition, &key, &art).unwrap();
+        let (path, fresh) =
+            cover_preview(&root, &edition, &key, &art, &round.join("previews")).unwrap();
         assert!(fresh && path.starts_with(round.join("previews")));
         let (width, height) = image::image_dimensions(&path).unwrap();
         assert_eq!(width, 720);
@@ -3650,13 +3739,14 @@ mod tests {
         assert!((ratio - 595.275_591 / 419.527_559).abs() < 0.002, "{ratio}");
         let written = fs::metadata(&path).unwrap().modified().unwrap();
         assert_eq!(
-            cover_preview(&root, &edition, &key, &art).unwrap(),
+            cover_preview(&root, &edition, &key, &art, &round.join("previews")).unwrap(),
             (path.clone(), false)
         );
         assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), written);
         edition.cover.headline = Some("A Different Headline".into());
         let key = cover::preview_key(&root, &edition).unwrap();
-        let (changed, fresh) = cover_preview(&root, &edition, &key, &art).unwrap();
+        let (changed, fresh) =
+            cover_preview(&root, &edition, &key, &art, &round.join("previews")).unwrap();
         assert!(fresh && changed != path && changed.is_file() && !path.exists());
         fs::remove_dir_all(&round).unwrap();
     }

@@ -1742,12 +1742,32 @@
 
 #let closing-plate(index: 1, alt: none, path: none, target: none) = plates.update(p => p + ((index: index, alt: alt, path: path, target: target),))
 
+#let BRIEF-PAGE-CAP = 2
+
+#let brief-section(body) = {
+  pagebreak(weak: true)
+  set par(leading: 0.3em, spacing: 0pt, justify: false, first-line-indent: 0pt)
+  block(width: 100%, above: 0pt, below: 6pt, align(center, text(font: SERIF, size: 15pt, weight: 600, fill: INK, hyphenate: false, top-edge: "cap-height", bottom-edge: "baseline", bookmark(1, body) + body)))
+}
+
+#let brief-head(first: false, title: none, byline: none) = block(width: 100%, breakable: false, sticky: true, above: if first { 22pt } else { 26pt }, below: 12pt, {
+  set par(leading: 0.42em, spacing: 0pt, justify: false, first-line-indent: 0pt)
+  set text(top-edge: "cap-height", bottom-edge: "baseline", hyphenate: false)
+  if not first {
+    align(center, line(length: 30%, stroke: 0.5pt + RUBRIC))
+    v(18pt)
+  }
+  text(font: SERIF, size: 13pt, weight: 600, fill: INK, bookmark(2, title) + title)
+  v(6pt)
+  text(font: SERIF, size: PLAIN-BYLINE-SIZE, style: "italic", fill: PAPER-INK, byline)
+})
+
 #let page-cap(id, kind) = context {
   let head = query(<mag-piece>).find(m => m.value.id == id)
   let foot = query(<mag-piece-end>).find(m => m.value == id)
   let span = foot.location().page() - head.location().page() + 1
   assert(
-    kind == "verbatim" or span <= ARTICLE-PAGE-CAP,
+    kind == "verbatim" or span <= if kind == "brief" { BRIEF-PAGE-CAP } else { ARTICLE-PAGE-CAP },
     message: id + " spans " + str(span) + " reader pages; the hard cap is "
       + str(ARTICLE-PAGE-CAP) + ". Condense it as a faithful_synthesis before building.",
   )
@@ -1764,7 +1784,7 @@
   titles: none,
   body,
 ) = {
-  pagebreak(weak: true)
+  if kind != "brief" { pagebreak(weak: true) }
   figure-counter.update(0)
   let plate = figure-layouts.any(l => l.starts-with("landscape_plate"))
   let after = if kind == "original_editorial" {
@@ -1793,17 +1813,17 @@
 #let MC-PAPER = rgb(250, 247, 241)
 #let MC-ICE = rgb("#d6e6ee")
 #let MC-LABS = (
-  anthropic: (frame: rgb("#b0623c"), deep: rgb("#5e2a14"), plate: rgb("#f4e6d6"), pip: rgb("#eab896"), word-h: 0.62),
-  openai: (frame: rgb("#34448a"), deep: rgb("#141a3a"), plate: rgb("#e4e8f4"), pip: rgb("#b4bfea"), word-h: 1.0),
-  google: (frame: rgb("#2f7350"), deep: rgb("#143522"), plate: rgb("#e2efe6"), pip: rgb("#a8d4b8"), word-h: 1.25),
-  meta: (frame: rgb("#56408f"), deep: rgb("#24183f"), plate: rgb("#ebe5f4"), pip: rgb("#c4b5e6"), word-h: 0.9),
-  other: (frame: rgb("#5b6470"), deep: rgb("#24292f"), plate: rgb("#e8eaec"), pip: rgb("#bcc3cb"), word-h: 1.0),
+  anthropic: (frame: rgb("#b0623c"), deep: rgb("#5e2a14"), plate: rgb("#f4e6d6"), pip: rgb("#eab896")),
+  openai: (frame: rgb("#34448a"), deep: rgb("#141a3a"), plate: rgb("#e4e8f4"), pip: rgb("#b4bfea")),
+  google: (frame: rgb("#2f7350"), deep: rgb("#143522"), plate: rgb("#e2efe6"), pip: rgb("#a8d4b8")),
+  meta: (frame: rgb("#56408f"), deep: rgb("#24183f"), plate: rgb("#ebe5f4"), pip: rgb("#c4b5e6")),
+  other: (frame: rgb("#5b6470"), deep: rgb("#24292f"), plate: rgb("#e8eaec"), pip: rgb("#bcc3cb")),
 )
 
 #let mc-palette(lab, dir) = {
   let key = ("anthropic", "openai", "google", "meta").find(k => lower(lab).replace(" ", "").contains(k))
   let logo(part) = if key == none { none } else { dir + "/" + key + "-" + part + ".svg" }
-  (..MC-LABS.at(if key == none { "other" } else { key }), mark: logo("mark"), wm: logo("mark-wm"), word: logo("word-w"), name: lab)
+  (..MC-LABS.at(if key == none { "other" } else { key }), mark: logo("mark"), wm: logo("mark-wm"), name: lab)
 }
 
 #let mc-fit-text(max, min, width, body) = context {
@@ -1858,12 +1878,12 @@
 #let mc-pips(p, cost, d) = stack(dir: ltr, spacing: d * 0.25, ..cost.map(c => mc-pip(p, c, d)))
 
 #let mc-type-plate(c, p) = mc-plate(p, height: 18pt, layout(sz => {
-  let id = if c.model_id != none { box(fill: white.transparentize(25%), radius: 2pt, inset: (x: 3pt, y: 1.6pt), mc-fit-text(6.7pt, 4.5pt, sz.width * 0.42, text(font: MONO, fill: INK, c.model_id))) }
+  let id = if c.model_id != none { mc-fit-text(6.7pt, 4.5pt, sz.width * 0.42, text(font: MONO, fill: INK, c.model_id)) }
   let idw = if id != none { measure(id).width } else { 0pt }
   let mark = if p.mark != none { box(height: 10.5pt, baseline: 20%, image(p.mark, height: 10.5pt)) }
-  grid(columns: (1fr, auto, auto), column-gutter: 5pt, align: horizon,
-    mc-fit-text(9.6pt, 5.3pt, sz.width - idw - 28pt, text(font: SERIF, weight: 600, fill: INK)[#c.type_line.kind #sym.dash.en #c.type_line.roles.join(" · ")]),
-    id, mark)
+  grid(columns: (1fr, auto), column-gutter: 5pt, align: horizon,
+    [#mc-fit-text(9.6pt, 5.3pt, sz.width - idw - 28pt, text(font: SERIF, weight: 600, fill: INK)[#c.type_line.kind #sym.dash.en #c.type_line.roles.join(" · ")])#h(1fr)#id],
+    mark)
 }))
 
 #let mc-rule(p, s) = block(above: s * 0.5, below: s * 0.5, line(length: 100%, stroke: 0.4pt + p.deep.transparentize(55%)))
@@ -1899,7 +1919,7 @@
     align(center, text(font: SANS, size: 5pt, weight: 600, fill: p.deep, tracking: 0.03em, upper(b.name)))))
 }
 
-#let mc-card(c, art, p, date) = block(width: 100%, height: 100%, radius: 5mm, fill: INK, inset: 3mm,
+#let mc-frame(c, art, p, date) = block(width: 100%, height: 100%, radius: 5mm, fill: INK, inset: 3mm,
   block(width: 100%, height: 100%, radius: 3mm, stroke: 0.6pt + MC-GOLD, inset: 2.7mm,
     fill: gradient.linear(p.frame.lighten(18%), p.frame, p.deep.lighten(10%), p.frame.darken(8%), p.frame.lighten(6%), angle: 62deg),
     layout(sz => grid(
@@ -1918,11 +1938,15 @@
         mc-fit-block(range(54, 29, step: -1).map(i => i * 0.25pt), (s, spread) => mc-rules(c, p, s, spread))
       }),
       grid(columns: (1fr, auto), align: (left + horizon, right + top),
-        pad(top: 3pt, stack(dir: ltr, spacing: 4.3pt,
-          if p.word != none { box(height: 8.6pt * p.word-h, image(p.word, height: 8.6pt * p.word-h)) } else { text(font: SANS, size: 6pt, weight: 700, fill: white, upper(p.name)) },
-          if date != none { box(height: 8.6pt, align(horizon, text(font: SANS, size: 5.4pt, weight: 600, fill: white.darken(6%), tracking: 0.06em, date))) })),
+        pad(top: 3pt, text(font: SANS, size: 7.4pt, weight: 700, fill: white, p.name + if date != none { h(4.3pt) + text(size: 5.4pt, weight: 600, fill: white.darken(6%), tracking: 0.06em, date) })),
         move(dy: -9pt, mc-bench(p, c.benchmark))),
     ))))
+
+#let mc-card(c, art, p, date) = {
+  set text(top-edge: "cap-height", bottom-edge: "baseline", features: ())
+  set par(leading: 0.65em, spacing: 1.2em, justify: false, first-line-indent: 0pt)
+  mc-frame(c, art, p, date)
+}
 
 #let mc-scaled(card, art, labs, date) = layout(sz => align(center + top, {
   let s = calc.min(1, sz.height / 184mm, sz.width / 128mm)

@@ -1426,9 +1426,27 @@ fn launch_mode(article: &str, sid: &str) -> Option<crate::model::kinds::ContentM
             println!("  model launch post ({}): queued as a model_card row; pass --mode article to keep it a plain article", models.join(", "));
             Some(crate::model::kinds::ContentMode::ModelCard)
         }
-        Ok(_) => None,
+        Ok(_) => brief_mode(&caller, article, sid),
         Err(e) => {
             println!("  model launch check failed ({e:#}); queued as an article, pass --mode model_card if it is a launch post");
+            None
+        }
+    }
+}
+
+fn brief_mode(
+    caller: &Caller,
+    article: &str,
+    sid: &str,
+) -> Option<crate::model::kinds::ContentMode> {
+    match crate::brief::detect_brief(caller, &format!("brief {sid}"), article) {
+        Ok(Some(kind)) => {
+            println!("  {kind}, not practice: queued as a one-page brief; pass --mode article to keep it a feature");
+            Some(crate::model::kinds::ContentMode::Brief)
+        }
+        Ok(None) => None,
+        Err(e) => {
+            println!("  brief check failed ({e:#}); queued as an article, pass --mode brief for a one-page brief");
             None
         }
     }

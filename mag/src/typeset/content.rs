@@ -2,7 +2,7 @@ use crate::model::doc::{
     code_display, educate_reader_quotes, fold_reader_characters, inline_text, is_settable,
     parse_publication_document, settable_codepoints, Block, Document, Inline,
 };
-use crate::model::kinds::ExtractStyle;
+use crate::model::kinds::{ContentMode, ExtractStyle};
 use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
@@ -260,18 +260,29 @@ impl Writer<'_> {
                 self.editorial(editorial, &document)?,
             ));
         }
+        let features = self
+            .edition
+            .articles
+            .iter()
+            .filter(|a| a.content_mode != ContentMode::Brief)
+            .count();
         for (index, article) in self.edition.articles.iter().enumerate() {
+            let brief = article.content_mode == ContentMode::Brief;
+            if brief && index == features {
+                main.push_str(&format!(
+                    "#brief-section{}\n",
+                    self.said(&self.ui("in_brief"))
+                ));
+            }
             let document = read_manuscript(&article.manuscript)?;
             main.push_str(&include_piece(
                 &mut files,
                 format!("pieces/article-{:02}-{}.typ", index + 1, article.id),
                 self.article(article, &document, index + 1)?,
             ));
-            main.push_str(&format!(
-                "#plates-after({}, of: {})\n",
-                index + 1,
-                self.edition.articles.len()
-            ));
+            if !brief {
+                main.push_str(&format!("#plates-after({}, of: {features})\n", index + 1));
+            }
         }
         for (index, section) in self.edition.sections.iter().enumerate() {
             let document = read_manuscript(&section.path)?;
@@ -377,7 +388,10 @@ impl Writer<'_> {
         for article in &self.edition.articles {
             entries.push(ContentsEntry {
                 destination: format!("article-{}", article.id),
-                label: String::new(),
+                label: match article.content_mode {
+                    ContentMode::Brief => self.ui("brief"),
+                    _ => String::new(),
+                },
                 title: article.title.clone(),
                 author: article.author.clone(),
             });
@@ -450,6 +464,15 @@ impl Writer<'_> {
         }
         let (mut out, trim) = match self.card_head(article, index) {
             Some(head) => (head, 0.0),
+            None if article.content_mode == ContentMode::Brief => {
+                let first = self
+                    .edition
+                    .articles
+                    .iter()
+                    .find(|a| a.content_mode == ContentMode::Brief)
+                    .is_some_and(|a| a.id == article.id);
+                (self.brief_head(article, first), 0.0)
+            }
             None => self.article_head(article, document, index, illustrated)?,
         };
         if !illustrated {
@@ -460,10 +483,12 @@ impl Writer<'_> {
         }
         out.push_str(&self.article_body(article, document, (usize::from(illustrated), trim))?);
         out.push_str(&self.key_ideas(article));
-        out.push_str(&format!(
-            "#end-mark{}\n\n",
-            self.said(&format!("{} / {index:02}", self.ui("end")))
-        ));
+        if article.content_mode != ContentMode::Brief {
+            out.push_str(&format!(
+                "#end-mark{}\n\n",
+                self.said(&format!("{} / {index:02}", self.ui("end")))
+            ));
+        }
         if let Some(path) = &article.tail_art {
             out.push_str(&self.tail_art(article, path)?);
         }
@@ -493,6 +518,19 @@ impl Writer<'_> {
             self.flowing(&moved, true),
         );
         Ok(self.cut(false, held) + &self.cut(false, rest))
+    }
+
+    fn brief_head(&self, article: &Article, first: bool) -> String {
+        format!(
+            "#piece(\n  id: {},\n  kind: \"brief\",\n  short-title: {},\n  source-ids: {},\n  figure-layouts: (),\n  opener: \"plain\",\n  art: none,\n  titles: none,\n)[\n\
+             #brief-head(first: {}, title: {}, byline: {})\n",
+            string_literal(&format!("article-{}", article.id)),
+            string_literal(&article.short_title),
+            string_array(&article.source_ids),
+            first,
+            self.said(&article.title),
+            self.said(&format!("{} {}", self.ui("by"), byline_roster(&article.author))),
+        )
     }
 
     fn card_head(&self, article: &Article, index: usize) -> Option<String> {
@@ -675,7 +713,8 @@ impl Writer<'_> {
             out.push_str(&self.extract(extract));
         }
         let mut references = false;
-        let standfirst = skip == 0 && matches!(document.blocks.first(), Some(Block::Paragraph(_)));
+        let lead = skip == 0 && article.content_mode != ContentMode::Brief;
+        let standfirst = lead && matches!(document.blocks.first(), Some(Block::Paragraph(_)));
         let mut attach = false;
         for (position, block) in document.blocks.iter().enumerate().skip(skip) {
             if let Block::Heading { children, .. } = block {
@@ -686,7 +725,7 @@ impl Writer<'_> {
                     "#doc-heading(level: {level}, standfirst: true)[{}]\n\n",
                     self.inlines(children)
                 ),
-                _ => self.markup_block(block, skip == 0 && position == 0, references, false)?,
+                _ => self.markup_block(block, lead && position == 0, references, false)?,
             };
             let heading = matches!(block, Block::Heading { .. });
             out.push_str(&self.cut(attach && !heading, markup));

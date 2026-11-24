@@ -44,7 +44,7 @@ macro_rules! kinds {
 }
 
 kinds! {
-    ContentMode { Article = "article", InANutshell = "in_a_nutshell", Explainer = "explainer", Verbatim = "verbatim", ModelCard = "model_card" }
+    ContentMode { Article = "article", InANutshell = "in_a_nutshell", Explainer = "explainer", Verbatim = "verbatim", ModelCard = "model_card", Brief = "brief" }
     PrintLayout { A5 = "a5", Columns = "columns", Single = "single" }
     RenderOperation {
         MeasureArticle = "measure_article",

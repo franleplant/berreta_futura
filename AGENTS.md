@@ -167,7 +167,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   one row if it does not exist, and then `[intake] edition` moves to it). By default the source
   gets its own `article` row (never auto-promoted to verbatim); `--article
   <id>` joins an existing row instead and `--mode` (article, in_a_nutshell,
-  explainer, verbatim) picks another mode. Decide the source-to-article
+  explainer, verbatim, brief) picks another mode. Decide the source-to-article
   mapping at capture time, on the command line, so it lives in plan.yaml and
   never only in a conversation. Raw HTML lands in `.magazine/capture/` (untracked). For pages curl
   cannot reach (login walls, JS-rendered apps like X), fetch the DOM with a
@@ -226,6 +226,21 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   card` makes one image per brief (no anatomy gate), pick in the showcase, then `--promote`.
   Never "creature", never birds; the gate checks four briefs per seed, no lab or model name, no
   many-armed figures, no em dash.
+  `brief`: a page that is news rather than practice gets one page instead of a feature. Capture
+  without `--mode` asks, after the launch check (a launch post stays a model_card and is never
+  asked), three parallel sonnet votes (`prompts/brief-detect.md`) for the page's subject from a
+  fixed list, each with an evidence sentence that must be on the page; code maps the subject:
+  company_news, science, distant_research, or standards_transition by majority makes the row
+  `brief`, anything else (model_launch, product_release, engineering, applied_research, essay)
+  keeps it a feature; `--mode article` overrides. The writer is `prompts/brief.md` (forked from
+  article.md, a one-minute read) capped at 400 words; produce scaffolds no author note, figures,
+  opener art, or tail, and the loader refuses art on a brief. Render moves every brief after the
+  features into one "In brief" section that starts on a new page; briefs share pages, each a
+  title and byline over plain text (no drop cap, no end mark, a short rule between briefs),
+  closing plates never fall between them, and a brief spans two pages at most. `cargo test --test
+  brief_calibration -- --ignored` (from mag/) reruns the detector over 017-023 (Fran's briefs
+  must come out briefs, every launch post a feature) and writes each source's votes to
+  `.magazine/brief-calibration.tsv`.
   See `docs/EDITORIAL_POLICY.md`.
 - Source articles fit in at most seven A5 reader pages (ten for
   `verbatim`). No edition carries an opening editorial: produce no longer

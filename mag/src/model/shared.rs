@@ -128,7 +128,7 @@ pub fn byline_roster(author: &str) -> String {
 }
 
 pub fn ui(language: &str, key: &str) -> String {
-    const ENGLISH: [(&str, &str); 22] = [
+    const ENGLISH: [(&str, &str); 24] = [
         ("issue", "Issue"),
         ("contents", "Contents"),
         ("sources", "Sources"),
@@ -151,8 +151,10 @@ pub fn ui(language: &str, key: &str) -> String {
         ("key_ideas", "KEY IDEAS"),
         ("verbatim", "VERBATIM"),
         ("model_card", "MODEL CARD"),
+        ("brief", "IN BRIEF"),
+        ("in_brief", "In brief"),
     ];
-    const SPANISH: [(&str, &str); 22] = [
+    const SPANISH: [(&str, &str); 24] = [
         ("issue", "Número"),
         ("contents", "Índice"),
         ("sources", "Fuentes"),
@@ -175,6 +177,8 @@ pub fn ui(language: &str, key: &str) -> String {
         ("key_ideas", "IDEAS CLAVE"),
         ("verbatim", "TEXTUAL"),
         ("model_card", "FICHA DEL MODELO"),
+        ("brief", "EN BREVE"),
+        ("in_brief", "En breve"),
     ];
     let table = if language == "es" { SPANISH } else { ENGLISH };
     table.iter().find(|(name, _)| *name == key).map_or_else(

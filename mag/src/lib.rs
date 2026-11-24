@@ -1,6 +1,7 @@
 pub mod anchors;
 pub mod art;
 pub mod book;
+pub mod brief;
 pub mod caller;
 pub mod capture;
 pub mod cards;

@@ -17,6 +17,7 @@ Every piece is explicitly one of:
 - `selected_extracts`: attributed passages with editorial framing;
 - `original_synthesis`: a new source-grounded article;
 - `in_a_nutshell`: the magazine's own explainer, teaching one source's principles to a reader who has never met the topic (`prompts/in-a-nutshell.md`);
+- `brief`: one page of news that is not practice (an announcement, science outside software, distant research), in the source author's voice (`prompts/brief.md`);
 - `original_editorial`: the magazine's own voice.
 
 The default for source articles is `faithful_edit`. The opening editorial is `original_editorial` and may be opinionated, interpretive, and stylistically distinct.
