@@ -169,6 +169,19 @@
   }
 }
 
+#let ridge(width, base, amp, seed, period: 297, step: 1mm) = range(int(width / step) + 2).map(i => {
+  let u = i * step / 1mm / period
+  let tri(n, phase) = 1 - 2 * calc.abs(calc.fract(n * u + phase) - 0.5)
+  let lift = 0.55 * tri(3, seed) + 0.3 * tri(7, seed * 2.3) + 0.15 * tri(17, seed * 0.7)
+  (i * step, base - amp * lift)
+})
+
+#let ridges(width, height, ink, layers: 7, from: 0.45, amp: 0.55) = for k in range(layers) {
+  let f = k / (layers - 1)
+  let pts = ridge(width, height * (from + (0.97 - from) * f), height * amp * (1 - 0.45 * f), 0.29 * k + 0.05)
+  place(polygon(fill: CREAM, stroke: (0.35pt + 0.55pt * f) + ink, ..pts, (width + 2mm, height + 2mm), (0mm, height + 2mm)))
+}
+
 #let motif-cell(motif, ink, accent) = {
   let s = (stroke: 0.55pt + ink)
   if motif == "peaks" {
@@ -212,8 +225,38 @@
   }
 }
 
+#let book-cover-ridges(title, author, blurb, ink, accent, spine) = {
+  set page(width: SHEET-W, height: SHEET-H, margin: 0pt, fill: CREAM)
+  set text(font: SERIF, fill: ink, lang: "en", hyphenate: true, number-type: "old-style", number-width: "proportional")
+  set par(first-line-indent: 0pt)
+  let wrap = 2 * TRIM-W + spine
+  let x0 = (SHEET-W - wrap) / 2
+  let y0 = (SHEET-H - TRIM-H) / 2
+  let front = x0 + TRIM-W + spine
+  let top = y0 + TRIM-H * 0.55
+  place(dx: front + TRIM-W * 0.5, dy: top - 4mm, circle(radius: 8mm, fill: accent))
+  place(dy: top, ridges(SHEET-W, SHEET-H - top, ink))
+  place(dx: front + 15mm, dy: y0 + 22mm, block(width: TRIM-W - 30mm, {
+    text(size: 8pt, tracking: 0.32em, upper("The ideas in"))
+    v(7mm)
+    par(leading: 0.4em, justify: false, text(size: 31pt, weight: 600, hyphenate: false, title))
+    v(7mm)
+    line(length: 18mm, stroke: 0.8pt + ink)
+    v(5mm)
+    text(size: 14pt, style: "italic", author)
+  }))
+  place(dx: x0 + 15mm, dy: y0 + 22mm, block(width: TRIM-W - 30mm, {
+    text(size: 7.5pt, tracking: 0.32em, upper("In thirty seconds"))
+    v(5mm)
+    set par(justify: true, leading: 0.6em)
+    text(size: 9.25pt, blurb)
+  }))
+  crop-marks(x0, y0, wrap, TRIM-H, (x0 + TRIM-W, front), ink)
+}
+
 #let book-cover(title: "", author: "", blurb: [], ink: INK, accent: RUBRIC, spine: 2mm, motif: "lattice") = {
   set document(title: title + " (cover)", author: author)
+  if motif == "ridges" { return book-cover-ridges(title, author, blurb, ink, accent, spine) }
   set page(width: SHEET-W, height: SHEET-H, margin: 0pt, fill: ink)
   set text(font: SERIF, fill: CREAM, lang: "en", hyphenate: true, number-type: "old-style")
   set par(first-line-indent: 0pt)
@@ -253,5 +296,9 @@
 
 #let book-endpaper(ink: INK, accent: RUBRIC, motif: "lattice") = {
   set page(width: SHEET-W, height: SHEET-H, margin: 0pt, fill: CREAM)
-  place(rect(width: 100%, height: 100%, fill: motif-cell(motif, ink.transparentize(25%), accent)))
+  if motif == "ridges" {
+    place(dy: -12mm, ridges(SHEET-W, SHEET-H + 14mm, ink.transparentize(20%), layers: 15, from: 0.1, amp: 0.16))
+  } else {
+    place(rect(width: 100%, height: 100%, fill: motif-cell(motif, ink.transparentize(25%), accent)))
+  }
 }
