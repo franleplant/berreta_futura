@@ -919,9 +919,11 @@ fn write_digest(
     );
     let fits = |body: &str| -> Result<()> {
         let printed = typeset(body, record)?.pages().len() - 1;
+        let count = body.split_whitespace().count();
         ensure!(
             printed <= most,
-            "the piece typesets to {printed} pages; it must fit in {most}, so cut detail, not points"
+            "the piece typesets to {printed} pages at {count} words; it must fit in {most}, so cut it to about {} words: cut detail and examples, not points",
+            count * most * 95 / 100 / printed
         );
         Ok(())
     };

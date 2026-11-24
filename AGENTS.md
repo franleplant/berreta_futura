@@ -140,7 +140,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   `impose`), `cover-a4.pdf` (back, spine from the leaf count, front, centred on
   A4 landscape with crop and fold marks for a 140 x 198 mm trim, the opener as
   the back blurb), and `endpaper-a4.pdf` (a vector tiling). No A4 side of the booklet is ever fully blank: blank A5 pages impose as empty halves, and a side with both halves empty gets a small tick on the fold 3 to 5 mm above the bottom edge, inside the 6 mm foot trim (`impose::blank_side_mark`), because blank sides break printing. The interior uses the `print:` ink alone. Colours and the
-  motif (`lattice`, `peaks`, or `ridges`: a cream cover in the ink alone with layered mountain ridges and an accent sun, and a full-page ridge endpaper) come from `print:` in record.yaml.
+  motif (`lattice`, `peaks`, `ridges`: a cream cover in the ink alone with layered mountain ridges and an accent sun, and a full-page ridge endpaper, or `mandala`: the same cream cover with a quaternity mandala and a tiled mandala endpaper) come from `print:` in record.yaml.
 - Prompts live in `prompts/`. The writer prompts are hand-tested; do not add
   instructions to writer calls or inject style packs.
 

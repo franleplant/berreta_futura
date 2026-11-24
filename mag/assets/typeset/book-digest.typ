@@ -225,7 +225,27 @@
   }
 }
 
-#let book-cover-ridges(title, author, blurb, ink, accent, spine) = {
+#let mandala(r, ink, accent, weight: 0.6pt) = box(width: 2 * r, height: 2 * r, {
+  let s = weight + ink
+  let ring(cx, cy, rr, ..args) = place(dx: r + cx - rr, dy: r + cy - rr, circle(radius: rr, ..args))
+  for k in (1, 0.94, 0.62, 0.3) { ring(0mm, 0mm, r * k, stroke: s) }
+  for i in range(8) {
+    let a = i * 45deg
+    let rr = if calc.even(i) { r * 0.32 } else { r * 0.22 }
+    ring(calc.cos(a) * r * 0.62, calc.sin(a) * r * 0.62, rr, stroke: s, fill: CREAM.transparentize(100%))
+  }
+  for i in range(4) {
+    let a = i * 90deg
+    place(line(start: (r + calc.cos(a) * r * 0.3, r + calc.sin(a) * r * 0.3), end: (r + calc.cos(a) * r * 0.94, r + calc.sin(a) * r * 0.94), stroke: s))
+  }
+  for i in range(32) {
+    let a = i * 11.25deg
+    place(line(start: (r + calc.cos(a) * r * 0.94, r + calc.sin(a) * r * 0.94), end: (r + calc.cos(a) * r, r + calc.sin(a) * r), stroke: s))
+  }
+  ring(0mm, 0mm, r * 0.08, fill: accent)
+})
+
+#let book-cover-light(title, author, blurb, ink, accent, spine, motif: "ridges") = {
   set page(width: SHEET-W, height: SHEET-H, margin: 0pt, fill: CREAM)
   set text(font: SERIF, fill: ink, lang: "en", hyphenate: true, number-type: "old-style", number-width: "proportional")
   set par(first-line-indent: 0pt)
@@ -234,8 +254,13 @@
   let y0 = (SHEET-H - TRIM-H) / 2
   let front = x0 + TRIM-W + spine
   let top = y0 + TRIM-H * 0.55
-  place(dx: front + TRIM-W * 0.5, dy: top - 4mm, circle(radius: 8mm, fill: accent))
-  place(dy: top, ridges(SHEET-W, SHEET-H - top, ink))
+  if motif == "mandala" {
+    let r = 42mm
+    place(dx: front + TRIM-W / 2 - r, dy: y0 + TRIM-H - 22mm - 2 * r, mandala(r, ink, accent, weight: 0.9pt))
+  } else {
+    place(dx: front + TRIM-W * 0.5, dy: top - 4mm, circle(radius: 8mm, fill: accent))
+    place(dy: top, ridges(SHEET-W, SHEET-H - top, ink))
+  }
   place(dx: front + 15mm, dy: y0 + 22mm, block(width: TRIM-W - 30mm, {
     text(size: 8pt, tracking: 0.32em, upper("The ideas in"))
     v(7mm)
@@ -256,7 +281,7 @@
 
 #let book-cover(title: "", author: "", blurb: [], ink: INK, accent: RUBRIC, spine: 2mm, motif: "lattice") = {
   set document(title: title + " (cover)", author: author)
-  if motif == "ridges" { return book-cover-ridges(title, author, blurb, ink, accent, spine) }
+  if motif in ("ridges", "mandala") { return book-cover-light(title, author, blurb, ink, accent, spine, motif: motif) }
   set page(width: SHEET-W, height: SHEET-H, margin: 0pt, fill: ink)
   set text(font: SERIF, fill: CREAM, lang: "en", hyphenate: true, number-type: "old-style")
   set par(first-line-indent: 0pt)
@@ -296,7 +321,11 @@
 
 #let book-endpaper(ink: INK, accent: RUBRIC, motif: "lattice") = {
   set page(width: SHEET-W, height: SHEET-H, margin: 0pt, fill: CREAM)
-  if motif == "ridges" {
+  if motif == "mandala" {
+    place(rect(width: 100%, height: 100%, fill: tiling(size: (36mm, 36mm), {
+      place(dx: 4mm, dy: 4mm, mandala(14mm, ink.transparentize(25%), accent, weight: 0.45pt))
+    })))
+  } else if motif == "ridges" {
     place(dy: -12mm, ridges(SHEET-W, SHEET-H + 14mm, ink.transparentize(20%), layers: 15, from: 0.1, amp: 0.16))
   } else {
     place(rect(width: 100%, height: 100%, fill: motif-cell(motif, ink.transparentize(25%), accent)))
