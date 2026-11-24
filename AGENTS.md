@@ -82,7 +82,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   into `cards/<slug>/candidates/` (gitignored; earlier ones move to `earlier-<time>/`) plus
   `candidates/showcase.html`, the bare art labelled by candidate and opened for Fran (never set in cards); `--rebrief` rewrites only the art briefs
   (every other field stays) before generating; `--pick <n-vN>` promotes one to `cards/<slug>/art.jpg`; `mag cards sheet <slug|card.json[:art]>...
-  [--out pdf]` lays cards three to an A4 landscape sheet with crop marks, each sheet followed by
+  [--out pdf]` lays cards three to an A4 landscape sheet with crop marks (a short last sheet is filled by repeating cards from the start), each sheet followed by
   the brand pattern back; `mag cards sheet --all` sets every card with picked art
   (`output/cards/all-sheet.pdf`): edition `cards:` rows by edition id (card.json from the newest
   complete run), then `cards/<slug>`, one card per model id (the one with art wins, else the

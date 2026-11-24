@@ -134,15 +134,17 @@ pub fn run(args: &CardsArgs) -> Result<i32> {
                 ),
             };
             ensure!(!cards.is_empty(), "no card has picked art yet");
+            let unique = cards.len();
+            let cards = filled(&cards);
             let out = out
                 .clone()
                 .unwrap_or_else(|| PathBuf::from(format!("output/cards/{stem}-sheet.pdf")));
             sheet(&cards, &out, &site()?, *labels)?;
             println!(
-                "sheet: {} ({} cards, {} pages)",
+                "sheet: {} ({unique} cards, {} repeated to fill the last sheet, {} pages)",
                 out.display(),
-                cards.len(),
-                cards.len().div_ceil(3) * 2
+                cards.len() - unique,
+                cards.len() / 3 * 2
             );
             println!("next: print it duplex, flip on the short edge, and trim at the crop marks");
             Ok(0)
@@ -453,6 +455,7 @@ fn promote(slug: &str, name: &str) -> Result<i32> {
     Ok(0)
 }
 
+#[derive(Clone)]
 struct Entry {
     card: Card,
     art: PathBuf,
@@ -493,6 +496,11 @@ fn site() -> Result<String> {
         .trim_start_matches("https://")
         .trim_end_matches('/')
         .to_string())
+}
+
+fn filled(cards: &[Entry]) -> Vec<Entry> {
+    let size = cards.len().div_ceil(3) * 3;
+    cards.iter().cycle().take(size).cloned().collect()
 }
 
 fn sheet(entries: &[Entry], out: &Path, site: &str, labels: bool) -> Result<()> {
