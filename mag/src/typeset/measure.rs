@@ -84,8 +84,8 @@ const ILLUSTRATED_FACE: &str = "illustrated-title";
 const BYLINE_RUNS: usize = 2;
 
 const PLAIN_FIELD_GAP: f64 = 305.2756 - 264.5208;
-const COMPACT_FIELD_GAP: f64 = 16.0;
-const COMPACT_TITLE_LIFT: f64 = 16.0;
+const COMPACT_FIELD_GAP: f64 = 8.0;
+const COMPACT_TITLE_LIFT: f64 = 24.0;
 const CODE_SIDE: f64 = 55.5;
 const CREDIT_GAP: f64 = 4.5 * 3.15;
 const INTER_CAP: f64 = 1490.0 / 2048.0;

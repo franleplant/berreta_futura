@@ -548,7 +548,7 @@ impl Writer<'_> {
             "  #content-label[#label-primary{}",
             self.said(&format!("{} {index:02}", self.ui("feature")))
         );
-        if illustrated {
+        if illustrated || article.content_mode == ContentMode::Brief {
             label.push_str(&format!("#label-separator{}", self.said(" / ")));
         }
         label.push_str(&format!(
@@ -652,11 +652,14 @@ impl Writer<'_> {
         let title = fold_reader_characters(&educate_reader_quotes(&article.title));
         Ok((
             format!(
-                "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, lift: {}pt, title: {})[\n",
+                "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, {}title: {})[\n",
                 opener.size,
                 opener.field,
                 opener.tracking,
-                opener.lift,
+                match opener.lift > 0.0 {
+                    true => format!("lift: {}pt, ", opener.lift),
+                    false => String::new(),
+                },
                 string_literal(&title)
             ),
             "]\n",

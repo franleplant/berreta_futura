@@ -1000,7 +1000,7 @@
   let items = (if body.has("children") { body.children } else { (body,) }).enumerate().map(((i, item)) => {
     (if i == 1 { box(move(dx: LABEL-TRACKING, item)) } else { unspaced(item) }) + h(LABEL-TRACKING)
   })
-  place(top + left, dx: -escape, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, [#box(width: 100% - MEASURE-DELTA + 2 * escape, small-caps(items.intersperse(h(1fr)).join(), tracking: 0.12em))])
+  place(top + left, dx: -escape, dy: PLAIN-LABEL-TOP + ZERO-LEADING-SANS, [#box(width: 100% - MEASURE-DELTA + 2 * escape, small-caps(items.intersperse(if plain-head.get().lift > 0pt { h(0.9em) } else { h(1fr) }).join(), tracking: 0.12em))])
 } else if opener-parts.get() == none {
   block(kicker-text(body), spacing: 9pt)
 } else {

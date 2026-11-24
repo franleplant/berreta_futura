@@ -236,7 +236,7 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   article.md, a one-minute read) capped at 400 words; produce scaffolds no author note, figures,
   opener art, or tail, and the loader refuses art on a brief and moves every brief after the
   features. Render sets each in the plain article layout without pictures but compact (title at
-  14-18pt on at most two lines, lifted toward the kicker, a short gap under the byline and QR) so
+  14-18pt on at most two lines, lifted toward a kicker packed to the left, a short gap under the byline and QR) so
   a brief fits one page, closing plates fall only between features, and it refuses a brief that
   spans more than two pages. `cargo test --test
   brief_calibration -- --ignored` (from mag/) reruns the detector over 017-023 (Fran's briefs
