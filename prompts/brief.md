@@ -12,7 +12,9 @@ Your own sentences obey the same rule: no claim, comparison, or causal link the 
 
 Keep what happened, the one or two results that carry it, and what the author says comes next; everything else is cut.
 
-Write it as a one-minute read: two to four short paragraphs, no headings, no lists, no code. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not include images. Land at most one aphorism per piece; end plainly. Do not use paraprosdokians ever.
+Open with the news itself: the first sentence says what was found, made, or announced. No introduction, no scene-setting, no anecdote or history, no opening summary that the rest repeats.
+
+Write it as a one-minute read: two or three short paragraphs, no headings, no lists, no code. Don’t repeat, don’t add a study material, rephrasing or opinions. Do not include images. Land at most one aphorism per piece; end plainly. Do not use paraprosdokians ever.
 
 Use correct capitalization, punctuation, and spacing.
 
