@@ -683,7 +683,8 @@ impl Writer<'_> {
             out.push_str(&self.extract(extract));
         }
         let mut references = false;
-        let standfirst = skip == 0 && matches!(document.blocks.first(), Some(Block::Paragraph(_)));
+        let lead = skip == 0 && article.content_mode != ContentMode::Brief;
+        let standfirst = lead && matches!(document.blocks.first(), Some(Block::Paragraph(_)));
         let mut attach = false;
         for (position, block) in document.blocks.iter().enumerate().skip(skip) {
             if let Block::Heading { children, .. } = block {
@@ -694,7 +695,7 @@ impl Writer<'_> {
                     "#doc-heading(level: {level}, standfirst: true)[{}]\n\n",
                     self.inlines(children)
                 ),
-                _ => self.markup_block(block, skip == 0 && position == 0, references, false)?,
+                _ => self.markup_block(block, lead && position == 0, references, false)?,
             };
             let heading = matches!(block, Block::Heading { .. });
             out.push_str(&self.cut(attach && !heading, markup));
