@@ -234,9 +234,11 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   `brief`, anything else (model_launch, product_release, engineering, applied_research, essay)
   keeps it a feature; `--mode article` overrides. The writer is `prompts/brief.md` (forked from
   article.md, a one-minute read) capped at 400 words; produce scaffolds no author note, figures,
-  opener art, or tail, and the loader refuses art on a brief. Render sets a brief where
-  edition.yaml lists it, in the plain article layout without pictures (title opener, byline,
-  drop cap, end mark), and refuses one that spans more than two pages. `cargo test --test
+  opener art, or tail, and the loader refuses art on a brief and moves every brief after the
+  features. Render sets each in the plain article layout without pictures but compact (title at
+  14-18pt on at most two lines, lifted toward the kicker, a short gap under the byline and QR) so
+  a brief fits one page, closing plates fall only between features, and it refuses a brief that
+  spans more than two pages. `cargo test --test
   brief_calibration -- --ignored` (from mag/) reruns the detector over 017-023 (Fran's briefs
   must come out briefs, every launch post a feature) and writes each source's votes to
   `.magazine/brief-calibration.tsv`.

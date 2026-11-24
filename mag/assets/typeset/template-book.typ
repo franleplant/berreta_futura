@@ -891,8 +891,8 @@
 #let PLAIN-NOTE-DROP = 12pt
 #let NOTE-LEADING = 9.45pt
 
-#let plain-opener(size: 35pt, field: 0pt, tracking: 0pt, title: "", wide: false, body) = {
-  plain-head.update((size: size, tracking: tracking, title: title, escape: if wide { RAIL } else { 0pt }))
+#let plain-opener(size: 35pt, field: 0pt, tracking: 0pt, lift: 0pt, title: "", wide: false, body) = {
+  plain-head.update((size: size, tracking: tracking, title: title, lift: lift, escape: if wide { RAIL } else { 0pt }))
   block(height: field, width: 100%, above: 0pt, below: 0pt, breakable: false, body)
   plain-head.update(none)
 }
@@ -937,7 +937,7 @@
 #let plain-byline-baseline(head) = {
   let leading = head.size * OPENER-TITLE-LEADING-RATIO
   let lines = calc.round(measure(plain-title-block(head, head.title)).height / leading)
-  PLAIN-TITLE-TOP + head.size + lines * leading + 10pt
+  PLAIN-TITLE-TOP - head.lift + head.size + lines * leading + 10pt
 }
 
 #let unspaced(body) = if body.has("children") {
@@ -1022,7 +1022,7 @@
 #let piece-title(body) = context if plain-head.get() != none {
   let head = plain-head.get()
   let (size, leading) = (head.size, head.size * OPENER-TITLE-LEADING-RATIO)
-  place(top + left, dx: -head.escape, dy: PLAIN-TITLE-TOP + size - (leading / 2 + HALF-DISPLAY * size), bookmark(1, body) + plain-title-block(head, body))
+  place(top + left, dx: -head.escape, dy: PLAIN-TITLE-TOP - head.lift + size - (leading / 2 + HALF-DISPLAY * size), bookmark(1, body) + plain-title-block(head, body))
 } else if opener-parts.get() == none {
   block(
     bookmark(1, body) + title-text(28pt, body, leading: 1.04),

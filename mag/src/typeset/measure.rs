@@ -84,6 +84,8 @@ const ILLUSTRATED_FACE: &str = "illustrated-title";
 const BYLINE_RUNS: usize = 2;
 
 const PLAIN_FIELD_GAP: f64 = 305.2756 - 264.5208;
+const COMPACT_FIELD_GAP: f64 = 16.0;
+const COMPACT_TITLE_LIFT: f64 = 16.0;
 const CODE_SIDE: f64 = 55.5;
 const CREDIT_GAP: f64 = 4.5 * 3.15;
 const INTER_CAP: f64 = 1490.0 / 2048.0;
@@ -94,6 +96,7 @@ pub struct PlainOpener {
     pub field: f64,
     pub tracking: f64,
     pub trim: f64,
+    pub lift: f64,
 }
 
 pub struct Metrics;
@@ -226,25 +229,36 @@ impl Metrics {
         byline: &str,
         note: &str,
         code: Option<usize>,
-        figure: bool,
+        (figure, compact): (bool, bool),
     ) -> Result<PlainOpener> {
-        let maximum = if figure { 30.0 } else { 35.0 };
-        let (size, lines) = self
-            .fitted(
+        let (maximum, minimum) = match (compact, figure) {
+            (true, _) => (18.0, 14.0),
+            (false, true) => (30.0, 24.0),
+            (false, false) => (35.0, 24.0),
+        };
+        let rows: &[usize] = if compact { &[2, 3] } else { &[4] };
+        let fits = |rows: usize| {
+            self.fitted(
                 (title, "serif-display"),
                 geometry().measure,
                 165.0,
                 maximum,
-                24.0,
-                4,
-            )?
-            .ok_or_else(|| {
-                ValidationError::one(format!(
-                    "Title cannot fit the Quiet Standard display box: {title}"
-                ))
-            })?;
+                minimum,
+                rows,
+            )
+        };
+        let mut fitted = None;
+        for &limit in rows {
+            fitted = fitted.or(fits(limit)?);
+        }
+        let (size, lines) = fitted.ok_or_else(|| {
+            ValidationError::one(format!(
+                "Title cannot fit the Quiet Standard display box: {title}"
+            ))
+        })?;
         let flow = size * (1.0 + geometry().opener_title_leading * lines as f64);
-        let baseline = (geometry().datum + 25.0 + 12.0) + flow + 10.0;
+        let lift = if compact { COMPACT_TITLE_LIFT } else { 0.0 };
+        let baseline = (geometry().datum + 25.0 + 12.0 - lift) + flow + 10.0;
         let (column, symbol) = match code {
             Some(rows) => {
                 let quiet = 4.0 * CODE_SIDE / (rows as f64 + 8.0);
@@ -271,9 +285,14 @@ impl Metrics {
         };
         Ok(PlainOpener {
             size,
-            field,
+            field: if compact {
+                field - PLAIN_FIELD_GAP + COMPACT_FIELD_GAP
+            } else {
+                field
+            },
             tracking,
             trim,
+            lift,
         })
     }
 

@@ -2,7 +2,7 @@ use crate::model::doc::{
     code_display, educate_reader_quotes, fold_reader_characters, inline_text, is_settable,
     parse_publication_document, settable_codepoints, Block, Document, Inline,
 };
-use crate::model::kinds::ExtractStyle;
+use crate::model::kinds::{ContentMode, ExtractStyle};
 use crate::model::manifest::{source_code_payload, Article, Edition, Editorial, Section};
 use crate::model::records::{Extract, Figure};
 use crate::model::shared::{
@@ -260,6 +260,12 @@ impl Writer<'_> {
                 self.editorial(editorial, &document)?,
             ));
         }
+        let features = self
+            .edition
+            .articles
+            .iter()
+            .filter(|article| article.content_mode != ContentMode::Brief)
+            .count();
         for (index, article) in self.edition.articles.iter().enumerate() {
             let document = read_manuscript(&article.manuscript)?;
             main.push_str(&include_piece(
@@ -267,11 +273,9 @@ impl Writer<'_> {
                 format!("pieces/article-{:02}-{}.typ", index + 1, article.id),
                 self.article(article, &document, index + 1)?,
             ));
-            main.push_str(&format!(
-                "#plates-after({}, of: {})\n",
-                index + 1,
-                self.edition.articles.len()
-            ));
+            if article.content_mode != ContentMode::Brief {
+                main.push_str(&format!("#plates-after({}, of: {features})\n", index + 1));
+            }
         }
         for (index, section) in self.edition.sections.iter().enumerate() {
             let document = read_manuscript(&section.path)?;
@@ -643,15 +647,16 @@ impl Writer<'_> {
             &format!("{} {}", self.ui("by"), byline_roster(&article.author)),
             &article.author_note,
             rows,
-            figure,
+            (figure, article.content_mode == ContentMode::Brief),
         )?;
         let title = fold_reader_characters(&educate_reader_quotes(&article.title));
         Ok((
             format!(
-                "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, title: {})[\n",
+                "#plain-opener(size: {}pt, field: {}pt, tracking: {}pt, lift: {}pt, title: {})[\n",
                 opener.size,
                 opener.field,
                 opener.tracking,
+                opener.lift,
                 string_literal(&title)
             ),
             "]\n",
