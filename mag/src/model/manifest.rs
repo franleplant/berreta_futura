@@ -305,7 +305,6 @@ fn load_articles(
             articles.push(article);
         }
     }
-    articles.sort_by_key(|article| article.content_mode == ContentMode::Brief);
     articles
 }
 

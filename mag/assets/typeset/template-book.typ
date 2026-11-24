@@ -1744,23 +1744,7 @@
 
 #let BRIEF-PAGE-CAP = 2
 
-#let brief-section(body) = {
-  pagebreak(weak: true)
-  set par(leading: 0.3em, spacing: 0pt, justify: false, first-line-indent: 0pt)
-  block(width: 100%, above: 0pt, below: 6pt, align(center, text(font: SERIF, size: 15pt, weight: 600, fill: INK, hyphenate: false, top-edge: "cap-height", bottom-edge: "baseline", bookmark(1, body) + body)))
-}
-
-#let brief-head(first: false, title: none, byline: none) = block(width: 100%, breakable: false, sticky: true, above: if first { 22pt } else { 26pt }, below: 12pt, {
-  set par(leading: 0.42em, spacing: 0pt, justify: false, first-line-indent: 0pt)
-  set text(top-edge: "cap-height", bottom-edge: "baseline", hyphenate: false)
-  if not first {
-    align(center, line(length: 30%, stroke: 0.5pt + RUBRIC))
-    v(18pt)
-  }
-  text(font: SERIF, size: 13pt, weight: 600, fill: INK, bookmark(2, title) + title)
-  v(6pt)
-  text(font: SERIF, size: PLAIN-BYLINE-SIZE, style: "italic", fill: PAPER-INK, byline)
-})
+#let BRIEF-PAGE-CAP = 2
 
 #let page-cap(id, kind) = context {
   let head = query(<mag-piece>).find(m => m.value.id == id)
@@ -1784,7 +1768,7 @@
   titles: none,
   body,
 ) = {
-  if kind != "brief" { pagebreak(weak: true) }
+  pagebreak(weak: true)
   figure-counter.update(0)
   let plate = figure-layouts.any(l => l.starts-with("landscape_plate"))
   let after = if kind == "original_editorial" {
