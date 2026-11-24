@@ -3,7 +3,7 @@ use mag::caller::Caller;
 use std::fs;
 use std::path::Path;
 
-const BRIEFS: [&str; 8] = [
+const BRIEFS: [&str; 13] = [
     "how-claude-designed-protein-binders-against-scor-ac67a5f1",
     "donating-agent-skills-to-the-agentic-ai-foundati-bdc7b775",
     "early-progress-on-accelerating-drug-development-dcad83d8",
@@ -12,6 +12,16 @@ const BRIEFS: [&str; 8] = [
     "the-post-quantum-future-of-web-privacy-0788fb80",
     "sparks-of-weight-space-programming-llms-can-nati-f9ecf66c",
     "teaching-ai-to-build-scientific-models-8a424d75",
+    "towards-securing-the-internet-a7982fbd",
+    "an-alignment-assessment-of-the-uk-aisi-cybertest-e16222d8",
+    "how-ai-agents-shape-experts-judgment-calls-723372c8",
+    "introducing-alphaproof-code-a-breakthrough-in-ve-f321c904",
+    "progress-on-provable-inference-for-large-languag-43862ef7",
+];
+
+const FEATURES: [&str; 2] = [
+    "death-to-long-lived-static-credentials-c46b92f3",
+    "the-components-of-agent-memory-f0247d2b",
 ];
 
 const LAUNCHES: [&str; 6] = [
@@ -92,11 +102,12 @@ fn briefs_are_the_news_and_launch_posts_stay_features() {
         .collect();
     let launched: Vec<&str> = LAUNCHES
         .into_iter()
+        .chain(FEATURES)
         .filter(|id| verdict(id) != "feature")
         .collect();
     assert!(missed.is_empty(), "briefs kept as features: {missed:?}");
     assert!(
         launched.is_empty(),
-        "launch posts turned into briefs: {launched:?}"
+        "launch posts or features turned into briefs: {launched:?}"
     );
 }
