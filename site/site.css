@@ -280,3 +280,148 @@ pre code .nf, pre code .fm, pre code .nc, pre code .nn, pre code .nd, pre code .
 .creed li { margin: 0; }
 .creed li:nth-child(even) { color: var(--red-text); }
 .about .credits { margin-top: var(--sp-6); padding-top: var(--sp-3); border-top: 1px solid var(--rule); color: var(--muted); font: 400 0.88rem/1.45 var(--sans); }
+
+.cards-head { margin-top: var(--sp-6); max-width: var(--wide); }
+.cards-head h1 { font-size: clamp(2.4rem, 9vw, var(--t5)); }
+.card-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-5) 0 0; }
+.card-filter {
+  font: 600 0.76rem/1.2 var(--sans); letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.48rem 0.85rem; border: 1px solid var(--rule); border-radius: 999px;
+  background: var(--well); color: var(--muted); cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.card-filter:hover { border-color: var(--ink); color: var(--ink); }
+.card-filter[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.card-filter:focus-visible, .card-btn:focus-visible, .mtg-card:focus-visible { outline: 3px solid var(--red); outline-offset: 4px; }
+
+.card-grid {
+  list-style: none; padding: var(--sp-6) 0 0; margin: var(--sp-5) 0 0;
+  border-top: 3px double var(--ink);
+  display: grid; grid-template-columns: 1fr; gap: var(--sp-6) var(--sp-5);
+}
+@media (min-width: 38rem) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 56rem) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.card-grid li { margin: 0; }
+.card-grid li[hidden] { display: none; }
+.card-tile { display: block; text-decoration: none; color: inherit; }
+.card-tile:hover .card-name { text-decoration: underline; text-decoration-thickness: 1px; }
+.card-caption { display: grid; gap: 0.2rem; margin-top: var(--sp-4); }
+.card-lab { color: var(--red-text); font: 700 0.7rem/1.2 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; }
+.card-name { font: 700 1.2rem/1.2 var(--display); letter-spacing: -0.02em; }
+.card-role { color: var(--muted); font: 400 0.86rem/1.35 var(--sans); }
+
+.mtg-scene { perspective: 1100px; }
+.mtg-scene-hero { perspective: 1400px; width: 100%; max-width: 24rem; margin: 0 auto; }
+.mtg-card {
+  position: relative; width: 100%; aspect-ratio: 128 / 184;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  will-change: transform;
+  border-radius: 4.1% / 2.85%;
+}
+.mtg-card.is-hero { cursor: pointer; }
+.mtg-card.is-flipped { transform: rotateX(var(--rx, 0deg)) rotateY(calc(180deg + var(--ry, 0deg))); }
+.mtg-card.is-flipping { transition: transform 0.65s cubic-bezier(0.22, 0.9, 0.32, 1); }
+
+.mtg-face {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: #0a0b0d;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.16) inset,
+    0 0 0 1px rgba(10, 11, 13, 0.85),
+    var(--sx, 0px) calc(12px + var(--sy, 0px)) 28px -6px rgba(10, 11, 13, 0.34),
+    calc(var(--sx, 0px) * 0.4) calc(4px + var(--sy, 0px) * 0.4) 10px -2px rgba(10, 11, 13, 0.22);
+}
+.mtg-card.is-hero .mtg-face {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 0 0 1px rgba(10, 11, 13, 0.9),
+    var(--sx, 0px) calc(22px + var(--sy, 0px)) 46px -10px rgba(10, 11, 13, 0.44),
+    calc(var(--sx, 0px) * 0.45) calc(8px + var(--sy, 0px) * 0.45) 16px -4px rgba(10, 11, 13, 0.26);
+}
+@media (prefers-color-scheme: dark) {
+  .mtg-face {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.18) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      var(--sx, 0px) calc(16px + var(--sy, 0px)) 36px -6px rgba(0, 0, 0, 0.72),
+      calc(var(--sx, 0px) * 0.4) calc(6px + var(--sy, 0px) * 0.4) 14px -2px rgba(0, 0, 0, 0.5);
+  }
+}
+.mtg-face img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; user-select: none; }
+.mtg-back { transform: rotateY(180deg); }
+
+.mtg-foil, .mtg-sheen {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+}
+.mtg-foil {
+  background-image:
+    repeating-linear-gradient(
+      115deg,
+      rgba(255, 214, 150, 0.18) 0%,
+      rgba(166, 227, 255, 0.2) 16%,
+      rgba(224, 179, 255, 0.18) 32%,
+      rgba(255, 238, 173, 0.2) 48%,
+      rgba(164, 240, 200, 0.16) 64%,
+      rgba(255, 214, 150, 0.18) 80%
+    );
+  background-size: 240% 240%;
+  background-position:
+    calc(50% + (var(--mx, 50%) - 50%) * -1.4)
+    calc(50% + (var(--my, 50%) - 50%) * -1.4);
+  mix-blend-mode: color-dodge;
+  opacity: calc(var(--hyp, 0) * 0.22);
+}
+.mtg-sheen {
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.16) 26%,
+    rgba(0, 0, 0, 0.12) 78%
+  );
+  mix-blend-mode: soft-light;
+  opacity: calc(0.14 + var(--hyp, 0) * 0.68);
+}
+
+.card-stage {
+  margin-top: var(--sp-6); padding: var(--sp-6) var(--sp-5);
+  background: radial-gradient(circle at 30% 20%, var(--well), var(--paper) 120%);
+  border: 1px solid var(--rule); border-radius: 0.75rem;
+  display: grid; gap: var(--sp-6); align-items: center;
+}
+@media (min-width: 52rem) {
+  .card-stage {
+    padding: var(--sp-7) var(--sp-6);
+    grid-template-columns: minmax(19rem, 24rem) 1fr;
+    gap: var(--sp-7);
+  }
+}
+.card-info h1 { font-size: clamp(2rem, 6vw, var(--t4)); margin: 0 0 var(--sp-2); }
+.card-type { margin: 0 0 var(--sp-3); font: italic 400 1.12rem/1.4 var(--serif); color: var(--muted); }
+.card-id { margin: 0 0 var(--sp-4); }
+.card-hint { margin: 0 0 var(--sp-4); font: 400 0.85rem/1.4 var(--sans); color: var(--muted); }
+.card-actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0 0 var(--sp-5); }
+.card-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0.65rem 1.15rem; font: 700 0.82rem/1.2 var(--sans); letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--ink); color: var(--paper); border: 1px solid var(--ink); text-decoration: none; cursor: pointer;
+  box-shadow: -4px 4px 0 var(--red);
+  transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+}
+.card-btn:hover { transform: translate(-4px, 4px); box-shadow: 0 0 0 var(--red); background: var(--red-text); border-color: var(--red-text); color: var(--on-red); }
+.card-btn-ghost { background: transparent; color: var(--ink); box-shadow: none; }
+.card-btn-ghost:hover { transform: none; background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.card-links { display: grid; gap: var(--sp-2); padding-top: var(--sp-4); border-top: 1px solid var(--rule); font: 400 0.9rem/1.45 var(--sans); }
+.card-links p { margin: 0; }
+.card-link-row span { color: var(--muted); }
+.card-link-row a { font-weight: 600; }
+
+.card-article { margin-top: var(--sp-7); padding-top: var(--sp-6); border-top: 3px double var(--ink); }
+.card-article-head { margin-bottom: var(--sp-5); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--rule); }
+.card-article-head h2 { margin: 0 0 var(--sp-3); font-size: clamp(1.7rem, 5vw, var(--t3)); line-height: 1.14; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mtg-card, .mtg-card.is-flipping { transition: none; }
+  .mtg-foil { display: none; }
+}

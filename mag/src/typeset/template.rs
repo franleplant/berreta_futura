@@ -99,6 +99,42 @@ pub fn card_png(
     Ok(pixmap.encode_png()?)
 }
 
+pub fn card_back_png(site: &str, ppi: f32) -> Result<Vec<u8>> {
+    let sheet = include_str!("../../assets/typeset/card-sheet.typ");
+    let source = format!(
+        "{sheet}\n#page(width: 128mm, height: 184mm, margin: 0pt, fill: none, header: none, footer: none, foreground: none, background: none,\n\
+         block(width: 100%, height: 100%, radius: 5mm, fill: CS-INK, inset: 3mm,\n\
+         block(width: 100%, height: 100%, radius: 3mm, stroke: 0.6pt + rgb(\"#c8a858\"), clip: true, fill: CS-VIOLET, {{\n\
+         place(center + horizon, cs-back({}))\n\
+         }})))\n",
+        crate::typeset::content::string_literal(site)
+    );
+    let tree = Tree {
+        files: vec![crate::typeset::content::File {
+            path: "main.typ".to_string(),
+            source,
+        }],
+        ..Tree::default()
+    };
+    let document = document(&Sources::new(
+        &tree,
+        BOOK_TEMPLATE_TYP,
+        "#include \"/main.typ\"\n",
+    )?)?;
+    let page = document
+        .pages()
+        .first()
+        .context("the card back image has no page")?;
+    let pixmap = typst_render::render(
+        page,
+        &typst_render::RenderOptions {
+            pixel_per_pt: typst::utils::Scalar::new(f64::from(ppi) / 72.0),
+            render_bleed: false,
+        },
+    );
+    Ok(pixmap.encode_png()?)
+}
+
 pub fn composed(
     edition: &crate::model::manifest::Edition,
     hyphenation: Hyphenation,

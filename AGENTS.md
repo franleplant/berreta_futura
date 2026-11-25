@@ -46,7 +46,11 @@ provenance bundles, no pinning, no bookkeeping beyond one small record file.
   run (never an untracked local run), read from a sparse worktree of HEAD at
   `.magazine/site-head` (so uncommitted edits neither block nor leak; `mag
   epub` loads through it too), with the print-tone figure copies,
-  resized JPEG/WebP variants, and no Typst render and no model call. Download links
+  resized JPEG/WebP variants, and no model call; its only Typst render is the
+  `/cards/` section (`mag/src/site/cards.rs`): every model card with picked art, edition cards
+  and `cards/<slug>`, one per model, as tilting, flipping card images (front and the brand
+  back, cached in `.magazine/site-cache`), each on its own page with the launch post it came
+  from set in full and a link to the original. Download links
   come only from a committed `editions/NNN/publish.yaml`; without one the
   issue page has no PDF or EPUB link. It refuses to write a page that drops any manuscript block,
   figure, or extract.

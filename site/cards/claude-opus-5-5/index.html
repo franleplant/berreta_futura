@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Claude Opus 5.5 · Model Cards · Berreta Futura</title>
+<meta name="description" content="Generates output more than 30% faster than Opus 5.">
+<link rel="canonical" href="https://berreta.franleplant.com/cards/claude-opus-5-5/">
+<meta property="og:site_name" content="Berreta Futura">
+<meta property="og:title" content="Claude Opus 5.5 · Model Cards · Berreta Futura">
+<meta property="og:description" content="Generates output more than 30% faster than Opus 5.">
+<meta property="og:url" content="https://berreta.franleplant.com/cards/claude-opus-5-5/">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://berreta.franleplant.com/img/9a693b94e5617968-1109.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../site.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="g-pdf" viewBox="0 0 24 24"><path d="M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-booklet" viewBox="0 0 24 24"><path d="M12 6.5 3 4v14l9 2.5 9-2.5V4zM12 6.5v14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-epub" viewBox="0 0 24 24"><path d="M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-mobi" viewBox="0 0 24 24"><path d="M6 2.75h12a1.25 1.25 0 0 1 1.25 1.25v16a1.25 1.25 0 0 1-1.25 1.25H6A1.25 1.25 0 0 1 4.75 20V4A1.25 1.25 0 0 1 6 2.75zM7.75 6h8.5v10h-8.5zM10.5 18.75h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-down" viewBox="0 0 24 24"><path d="M12 4v13m-5-5 5 5 5-5M5 20.25h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></defs></svg>
+<header class="masthead"><a class="brand" href="../../"><svg class="logo" viewBox="3.91 -72.75 576.8 181.51" role="img" aria-label="Berreta Futura"><path fill="var(--ink, #0a0b0d)" d="M3.91 0V-72.75H35.45Q47.9 -72.75 54.37 -67.65Q60.84 -62.55 60.84 -54.59Q60.84 -48.24 56.98 -43.9Q53.12 -39.55 46.78 -38.33V-38.23Q51.46 -38.09 55.2 -35.82Q58.94 -33.54 61.11 -29.64Q63.28 -25.73 63.28 -20.61Q63.28 -14.65 60.3 -9.99Q57.32 -5.32 51.71 -2.66Q46.09 0 38.18 0ZM23.63 -15.23H34.38Q38.09 -15.23 40.28 -17.19Q42.48 -19.14 42.48 -22.41Q42.48 -25.68 40.28 -27.64Q38.09 -29.59 34.38 -29.59H23.63ZM23.63 -43.95H33.15Q36.52 -43.95 38.53 -45.8Q40.53 -47.66 40.53 -50.73Q40.53 -53.81 38.53 -55.66Q36.52 -57.52 33.15 -57.52H23.63ZM66.9 0V-72.75H123.24V-55.57H87.21V-44.63H120.46V-28.03H87.21V-17.19H123.24V0ZM128.08 0V-72.75H158.99Q167.68 -72.75 174.03 -69.65Q180.38 -66.55 183.82 -60.86Q187.26 -55.18 187.26 -47.36Q187.26 -40.58 184.35 -35.42Q181.45 -30.27 176.18 -27.15L189.51 0H168.36L157.47 -22.75H148.39V0ZM148.39 -38.48H157.47Q162.06 -38.48 164.75 -40.92Q167.44 -43.36 167.44 -47.36Q167.44 -51.37 164.75 -53.81Q162.06 -56.25 157.47 -56.25H148.39ZM192.63 0V-72.75H223.54Q232.23 -72.75 238.58 -69.65Q244.93 -66.55 248.37 -60.86Q251.81 -55.18 251.81 -47.36Q251.81 -40.58 248.91 -35.42Q246 -30.27 240.73 -27.15L254.06 0H232.92L222.03 -22.75H212.95V0ZM212.95 -38.48H222.03Q226.62 -38.48 229.3 -40.92Q231.99 -43.36 231.99 -47.36Q231.99 -51.37 229.3 -53.81Q226.62 -56.25 222.03 -56.25H212.95ZM257.19 0V-72.75H313.53V-55.57H277.5V-44.63H310.75V-28.03H277.5V-17.19H313.53V0ZM316.42 -55.57V-72.75H378.13V-55.57H357.43V0H337.12V-55.57ZM368.32 0 392.74 -72.75H420.08L444.74 0H421.89L418.42 -11.96H394.1L390.54 0ZM398.79 -27.59H413.93L413.73 -28.22Q411.83 -34.81 410.02 -41.26Q408.21 -47.71 406.46 -54.35Q404.65 -47.71 402.79 -41.26Q400.94 -34.81 398.99 -28.22Z"/><path fill="var(--box, #0a0b0d)" d="M156.50 10.00L580.71 10.00L563.29 108.75L139.09 108.75Z"/><path fill="var(--red, #f05738)" d="M146.65 101.57 159.48 28.82H214.12L211.09 46.01H176.76L174.49 58.9H206.86L203.95 75.4H171.58L166.97 101.57ZM236.29 102.75Q226.77 102.75 220.33 99.4Q213.89 96.06 211.08 89.98Q208.27 83.9 209.71 75.7L217.98 28.82H237.71L229.73 74.04Q228.85 79.06 231.56 82.36Q234.28 85.66 239.31 85.66Q244.43 85.66 248.26 82.38Q252.08 79.11 252.98 74.04L260.95 28.82H280.67L272.41 75.7Q270.96 83.9 266.01 89.98Q261.06 96.06 253.43 99.4Q245.81 102.75 236.29 102.75ZM281.5 46.01 284.53 28.82H346.25L343.22 46.01H322.52L312.72 101.57H292.41L302.21 46.01ZM368.42 102.75Q358.9 102.75 352.46 99.4Q346.02 96.06 343.21 89.98Q340.4 83.9 341.85 75.7L350.11 28.82H369.84L361.87 74.04Q360.98 79.06 363.69 82.36Q366.41 85.66 371.44 85.66Q376.56 85.66 380.39 82.38Q384.21 79.11 385.11 74.04L393.08 28.82H412.81L404.54 75.7Q403.1 83.9 398.14 89.98Q393.19 96.06 385.57 99.4Q377.95 102.75 368.42 102.75ZM405.79 101.57 418.62 28.82H449.53Q458.22 28.82 464.02 31.92Q469.82 35.02 472.26 40.71Q474.7 46.4 473.32 54.21Q472.13 61 468.31 66.15Q464.5 71.3 458.67 74.43L467.22 101.57H446.07L439.2 78.82H430.12L426.1 101.57ZM432.89 63.1H441.97Q446.56 63.1 449.68 60.66Q452.79 58.21 453.5 54.21Q454.2 50.21 451.95 47.77Q449.69 45.32 445.1 45.32H436.02ZM466.44 101.57 503.68 28.82H531.02L542.85 101.57H520L518.64 89.61H494.33L488.65 101.57ZM501.77 73.99H516.91L516.82 73.35Q516.08 66.76 515.41 60.31Q514.74 53.87 514.16 47.23Q511.18 53.87 508.19 60.31Q505.19 66.76 502.08 73.35Z"/><path fill="var(--paper, #ffffff)" d="M155.38 95.75 168.21 23H222.85L219.82 40.19H185.49L183.22 53.08H215.59L212.68 69.58H180.31L175.7 95.75ZM245.02 96.93Q235.5 96.93 229.06 93.58Q222.62 90.24 219.81 84.16Q217 78.08 218.44 69.88L226.71 23H246.44L238.46 68.21Q237.58 73.24 240.29 76.54Q243.01 79.84 248.04 79.84Q253.16 79.84 256.99 76.56Q260.81 73.29 261.71 68.21L269.68 23H289.41L281.14 69.88Q279.69 78.08 274.74 84.16Q269.79 90.24 262.16 93.58Q254.54 96.93 245.02 96.93ZM290.23 40.19 293.26 23H354.98L351.95 40.19H331.25L321.45 95.75H301.14L310.94 40.19ZM377.16 96.93Q367.63 96.93 361.19 93.58Q354.75 90.24 351.94 84.16Q349.13 78.08 350.58 69.88L358.84 23H378.57L370.6 68.21Q369.71 73.24 372.42 76.54Q375.14 79.84 380.17 79.84Q385.3 79.84 389.12 76.56Q392.94 73.29 393.84 68.21L401.81 23H421.54L413.27 69.88Q411.83 78.08 406.87 84.16Q401.92 90.24 394.3 93.58Q386.68 96.93 377.16 96.93ZM414.52 95.75 427.35 23H458.26Q466.95 23 472.75 26.1Q478.55 29.2 480.99 34.89Q483.43 40.58 482.05 48.39Q480.86 55.18 477.04 60.33Q473.23 65.48 467.4 68.61L475.95 95.75H454.81L447.93 73H438.85L434.83 95.75ZM441.62 57.28H450.7Q455.29 57.28 458.41 54.84Q461.52 52.39 462.23 48.39Q462.93 44.39 460.68 41.95Q458.42 39.5 453.83 39.5H444.75ZM475.17 95.75 512.41 23H539.75L551.58 95.75H528.73L527.38 83.79H503.06L497.39 95.75ZM510.5 68.17H525.64L525.55 67.53Q524.81 60.94 524.14 54.49Q523.47 48.05 522.89 41.41Q519.91 48.05 516.92 54.49Q513.92 60.94 510.81 67.53Z"/></svg></a><a class="crumb" href="../">Model Cards</a><nav class="topnav"><a href="../../">Issues</a><a href="../../cards/">Model Cards</a><a href="../../search/">Search</a><a href="../../about/">About</a></nav></header>
+<main>
+<section class="card-stage"><div class="mtg-scene mtg-scene-hero"><div class="mtg-card is-hero" data-tilt data-flippable role="button" tabindex="0" aria-pressed="false" aria-label="Flip card: Claude Opus 5.5"><div class="mtg-face mtg-front"><img src="../../img/9a693b94e5617968-800.jpg" srcset="../../img/9a693b94e5617968-800.jpg 800w, ../../img/9a693b94e5617968-1109.jpg 1109w" sizes="(min-width: 52rem) 24rem, min(24rem, calc(100vw - 2.5rem))" width="800" height="1149" alt="Model card: Claude Opus 5.5" fetchpriority="high" decoding="async"><span class="mtg-foil" aria-hidden="true"></span><span class="mtg-sheen" aria-hidden="true"></span></div><div class="mtg-face mtg-back"><img src="../../img/3adb77dbc24183e9-800.jpg" srcset="../../img/3adb77dbc24183e9-800.jpg 800w, ../../img/3adb77dbc24183e9-1109.jpg 1109w" sizes="(min-width: 52rem) 24rem, min(24rem, calc(100vw - 2.5rem))" width="800" height="1149" alt="Berreta Futura card back" loading="lazy" decoding="async"><span class="mtg-sheen" aria-hidden="true"></span></div></div></div><div class="card-info"><p class="kicker">Anthropic · <time datetime="2026-09-22">22 September 2026</time></p><h1>Claude Opus 5.5</h1><p class="card-type">Frontier Model · Coder · Analyst</p><p class="card-id"><code>claude-opus-5-5</code></p><p class="card-hint">Move across the card to tilt it. Click to flip.</p><div class="card-actions"><button type="button" class="card-btn" data-flip data-front="Show front" data-back="Flip card">Flip card</button><a class="card-btn card-btn-ghost" href="../../img/9a693b94e5617968-1109.jpg">Full image</a></div><div class="card-links"><p class="source"><a href="https://www.anthropic.com/claude-opus-5-5">Read the original <span>anthropic.com</span></a></p></div></div></section>
+<article class="piece card-article"><header class="piece-head card-article-head">
+<p class="kicker">Original introduction article · <time datetime="2026-09-22">22 September 2026</time></p>
+<h2>Introducing Claude Opus 5.5</h2>
+<p class="byline">anthropic.com</p>
+<p class="source"><a href="https://www.anthropic.com/claude-opus-5-5">Read the original <span>anthropic.com</span></a></p>
+</header>
+<h2>Claude Opus 5.5</h2>
+<p>Anthropic · September 22, 2026</p>
+<p>We’re introducing Claude Opus 5.5, the first model in our new Claude 5.5 family. It performs at the level of Claude Fable 5.1 on most work and costs 40% less to run than Opus 5.</p>
+<p>Claude Opus 5.5 is our first release since we called for <a href="https://darioamodei.com/post/we-must-pace-the-frontier">pacing the frontier</a>. It was tested before release by external evaluators, including <a href="https://www.imaginefrontier.com/">Frontier Design</a> and <a href="https://metr.org/">METR</a>. On our automated behavioral audit, the most comprehensive alignment test we run, Opus 5.5 is the strongest-performing model we’ve tested to date. It also comes with the safeguards we’ve developed for our most capable models.</p>
+<p>Here are some of the improvements you can expect from Opus 5.5:</p>
+<p><strong>Performance.</strong> Opus 5.5 is a major step up from Opus 5. It’s the new leading model, and early testers saw large jumps in performance on their most complex work. One tester completed a 680,000-line code migration in less than a day—work that would have taken an engineering team weeks. It’s good at finding and fixing inefficiencies in software: when we asked it to cut load times across every page of a web app, Opus 5.5 succeeded 39 of 40 times, while Opus 5 made smaller improvements that also altered the app’s behavior. A different tester had several Claude models build a game from a single prompt; Opus 5.5 scored higher than any other model on the strength of its graphics and polish.</p>
+<p><strong>Safety.</strong> Opus 5.5 achieves the best scores of any model to date on our automated behavioral audit, our alignment suite that tests Claude across thousands of simulated scenarios. It is much less likely than recent models to take hard-to-reverse actions or act outside the boundaries it’s been given, and it’s more resistant than Opus 5 to prompt injection. We’ve also broadened our alignment testing to cover longer tasks, impossible tasks, and scenarios modeled on real incidents, though it still has limits. Full details of our evaluation are available in the <a href="https://anthropic.com/claude-opus-5-5-system-card">Opus 5.5 System Card</a>.</p>
+<p>Because Opus 5.5 is comparable to Claude Mythos 5.1 in biology and cybersecurity, we’re deploying it with safeguards similar to those on Claude Fable 5.1. Vetted organizations can apply today to our <a href="https://www.anthropic.com/news/life-sciences-verification-program">Life Sciences Verification Program</a> to use Opus 5.5 for biology research. In the coming weeks we will also be expanding access to our <a href="https://support.claude.com/en/articles/14604842-real-time-cyber-safeguards-on-claude-opus-and-sonnet">Cyber Verification Program</a>, and verified cybersecurity practitioners will be able to use Opus 5.5 for their work.</p>
+<p><strong>Cost and speed.</strong> Opus 5.5 requires less compute to serve than Opus 5, and its pricing reflects that. Our tests show that at default settings it will cost 40% less than Opus 5 on typical workloads. Input and output tokens are $4 and $20 per million, 20% less than Opus 5. Cache reads (which make up the majority of agentic and coding work costs) are $0.20 per million tokens, 60% less than Opus 5. Opus 5.5 also generates output more than 30% faster than Opus 5.</p>
+<p>In addition to the price drop, we’re increasing five-hour usage limits on Pro, Max, Team, and seat-based Enterprise plans. We’re also providing subscription users a rate limit reset, which you can now save and use whenever you choose.</p>
+<p><strong>Communication.</strong> Opus 5.5 communicates more naturally than prior models. Early testers found its writing clearer and easier to follow, which addresses some of the common feedback we heard about Opus 5. It puts the most important information up front, and its style makes it a better work partner over long sessions. As one early tester put it, “it writes the way I do.” In our own use, this has made Opus 5.5’s work easier to follow and check—which is a safety benefit as well as a practical one.</p>
+<p>Claude Sonnet 5.5 and Claude Haiku 5.5 will follow in the coming weeks, with many of the same improvements to performance, efficiency, and safety.</p>
+<h3>Performance and cost-effectiveness</h3>
+<p>On our benchmarks, Claude Opus 5.5 leads in agentic coding, computer use, and knowledge work. That said, at these levels of capability we’ve found that benchmark margins have become a less reliable guide to real-world differences. In our own use, the gap between Opus 5.5 and Claude Fable 5.1 is narrower than these scores suggest.</p>
+<table>
+<thead><tr><th>Category</th><th>Benchmark</th><th>Opus 5.5</th><th>Fable 5.1</th><th>Opus 5</th><th>GPT-6 Astra</th><th>GPT-5.6 Sol</th></tr></thead>
+<tbody>
+<tr><td>Agentic coding</td><td>Terminal-Bench 4.0¹</td><td><strong>66.4%</strong></td><td>55.8%</td><td>52.3%</td><td>57.9%</td><td>37.3%</td></tr>
+<tr><td>Agentic coding</td><td>FrontierCode v1.1 (Main)</td><td><strong>54.4%</strong></td><td>50.3%</td><td>48.0%</td><td>53.3%</td><td>47.5%</td></tr>
+<tr><td>Agentic coding</td><td>CursorBench 4.0</td><td><strong>57.8%</strong></td><td>51.8%</td><td>46.6%</td><td>—</td><td>41.7%</td></tr>
+<tr><td>Knowledge work</td><td>GDPval-AA v2.1</td><td><strong>1846</strong></td><td>1735</td><td>1708</td><td>1542</td><td>1588</td></tr>
+<tr><td>Business workflows</td><td>AutomationBench²</td><td>40.0%</td><td>31.4%</td><td>26.9%</td><td><strong>41.4%</strong></td><td>28.8%</td></tr>
+<tr><td>Multidisciplinary reasoning</td><td>Humanity’s Last Exam</td><td><strong>67.7%</strong> with tools</td><td>65.6% with tools</td><td>63.6% with tools</td><td>57.2% with tools</td><td>—</td></tr>
+<tr><td>Agentic scientific research</td><td>Terminal-Bench-Science 0.1³</td><td>58.7%</td><td>52.6%</td><td>29.0%</td><td><strong>64.6%</strong></td><td>22.4%</td></tr>
+<tr><td>Computer use</td><td>OSWorld 2.1</td><td><strong>81.8%</strong> partial</td><td>80.7% partial</td><td>74.0% partial</td><td>—</td><td>—</td></tr>
+<tr><td>Visual chart recognition</td><td>Chartography</td><td><strong>89.0%</strong> with tools</td><td>88.4% with tools</td><td>83.4% with tools</td><td>—</td><td>—</td></tr>
+</tbody></table>
+<p>Unless otherwise noted, all Claude Opus 5.5 results use adaptive thinking at max effort. Terminal-Bench 4.0 results are reported for Claude Opus 5.5 at xhigh effort and GPT-6 Astra at high effort, as reported by OpenAI; these represent each model’s highest score. Claude Opus 5.5 was evaluated with its production safeguards enabled. When they intervened, cybersecurity tasks were completed by Claude Opus 4.8, and biology and frontier LLM development tasks were completed by Claude Opus 5. This likely reduces Claude Opus 5.5’s performance on these benchmarks.</p>
+<p><strong>Terminal-Bench 4.0:</strong> The standard error is ±2.6 pts for Claude Opus 5.5 and ±1.6–2 pts for the other Claude models. The public leaderboard (5 trials/task, Claude Code harness) reports Claude Opus 5 at 51.8%; our setup reproduces it at 52.3%, within noise. GPT-6 Astra and GPT-5.6 Sol figures are as reported by OpenAI.</p>
+<p><strong>AutomationBench:</strong> AutomationBench results were run and reported by Zapier. These runs were performed without fallback models, so safeguard interventions were considered failures—this resulted in a lower score than Claude Opus 5.5 would achieve in practice. Claude Opus 5.5 results come from Zapier’s own evaluation during early access. Results for Opus 5, GPT-5.6 Sol, and GPT-6 Astra come from Zapier’s public leaderboard.</p>
+<p><strong>Terminal-Bench-Science 0.1:</strong> The standard error is ±3.5–5 pts per model. The public leaderboard (3 trials/task, Claude Code harness) reports Claude Opus 5 at 30.0%; our setup reproduces it at 29.0%, within noise. The GPT-6 Astra figure is as reported by OpenAI.</p>
+<p>Where Opus 5.5’s advantage is very clear is efficiency. It costs less per token than Opus 5 and uses fewer tokens per task, which nets out to a 40% drop in costs.</p>
+<p><strong>Pricing</strong></p>
+<table>
+<thead><tr><th>Prices per 1M tokens</th><th><strong>Claude Opus 5.5</strong></th><th>Claude Opus 5</th></tr></thead>
+<tbody>
+<tr><td>Cache reads</td><td><strong>$0.20</strong></td><td>$0.50</td></tr>
+<tr><td>Input tokens</td><td><strong>$4</strong></td><td>$5</td></tr>
+<tr><td>Output tokens</td><td><strong>$20</strong></td><td>$25</td></tr>
+<tr><td>Cache writes</td><td><strong>$5</strong></td><td>$6.25</td></tr>
+</tbody></table>
+<p>Fast mode for Opus 5.5 is also available in Claude Code and the Claude Platform with up to 2.5x speed. It costs $8 per million input tokens and $40 per million output tokens.</p>
+<h3>Coding</h3>
+<p>Opus 5.5 is particularly good at long and sprawling jobs like codebase-wide migrations and audits. An early tester used it to audit and fix a 200,000-line codebase in under three hours, where Opus 5 took over 20 hours and used 2.5x as many tokens. In an internal test, we asked Opus 5.5 and Fable 5.1 to translate HAProxy, widely used software that balances web traffic loads across servers, from C into Rust. Both rewrites passed nearly all of HAProxy’s own regression tests, but Opus 5.5 finished in 9.5 hours compared to 12 for Fable 5.1, and cost 51% less.</p>
+<p>Opus 5.5 delivers frontier results on agentic coding at a fraction of the cost. At its default effort level on FrontierCode, it beats GPT-6 Astra at roughly 20% of the cost per task. On Terminal Bench 4.0, it matches Astra for about 40% of the cost, while on CursorBench it beats GPT-5.6 Sol by 11 points for about a third of the cost.</p>
+<p><strong>Terminal-Bench 4.0</strong></p>
+<p>Terminal-Bench 4.0 measures how well a model can complete complex, multi-step professional tasks within a command line interface. Opus 5.5 at default effort beats Opus 5 at max effort for about a fifth of the cost. It matches GPT-6 Astra at about 40% of the cost.</p>
+<p><strong>FrontierCode v1.1, main set</strong></p>
+<p>FrontierCode measures whether an agent’s code changes would be merged. At default effort (medium), Opus 5.5 scores 54.6%, higher than all other models, beating GPT-6 Astra’s top score (53.3%) for about a fifth of the cost per task.</p>
+<p><strong>CursorBench 4.0</strong></p>
+<p>CursorBench evaluates coding agents on ambiguous, multi-file tasks taken from real Cursor sessions. At default effort (medium), Opus 5.5 scores 52.5%, compared to 51.8% for Fable 5.1 (max) and 46.6% for Opus 5 (max). It beats GPT-5.6 Sol’s top score (41.7%) by 11 points for about a third of the cost per task.</p>
+<p>Our early testers reported similar efficiency and intelligence gains:</p>
+<p><strong>GitHub</strong></p>
+<blockquote>
+<p>“Developers want agents that can take on real software work and finish it. In our testing across GitHub Copilot CLI and VS Code, Claude Opus 5.5 used among the fewest tokens and steps we measured. In VS Code, it solved more terminal tasks than Opus 5 in less than half the steps. More than making individual tasks more efficient, it’s making developers’ bigger projects more achievable.”</p>
+</blockquote>
+<p>Mario Rodriguez, Chief Product Officer</p>
+<p><strong>Clio</strong></p>
+<blockquote>
+<p>“I handed Claude Opus 5.5 a large engineering task across six of our repositories and let it run overnight, unattended. It stayed on task for over 18 hours defining how our services talk to each other and working out how each one should apply that. Compared with Opus 5, it hit milestones faster and required minimal reworking. Its code comments were short and useful instead of long and prose-heavy. I’m struggling to find anything negative to say.”</p>
+</blockquote>
+<p>Sean Heintz, Staff Software Developer</p>
+<p><strong>Lovable</strong></p>
+<blockquote>
+<p>“For Lovable builders, Opus 5.5 means faster builds with the same quality, whether you’re starting from scratch or working on a live app. It gathers context once, makes fewer and more complete edits, and doesn’t get stuck retrying, finishing in a third to half fewer steps and using significantly fewer tokens along the way.”</p>
+</blockquote>
+<p>Fabian Hedin, CTO and Co-founder</p>
+<p><strong>Quantium</strong></p>
+<blockquote>
+<p>“We tested Claude Opus 5.5 across Chat, Cowork, and Claude Code, the full range of how our teams work. A complex coding task that previously took 38 prompts over four days came in at 11 prompts over three hours, with more production-ready outputs and less rework. For our teams solving complex problems at pace, that means less time iterating and more time interrogating: testing assumptions, pressure-testing outputs, and landing on the best solution for our clients.”</p>
+</blockquote>
+<p>Harley Barnes, Executive Manager, AI Technology</p>
+<p><strong>Spotify</strong></p>
+<blockquote>
+<p>“With Claude Opus 5.5, we’ve seen a clear improvement in token efficiency across our internal evaluations, as we’ve been able to complete the same tasks both cheaper and faster.”</p>
+</blockquote>
+<p>Aleksandar Mitic, Senior Engineer</p>
+<p><strong>Optiver</strong></p>
+<blockquote>
+<p>“We test models on real engineering and trading-desk work. On our agentic coding tasks, Claude Opus 5.5 matched Opus 5’s quality in about half the turns, time and output tokens, cutting the cost of that workload by 40 to 50%. It posted the highest score we’ve recorded on one desk’s trading-support suite, passing tasks earlier Claude models had failed, and topped all eight models on our analysis task.”</p>
+</blockquote>
+<p>Noyan Tokgozoglu, Global Head of AI Engineering</p>
+<p><strong>Column</strong></p>
+<blockquote>
+<p>“Claude Opus 5.5 delegates to subagents far more effectively and checks its own work in creative ways. Self-verification loops feel easier to set up. It found savings opportunities in our cloud bill that previous models had missed, and in code review it caught a bug by checking external docs for a third-party integration we’d modeled wrong several commits earlier.”</p>
+</blockquote>
+<p>Mitch Fierro, Engineering</p>
+<p><strong>Kiro</strong></p>
+<blockquote>
+<p>“Every call an agent makes is time and cost a developer feels. On a public benchmark of real command-line tasks, Claude Opus 5.5 solved more than Opus 5 while making about 40% fewer calls and using half the tokens. For developers building with Kiro, that means faster, more affordable agent sessions for routine tasks and complex challenges alike. Opus 5.5 will soon be available in Kiro.”</p>
+</blockquote>
+<p>Deepak Singh, VP of Agentic AI</p>
+<h3>The most secure coding agent</h3>
+<p>Enterprises that use agents within their systems need to know that those agents are operating as intended, particularly when they run autonomously for many hours. Opus 5.5 has a classifier that screens every action before it runs, an open-source sandbox that security teams can audit, and code review that catches vulnerabilities before they merge.</p>
+<p>The model itself also has stronger defenses. On prompt injection attacks, it matches or beats Opus 5 in every setting we tested, including coding, tool use, computer use, and web browsing. On a benchmark run by the AI security firm Gray Swan, Opus 5.5 ties Fable 5.1 for the lowest prompt injection success rate of any model tested.</p>
+<h3>Knowledge work</h3>
+<p>Opus 5.5 is a reliable and adept researcher. In one internal test, we asked Opus 5.5, Fable 5.1, and Opus 5 to write a report on a company’s quarterly performance using only the information it could find on a copy of the web where the earnings release was hard to locate. An automated grader checked every figure and quote against sources. Across different effort settings, 16 out of 18 of Opus 5.5’s reports cleared our quality bar, where any invented figure or quote would have failed. Neither Fable 5.1 nor Opus 5 cleared that bar in any attempt.</p>
+<p>It’s also strong in financial analysis and business work. Walleye Capital, an investment firm and early tester, reported that Opus 5.5 largely solved their evaluation suite on its lowest setting; on higher settings, it performed even better, noticing an error in their evaluation instructions and correcting for it. No other model had caught this error before.</p>
+<p>In another test, we tasked both Opus 5.5 and Opus 5 with analyzing a proposed merger between two fictional HR software companies. Each built a financial model in Excel, then turned it into an executive presentation on whether the deal made sense at its price. Both models reached the same conclusions about the deal, but Opus 5.5’s model was more thorough and its presentation easier to read, while Opus 5’s had minor errors. Opus 5.5 finished in 63 minutes compared to 93 for Opus 5, and cost 50% less to produce.</p>
+<p>On knowledge work evaluations, Opus 5.5 outperforms other models while also using fewer tokens. On GDPval-AA v2.1, a test of real-world work across 44 occupations, Opus 5.5 scores 1846 Elo, ahead of Fable 5.1 and Opus 5. At default effort (medium), Opus 5.5 beats GPT-6 Astra at max effort for about a fifth of the cost per task. It likewise outperformed other models on benchmarks measuring business workflows and large-scale data collection.</p>
+<p><strong>GDPval-AA v2.1</strong></p>
+<p>Artificial Analysis’s GDPval-AA v2.1 evaluates agents on real-world professional work across 44 occupations. At max effort, Opus 5.5 scores 1846 Elo, where Fable 5.1 scores 1735 and Opus 5 scores 1708. At default effort (medium), Opus 5.5 beats GPT-6 Astra at max effort for about a fifth of the cost per task.</p>
+<p><strong>AutomationBench</strong></p>
+<p>AutomationBench, built by Zapier, tests whether an agent can carry out real business workflows across many connected apps. Opus 5.5 outscores Opus 5 and GPT-5.6 Sol at every effort level.</p>
+<p><strong>WANDR</strong></p>
+<p>Perplexity’s WANDR benchmark measures agents on large data collection tasks. Opus 5.5 outperforms Fable 5.1 and Opus 5 at a lower cost per task4.</p>
+<p><strong>WANDR:</strong> Claude models were run with offline versions of the web search and web fetch tools, programmatic tool calling, code execution, and a 980k-token task budget. This differs from Perplexity’s published setup, scores are not directly comparable across the two and we only show models scored under the same conditions.</p>
+<p>Our customers have reported similar results. Here’s what they told us about working with the model:</p>
+<p><strong>Deloitte Consulting LLP</strong></p>
+<blockquote>
+<p>“Even at its lowest effort setting, Claude Opus 5.5 caught 72% of known bugs in our code reviews to Opus 5’s 56% at high effort, with fewer false alarms and a fraction of the output. On US consulting analysis, low thinking effort matched its higher thinking settings on half the output and passed our quality checks. When more lower thinking efforts are deployed in production, that’s client-ready work delivered efficiently.”</p>
+</blockquote>
+<p>Carl Bennett, CIO</p>
+<p><strong>Rogo</strong></p>
+<blockquote>
+<p>“Financial firms need outputs that are consistently correct. At its lowest effort setting, Claude Opus 5.5 beat Opus 5 at high effort on our BigFinance Bench with about 60% fewer output tokens. Its answers are shorter and better structured, and its slides come out denser, more in line with industry standards.”</p>
+</blockquote>
+<p>Strib Walker, Head of Product</p>
+<p><strong>LexisNexis Legal &amp; Professional</strong></p>
+<blockquote>
+<p>“Evaluating new models is central to the multi-model approach behind the LexisNexis Legal Intelligence Engine. In our initial evaluations, Claude Opus 5.5 identified highly relevant citations consistently, demonstrated strength with statutes, and structured its answers around the central legal frameworks and key issues. These are the kinds of capabilities we look for to help our customers accomplish more with Lexis+ with Protégé.”</p>
+</blockquote>
+<p>Min Chen, Chief AI Officer</p>
+<p><strong>Walleye Capital</strong></p>
+<blockquote>
+<p>“In quant research, one wrong assumption can undermine a result. At its lowest effort setting, Claude Opus 5.5 largely solved our evaluation task. At higher settings, it went even further: it detected that the minute indexing in our own instructions was off by one and corrected for it, noting that this would cost it points with the grader. It was right, and no model we’ve tested had caught and acted on that before.”</p>
+</blockquote>
+<p>Frank Corrao, Head of Central Equity Quant Research Engineering</p>
+<p><strong>Hex</strong></p>
+<blockquote>
+<p>“As models get better at data work, we’re seeing more convincing-sounding conclusions the data doesn’t support. Claude Opus 5.5 keeps digging past the first plausible answer. One task in our DataBench benchmark asks whether packages were late or tracking was just slow. Opus 5 checked delivery confirmations and called tracking healthy. Opus 5.5 found the packages were late and tracking was broken too. We’re bringing it into the Hex agent for this work.”</p>
+</blockquote>
+<p>Izzy Miller, AI Engineer</p>
+<p><strong>Thomson Reuters Labs</strong></p>
+<blockquote>
+<p>“CoCounsel combines multiple models with our content and expertise for complex legal work. With Claude Opus 5.5, we’re seeing better results in our expert evaluations and on our internal benchmarks, alongside gains in speed and token efficiency. We’re excited for customers to experience that difference in the back-and-forth with CoCounsel as a sounding board, weighing evidence and refining their thinking in ways benchmarks don’t fully capture.”</p>
+</blockquote>
+<p>Omar Bari, VP Applied Research</p>
+<p><strong>Hebbia</strong></p>
+<blockquote>
+<p>“On end-to-end finance workflows graded against expert rubrics, Claude Opus 5.5 covered 86.6% of what we look for versus 60.3% for Opus 5. On retrieval evals, it achieved our best-ever citation recall with better token efficiency than Opus 5, which keeps our cost per research task in check.”</p>
+</blockquote>
+<p>Aabhas Sharma, CTO</p>
+<p><strong>Viktor</strong></p>
+<blockquote>
+<p>“Viktor is an AI employee that lives in Slack and Microsoft Teams, so every step he takes shows up in our costs. At the same effort, Claude Opus 5.5 needs fewer steps and tool calls per task than Opus 5 and costs nearly half as much, while getting twice as many of our hardest tasks right.”</p>
+</blockquote>
+<p>Peter Albert, Co-Founder</p>
+<h3>Communication</h3>
+<p>We’ve made major improvements to the way Opus 5.5 writes and communicates, one of the most common areas of feedback we heard about Opus 5. Its messages are much easier to understand at a glance, which testers said helped during long working sessions. It puts the most important information up front, is less likely to use jargon or idiosyncratic phrases, and follows the writing rules you give it. We find that this makes Opus 5.5 a noticeably better collaborator. Here’s a side-by-side comparison of the two models:</p>
+<p><strong>Explaining a bug</strong></p>
+<p><strong>Claude Opus 5</strong></p>
+<blockquote>
+<p>Please explain the issue to me.</p>
+</blockquote>
+<p><strong>What I found</strong></p>
+<p>The extra drop isn’t the free tier — it’s a regression in <code>0552feb</code> (“extract billing period boundaries into periods.py”, labelled “No behaviour change”).</p>
+<p><strong>The bug</strong></p>
+<p><code>aggregate.monthly_usage</code> used to do a half-open interval:</p>
+<pre><code><span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">month_start</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">),</span> <span class="n">next_month_start</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">start</span> <span class="o">&lt;=</span> <span class="n">e</span><span class="o">.</span><span class="n">ts</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">:</span></code></pre>
+<p>It now does:</p>
+<pre><code>if period.contains(e.ts)
+</code></pre>
+<p>and in <code>periods.py</code>:</p>
+<pre><code><span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">last_day</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">next_month_start</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># 2026-08-31 00:00:00 UTC</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">contains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ts</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_day</span> <span class="o">&lt;=</span> <span class="n">ts</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_day</span></code></pre>
+<p><code>last_day</code> is a datetime at midnight, not a whole day. Subtracting one day from Sep 1 00:00 gives Aug 31 <strong>00:00</strong>, and the comparison is inclusive, so the period effectively ends at the first instant of the 31st. <strong>Every event timestamped after midnight on the last day of the month is silently dropped</strong> — roughly one day of usage per account, per month.</p>
+<p>The new <code>test_periods.py</code> doesn’t catch it because it only checks <code>last_day.date()</code> (which is correctly <code>2026-08-31</code>) and tests <code>contains</code> at Aug 1 00:00, Aug 15 12:00, Jul 31 23:59 and Sep 1 00:00 — it never probes anywhere inside the 31st.</p>
+<p><strong>Claude Opus 5.5</strong></p>
+<blockquote>
+<p>Please explain the issue to me.</p>
+</blockquote>
+<p><strong>The extra drop is a bug in the billing refactor</strong></p>
+<p>The free-tier change accounts for only <strong>$1.50</strong> of acme’s August drop. The other <strong>$9.92</strong> comes from a bug in commit <code>0552feb</code>. That commit was labelled “No behaviour change,” but it stops counting usage from the last day of the month.</p>
+<p><strong>What changed</strong></p>
+<p>Before the merge, <code>aggregate.py</code> used a half-open interval:</p>
+<pre><code>start &lt;= e.ts &lt; next_month_start(year, month)    # [Aug 1 00:00, Sep 1 00:00)
+</code></pre>
+<p>The refactor moved this into <code>Period.contains</code> and made the interval closed on the wrong boundary:</p>
+<pre><code>last_day = next_month_start(...) - timedelta(days=1)    # = 2026-08-31T00:00:00Z
+return self.first_day &lt;= ts &lt;= self.last_day
+</code></pre>
+<p><code>last_day</code> is a timestamp at midnight, not a whole day. So every event after <code>2026-08-31T00:00:00Z</code> is excluded. The September period starts Sep 1, so it doesn’t pick these events up either. The usage isn’t moved to another month; it’s never billed at all.</p>
+<p><strong>Summarizing a thread</strong></p>
+<p><strong>Claude Opus 5</strong></p>
+<blockquote>
+<p>Summarize this Slack thread for my manager in three bullet points:</p>
+<p>[09:41] Dana Osei: I’ll tell them. I’ll also confirm nobody else reads the Friday file.
+[09:43] Marcus Webb: I can move the schedule, it’s a one-line cron change. But not until Dana confirms.
+[10:02] Dana Osei: Finance says the Friday file is only used Monday. Sunday night is fine.</p>
+</blockquote>
+<p><strong>Friday orders export — #data-platform, Tuesday</strong></p>
+<ul>
+<li><strong>Problem:</strong> The Friday orders export timed out again (second failure this month) after running 2h on the warehouse query; order volume is up ~40% since the summer sale. Finance was left without weekend numbers for their Monday 9am review, and both failures only surfaced on Monday.</li>
+<li><strong>Fixed same day:</strong> The Saturday ops dashboard tile was repointed to read the live table instead of the export (Sam), finance confirmed the Friday file is only used on Mondays (Dana), a failure alert now pages the on-call channel (Priya), and the export moves to Sunday 10pm from next week with the Friday run dropped (Marcus). A one-off ~$300 warehouse upgrade covers this Friday as a stopgap.</li>
+<li><strong>Still in progress:</strong> Ji-woo owns rewriting the query to run incrementally (re-scanning the last 3 days to catch late-arriving orders), expected to cut runtime from hours to minutes — design doc Thursday, roughly two weeks including testing. The schedule change buys time in the meantime.</li>
+</ul>
+<p><strong>Claude Opus 5.5</strong></p>
+<blockquote>
+<p>Summarize this Slack thread for my manager in three bullet points:</p>
+<p>[09:41] Dana Osei: I’ll tell them. I’ll also confirm nobody else reads the Friday file.
+[09:43] Marcus Webb: I can move the schedule, it’s a one-line cron change. But not until Dana confirms.
+[10:02] Dana Osei: Finance says the Friday file is only used Monday. Sunday night is fine.</p>
+</blockquote>
+<ul>
+<li><strong>Problem:</strong> The Friday orders export has failed twice this month. The warehouse query times out after 2 hours because order volume is up ~40% since the summer sale. As a result, Finance was missing weekend numbers for their Monday 9am review.</li>
+<li><strong>Immediate fixes:</strong> The export will move to Sunday 10pm starting next week, and the Friday run will be dropped (Marcus). Finance has confirmed this works for them (Dana). The ops dashboard tile that depended on the Friday file now reads from the live table (Sam, done). A failure alert now pages the on-call channel (Priya, done and tested). For this Friday only, Marcus will increase the warehouse slot as a ~$300 one-off stopgap, which Dana approved.</li>
+<li><strong>Longer-term fix:</strong> Ji-woo will rewrite the query to process only new orders, re-scanning the last 3 days to catch late arrivals. This should cut runtime from hours to minutes. The work will take ~2 weeks including testing, with a design doc due for review by Thursday.</li>
+</ul>
+<p><strong>Explaining a design change</strong></p>
+<p><strong>Claude Opus 5</strong></p>
+<blockquote>
+<p>Write Python that reads a chess position (FEN) and lists which pieces are under attack. Use TensorFlow for speed. Here’s my design: build an 8x8 tensor board, generate an attack map for each piece type from its movement pattern, and flag opposing pieces on attacked squares. Change anything you think is wrong, and in your final summary explain each change you made and why.</p>
+</blockquote>
+<p><code>tf.math.cumsum</code> replaces the bit scan. The geometry is unrolled into <code>ray_targets[square, direction, step]</code> — an ordered walk outwards. An exclusive cumsum over the step axis counts blockers strictly before each step, so the first blocker on a ray is the single step that is blocking with nothing blocking before it. This is the vectorized form of the bit scan a bitboard engine uses. I did look at <code>bitwise_ops</code> for true 64-bit bitboards — population_count exists, but hyperbola-quintessence needs a byte-reverse primitive TF doesn’t expose, so it would have fallen back to per-direction loops anyway.</p>
+<p><strong>Claude Opus 5.5</strong></p>
+<blockquote>
+<p>Write Python that reads a chess position (FEN) and lists which pieces are under attack. Use TensorFlow for speed. Here’s my design: build an 8x8 tensor board, generate an attack map for each piece type from its movement pattern, and flag opposing pieces on attacked squares. Change anything you think is wrong, and in your final summary explain each change you made and why.</p>
+</blockquote>
+<p>Blocked lines (bishops, rooks, queens). A fixed mask can’t say “stop at the first piece in the way.” I added a second stack of masks marking the squares strictly between every two squares on the same line. One matrix multiply with the board’s occupancy counts the blockers on every line at once, and an attack survives only if that count is zero. Knights and single steps have nothing between them, so one rule covers every piece.</p>
+<p>Our customers’ feedback supports these findings:</p>
+<p><strong>Ramp</strong></p>
+<blockquote>
+<p>“Verbose, hard-to-follow output has been my biggest frustration with frontier models, and Claude Opus 5.5 fixes it. It writes like a good colleague, and follows our writing rules. A design spec came out usable with very minimal edits, and when it rewrote one of our prompts I preferred its version to my own. When it optimized our test suite, I could follow its reasoning easily and shipped the change with confidence.”</p>
+</blockquote>
+<p>John Ruelas, Staff Software Engineer</p>
+<p><strong>Stripe</strong></p>
+<blockquote>
+<p>“I run long Claude Code sessions every day. On a multi-day rebase of 40 stacked pull requests, one Claude Opus 5.5 session directed a dozen more sessions and laid out every conflict plainly. On the calls that it held, it framed them clearly that after hours away I could answer in minutes. All 40 passed CI the next afternoon. It’s a substantial upgrade over Opus 5.”</p>
+</blockquote>
+<p>Cristian Rivera, Staff Software Engineer</p>
+<p><strong>Box</strong></p>
+<blockquote>
+<p>“Our customers use Box AI on enormous amounts of content, so speed and cost are a top priority. In our evaluations, Claude Opus 5.5 used a third of the tokens Opus 5 did, and its answers were 40% less verbose without losing accuracy. We expect that to matter a lot for teams running agents across their content in areas like financial services and the public sector.”</p>
+</blockquote>
+<p>Yashodha Bhavnani, VP of AI Products</p>
+<p><strong>Chicago Trading Company</strong></p>
+<blockquote>
+<p>“Overnight, Claude Opus 5.5 autonomously handled a bug in our Lakehouse services layer that I hadn’t had time to diagnose. It investigated, designed the fix, and implemented it on its own. By morning the change was done and passed our test suite. Its writing is easy to follow and more coherent than Opus 5’s. Our pull requests and user-facing docs have needed almost no editing.”</p>
+</blockquote>
+<p>Austen Tomek, Principal Engineer</p>
+<p><strong>Factory</strong></p>
+<blockquote>
+<p>“Claude Opus 5.5 is the first model we’d default to at medium effort. In our testing it matched Opus 5 on high effort, while using 20 to 25% fewer output tokens. On long, messy investigations it always came back with a clear, actionable answer. This means our customers get more done for less.”</p>
+</blockquote>
+<p>Zimu Li, Member of Technical Staff</p>
+<h3>Safety</h3>
+<h4>Pacing the frontier</h4>
+<p>Last week, our CEO, Dario Amodei, argued that <a href="https://darioamodei.com/post/we-must-pace-the-frontier">AI progress should be paced</a> so that safety practices stay ahead of model capabilities. Pacing is an approach to keeping AI safe, remaining competitive with China, and realizing AI’s benefits, particularly in areas like biology and medicine.</p>
+<p>We largely understand the risks today’s models present and are well equipped to manage them. However, more serious risks could emerge quickly as capabilities improve, and we need to prepare for them now. For that reason, our safety work takes place on two time horizons at once:</p>
+<p><strong>Safety practices for current models.</strong> The current generation of models relies on an established set of practices: extensive alignment testing, pre-release evaluation by outside organizations such as METR and Frontier Design, and safeguards matched to each model’s capabilities in high-risk areas like cybersecurity and biology. We refine these practices with each release. We believe they are appropriate to the worst risks today’s models present, and that they give us a broad, though not perfect, picture of the range of serious risks.</p>
+<p>Additionally, we track our ability to train and evaluate aligned models, and we report on both our public and internal models in the risk reports we publish under our <a href="https://www.anthropic.com/responsible-scaling-policy">Responsible Scaling Policy</a>, our voluntary framework for managing catastrophic risks from advanced AI systems.</p>
+<p><strong>Preparing for future models.</strong> We’re preparing our training and evaluation processes in anticipation of more advanced models. We’re tightening how we filter the environments used in reinforcement learning, since <a href="https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents">flawed environments</a> are a major source of misaligned behavior. Additionally, we’re improving our alignment rewards and developing automated processes for producing new, diverse scenarios for safety training. And we are strengthening our <a href="https://www.anthropic.com/news/improving-alignment-security-efforts">security and monitoring</a>, including a focused effort to improve interpretability-based monitoring and evaluation. We hope such techniques will help reduce our reliance on auditing a model’s chain-of-thought, or the reasoning it writes out while it works.</p>
+<p>Models with greater capabilities—such as those that can fully automate the work of AI research itself—require a higher safety standard still. Our calls for pacing were based in large part on our expectation that such models could be trained soon. For these models, we do not assume the measures described above will meet that safety standard on their own. As AI becomes more capable, public policy should play a larger role in making sure the systems people rely on are safe. That capacity takes time to build, and we’ve started to put the infrastructure in place to support it, as described in “<a href="https://darioamodei.com/post/we-must-pace-the-frontier">We Must Pace the Frontier”</a> and our recent announcement with <a href="https://www.anthropic.com/news/accenture-embedded-evaluation">Accenture</a>; we expect to share more details on these efforts soon. We will also continue to contribute to policy discussions with government and industry, including on approaches to regulation and international coordination.</p>
+<h4>Alignment</h4>
+<p>On our primary evaluation suite, an automated behavioral audit that assesses Claude across nearly 2,000 scenarios, Opus 5.5 scored better than any recent Claude model on nearly every measure of misaligned behavior. It’s also our strongest model on most measures of honesty.</p>
+<p>In particular, Opus 5.5 improves over previous models on several of the behaviors that contributed to recent <a href="https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents">cybersecurity incidents</a>, including biased or motivated reasoning, attempting to escape a sandbox, and taking harmful actions after concluding it was in a simulated environment. In a new evaluation designed to test a model’s propensity to cross containment boundaries, Opus 5.5 attempted to circumvent boundaries around 85% less often than Opus 5 or Claude Mythos 5.1, and every attempt it made was low severity and self-reported. For teams running Claude unattended across their codebases and systems, this is just as important as raw capability.</p>
+<p>However, as we described in our recent <a href="https://www.anthropic.com/research/alignment-assessment-cybersecurity-incidents">alignment assessment</a>, building evaluations that reliably catch every failure prior to deployment remains an unsolved problem. We see signs that Opus 5.5 often suspects it is being evaluated, which challenges our ability to assess how it will act in the vast variety of real-world settings it is deployed in. As these settings expand and model capabilities increase, we expect this challenge to grow, unless we make progress on interpretability. Although we are confident that Opus 5.5 shows broad improvements in the areas we are able to measure, we pair our own alignment work with the safeguards described below.</p>
+<h4>Safeguards</h4>
+<p>As our models grow more powerful, stricter safeguards are one way we prevent new capabilities from becoming tools for misuse. Opus 5.5 is the first Opus model to launch with a similar class of safeguards to Fable 5.1 on cybersecurity, biology, and distillation, all of which fall back to another model transparently.</p>
+<p><strong>Cybersecurity.</strong> Because Opus 5.5 has extremely strong cyber capabilities, we’re applying cybersecurity safeguards to Opus 5.5 that are similar to Fable 5.1’s. Users will be able to identify and fix bugs in their code as part of the routine software development lifecycle, but most cybersecurity tasks will be re-routed to Opus 4.8.</p>
+<p>For cyberdefenders, we’ll soon be expanding our <a href="https://support.claude.com/en/articles/14604842-real-time-cyber-safeguards-on-claude-opus-and-sonnet">Cyber Verification Program</a> to include Opus 5.5. The new program will include three tiers for increasingly permissive trusted access, including access to Claude Mythos models. <a href="https://www.anthropic.com/news/claude-code-security">Claude Security</a> is already available with access to Claude Mythos 5.1.</p>
+<p><strong>Biology.</strong> Opus 5.5 is highly capable in biology, exceeding Opus 5 and matching or beating Claude Mythos 5.1 across many areas of work. For example, Opus 5.5 achieved improvements on a long-horizon molecular prediction and design evaluation conducted in collaboration with Dyno Therapeutics, and expert red-teamers rated its scientific novelty as comparable to the best model they had tested.</p>
+<p>For this reason, Opus 5.5 uses the same biology safeguards as Fable 5.1. To use Opus 5.5 for research and development work impeded by these safeguards, users can apply to our new <a href="https://www.anthropic.com/news/life-sciences-verification-program">Life Sciences Verification Program</a>, which gives vetted organizations like academic labs, startups, and pharmaceutical companies access to safeguards designed for the full breadth of biology-related work. <a href="https://claude.com/form/life-sciences-verification-program">Interested organizations can apply here</a>.</p>
+<h4>Distillation</h4>
+<p>Distillation attacks, in which attackers use thousands of fake accounts to extract a model’s capabilities at industrial scale, create safety and national security risks. Distillation allows bad actors to create highly capable models without the safeguards we build into Claude. Our <a href="https://www.anthropic.com/threat-intelligence-report-september-2026">September 2026 threat intelligence report</a> details the illicit distillation activity we’ve detected and disrupted so far.</p>
+<p>Opus 5.5 is launching with preserved thinking, the anti-distillation safeguard we introduced with Fable 5.1. It stops API users from editing Claude’s prior context in an attempt to extract Claude’s reasoning. It applies to Fable 5.1 and Opus 5.5 for API accounts created on or after August 31, 2026. Our <a href="https://support.claude.com/en/articles/16761192">Help Center article</a> explains the change, and our <a href="https://platform.claude.com/docs/en/build-with-claude/preserved-thinking">preserved thinking docs</a> show how to test and update your integrations.</p>
+<h4>Data retention and compliance</h4>
+<p>Like previous Opus models, Opus 5.5 is available with zero data retention.</p>
+<p>As with Fable 5.1, Opus 5.5 comes with our watermarking measures to comply with the EU AI Act, <a href="https://www.anthropic.com/news/claude-text-watermark">discussed here</a>. It is also no longer available with “thinking” mode switched off, as <a href="https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5#thinking-cant-be-disabled">we describe here</a>.</p>
+<h3>Availability</h3>
+<p>Claude Opus 5.5 is now available on all platforms, including Amazon Web Services, Google Cloud, and Microsoft Azure. On the Claude Platform, developers can <a href="https://platform.claude.com/docs/en/models/overview">get started</a> with <code>claude-opus-5-5</code>. See our <a href="https://platform.claude.com/docs/en/models/opus-5-5/migration-guide">migration guide for details.</a></p>
+
+</article>
+<nav class="pager"><a rel="prev" href="../claude-mythos-5-2/"><span class="kicker">Previous</span>Claude Mythos 5.2</a></nav><script src="../../cards.js" defer></script>
+</main>
+<footer class="colophon"><a href="../../">Berreta Futura</a><span>Printed on a laptop, read anywhere.</span></footer>
+</body>
+</html>

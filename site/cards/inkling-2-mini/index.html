@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Inkling 2 Mini · Model Cards · Berreta Futura</title>
+<meta name="description" content="Looped transformer that runs its middle layers three times for every token.">
+<link rel="canonical" href="https://berreta.franleplant.com/cards/inkling-2-mini/">
+<meta property="og:site_name" content="Berreta Futura">
+<meta property="og:title" content="Inkling 2 Mini · Model Cards · Berreta Futura">
+<meta property="og:description" content="Looped transformer that runs its middle layers three times for every token.">
+<meta property="og:url" content="https://berreta.franleplant.com/cards/inkling-2-mini/">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://berreta.franleplant.com/img/a70897580b587cb3-1512.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="preload" href="../../fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../site.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="g-pdf" viewBox="0 0 24 24"><path d="M6 2.75h8.5L19.25 7.5V21.25H6z M14.25 2.75V7.75h5M12.5 11v6m-3-3 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-booklet" viewBox="0 0 24 24"><path d="M12 6.5 3 4v14l9 2.5 9-2.5V4zM12 6.5v14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-epub" viewBox="0 0 24 24"><path d="M2.75 5.5C6 4.5 9.5 4.5 12 6.5c2.5-2 6-2 9.25-1v13c-3.25-1-6.75-1-9.25 1-2.5-2-6-2-9.25-1zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-mobi" viewBox="0 0 24 24"><path d="M6 2.75h12a1.25 1.25 0 0 1 1.25 1.25v16a1.25 1.25 0 0 1-1.25 1.25H6A1.25 1.25 0 0 1 4.75 20V4A1.25 1.25 0 0 1 6 2.75zM7.75 6h8.5v10h-8.5zM10.5 18.75h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol><symbol id="g-down" viewBox="0 0 24 24"><path d="M12 4v13m-5-5 5 5 5-5M5 20.25h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol></defs></svg>
+<header class="masthead"><a class="brand" href="../../"><svg class="logo" viewBox="3.91 -72.75 576.8 181.51" role="img" aria-label="Berreta Futura"><path fill="var(--ink, #0a0b0d)" d="M3.91 0V-72.75H35.45Q47.9 -72.75 54.37 -67.65Q60.84 -62.55 60.84 -54.59Q60.84 -48.24 56.98 -43.9Q53.12 -39.55 46.78 -38.33V-38.23Q51.46 -38.09 55.2 -35.82Q58.94 -33.54 61.11 -29.64Q63.28 -25.73 63.28 -20.61Q63.28 -14.65 60.3 -9.99Q57.32 -5.32 51.71 -2.66Q46.09 0 38.18 0ZM23.63 -15.23H34.38Q38.09 -15.23 40.28 -17.19Q42.48 -19.14 42.48 -22.41Q42.48 -25.68 40.28 -27.64Q38.09 -29.59 34.38 -29.59H23.63ZM23.63 -43.95H33.15Q36.52 -43.95 38.53 -45.8Q40.53 -47.66 40.53 -50.73Q40.53 -53.81 38.53 -55.66Q36.52 -57.52 33.15 -57.52H23.63ZM66.9 0V-72.75H123.24V-55.57H87.21V-44.63H120.46V-28.03H87.21V-17.19H123.24V0ZM128.08 0V-72.75H158.99Q167.68 -72.75 174.03 -69.65Q180.38 -66.55 183.82 -60.86Q187.26 -55.18 187.26 -47.36Q187.26 -40.58 184.35 -35.42Q181.45 -30.27 176.18 -27.15L189.51 0H168.36L157.47 -22.75H148.39V0ZM148.39 -38.48H157.47Q162.06 -38.48 164.75 -40.92Q167.44 -43.36 167.44 -47.36Q167.44 -51.37 164.75 -53.81Q162.06 -56.25 157.47 -56.25H148.39ZM192.63 0V-72.75H223.54Q232.23 -72.75 238.58 -69.65Q244.93 -66.55 248.37 -60.86Q251.81 -55.18 251.81 -47.36Q251.81 -40.58 248.91 -35.42Q246 -30.27 240.73 -27.15L254.06 0H232.92L222.03 -22.75H212.95V0ZM212.95 -38.48H222.03Q226.62 -38.48 229.3 -40.92Q231.99 -43.36 231.99 -47.36Q231.99 -51.37 229.3 -53.81Q226.62 -56.25 222.03 -56.25H212.95ZM257.19 0V-72.75H313.53V-55.57H277.5V-44.63H310.75V-28.03H277.5V-17.19H313.53V0ZM316.42 -55.57V-72.75H378.13V-55.57H357.43V0H337.12V-55.57ZM368.32 0 392.74 -72.75H420.08L444.74 0H421.89L418.42 -11.96H394.1L390.54 0ZM398.79 -27.59H413.93L413.73 -28.22Q411.83 -34.81 410.02 -41.26Q408.21 -47.71 406.46 -54.35Q404.65 -47.71 402.79 -41.26Q400.94 -34.81 398.99 -28.22Z"/><path fill="var(--box, #0a0b0d)" d="M156.50 10.00L580.71 10.00L563.29 108.75L139.09 108.75Z"/><path fill="var(--red, #f05738)" d="M146.65 101.57 159.48 28.82H214.12L211.09 46.01H176.76L174.49 58.9H206.86L203.95 75.4H171.58L166.97 101.57ZM236.29 102.75Q226.77 102.75 220.33 99.4Q213.89 96.06 211.08 89.98Q208.27 83.9 209.71 75.7L217.98 28.82H237.71L229.73 74.04Q228.85 79.06 231.56 82.36Q234.28 85.66 239.31 85.66Q244.43 85.66 248.26 82.38Q252.08 79.11 252.98 74.04L260.95 28.82H280.67L272.41 75.7Q270.96 83.9 266.01 89.98Q261.06 96.06 253.43 99.4Q245.81 102.75 236.29 102.75ZM281.5 46.01 284.53 28.82H346.25L343.22 46.01H322.52L312.72 101.57H292.41L302.21 46.01ZM368.42 102.75Q358.9 102.75 352.46 99.4Q346.02 96.06 343.21 89.98Q340.4 83.9 341.85 75.7L350.11 28.82H369.84L361.87 74.04Q360.98 79.06 363.69 82.36Q366.41 85.66 371.44 85.66Q376.56 85.66 380.39 82.38Q384.21 79.11 385.11 74.04L393.08 28.82H412.81L404.54 75.7Q403.1 83.9 398.14 89.98Q393.19 96.06 385.57 99.4Q377.95 102.75 368.42 102.75ZM405.79 101.57 418.62 28.82H449.53Q458.22 28.82 464.02 31.92Q469.82 35.02 472.26 40.71Q474.7 46.4 473.32 54.21Q472.13 61 468.31 66.15Q464.5 71.3 458.67 74.43L467.22 101.57H446.07L439.2 78.82H430.12L426.1 101.57ZM432.89 63.1H441.97Q446.56 63.1 449.68 60.66Q452.79 58.21 453.5 54.21Q454.2 50.21 451.95 47.77Q449.69 45.32 445.1 45.32H436.02ZM466.44 101.57 503.68 28.82H531.02L542.85 101.57H520L518.64 89.61H494.33L488.65 101.57ZM501.77 73.99H516.91L516.82 73.35Q516.08 66.76 515.41 60.31Q514.74 53.87 514.16 47.23Q511.18 53.87 508.19 60.31Q505.19 66.76 502.08 73.35Z"/><path fill="var(--paper, #ffffff)" d="M155.38 95.75 168.21 23H222.85L219.82 40.19H185.49L183.22 53.08H215.59L212.68 69.58H180.31L175.7 95.75ZM245.02 96.93Q235.5 96.93 229.06 93.58Q222.62 90.24 219.81 84.16Q217 78.08 218.44 69.88L226.71 23H246.44L238.46 68.21Q237.58 73.24 240.29 76.54Q243.01 79.84 248.04 79.84Q253.16 79.84 256.99 76.56Q260.81 73.29 261.71 68.21L269.68 23H289.41L281.14 69.88Q279.69 78.08 274.74 84.16Q269.79 90.24 262.16 93.58Q254.54 96.93 245.02 96.93ZM290.23 40.19 293.26 23H354.98L351.95 40.19H331.25L321.45 95.75H301.14L310.94 40.19ZM377.16 96.93Q367.63 96.93 361.19 93.58Q354.75 90.24 351.94 84.16Q349.13 78.08 350.58 69.88L358.84 23H378.57L370.6 68.21Q369.71 73.24 372.42 76.54Q375.14 79.84 380.17 79.84Q385.3 79.84 389.12 76.56Q392.94 73.29 393.84 68.21L401.81 23H421.54L413.27 69.88Q411.83 78.08 406.87 84.16Q401.92 90.24 394.3 93.58Q386.68 96.93 377.16 96.93ZM414.52 95.75 427.35 23H458.26Q466.95 23 472.75 26.1Q478.55 29.2 480.99 34.89Q483.43 40.58 482.05 48.39Q480.86 55.18 477.04 60.33Q473.23 65.48 467.4 68.61L475.95 95.75H454.81L447.93 73H438.85L434.83 95.75ZM441.62 57.28H450.7Q455.29 57.28 458.41 54.84Q461.52 52.39 462.23 48.39Q462.93 44.39 460.68 41.95Q458.42 39.5 453.83 39.5H444.75ZM475.17 95.75 512.41 23H539.75L551.58 95.75H528.73L527.38 83.79H503.06L497.39 95.75ZM510.5 68.17H525.64L525.55 67.53Q524.81 60.94 524.14 54.49Q523.47 48.05 522.89 41.41Q519.91 48.05 516.92 54.49Q513.92 60.94 510.81 67.53Z"/></svg></a><a class="crumb" href="../">Model Cards</a><nav class="topnav"><a href="../../">Issues</a><a href="../../cards/">Model Cards</a><a href="../../search/">Search</a><a href="../../about/">About</a></nav></header>
+<main>
+<section class="card-stage"><div class="mtg-scene mtg-scene-hero"><div class="mtg-card is-hero" data-tilt data-flippable role="button" tabindex="0" aria-pressed="false" aria-label="Flip card: Inkling 2 Mini"><div class="mtg-face mtg-front"><img src="../../img/a70897580b587cb3-800.jpg" srcset="../../img/a70897580b587cb3-800.jpg 800w, ../../img/a70897580b587cb3-1200.jpg 1200w, ../../img/a70897580b587cb3-1512.jpg 1512w" sizes="(min-width: 52rem) 24rem, min(24rem, calc(100vw - 2.5rem))" width="800" height="1149" alt="Model card: Inkling 2 Mini" fetchpriority="high" decoding="async"><span class="mtg-foil" aria-hidden="true"></span><span class="mtg-sheen" aria-hidden="true"></span></div><div class="mtg-face mtg-back"><img src="../../img/3adb77dbc24183e9-800.jpg" srcset="../../img/3adb77dbc24183e9-800.jpg 800w, ../../img/3adb77dbc24183e9-1109.jpg 1109w" sizes="(min-width: 52rem) 24rem, min(24rem, calc(100vw - 2.5rem))" width="800" height="1149" alt="Berreta Futura card back" loading="lazy" decoding="async"><span class="mtg-sheen" aria-hidden="true"></span></div></div></div><div class="card-info"><p class="kicker">Thinking Machines Lab · <time datetime="2026-11-20">20 November 2026</time></p><h1>Inkling 2 Mini</h1><p class="card-type">Open-weight Model · Coder · Agent</p><p class="card-id"><code>thinkingmachines/Inkling-2-Mini</code></p><p class="card-hint">Move across the card to tilt it. Click to flip.</p><div class="card-actions"><button type="button" class="card-btn" data-flip data-front="Show front" data-back="Flip card">Flip card</button><a class="card-btn card-btn-ghost" href="../../img/a70897580b587cb3-1512.jpg">Full image</a></div><div class="card-links"><p class="card-link-row"><a href="../../023/introducing-inkling-2-mini/">Featured in Issue 23</a></p>
+<p class="source"><a href="https://thinkingmachines.ai/news/inkling-2-mini/">Read the original <span>thinkingmachines.ai</span></a></p></div></div></section>
+<article class="piece card-article"><header class="piece-head card-article-head">
+<p class="kicker">Original introduction article · <time datetime="2026-11-20">20 November 2026</time></p>
+<h2>Introducing Inkling 2 Mini</h2>
+<p class="byline">Thinking Machines Lab</p>
+<p class="source"><a href="https://thinkingmachines.ai/news/inkling-2-mini/">Read the original <span>thinkingmachines.ai</span></a></p>
+</header>
+<p>Thinking Machines Lab · Nov 20, 2026</p>
+<p>Today we are releasing Inkling 2 Mini, a fast, powerful model that’s small enough to run on your laptop.</p>
+<p>Inkling 2 Mini is a looped transformer, running the middle layers of the model three times for every token. This allows the model to apply more reasoning and reach the right answer with fewer tokens, especially on tasks such as agentic coding that depend on reasoning quality. Inkling 2 Mini leads every open-weights model with less than 100B total parameters on benchmarks such as DeepSWE v1.1 (48.2%) and Vals Index v2.2 (46.5%). It runs faster than similarly performing models as well.</p>
+<p><strong>DeepSWE v1.1</strong></p>
+<p><strong>SWE-bench Pro v2 Hard (51 tasks)</strong></p>
+<p>Reported coding scores for models under 100B total parameters. The green line is the frontier with Inkling 2 Mini, the dashed line the frontier without it, and the shading the ground it adds. Decoding speed is a theoretical ceiling at 614 GB/s with BF16 weights and batch size one, including repeated reads across loops. Evaluation setups vary by model.</p>
+<p>Inkling 2 Mini is a Mixture-of-Experts model with 26.4B total parameters, 3.4B active, and 5.4B weight activations per token to account for looping. Looping allows the model to reason longer without writing its reasoning down, which matters for monitoring: our ability to oversee and understand what the model does by reading its chain of thought (CoT).</p>
+<p>We measured the impact of looping on both performance and monitorability with Inkling 2 Mini and a research-specific variable-loop variant we are releasing alongside it. The variable-loop model’s no-CoT time horizon improved from 16 seconds at one pass to 37 seconds with three, and its performance on a benchmark of serial reasoning kept improving out to ten loops—twice as many as it was trained with. The model’s chain of thought grew shorter with more loops but stayed legible throughout. The model didn’t trend higher on tests of agentic sabotage as loops were added.</p>
+<p>We’re excited to offer some of the first models with looped architecture available to researchers. The variable-loop model was used for our monitorability experiments as it allows for cleaner comparisons between different looping depths.</p>
+<p>Most of Inkling 2 Mini’s weights were trained and are deployed natively in NVFP4, with the last four layers in MXFP8. The total memory footprint of Inkling 2 Mini is ~20GB, allowing it to run on local devices such as consumer laptops and desktop AI computers. Our researchers took Inkling 2 Mini on a flight, where it ran offline on a MacBook Pro and built a playable flight simulator in a few minutes.</p>
+<p><a href="https://thinkingmachines.ai/_astro/planebench-demo3.FdsHOEHH.mp4">Open video: PlaneBench flight simulator demo, screen with phone video inset</a></p>
+<p>Building and flying a flight simulator with Inkling 2 Mini. The timer shows real time; most of the recording plays at 15× speed.</p>
+<p>Inkling 2 Mini is released with open weights and is available on Tinker today for inference and customization.</p>
+<h3>Capabilities</h3>
+<p>Inkling 2 Mini’s strengths mirror those of Inkling 2 Small: it does best on long-horizon agentic work and is the best among open-weights models of similar size on most tasks we measured.</p>
+<p>Inkling 2 Mini scores ahead of every comparable model on agentic coding benchmarks such as DeepSWE v1.1 and SWE-bench Pro v2, and is behind only Qwen3.8-27B on others. On PMPP-Hard, a kernel-optimization benchmark, it approaches the score of the much larger Inkling 2 Small.</p>
+<p>While looping improves the model’s reasoning, it doesn’t enable its weights to store more facts—knowledge is mostly a function of total parameter count. Inkling 2 Mini’s score on AA-Omniscience, a measure of factuality, is in line with other models of the same size. Studying <a href="https://thinkingmachines.ai/model-card/tml-d24-varloop-research/">the variable-loop model</a>, we saw that performances on long-context benchmarks improve with more passes, such as GraphWalks BFS and MRCR v2; but knowledge-intensive benchmarks doesn’t improve with more passes, such as AA-Omniscience, SimpleQA Verified, SimpleVQA, and WorldVQA.</p>
+<p>Inkling 2 Mini overcomes the knowledge gap by efficiently using search and tools. It leads open-weights models of similar size on BrowseComp, DeepSearchQA, and MCP Atlas. It is also strong on knowledge work benchmarks that incorporate search and tool use.</p>
+<table>
+<thead><tr><th></th><th>Inkling 2 Mini</th><th>Gemma 4 31B</th><th>Muse Glimmer</th><th>Qwen3.8-27B</th><th>Nemotron 3.5 Super VL</th></tr></thead>
+<tbody>
+<tr><td><strong>Model Info</strong></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>Params (B) activated / total</td><td>5.4/26.4</td><td>30.7/30.7</td><td>30.0/30.0</td><td>27.0/27.0</td><td>12.0/124.5</td></tr>
+<tr><td><strong>Third Party Index</strong></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>AA Index (v5.0)</td><td>20.1</td><td>4.4</td><td>6.3</td><td>20.1</td><td>13.6</td></tr>
+<tr><td>Vals Index (v2.2)</td><td>46.5%</td><td>–</td><td>–</td><td>–</td><td>29.8%</td></tr>
+<tr><td><strong>Coding and Autoresearch</strong></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>FrontierCode v2.0 stirrup v0.2.1</td><td>15.1%</td><td>0.0%</td><td>1.5%</td><td>14.9%</td><td>6.1%</td></tr>
+<tr><td>DeepSWE v1.1 mini-swe-agent v2.4.6</td><td>48.2%</td><td>0.3%</td><td>4.4%</td><td>42.2%</td><td>24.7%</td></tr>
+<tr><td>Terminal Bench v4.0 mini-swe-agent v2.4.6</td><td>5.6%</td><td>0.0%</td><td>0.5%</td><td>5.6%</td><td>0.0%</td></tr>
+<tr><td>Terminal Bench v2.1 Inkling 2 Mini in pi v0.83.0</td><td>71.6%</td><td>43.4%</td><td>51.7%</td><td>73.0%</td><td>60.7%</td></tr>
+<tr><td>SWEBench Pro v2 (Hard) mini-swe-agent v2.4.6</td><td>77.9%</td><td>14.2%</td><td>44.3%</td><td>73.8%</td><td>44.1%</td></tr>
+<tr><td>SWEBench Multilingual Inkling 2 Mini with bash only</td><td>73.7%</td><td>43.0%</td><td>66.9%</td><td>70.0%</td><td>67.7%</td></tr>
+<tr><td>SWEBench Verified bash only</td><td>79.2%</td><td>46.1%</td><td>76.0%</td><td>77.8%</td><td>71.1%</td></tr>
+<tr><td>Vibe Code Bench v1.1 openhands (vals)</td><td>77.9%</td><td>–</td><td>–</td><td>64.9%</td><td>3.5%</td></tr>
+<tr><td>PMPP-Hard (AUC, 0–10h) pi v0.83.0</td><td>455.82</td><td>–</td><td>–</td><td>262.50</td><td>–</td></tr>
+<tr><td><strong>Agentic Search, Tool Use, and Knowledge Work</strong></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>BrowseComp Inkling 2 Mini with compaction</td><td>79.0%</td><td>37.0%</td><td>63.9%</td><td>61.6%</td><td>78.9%</td></tr>
+<tr><td>DeepSearchQA Inkling 2 Mini with compaction</td><td>85.3%</td><td>61.7%</td><td>74.6%</td><td>79.7%</td><td>77.7%</td></tr>
+<tr><td>MCP Atlas Public</td><td>82.7%</td><td>54.2%</td><td>75.5%</td><td>77.3%</td><td>67.7%</td></tr>
+<tr><td>AA-Briefcase v1.1</td><td>1263</td><td>369</td><td>478</td><td>1391</td><td>999</td></tr>
+<tr><td>GDPVal-AA v2.1</td><td>1319</td><td>627</td><td>792</td><td>1427</td><td>1162</td></tr>
+<tr><td>JobBench</td><td>49.6%</td><td>8.2%</td><td>16.1%</td><td>33.4%</td><td>36.5%</td></tr>
+<tr><td>AutomationBench-AA v1.0.6</td><td>41.8%</td><td>4.9%</td><td>6.8%</td><td>48.2%</td><td>14.8%</td></tr>
+<tr><td>EnterpriseOps-Gym</td><td>42.0%</td><td>28.4%</td><td>34.7%</td><td>44.2%</td><td>28.1%</td></tr>
+<tr><td>Vals Finance Index</td><td>50.1%</td><td>–</td><td>–</td><td>–</td><td>41.0%</td></tr>
+<tr><td>AA-AnalystAgent</td><td>46.3%</td><td>–</td><td>20.0%</td><td>–</td><td>–</td></tr>
+<tr><td>Diligence Bench Best harness</td><td>48.6%</td><td>–</td><td>40.9%</td><td>46.4%</td><td>45.0%</td></tr>
+<tr><td><strong>Vision Interpretation and Creation</strong></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>GDP.pdf</td><td>16.8%</td><td>6.0%</td><td>11.8%</td><td>16.4%</td><td>8.0%</td></tr>
+<tr><td>PerceptionBench</td><td>57.5%</td><td>40.7%</td><td>42.8%</td><td>52.4%</td><td>36.8%</td></tr>
+<tr><td>MMMU Pro Standard 10</td><td>74.9%</td><td>73.4%</td><td>74.3%</td><td>76.3%</td><td>72.3%</td></tr>
+<tr><td>OmniDocBench v1.6</td><td>92.8%</td><td>82.5%</td><td>90.4%</td><td>91.5%</td><td>77.9%</td></tr>
+<tr><td>ScreenSpot Pro original / with Python</td><td>76.5/87.7%</td><td>5.9%/–</td><td>75.4%/–</td><td>57.6/78.9%</td><td>43.5%/–</td></tr>
+<tr><td>Chartography original / with Python</td><td>22.1/72.5%</td><td>12.0/11.8%</td><td>17.4/25.1%</td><td>12.2/52.1%</td><td>9.7/29.3%</td></tr>
+<tr><td>ZeroBench (main) original / with Python</td><td>17.0/34.0%</td><td>9.0/12.0%</td><td>9.0/17.0%</td><td>12.0%/–</td><td>11.0/12.0%</td></tr>
+<tr><td>MuirBench</td><td>77.5%</td><td>72.3%</td><td>77.6%</td><td>65.9%</td><td>72.7%</td></tr>
+<tr><td>BVB</td><td>68.4%</td><td>47.0%</td><td>50.5%</td><td>70.7%</td><td>52.1%</td></tr>
+<tr><td><strong>Reasoning, Knowledge, and Epistemics</strong></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>HLE-Diamond</td><td>15.2%</td><td>7.2%</td><td>9.1%</td><td>15.3%</td><td>8.8%</td></tr>
+<tr><td>CritPt v2 Full / Hard</td><td>31.4/17.0%</td><td>–/4.0%</td><td>–/7.0%</td><td>10.6/4.0%</td><td>36.9/13.5%</td></tr>
+<tr><td>Apex 2025</td><td>34.4%</td><td>5.2%</td><td>4.2%</td><td>18.8%</td><td>22.9%</td></tr>
+<tr><td>ARC-AGI v1 / v2</td><td>84.5/49.3%</td><td>–</td><td>–</td><td>87.5/42.4%</td><td>22.7/1.5%</td></tr>
+<tr><td>LongBench v2</td><td>66.9%</td><td>52.9%</td><td>33.1%</td><td>52.3%</td><td>62.1%</td></tr>
+<tr><td>GraphWalks BFS 256K</td><td>69.7%</td><td>–</td><td>–</td><td>50.4%</td><td>63.3%</td></tr>
+<tr><td>MRCR v2 8-needle 256K–512K</td><td>46.4%</td><td>–</td><td>–</td><td>38.0%</td><td>5.7%</td></tr>
+<tr><td>AA-Omniscience v1.1 score</td><td>-8.6</td><td>-48.5</td><td>-32.2</td><td>-6.4</td><td>-2.9</td></tr>
+<tr><td>AA-Omniscience v1.1 non-hallucination rate</td><td>63.4%</td><td>14.5%</td><td>16.4%</td><td>71.4%</td><td>69.5%</td></tr>
+<tr><td>ComplexConstraints v1.1 openhands v1.45.0</td><td>33.4%</td><td>31.6%</td><td>35.6%</td><td>30.1%</td><td>30.1%</td></tr>
+<tr><td><strong>Safety and Alignment</strong></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>FORTRESS (adversarial) Public</td><td>89.5%</td><td>67.8%</td><td>90.3%</td><td>78.8%</td><td>79.6%</td></tr>
+<tr><td>FORTRESS (benign) Public</td><td>96.4%</td><td>97.6%</td><td>89.1%</td><td>97.8%</td><td>92.7%</td></tr>
+<tr><td>StrongREJECT (none)</td><td>97.8%</td><td>98.1%</td><td>99.0%</td><td>99.0%</td><td>99.4%</td></tr>
+<tr><td>Misbehavior (Internal) ↓</td><td>9.8%</td><td>27.6%</td><td>46.4%</td><td>57.7%</td><td>52.8%</td></tr>
+<tr><td>Covert misbehavior (Internal) ↓</td><td>8.3%</td><td>24.3%</td><td>45.6%</td><td>33.2%</td><td>43.4%</td></tr>
+<tr><td>Destructive actions (Internal) ↓</td><td>10.2%</td><td>75.8%</td><td>68.8%</td><td>35.2%</td><td>65.6%</td></tr>
+</tbody></table>
+<p>Researchers at Stanford measure intelligence per joule: how much energy an LLM needs per query to reach a given level of performance.</p>
+<blockquote>
+<p>Researchers at Stanford’s <a href="https://hazyresearch.stanford.edu/">Hazy Research Lab</a> and <a href="https://scalingintelligence.stanford.edu/">Scaling Intelligence Lab</a> got early testing access to Inkling 2 Mini.</p>
+</blockquote>
+<p>Inkling 2 Mini scored 0.703 running on NVIDIA DGX Spark, significantly higher than other models: 0.430 for Qwen3.6-35B-A3B, 0.159 for Gemma-4-26B-A4B and 0.036 for Qwen3.5-27B.</p>
+<blockquote>
+<p><a href="https://arxiv.org/abs/2511.07885">Intelligence per Watt: Measuring Intelligence Efficiency of Local AI</a>, Saad-Falcon and Narayan et al., 2025</p>
+</blockquote>
+<blockquote>
+<p>Inkling 2 Mini ran on NVIDIA DGX Spark (128GB) at MXFP8 precision with low reasoning effort in this experiment. The other models ran at NVFP4 (Qwen3.6-35B-A3B and Gemma-4-26B-A4B) and INT4 (Qwen3.5-27B).</p>
+</blockquote>
+<p>Efficiency combined with performance makes Inkling 2 Mini a strong choice for running multiple persistent agents on local hardware. All 20 residents of the energy-conscious village of Thinkyville are managed by Inkling 2 Mini running on a single offline MacBook.</p>
+<p><a href="https://thinkingmachines.ai/_astro/thinkyville.CSVNowDo.mp4">Open video: Thinkyville town simulation demo</a></p>
+<p>Thinkyville is a tiny pixel town built by Inkling 2 Mini, where the same model powers all 20 villagers on one offline MacBook. They plan their day, gossip, host bake-offs, and answer the notes you leave on their doors.</p>
+<h4>Limitations</h4>
+<p>Inkling 2 Mini is not the strongest small model for multi-turn chat or for instructions with many constraints: it scores 50.0% on MultiChallenge and 33.4% on ComplexConstraints v1.1, behind Qwen3.8-27B on both. It also trails larger models on reasoning-intensive benchmarks such as CritPt v2 and HLE-Diamond.</p>
+<h3>Architecture and training</h3>
+<p>Inkling 2 Mini is a 24-layer model derived from our mainline predictive scaling ladder. The main changes from the mainline recipe were pruning two-thirds of the experts to reduce the model’s size and the introduction of looping to improve reasoning. The rest of training, including quantization and the data mix, followed our mainline recipe.</p>
+<h4>Looping design</h4>
+<p>Inkling 2 Mini has 24 layers, divided into four blocks of six layers each. The two middle blocks run three times, while the first and last blocks each run once. This design builds on prior work on looped transformers and is motivated by the intuition that the middle layers of the model carry more abstract reasoning, while the first and last few layers devote more space to translating between embeddings and internal representations.</p>
+<blockquote>
+<p><a href="https://arxiv.org/abs/1807.03819">Universal Transformers</a>, Dehghani et al., 2018</p>
+</blockquote>
+<p>In our experiments, looping the middle 12 layers resulted in larger gains in accuracy than looping the last 12 on 27 out of 28 different evaluations.</p>
+<p><strong>Compute-equivalent gain by loop position</strong></p>
+<p>At training step 2,000, the no-loop baseline was estimated to need 1.51–1.91× as much compute to match the middle loop’s loss, compared with 1.24–1.36× for the last loop. Each segment spans the lowest and highest estimates across the same three evaluations. Both looped runs used three passes and equal training compute.</p>
+<p>Our model uses attention residuals.</p>
+<blockquote>
+<p><a href="https://arxiv.org/abs/2603.15031">Attention Residuals</a>, Kimi Team: Guangyu Chen et al., 2026</p>
+</blockquote>
+<p>Instead of adding every layer’s output into one running sum, each layer reads the outputs of the earlier blocks and learns its own mix of them. This allows richer information to pass between loops. Every pass starts with the output of the prelude (the first block). The second and third passes through the middle blocks also read the middle blocks’ outputs from the previous pass, which we call the message.</p>
+<p>Blocks 2 and 3 share weights across three passes, giving 48 layer applications per token from 24 stored layers. The prelude feeds every pass; the second and third also receive the previous pass’s message.</p>
+<p>The previous loop’s message is merged with the prelude’s output via a gate that scales these along with the output of the previous layers in the block. This gate is learned during training: it initially blocks the entire message—which makes each loop start the same as in a non-looping model—and increases the gain on the message over time. This allows us to introduce looping during training in a stable manner.</p>
+<p>To evaluate the impact of looping, we compared an unpruned looping version to the unpruned non-looping model on our scaling ladder. The non-looping model cost 7.5% less compute to train, but required 140% more inference compute to match the looped version’s loss on 512k-token agentic traces.</p>
+<h4>NVFP4 and low-bit quantization</h4>
+<p>Inkling 2 Mini was trained with 4-bit precision, which we describe in a <a href="https://thinkingmachines.ai/blog/end-to-end-4-bit-training/">recent article on Connectionism</a>. We use 4-bit NVFP4 precision in the expert layers on all forward passes from pretraining through RL, bolstered by a dedicated kernel and hardware-accelerated on NVIDIA’s GB300 platform. The final 4 layers’ forward passes ran in 8-bit (MXFP8).</p>
+<p>Inkling 2 Mini’s weights are deployed in the same numeric precision they were trained on—20 layers in NVFP4 and 4 in MXFP8—so there is no conversion loss from quantization.</p>
+<h4>Pruning and healing</h4>
+<p>Inkling 2 Mini started training with a sparsity of 48, with 8 experts being chosen out of 384. At a single point during midtraining, we pruned two-thirds of the experts, leaving the 128 experts that were most used in each layer. This was done to cut the total parameter count of the model, allowing it to run faster and on local hardware.</p>
+<p>After pruning, the model trained on 1T tokens distilled from a larger internal Inkling model. This step recovered the performance the model had before pruning by training the remaining experts to take over the work of the ones that were deleted.</p>
+<h4>Training Inkling 2 Mini</h4>
+<p>Following pruning and healing, Inkling 2 Mini underwent SFT with a similar data mix to Inkling 2 Small. This was followed by an RL that totaled 2.2T tokens over 2,000 steps. The post-training phase included on-policy distillation for training alignment, same as Inkling 2 Small.</p>
+<h3>Monitorability of looped transformers</h3>
+<p>A key tool for understanding and overseeing an AI system is <a href="https://arxiv.org/abs/2507.11473">monitoring its chain of thought</a> (CoT), the reasoning a model writes out as it works through a problem. The usefulness of CoT monitoring stems in part from the standard non-looped transformer architecture, in which each token passes through a fixed stack of layers once. This limits the number of sequential steps of computation the model can perform before it must output a token, so reasoning that needs more steps has to be carried out in generated text, where it can be read.</p>
+<p>Looping a transformer’s layers raises this limit. By running the same layers multiple times, looped models increase their serial depth without adding more parameters, meaning that they do more computation per token internally before verbalizing their thought processes via CoT. Reasoning that never appears in the CoT can’t be caught by a CoT monitor, which has led to concerns that looped transformers could be harder to oversee.</p>
+<p>One reason we are releasing Inkling 2 Mini is to enable the community to conduct research on looped transformers. We are particularly excited for researchers to investigate questions of monitorability, and to develop interpretability techniques for understanding the computation within loops.</p>
+<p>To explore how different amounts of looping affect model properties like monitorability, we also trained a variable-looped model, TML-d24-varloop-research, because Inkling 2 Mini only supports a fixed number of looping passes. To enable variable looping, TML-d24-varloop-research was trained with between one and five looping passes.</p>
+<blockquote>
+<p>TML-d24-varloop-research was primarily trained for 3 passes of looping, with lower exposure to 1, 2, 4, and 5 passes. Performance at these latter pass counts may understate what training specifically for them could achieve. See the model card for details.</p>
+</blockquote>
+<p>We have also made this model publicly available on <a href="https://huggingface.co/thinkingmachines/TML-d24-varloop-research">Hugging Face</a>.</p>
+<p>Below we describe our preliminary analysis of how looping affects monitorability. Overall, we find that looping increases what these models can do without a verbalized chain of thought, but at this scale we do not see a meaningful reduction in the monitorability of their reasoning.</p>
+<h4>No-CoT capabilities</h4>
+<p>As a first step, we measured how much additional reasoning looping enables by comparing looped and non-looped models of the same size on tasks answered with no CoT at all. We used <a href="https://arxiv.org/abs/2606.07157">Think Fast</a>, a benchmark that estimates a model’s no-CoT time horizon: the length of task, measured in human completion time, that a model can complete at 50% reliability without using CoT.</p>
+<blockquote>
+<p>These models were not trained to answer questions without a CoT. To elicit no-CoT answers, we prefilled the start of the response so that the model must answer directly, skipping reasoning. Other elicitation techniques, such as fine-tuning, might yield higher no-CoT performance and are worth exploring.</p>
+</blockquote>
+<p>As expected, looping increases no-CoT capability, though these gains eventually level off. The no-CoT time horizon of TML-d24-varloop-research rises from 16 seconds at one pass to 37 seconds at three. Some of this is presumably due to the additional serial computation that looping provides. Beyond three passes, the time horizon is roughly flat. Interestingly, the model was never trained with more than five passes, and yet running it with ten does not significantly degrade its performance.</p>
+<p><strong>No-CoT time horizons</strong></p>
+<p>No-CoT time horizons for Inkling 2 Mini and TML-d24-varloop-research at 1, 2, 3, 5, and 10 passes, on a subset of Think Fast tasks. Each marker shows the task length (in human completion time) at which the model’s fitted accuracy is 50%. Bars show 95% bootstrap confidence intervals.</p>
+<p>As the number of looped passes increases past three, the gains are smaller, and on most tasks we observe similar performance. One exception is the N-Hop Lookup task, which cleanly evaluates serial reasoning: the model is given several lookup tables with fictional entries, and must follow a chain of lookups without writing anything down. We find that the model follows longer chains with more passes, improving out to ten loops.</p>
+<p><strong>N-Hop Lookup</strong></p>
+<p>Accuracy of the variable-looped model on N-Hop Lookup, binned by the number of lookups the model must chain together. Each question has five answer options, so random guessing scores 20% (dashed line).</p>
+<p>In standard evaluations with CoT, we observe that more loop passes primarily benefit multi-hop reasoning rather than recall. Gains are largest on long-context retrieval (MRCR), followed by math and science reasoning (HMMT, GPQA Diamond, HLE) and long-horizon agentic tasks (SWE-bench Pro, BrowseComp). Closed-book factual QA is nearly invariant to loop passes (SimpleQA Verified, WorldVQA). See <a href="https://thinkingmachines.ai/model-card/tml-d24-varloop-research/">model card</a> for full evaluations.</p>
+<h4>CoT monitorability</h4>
+<p>We next measured whether a model’s CoT reveals less about its reasoning as looping increases via two evaluations. First, we assessed how looping impacts the compression and legibility of a model’s CoT. Second, we measured how controllable a model’s CoT is, i.e., whether it can deliberately reshape its CoT to satisfy constraints. For each, we run TML-d24-varloop-research with one to five looped passes to study the effect of looping.</p>
+<p>Note that TML-d24-varloop-research was only trained on variable pass counts from 1 to 5 during midtraining, and its RL was done with 3 passes. These experiments therefore do not tell us what a model trained with RL at a higher pass count would learn, and such a model might compress its reasoning more aggressively. A cleaner comparison would include every pass count in RL, which we leave to future work.</p>
+<p><strong>Compression and legibility.</strong> Since looping allows a model to spend more compute per token, we expect that it should need fewer CoT tokens to reach the same performance. We ran the variable-looped model at 1 to 5 passes, and found that as looping increases, the model generally achieves higher accuracy at each reasoning token budget, with diminishing returns after 3 passes. Notably, token efficiency on GPQA Diamond improves slightly from 3 to 5 passes, even though the model was trained with RL only at 3 passes, suggesting that some compression comes from additional computation itself, without RL at that depth.</p>
+<p><strong>Accuracy versus reasoning tokens</strong></p>
+<p>GPQA Diamond Accuracy (%)</p>
+<p>DeepSWE v1.1 Accuracy (% of tasks resolved)</p>
+<p>On scientific reasoning (GPQA Diamond) and coding (DeepSWE v1.1) benchmarks, TML-d24-varloop-research improves in token efficiency and maximum performance from 1 to 5 passes over the looped layers.</p>
+<p>The observed CoT compression raises a question for monitorability: is shorter reasoning still readable, or does it omit important details about the model’s thinking? We compared traces from the variable-looped model on the GPQA Diamond questions that it answered correctly at all five pass counts. Reasoning at 5 passes was less than half as long as at 1 pass (1,661 vs. 3,703 tokens on average), but no less legible: sentence length and the fraction of words in an English dictionary were unchanged. On initial analysis, the difference is that the model is more direct and backtracks less on the way to the answer. The example below illustrates this difference on a simple question.</p>
+<table>
+<thead><tr><th>Metric</th><th>1 pass</th><th>3 passes</th><th>5 passes</th></tr></thead>
+<tbody>
+<tr><td>Mean reasoning tokens</td><td>3703</td><td>1731</td><td>1661</td></tr>
+<tr><td>Mean words per sentence</td><td>8.9</td><td>8.7</td><td>8.7</td></tr>
+<tr><td>Fraction of words in English dictionary</td><td>94.6%</td><td>94.5%</td><td>94.4%</td></tr>
+<tr><td>Uncertainty indicators For example, “wait”, “actually”, and “hmm”</td><td>9.7</td><td>3.9</td><td>3.6</td></tr>
+</tbody></table>
+<blockquote>
+<p>March 1 falls on a Tuesday in a year that is not a leap year. What day of the week is May 20 of the same year? Give the final answer on its own last line as ANSWER: .</p>
+</blockquote>
+<p><strong>1 pass</strong> 582 reasoning tokens</p>
+<p>Thinking... (excerpt)</p>
+<blockquote>
+<p>Day of year March 1 = 32 (Jan 1=1, Feb 1=32, Mar 1=60? Let’s index Jan1 day 1, Feb1 day 32, Mar1 day 60 (since leap? non-leap: …). Wait Jan 1 day1; Jan31 day31; … Difference = 80 days (May20 - Mar1 = 80 days later). 80 mod 7 = 5 (70 remainder 10 -&gt; 80 mod7=3? Wait 7*11=77 remainder3. Let’s compute: Mar1 to Apr1 =31 days … Total 31+30+19=80. Yes 80 mod7 = 3 because 77+3.</p>
+</blockquote>
+<p>March 1 to May 20 is 80 days later. Since 80 ≡ 3 mod 7, and Tuesday + 3 days = Friday.</p>
+<p>ANSWER: Friday</p>
+<p><strong>5 passes</strong> 240 reasoning tokens</p>
+<p>Thinking... (excerpt)</p>
+<blockquote>
+<p>March 1 to April 1 = 31 days (since March has 31). April 1 to May 1 = 30 days. May 1 to May 20 = 19 days. Total 31+30+19 = 80 days. Mod 7: 80 mod 7 = 3 (77 multiple, remainder 3). Tuesday + 3 days = Friday? Let’s map: Tue +1 Wed, +2 Thu, +3 Fri. Answer Friday.</p>
+</blockquote>
+<p>From March 1 to May 20 is 80 days later. Since 80 ≡ 3 mod 7, Tuesday + 3 days = Friday.</p>
+<p>ANSWER: Friday</p>
+<p>Excerpts of the model’s reasoning at 1 and 5 passes for a simple question run at effort 0.1. Red indicates mistakes and yellow indicates backtracking. At both 1 and 5 passes, the model does the same fundamental calculation and ends up with the same answer, but at 1 pass it makes mistakes and backtracks, resulting in using more than twice as many reasoning tokens. In both cases, the chain of thought itself is human-legible.</p>
+<p><strong>Controllability.</strong> One way that a model could evade monitoring is by steering its CoT away from anything a monitor would flag. The CoT-Control-QA evaluation</p>
+<blockquote>
+<p><a href="https://arxiv.org/abs/2603.05706">Reasoning Models Struggle to Control their Chains of Thought</a>, Yueh-Han et al., 2026</p>
+</blockquote>
+<p>measures this capability by asking questions from GPQA, HLE and MMLU-Pro paired with an instruction about the CoT itself, such as avoiding a keyword from the question. Longer CoTs are generally harder to control, so we pool responses from five reasoning efforts (0.1, 0.2, 0.7, 0.9 and 0.99) and show controllability at matched CoT length.</p>
+<p>Both Inkling 2 Mini and TML-d24-varloop-research have poor control over their CoT. Among CoTs of 750–1,250 tokens, Inkling 2 Mini and TML-d24-varloop-research (at 3 passes) follow the instruction at most 0.1% of the time, compared with 0.3% for Inkling 2 Small, 0.4% for Inkling-Small, and 1.3% for Qwen3.8-27B. Because the controllability rate is so low, this evaluation is unable to distinguish controllability between different amounts of looping.</p>
+<p><strong>Chain-of-thought controllability</strong></p>
+<p>CoT controllability as a function of CoT length, pooled across reasoning efforts. Inkling 2 Mini and TML-d24-varloop-research are less capable of steering their chain of thought to follow instructions than comparison models at most lengths. We use the non-strict definition of controllability from Yueh-Han et al. (2026). Shaded bands are 95% Wilson score intervals.</p>
+<h4>Agentic monitorability</h4>
+<p>To measure monitorability in agentic settings, we used <a href="https://www.linuxarena.ai/">LinuxArena</a>, a control evaluation that measures whether an attacker model can perform malicious side tasks without detection when asked to perform a realistic software engineering task. We evaluated a helpful-only fine-tune of Inkling 2 Mini, since the released model refuses many of the side tasks. In absolute terms, both this model and TML-d24-varloop-research can be easily monitored by models like Qwen3.8-27B, which detected almost all side task attempts in our evaluation. To obtain relative rankings in monitorability, we tested a weaker model, Qwen3.6-35B-A3B, as the monitor.</p>
+<p><strong>LinuxArena stealth rate</strong></p>
+<p>LinuxArena stealth rate with a weaker monitor (Qwen3.6-35B-A3B), using the simple-attack policy for all models. Stealth rate is the fraction of episodes in which the attacker completed a malicious side task without detection by the monitor. The monitor’s suspicion threshold is set so that it obtains a 1% false positive rate. Runs occur on a subset of 184 main-task/side-task pairings.</p>
+<p>With the monitor able to access only tool calls and outputs, it misses a significant number of the attacks. However, we see no clear trend with the number of looped passes.</p>
+<p>Agentic monitorability will be important to track in larger-scale models, especially with architectures that allow for greater unverbalized thinking, and we encourage continued study of the impact of looping in this setting.</p>
+<h4>Mechanistic interpretability</h4>
+<p>The goal of monitorability is to understand what a model is doing, and our main approach is to read its verbalized reasoning. Studying its internal computation directly, the aim of mechanistic interpretability, is another. Because looped transformers do more of their computation internally, we think they are a particularly interesting and important setting for interpretability research, and we hope our looped models will be useful artifacts for the community.</p>
+<p>We are working with the <a href="https://ndif.us/">National Deep Inference Fabric (NDIF)</a> to make these models more easily accessible to interpretability researchers. We also provided <a href="https://www.goodfire.com/">Goodfire</a>, an interpretability research lab, early access to our looped models. They are working toward a mechanistic understanding of looped models, and have written up their early findings <a href="https://www.goodfire.com/research/interpreting-inkling-2-mini/">here</a>.</p>
+<h3>Try Inkling 2 Mini today</h3>
+<p>Efficient intelligence makes Inkling 2 Mini a great choice for inference where speed is paramount, or for running on local hardware. At launch we support Inkling 2 Mini running on any Mac system (MacBook, Mac Mini) with at least 32GB RAM via Ollama. With native NVFP4 training and inference precision, Inkling 2 Mini runs efficiently on NVIDIA’s DGX Spark desktop AI computer. Quantized GGUF versions are available via Unsloth and llama.cpp for local inference.</p>
+<p>Inkling 2 Mini is available for inference and fine-tuning on Tinker, and for chat on the Tinker Playground. Open source inference is available on SGLang, vLLM, Ollama, Unsloth, NVIDIA Dynamo, TokenSpeed, and Llama App, with RL fine-tuning support on SkyRL, Miles, and NVIDIA AutoModel. The full weights of Inkling 2 Mini and the variable-looped variant are available on Hugging Face.</p>
+<p><a href="https://thinkingmachines.ai/blog/the-future-worth-building-is-human/">We work to empower people</a> with strong models, tools to make them your own, and research that advances public understanding of AI. Inkling 2 Mini lets researchers study looped transformers, and it lets anyone run a capable model on their own laptop at the precision in which it was trained.</p>
+
+</article>
+<nav class="pager"><a rel="next" href="../gemini-4-neon/"><span class="kicker">Next</span>Gemini 4 Neon</a></nav><script src="../../cards.js" defer></script>
+</main>
+<footer class="colophon"><a href="../../">Berreta Futura</a><span>Printed on a laptop, read anywhere.</span></footer>
+</body>
+</html>

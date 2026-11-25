@@ -1,5 +1,6 @@
 use crate::model::kinds::RenderOperation;
 mod about;
+mod cards;
 pub mod epub;
 mod html;
 mod images;
@@ -297,28 +298,42 @@ pub fn at_head(live: &Path) -> Result<(PathBuf, AtHead)> {
 fn build(args: &SiteArgs) -> Result<()> {
     let _scratch = Scratch;
     let root = std::env::current_dir()?.canonicalize()?;
-    let (site, about, mut issues) = {
+    let cache = root.join(".magazine/site-cache");
+    let (site, about, mut issues, deck) = {
         let (head, _at) = at_head(&root)?;
         let site = config(&head)?;
         let about = about::load(&head)?;
         let issues = crate::util::parallel(&site.editions, |id| issue(&head, id))
             .into_iter()
             .collect::<Result<Vec<_>>>()?;
-        (site, about, issues)
+        let host = site
+            .base_url
+            .trim_start_matches("https://")
+            .trim_start_matches("http://")
+            .trim_end_matches('/');
+        let deck = cards::load(&head, &cache, host, &issues)?;
+        (site, about, issues, deck)
     };
     issues.sort_by(|a, b| b.editions[0].id.cmp(&a.editions[0].id));
     prepare(&args.out)?;
-    let images = images::encode_all(
-        &html::image_paths(&issues),
-        &args.out,
-        &root.join(".magazine/site-cache"),
-    )?;
+    let mut paths = html::image_paths(&issues);
+    paths.extend(cards::image_paths(&deck));
+    paths.sort();
+    paths.dedup();
+    let images = images::encode_all(&paths, &args.out, &cache)?;
     let name = issues
         .first()
         .map_or("Magazine", |i| i.editions[0].publication_name.as_str())
         .to_string();
     let logo = logo::build(&name)?;
-    let files = html::pages(&issues, &images, (&site, &about), &name, &logo.inline)?;
+    let files = html::pages(
+        &issues,
+        &deck,
+        &images,
+        (&site, &about),
+        &name,
+        &logo.inline,
+    )?;
     check_font_coverage(&root, &files)?;
     for (path, body) in &files {
         let target = args.out.join(path);
@@ -369,6 +384,7 @@ fn prepare(out: &Path) -> Result<()> {
     }
     fs::create_dir_all(out)?;
     fs::write(out.join("share.js"), include_str!("../../assets/share.js"))?;
+    fs::write(out.join("cards.js"), include_str!("../../assets/cards.js"))?;
     fs::write(
         out.join("search.js"),
         include_str!("../../assets/search.js"),

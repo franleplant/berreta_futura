@@ -88,7 +88,7 @@ fn say(language: &str, key: &str) -> &'static str {
     }
 }
 
-fn date(language: &str, iso: &str) -> String {
+pub(super) fn date(language: &str, iso: &str) -> String {
     const EN: [&str; 12] = [
         "January",
         "February",
@@ -665,7 +665,7 @@ pub struct Page {
     pub body: String,
 }
 
-fn depth_root(path: &str) -> String {
+pub(super) fn depth_root(path: &str) -> String {
     "../".repeat(path.matches('/').count())
 }
 
@@ -721,13 +721,14 @@ fn document(page: &Page, site: &SiteConfig, (name, logo): (&str, &str), root: &s
 <link rel=\"apple-touch-icon\" href=\"{root}apple-touch-icon.png\">\n\
 <link rel=\"preload\" href=\"{root}fonts/Geist-Variable.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\n\
 <link rel=\"stylesheet\" href=\"{root}site.css\">\n</head>\n<body>\n{SPRITE}\
-<header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}<nav class=\"topnav\"><a href=\"{home}\">{issues}</a><a href=\"{home}search/\">{search}</a><a href=\"{home}about/\">{about}</a></nav>{switch}</header>\n\
+<header class=\"masthead\"><a class=\"brand\" href=\"{home}\">{logo}</a>{crumb}<nav class=\"topnav\"><a href=\"{home}\">{issues}</a><a href=\"{home}cards/\">{cards}</a><a href=\"{home}search/\">{search}</a><a href=\"{home}about/\">{about}</a></nav>{switch}</header>\n\
 <main>\n{body}\n</main>\n\
 <footer class=\"colophon\"><a href=\"{home}\">{name}</a><span>{tagline}</span></footer>\n</body>\n</html>\n",
         lang = escape_html(&page.language),
         head = head.join("\n"),
         name = escape_html(name),
         issues = say(&page.language, "issues"),
+        cards = super::cards::label(&page.language),
         search = say(&page.language, "search"),
         about = super::about::label(&page.language),
         tagline = say(&page.language, "tagline"),
@@ -1238,6 +1239,7 @@ fn lost_page(name: &str) -> Page {
 
 pub fn pages(
     issues: &[Issue],
+    deck: &super::cards::Deck,
     images: &Images,
     (site, about): (&SiteConfig, &super::about::About),
     name: &str,
@@ -1271,6 +1273,7 @@ pub fn pages(
             .collect();
         let other = languages.iter().copied().find(|l| l != language);
         out.push(index_page(language, &own, images, other));
+        out.extend(super::cards::pages(language, deck, images, name, other)?);
         out.push(search_page(language, &own));
         out.push(super::about::page(language, about, name, other)?);
         indexes.push(search_index(language, &own)?);
