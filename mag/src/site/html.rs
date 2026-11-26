@@ -37,8 +37,8 @@ fn format_note(language: &str, kind: &str) -> &'static str {
         ("epub", false) => "for e-readers",
         ("mobi", true) => "para Kindle",
         ("mobi", false) => "for Kindle",
-        (_, true) => "pliegos A4 para imprimir en casa",
-        (_, false) => "A4 sheets to print at home",
+        (_, true) => "pliegos A4 para imprimir",
+        (_, false) => "A4 print sheets",
     }
 }
 
@@ -467,10 +467,16 @@ fn card_images(article: &Article) -> Vec<(&Path, &str)> {
 }
 
 fn body(ctx: &Ctx, language: &str, piece: &Piece) -> Result<String> {
+    body_inner(ctx, language, piece, true)
+}
+
+fn body_inner(ctx: &Ctx, language: &str, piece: &Piece, with_opener: bool) -> Result<String> {
     let mut out = Vec::new();
     let lead = matches!(piece.document.blocks.first(), Some(Block::Paragraph(_)));
     if !lead {
-        out.push(opener(ctx, piece));
+        if with_opener {
+            out.push(opener(ctx, piece));
+        }
         out.push(anchored(ctx, language, piece.article, &anchor_key(OPENER)));
     }
     let mut capped = false;
@@ -484,7 +490,9 @@ fn body(ctx: &Ctx, language: &str, piece: &Piece) -> Result<String> {
         capped |= is_paragraph && index > 0;
         out.push(block(item, class)?);
         if index == 0 && lead {
-            out.push(opener(ctx, piece));
+            if with_opener {
+                out.push(opener(ctx, piece));
+            }
             out.push(anchored(ctx, language, piece.article, &anchor_key(OPENER)));
         }
         if let Block::Heading { children, .. } = item {
@@ -497,6 +505,78 @@ fn body(ctx: &Ctx, language: &str, piece: &Piece) -> Result<String> {
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
         .join("\n"))
+}
+
+pub(super) fn render_rewritten_piece(
+    language: &str,
+    issue_label: &str,
+    piece: &Piece,
+    images: &Images,
+    root: &str,
+) -> Result<String> {
+    let ctx = Ctx {
+        root: root.to_string(),
+        images,
+        epub: false,
+    };
+    let mut head = Vec::new();
+    let dateline = piece
+        .article
+        .and_then(|a| a.dateline.as_deref())
+        .filter(|d| !d.is_empty())
+        .map(|d| format!(" · {}", escape_html(d)))
+        .unwrap_or_default();
+    head.push(format!(
+        "<p class=\"kicker\">{} · {}{dateline}</p>",
+        escape_html(issue_label),
+        prose(&piece.kicker)
+    ));
+    head.push(format!("<h2>{}</h2>", prose(&piece.title)));
+    if !piece.author.is_empty() {
+        head.push(format!(
+            "<p class=\"byline\">{} {}</p>",
+            escape_html(&ui(language, "by")),
+            prose(&piece.author)
+        ));
+    }
+    if let Some(article) = piece.article {
+        if !article.author_note.is_empty() {
+            head.push(format!(
+                "<p class=\"author-note\">{}</p>",
+                prose(&article.author_note)
+            ));
+        }
+        if let Some(url) = article.source_url.as_deref().filter(|u| !u.is_empty()) {
+            let host = url::Url::parse(url)
+                .ok()
+                .and_then(|u| {
+                    u.host_str()
+                        .map(|h| h.trim_start_matches("www.").to_string())
+                })
+                .unwrap_or_default();
+            head.push(format!(
+                "<p class=\"source\"><a href=\"{}\">{} <span>{}</span></a></p>",
+                escape_html(url),
+                say(language, "original"),
+                escape_html(&host)
+            ));
+        }
+    }
+    let content = body_inner(&ctx, language, piece, false)?;
+    let tail = article_tail(&ctx, language, piece.article);
+    let html = format!(
+        "<article class=\"piece card-article\">\n<header class=\"piece-head card-article-head\">\n{}\n</header>\n{content}\n{tail}\n</article>",
+        head.join("\n")
+    );
+    let missing = dropped(piece, &html);
+    anyhow::ensure!(
+        missing.is_empty(),
+        "the card page for {} drops {} block(s) of its manuscript:\n  {}",
+        piece.slug,
+        missing.len(),
+        missing.join("\n  ")
+    );
+    Ok(html)
 }
 
 fn markup_free(html: &str) -> String {
@@ -764,11 +844,11 @@ fn summary(document: &Document, fallback: &str) -> String {
     )
 }
 
-struct Issued<'a> {
-    edition: &'a Edition,
-    pieces: Vec<Piece<'a>>,
-    assets: Option<&'a super::Assets>,
-    others: Vec<&'a str>,
+pub(super) struct Issued<'a> {
+    pub(super) edition: &'a Edition,
+    pub(super) pieces: Vec<Piece<'a>>,
+    pub(super) assets: Option<&'a super::Assets>,
+    pub(super) others: Vec<&'a str>,
 }
 
 impl Issued<'_> {
@@ -776,7 +856,7 @@ impl Issued<'_> {
         issue_dir(self.edition)
     }
 
-    fn issue_label(&self) -> String {
+    pub(super) fn issue_label(&self) -> String {
         format!(
             "{} {}",
             ui(&self.edition.language, "issue"),
@@ -1273,7 +1353,9 @@ pub fn pages(
             .collect();
         let other = languages.iter().copied().find(|l| l != language);
         out.push(index_page(language, &own, images, other));
-        out.extend(super::cards::pages(language, deck, images, name, other)?);
+        out.extend(super::cards::pages(
+            language, deck, &own, images, name, other,
+        )?);
         out.push(search_page(language, &own));
         out.push(super::about::page(language, about, name, other)?);
         indexes.push(search_index(language, &own)?);

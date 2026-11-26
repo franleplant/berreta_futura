@@ -1,4 +1,4 @@
-use super::html::{date, depth_root, Page};
+use super::html::{date, depth_root, render_rewritten_piece, Issued, Page};
 use super::images::Image;
 use super::Issue;
 use crate::model::doc::educate_reader_quotes;
@@ -13,7 +13,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const CARD_BACK_SHEET: &str = include_str!("../../assets/typeset/card-sheet.typ");
-const GRID_SIZES: &str = "(min-width: 56rem) 19rem, (min-width: 38rem) 44vw, calc(100vw - 2.5rem)";
+const HAND_SIZES: &str = "(min-width: 52rem) 14rem, 42vw";
 const HERO_SIZES: &str = "(min-width: 52rem) 24rem, min(24rem, calc(100vw - 2.5rem))";
 const BODY_SIZES: &str = "(min-width: 44rem) 40rem, calc(100vw - 2.5rem)";
 const CARD_PPI: f32 = 220.0;
@@ -79,11 +79,19 @@ fn say(language: &str, key: &str) -> &'static str {
     match key {
         "kicker" if es => "Colección",
         "kicker" => "Collection",
-        "lede" if es => "Modelos de frontera destilados en cartas coleccionables, cada una junto a su artículo original de lanzamiento.",
-        "lede" => "Frontier models distilled into collectible cards, each paired with its original launch announcement.",
+        "desc" if es => "Colección de model cards de Berreta Futura.",
+        "desc" => "Berreta Futura model cards collection.",
         "all" if es => "Todos",
         "all" => "All",
-        "hint" if es => "Mové el cursor sobre la carta para inclinarla. Hacé clic para darla vuelta.",
+        "read_article" if es => "Leer el artículo",
+        "read_article" => "Read article",
+        "prev_card" if es => "Carta anterior",
+        "prev_card" => "Previous card",
+        "next_card" if es => "Siguiente carta",
+        "next_card" => "Next card",
+        "hint" if es => {
+            "Mové el cursor sobre la carta para inclinarla. Hacé clic para darla vuelta."
+        }
         "hint" => "Move across the card to tilt it. Click to flip.",
         "flip" if es => "Dar vuelta",
         "flip" => "Flip card",
@@ -253,7 +261,29 @@ fn edition_cards(head: &Path, cache: &Path, issues: &[Issue]) -> Result<Vec<WebC
     Ok(out)
 }
 
-fn standalone_cards(head: &Path, cache: &Path) -> Result<Vec<WebCard>> {
+fn find_issue_for_source(issues: &[Issue], source_id: &str) -> Option<(String, String, String)> {
+    for issue in issues {
+        let edition = issue
+            .editions
+            .iter()
+            .find(|e| e.language == "en")
+            .or_else(|| issue.editions.first())?;
+        if let Some(article) = edition
+            .articles
+            .iter()
+            .find(|a| a.source_ids.iter().any(|id| id == source_id))
+        {
+            return Some((
+                edition.id.clone(),
+                edition.issue_number.clone(),
+                article.id.clone(),
+            ));
+        }
+    }
+    None
+}
+
+fn standalone_cards(head: &Path, cache: &Path, issues: &[Issue]) -> Result<Vec<WebCard>> {
     let dir = head.join("cards");
     let Ok(read) = fs::read_dir(&dir) else {
         return Ok(Vec::new());
@@ -280,6 +310,9 @@ fn standalone_cards(head: &Path, cache: &Path) -> Result<Vec<WebCard>> {
                     .find(|l| !l.is_empty())
                     .map(str::to_string)
             });
+        let issue = source_id
+            .as_deref()
+            .and_then(|id| find_issue_for_source(issues, id));
         let source = match source_id {
             Some(id) => load_source(head, &id)?,
             None => None,
@@ -295,7 +328,7 @@ fn standalone_cards(head: &Path, cache: &Path) -> Result<Vec<WebCard>> {
             card,
             released,
             front,
-            issue: None,
+            issue,
             source,
         });
     }
@@ -304,7 +337,7 @@ fn standalone_cards(head: &Path, cache: &Path) -> Result<Vec<WebCard>> {
 
 pub fn load(head: &Path, cache: &Path, site_host: &str, issues: &[Issue]) -> Result<Deck> {
     let mut all = edition_cards(head, cache, issues)?;
-    all.extend(standalone_cards(head, cache)?);
+    all.extend(standalone_cards(head, cache, issues)?);
     let mut seen = BTreeSet::new();
     let mut cards = Vec::new();
     for item in all {
@@ -328,8 +361,10 @@ pub fn image_paths(deck: &Deck) -> Vec<PathBuf> {
     }
     for item in &deck.cards {
         paths.push(item.front.clone());
-        if let Some(source) = &item.source {
-            paths.extend(source.media.iter().cloned());
+        if item.issue.is_none() {
+            if let Some(source) = &item.source {
+                paths.extend(source.media.iter().cloned());
+            }
         }
     }
     paths
@@ -418,40 +453,31 @@ fn index_page(
     let items: String = deck
         .cards
         .iter()
-        .enumerate()
-        .map(|(idx, item)| {
+        .map(|item| {
             let img = picture(
                 images,
                 &root,
                 &item.front,
                 &format!("Model card: {}", item.card.name),
-                GRID_SIZES,
-                idx < 3,
+                HAND_SIZES,
+                true,
             );
-            let when = match item.released.is_empty() {
-                true => String::new(),
-                false => format!(" · {}", date(language, &item.released)),
-            };
             format!(
-                "<li data-lab=\"{lab}\"><a class=\"card-tile\" href=\"{slug}/\">\
-                 <div class=\"mtg-scene\"><div class=\"mtg-card\" data-tilt>\
+                "<div class=\"hand-slot\" data-lab=\"{lab}\">\
+                 <div class=\"mtg-scene\">\
+                 <a class=\"mtg-card\" href=\"{slug}/\" data-tilt aria-label=\"{title}\">\
                  <div class=\"mtg-face mtg-front\">{img}\
                  <span class=\"mtg-foil\" aria-hidden=\"true\"></span>\
                  <span class=\"mtg-sheen\" aria-hidden=\"true\"></span>\
-                 </div></div></div>\
-                 <div class=\"card-caption\">\
-                 <span class=\"card-lab\">{lab}{when}</span>\
-                 <span class=\"card-name\">{title}</span>\
-                 <span class=\"card-role\">{roles}</span>\
-                 </div></a></li>",
+                 </div></a></div></div>",
                 lab = escape_html(&item.card.lab),
                 slug = escape_html(&item.slug),
                 title = prose(&item.card.name),
-                roles = prose(&role_line(&item.card)),
             )
         })
         .collect();
-    let count = match deck.cards.len() {
+    let total = deck.cards.len();
+    let count = match total {
         1 => say(language, "count_one").to_string(),
         n => format!("{n} {}", say(language, "count_many")),
     };
@@ -463,20 +489,20 @@ fn index_page(
         "<section class=\"cards-head\">\
          <p class=\"kicker\">{kicker} · <span class=\"card-tally\">{count}</span></p>\
          <h1>{heading}</h1>\
-         <p class=\"subtitle\">{lede}</p>\
          <div class=\"card-filters\" role=\"group\" aria-label=\"{heading}\">{filters}</div>\
          </section>\
-         <ol class=\"card-grid\">{items}</ol>\
+         <section class=\"hand-stage\" aria-label=\"{heading}\">\
+         <div class=\"hand\" data-hand>{items}</div>\
+         </section>\
          <script src=\"{root}cards.js\" defer></script>",
         kicker = say(language, "kicker"),
         heading = label(language),
-        lede = say(language, "lede"),
     );
     Page {
         path: page_path,
         language: language.to_string(),
         title: format!("{} · {name}", label(language)),
-        description: say(language, "lede").to_string(),
+        description: say(language, "desc").to_string(),
         image: og,
         alternate: other.map(|o| (o.to_string(), path(o))),
         crumb: String::new(),
@@ -556,6 +582,7 @@ fn card_pager(language: &str, deck: &Deck, index: usize) -> String {
 fn detail_page(
     language: &str,
     deck: &Deck,
+    issued: &[&Issued],
     index: usize,
     images: &BTreeMap<PathBuf, Image>,
     name: &str,
@@ -595,9 +622,17 @@ fn detail_page(
         .as_deref()
         .map(|id| format!("<p class=\"card-id\"><code>{}</code></p>", escape_html(id)))
         .unwrap_or_default();
-    let article = match &item.source {
-        Some(source) => render_source_article(language, source, images, &root)?,
-        None => String::new(),
+    let rewritten = item.issue.as_ref().and_then(|(edition_id, _, slug)| {
+        let one = issued.iter().find(|i| i.edition.id == *edition_id)?;
+        let piece = one.pieces.iter().find(|p| p.slug == *slug)?;
+        Some((one.issue_label(), piece))
+    });
+    let article = match (rewritten, &item.source) {
+        (Some((label, piece)), _) => {
+            render_rewritten_piece(language, &label, piece, images, &root)?
+        }
+        (None, Some(source)) => render_source_article(language, source, images, &root)?,
+        (None, None) => String::new(),
     };
     let links = detail_links(language, item, deck, &root);
     let pager = card_pager(language, deck, index);
@@ -935,6 +970,7 @@ impl MdState<'_> {
 pub fn pages(
     language: &str,
     deck: &Deck,
+    issued: &[&Issued],
     images: &BTreeMap<PathBuf, Image>,
     name: &str,
     other: Option<&str>,
@@ -944,7 +980,9 @@ pub fn pages(
     }
     let mut out = vec![index_page(language, deck, images, name, other)];
     for index in 0..deck.cards.len() {
-        out.push(detail_page(language, deck, index, images, name, other)?);
+        out.push(detail_page(
+            language, deck, issued, index, images, name, other,
+        )?);
     }
     Ok(out)
 }
